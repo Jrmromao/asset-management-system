@@ -11,7 +11,7 @@ const ibmPlexSerif = IBM_Plex_Serif({
 })
 
 export const metadata: Metadata = {
-  title: "Peoples Bank",
+  title: "Assest Managment System",
   description: "This is my banking app for the people",
   icons: {
     icon: '/icons/logo.svg'

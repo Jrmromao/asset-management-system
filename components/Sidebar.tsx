@@ -15,7 +15,7 @@ const Sidebar = ({ user }: SiderbarProps) => {
             <nav className="flex flex-col gap-4">
                 <Link href="/" className="mb-12 cursor-pointer flex items-center gap-2">
                     <Image src='/icons/logo.svg' width={34} height={34} alt="Logo" className="size-[24px] max-xl:size-14" />
-                    <h1 className="sidebar-logo">My Bank</h1>
+                    <h1 className="sidebar-logo">Qlientel</h1>
                 </Link>
 
                 {sidebarLinks.map((item) => {
@@ -36,10 +36,10 @@ const Sidebar = ({ user }: SiderbarProps) => {
                         </Link>
                     )
                 })}
-                <PlaidLink user={user} />
+                {/* <PlaidLink user={user} /> */}
 
             </nav>
-            <Footer user={user} />
+            <Footer />
         </section>
     )
 }

@@ -13,7 +13,7 @@ import { usePathname } from "next/navigation"
 import Footer from "@/components/Footer";
 
 
-const MobileNav = ({ user }: MobileNavProps) => {
+const MobileNav = () => {
 
   const pathName = usePathname()
 
@@ -26,7 +26,7 @@ const MobileNav = ({ user }: MobileNavProps) => {
         <SheetContent side={'left'} className="border-none bg-white">
           <Link href="/" className="cursor-pointer flex items-center gap-1 px-4">
             <Image src='/icons/logo.svg' width={34} height={34} alt="Logo" />
-            <h1 className="text-26  font-ibm-plex-serif font-bold text-black-1">My Bank</h1>
+            <h1 className="text-26  font-ibm-plex-serif font-bold text-black-1">Qlientel</h1>
           </Link>
             <SheetClose asChild>
               <nav className="flex h-full flex-col gap-6 pt-16 text-white">
@@ -51,7 +51,7 @@ const MobileNav = ({ user }: MobileNavProps) => {
                 USER
               </nav>
             </SheetClose>
-          <Footer user={user} type={'mobile'} />
+          <Footer type={'mobile'} />
         </SheetContent>
       </Sheet>
     </section>

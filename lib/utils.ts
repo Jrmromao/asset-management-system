@@ -3,8 +3,6 @@ import {type ClassValue, clsx} from "clsx";
 import qs from "query-string";
 import {twMerge} from "tailwind-merge";
 import {z} from "zod";
-import CustomInput from "@/components/CustomInput";
-import React from "react";
 
 export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
