@@ -2,6 +2,8 @@ import HeaderBox from '@/components/HeaderBox'
 import RecentTransactions from '@/components/RecentTransactions';
 import RightSidebar from '@/components/RightSidebar';
 import TotalBalanceBox from '@/components/TotalBalanceBox';
+import {prisma} from "@/app/db";
+import {Button} from "@/components/ui/button";
 // import {getAccount, getAccounts} from '@/lib/actions/bank.actions';
 // import {getLoggedInUser} from '@/lib/actions/user.actions';
 
@@ -37,6 +39,10 @@ const Home = async ({searchParams: {id, page}}: SearchParamProps) => {
                     /> */}
                 </header>
 
+
+                <>Home</>
+
+
                 {/* <RecentTransactions
                     accounts={accountsData}
                     transactions={account?.transactions}
@@ -44,11 +50,11 @@ const Home = async ({searchParams: {id, page}}: SearchParamProps) => {
                     page={currentPage}
                 /> */}
             </div>
-            <RightSidebar
-                // user={loggedIn}
-                // transactions={account?.transactions}
-                // banks={accountsData?.slice(0, 2)}
-            />
+            {/*<RightSidebar*/}
+            {/*    // user={loggedIn}*/}
+            {/*    // transactions={account?.transactions}*/}
+            {/*    // banks={accountsData?.slice(0, 2)}*/}
+            {/*/>*/}
         </section>
     )
 }

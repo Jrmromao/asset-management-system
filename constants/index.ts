@@ -4,21 +4,26 @@ export const sidebarLinks = [
     route: "/",
     label: "Home",
   },
-  // {
-  //   imgURL: "/icons/dollar-circle.svg",
-  //   route: "/my-banks",
-  //   label: "My Banks",
-  // },
-  // {
-  //   imgURL: "/icons/transaction.svg",
-  //   route: "/transaction-history",
-  //   label: "Transaction History",
-  // },
-  // {
-  //   imgURL: "/icons/money-send.svg",
-  //   route: "/payment-transfer",
-  //   label: "Transfer Funds",
-  // },
+  {
+    imgURL: "/icons/dollar-circle.svg",
+    route: "/assets",
+    label: "Assets",
+  },
+  {
+    imgURL: "/icons/transaction.svg",
+    route: "/licenses",
+    label: "Licenses",
+  },
+  {
+    imgURL: "/icons/money-send.svg",
+    route: "/consumables",
+    label: "Consumables",
+  },
+  {
+    imgURL: "/icons/spotify.svg",
+    route: "/people",
+    label: "People",
+  },
 ];
 
 // good_user / good_password - Bank of America
