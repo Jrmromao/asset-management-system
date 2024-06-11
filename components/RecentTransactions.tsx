@@ -25,7 +25,7 @@ const RecentTransactions = ({
         <section className="recent-transactions">
             <header className="flex items-center justify-between">
                 <Link
-                    href={`/transaction-history/?id=${appwriteItemId}`}
+                    href={`/assets/create-new`}
                     className="view-all-btn"
                 >
                     Create New

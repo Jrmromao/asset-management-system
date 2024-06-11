@@ -3,10 +3,10 @@ import {FormControl, FormField, FormLabel, FormMessage} from "@/components/ui/fo
 import {Input} from "@/components/ui/input";
 import {Control, FieldPath} from 'react-hook-form'
 import {z} from "zod";
-import {authFormSchema} from "@/lib/utils";
+import {assetFormSchema} from "@/lib/utils";
 
 
-const formSchema = authFormSchema('sign-up')
+const formSchema = assetFormSchema('sign-up')
 
 
 interface CustomInputProps {

@@ -23,33 +23,24 @@ const Home = async ({searchParams: {id, page}}: SearchParamProps) => {
 
     return (
         <section className="home">
-            <div className="home-content">
-                <header className="home-header">
-                    <HeaderBox
-                        type="greeting"
-                        title="Welcome"
-                        user={'Joao' || 'Guest'}
-                        subtext="Access and manage your account and transactions efficiently."
-                    />
+            <div className=" flex flex-col flex-grow">
 
-                    {/* <TotalBalanceBox
-                        accounts={accountsData}
-                        totalBanks={accounts?.totalBanks}
-                        totalCurrentBalance={accounts?.totalCurrentBalance}
-                    /> */}
-                </header>
+                <div className='bg-amber-300'>ee</div>
+                <div className='bg-red-300'>eee</div>
+                {/*<header className="home-header">*/}
+                {/*    <HeaderBox*/}
+                {/*        type="greeting"*/}
+                {/*        title="Welcome"*/}
+                {/*        user={'Joao' || 'Guest'}*/}
+                {/*        subtext="Access and manage your account and transactions efficiently."*/}
+                {/*    />*/}
+                {/*</header>*/}
 
 
-                <>Home</>
-
-
-                {/* <RecentTransactions
-                    accounts={accountsData}
-                    transactions={account?.transactions}
-                    appwriteItemId={appwriteItemId}
-                    page={currentPage}
-                /> */}
             </div>
+
+
+
             {/*<RightSidebar*/}
             {/*    // user={loggedIn}*/}
             {/*    // transactions={account?.transactions}*/}

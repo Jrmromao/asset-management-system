@@ -3,6 +3,9 @@ import HeaderBox from "@/components/HeaderBox";
 import {Pagination} from "@/components/Pagination";
 import RecentTransactions from "@/components/RecentTransactions";
 
+
+
+
 const Assets = () => {
     return (
         <div className="transactions">

@@ -1,19 +1,97 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// prisma/schema.prisma
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
 
 generator client {
   provider = "prisma-client-js"
 }
 
-datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+model User {
+  id             Int           @id @default(autoincrement())
+  email          String        @unique
+  password       String
+  name           String
+  role           String
+  organizationId Int
+  organization   Organization  @relation(fields: [organizationId], references: [id])
+  assets         Asset[]
+  toolLicenses   ToolLicense[]
+  auditLogs      AuditLog[]
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 }
 
-model Todo {
-  id        String   @id @default(uuid())
-  title     String
-  complete  Boolean
+model Organization {
+  id        Int        @id @default(autoincrement())
+  name      String
+  users     User[]
+  auditLogs AuditLog[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model Asset {
+  id           Int           @id @default(autoincrement())
+  name         String
+  description  String?
+  value        Float
+  categoryId   Int
+  userId       Int
+  transactions Transaction[]
+  category     Category      @relation(fields: [categoryId], references: [id])
+  user         User          @relation(fields: [userId], references: [id])
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model Category {
+  id        Int      @id @default(autoincrement())
+  name      String
+  assets    Asset[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Transaction {
+  id        Int      @id @default(autoincrement())
+  type      String
+  amount    Float
+  assetId   Int
+  asset     Asset    @relation(fields: [assetId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ToolLicense {
+  id             Int      @id @default(autoincrement())
+  name           String
+  key            String
+  issuedDate     DateTime
+  expirationDate DateTime
+  userId         Int?
+  user           User?    @relation(fields: [userId], references: [id])
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model AuditLog {
+  id             Int          @id @default(autoincrement())
+  action         String
+  entity         String
+  entityId       Int?
+  userId         Int
+  user           User         @relation(fields: [userId], references: [id])
+  organizationId Int
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  details        String?
+  createdAt      DateTime     @default(now())
+}
+
+model Sample {
+  id        Int      @id @default(autoincrement())
+  action    String
+  createdAt DateTime @default(now())
 }
