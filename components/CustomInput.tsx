@@ -6,7 +6,7 @@ import {z} from "zod";
 import {assetFormSchema} from "@/lib/utils";
 
 
-const formSchema = assetFormSchema('sign-up')
+const formSchema = assetFormSchema()
 
 
 interface CustomInputProps {

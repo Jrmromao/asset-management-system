@@ -81,6 +81,23 @@ declare type Transaction = {
   receiverBankId: string;
 };
 
+
+declare type Asset = {
+  id: string;
+  $id: string;
+  name: string;
+  manufacturer: string;
+  model: string;
+  serialNumber: string;
+  description: string;
+  price: number;
+  shipped: boolean;
+  category: string;
+  date: string;
+  image: string;
+  $createdAt: string;
+};
+
 declare type Bank = {
   $id: string;
   accountId: string;
@@ -239,9 +256,15 @@ declare interface CategoryBadgeProps {
   category: string;
 }
 
-declare interface TransactionTableProps {
-  transactions: Transaction[];
+
+
+declare interface AssetTableProps {
+  assets: Asset[];
 }
+
+
+
+
 
 declare interface CategoryProps {
   category: CategoryCount;

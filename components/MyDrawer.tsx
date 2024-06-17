@@ -1,23 +1,33 @@
+// app/page.jsx (or any component where you want to use the drawer)
+
 'use client'
-import React, { useState } from 'react';
-import AuthForm from "@/components/AuthForm";
-import AddAssetForm from "@/components/AddAssetForm";
-// import library components or create your custom styles
 
-function SideDrawer() {
-    const [isOpen, setIsOpen] = useState(false);
+import { useState } from 'react';
+import { Button } from "@/components/ui/button"
+import {
+    Drawer,
+    DrawerContent,
+    DrawerHeader,
+    DrawerTitle,
+    DrawerTrigger,
+    DrawerClose,
+} from "@/components/ui/drawer"
 
-    const toggleDrawer = () => setIsOpen(!isOpen);
+export default function MyDrawer({open, setOpen}: {open: boolean, setOpen: (open: boolean) => void}) {
+    // const [open, setOpen] = useState(false);
 
     return (
-        <>
-            <button onClick={toggleDrawer}>Open Drawer</button>
-            <div className={`sidedrawer ${isOpen ? 'open' : ''}`}>
-                <AddAssetForm/>
-            </div>
-            {isOpen && <div className="overlay" onClick={toggleDrawer} />}
-        </>
+        <Drawer open={open} onOpenChange={setOpen} >
+            <DrawerTrigger asChild>
+                <Button variant="outline">Open</Button>
+            </DrawerTrigger>
+            <DrawerContent>
+                <DrawerHeader>
+                    <DrawerTitle>Navigation</DrawerTitle>
+                    <DrawerClose />
+                </DrawerHeader>
+                {/* Your drawer content (links, etc.) goes here */}
+            </DrawerContent>
+        </Drawer>
     );
 }
-
-export default SideDrawer;

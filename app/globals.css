@@ -380,3 +380,61 @@
     @apply text-16 font-semibold text-black-2 max-xl:hidden;
   }
 }
+
+/* Base styles for all screen sizes */
+.sidedrawer {
+  position: fixed;
+  top: 0;
+  right: -100%; /* Initially hidden */
+  height: 100%;
+  background-color: white;
+  transition: right 0.3s ease-in-out;
+  z-index: 10;
+}
+
+.sidedrawer.open {
+  right: 0;
+}
+
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 9;
+}
+.close-btn {
+  position: absolute;
+  top: 10px; /* Adjust position as needed */
+  right: 10px;
+  font-size: 24px; /* Adjust size as needed */
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+/* Specific styles for different screen sizes */
+
+/* Small screens (e.g., phones) */
+@media (max-width: 767px) { /* Adjust breakpoint as needed */
+  .sidedrawer {
+    width: 350px; /* Full screen width on small screens */
+  }
+}
+
+/* Medium screens (e.g., tablets) */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .sidedrawer {
+    width: 80%; /* 80% of screen width on medium screens */
+  }
+}
+
+/* Large screens (e.g., desktops) */
+@media (min-width: 1024px) {
+  .sidedrawer {
+    width: 600px; /* Original width for large screens */
+  }
+}
+

@@ -4,6 +4,7 @@ import RightSidebar from '@/components/RightSidebar';
 import TotalBalanceBox from '@/components/TotalBalanceBox';
 import {prisma} from "@/app/db";
 import {Button} from "@/components/ui/button";
+import CustomTable from "@/components/CustomTable";
 // import {getAccount, getAccounts} from '@/lib/actions/bank.actions';
 // import {getLoggedInUser} from '@/lib/actions/user.actions';
 
@@ -25,27 +26,39 @@ const Home = async ({searchParams: {id, page}}: SearchParamProps) => {
         <section className="home">
             <div className=" flex flex-col flex-grow">
 
-                <div className='bg-amber-300'>ee</div>
-                <div className='bg-red-300'>eee</div>
-                {/*<header className="home-header">*/}
-                {/*    <HeaderBox*/}
-                {/*        type="greeting"*/}
-                {/*        title="Welcome"*/}
-                {/*        user={'Joao' || 'Guest'}*/}
-                {/*        subtext="Access and manage your account and transactions efficiently."*/}
-                {/*    />*/}
-                {/*</header>*/}
+                <header className="home-header">
+                    <HeaderBox
+                        type="greeting"
+                        title="Welcome"
+                        user={'Joao' || 'Guest'}
+                        subtext="Access and manage your account and transactions efficiently."
+                    />
 
+                </header>
+
+
+                <div className=" flex flex-col flex-grow">
+                    <div className="home-content">
+                    <div className={'bg-yellow-400'}>test</div>
+
+                        <TotalBalanceBox
+                            accounts={[]}
+                            totalBanks={0}
+                            totalCurrentBalance={0}
+                        />
+                        <CustomTable assets={[]}/>
+                    </div>
+
+
+                </div>
 
             </div>
 
-
-
-            {/*<RightSidebar*/}
-            {/*    // user={loggedIn}*/}
-            {/*    // transactions={account?.transactions}*/}
-            {/*    // banks={accountsData?.slice(0, 2)}*/}
-            {/*/>*/}
+            <RightSidebar
+                // user={loggedIn}
+                // transactions={account?.transactions}
+                // banks={accountsData?.slice(0, 2)}
+            />
         </section>
     )
 }

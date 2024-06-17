@@ -26,7 +26,7 @@ const CategoryBadge = ({ category }: CategoryBadgeProps) => {
     )
 }
 
-const TransactionsTable = ({ transactions }: TransactionTableProps) => {
+const TransactionsTable = ({ transactions }: any) => {
 
 
     return (
