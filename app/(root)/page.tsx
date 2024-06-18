@@ -1,9 +1,6 @@
 import HeaderBox from '@/components/HeaderBox'
-import RecentTransactions from '@/components/RecentTransactions';
 import RightSidebar from '@/components/RightSidebar';
 import TotalBalanceBox from '@/components/TotalBalanceBox';
-import {prisma} from "@/app/db";
-import {Button} from "@/components/ui/button";
 import CustomTable from "@/components/CustomTable";
 // import {getAccount, getAccounts} from '@/lib/actions/bank.actions';
 // import {getLoggedInUser} from '@/lib/actions/user.actions';
@@ -39,7 +36,6 @@ const Home = async ({searchParams: {id, page}}: SearchParamProps) => {
 
                 <div className=" flex flex-col flex-grow">
                     <div className="home-content">
-                    <div className={'bg-yellow-400'}>test</div>
 
                         <TotalBalanceBox
                             accounts={[]}

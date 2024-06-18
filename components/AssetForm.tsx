@@ -62,44 +62,69 @@ const AssetForm = () => {
     return (
         <section className={''}>
             <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)}
-                      className="flex flex-col gap-4">
+                <form onSubmit={form.handleSubmit(onSubmit)}>
 
-                    <div className={'flex'}>
-                        <CustomInput control={form.control} name={'assetId'} label={'Asset ID'}  placeholder={'Auto generate'} type={'text'}/>
-
-                        <CustomInput control={form.control} name={'title'} label={'Title'} placeholder={'title'}  type={'text'}/>
+                    <div className={'flex flex-col md:flex-row gap-4 pt-5'}>
+                        <div className={'flex-1'}>
+                        <CustomInput control={form.control} name={'assetId'} label={'Asset ID'}
+                                     placeholder={'Auto generate'} type={'text'}/>
+                        </div>
+                        <div className={'flex-1'}>
+                        <CustomInput control={form.control} name={'title'} label={'Title'} placeholder={'title'}
+                                     type={'text'}/>
+                        </div>
                     </div>
-                    <div className={'flex'}>
-                        <CustomInput control={form.control} name={'description'} label={'Description'}  placeholder={'description'} type={'textarea'}/>
-                        <CustomInput control={form.control} name={'category'} label={'Category'} placeholder={'category'}  type={'text'}/>
-                    </div>
+                    <div className={'flex flex-col md:flex-row gap-4  pt-5'}>
+                        <div className={'flex-1'}>
+                        <CustomInput control={form.control} name={'description'} label={'Description'}
+                                     placeholder={'description'} type={'textarea'}/>
+                        </div>
+                        <div className={'flex-1'}>
+                        <CustomInput control={form.control} name={'category'} label={'Category'}
+                                     placeholder={'category'} type={'text'}/>
+                        </div>
+                        </div>
 
-                    <div className={'flex w-full-col'}>
+                    <div className={'flex flex-col md:flex-row gap-4  pt-5'}>
+                        <div className={'flex-1'}>
                         <CustomInput control={form.control} name={'status'} label={'Status'} placeholder={'status'}
                                      type={'text'}/>
+                        </div>
+                        <div className={'flex-1'}>
                         <CustomInput control={form.control} name={'brand'} label={'Brand'} placeholder={'brand'}
                                      type={'text'}/>
+                        </div>
                     </div>
-
+                    <div className={'flex flex-col md:flex-row gap-4 pt-5'}>
+                        <div className={'flex-1'}>
                         <CustomInput control={form.control} name={'purchaseNotes'} label={'Purchase Notes'}
                                      placeholder={'purchaseNotes'} type={'text'}/>
+                        </div>
+                        <div className={'flex-1'}>
                         <CustomInput control={form.control} name={'purchasePrice'} label={'Purchase Price'}
                                      placeholder={'purchasePrice'} type={'text'}/>
-                        <CustomInput control={form.control} name={'purchaseDate'} label={'Purchase Date'}
-                                     placeholder={'purchaseDate'} type={'text'}/>
+                        </div>
+                    </div>
+                    <div className={'flex flex-col md:flex-row gap-4 pt-5'}>
+                        <div className={'flex-1'}>
+                            <CustomInput control={form.control} name={'purchaseDate'} label={'Purchase Date'}
+                                         placeholder={'purchase Date'} type={'text'}/>
+                        </div>
+                        <div className={'flex-1'}>
                         <CustomInput control={form.control} name={'image'} label={'Image'} placeholder={'image'}
                                      type={'upload'}/>
+                        </div>
+                    </div>
 
-                        <Button type="submit" className={'form-btn'} disabled={isLoading}>
-                            {isLoading ? (
-                                    <>
-                                        <Loader2 size={20} className={'animate-spin'}/>&nbsp;
-                                        Loading...
-                                    </>
-                                ) :
-                                'Submit'}
-                        </Button>
+                    <Button type="submit" className={'form-btn mt-6 w-full md:w-auto'} disabled={isLoading}>
+                        {isLoading ? (
+                                <>
+                                    <Loader2 size={20} className={'animate-spin'}/>&nbsp;
+                                    Loading...
+                                </>
+                            ) :
+                            'Submit'}
+                    </Button>
 
 
                 </form>
@@ -107,6 +132,6 @@ const AssetForm = () => {
 
 
         </section>
-)
+    )
 }
 export default AssetForm

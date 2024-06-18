@@ -5,7 +5,6 @@ import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import Footer from "@/components/Footer";
-import PlaidLink from "@/components/PlaidLink";
 
 const Sidebar = ({ user }: SiderbarProps) => {
 
