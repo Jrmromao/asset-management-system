@@ -7,7 +7,7 @@ import AssetForm from "@/components/AssetForm";
 const CreateNew = () => {
 
     return (
-        <div className="transactions">
+        <div className="assets">
             <div className="transactions-header">
                 <HeaderBox
                     title="Create new asset"
@@ -15,7 +15,6 @@ const CreateNew = () => {
                 />
             </div>
             <div className="">
-
                     <AssetForm />
 
             </div>

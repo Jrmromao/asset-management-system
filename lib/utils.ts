@@ -215,8 +215,8 @@ export const getTransactionStatus = (date: Date) => {
 // })
 
 export const assetFormSchema = () => z.object({
-    assetId: z.string(),
-    title: z.string(),
+    id: z.string(),
+    name: z.string(),
     description: z.string(),
     category: z.string(),
     notes: z.string(),

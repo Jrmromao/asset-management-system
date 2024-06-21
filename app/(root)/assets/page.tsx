@@ -11,7 +11,7 @@ const Assets = () => {
 
 
     return (
-        <div className="transactions">
+        <div className="assets">
 
             <div className="transactions-header">
                 <HeaderBox

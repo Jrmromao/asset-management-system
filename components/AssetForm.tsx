@@ -1,6 +1,6 @@
 'use client'
 import React, {useState} from 'react'
-import {z} from "zod"
+import {any, z} from "zod"
 import {zodResolver} from "@hookform/resolvers/zod"
 import {useForm} from "react-hook-form"
 import {Button} from "@/components/ui/button"
@@ -9,7 +9,7 @@ import CustomInput from "@/components/CustomInput";
 import {assetFormSchema} from "@/lib/utils";
 import {Loader2} from "lucide-react";
 import {useRouter} from "next/navigation";
-// import {getLoggedInUser, signIn, signUp} from "@/lib/actions/user.actions";
+import {createAsset} from "@/lib/actions/assets.actions";
 
 const AssetForm = () => {
     const [isLoading, setIsLoading] = useState(false)
@@ -20,7 +20,7 @@ const AssetForm = () => {
         resolver: zodResolver(formSchema),
         defaultValues: {
             assetId: '',
-            title: '',
+            name: '',
             description: '',
             category: '',
             notes: '',
@@ -39,19 +39,25 @@ const AssetForm = () => {
 
         try {
             const assetData = {
-                assetId: data.assetId,
-                title: data.title,
+                id: data.id,
+                name: data.name,
                 description: data.description,
                 category: data.category,
                 status: data.status,
                 brand: data.brand,
                 purchaseNotes: data.purchaseNotes,
                 serialNumber: data.serialNumber,
-                purchasePrice: data.purchasePrice,
+                price: 0,
+                shippedDate: data.purchasePrice,
+                shipped: false,
+                createdAt: data.purchasePrice,
                 purchaseDate: data.purchaseDate,
+                date: data.purchaseDate,
                 image: data.image,
             }
-            // const newAsset = await addAsset(assetData)
+
+            console.log(assetData)
+            const newAsset = await createAsset(assetData)
         } catch (e) {
             console.error(e)
         } finally {
@@ -66,11 +72,11 @@ const AssetForm = () => {
 
                     <div className={'flex flex-col md:flex-row gap-4 pt-5'}>
                         <div className={'flex-1'}>
-                        <CustomInput control={form.control} name={'assetId'} label={'Asset ID'}
+                        <CustomInput control={form.control} name={'id'} label={'Asset ID'}
                                      placeholder={'Auto generate'} type={'text'}/>
                         </div>
                         <div className={'flex-1'}>
-                        <CustomInput control={form.control} name={'title'} label={'Title'} placeholder={'title'}
+                        <CustomInput control={form.control} name={'name'} label={'Name'} placeholder={'Name'}
                                      type={'text'}/>
                         </div>
                     </div>

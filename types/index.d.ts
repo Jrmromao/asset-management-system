@@ -83,11 +83,11 @@ declare type Transaction = {
 
 
 declare type Asset = {
-  id: string;
-  $id: string;
-  name: string;
-  manufacturer: string;
-  model: string;
+  id?: string;
+  // $id: string;
+  // name: string;
+  // manufacturer: string;
+  // model: string;
   serialNumber: string;
   description: string;
   price: number;
@@ -95,7 +95,7 @@ declare type Asset = {
   category: string;
   date: string;
   image: string;
-  $createdAt: string;
+  createdAt: string;
 };
 
 declare type Bank = {
