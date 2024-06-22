@@ -6,7 +6,6 @@
 // import { encryptId, extractCustomerIdFromUrl, parseStringify } from "../utils";
 // import { CountryCode, ProcessorTokenCreateRequest, ProcessorTokenCreateRequestProcessorEnum, Products } from "plaid";
 
-// import { plaidClient } from '@/lib/plaid';
 // import { revalidatePath } from "next/cache";
 // import { addFundingSource, createDwollaCustomer } from "./dwolla.actions";
 
@@ -16,14 +15,51 @@
 //     APPWRITE_BANK_COLLECTION_ID: BANK_COLLECTION_ID,
 // } = process.env;
 
+import {prisma} from "@/app/db";
+import {parseStringify} from "@/lib/utils";
+
 export const createAsset = async (assetData: Asset) => {
     try {
 
-        console.log(assetData)
+        const newCategory = await prisma.category.create({
+            data: {
+                name: 'test',
+                createdAt: new Date(),
+                updatedAt: new Date()
+            }
+        })
+
+
+        const newAsset = await prisma.asset.create({
+            data: {
+                name: '',
+                description: 'assetData.description',
+                price: 100,
+                categoryId: newCategory.id,
+                userId: 1,
+                createdAt: new Date(),
+                updatedAt: new Date()
+            }
+        })
+
+
     } catch (error) {
         console.log(error)
     }
 }
+
+// give me a function to get all assets
+export const getAssets = async () => {
+    try {
+        const assets = await prisma.asset.findMany();
+        return parseStringify(assets);
+    } catch (error) {
+        console.log(error)
+    }
+}
+
+
+
 
 // export const signIn = async ({ email, password }: signInProps) => {
 //     try {

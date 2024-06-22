@@ -7,19 +7,22 @@ import {Button} from "@/components/ui/button"
 import {Form,} from "@/components/ui/form"
 import CustomInput from "@/components/CustomInput";
 import {assetFormSchema} from "@/lib/utils";
-import {Loader2} from "lucide-react";
 import {useRouter} from "next/navigation";
 import {createAsset} from "@/lib/actions/assets.actions";
+// import { Calendar } from "@/components/ui/calendar"
+import {Loader2} from "lucide-react";
 
 const AssetForm = () => {
     const [isLoading, setIsLoading] = useState(false)
     const [user, setUser] = useState(null)
     const formSchema = assetFormSchema()
     const router = useRouter()
+    const [date, setDate] = useState<Date | undefined>(new Date())
+
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
-            assetId: '',
+            id: '',
             name: '',
             description: '',
             category: '',
@@ -39,9 +42,8 @@ const AssetForm = () => {
 
         try {
             const assetData = {
-                id: data.id,
-                name: data.name,
-                description: data.description,
+                assetTitle: data.name,
+                note: data.description,
                 category: data.category,
                 status: data.status,
                 brand: data.brand,
@@ -56,8 +58,7 @@ const AssetForm = () => {
                 image: data.image,
             }
 
-            console.log(assetData)
-            const newAsset = await createAsset(assetData)
+            // const newAsset = await createAsset(assetData)
         } catch (e) {
             console.error(e)
         } finally {
@@ -108,13 +109,14 @@ const AssetForm = () => {
                         </div>
                         <div className={'flex-1'}>
                         <CustomInput control={form.control} name={'purchasePrice'} label={'Purchase Price'}
-                                     placeholder={'purchasePrice'} type={'text'}/>
+                                     placeholder={'purchasePrice'} type={'number'}/>
                         </div>
                     </div>
                     <div className={'flex flex-col md:flex-row gap-4 pt-5'}>
                         <div className={'flex-1'}>
                             <CustomInput control={form.control} name={'purchaseDate'} label={'Purchase Date'}
-                                         placeholder={'purchase Date'} type={'text'}/>
+                                         placeholder={'YYYY/MM/DD'} type={'date'}/>
+
                         </div>
                         <div className={'flex-1'}>
                         <CustomInput control={form.control} name={'image'} label={'Image'} placeholder={'image'}

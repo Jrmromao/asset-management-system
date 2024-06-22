@@ -1,8 +1,8 @@
 // prisma/schema.prisma
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 generator client {
@@ -12,7 +12,6 @@ generator client {
 model User {
   id             Int           @id @default(autoincrement())
   email          String        @unique
-  password       String
   name           String
   role           String
   organizationId Int
@@ -37,7 +36,7 @@ model Asset {
   id           Int           @id @default(autoincrement())
   name         String
   description  String?
-  value        Float
+  price        Float
   categoryId   Int
   userId       Int
   transactions Transaction[]

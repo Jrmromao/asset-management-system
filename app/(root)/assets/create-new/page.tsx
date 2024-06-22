@@ -16,7 +16,6 @@ const CreateNew = () => {
             </div>
             <div className="">
                     <AssetForm />
-
             </div>
         </div>
 

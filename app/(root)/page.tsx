@@ -2,6 +2,7 @@ import HeaderBox from '@/components/HeaderBox'
 import RightSidebar from '@/components/RightSidebar';
 import TotalBalanceBox from '@/components/TotalBalanceBox';
 import CustomTable from "@/components/CustomTable";
+
 // import {getAccount, getAccounts} from '@/lib/actions/bank.actions';
 // import {getLoggedInUser} from '@/lib/actions/user.actions';
 
