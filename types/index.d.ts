@@ -100,18 +100,25 @@ declare type Transaction = {
 
 declare type Asset = {
     id?: number;
-    assetTitle: string;
-    description: string;
+    name: string;
+    description?: string;
     categoryId: number;
-    userId: number;
-    category: string;
+    // category: string;
     status: string;
-    image: string;
     location: string;
     datePurchased: string;
-    createdAt: Date;
-    updatedAt: Date;
+    purchasePrice: number;
+    createdAt?: Date;
+    updatedAt?: Date;
 }
+declare type Category = {
+    id?: string;
+    name: string;
+    note: string;
+    createdAt?: Date;
+    updatedAt?: Date;
+};
+
 
 declare type Bank = {
     $id: string;
@@ -130,7 +137,7 @@ declare type AccountTypes =
     | "investment"
     | "other";
 
-declare type Category = "Food and Drink" | "Travel" | "Transfer";
+// declare type Category = "Food and Drink" | "Travel" | "Transfer";
 
 declare type CategoryCount = {
     name: string;
@@ -274,6 +281,10 @@ declare interface CategoryBadgeProps {
 
 declare interface AssetTableProps {
     assets: Asset[];
+}
+
+declare interface CategoryTableProps {
+    categories: Category[];
 }
 
 

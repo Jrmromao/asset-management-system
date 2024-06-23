@@ -9,6 +9,15 @@ import {
 } from "@/components/ui/table"
 import { transactionCategoryStyles } from "@/constants"
 import { cn, formatAmount, formatDateTime, getTransactionStatus, removeSpecialCharacters } from "@/lib/utils"
+import {
+    DropdownMenu, DropdownMenuCheckboxItem,
+    DropdownMenuContent,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
+import {Button} from "@/components/ui/button";
+import {ListFilter} from "lucide-react";
 
 // const CategoryBadge = ({ category }: CategoryBadgeProps) => {
 //     const {
@@ -26,7 +35,7 @@ import { cn, formatAmount, formatDateTime, getTransactionStatus, removeSpecialCh
 //     )
 // }
 
-const TransactionsTable = ({ assets }: AssetTableProps) => {
+const CustomAssetTable = ({ assets = [] }: AssetTableProps) => {
 
 
     return (
@@ -49,8 +58,6 @@ const TransactionsTable = ({ assets }: AssetTableProps) => {
             <TableBody>
 
                 {assets?.map((asset: Asset) => {
-                    // const status = getTransactionStatus(new Date(t.date))
-                    // const amount = formatAmount(t.price)
                     return (
                         <TableRow key={asset.id} className={` bg-[#F6FEF9]!over:bg-none !border-b-DEFAULT`}>
                             <TableCell className="max-w-[250px] pl-2 pr-10">
@@ -60,20 +67,20 @@ const TransactionsTable = ({ assets }: AssetTableProps) => {
                                 {/*    </h1>*/}
                                 {/*</div>*/}
 
-                                <img src={asset.image} alt={''} className="bg-yellow-100 h-8 w-8" />
+                                <img src={''} alt={''} className="bg-yellow-100 h-8 w-8" />
                             </TableCell>
 
                             <TableCell className="pl-2 pr-10">
-                                {asset.assetTitle}
+                                {asset.name}
                             </TableCell>
 
                             <TableCell className="min-w-32 pl-2 pr-10">
-                                {asset.userId}
+                                {asset.status}
                             </TableCell>
 
-                            <TableCell className="pl-2 pr-10 capitalize min-w-24">
-                                {asset.category}
-                            </TableCell>
+                            {/*<TableCell className="pl-2 pr-10 capitalize min-w-24">*/}
+                            {/*    {asset.note}*/}
+                            {/*</TableCell>*/}
 
                             <TableCell className="pl-2 pr-10 capitalize min-w-24">
                                 {asset.status}
@@ -87,7 +94,19 @@ const TransactionsTable = ({ assets }: AssetTableProps) => {
                                 {asset.datePurchased}
                             </TableCell>
                             <TableCell className="pl-2 pr-10 capitalize min-w-24">
-                                ...
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <span className="sr-only sm:not-sr-only">...</span>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent>
+                                        <DropdownMenuCheckboxItem  onClick={()=> console.log(asset.id)}>
+                                            <div className={'cursor-pointer text-[#344054]'}>Update</div>
+                                        </DropdownMenuCheckboxItem>
+                                        <DropdownMenuCheckboxItem onClick={() => console.log(asset)}>
+                                            <div className={'cursor-pointer text-[#344054]'}> Delete</div>
+                                        </DropdownMenuCheckboxItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
                             </TableCell>
 
                         </TableRow>
@@ -98,4 +117,4 @@ const TransactionsTable = ({ assets }: AssetTableProps) => {
     )
 }
 
-export default TransactionsTable
+export default CustomAssetTable

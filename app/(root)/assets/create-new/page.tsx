@@ -1,7 +1,7 @@
 'use client'
 import HeaderBox from "@/components/HeaderBox";
 import React from "react";
-import AssetForm from "@/components/AssetForm";
+import AssetForm from "@/components/forms/AssetForm";
 
 
 const CreateNew = () => {

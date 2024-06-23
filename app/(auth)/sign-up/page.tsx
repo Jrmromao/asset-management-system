@@ -1,5 +1,5 @@
 import React from 'react'
-import AuthForm from "@/components/AuthForm";
+import AuthForm from "@/components/forms/AuthForm";
 // import {getLoggedInUser} from "@/lib/actions/user.actions";
 
 const SignUp = async () => {

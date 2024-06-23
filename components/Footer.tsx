@@ -2,6 +2,8 @@
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import React from 'react'
+import {cn} from "@/lib/utils";
+import Link from "next/link";
 
 const Footer = ({ type = 'desktop' }: FooterProps) => {
     const router = useRouter();
@@ -14,11 +16,15 @@ const Footer = ({ type = 'desktop' }: FooterProps) => {
 
     return (
         <footer className="footer">
+            
+
             <div className={type === 'mobile' ? 'footer_name-mobile' : 'footer_name'}>
                 <p className="text-xl font-bold text-gray-700">
                     {/* {user?.firstName[0]} */}J
                 </p>
             </div>
+
+
 
             <div className={type === 'mobile' ? 'footer_email-mobile' : 'footer_email'}>
                 <h1 className="text-14 truncate text-gray-700 font-semibold">

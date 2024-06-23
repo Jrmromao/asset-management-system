@@ -16,7 +16,6 @@ model User {
   role           String
   organizationId Int
   organization   Organization  @relation(fields: [organizationId], references: [id])
-  assets         Asset[]
   toolLicenses   ToolLicense[]
   auditLogs      AuditLog[]
   createdAt      DateTime      @default(now())
@@ -38,18 +37,18 @@ model Asset {
   description  String?
   price        Float
   categoryId   Int
-  userId       Int
   transactions Transaction[]
   category     Category      @relation(fields: [categoryId], references: [id])
-  user         User          @relation(fields: [userId], references: [id])
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
+  userId       Int?
 }
 
 model Category {
   id        Int      @id @default(autoincrement())
   name      String
   assets    Asset[]
+  note      String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -87,10 +86,4 @@ model AuditLog {
   organization   Organization @relation(fields: [organizationId], references: [id])
   details        String?
   createdAt      DateTime     @default(now())
-}
-
-model Sample {
-  id        Int      @id @default(autoincrement())
-  action    String
-  createdAt DateTime @default(now())
 }

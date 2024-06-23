@@ -19,30 +19,20 @@ import {prisma} from "@/app/db";
 import {parseStringify} from "@/lib/utils";
 
 export const createAsset = async (assetData: Asset) => {
+
+    console.log(assetData)
     try {
-
-        const newCategory = await prisma.category.create({
+        await prisma.asset.create({
             data: {
-                name: 'test',
+                name: assetData.name,
+                description: assetData.description,
+                price: assetData.purchasePrice,
+                categoryId: 8,
+                userId: 10,
                 createdAt: new Date(),
                 updatedAt: new Date()
             }
         })
-
-
-        const newAsset = await prisma.asset.create({
-            data: {
-                name: '',
-                description: 'assetData.description',
-                price: 100,
-                categoryId: newCategory.id,
-                userId: 1,
-                createdAt: new Date(),
-                updatedAt: new Date()
-            }
-        })
-
-
     } catch (error) {
         console.log(error)
     }

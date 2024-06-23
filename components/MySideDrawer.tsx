@@ -1,7 +1,7 @@
 'use client'
 import React, { useState } from 'react';
-import AuthForm from "@/components/AuthForm";
-import AssetForm from "@/components/AssetForm";
+import AuthForm from "@/components/forms/AuthForm";
+import AssetForm from "@/components/forms/AssetForm";
 
 // import library components or create your custom styles
 

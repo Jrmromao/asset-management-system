@@ -9,7 +9,7 @@ import {Button} from "@/components/ui/button"
 import {
     Form,
 } from "@/components/ui/form"
-import CustomInput from "@/components/CustomInput";
+import CustomInput from "@/components/forms/CustomInput";
 // import { authFormSchema} from "@/lib/utils";
 import {Loader2} from "lucide-react";
 import {useRouter} from "next/navigation";
@@ -76,7 +76,7 @@ const AuthForm = ({type}: { type: string }) => {
     return (
         <section className={'auth-form'}>
             <header className={'flex flex-col gap-5 md:gap-8'}>
-                <Link href="/" className="mb-12 cursor-pointer flex items-center gap-1">
+                <Link href="/public" className="mb-12 cursor-pointer flex items-center gap-1">
                     <Image src='/icons/logo.svg' width={34} height={34} alt="Logo"
                            className="size-[24px] max-xl:size-14"/>
                     <h1 className="sidebar-logo">Peoplez Bank</h1>

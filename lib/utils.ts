@@ -195,46 +195,28 @@ export const getTransactionStatus = (date: Date) => {
     return date > twoDaysAgo ? "Processing" : "Success";
 };
 
-// export const authFormSchema = (type: string) => z.object({
-//
-//     // sign-up
-//     firstName: type === 'sign-in' ? z.string().optional() : z.string().min(3),
-//     lastName: type === 'sign-in' ? z.string().optional() : z.string().min(3),
-//     address1: type === 'sign-in' ? z.string().optional() : z.string().min(8).max(50),
-//     city: type === 'sign-in' ? z.string().optional() : z.string().min(8).max(50),
-//     state: type === 'sign-in' ? z.string().optional() : z.string().min(2).max(2),
-//     postalCode: type === 'sign-in' ? z.string().optional() : z.string().min(3).max(6),
-//     dateOfBirth: type === 'sign-in' ? z.string().optional() : z.string().min(3),
-//     ssn: type === 'sign-in' ? z.string().optional() : z.string().min(8),
-//
-//     // both
-//     email: z.string().email(),
-//     password: z.string().min(8),
-//
-//
-// })
+export const formSchema = (type: string) => z.object({
 
-export const assetFormSchema = () => z.object({
-    id: z.string(),
-    name: z.string(),
-    description: z.string(),
-    category: z.string(),
-    notes: z.string(),
-    status: z.string(),
-    brand: z.string(),
-    purchaseNotes: z.string(),
-    serialNumber: z.string(),
-    purchasePrice: z
+
+    name:z.string(),
+    // note: z.string(),
+    id:   z.string().optional(),
+    // asset
+    // category: type === 'category' ? z.string().optional() :  z.string(),
+    status: type === 'category' ? z.string().optional() :  z.string(),
+    brand: type === 'category' ? z.string().optional() :  z.string(),
+    purchaseNotes:  type === 'category' ? z.string().optional() : z.string(),
+    purchasePrice:  type === 'category' ? z.string().optional() : z
         .string()
         .regex(/^\d+(\.\d{1,2})?$/, "Amount must be a number")
         .min(1, "Amount is too short"),
-    purchaseDate: z
-        .string()
-        .refine((value) => {
-            const date = new Date(value);
-            return !isNaN(date.getTime());
-        }, "Invalid date"),
-    image: z.string().url("Invalid image URL"),
 
+    // purchaseDate:  type === 'category' ? z.string().optional() : z
+    //     .string()
+    //     .refine((value) => {
+    //         const date = new Date(value);
+    //         return !isNaN(date.getTime());
+    //     }, "Invalid date"),
 })
+
 

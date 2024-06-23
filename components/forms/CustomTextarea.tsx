@@ -1,12 +1,14 @@
 import React from 'react'
 import {FormControl, FormField, FormLabel, FormMessage} from "@/components/ui/form";
-import {Input} from "@/components/ui/input";
+
+import { Textarea } from "@/components/ui/textarea"
+
 import {Control, FieldPath} from 'react-hook-form'
 import {z} from "zod";
-import {assetFormSchema} from "@/lib/utils";
+import {formSchema as myFormSchema} from "@/lib/utils";
 
 
-const formSchema = assetFormSchema()
+const formSchema = myFormSchema('')
 
 
 interface CustomInputProps {
@@ -14,10 +16,9 @@ interface CustomInputProps {
     name: FieldPath<z.infer<typeof formSchema>>,
     label: string,
     placeholder: string,
-    type: string
 }
 
-const CustomInput = ({control, name, label, placeholder, type}: CustomInputProps) => {
+const CustomTextarea = ({control, name, label, placeholder}: CustomInputProps) => {
     return (
         <FormField
             control={control}
@@ -29,10 +30,9 @@ const CustomInput = ({control, name, label, placeholder, type}: CustomInputProps
                     </FormLabel>
                     <div className={'flex w-full flex-col'}>
                         <FormControl>
-                            <Input
+                            <Textarea
                                 placeholder={placeholder}
                                 className={'input-class'} {...field}
-                                type={type}
                             />
                         </FormControl>
                         <FormMessage className={'form-message mt-2'}/>
@@ -42,4 +42,4 @@ const CustomInput = ({control, name, label, placeholder, type}: CustomInputProps
         />
     )
 }
-export default CustomInput
+export default CustomTextarea
