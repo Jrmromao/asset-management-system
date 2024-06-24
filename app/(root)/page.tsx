@@ -33,27 +33,23 @@ const Home = async ({searchParams: {id, page}}: SearchParamProps) => {
                 </header>
 
 
-                <div className=" flex flex-col flex-grow">
-                    <div className="home-content">
-
-                        <TotalBalanceBox
-                            accounts={[]}
-                            totalBanks={0}
-                            totalCurrentBalance={0}
-                        />
-                        <CustomAssetTable assets={[]}/>
-                    </div>
-
-
-                </div>
-
+                {/*<div className=" flex flex-col flex-grow">*/}
+                {/*    <div className="home-content">*/}
+                {/*        <TotalBalanceBox*/}
+                {/*            accounts={[]}*/}
+                {/*            totalBanks={0}*/}
+                {/*            totalCurrentBalance={0}*/}
+                {/*        />*/}
+                {/*        <CustomAssetTable assets={[]}/>*/}
+                {/*    </div>*/}
+                {/*</div>*/}
             </div>
 
-            <RightSidebar
-                // user={loggedIn}
-                // transactions={account?.transactions}
-                // banks={accountsData?.slice(0, 2)}
-            />
+            {/*<RightSidebar*/}
+            {/*    user={loggedIn}*/}
+            {/*    transactions={account?.transactions}*/}
+            {/*    banks={accountsData?.slice(0, 2)}*/}
+            {/*/>*/}
         </section>
     )
 }

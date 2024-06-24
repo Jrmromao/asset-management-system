@@ -101,6 +101,7 @@ declare type Transaction = {
 declare type Asset = {
     id?: number;
     name: string;
+    userId: string;
     description?: string;
     categoryId: number;
     // category: string;
@@ -108,6 +109,8 @@ declare type Asset = {
     location: string;
     datePurchased: string;
     purchasePrice: number;
+    price: number;
+    image?: string;
     createdAt?: Date;
     updatedAt?: Date;
 }

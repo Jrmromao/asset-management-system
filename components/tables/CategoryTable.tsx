@@ -7,28 +7,38 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import {formatDateTime} from "@/lib/utils";
+import {filterColumns, formatDateTime, renameColumns} from "@/lib/utils";
 
 
-const CustomAssetTable = ({ categories }: CategoryTableProps) => {
+const CustomAssetTable = ({categories}: CategoryTableProps) => {
 
-
+    const columnMappings: Record<keyof Category, string> = {
+        note: "Note",
+        name: 'Name',
+        id: "id",
+        createdAt: "Created At",
+        updatedAt: "updatedAt"
+    };
+    const filteredData = filterColumns(categories, ['id', 'updatedAt']);
+    const renamedData = renameColumns(filteredData, columnMappings);
+    if(renamedData.length === 0) return <p>No assets found</p>
+    const headers = Object.keys(renamedData[0])
     return (
         <Table>
             <TableHeader className="bg-[#f9fafb]">
                 <TableRow>
-                    <TableHead className="px-2">Name</TableHead>
-                    <TableHead className="px-2">Note</TableHead>
-                    <TableHead className="px-2">Created At</TableHead>
+                    {headers.map(name => {
+                        return (
+                            <TableHead key={name} className="px-2">{name}</TableHead>
+                        )
+                    })}
                     <TableHead className="px-2"></TableHead>
                 </TableRow>
             </TableHeader>
             <TableBody>
 
                 {categories?.map((category: Category) => {
-
                     const createdAt = formatDateTime(category.createdAt!);
-
                     return (
                         <TableRow key={category.id} className={` bg-[#F6FEF9]!over:bg-none !border-b-DEFAULT`}>
 

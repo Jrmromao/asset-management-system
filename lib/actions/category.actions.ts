@@ -3,7 +3,7 @@ import {prisma} from "@/app/db";
 import {parseStringify} from "@/lib/utils";
 import {redirect} from "next/navigation";
 
-export const createCategory = async (categoryData: Category) => {
+export const createCategory = async (categoryData: { note: string ; name: string }) => {
     try {
         const category = await prisma.category.create({
             data: {

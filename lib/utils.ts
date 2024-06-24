@@ -197,14 +197,14 @@ export const getTransactionStatus = (date: Date) => {
 
 export const formSchema = (type: string) => z.object({
 
-
-    name:z.string(),
+    name:z.string().min(1, "Name is required"),
     // note: z.string(),
     id:   z.string().optional(),
     // asset
     // category: type === 'category' ? z.string().optional() :  z.string(),
-    status: type === 'category' ? z.string().optional() :  z.string(),
-    brand: type === 'category' ? z.string().optional() :  z.string(),
+    status: type === 'category' ? z.string().optional() :  z.string().min(1, "Status is required"),
+    brandId: type === 'category' ? z.string().optional() :  z.string().min(1, "Brand is required"),
+    brand: type === 'category' ? z.string().optional() :  z.string().min(1, "Brand is required"),
     purchaseNotes:  type === 'category' ? z.string().optional() : z.string(),
     purchasePrice:  type === 'category' ? z.string().optional() : z
         .string()
@@ -220,3 +220,26 @@ export const formSchema = (type: string) => z.object({
 })
 
 
+
+export function filterColumns<T>(data: T[], columnsToExclude: (keyof T)[]): Partial<T>[] {
+    return data.map(item => {
+        const filteredItem: Partial<T> = {};
+        for (const key in item) {
+            if (!columnsToExclude.includes(key as keyof T)) {
+                filteredItem[key] = item[key];
+            }
+        }
+        return filteredItem;
+    });
+}
+
+export function renameColumns<T>(data: T[], columnMappings: Record<keyof T, string>): any[] {
+    return data.map(item => {
+        const renamedItem: any = {}; // Using 'any' for flexibility
+        for (const key in item) {
+            const newKey = columnMappings[key] || key; // Rename if mapping exists
+            renamedItem[newKey] = item[key];
+        }
+        return renamedItem;
+    });
+}
