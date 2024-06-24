@@ -18,7 +18,15 @@
 import {prisma} from "@/app/db";
 import {parseStringify} from "@/lib/utils";
 
-export const createAsset = async (assetData: Asset) => {
+export const createAsset = async (assetData: {
+    datePurchased: string;
+    name: string;
+    description: string | undefined;
+    location: string;
+    purchasePrice: number;
+    categoryId: number;
+    status: string
+}) => {
 
     console.log(assetData)
     try {
