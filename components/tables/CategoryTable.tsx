@@ -2,15 +2,63 @@ import {
     Table,
     TableBody,
     TableCaption,
-    TableCell,
+    TableCell, TableFooter,
     TableHead,
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
 import {filterColumns, formatDateTime, renameColumns} from "@/lib/utils";
+import CustomTableCell from "@/components/tables/CustomTableCell";
+import React from "react";
 
 
 const CustomAssetTable = ({categories}: CategoryTableProps) => {
+
+    const invoices = [
+        {
+            invoice: "INV001",
+            paymentStatus: "Paid",
+            totalAmount: "$250.00",
+            paymentMethod: "Credit Card",
+        },
+        {
+            invoice: "INV002",
+            paymentStatus: "Pending",
+            totalAmount: "$150.00",
+            paymentMethod: "PayPal",
+        },
+        {
+            invoice: "INV003",
+            paymentStatus: "Unpaid",
+            totalAmount: "$350.00",
+            paymentMethod: "Bank Transfer",
+        },
+        {
+            invoice: "INV004",
+            paymentStatus: "Paid",
+            totalAmount: "$450.00",
+            paymentMethod: "Credit Card",
+        },
+        {
+            invoice: "INV005",
+            paymentStatus: "Paid",
+            totalAmount: "$550.00",
+            paymentMethod: "PayPal",
+        },
+        {
+            invoice: "INV006",
+            paymentStatus: "Pending",
+            totalAmount: "$200.00",
+            paymentMethod: "Bank Transfer",
+        },
+        {
+            invoice: "INV007",
+            paymentStatus: "Unpaid",
+            totalAmount: "$300.00",
+            paymentMethod: "Credit Card",
+        },
+    ]
+
 
     const columnMappings: Record<keyof Category, string> = {
         note: "Note",
@@ -24,6 +72,7 @@ const CustomAssetTable = ({categories}: CategoryTableProps) => {
     if(renamedData.length === 0) return <p>No assets found</p>
     const headers = Object.keys(renamedData[0])
     return (
+
         <Table>
             <TableHeader className="bg-[#f9fafb]">
                 <TableRow>
@@ -55,14 +104,16 @@ const CustomAssetTable = ({categories}: CategoryTableProps) => {
                             </TableCell>
 
                             <TableCell className="pl-2 pr-10 capitalize min-w-24">
-                                ...
+                                <CustomTableCell id={Number(category.id)} entity={category} />
                             </TableCell>
-
                         </TableRow>
                     )
                 })}
             </TableBody>
         </Table>
+
+
+
     )
 }
 

@@ -6,10 +6,10 @@ interface IProps {
     onOpenChange: () => void
 }
 
-export function AssetModal({open, onOpenChange }: IProps) {
+export function AssetDialog({open, onOpenChange }: IProps) {
 
     return (
-        <div className={'bg-red-500'}>
+        <div className={"asset-dialog"}>
 
         <Dialog open={open} onOpenChange={onOpenChange}>
             {/*<DialogTrigger asChild>*/}

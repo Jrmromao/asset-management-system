@@ -196,6 +196,10 @@
     @apply flex max-h-screen w-full flex-col gap-8 overflow-y-scroll  p-8 xl:py-12;
   }
 
+  .admin {
+    @apply flex max-h-screen w-full flex-col overflow-y-scroll ;
+  }
+
   .transactions-header {
     @apply flex w-full flex-col items-start justify-between gap-8 md:flex-row;
   }

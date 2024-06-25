@@ -28,7 +28,6 @@ const CategoryForm = ({setRefresh}:{setRefresh: (flag: boolean) => void}) => {
         try {
             const categoryData = {
                 name: data.name,
-                note: data.purchaseNotes!,
             }
             await createCategory(categoryData).then(_ => setRefresh(true))
         } catch (e) {
@@ -44,7 +43,6 @@ const CategoryForm = ({setRefresh}:{setRefresh: (flag: boolean) => void}) => {
                 <form onSubmit={form.handleSubmit(onSubmit)}>
                     <div className={'flex flex-col md:flex-col gap-4 pt-5'}>
                             <CustomInput control={form.control} name={'name'} label={'Name'} placeholder={'Name'} type={'text'}/>
-                            <CustomTextarea control={form.control} name={'purchaseNotes'} label={'Note'} placeholder={'Category Note'}/>
                     </div>
                     <Button type="submit" className={'form-btn mt-6 w-full md:w-auto'} disabled={isLoading}>
                         {isLoading ? (

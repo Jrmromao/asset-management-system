@@ -2,7 +2,7 @@ import {
     Table,
     TableBody,
     TableCaption,
-    TableCell,
+    TableCell, TableFooter,
     TableHead,
     TableHeader,
     TableRow,
@@ -26,6 +26,8 @@ import {
 import {Button} from "@/components/ui/button";
 import {ListFilter} from "lucide-react";
 import {Pagination} from "@/components/Pagination";
+import React from "react";
+import CustomTableCell from "@/components/tables/CustomTableCell";
 
 // const CategoryBadge = ({ category }: CategoryBadgeProps) => {
 //     const {
@@ -60,11 +62,53 @@ const CustomAssetTable = ({ assets}: AssetTableProps) => {
         userId: "userId",
         image: ""
     };
-
     const filteredData = filterColumns(assets, ['id', 'updatedAt', 'categoryId', 'datePurchased','userId', 'purchasePrice', 'description']);
 
     const renamedData = renameColumns(filteredData, columnMappings);
-
+    const invoices = [
+        {
+            invoice: "INV001",
+            paymentStatus: "Paid",
+            totalAmount: "$250.00",
+            paymentMethod: "Credit Card",
+        },
+        {
+            invoice: "INV002",
+            paymentStatus: "Pending",
+            totalAmount: "$150.00",
+            paymentMethod: "PayPal",
+        },
+        {
+            invoice: "INV003",
+            paymentStatus: "Unpaid",
+            totalAmount: "$350.00",
+            paymentMethod: "Bank Transfer",
+        },
+        {
+            invoice: "INV004",
+            paymentStatus: "Paid",
+            totalAmount: "$450.00",
+            paymentMethod: "Credit Card",
+        },
+        {
+            invoice: "INV005",
+            paymentStatus: "Paid",
+            totalAmount: "$550.00",
+            paymentMethod: "PayPal",
+        },
+        {
+            invoice: "INV006",
+            paymentStatus: "Pending",
+            totalAmount: "$200.00",
+            paymentMethod: "Bank Transfer",
+        },
+        {
+            invoice: "INV007",
+            paymentStatus: "Unpaid",
+            totalAmount: "$300.00",
+            paymentMethod: "Credit Card",
+        },
+    ]
     if(renamedData.length === 0) return <p>No assets found</p>
     const headers = Object?.keys(renamedData[0])
 
@@ -85,15 +129,12 @@ const CustomAssetTable = ({ assets}: AssetTableProps) => {
             <TableBody>
                 {assets?.map((asset: Asset) => {
                     return (
-                        <TableRow key={asset.id} className={` bg-[#F6FEF9]!over:bg-none !border-b-DEFAULT`}>
-                            <TableCell className="max-w-[250px] pl-2 pr-10">
-                                <div className="flex items-center gap-3">
-                                    <h1 className="text-14 truncate font-semibold text-[#344054]">
-                                        {asset.image}
-                                    </h1>
-                                </div>
+                        <TableRow key={asset.id} className={` bg-[#F6FEF9]!over:bg-none !border-b-DEFAULT border-b-[1px]`}>
+                            <TableCell>
 
-                                <img src={''} alt={''} className="bg-yellow-100 h-8 w-8" />
+                                        {asset.image}
+
+
                             </TableCell>
 
                             <TableCell className="pl-2 pr-10">
@@ -109,19 +150,7 @@ const CustomAssetTable = ({ assets}: AssetTableProps) => {
                             </TableCell>
 
                             <TableCell className="pl-2 pr-10 capitalize min-w-24">
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <span className="sr-only sm:not-sr-only">...</span>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent>
-                                        <DropdownMenuCheckboxItem  onClick={()=> console.log(asset.id)}>
-                                            <div className={'cursor-pointer text-[#344054]'}>Update</div>
-                                        </DropdownMenuCheckboxItem>
-                                        <DropdownMenuCheckboxItem onClick={() => console.log(asset)}>
-                                            <div className={'cursor-pointer text-[#344054]'}> Delete</div>
-                                        </DropdownMenuCheckboxItem>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
+                              <CustomTableCell id={asset.id!} entity={asset} />
                             </TableCell>
 
                         </TableRow>
@@ -130,7 +159,11 @@ const CustomAssetTable = ({ assets}: AssetTableProps) => {
             </TableBody>
         </Table>
 
-        </div>
+
+
+
+
+</div>
     )
 }
 
