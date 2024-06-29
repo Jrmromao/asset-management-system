@@ -77,6 +77,7 @@ export const remove = async (id: number) => {
         console.log(error)
     }
 }
+// adding a new  comment
 export const update = async (data: {
     id: number;
     key: string;
