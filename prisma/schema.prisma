@@ -16,7 +16,7 @@ model User {
   role           String
   organizationId Int
   organization   Organization  @relation(fields: [organizationId], references: [id])
-  toolLicenses   ToolLicense[]
+  licenses       LicenseTool[]
   auditLogs      AuditLog[]
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
@@ -63,7 +63,7 @@ model Transaction {
   updatedAt DateTime @updatedAt
 }
 
-model ToolLicense {
+model LicenseTool {
   id             Int      @id @default(autoincrement())
   name           String
   key            String

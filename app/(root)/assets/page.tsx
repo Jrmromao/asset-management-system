@@ -3,7 +3,7 @@
 import React, {useMemo, useState} from 'react'
 import HeaderBox from "@/components/HeaderBox";
 import {useRouter, useSearchParams} from "next/navigation"
-import {getAssets} from "@/lib/actions/assets.actions";
+import {get} from "@/lib/actions/assets.actions";
 import CustomAssetTable from "@/components/tables/CustomAssetTable";
 import {AssetDialog} from "@/components/modals/AssetDialog";
 import {useDialogStore} from "@/lib/stores/store";
@@ -30,7 +30,7 @@ const Assets = ({page = 1}) => {
         indexOfFirstTransaction, indexOfLastTransaction
     )
 
-    const memoAssetList = useMemo(() => getAssets().then(assets => setAssetList(assets)), [setAssetList, isOpen, page]);
+    const memoAssetList = useMemo(() => get().then(assets => setAssetList(assets)), [setAssetList, isOpen, page]);
 
 
     return (

@@ -24,7 +24,9 @@ import {Tabs, TabsContent, TabsList, TabsTrigger,} from "@/components/ui/tabs"
 import CategoryForm from "@/components/forms/CategoryForm";
 import CategoryTable from "@/components/tables/CategoryTable";
 import {useEffect, useState} from "react";
-import {listCategories} from "@/lib/actions/category.actions";
+import {getCategories} from "@/lib/actions/category.actions";
+import LicenseForm from "@/components/forms/LicenseForm";
+import {getLicenses} from "@/lib/actions/licenseTool.actions";
 
 // import {
 //     Tooltip,
@@ -37,20 +39,24 @@ const Admin = () => {
     const [refresh, setRefresh] = useState(false)
 
     const [categoriesList, setCategoriesList] = useState<Category[]>()
+    const [licensesList, setLicenseList] = useState<Category[]>()
 
     useEffect(() => {
 
         if(refresh) {
             setCategoriesList([])
-            listCategories().then(categories => {
+            getCategories().then(categories => {
                 setCategoriesList(categories)
                 setRefresh(false)
             })
+
+
         }
-        listCategories().then(categories => setCategoriesList(categories))
+        getCategories().then(categories => setCategoriesList(categories))
+        getLicenses().then(licenses => setLicenseList(licenses))
 
 
-    }, [listCategories, setCategoriesList, refresh]);
+    }, [getCategories, setCategoriesList, refresh]);
 
 
     return (
@@ -182,8 +188,8 @@ const Admin = () => {
                             <div className="flex items-center">
                                 <TabsList>
                                     <TabsTrigger value="category">Category</TabsTrigger>
-                                    <TabsTrigger value="week">Locations</TabsTrigger>
-                                    <TabsTrigger value="week">People</TabsTrigger>
+                                    <TabsTrigger value="licenses">Licenses</TabsTrigger>
+                                    <TabsTrigger value="people">People</TabsTrigger>
                                 </TabsList>
                                 <div className="ml-auto flex items-center gap-2">
                                     {/*<DropdownMenu>*/}
@@ -251,6 +257,84 @@ const Admin = () => {
                                                 <CardTitle>All Categories</CardTitle>
                                                 <CardDescription className="max-w-lg text-balance leading-relaxed">
                                                     All the categories in your account are listed here.
+                                                </CardDescription>
+                                            </CardHeader>
+                                            <CardContent>
+                                                <CategoryTable categories={categoriesList || []} />
+                                            </CardContent>
+                                            <CardFooter>
+                                            </CardFooter>
+                                        </Card>
+                                    </CardContent>
+                                </Card>
+                            </TabsContent>
+                            <TabsContent value="licenses">
+                                <Card x-chunk="dashboard-05-chunk-3">
+                                    <CardHeader className="px-7">
+                                        <CardTitle>Add License</CardTitle>
+                                        <CardDescription>
+                                            Register a new License.
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent
+                                        className="grid gap-4 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-2 xl:grid-cols-3">
+                                        <Card x-chunk="dashboard-05-chunk-1">
+                                            <CardHeader className="pb-2">
+                                                <CardTitle>Add License</CardTitle>
+                                                <CardDescription className="max-w-lg text-balance leading-relaxed">
+                                                    Fill the form to create new license.
+                                                </CardDescription>
+                                            </CardHeader>
+                                            <CardContent>
+                                                <LicenseForm />
+                                            </CardContent>
+                                            <CardFooter>
+                                            </CardFooter>
+                                        </Card>
+                                        <Card className="sm:col-span-2" x-chunk="dashboard-05-chunk-0">
+                                            <CardHeader className="pb-3">
+                                                <CardTitle>All Locations</CardTitle>
+                                                <CardDescription className="max-w-lg text-balance leading-relaxed">
+                                                    All the locations in your account are listed here.
+                                                </CardDescription>
+                                            </CardHeader>
+                                            <CardContent>
+                                                <CategoryTable categories={licensesList || []} />
+                                            </CardContent>
+                                            <CardFooter>
+                                            </CardFooter>
+                                        </Card>
+                                    </CardContent>
+                                </Card>
+                            </TabsContent>
+                            <TabsContent value="people">
+                                <Card x-chunk="dashboard-05-chunk-3">
+                                    <CardHeader className="px-7">
+                                        <CardTitle>Add People</CardTitle>
+                                        <CardDescription>
+                                            Register a new People.
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent
+                                        className="grid gap-4 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-2 xl:grid-cols-3">
+                                        <Card x-chunk="dashboard-05-chunk-1">
+                                            <CardHeader className="pb-2">
+                                                <CardTitle>Add People</CardTitle>
+                                                <CardDescription className="max-w-lg text-balance leading-relaxed">
+                                                    Fill the form to create new category.
+                                                </CardDescription>
+                                            </CardHeader>
+                                            <CardContent>
+                                                <CategoryForm setRefresh={setRefresh}  />
+                                            </CardContent>
+                                            <CardFooter>
+                                            </CardFooter>
+                                        </Card>
+                                        <Card className="sm:col-span-2" x-chunk="dashboard-05-chunk-0">
+                                            <CardHeader className="pb-3">
+                                                <CardTitle>All People</CardTitle>
+                                                <CardDescription className="max-w-lg text-balance leading-relaxed">
+                                                    All the people in your account are listed here.
                                                 </CardDescription>
                                             </CardHeader>
                                             <CardContent>

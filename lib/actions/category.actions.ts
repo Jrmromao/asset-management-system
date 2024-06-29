@@ -20,7 +20,7 @@ export const createCategory = async (categoryData: {  name: string }) => {
     }
 }
 
-export const listCategories = async () => {
+export const getCategories = async () => {
     try {
         const categories = await prisma.category.findMany();
         return parseStringify(categories);

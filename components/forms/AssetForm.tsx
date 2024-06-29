@@ -8,7 +8,7 @@ import {Form,} from "@/components/ui/form"
 import CustomInput from "@/components/forms/CustomInput";
 import {formSchema as assetFormSchema} from "@/lib/utils";
 import {useRouter} from "next/navigation";
-import {createAsset} from "@/lib/actions/assets.actions";
+import {create} from "@/lib/actions/assets.actions";
 // import { Calendar } from "@/components/ui/calendar"
 import {Loader2} from "lucide-react";
 import CustomTextarea from "@/components/forms/CustomTextarea";
@@ -36,6 +36,8 @@ const AssetForm = () => {
         },
     })
 
+
+
     const onSubmit = async (data: z.infer<typeof formSchema>) => {
         setIsLoading(true)
         console.log(data)
@@ -49,7 +51,10 @@ const AssetForm = () => {
                 location: 'Dublin',
                 datePurchased: new Date().getDate().toString(),
             }
-            await createAsset(assetData).then(r => closeDialog())
+            await create(assetData).then(r => {
+                form.reset()
+                closeDialog()
+            })
         } catch (e) {
             console.error(e)
         } finally {

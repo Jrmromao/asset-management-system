@@ -21,7 +21,6 @@ const Home = async ({searchParams: {id, page}}: SearchParamProps) => {
     return (
         <section className="home">
             <div className=" flex flex-col flex-grow">
-
                 <header className="home-header">
                     <HeaderBox
                         type="greeting"
@@ -29,10 +28,7 @@ const Home = async ({searchParams: {id, page}}: SearchParamProps) => {
                         user={'Joao' || 'Guest'}
                         subtext="Access and manage your account and transactions efficiently."
                     />
-
                 </header>
-
-
                 {/*<div className=" flex flex-col flex-grow">*/}
                 {/*    <div className="home-content">*/}
                 {/*        <TotalBalanceBox*/}
@@ -44,7 +40,6 @@ const Home = async ({searchParams: {id, page}}: SearchParamProps) => {
                 {/*    </div>*/}
                 {/*</div>*/}
             </div>
-
             {/*<RightSidebar*/}
             {/*    user={loggedIn}*/}
             {/*    transactions={account?.transactions}*/}
