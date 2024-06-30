@@ -9,10 +9,11 @@ import {
 } from "@/components/ui/table"
 import {filterColumns, formatDateTime, renameColumns} from "@/lib/utils";
 import CustomTableCell from "@/components/tables/CustomTableCell";
-import React from "react";
+import React, {useMemo} from "react";
+import {get} from "@/lib/actions/assets.actions";
 
 
-const CustomAssetTable = ({categories}: CategoryTableProps) => {
+const CustomAssetTable = ({licenses}: CategoryTableProps) => {
 
     const invoices = [
         {
@@ -67,7 +68,7 @@ const CustomAssetTable = ({categories}: CategoryTableProps) => {
         createdAt: "Created At",
         updatedAt: "updatedAt"
     };
-    const filteredData = filterColumns(categories, ['id', 'updatedAt']);
+    const filteredData = filterColumns(licenses, ['id', 'updatedAt']);
     const renamedData = renameColumns(filteredData, columnMappings);
     if(renamedData.length === 0) return <p>No assets found</p>
     const headers = Object.keys(renamedData[0])
@@ -86,7 +87,7 @@ const CustomAssetTable = ({categories}: CategoryTableProps) => {
             </TableHeader>
             <TableBody>
 
-                {categories?.map((category: Category) => {
+                {licenses?.map((category: Category) => {
                     const createdAt = formatDateTime(category.createdAt!);
                     return (
                         <TableRow key={category.id} className={` bg-[#F6FEF9]!over:bg-none !border-b-DEFAULT`}>

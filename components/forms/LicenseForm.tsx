@@ -11,13 +11,13 @@ import {useRouter} from "next/navigation";
 import {create} from "@/lib/actions/licenseTool.actions";
 import {Loader2} from "lucide-react";
 import CustomTextarea from "@/components/forms/CustomTextarea";
-import {useDialogStore} from "@/lib/stores/store";
+import {licenseStore} from "@/lib/stores/store";
 
 const LicenseForm = () => {
     const [isLoading, setIsLoading] = useState(false)
     const formSchema = assetFormSchema('license')
     const router = useRouter()
-    const closeDialog = useDialogStore((state) => state.onClose)
+    const updateRefresh = licenseStore((state) => state.updateRefresh)
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -25,6 +25,8 @@ const LicenseForm = () => {
             id: '',
             name: '',
             key: '',
+            issuedDate: '',
+            expirationDate: '',
         },
     })
 
@@ -40,7 +42,7 @@ const LicenseForm = () => {
             }
             await create(licenseData).then(r => {
                 form.reset()
-                closeDialog()
+                updateRefresh()
             })
         } catch (e) {
             console.error(e)
@@ -49,6 +51,15 @@ const LicenseForm = () => {
         }
     }
 
+    //
+    // id             Int      @id @default(autoincrement())
+    // name           String
+    // key            String
+    // issuedDate     DateTime
+    // expirationDate DateTime
+    // createdAt      DateTime @default(now())
+    // updatedAt      DateTime @updatedAt
+
     return (
         <section className="w-full bg-white z-50">
             <Form {...form}>
@@ -56,13 +67,46 @@ const LicenseForm = () => {
 
                     <div className={'flex flex-col md:flex-row gap-4 pt-5'}>
                         <div className={'flex-1'}>
-
-                            <CustomInput control={form.control} name={'name'} label={'Name'} placeholder={'Name'} type={'text'}/>
+                            <CustomInput control={form.control} name={'name'} label={'Name'} placeholder={'Name'}
+                                         type={'text'}/>
                         </div>
-                        <div className={'flex-1'}>
-                            <CustomInput control={form.control} name={'key'} label={'Key'} placeholder={'Key'} type={'text'}/>
+                        <div className={'flex-1 mt-8'}>
+                            License Title
                         </div>
                     </div>
+
+                    <div className={'flex flex-col md:flex-row gap-4 pt-5'}>
+                        <div className={'flex-1'}>
+                            <CustomInput control={form.control} name={'key'} label={'Key'} placeholder={'Key'}
+                                         type={'text'}/>
+                        </div>
+                        <div className={'flex-1 mt-8'}>
+                            License Ley
+                        </div>
+                    </div>
+
+                    <div className={'flex flex-col md:flex-row gap-4 pt-5'}>
+                        <div className={'flex-1'}>
+                            <CustomInput control={form.control} name={'issuedDate'} label={'Issued Date'}
+                                         placeholder={'Issued Date'}
+                                         type={'text'}/>
+                        </div>
+                        <div className={'flex-1 mt-8'}>
+                            Issued Date
+                        </div>
+                    </div>
+
+                    <div className={'flex flex-col md:flex-row gap-4 pt-5'}>
+                        <div className={'flex-1'}>
+                            <CustomInput control={form.control} name={'expirationDate'} label={'Expiration Date'}
+                                         placeholder={'Expiration Date'}
+                                         type={'text'}/>
+                        </div>
+                        <div className={'flex-1 mt-8'}>
+                            Expiration Date
+                        </div>
+                    </div>
+
                     <Button type="submit" className={'form-btn mt-6 w-full md:w-auto'} disabled={isLoading}>
                         {isLoading ? (
                                 <>

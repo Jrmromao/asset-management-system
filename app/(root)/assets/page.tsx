@@ -10,7 +10,7 @@ import {useDialogStore} from "@/lib/stores/store";
 import {Pagination} from "@/components/Pagination";
 import {Button} from "@/components/ui/button";
 
-const Assets = ({page = 1}) => {
+const Assets = () => {
     const [open, setOpen] = useState(false);
     const [assetList, setAssetList] = useState([])
     const navigate = useRouter()
@@ -23,14 +23,14 @@ const Assets = ({page = 1}) => {
     const rowsPerPage = 10;
     const totalPages = Math.ceil(assetList.length / rowsPerPage);
 
-    const indexOfLastTransaction = page * rowsPerPage;
+    const indexOfLastTransaction = 1 * rowsPerPage;
     const indexOfFirstTransaction = indexOfLastTransaction - rowsPerPage;
 
     const currentAssets = assetList.slice(
         indexOfFirstTransaction, indexOfLastTransaction
     )
 
-    const memoAssetList = useMemo(() => get().then(assets => setAssetList(assets)), [setAssetList, isOpen, page]);
+    const memoAssetList = useMemo(() => get().then(assets => setAssetList(assets)), [setAssetList, isOpen]);
 
 
     return (
@@ -64,7 +64,7 @@ const Assets = ({page = 1}) => {
                     <CustomAssetTable assets={currentAssets}/>
                     {totalPages > 1 && (
                         <div className="my-4 w-full">
-                            <Pagination totalPages={totalPages} page={page} />
+                            <Pagination totalPages={totalPages} page={1} />
                         </div>
                     )}
                 </section>

@@ -30,7 +30,7 @@ export const sidebarLinks = [
         visibleTo: ["admin", "user"],
     },
     {
-        imgURL: "/icons/spotify.svg",
+        imgURL: "/icons/plus.svg",
         route: "/people",
         label: "People",
         visibleTo: ["admin", "user"],

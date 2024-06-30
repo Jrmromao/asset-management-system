@@ -15,7 +15,10 @@ const CustomTableCell = ({id, entity}: { id: number, entity: Object  }) => {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
                     <DropdownMenuCheckboxItem  onClick={()=> console.log(id)}>
-                        <div className={'cursor-pointer text-[#344054]'}>Update</div>
+                        <div className={'cursor-pointer text-[#344054]'}>View</div>
+                    </DropdownMenuCheckboxItem>
+                    <DropdownMenuCheckboxItem onClick={() => console.log(entity)}>
+                        <div className={'cursor-pointer text-[#344054]'}> Update</div>
                     </DropdownMenuCheckboxItem>
                     <DropdownMenuCheckboxItem onClick={() => console.log(entity)}>
                         <div className={'cursor-pointer text-[#344054]'}> Delete</div>

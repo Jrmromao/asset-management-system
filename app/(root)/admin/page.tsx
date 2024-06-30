@@ -260,7 +260,7 @@ const Admin = () => {
                                                 </CardDescription>
                                             </CardHeader>
                                             <CardContent>
-                                                <CategoryTable categories={categoriesList || []} />
+                                                <CategoryTable licenses={categoriesList || []} />
                                             </CardContent>
                                             <CardFooter>
                                             </CardFooter>
@@ -299,7 +299,7 @@ const Admin = () => {
                                                 </CardDescription>
                                             </CardHeader>
                                             <CardContent>
-                                                <CategoryTable categories={licensesList || []} />
+                                                <CategoryTable licenses={licensesList || []} />
                                             </CardContent>
                                             <CardFooter>
                                             </CardFooter>
@@ -338,7 +338,7 @@ const Admin = () => {
                                                 </CardDescription>
                                             </CardHeader>
                                             <CardContent>
-                                                <CategoryTable categories={categoriesList || []} />
+                                                <CategoryTable licenses={categoriesList || []} />
                                             </CardContent>
                                             <CardFooter>
                                             </CardFooter>

@@ -200,18 +200,17 @@ export const formSchema = (type: string) => z.object({
 
     // category: type === 'category' ? z.string().optional() :  z.string(),
     // type: type === 'category' ? z.string().optional() :  z.string().min(1, "Type is required"),
-    key: type === 'category' || type === 'asset' ? z.string().optional() :  z.string().min(1, "Key is required"),
 
-    name:z.string().min(1, "Name is required"),
+    name: z.string().min(1, "Name is required"),
     // note: z.string(),
-    id:   z.string().optional(),
+    id: z.string().optional(),
     // asset
     // category: type === 'category' ? z.string().optional() :  z.string(),
-    status: type === 'category' || type === 'license' ? z.string().optional() :  z.string().min(1, "Status is required"),
-    brandId: type === 'category' || type === 'license'? z.string().optional() :  z.string().min(1, "Brand is required"),
-    brand: type === 'category'|| type === 'license' ? z.string().optional() :  z.string().min(1, "Brand is required"),
-    purchaseNotes:  type === 'category'|| type === 'license' ? z.string().optional() : z.string(),
-    purchasePrice:  type === 'category' || type === 'license'? z.string().optional() : z
+    status: type === 'category' || type === 'license' ? z.string().optional() : z.string().min(1, "Status is required"),
+    brandId: type === 'category' || type === 'license' ? z.string().optional() : z.string().min(1, "Brand is required"),
+    brand: type === 'category' || type === 'license' ? z.string().optional() : z.string().min(1, "Brand is required"),
+    purchaseNotes: type === 'category' || type === 'license' ? z.string().optional() : z.string(),
+    purchasePrice: type === 'category' || type === 'license' ? z.string().optional() : z
         .string()
         .regex(/^\d+(\.\d{1,2})?$/, "Amount must be a number")
         .min(1, "Amount is too short"),
@@ -222,8 +221,13 @@ export const formSchema = (type: string) => z.object({
     //         const date = new Date(value);
     //         return !isNaN(date.getTime());
     //     }, "Invalid date"),
-})
 
+    issuedDate: type === 'license' ? z.string().min(0, 'Issued date is required') : z.string().optional(),
+    expirationDate: type === 'license' ? z.string().min(0, 'Expiration date is required') : z.string().optional(),
+    key: type === 'license' ? z.string().min(1, "Key is required") : z.string().optional(),
+
+
+})
 
 
 export function filterColumns<T>(data: T[], columnsToExclude: (keyof T)[]): Partial<T>[] {
