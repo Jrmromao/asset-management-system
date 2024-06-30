@@ -1,17 +1,8 @@
-import {
-    Table,
-    TableBody,
-    TableCaption,
-    TableCell, TableFooter,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table"
+import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow,} from "@/components/ui/table"
 import {filterColumns, formatDateTime, renameColumns} from "@/lib/utils";
 import CustomTableCell from "@/components/tables/CustomTableCell";
 import React from "react";
 import {licenseStore} from "@/lib/stores/store";
-import {License} from "@prisma/client";
 
 
 const LicensesTable = ({licenses = []}: LicenseTableProps) => {
