@@ -15,7 +15,7 @@ export const create = async (data: {
 }) => {
     console.log(data)
     try {
-        await prisma.license.create({
+        await prisma.licenseTool.create({
             data: {
                 key: data.key,
                 expirationDate: data.expirationDate,
@@ -25,18 +25,6 @@ export const create = async (data: {
                 updatedAt: new Date()
             }
         })
-
-
-        // id             Int          @id @default(autoincrement())
-        // action         String
-        // entity         String
-        // entityId       Int?
-        // userId         Int
-        // user           User         @relation(fields: [userId], references: [id])
-        // organizationId Int
-        // organization   Organization @relation(fields: [organizationId], references: [id])
-        // details        String?
-        //     createdAt      DateTime     @default(now())
     } catch (error) {
         console.log(error)
     }
@@ -48,7 +36,7 @@ export const getLicenses = async () => {
     try {
 
 
-        const licenseTools = await prisma.license.findMany();
+        const licenseTools = await prisma.licenseTool.findMany();
 
 
         return parseStringify(licenseTools);
@@ -61,7 +49,7 @@ export const getLicenses = async () => {
 }
 export const findById = async (id: number) => {
     try {
-        const licenseTool = await prisma.license.findFirst({
+        const licenseTool = await prisma.licenseTool.findFirst({
             where: {
                 id: id
             }
@@ -76,7 +64,7 @@ export const findById = async (id: number) => {
 }
 export const remove = async (id: number) => {
     try {
-        const licenseTool = await prisma.license.delete({
+        const licenseTool = await prisma.licenseTool.delete({
             where: {
                 id: id
             }
@@ -98,7 +86,7 @@ export const update = async (data: {
     name: string;
 }, id: number) => {
     try {
-        const licenseTool = await prisma.license.update({
+        const licenseTool = await prisma.licenseTool.update({
             where: {
                 id: id
             },
