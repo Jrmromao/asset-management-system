@@ -40,6 +40,9 @@ export const create = async (data: {
     } catch (error) {
         console.log(error)
     }
+    finally {
+        await prisma.$disconnect()
+    }
 }
 export const getLicenses = async () => {
     try {
@@ -51,6 +54,9 @@ export const getLicenses = async () => {
         return parseStringify(licenseTools);
     } catch (error) {
         console.log(error)
+    }
+    finally {
+        await prisma.$disconnect()
     }
 }
 export const findById = async (id: number) => {
@@ -64,6 +70,9 @@ export const findById = async (id: number) => {
     } catch (error) {
         console.log(error)
     }
+    finally {
+        await prisma.$disconnect()
+    }
 }
 export const remove = async (id: number) => {
     try {
@@ -75,6 +84,9 @@ export const remove = async (id: number) => {
         return parseStringify(licenseTool);
     } catch (error) {
         console.log(error)
+    }
+    finally {
+        await prisma.$disconnect()
     }
 }
 // adding a new  comment
@@ -95,6 +107,9 @@ export const update = async (data: {
         return parseStringify(licenseTool);
     } catch (error) {
         console.log(error)
+    }
+    finally {
+        await prisma.$disconnect()
     }
 }
 

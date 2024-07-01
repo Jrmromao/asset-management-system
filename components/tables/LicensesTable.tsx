@@ -3,6 +3,7 @@ import {filterColumns, formatDateTime, renameColumns} from "@/lib/utils";
 import CustomTableCell from "@/components/tables/CustomTableCell";
 import React from "react";
 import {licenseStore} from "@/lib/stores/store";
+import {getLicenses, create, remove, findById} from "@/lib/actions/licenseTool.actions";
 
 
 const LicensesTable = ({licenses = []}: LicenseTableProps) => {
@@ -67,7 +68,7 @@ const LicensesTable = ({licenses = []}: LicenseTableProps) => {
                                 created at
                             </TableCell>
                             <TableCell className="pl-2 pr-10 capitalize min-w-24">
-                                <CustomTableCell id={Number(license.id)} entity={license}/>
+                                <CustomTableCell id={Number(license.id)} entity={license} deleteEntity={remove} updateEntity={() => {}} viewEntity={findById}/>
                             </TableCell>
                         </TableRow>
                     )

@@ -6,7 +6,7 @@ import {
     DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 
-const CustomTableCell = ({id, entity}: { id: number, entity: Object  }) => {
+const CustomTableCell = ({id, entity, deleteEntity, updateEntity, viewEntity}: { id: number, entity: Object, deleteEntity: (id: number) => void, updateEntity: (id: number) => void, viewEntity: (id: number) => void }) => {
     return (
         <>
             <DropdownMenu>
@@ -14,13 +14,13 @@ const CustomTableCell = ({id, entity}: { id: number, entity: Object  }) => {
                     <span className="sr-only sm:not-sr-only">...</span>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
-                    <DropdownMenuCheckboxItem  onClick={()=> console.log(id)}>
+                    <DropdownMenuCheckboxItem  onClick={()=> viewEntity(id)}>
                         <div className={'cursor-pointer text-[#344054]'}>View</div>
                     </DropdownMenuCheckboxItem>
-                    <DropdownMenuCheckboxItem onClick={() => console.log(entity)}>
+                    <DropdownMenuCheckboxItem onClick={() => updateEntity(id)}>
                         <div className={'cursor-pointer text-[#344054]'}> Update</div>
                     </DropdownMenuCheckboxItem>
-                    <DropdownMenuCheckboxItem onClick={() => console.log(entity)}>
+                    <DropdownMenuCheckboxItem onClick={() => deleteEntity(id)}>
                         <div className={'cursor-pointer text-[#344054]'}> Delete</div>
                     </DropdownMenuCheckboxItem>
                 </DropdownMenuContent>

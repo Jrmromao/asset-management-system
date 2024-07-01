@@ -11,7 +11,9 @@ export type Actions = {
 
 export type LicenseAction = {
     shouldRefresh: boolean
-    updateRefresh: () => void
+    updateRefresh: (flag: boolean) => void
+    licenses: LicenseType[]
+    setLicenses: (licenses: LicenseType[]) => void
 }
 
 
@@ -25,6 +27,8 @@ export const useDialogStore = create<Actions>()(persist(set => ({
 
 export const licenseStore = create<LicenseAction>()(persist(set => ({
     shouldRefresh: false,
-    updateRefresh: () => set({shouldRefresh: true}),
+    updateRefresh: (flag: boolean) => set({shouldRefresh: flag}),
+    licenses: [],
+    setLicenses: (licenses: LicenseType[]) => set({licenses: licenses}),
     }), {name: "dialog_store"})
 )

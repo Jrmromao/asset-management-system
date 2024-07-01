@@ -8,16 +8,21 @@ import {Form,} from "@/components/ui/form"
 import CustomInput from "@/components/forms/CustomInput";
 import {formSchema as assetFormSchema} from "@/lib/utils";
 import {useRouter} from "next/navigation";
-import {create} from "@/lib/actions/licenseTool.actions";
+import {create, getLicenses} from "@/lib/actions/licenseTool.actions";
 import {Loader2} from "lucide-react";
 import CustomTextarea from "@/components/forms/CustomTextarea";
-import {licenseStore} from "@/lib/stores/store";
+import {licenseStore, useDialogStore} from "@/lib/stores/store";
 
 const LicenseForm = () => {
     const [isLoading, setIsLoading] = useState(false)
     const formSchema = assetFormSchema('license')
     const router = useRouter()
-    const updateRefresh = licenseStore((state) => state.updateRefresh)
+    const [setLicenses, updateRefresh] = licenseStore((state) => [state.setLicenses, state.updateRefresh])
+
+
+
+
+
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -42,7 +47,9 @@ const LicenseForm = () => {
             }
             await create(licenseData).then(r => {
                 form.reset()
-                updateRefresh()
+                getLicenses().then(licenses => setLicenses(licenses))
+                updateRefresh(true)
+
             })
         } catch (e) {
             console.error(e)

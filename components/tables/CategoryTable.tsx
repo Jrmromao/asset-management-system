@@ -1,16 +1,7 @@
-import {
-    Table,
-    TableBody,
-    TableCaption,
-    TableCell, TableFooter,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table"
+import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow,} from "@/components/ui/table"
 import {filterColumns, formatDateTime, renameColumns} from "@/lib/utils";
 import CustomTableCell from "@/components/tables/CustomTableCell";
-import React, {useMemo} from "react";
-import {get} from "@/lib/actions/assets.actions";
+import React from "react";
 
 
 const CustomAssetTable = ({licenses}: CategoryTableProps) => {
@@ -105,7 +96,7 @@ const CustomAssetTable = ({licenses}: CategoryTableProps) => {
                             </TableCell>
 
                             <TableCell className="pl-2 pr-10 capitalize min-w-24">
-                                <CustomTableCell id={Number(category.id)} entity={category} />
+                                <CustomTableCell id={Number(category.id)} entity={category} viewEntity={() =>{}} deleteEntity={() =>{}} updateEntity={() =>{}}/>
                             </TableCell>
                         </TableRow>
                     )
