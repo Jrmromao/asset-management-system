@@ -8,7 +8,7 @@ import {Form,} from "@/components/ui/form"
 import CustomInput from "@/components/forms/CustomInput";
 import {formSchema as assetFormSchema} from "@/lib/utils";
 import {useRouter} from "next/navigation";
-import {create, getLicenses} from "@/lib/actions/licenseTool.actions";
+import {create, getLicenses} from "@/lib/actions/license.actions";
 import {Loader2} from "lucide-react";
 import CustomTextarea from "@/components/forms/CustomTextarea";
 import {licenseStore, useDialogStore} from "@/lib/stores/store";

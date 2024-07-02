@@ -3,7 +3,7 @@ import {filterColumns, formatDateTime, renameColumns} from "@/lib/utils";
 import CustomTableCell from "@/components/tables/CustomTableCell";
 import React from "react";
 import {licenseStore} from "@/lib/stores/store";
-import {getLicenses, create, remove, findById} from "@/lib/actions/licenseTool.actions";
+import {getLicenses, create, remove, findById} from "@/lib/actions/license.actions";
 
 
 const LicensesTable = ({licenses = []}: LicenseTableProps) => {

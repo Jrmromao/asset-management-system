@@ -2,7 +2,7 @@
 import React, {useEffect, useMemo, useState} from 'react'
 import HeaderBox from "@/components/HeaderBox";
 import LicenseForm from "@/components/forms/LicenseForm";
-import {getLicenses} from "@/lib/actions/licenseTool.actions";
+import {getLicenses} from "@/lib/actions/license.actions";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
 import LicensesTable from "@/components/tables/LicensesTable";

@@ -26,7 +26,7 @@ import CategoryTable from "@/components/tables/CategoryTable";
 import {useEffect, useState} from "react";
 import {getCategories} from "@/lib/actions/category.actions";
 import LicenseForm from "@/components/forms/LicenseForm";
-import {getLicenses} from "@/lib/actions/licenseTool.actions";
+import {getLicenses} from "@/lib/actions/license.actions";
 
 // import {
 //     Tooltip,

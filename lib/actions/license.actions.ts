@@ -13,7 +13,6 @@ export const create = async (data: {
     issuedDate: Date;
     name: string;
 }) => {
-    console.log(data)
     try {
         await prisma.licenseTool.create({
             data: {
@@ -36,10 +35,10 @@ export const getLicenses = async () => {
     try {
 
 
-        const licenseTools = await prisma.licenseTool.findMany();
+        const licenses = await prisma.licenseTool.findMany();
 
 
-        return parseStringify(licenseTools);
+        return parseStringify(licenses);
     } catch (error) {
         console.log(error)
     }
