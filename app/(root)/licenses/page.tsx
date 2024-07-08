@@ -14,7 +14,6 @@ const Licenses = () => {
     const [shouldRefresh,licenses ] = licenseStore((state) => [state.shouldRefresh, state.licenses])
 
     useEffect(() => {
-        console.log(licenses)
         getLicenses().then(licenses => setLicenseList(licenses))
     }, [setLicenseList, shouldRefresh]);
 

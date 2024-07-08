@@ -195,36 +195,34 @@ export const getTransactionStatus = (date: Date) => {
     return date > twoDaysAgo ? "Processing" : "Success";
 };
 
+
+const asset = ['asset']
+const common = ['asset', 'category', 'license']
+const categoryLicense = ['asset', 'category', 'license']
+const license = [ 'license']
+
+
 export const formSchema = (type: string) => z.object({
-
-
-    // category: type === 'category' ? z.string().optional() :  z.string(),
-    // type: type === 'category' ? z.string().optional() :  z.string().min(1, "Type is required"),
-
+    // common
     name: z.string().min(1, "Name is required"),
-    // note: z.string(),
     id: z.string().optional(),
+    purchaseNotes: z.string().optional(),
+
+
     // asset
-    // category: type === 'category' ? z.string().optional() :  z.string(),
-    status: type === 'category' || type === 'license' ? z.string().optional() : z.string().min(1, "Status is required"),
-    brandId: type === 'category' || type === 'license' ? z.string().optional() : z.string().min(1, "Brand is required"),
-    brand: type === 'category' || type === 'license' ? z.string().optional() : z.string().min(1, "Brand is required"),
-    purchaseNotes: type === 'category' || type === 'license' ? z.string().optional() : z.string(),
-    purchasePrice: type === 'category' || type === 'license' ? z.string().optional() : z
+    brand: type in categoryLicense ? z.string().min(1, "Brand is required") : z.string().optional(),
+    status: type in asset ? z.string().min(1, "Status is required") : z.string().optional(),
+    purchasePrice: type in asset ? z
         .string()
         .regex(/^\d+(\.\d{1,2})?$/, "Amount must be a number")
-        .min(1, "Amount is too short"),
+        .min(1, "Amount is too short"):  z.string().optional(),
 
-    // purchaseDate:  type === 'category' ? z.string().optional() : z
-    //     .string()
-    //     .refine((value) => {
-    //         const date = new Date(value);
-    //         return !isNaN(date.getTime());
-    //     }, "Invalid date"),
+    issuedDate: type in license ? z.string().min(0, 'Issued date is required') : z.string().optional(),
+    expirationDate: type in license ? z.string().min(0, 'Expiration date is required') : z.string().optional(),
 
-    issuedDate: type === 'license' ? z.string().min(0, 'Issued date is required') : z.string().optional(),
-    expirationDate: type === 'license' ? z.string().min(0, 'Expiration date is required') : z.string().optional(),
-    key: type === 'license' ? z.string().min(1, "Key is required") : z.string().optional(),
+
+    //licence
+    key: type in license? z.string().min(1, "Key is required") : z.string().optional(),
 
 
 })

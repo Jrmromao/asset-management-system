@@ -2,6 +2,7 @@ import HeaderBox from '@/components/HeaderBox'
 import RightSidebar from '@/components/RightSidebar';
 import TotalBalanceBox from '@/components/TotalBalanceBox';
 import CustomAssetTable from "@/components/tables/CustomAssetTable";
+import AuthForm from "@/components/forms/AuthForm";
 
 
 
@@ -29,6 +30,9 @@ const Home = async ({searchParams: {id, page}}: SearchParamProps) => {
                         subtext="Access and manage your account and transactions efficiently."
                     />
                 </header>
+
+                <AuthForm type={'sign-in'} />
+
                 {/*<div className=" flex flex-col flex-grow">*/}
                 {/*    <div className="home-content">*/}
                 {/*        <TotalBalanceBox*/}

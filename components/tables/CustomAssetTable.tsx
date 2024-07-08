@@ -133,8 +133,6 @@ const CustomAssetTable = ({ assets}: AssetTableProps) => {
                             <TableCell>
 
                                         {asset.image}
-
-
                             </TableCell>
 
                             <TableCell className="pl-2 pr-10">
