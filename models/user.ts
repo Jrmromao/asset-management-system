@@ -1,4 +1,4 @@
-import { CognitoUser } from "@aws-amplify/auth";
+import {CognitoUser} from "amazon-cognito-identity-js";
 
 export interface User {
     userName: string;
