@@ -32,17 +32,25 @@ const options: NextAuthOptions = {
             }
         })
     ],
-    adapter: PrismaAdapter(prisma),
+    // adapter: PrismaAdapter(prisma),
     session: {
         strategy: 'jwt',
         maxAge: +process.env.SESSION_TIMEOUT! || 900,
         updateAge: +process.env.SESSION_UPDATE_TIMEOUT! || 600
     },
     secret: process.env.NEXTAUTH_SECRET,
+    callbacks: {
+        redirect: async ({ url, baseUrl }) => {
+            return '/'
+        }
+    },
     pages: {
-        signIn: "/auth/sign-in"
+        signIn: "/sign-in",
+    //     signOut: "/sign-in",
+    //     error: "/",
     },
     debug: true,
+
 };
 
 const handler = NextAuth(options)

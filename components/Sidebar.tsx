@@ -5,10 +5,12 @@ import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import Footer from "@/components/Footer";
+import {useSession} from "next-auth/react";
 
 const Sidebar = ({  }: SiderbarProps) => {
 
     const pathName = usePathname()
+    const {data    } = useSession()
 
     const user: any = {
         role: 'admin'
