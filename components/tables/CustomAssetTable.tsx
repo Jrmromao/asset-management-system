@@ -133,8 +133,6 @@ const CustomAssetTable = ({ assets}: AssetTableProps) => {
                             <TableCell>
 
                                         {asset.image}
-
-
                             </TableCell>
 
                             <TableCell className="pl-2 pr-10">
@@ -150,7 +148,8 @@ const CustomAssetTable = ({ assets}: AssetTableProps) => {
                             </TableCell>
 
                             <TableCell className="pl-2 pr-10 capitalize min-w-24">
-                              <CustomTableCell id={asset.id!} entity={asset} />
+
+                              <CustomTableCell id={asset.id!} entity={asset} deleteEntity={() =>{}} updateEntity={() =>{}} viewEntity={() =>{}} />
                             </TableCell>
 
                         </TableRow>

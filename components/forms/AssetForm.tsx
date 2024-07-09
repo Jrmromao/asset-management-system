@@ -31,8 +31,7 @@ const AssetForm = () => {
             status: '',
             brand: '',
             purchaseNotes: '',
-            purchasePrice: '',
-            // purchaseDate: ''
+            purchasePrice: ''
         },
     })
 

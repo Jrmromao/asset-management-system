@@ -9,10 +9,26 @@ export type Actions = {
 }
 
 
-export const useDialogStore = create<Actions>()(persist(set => ({
+export type LicenseAction = {
+    shouldRefresh: boolean
+    updateRefresh: (flag: boolean) => void
+    licenses: LicenseType[]
+    setLicenses: (licenses: LicenseType[]) => void
+}
 
+
+export const useDialogStore = create<Actions>()(persist(set => ({
         isOpen: false,
         onOpen: () => set({isOpen: true}),
         onClose: () => set({isOpen: false}),
+    }), {name: "dialog_store"})
+)
+
+
+export const licenseStore = create<LicenseAction>()(persist(set => ({
+    shouldRefresh: false,
+    updateRefresh: (flag: boolean) => set({shouldRefresh: flag}),
+    licenses: [],
+    setLicenses: (licenses: LicenseType[]) => set({licenses: licenses}),
     }), {name: "dialog_store"})
 )

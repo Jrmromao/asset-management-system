@@ -1,18 +1,10 @@
-import {
-    Table,
-    TableBody,
-    TableCaption,
-    TableCell, TableFooter,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table"
+import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow,} from "@/components/ui/table"
 import {filterColumns, formatDateTime, renameColumns} from "@/lib/utils";
 import CustomTableCell from "@/components/tables/CustomTableCell";
 import React from "react";
 
 
-const CustomAssetTable = ({categories}: CategoryTableProps) => {
+const CustomAssetTable = ({licenses}: CategoryTableProps) => {
 
     const invoices = [
         {
@@ -67,7 +59,7 @@ const CustomAssetTable = ({categories}: CategoryTableProps) => {
         createdAt: "Created At",
         updatedAt: "updatedAt"
     };
-    const filteredData = filterColumns(categories, ['id', 'updatedAt']);
+    const filteredData = filterColumns(licenses, ['id', 'updatedAt']);
     const renamedData = renameColumns(filteredData, columnMappings);
     if(renamedData.length === 0) return <p>No assets found</p>
     const headers = Object.keys(renamedData[0])
@@ -86,7 +78,7 @@ const CustomAssetTable = ({categories}: CategoryTableProps) => {
             </TableHeader>
             <TableBody>
 
-                {categories?.map((category: Category) => {
+                {licenses?.map((category: Category) => {
                     const createdAt = formatDateTime(category.createdAt!);
                     return (
                         <TableRow key={category.id} className={` bg-[#F6FEF9]!over:bg-none !border-b-DEFAULT`}>
@@ -104,7 +96,7 @@ const CustomAssetTable = ({categories}: CategoryTableProps) => {
                             </TableCell>
 
                             <TableCell className="pl-2 pr-10 capitalize min-w-24">
-                                <CustomTableCell id={Number(category.id)} entity={category} />
+                                <CustomTableCell id={Number(category.id)} entity={category} viewEntity={() =>{}} deleteEntity={() =>{}} updateEntity={() =>{}}/>
                             </TableCell>
                         </TableRow>
                     )

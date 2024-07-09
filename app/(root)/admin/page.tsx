@@ -23,10 +23,12 @@ import {Sheet, SheetContent, SheetTrigger} from "@/components/ui/sheet"
 import {Tabs, TabsContent, TabsList, TabsTrigger,} from "@/components/ui/tabs"
 import CategoryForm from "@/components/forms/CategoryForm";
 import CategoryTable from "@/components/tables/CategoryTable";
-import {useEffect, useState} from "react";
+import React, {useEffect, useState} from "react";
 import {getCategories} from "@/lib/actions/category.actions";
 import LicenseForm from "@/components/forms/LicenseForm";
-import {getLicenses} from "@/lib/actions/licenseTool.actions";
+import {getLicenses} from "@/lib/actions/license.actions";
+import LicensesTable from "@/components/tables/LicensesTable";
+import {licenseStore} from "@/lib/stores/store";
 
 // import {
 //     Tooltip,
@@ -39,7 +41,14 @@ const Admin = () => {
     const [refresh, setRefresh] = useState(false)
 
     const [categoriesList, setCategoriesList] = useState<Category[]>()
-    const [licensesList, setLicenseList] = useState<Category[]>()
+    const [shouldRefresh,licenses ] = licenseStore((state) => [state.shouldRefresh, state.licenses])
+
+    const [licensesList, setLicenseList] = useState<[]>()
+
+    useEffect(() => {
+        getLicenses().then(licenses => setLicenseList(licenses))
+    }, [setLicenseList, shouldRefresh]);
+
 
     useEffect(() => {
 
@@ -53,8 +62,6 @@ const Admin = () => {
 
         }
         getCategories().then(categories => setCategoriesList(categories))
-        getLicenses().then(licenses => setLicenseList(licenses))
-
 
     }, [getCategories, setCategoriesList, refresh]);
 
@@ -260,7 +267,7 @@ const Admin = () => {
                                                 </CardDescription>
                                             </CardHeader>
                                             <CardContent>
-                                                <CategoryTable categories={categoriesList || []} />
+                                                <CategoryTable licenses={categoriesList || []} />
                                             </CardContent>
                                             <CardFooter>
                                             </CardFooter>
@@ -299,7 +306,7 @@ const Admin = () => {
                                                 </CardDescription>
                                             </CardHeader>
                                             <CardContent>
-                                                <CategoryTable categories={licensesList || []} />
+                                                <LicensesTable licenses={licenses || []}/>
                                             </CardContent>
                                             <CardFooter>
                                             </CardFooter>
@@ -338,7 +345,7 @@ const Admin = () => {
                                                 </CardDescription>
                                             </CardHeader>
                                             <CardContent>
-                                                <CategoryTable categories={categoriesList || []} />
+                                                <CategoryTable licenses={categoriesList || []} />
                                             </CardContent>
                                             <CardFooter>
                                             </CardFooter>

@@ -13,17 +13,19 @@ export const create = async (data: {
     status: string
 }) => {
     try {
-        await prisma.asset.create({
+        let prismaAssetClient = await prisma.asset.create({
             data: {
                 name: data.name,
                 description: data.description,
                 price: data.purchasePrice,
-                categoryId: 8,
+                categoryId: 2,
                 userId: 10,
                 createdAt: new Date(),
                 updatedAt: new Date()
             }
-        })
+        });
+
+
     } catch (error) {
         console.log(error)
     }
@@ -31,6 +33,8 @@ export const create = async (data: {
 export const get = async () => {
     try {
         const assets = await prisma.asset.findMany();
+
+        console.log(assets)
         return parseStringify(assets);
     } catch (error) {
         console.log(error)

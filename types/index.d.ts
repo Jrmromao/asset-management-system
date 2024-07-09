@@ -122,6 +122,15 @@ declare type Category = {
     updatedAt?: Date;
 };
 
+declare type LicenseType = {
+    id?: string;
+    name: string;
+    key: string;
+    issuedDate: Date;
+    expirationDate: Date;
+    createdAt?: Date;
+    updatedAt?: Date;
+};
 
 declare type Bank = {
     $id: string;
@@ -287,7 +296,11 @@ declare interface AssetTableProps {
 }
 
 declare interface CategoryTableProps {
-    categories: Category[];
+    licenses: Category[];
+}
+
+declare interface LicenseTableProps {
+    licenses: LicenseType[];
 }
 
 
