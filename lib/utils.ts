@@ -3,6 +3,7 @@ import {type ClassValue, clsx} from "clsx";
 import qs from "query-string";
 import {twMerge} from "tailwind-merge";
 import {z} from "zod";
+import {SignJWT} from "jose";
 
 export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -249,4 +250,15 @@ export function renameColumns<T>(data: T[], columnMappings: Record<keyof T, stri
         }
         return renamedItem;
     });
+}
+
+const secretKey = "secret";
+const key = new TextEncoder().encode(secretKey);
+
+export async function encrypt(payload: any) {
+    return await new SignJWT(payload)
+        .setProtectedHeader({ alg: "HS256" })
+        .setIssuedAt()
+        .setExpirationTime("10 sec from now")
+        .sign(key);
 }

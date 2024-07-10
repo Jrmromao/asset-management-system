@@ -31,29 +31,35 @@ const options: NextAuthOptions = {
             }
         })
     ],
-    // adapter: PrismaAdapter(prisma),
     session: {
         strategy: 'jwt',
-        maxAge: +process.env.SESSION_TIMEOUT! || 900,
-        updateAge: +process.env.SESSION_UPDATE_TIMEOUT! || 600
+        maxAge:  900,
+        updateAge:  600
     },
     secret: process.env.NEXTAUTH_SECRET,
-    callbacks: {
-        redirect: async ({ url, baseUrl }) => {
-            return '/'
-        }
-    },
     pages: {
-        signIn: "/sign-in",
-    //     signOut: "/sign-in",
-    //     error: "/",
+        signIn: "/sign-in"
     },
     debug: true,
+
+    callbacks: {
+        async jwt({ token, user, account, profile, isNewUser }) {
+            if (user) {
+                token.id = user.id;
+            }
+            if (account) {
+                token.accessToken = account.access_token;
+                console.log(token)
+            }
+            return token;
+        },
+    },
+
 
 };
 
 const handler = NextAuth(options)
-export { handler as GET, handler as POST }
+export {handler as GET, handler as POST}
 
 
 
