@@ -5,7 +5,7 @@ import CustomTableCell from "@/components/tables/CustomTableCell";
 import {useRouter} from "next/navigation";
 
 
-const CustomAssetTable = ({assets, findById}: AssetTableProps) => {
+const CustomAssetTable = ({assets, findById, deleteAsset}: AssetTableProps) => {
 
     const navigate = useRouter()
     const columnMappings: Record<keyof Asset, string> = {
@@ -15,21 +15,22 @@ const CustomAssetTable = ({assets, findById}: AssetTableProps) => {
         name: "name",
         price: "Price",
         purchasePrice: "Price",
-        status: "Status",
         id: "id",
-        description: "description",
         createdAt: "Created At",
         updatedAt: "updatedAt",
-        userId: "userId",
-        image: ""
+        assigneeId: "assigneeId",
+        certificateUrl: "certificateUrl",
+        licenceUrl: "licenceUrl",
+        model: "Model",
+        brand: "Brand",
+        serialNumber: "Serial Number",
+        catergory: "Catergory"
     };
-    const filteredData = filterColumns(assets, ['id', 'updatedAt', 'categoryId', 'datePurchased', 'userId', 'purchasePrice', 'description']);
+    const filteredData = filterColumns(assets, ['id', 'updatedAt', 'categoryId', 'datePurchased', 'certificateUrl', 'assigneeId', 'purchasePrice', 'licenceUrl']);
 
     const renamedData = renameColumns(filteredData, columnMappings);
-    if (renamedData.length === 0) return <p>No assets found</p>
-    const headers = Object?.keys(renamedData[0])
-
-
+    if (renamedData?.length === 0) return <p>No assets found</p>
+    const headers = renamedData?.length > 0 ? Object?.keys(renamedData[0]) : []
 
 
     return (
@@ -37,7 +38,7 @@ const CustomAssetTable = ({assets, findById}: AssetTableProps) => {
             <Table>
                 <TableHeader className="bg-[#f9fafb]">
                     <TableRow>
-                        <TableHead className="px-2"></TableHead>
+                        {/*<TableHead className="px-2"></TableHead>*/}
                         {headers.map(name => {
                             return (
                                 <TableHead key={name} className="px-2">{name}</TableHead>
@@ -49,25 +50,37 @@ const CustomAssetTable = ({assets, findById}: AssetTableProps) => {
                 <TableBody>
                     {assets?.map((asset: Asset) => {
                         return (
-                            <TableRow key={asset.id} onClick={() => { navigate.push(`/assets/view/?id=${asset.id}`)}
-                            }
-                                      className={` bg-[#F6FEF9]!over:bg-none !border-b-DEFAULT border-b-[1px]`}>
-                                <TableCell>
-                                    {asset.image}
-                                </TableCell>
+                            <TableRow key={asset.id}
+                                // onClick={() => { navigate.push(`/assets/view/?id=${asset.id}`)}}
+                            className={` bg-[#F6FEF9]!over:bg-none !border-b-DEFAULT border-b-[1px]`}>
+
                                 <TableCell className="pl-2 pr-10">
                                     {asset.name}
                                 </TableCell>
                                 <TableCell className="min-w-32 pl-2 pr-10">
+                                    {asset.brand}
+                                </TableCell>
+
+                                <TableCell className="min-w-32 pl-2 pr-10">
+                                    {asset.model}
+                                </TableCell>
+
+                                <TableCell className="min-w-32 pl-2 pr-10">
                                     {asset.price}
                                 </TableCell>
+                                <TableCell className="min-w-32 pl-2 pr-10">
+                                    {asset.serialNumber}
+                                </TableCell>
+
                                 <TableCell className="pl-2 pr-10 capitalize min-w-24">
                                     {formatDateTime(asset.createdAt!).dateTime}
                                 </TableCell>
-                                <TableCell className="pl-2 pr-10 capitalize min-w-24">
+                                <TableCell className="min-w-32 pl-2 pr-10">
+                                    Category
+                                </TableCell>
 
-                                    <CustomTableCell id={asset.id!} entity={asset} deleteEntity={() => {
-                                    }} updateEntity={() => {
+                                <TableCell className="pl-2 pr-10 capitalize min-w-24">
+                                    <CustomTableCell id={asset.id!} entity={asset} deleteEntity={() => deleteAsset(asset.id!)} updateEntity={() => {
                                     }} viewEntity={() => {
                                     }}/>
                                 </TableCell>

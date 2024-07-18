@@ -212,7 +212,9 @@ export const formSchema = (type: string) => z.object({
 
     // asset
     brand: type in categoryLicense ? z.string().min(1, "Brand is required") : z.string().optional(),
-    status: type in asset ? z.string().min(1, "Status is required") : z.string().optional(),
+    model: type in asset ? z.string().min(1, "Model is required") : z.string().optional(),
+    serialNumber: type in asset ? z.string().min(1, "Serial number is required") : z.string().optional(),
+    category: type in asset ? z.string().min(1, "Category is required") : z.string().optional(),
     purchasePrice: type in asset ? z
         .string()
         .regex(/^\d+(\.\d{1,2})?$/, "Amount must be a number")
@@ -230,7 +232,7 @@ export const formSchema = (type: string) => z.object({
 
 
 export function filterColumns<T>(data: T[], columnsToExclude: (keyof T)[]): Partial<T>[] {
-    return data.map(item => {
+    return data?.map(item => {
         const filteredItem: Partial<T> = {};
         for (const key in item) {
             if (!columnsToExclude.includes(key as keyof T)) {
@@ -242,7 +244,7 @@ export function filterColumns<T>(data: T[], columnsToExclude: (keyof T)[]): Part
 }
 
 export function renameColumns<T>(data: T[], columnMappings: Record<keyof T, string>): any[] {
-    return data.map(item => {
+    return data?.map(item => {
         const renamedItem: any = {}; // Using 'any' for flexibility
         for (const key in item) {
             const newKey = columnMappings[key] || key; // Rename if mapping exists

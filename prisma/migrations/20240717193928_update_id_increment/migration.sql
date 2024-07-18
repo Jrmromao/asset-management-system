@@ -1,0 +1,9 @@
+-- This is an empty migration.
+
+ALTER SEQUENCE "Asset_id_seq" START WITH 10000;
+ALTER SEQUENCE "AuditLog_id_seq" START WITH 10000;
+ALTER SEQUENCE "Transaction_id_seq" START WITH 10000;
+ALTER SEQUENCE "Category_id_seq" START WITH 10000;
+ALTER SEQUENCE "LicenseTool_id_seq" START WITH 10000;
+ALTER SEQUENCE "User_id_seq" START WITH 10000;
+ALTER SEQUENCE "Organization_id_seq" START WITH 10000;

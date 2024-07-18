@@ -101,18 +101,20 @@ declare type Transaction = {
 declare type Asset = {
     id?: number;
     name: string;
-    userId: string;
-    description?: string;
+    assigneeId: string;
     categoryId: number;
-    // category: string;
-    status: string;
+    brand: string;
+    model: string;
     location: string;
     datePurchased: string;
     purchasePrice: number;
     price: number;
-    image?: string;
+    certificateUrl?: string;
+    licenceUrl?: string;
+    serialNumber?: string;
     createdAt?: Date;
     updatedAt?: Date;
+    catergory?: Category
 }
 declare type Category = {
     id?: string;
@@ -299,6 +301,7 @@ declare interface AssetTableProps {
 
 declare interface CategoryTableProps {
     licenses: Category[];
+    deleteCategory: (id: number) => Promise<Asset>;
 }
 
 declare interface LicenseTableProps {

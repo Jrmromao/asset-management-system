@@ -4,22 +4,28 @@ import {prisma} from "@/app/db";
 import {parseStringify} from "@/lib/utils";
 
 export const create = async (data: {
+    serialNumber: string;
     datePurchased: string;
     name: string;
-    description: string | undefined;
-    location: string;
+    model: string;
     purchasePrice: number;
-    categoryId: number;
-    status: string
+    brand: string;
+    categoryId: string | number
 }) => {
+
+    console.log(data)
+
     try {
         let prismaAssetClient = await prisma.asset.create({
             data: {
                 name: data.name,
-                description: data.description,
+                brand: data.brand,
+                model: data.model,
                 price: data.purchasePrice,
-                categoryId: 2,
-                userId: 10,
+                serialNumber: data.serialNumber,
+                licenceUrl: '',
+                certificateUrl: '',
+                categoryId: data.categoryId,
                 createdAt: new Date(),
                 updatedAt: new Date()
             }
@@ -32,7 +38,12 @@ export const create = async (data: {
 }
 export const get = async () => {
     try {
-        const assets = await prisma.asset.findMany();
+        const assets = await prisma.asset.findMany({
+            include: {
+                category: true,
+
+            }
+        });
 
         console.log(assets)
         return parseStringify(assets);

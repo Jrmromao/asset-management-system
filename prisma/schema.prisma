@@ -32,23 +32,25 @@ model Organization {
 }
 
 model Asset {
-  id           Int           @id @default(autoincrement())
-  name         String
-  description  String?
-  price        Float
-  categoryId   Int
-  transactions Transaction[]
-  category     Category      @relation(fields: [categoryId], references: [id])
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  userId       Int?
+  id             Int      @id @default(autoincrement())
+  name           String
+  brand          String
+  model          String
+  price          Float
+  serialNumber   String
+  categoryId     Int
+  licenceUrl     String
+  certificateUrl String
+  category       Category @relation(fields: [categoryId], references: [id])
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  assigneeId     Int?
 }
 
 model Category {
   id        Int      @id @default(autoincrement())
   name      String
   assets    Asset[]
-  note      String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -58,7 +60,6 @@ model Transaction {
   type      String
   amount    Float
   assetId   Int
-  asset     Asset    @relation(fields: [assetId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

@@ -26,7 +26,7 @@ import CategoryTable from "@/components/tables/CategoryTable";
 import React, {useEffect, useState} from "react";
 import {getCategories} from "@/lib/actions/category.actions";
 import LicenseForm from "@/components/forms/LicenseForm";
-import {getLicenses} from "@/lib/actions/license.actions";
+import {getLicenses, remove} from "@/lib/actions/license.actions";
 import LicensesTable from "@/components/tables/LicensesTable";
 import {licenseStore} from "@/lib/stores/store";
 
@@ -267,7 +267,7 @@ const Admin = () => {
                                                 </CardDescription>
                                             </CardHeader>
                                             <CardContent>
-                                                <CategoryTable licenses={categoriesList || []} />
+                                                <CategoryTable licenses={categoriesList || []} deleteCategory={remove}/>
                                             </CardContent>
                                             <CardFooter>
                                             </CardFooter>
@@ -345,7 +345,7 @@ const Admin = () => {
                                                 </CardDescription>
                                             </CardHeader>
                                             <CardContent>
-                                                <CategoryTable licenses={categoriesList || []} />
+                                                <CategoryTable licenses={categoriesList || []} deleteCategory={remove} />
                                             </CardContent>
                                             <CardFooter>
                                             </CardFooter>

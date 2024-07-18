@@ -63,7 +63,7 @@ export const findById = async (id: number) => {
 }
 export const remove = async (id: number) => {
     try {
-        const licenseTool = await prisma.licenseTool.delete({
+        const licenseTool = await prisma.category.delete({
             where: {
                 id: id
             }
