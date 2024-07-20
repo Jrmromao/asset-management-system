@@ -5,63 +5,72 @@ import Image from "next/image";
 import {Button} from "@/components/ui/button";
 import {useRouter} from "next/navigation";
 import {signIn} from "next-auth/react";
+import {useForm} from "react-hook-form";
+import {Form,} from "@/components/ui/form"
+import {zodResolver} from "@hookform/resolvers/zod";
+import {z} from "zod";
+import {formSchema as authFormSchema} from "@/lib/utils";
+import CustomInput from "@/components/forms/CustomInput";
+import {Loader2} from "lucide-react";
+import {FaGoogle, FaGithub, FaPrint} from 'react-icons/fa';
+import CustomButton from "@/components/CustomButton";
+import { Separator } from "@/components/ui/separator"
 
 const AuthForm = ({type}: { type: string }) => {
     const [isLoading, setIsLoading] = useState(false)
     const [user, setUser] = useState(null)
-    // const formSchema = authFormSchema(type)
-    const router = useRouter()
-    // const form = useForm<z.infer<typeof formSchema>>({
-    //     resolver: zodResolver(formSchema),
-    //     defaultValues: {
-    //         email: "",
-    //         password: '',
-    //         firstName: '',
-    //         lastName: '',
-    //         address1: '',
-    //         city: '',
-    //         state: '',
-    //         postalCode: '',
-    //         dateOfBirth: '',
-    //         ssn: ''
-    //     },
-    // })
 
-    // const onSubmit = async (data: z.infer<typeof formSchema>) => {
-    //     setIsLoading(true)
-    //
-    //     try {
-    //         if (type === 'sign-up') {
-    //             const userData = {
-    //                 firstName: data.firstName!,
-    //                 lastName: data.lastName!,
-    //                 address1: data.address1!,
-    //                 city: data.city!,
-    //                 state: data.state!,
-    //                 postalCode: data.postalCode!,
-    //                 dateOfBirth: data.dateOfBirth!,
-    //                 ssn: data.ssn!,
-    //                 email: data.email,
-    //                 password: data.password
-    //             }
-    //             // const newUser = await signUp(userData)
-    //             // setUser(newUser)
-    //         }
-    //         if (type === 'sign-in') {
-    //             const response = false
-    //             // await signIn({
-    //             //     email: data.email,
-    //             //     password: data.password
-    //             // })
-    //             if (response)
-    //                 router.push('/')
-    //         }
-    //     } catch (e) {
-    //         console.error(e)
-    //     } finally {
-    //         setIsLoading(false)
-    //     }
-    // }
+    const formSchema = authFormSchema(type)
+    const router = useRouter()
+    const form = useForm<z.infer<typeof formSchema>>({
+        resolver: zodResolver(formSchema),
+        defaultValues: {
+            email: "",
+            password: '',
+            firstName: '',
+            lastName: '',
+            phoneNumber: '',
+            companyName: '',
+        },
+    })
+
+    const onSubmit = async (data: z.infer<typeof formSchema>) => {
+        setIsLoading(true)
+
+        try {
+            if (type === 'sign-up') {
+                // const userData = {
+                //     firstName: data.firstName!,
+                //     lastName: data.lastName!,
+                //     address1: data.address1!,
+                //     city: data.city!,
+                //     state: data.state!,
+                //     postalCode: data.postalCode!,
+                //     dateOfBirth: data.dateOfBirth!,
+                //     ssn: data.ssn!,
+                //     email: data.email,
+                //     password: data.password
+                // }
+                console.log(data)
+                // const newUser = await signUp(userData)
+                // setUser(newUser)
+            }
+            if (type === 'sign-in') {
+                const response = false
+                // await signIn({
+                //     email: data.email,
+                //     password: data.password
+                // })
+                console.log(data)
+                if (response)
+                    router.push('/')
+            }
+        } catch (e) {
+            console.error(e)
+        } finally {
+            setIsLoading(false)
+        }
+    }
 
     return (
         <section className={'auth-form'}>
@@ -69,7 +78,7 @@ const AuthForm = ({type}: { type: string }) => {
                 <Link href="/public" className="mb-12 cursor-pointer flex items-center gap-1">
                     <Image src='/icons/logo.svg' width={34} height={34} alt="Logo"
                            className="size-[24px] max-xl:size-14"/>
-                    <h1 className="sidebar-logo">Peoplez Bank</h1>
+                    <h1 className="sidebar-logo">Asset Sea</h1>
                 </Link>
                 <div className={'flex flex-col gap-1 md:gap-3'}>
                     <h1 className={'text-24 lg:text-36 font-semibold text-gray-900'}>
@@ -79,80 +88,110 @@ const AuthForm = ({type}: { type: string }) => {
                         </p>
                     </h1>
                 </div>
-                <Button onClick={(e) => signIn('google', { callbackUrl: '/' })} variant={'default'} value={'Google'}>Google</Button>
-                <Button  onClick={(e) => signIn('github', { callbackUrl: '/' })} variant={'default'} value={'Github'}> Github</Button>
+
             </header>
-            {/*{user ? (*/}
-            {/*    <div className={'flex flex-col gap-4'}>*/}
+            {user ? (
+                <div className={'flex flex-col gap-4'}>
 
-            {/*    </div>*/}
-            {/*) : (<>*/}
-            {/*        /!*<Form {...form}>*!/*/}
-            {/*        /!*    <form onSubmit={form.handleSubmit((data) => console.log(data))}*!/*/}
-            {/*        /!*          className="space-y-8">*!/*/}
-            {/*        /!*        {type === 'sign-up' && (*!/*/}
-            {/*        /!*            <>*!/*/}
-            {/*        /!*                /!*<div className={'flex gap-4'}>*!/*!/*/}
-            {/*        /!*                /!*    <CustomInput control={form.control} name={'firstName'} label={'First Name'}*!/*!/*/}
-            {/*        /!*                /!*                 placeholder={'ex: Joe'} type={'text'}/>*!/*!/*/}
-            {/*        /!*                /!*    <CustomInput control={form.control} name={'lastName'} label={'Last Name'}*!/*!/*/}
-            {/*        /!*                /!*                 placeholder={'ex: Doe'} type={'text'}/>*!/*!/*/}
-            {/*        /!*                /!*</div>*!/*!/*/}
-            {/*        /!*                /!*<CustomInput control={form.control} name={'address1'} label={'Address'}*!/*!/*/}
-            {/*        /!*                /!*             placeholder={'Enter you Address'} type={'text'}/>*!/*!/*/}
-
-            {/*        /!*                /!*<CustomInput control={form.control} name={'city'} label={'City'}*!/*!/*/}
-            {/*        /!*                /!*             placeholder={'Enter you City'} type={'text'}/>*!/*!/*/}
-            {/*        /!*                /!*<div className={'flex gap-4'}>*!/*!/*/}
-            {/*        /!*                /!*    <CustomInput control={form.control} name={'state'} label={'State'}*!/*!/*/}
-            {/*        /!*                /!*                 placeholder={'ex: NY'} type={'text'}/>*!/*!/*/}
-            {/*        /!*                /!*    <CustomInput control={form.control} name={'postalCode'} label={'Postal Code'}*!/*!/*/}
-            {/*        /!*                /!*                 placeholder={'ex: 11101'} type={'text'}/>*!/*!/*/}
-            {/*        /!*                /!*</div>*!/*!/*/}
-            {/*        /!*                /!*<div className={'flex gap-4'}>*!/*!/*/}
-            {/*        /!*                /!*    <CustomInput control={form.control} name={'dateOfBirth'} label={'Date of Birth'}*!/*!/*/}
-            {/*        /!*                /!*                 placeholder={'ex: YYYY-MM-DD'} type={'text'}/>*!/*!/*/}
-            {/*        /!*                /!*    <CustomInput control={form.control} name={'ssn'} label={'SSN'}*!/*!/*/}
-            {/*        /!*                /!*                 placeholder={'ex: 1234'} type={'text'}/>*!/*!/*/}
-            {/*        /!*                /!*</div>*!/*!/*/}
-            {/*        /!*            </>*!/*/}
-            {/*        /!*        )}*!/*/}
+                </div>
+            ) : (<>
+                    <Form {...form}>
+                        <form onSubmit={form.handleSubmit((data) => console.log(data))}
 
 
-            {/*        /!*        /!*<CustomInput control={form.control} name={'email'} placeholder={'Please enter your email'}*!/*!/*/}
-            {/*        /!*        /!*             label={'Email'} type={'email'}/>*!/*!/*/}
-            {/*        /!*        /!*<CustomInput control={form.control} name={'password'}*!/*!/*/}
-            {/*        /!*        /!*             placeholder={'Please enter your password'}*!/*!/*/}
-            {/*        /!*        /!*             label={'Password'} type={'password'}/>*!/*!/*/}
+                              className="space-y-8">
+                            {type === 'sign-up' && (
+                                <>
+                                    <div className={''}>
+                                        <CustomInput control={form.control} name={'companyName'} label={'Company Name'}
+                                                     placeholder={'ex: Qlientel'} type={'text'}/>
+                                        <div className={'text-12 text-gray-500 mt-4'}>
+                                            The company name will be used as a domain for your account. For example, your account might be qlientel.pdfintel.com
+                                        </div>
+                                    </div>
+                                    <div className={'flex gap-4'}>
+                                        <CustomInput control={form.control} name={'firstName'} label={'First Name'}
+                                                     placeholder={'ex: Joe'} type={'text'}/>
+                                        <CustomInput control={form.control} name={'lastName'} label={'Last Name'}
+                                                     placeholder={'ex: Doe'} type={'text'}/>
+                                    </div>
+                                    <div className={'flex gap-4'}>
+                                        <CustomInput control={form.control} name={'password'} label={'Password'}
+                                                     placeholder={'xxxxxxxx'} type={'password'}/>
 
-            {/*        /!*        <div className={'flex flex-col gap-4'}>*!/*/}
+                                        <CustomInput control={form.control} name={'repeatPassword'} label={'Repeat Password'}
+                                                     placeholder={'xxxxxxxx'} type={'password'}/>
+                                    </div>
+                                    <div className={'gap-4'}>
+                                        <CustomInput control={form.control} name={'email'} label={'Email address'}
+                                                     placeholder={'Enter your email'} type={'text'}/>
+                                    </div>
+                                    <div className={'gap-4'}>
+                                        <CustomInput control={form.control} name={'phoneNumber'} label={'Phone Number'}
+                                                     placeholder={'Enter your phone number'} type={'text'}/>
+                                    </div>
+                                </>
+                            )}
 
-            {/*        /!*            <Button type="submit" className={'form-btn'} disabled={isLoading}>*!/*/}
-            {/*        /!*                {isLoading ? (*!/*/}
-            {/*        /!*                    <>*!/*/}
-            {/*        /!*                        <Loader2 size={20} className={'animate-spin'}/>&nbsp;*!/*/}
-            {/*        /!*                        Loading...*!/*/}
-            {/*        /!*                    </>*!/*/}
-            {/*        /!*                ) : type === 'sign-in'*!/*/}
-            {/*        /!*                    ? 'Sign In' : 'Sign Up'}*!/*/}
-            {/*        /!*            </Button>*!/*/}
-            {/*        /!*        </div>*!/*/}
+                            {type === 'sign-in' && (
+                                <>
+                                    <CustomInput control={form.control} name={'email'}
+                                                 placeholder={'Please enter your email'}
+                                                 label={'Email'} type={'text'}/>
+                                    <CustomInput control={form.control} name={'password'}
+                                                 placeholder={'Please enter your password'} label={'Password'}
+                                                 type={'password'}/>
+                                </>
+                            )}
 
 
-            {/*        /!*    </form>*!/*/}
-            {/*        /!*</Form>*!/*/}
-            {/*        <footer className={'flex justify-center gap-1'}>*/}
-            {/*            <p>{type === 'sign-in' ? 'Don\'t have an account?' : 'Already have an account?'}</p>*/}
-            {/*            <Link href={type === 'sign-in' ? '/sign-up' : '/sign-in'} className={'form-link'}>*/}
-            {/*                {type === 'sign-up' ? 'Sign In' : 'Sign Up'}*/}
-            {/*            </Link>*/}
+                            <div className={'flex flex-col gap-4'}>
+
+                                <Button type="submit" className={'form-btn'} disabled={isLoading}>
+                                    {isLoading ? (
+                                        <>
+                                            <Loader2 size={20} className={'animate-spin'}/>&nbsp;
+                                            Loading...
+                                        </>
+                                    ) : type === 'sign-in'
+                                        ? 'Sign In' : 'Sign Up'}
+                                </Button>
+                            </div>
+                        </form>
+                    </Form>
 
 
-            {/*       */}
+                    {type === 'sign-in' && (
+                        <div className={'flex flex-col gap-4'}>
+                            <CustomButton
+                                className={'bg-white border border-gray-300 rounded-md py-2 px-4 flex items-center hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 text-black-1 w-full'}
+                                size="lg"
+                                variant="outline"
+                                action={() => signIn('google', {callbackUrl: '/'})}
+                                value="Sign In with Google"
+                                Icon={FaGoogle}
+                            />
 
-            {/*        </footer>*/}
-            {/*    </>*/}
-            {/*)}*/}
+                            <CustomButton
+                                className={'bg-[#24292F] text-white border border-gray-600 rounded-md py-2 px-4 flex items-center hover:bg-[#333] focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 w-full'}
+                                size="lg"
+                                variant="default"
+                                action={() => signIn('github', {callbackUrl: '/'})}
+                                value="Sign In with Github"
+                                Icon={FaGithub}
+                            />
+                        </div>
+                    )}
+
+
+                    <footer className={'flex justify-center gap-1'}>
+                        <p>{type === 'sign-in' ? 'Don\'t have an account?' : 'Already have an account?'}</p>
+                        <Link href={type === 'sign-in' ? '/sign-up' : '/sign-in'} className={'form-link'}>
+                            {type === 'sign-up' ? 'Sign In' : 'Sign Up'}
+                        </Link>
+                    </footer>
+                </>
+            )}
         </section>
     )
 }

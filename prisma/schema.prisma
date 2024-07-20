@@ -1,5 +1,8 @@
 // prisma/schema.prisma
 
+// npx prisma migrate dev --create-only --name <NAME>
+// npx prisma migrate dev
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -10,16 +13,16 @@ generator client {
 }
 
 model User {
-  id             Int           @id @default(autoincrement())
-  email          String        @unique
+  id             Int          @id @default(autoincrement())
+  email          String       @unique
   name           String
   role           String
   organizationId Int
-  organization   Organization  @relation(fields: [organizationId], references: [id])
-  licenses       LicenseTool[]
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  // licenses       License[]
   auditLogs      AuditLog[]
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 }
 
 model Organization {
@@ -64,14 +67,14 @@ model Transaction {
   updatedAt DateTime @updatedAt
 }
 
-model LicenseTool {
+model License {
   id             Int      @id @default(autoincrement())
   name           String
   key            String
   issuedDate     DateTime
   expirationDate DateTime
   userId         Int?
-  user           User?    @relation(fields: [userId], references: [id])
+  // user           User?    @relation(fields: [userId], references: [id])
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 }

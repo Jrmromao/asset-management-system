@@ -20,6 +20,7 @@ import CustomSelect from "@/components/forms/CustomSelect";
 import YesNoQuestion from "@/components/YesNoQuestion";
 import {Checkbox} from "@/components/ui/checkbox";
 import {Label} from "@/components/ui/label";
+import LicenseForm from "@/components/forms/LicenseForm";
 
 const AssetForm = () => {
     const [isLoading, setIsLoading] = useState(false)
@@ -63,6 +64,7 @@ const AssetForm = () => {
                 serialNumber: data.serialNumber || '',
                 purchasePrice: Number(data.purchasePrice) || 0,
                 datePurchased: new Date().getDate().toString(),
+
             }
             await create(assetData).then(r => {
                 form.reset()
@@ -140,8 +142,14 @@ const AssetForm = () => {
                                                      onClick={() => setLicenseQuestion('no')}/>
                     </div>
 
-                    {licenseQuestion === 'yes' && <p className={'mt-2 text-sm'}>Select a license</p>}
-                    {licenseQuestion === 'no' && <p className={'mt-2 text-sm'}>License Form</p>}
+                    {licenseQuestion === 'yes' &&  (  <CustomSelect control={form.control} name={'category'} label={'Category'} data={categories}
+                                                                    placeholder={'Select a Category'}/>)
+
+
+                    }
+
+
+                    {licenseQuestion === 'no' && <LicenseForm/>}
 
 
 

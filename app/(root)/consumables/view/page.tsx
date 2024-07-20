@@ -60,7 +60,7 @@ const View = () => {
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                                         <div className="p-4 ">
                                             <h2 className="text-gray-500 mb-2">Status</h2>
-                                            <p className="font-semibold text-gray-600">{asset?.status}</p>
+                                            <p className="font-semibold text-gray-600">test</p>
                                         </div>
                                         <div className="p-4">
                                             <h2 className="text-gray-500 mb-2">Location</h2>

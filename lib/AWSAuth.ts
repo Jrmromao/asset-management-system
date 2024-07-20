@@ -15,6 +15,9 @@ export const cognitoSignIn = (email: string, password: string): Promise<NextAuth
 
         const cognitoUser = new AmazonCognitoIdentity.CognitoUser({ Username: email, Pool: userPool });
 
+
+
+
         cognitoUser.authenticateUser(authenticationDetails, {
             onSuccess: function (result: AmazonCognitoIdentity.CognitoUserSession) {
 
@@ -34,8 +37,6 @@ export const cognitoSignIn = (email: string, password: string): Promise<NextAuth
         });
     });
 };
-
-
 
 const getUserAttributes = (cognitoUser: AmazonCognitoIdentity.CognitoUser): UserAttributes | null => {
     const attributes = cognitoUser.getSignInUserSession()?.getIdToken().decodePayload();

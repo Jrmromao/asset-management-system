@@ -25,7 +25,7 @@ export const create = async (data: {
                 serialNumber: data.serialNumber,
                 licenceUrl: '',
                 certificateUrl: '',
-                categoryId: data.categoryId,
+                categoryId: +data.categoryId,
                 createdAt: new Date(),
                 updatedAt: new Date()
             }

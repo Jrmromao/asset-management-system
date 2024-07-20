@@ -14,7 +14,7 @@ export const create = async (data: {
     name: string;
 }) => {
     try {
-        await prisma.licenseTool.create({
+        await prisma.license.create({
             data: {
                 key: data.key,
                 expirationDate: data.expirationDate,
@@ -35,7 +35,7 @@ export const getLicenses = async () => {
     try {
 
 
-        const licenses = await prisma.licenseTool.findMany();
+        const licenses = await prisma.license.findMany();
 
 
         return parseStringify(licenses);
@@ -48,7 +48,7 @@ export const getLicenses = async () => {
 }
 export const findById = async (id: number) => {
     try {
-        const licenseTool = await prisma.licenseTool.findFirst({
+        const licenseTool = await prisma.license.findFirst({
             where: {
                 id: id
             }
@@ -85,7 +85,7 @@ export const update = async (data: {
     name: string;
 }, id: number) => {
     try {
-        const licenseTool = await prisma.licenseTool.update({
+        const licenseTool = await prisma.license.update({
             where: {
                 id: id
             },

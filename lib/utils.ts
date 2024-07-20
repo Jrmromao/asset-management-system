@@ -201,6 +201,21 @@ const asset = ['asset']
 const common = ['asset', 'category', 'license']
 const categoryLicense = ['asset', 'category', 'license']
 const license = [ 'license']
+const signupSignin = ['sign-in', 'sign-up']
+const signup = ['sign-up']
+
+
+const passwordSchema = z.string()
+    .min(8, { message: "Password must be at least 8 characters long" })
+    .max(20, { message: "Password must not exceed 20 characters" })
+    // .refine(
+    //     (value) =>
+    //         /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/.test(value),
+    //     {
+    //         message:
+    //             "Password must include at least one uppercase letter, one lowercase letter, one number, and one special character (@$!%*?&)",
+    //     }
+    // );
 
 
 export const formSchema = (type: string) => z.object({
@@ -208,8 +223,6 @@ export const formSchema = (type: string) => z.object({
     name: z.string().min(1, "Name is required"),
     id: z.string().optional(),
     purchaseNotes: z.string().optional(),
-
-
     // asset
     brand: type in categoryLicense ? z.string().min(1, "Brand is required") : z.string().optional(),
     model: type in asset ? z.string().min(1, "Model is required") : z.string().optional(),
@@ -222,13 +235,26 @@ export const formSchema = (type: string) => z.object({
 
     issuedDate: type in license ? z.string().min(0, 'Issued date is required') : z.string().optional(),
     expirationDate: type in license ? z.string().min(0, 'Expiration date is required') : z.string().optional(),
-
-
     //licence
-    key: type in license? z.string().min(1, "Key is required") : z.string().optional(),
+    key: type in license ? z.string().min(1, "Key is required") : z.string().optional(),
 
 
+    // sign-up & sign-in
+    email: type in signupSignin ? z.string().email("Invalid email").min(1, "Email is required") : z.string().optional(),
+    password: type in signupSignin ?  passwordSchema : z.string().optional(),
+
+    // signup - register
+    repeatPassword: type in signup ? z.string().min(1, "Password is required") : z.string().optional(),
+    firstName: type in signup ? z.string().min(1, "First name is required") : z.string().optional(),
+    lastName: type in signup ? z.string().min(1, "Last name is required") : z.string().optional(),
+    phoneNumber: type in signup ? z.string().min(1, "Phone number is required") : z.string().optional(),
+    companyName: type in signup ? z.string().min(1, "Company name is required") : z.string().optional(),
 })
+
+//     .refine((data) => data.password === data.repeatPassword, {
+//     message: "Passwords do not match",
+//     path: ["repeatPassword"],
+// });
 
 
 export function filterColumns<T>(data: T[], columnsToExclude: (keyof T)[]): Partial<T>[] {
