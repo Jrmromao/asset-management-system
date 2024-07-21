@@ -322,9 +322,17 @@ declare interface PaymentTransferFormProps {
 }
 
 // Actions
-declare interface getAccountsProps {
-    userId: string;
+declare interface CompanyRegistrationProps {
+   companyName: string;
+   email: string;
+   password: string;
+   phoneNumber: string;
+   firstName: string;
+   lastName: string;
 }
+
+
+
 
 declare interface getAccountProps {
     appwriteItemId: string;

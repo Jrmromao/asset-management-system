@@ -1,36 +1,54 @@
-// 'use server';
+'use server';
+
+import {PrismaClient} from '@prisma/client'
+import {parseStringify} from "@/lib/utils";
+import {signUp as CognitoSignUp} from "@/services/aws/Cognito";
+
+
+const prisma = new PrismaClient()
+
+export const registerUser = async (data: { email: string; password: string, roleId: number, companyId: number, firstName?: string, lastName?: string, phoneNumber?: string }) => {
+    try {
+
+        console.log('data: ',data)
+
+        const cognitoRegisterResult = await CognitoSignUp({
+            clientId: process.env.COGNITO_CLIENT_ID!,
+            username: data.email.split('@')[0],
+            email: data.email,
+            password: data.password,
+            companyId: data.companyId
+        }).catch((error)=>{
+            return error
+        });
+
+        console.log('cognitoRegisterResult: ',cognitoRegisterResult)
+
+        if ('cognitoRegisterResult') {
+            let newUser = await prisma.user.create({
+                data: {
+                    roleId: 4,
+                    companyId: data.companyId,
+                    email: data.email,
+                    firstName: data.firstName,
+                    lastName: data.lastName,
+                    phoneNumber: data.phoneNumber,
+                    createdAt: new Date(),
+                    updatedAt: new Date()
+                }
+            });
+
+        }
+        console.log(cognitoRegisterResult)
+
+        return parseStringify(cognitoRegisterResult);
+    } catch (error) {
+        console.log(error)
+    } finally {
+        await prisma.$disconnect()
+    }
+}
 //
-// // import {prisma} from "@/app/db";
-// import { PrismaClient } from '@prisma/client'
-//
-// const prisma = new PrismaClient()
-//
-// import {parseStringify} from "@/lib/utils";
-//
-// export const create = async (data: {
-//     key: string;
-//     expirationDate: Date;
-//     issuedDate: Date;
-//     name: string;
-// }) => {
-//     try {
-//         await prisma.licenseTool.create({
-//             data: {
-//                 key: data.key,
-//                 expirationDate: data.expirationDate,
-//                 issuedDate: data.issuedDate,
-//                 name: data.name,
-//                 createdAt: new Date(),
-//                 updatedAt: new Date()
-//             }
-//         })
-//     } catch (error) {
-//         console.log(error)
-//     }
-//     finally {
-//         await prisma.$disconnect()
-//     }
-// }
 // export const getLicenses = async () => {
 //     try {
 //
@@ -46,6 +64,7 @@
 //         await prisma.$disconnect()
 //     }
 // }
+//
 // export const findById = async (id: number) => {
 //     try {
 //         const licenseTool = await prisma.licenseTool.findFirst({
@@ -61,6 +80,7 @@
 //         await prisma.$disconnect()
 //     }
 // }
+//
 // export const remove = async (id: number) => {
 //     try {
 //         const licenseTool = await prisma.licenseTool.delete({
@@ -76,7 +96,9 @@
 //         await prisma.$disconnect()
 //     }
 // }
-// // adding a new  comment
+//
+//
+//
 // export const update = async (data: {
 //     id: number;
 //     key: string;

@@ -13,17 +13,19 @@ generator client {
 }
 
 model User {
-  id        Int        @id @default(autoincrement())
-  email     String     @unique
-  name      String
-  companyId Int
-  company   Company    @relation(fields: [companyId], references: [id])
+  id          Int        @id @default(autoincrement())
+  email       String     @unique
+  firstName   String
+  lastName    String
+  phoneNumber String     @unique
+  companyId   Int
+  company     Company    @relation(fields: [companyId], references: [id])
   // licenses       License[]
-  auditLogs AuditLog[]
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-  role      Role       @relation(fields: [roleId], references: [id])
-  roleId    Int
+  auditLogs   AuditLog[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  role        Role       @relation(fields: [roleId], references: [id])
+  roleId      Int
 }
 
 model Role {
@@ -34,7 +36,7 @@ model Role {
 
 model Company {
   id        Int        @id @default(autoincrement())
-  name      String
+  name      String     @unique
   users     User[]
   auditLogs AuditLog[]
   createdAt DateTime   @default(now())
@@ -59,7 +61,7 @@ model Asset {
 
 model Category {
   id        Int      @id @default(autoincrement())
-  name      String
+  name      String   @unique
   assets    Asset[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

@@ -142,19 +142,13 @@ const AssetForm = () => {
                                                      onClick={() => setLicenseQuestion('no')}/>
                     </div>
 
-                    {licenseQuestion === 'yes' &&  (  <CustomSelect control={form.control} name={'category'} label={'Category'} data={categories}
-                                                                    placeholder={'Select a Category'}/>)
-
-
+                    {licenseQuestion === 'yes' && (
+                        <CustomSelect control={form.control} name={'category'} label={'Category'} data={categories}
+                                      placeholder={'Select a Category'}/>)
                     }
-
-
                     {licenseQuestion === 'no' && <LicenseForm/>}
 
-
-
                     <Button type="submit" className={'form-btn mt-6 w-full  md:w-auto'} disabled={isLoading}>
-
                         {isLoading ? (
                                 <>
                                     <Loader2 size={20} className={'animate-spin'}/>&nbsp;

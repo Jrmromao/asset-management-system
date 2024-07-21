@@ -202,7 +202,7 @@ const common = ['asset', 'category', 'license']
 const categoryLicense = ['asset', 'category', 'license']
 const license = [ 'license']
 const signupSignin = ['sign-in', 'sign-up']
-const signup = ['sign-up']
+const signup = ['sign-un']
 
 
 const passwordSchema = z.string()
@@ -219,43 +219,38 @@ const passwordSchema = z.string()
 
 
 export const formSchema = (type: string) => z.object({
+
     // common
-    name: z.string().min(1, "Name is required"),
-    id: z.string().optional(),
-    purchaseNotes: z.string().optional(),
-    // asset
-    brand: type in categoryLicense ? z.string().min(1, "Brand is required") : z.string().optional(),
-    model: type in asset ? z.string().min(1, "Model is required") : z.string().optional(),
-    serialNumber: type in asset ? z.string().min(1, "Serial number is required") : z.string().optional(),
-    category: type in asset ? z.string().min(1, "Category is required") : z.string().optional(),
-    purchasePrice: type in asset ? z
-        .string()
-        .regex(/^\d+(\.\d{1,2})?$/, "Amount must be a number")
-        .min(1, "Amount is too short"):  z.string().optional(),
-
-    issuedDate: type in license ? z.string().min(0, 'Issued date is required') : z.string().optional(),
-    expirationDate: type in license ? z.string().min(0, 'Expiration date is required') : z.string().optional(),
-    //licence
-    key: type in license ? z.string().min(1, "Key is required") : z.string().optional(),
-
+    // name: z.string().min(1, "Name is required"),
+    // id: z.string().optional(),
+    // purchaseNotes: z.string().optional(),
+    //
+    // // asset
+    // brand: type in categoryLicense ? z.string().min(1, "Brand is required") : z.string().optional(),
+    // model: type in asset ? z.string().min(1, "Model is required") : z.string().optional(),
+    // serialNumber: type in asset ? z.string().min(1, "Serial number is required") : z.string().optional(),
+    // category: type in asset ? z.string().min(1, "Category is required") : z.string().optional(),
+    // purchasePrice: type in asset ? z
+    //     .string()
+    //     .regex(/^\d+(\.\d{1,2})?$/, "Amount must be a number")
+    //     .min(1, "Amount is too short"):  z.string().optional(),
+    // issuedDate: type in license ? z.string().min(0, 'Issued date is required') : z.string().optional(),
+    // expirationDate: type in license ? z.string().min(0, 'Expiration date is required') : z.string().optional(),
+    //
+    // //licence
+    // key: type in license ? z.string().min(1, "Key is required") : z.string().optional(),
 
     // sign-up & sign-in
-    email: type in signupSignin ? z.string().email("Invalid email").min(1, "Email is required") : z.string().optional(),
-    password: type in signupSignin ?  passwordSchema : z.string().optional(),
+    email: type === 'sign-up' ? z.string().email("Invalid email").min(1, "Email is required") : z.string().optional(),
+    password: type === 'sign-up'  ?  passwordSchema : z.string().optional(),
 
     // signup - register
-    repeatPassword: type in signup ? z.string().min(1, "Password is required") : z.string().optional(),
-    firstName: type in signup ? z.string().min(1, "First name is required") : z.string().optional(),
-    lastName: type in signup ? z.string().min(1, "Last name is required") : z.string().optional(),
-    phoneNumber: type in signup ? z.string().min(1, "Phone number is required") : z.string().optional(),
-    companyName: type in signup ? z.string().min(1, "Company name is required") : z.string().optional(),
+    repeatPassword: type === 'sign-up'  ? z.string().min(1, "Password is required") : z.string().optional(),
+    firstName: type === 'sign-up' ? z.string().min(1, "First name is required") : z.string().optional(),
+    lastName: type === 'sign-up' ? z.string().min(1, "Last name is required") : z.string().optional(),
+    phoneNumber: type === 'sign-up' ? z.string().min(1, "Phone number is required") : z.string().optional(),
+    companyName: type === 'sign-up' ? z.string().min(1, "Company name is required") : z.string().optional(),
 })
-
-//     .refine((data) => data.password === data.repeatPassword, {
-//     message: "Passwords do not match",
-//     path: ["repeatPassword"],
-// });
-
 
 export function filterColumns<T>(data: T[], columnsToExclude: (keyof T)[]): Partial<T>[] {
     return data?.map(item => {
