@@ -13,19 +13,26 @@ generator client {
 }
 
 model User {
-  id             Int          @id @default(autoincrement())
-  email          String       @unique
-  name           String
-  role           String
-  organizationId Int
-  organization   Organization @relation(fields: [organizationId], references: [id])
+  id        Int        @id @default(autoincrement())
+  email     String     @unique
+  name      String
+  companyId Int
+  company   Company    @relation(fields: [companyId], references: [id])
   // licenses       License[]
-  auditLogs      AuditLog[]
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  auditLogs AuditLog[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  role      Role       @relation(fields: [roleId], references: [id])
+  roleId    Int
 }
 
-model Organization {
+model Role {
+  id    Int    @id @default(autoincrement())
+  name  String @unique
+  users User[]
+}
+
+model Company {
   id        Int        @id @default(autoincrement())
   name      String
   users     User[]
@@ -80,14 +87,14 @@ model License {
 }
 
 model AuditLog {
-  id             Int          @id @default(autoincrement())
-  action         String
-  entity         String
-  entityId       Int?
-  userId         Int
-  user           User         @relation(fields: [userId], references: [id])
-  organizationId Int
-  organization   Organization @relation(fields: [organizationId], references: [id])
-  details        String?
-  createdAt      DateTime     @default(now())
+  id        Int      @id @default(autoincrement())
+  action    String
+  entity    String
+  entityId  Int?
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  companyId Int
+  company   Company  @relation(fields: [companyId], references: [id])
+  details   String?
+  createdAt DateTime @default(now())
 }
