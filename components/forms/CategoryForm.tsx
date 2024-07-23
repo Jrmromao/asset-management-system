@@ -6,20 +6,19 @@ import {useForm} from "react-hook-form"
 import {Button} from "@/components/ui/button"
 import {Form,} from "@/components/ui/form"
 import CustomInput from "@/components/forms/CustomInput";
-import {formSchema} from "@/lib/utils";
+import {formSchema as categoryFormSchema} from "@/lib/utils";
 import {Loader2} from "lucide-react";
 import CustomTextarea from "@/components/forms/CustomTextarea";
 import {createCategory, getCategories} from "@/lib/actions/category.actions";
 
 const CategoryForm = ({setRefresh}:{setRefresh: (flag: boolean) => void}) => {
     const [isLoading, setIsLoading] = useState(false)
-    const catFormSchema = formSchema('category')
+    const catFormSchema = categoryFormSchema('category')
 
     const form = useForm<z.infer<typeof catFormSchema>>({
         resolver: zodResolver(catFormSchema),
         defaultValues: {
             name: '',
-            purchaseNotes: '',
         },
     }
     )
@@ -27,7 +26,7 @@ const CategoryForm = ({setRefresh}:{setRefresh: (flag: boolean) => void}) => {
         setIsLoading(true)
         try {
             const categoryData = {
-                name: data.name,
+                name: data.name || '',
             }
             await createCategory(categoryData).then(_ => {
                 setRefresh(true)

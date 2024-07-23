@@ -6,7 +6,7 @@ import {useForm} from "react-hook-form"
 import {Button} from "@/components/ui/button"
 import {Form,} from "@/components/ui/form"
 import CustomInput from "@/components/forms/CustomInput";
-import {formSchema as assetFormSchema} from "@/lib/utils";
+import {formSchema as categoryFormSchema, formSchema as licenseFormSchema} from "@/lib/utils";
 import {useRouter} from "next/navigation";
 import {create, getLicenses} from "@/lib/actions/license.actions";
 import {Loader2} from "lucide-react";
@@ -15,17 +15,13 @@ import {licenseStore, useDialogStore} from "@/lib/stores/store";
 
 const LicenseForm = () => {
     const [isLoading, setIsLoading] = useState(false)
-    const formSchema = assetFormSchema('license')
     const router = useRouter()
     const [setLicenses, updateRefresh] = licenseStore((state) => [state.setLicenses, state.updateRefresh])
 
+    const catFormSchema = categoryFormSchema('category')
 
-
-
-
-
-    const form = useForm<z.infer<typeof formSchema>>({
-        resolver: zodResolver(formSchema),
+    const form = useForm<z.infer<typeof catFormSchema>>({
+        resolver: zodResolver(catFormSchema),
         defaultValues: {
             id: '',
             name: '',
@@ -36,7 +32,7 @@ const LicenseForm = () => {
     })
 
 
-    const onSubmit = async (data: z.infer<typeof formSchema>) => {
+    const onSubmit = async (data: z.infer<typeof catFormSchema>) => {
         setIsLoading(true)
         try {
             const licenseData = {
@@ -57,16 +53,6 @@ const LicenseForm = () => {
             setIsLoading(false)
         }
     }
-
-    //
-    // id             Int      @id @default(autoincrement())
-    // name           String
-    // key            String
-    // issuedDate     DateTime
-    // expirationDate DateTime
-    // createdAt      DateTime @default(now())
-    // updatedAt      DateTime @updatedAt
-
     return (
         <section className="w-full bg-white z-50">
             <Form {...form}>

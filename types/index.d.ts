@@ -114,7 +114,7 @@ declare type Asset = {
     serialNumber?: string;
     createdAt?: Date;
     updatedAt?: Date;
-    catergory?: Category
+    category?: Category
 }
 declare type Category = {
     id?: string;

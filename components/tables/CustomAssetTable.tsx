@@ -24,7 +24,7 @@ const CustomAssetTable = ({assets, findById, deleteAsset}: AssetTableProps) => {
         model: "Model",
         brand: "Brand",
         serialNumber: "Serial Number",
-        catergory: "Catergory"
+        category: "Category"
     };
     const filteredData = filterColumns(assets, ['id', 'updatedAt', 'categoryId', 'datePurchased', 'certificateUrl', 'assigneeId', 'purchasePrice', 'licenceUrl']);
 
@@ -55,28 +55,28 @@ const CustomAssetTable = ({assets, findById, deleteAsset}: AssetTableProps) => {
                             className={` bg-[#F6FEF9]!over:bg-none !border-b-DEFAULT border-b-[1px]`}>
 
                                 <TableCell className="pl-2 pr-10">
-                                    {asset.name}
+                                    {asset?.name}
                                 </TableCell>
                                 <TableCell className="min-w-32 pl-2 pr-10">
-                                    {asset.brand}
-                                </TableCell>
-
-                                <TableCell className="min-w-32 pl-2 pr-10">
-                                    {asset.model}
+                                    {asset?.brand}
                                 </TableCell>
 
                                 <TableCell className="min-w-32 pl-2 pr-10">
-                                    {asset.price}
+                                    {asset?.model}
+                                </TableCell>
+
+                                <TableCell className="min-w-32 pl-2 pr-10">
+                                    {asset?.price}
                                 </TableCell>
                                 <TableCell className="min-w-32 pl-2 pr-10">
-                                    {asset.serialNumber}
+                                    {asset?.serialNumber}
                                 </TableCell>
 
                                 <TableCell className="pl-2 pr-10 capitalize min-w-24">
-                                    {formatDateTime(asset.createdAt!).dateTime}
+                                    {formatDateTime(asset?.createdAt!).dateTime}
                                 </TableCell>
                                 <TableCell className="min-w-32 pl-2 pr-10">
-                                    Category
+                                    {asset?.category?.name}
                                 </TableCell>
 
                                 <TableCell className="pl-2 pr-10 capitalize min-w-24">

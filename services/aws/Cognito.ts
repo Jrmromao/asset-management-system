@@ -1,11 +1,8 @@
 import {CognitoIdentityProviderClient, SignUpCommand,} from "@aws-sdk/client-cognito-identity-provider";
-
 import {createHmac} from "crypto";
+import {AuthenticationDetails, CognitoUser, CognitoUserPool} from "amazon-cognito-identity-js";
+import {CognitoIdentityServiceProvider} from "aws-sdk";
 
-function calculateSecretHash(username: string, clientId: string, clientSecret: string) {
-    const message = `${username}${clientId}`;
-    return createHmac("sha256", clientSecret).update(message).digest("base64");
-}
 
 export const signUp = async ({clientId, username, password, email, companyId}: {
     clientId: string,
@@ -14,26 +11,26 @@ export const signUp = async ({clientId, username, password, email, companyId}: {
     email: string,
     companyId: number
 }) => {
-    const client = new CognitoIdentityProviderClient({region: process.env.AWS_REGION!});
 
-    // const command = new SignUpCommand({
-    //     ClientId: clientId,
-    //     Username: username,
-    //     Password: password,
-    //     SecretHash: calculateSecretHash(username, clientId, process.env.COGNITO_CLIENT_SECRET!),
-    //     UserAttributes: [{ Name: "Username", Value: email }],
-    // });
+    const client = new CognitoIdentityProviderClient({region: process.env.AWS_REGION!});
 
     try {
         const command = new SignUpCommand({
             ClientId: clientId,
             Username: email,
             Password: password,
-            SecretHash: calculateSecretHash(email, clientId, process.env.COGNITO_CLIENT_SECRET!),
             UserAttributes: [
+                {
+                    Name: "custom:companyId",
+                    Value: companyId.toString(),
+                },
                 {
                     Name: "email",
                     Value: email,
+                },
+                {
+                    Name: 'preferred_username',
+                    Value: username
                 },
             ],
         });

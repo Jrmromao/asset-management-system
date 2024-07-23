@@ -13,7 +13,7 @@ generator client {
 }
 
 model User {
-  id          Int        @id @default(autoincrement())
+  id          String     @id @default(uuid())
   email       String     @unique
   firstName   String
   lastName    String
@@ -82,7 +82,7 @@ model License {
   key            String
   issuedDate     DateTime
   expirationDate DateTime
-  userId         Int?
+  userId         String?
   // user           User?    @relation(fields: [userId], references: [id])
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
@@ -93,7 +93,7 @@ model AuditLog {
   action    String
   entity    String
   entityId  Int?
-  userId    Int
+  userId    String
   user      User     @relation(fields: [userId], references: [id])
   companyId Int
   company   Company  @relation(fields: [companyId], references: [id])

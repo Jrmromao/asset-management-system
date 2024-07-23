@@ -221,30 +221,28 @@ const passwordSchema = z.string()
 export const formSchema = (type: string) => z.object({
 
     // common
-    // name: z.string().min(1, "Name is required"),
-    // id: z.string().optional(),
-    // purchaseNotes: z.string().optional(),
-    //
-    // // asset
-    // brand: type in categoryLicense ? z.string().min(1, "Brand is required") : z.string().optional(),
-    // model: type in asset ? z.string().min(1, "Model is required") : z.string().optional(),
-    // serialNumber: type in asset ? z.string().min(1, "Serial number is required") : z.string().optional(),
-    // category: type in asset ? z.string().min(1, "Category is required") : z.string().optional(),
-    // purchasePrice: type in asset ? z
-    //     .string()
-    //     .regex(/^\d+(\.\d{1,2})?$/, "Amount must be a number")
-    //     .min(1, "Amount is too short"):  z.string().optional(),
-    // issuedDate: type in license ? z.string().min(0, 'Issued date is required') : z.string().optional(),
-    // expirationDate: type in license ? z.string().min(0, 'Expiration date is required') : z.string().optional(),
-    //
-    // //licence
-    // key: type in license ? z.string().min(1, "Key is required") : z.string().optional(),
+    name: z.string().min(1, "Name is required"),
+    id: z.string().optional(),
+    purchaseNotes: z.string().optional(),
+    //asset
+    brand: type === 'asset' ? z.string().min(1, "Brand is required") : z.string().optional(),
+    model:  type === 'asset' ? z.string().min(1, "Model is required") : z.string().optional(),
+    serialNumber: type === 'asset' ? z.string().min(1, "Serial number is required") : z.string().optional(),
+    category:   type === 'asset' ? z.string().min(1, "Category is required") : z.string().optional(),
+    purchasePrice: type === 'asset' ? z .string()
+        .regex(/^\d+(\.\d{1,2})?$/, "Amount must be a number")
+        .min(1, "Amount is too short") : z.string().optional(),
 
-    // sign-up & sign-in
+
+    issuedDate: type === 'license' ? z.string().min(0, 'Issued date is required') : z.string().optional(),
+    expirationDate: type === 'license' ? z.string().min(0, 'Expiration date is required') : z.string().optional(),
+    key: type === 'license' ? z.string().min(1, "Key is required") : z.string().optional(),
+    //
+    // // sign-up & sign-in
     email: type === 'sign-up' ? z.string().email("Invalid email").min(1, "Email is required") : z.string().optional(),
     password: type === 'sign-up'  ?  passwordSchema : z.string().optional(),
 
-    // signup - register
+    // // signup - register
     repeatPassword: type === 'sign-up'  ? z.string().min(1, "Password is required") : z.string().optional(),
     firstName: type === 'sign-up' ? z.string().min(1, "First name is required") : z.string().optional(),
     lastName: type === 'sign-up' ? z.string().min(1, "Last name is required") : z.string().optional(),

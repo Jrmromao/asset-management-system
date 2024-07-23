@@ -57,7 +57,7 @@ const AssetForm = () => {
         setIsLoading(true)
         try {
             const assetData = {
-                name: data.name,
+                name: data.name || '',
                 brand: data.brand || '',
                 model: data.model || '',
                 categoryId: categories.find(c => c.name === data.category?.toString())?.id || 0,
@@ -80,7 +80,7 @@ const AssetForm = () => {
     return (
         <section className="w-full bg-white z-50 max-h-[700px] overflow-y-auto p-4">
             <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)}>
+                <form onSubmit={form.handleSubmit(onSubmit)} >
 
                     <div className={'mt-6 header-2'}>Asset Details</div>
 
@@ -143,8 +143,7 @@ const AssetForm = () => {
                     </div>
 
                     {licenseQuestion === 'yes' && (
-                        <CustomSelect control={form.control} name={'category'} label={'Category'} data={categories}
-                                      placeholder={'Select a Category'}/>)
+                        <CustomSelect control={form.control} name={'category'} label={'Category'} data={categories} placeholder={'Select a Category'}/>)
                     }
                     {licenseQuestion === 'no' && <LicenseForm/>}
 

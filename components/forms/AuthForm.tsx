@@ -20,7 +20,7 @@ const AuthForm = ({type}: { type: string }) => {
     const [isLoading, setIsLoading] = useState(false)
     const [user, setUser] = useState(null)
 
-    const formSchema = authFormSchema(type)
+    const formSchema = authFormSchema('')
     const router = useRouter()
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -39,7 +39,7 @@ const AuthForm = ({type}: { type: string }) => {
     const onSubmit = async (data: z.infer<typeof formSchema>) => {
         setIsLoading(true)
 
-        console.log(data)
+
         try {
             if (type === 'sign-up') {
 
@@ -57,10 +57,14 @@ const AuthForm = ({type}: { type: string }) => {
                 }
             }
             if (type === 'sign-in') {
-                const response = true
-                console.log(data)
-                if (response)
+                const response = await signIn('credentials', {
+                    email: data.email,
+                    password: data.password,
+                    redirect: false
+                })
+                if (response?.ok) {
                     router.push('/')
+                }
             }
         } catch (e) {
             console.error(e)
