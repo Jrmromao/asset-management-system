@@ -5,7 +5,6 @@ import {parseStringify} from "@/lib/utils";
 
 export const createCategory = async (categoryData: { name: string }) => {
     try {
-        console.log(categoryData)
 
         const category = await prisma.category.create({
             data: {
@@ -31,5 +30,21 @@ export const getCategories = async () => {
         return parseStringify(categories);
     } catch (error) {
         console.log(error)
+    }
+}
+
+export const remove = async (id: number) => {
+    try {
+        const licenseTool = await prisma.category.delete({
+            where: {
+                id: id
+            }
+        })
+        return parseStringify(licenseTool);
+    } catch (error) {
+        console.log(error)
+    }
+    finally {
+        await prisma.$disconnect()
     }
 }

@@ -61,21 +61,7 @@ export const findById = async (id: number) => {
         await prisma.$disconnect()
     }
 }
-export const remove = async (id: number) => {
-    try {
-        const licenseTool = await prisma.category.delete({
-            where: {
-                id: id
-            }
-        })
-        return parseStringify(licenseTool);
-    } catch (error) {
-        console.log(error)
-    }
-    finally {
-        await prisma.$disconnect()
-    }
-}
+
 // adding a new  comment
 export const update = async (data: {
     id: number;

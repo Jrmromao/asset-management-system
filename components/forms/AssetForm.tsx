@@ -21,6 +21,7 @@ import YesNoQuestion from "@/components/YesNoQuestion";
 import {Checkbox} from "@/components/ui/checkbox";
 import {Label} from "@/components/ui/label";
 import LicenseForm from "@/components/forms/LicenseForm";
+import {useAssetStore} from "@/lib/stores/assetStore";
 
 const AssetForm = () => {
     const [isLoading, setIsLoading] = useState(false)
@@ -31,6 +32,7 @@ const AssetForm = () => {
     const closeDialog = useDialogStore((state) => state.onClose)
     const [categories, setCategories] = useState<Category[]>([])
     const [licenseQuestion, setLicenseQuestion] = useState('')
+    const [createAsset] = useAssetStore((state) => [state.createAsset]);
 
 
     const form = useForm<z.infer<typeof formSchema>>({
@@ -50,26 +52,28 @@ const AssetForm = () => {
         getCategories().then(r => {
             setCategories(r)
         })
-    }, [getCategories, setCategories])
+    }, [])
 
 
     const onSubmit = async (data: z.infer<typeof formSchema>) => {
         setIsLoading(true)
         try {
-            const assetData = {
+            const categoryId = Number(categories.find(c => c.name === data.category?.toString())?.id)
+
+            const assetData: Asset = {
                 name: data.name || '',
                 brand: data.brand || '',
                 model: data.model || '',
-                categoryId: categories.find(c => c.name === data.category?.toString())?.id || 0,
+                categoryId: categoryId,
+                assigneeId: '',
                 serialNumber: data.serialNumber || '',
                 purchasePrice: Number(data.purchasePrice) || 0,
                 datePurchased: new Date().getDate().toString(),
-
             }
-            await create(assetData).then(r => {
-                form.reset()
-                closeDialog()
-            })
+            createAsset(assetData)
+            closeDialog()
+            form.reset()
+
         } catch (e) {
             console.error(e)
         } finally {
@@ -80,7 +84,7 @@ const AssetForm = () => {
     return (
         <section className="w-full bg-white z-50 max-h-[700px] overflow-y-auto p-4">
             <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} >
+                <form onSubmit={form.handleSubmit(onSubmit)}>
 
                     <div className={'mt-6 header-2'}>Asset Details</div>
 
@@ -143,7 +147,8 @@ const AssetForm = () => {
                     </div>
 
                     {licenseQuestion === 'yes' && (
-                        <CustomSelect control={form.control} name={'category'} label={'Category'} data={categories} placeholder={'Select a Category'}/>)
+                        <CustomSelect control={form.control} name={'category'} label={'Category'} data={categories}
+                                      placeholder={'Select a Category'}/>)
                     }
                     {licenseQuestion === 'no' && <LicenseForm/>}
 

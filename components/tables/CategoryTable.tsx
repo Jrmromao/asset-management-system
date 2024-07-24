@@ -2,9 +2,9 @@ import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow,} from "@/
 import {filterColumns, formatDateTime, renameColumns} from "@/lib/utils";
 import CustomTableCell from "@/components/tables/CustomTableCell";
 import React from "react";
+import {useRouter} from "next/navigation"
 
-
-const CustomAssetTable = ({licenses, deleteCategory}: CategoryTableProps) => {
+const CustomAssetTable = ({licenses, deleteCategory, setRefresh}: CategoryTableProps) => {
 
     const columnMappings: Record<keyof Category, string> = {
         note: "Note",
@@ -13,9 +13,10 @@ const CustomAssetTable = ({licenses, deleteCategory}: CategoryTableProps) => {
         createdAt: "Created At",
         updatedAt: "updatedAt"
     };
+    const navigate = useRouter()
     const filteredData = filterColumns(licenses, ['id', 'updatedAt']);
     const renamedData = renameColumns(filteredData, columnMappings);
-    if(renamedData.length === 0) return <p>No assets found</p>
+    if (renamedData.length === 0) return <p>No assets found</p>
     const headers = Object.keys(renamedData[0])
     return (
 
@@ -47,14 +48,15 @@ const CustomAssetTable = ({licenses, deleteCategory}: CategoryTableProps) => {
                             </TableCell>
 
                             <TableCell className="pl-2 pr-10 capitalize min-w-24">
-                                <CustomTableCell id={Number(category.id)} entity={category} viewEntity={() =>{}} deleteEntity={() => deleteCategory(Number(category.id))} updateEntity={() =>{}}/>
+                                <CustomTableCell id={Number(category.id)} entity={category} viewEntity={() => {
+                                }} deleteEntity={() => deleteCategory(Number(category.id))} updateEntity={() => {
+                                }} setRefresh={setRefresh}/>
                             </TableCell>
                         </TableRow>
                     )
                 })}
             </TableBody>
         </Table>
-
 
 
     )

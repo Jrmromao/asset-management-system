@@ -41,11 +41,8 @@ export const get = async () => {
         const assets = await prisma.asset.findMany({
             include: {
                 category: true,
-
             }
         });
-
-        console.log(assets)
         return parseStringify(assets);
     } catch (error) {
         console.log(error)
@@ -78,24 +75,17 @@ export const remove = async (id: number) => {
     }
 }
 
-export const update = async (data: {
-    id: number;
-    datePurchased: string;
-    name: string;
-    description: string | undefined;
-    location: string;
-    purchasePrice: number;
-    categoryId: number;
-    status: string
-}, id: number) => {
+export const update = async (asset: Asset, id: number) => {
     try {
-        const assets = await prisma.asset.update({
-            where: {
-                id: id
-            },
-            data
-        });
-        return parseStringify(assets);
+        // const assets = await prisma.asset.update({
+        //     where: {
+        //         id: id
+        //     },
+        //     data: asset
+        // });
+        // return parseStringify(assets);
+
+        console.log(asset)
     } catch (error) {
         console.log(error)
     }
