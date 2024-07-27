@@ -108,8 +108,8 @@ declare interface CategoryBadgeProps {
 
 declare interface AssetTableProps {
     assets: Asset[];
-    deleteAsset: (id: number) => Promise<Asset>;
-    findById: (id: number) => Promise<Asset>;
+    deleteAsset: (id: number) => void;
+    findById: (id: number) => void;
 }
 
 declare interface CategoryTableProps {

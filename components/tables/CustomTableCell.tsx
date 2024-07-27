@@ -10,8 +10,6 @@ import withReactContent from 'sweetalert2-react-content'
 
 const CustomTableCell = ({id, entity, deleteEntity, updateEntity, viewEntity, setRefresh}: { id: number, entity: Object, deleteEntity: (id: number) => void, updateEntity: (id: number) => void, viewEntity: (id: number) => void, setRefresh: (flag: boolean) => void}) => {
 
-
-
     const handleDelete = (id: number) => {
 
         Swal.fire({
@@ -43,7 +41,7 @@ const CustomTableCell = ({id, entity, deleteEntity, updateEntity, viewEntity, se
         <>
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <span className="sr-only sm:not-sr-only">...</span>
+                    <span className="cusor-pointer sr-only sm:not-sr-only">...</span>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
                     <DropdownMenuCheckboxItem  onClick={()=> viewEntity(id)}>

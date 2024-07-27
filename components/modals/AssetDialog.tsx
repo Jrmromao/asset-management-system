@@ -1,5 +1,6 @@
 import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,} from "@/components/ui/dialog"
 import AssetForm from "@/components/forms/AssetForm";
+import {Progress} from "@/components/ui/progress";
 
 interface IProps {
     open: boolean
@@ -10,12 +11,10 @@ export function AssetDialog({open, onOpenChange }: IProps) {
 
     return (
         <div className={"asset-dialog"}>
-
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            {/*<DialogTrigger asChild>*/}
-            {/*    <Button variant="outline">Add Asset</Button>*/}
-            {/*</DialogTrigger>*/}
+            <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-[725px]">
+
+                <Progress value={4} />
                 <DialogHeader>
                     <DialogTitle>Add a new asset</DialogTitle>
                     <DialogDescription>

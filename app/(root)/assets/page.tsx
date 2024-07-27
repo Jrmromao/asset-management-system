@@ -9,6 +9,10 @@ import {useDialogStore} from "@/lib/stores/store";
 import {Button} from "@/components/ui/button";
 import {useAssetStore} from "@/lib/stores/assetStore";
 import {a} from "@aws-amplify/data-schema";
+import CustomTable from "@/components/tables/CustomTable";
+import {useRouter} from "next/navigation";
+import {filterColumns, renameColumns} from "@/lib/utils";
+import AssetWizard from "@/components/Wizard/AssetWizard";
 
 const Assets = () => {
 
@@ -17,9 +21,35 @@ const Assets = () => {
     const [assets, loading, fetchAssets, getAssetById, deleteAsset] = useAssetStore((state) => [state.assets, state.loading, state.fetchAssets, state.getAssetById, state.deleteAsset,]);
 
 
+    const navigate = useRouter()
+    const columnMappings: Record<keyof Asset, string> = {
+        categoryId: "categoryId",
+        datePurchased: "Date Purchased",
+        name: "name",
+        purchasePrice: "Price",
+        id: "id",
+        createdAt: "Created At",
+        updatedAt: "updatedAt",
+        assigneeId: "assigneeId",
+        certificateUrl: "certificateUrl",
+        licenceUrl: "licenceUrl",
+        model: "Model",
+        brand: "Brand",
+        serialNumber: "Serial Number",
+        category: "Category"
+    };
+
     useEffect(() => {
         fetchAssets();
     }, []);
+
+    const filteredData = filterColumns(assets, ['id', 'updatedAt', 'categoryId', 'datePurchased', 'certificateUrl', 'assigneeId', 'purchasePrice', 'licenceUrl']);
+    const renamedData = renameColumns(filteredData, columnMappings);
+    if (renamedData?.length === 0) return <p>No assets found</p>
+    const headers = renamedData?.length > 0 ? Object?.keys(renamedData[0]) : []
+
+
+
 
     return (
         <div className="assets">
@@ -49,6 +79,10 @@ const Assets = () => {
                     <CustomAssetTable assets={assets} deleteAsset={deleteAsset} findById={getAssetById}/>
                 </section>
             </div>
+
+
+            <AssetWizard />
+
         </div>
     )
 }
