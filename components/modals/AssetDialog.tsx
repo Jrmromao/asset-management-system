@@ -1,6 +1,7 @@
 import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,} from "@/components/ui/dialog"
-import AssetForm from "@/components/forms/AssetForm";
+import AssetForm from "@/components/forms/asset/AssetForm";
 import {Progress} from "@/components/ui/progress";
+import FormContainer from "@/components/forms/asset/Container";
 
 interface IProps {
     open: boolean
@@ -21,7 +22,7 @@ export function AssetDialog({open, onOpenChange }: IProps) {
                         Add a new asset to your account.
                     </DialogDescription>
                 </DialogHeader>
-                <AssetForm/>
+                <FormContainer/>
             </DialogContent>
         </Dialog>
         </div>

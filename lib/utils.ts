@@ -102,83 +102,83 @@ export function formUrlQuery({params, key, value}: UrlQueryParams) {
         {skipNull: true}
     );
 }
+//
+// export function getAccountTypeColors(type: AccountTypes) {
+//     switch (type) {
+//         case "depository":
+//             return {
+//                 bg: "bg-blue-25",
+//                 lightBg: "bg-blue-100",
+//                 title: "text-blue-900",
+//                 subText: "text-blue-700",
+//             };
+//
+//         case "credit":
+//             return {
+//                 bg: "bg-success-25",
+//                 lightBg: "bg-success-100",
+//                 title: "text-success-900",
+//                 subText: "text-success-700",
+//             };
+//
+//         default:
+//             return {
+//                 bg: "bg-green-25",
+//                 lightBg: "bg-green-100",
+//                 title: "text-green-900",
+//                 subText: "text-green-700",
+//             };
+//     }
+// }
 
-export function getAccountTypeColors(type: AccountTypes) {
-    switch (type) {
-        case "depository":
-            return {
-                bg: "bg-blue-25",
-                lightBg: "bg-blue-100",
-                title: "text-blue-900",
-                subText: "text-blue-700",
-            };
+// export function countTransactionCategories(
+//     transactions: Transaction[]
+// ): CategoryCount[] {
+//     const categoryCounts: { [category: string]: number } = {};
+//     let totalCount = 0;
+//
+//     // Iterate over each transaction
+//     transactions &&
+//     transactions.forEach((transaction) => {
+//         // Extract the category from the transaction
+//         const category = transaction.category;
+//
+//         // If the category exists in the categoryCounts object, increment its count
+//         if (categoryCounts.hasOwnProperty(category)) {
+//             categoryCounts[category]++;
+//         } else {
+//             // Otherwise, initialize the count to 1
+//             categoryCounts[category] = 1;
+//         }
+//
+//         // Increment total count
+//         totalCount++;
+//     });
+//
+//     // Convert the categoryCounts object to an array of objects
+//     const aggregatedCategories: CategoryCount[] = Object.keys(categoryCounts).map(
+//         (category) => ({
+//             name: category,
+//             count: categoryCounts[category],
+//             totalCount,
+//         })
+//     );
+//
+//     // Sort the aggregatedCategories array by count in descending order
+//     aggregatedCategories.sort((a, b) => b.count - a.count);
+//
+//     return aggregatedCategories;
+// }
 
-        case "credit":
-            return {
-                bg: "bg-success-25",
-                lightBg: "bg-success-100",
-                title: "text-success-900",
-                subText: "text-success-700",
-            };
-
-        default:
-            return {
-                bg: "bg-green-25",
-                lightBg: "bg-green-100",
-                title: "text-green-900",
-                subText: "text-green-700",
-            };
-    }
-}
-
-export function countTransactionCategories(
-    transactions: Transaction[]
-): CategoryCount[] {
-    const categoryCounts: { [category: string]: number } = {};
-    let totalCount = 0;
-
-    // Iterate over each transaction
-    transactions &&
-    transactions.forEach((transaction) => {
-        // Extract the category from the transaction
-        const category = transaction.category;
-
-        // If the category exists in the categoryCounts object, increment its count
-        if (categoryCounts.hasOwnProperty(category)) {
-            categoryCounts[category]++;
-        } else {
-            // Otherwise, initialize the count to 1
-            categoryCounts[category] = 1;
-        }
-
-        // Increment total count
-        totalCount++;
-    });
-
-    // Convert the categoryCounts object to an array of objects
-    const aggregatedCategories: CategoryCount[] = Object.keys(categoryCounts).map(
-        (category) => ({
-            name: category,
-            count: categoryCounts[category],
-            totalCount,
-        })
-    );
-
-    // Sort the aggregatedCategories array by count in descending order
-    aggregatedCategories.sort((a, b) => b.count - a.count);
-
-    return aggregatedCategories;
-}
-
-export function extractCustomerIdFromUrl(url: string) {
-    // Split the URL string by '/'
-    const parts = url.split("/");
-
-    // Extract the last part, which represents the customer ID
-    const customerId = parts[parts.length - 1];
-
-    return customerId;
-}
+// export function extractCustomerIdFromUrl(url: string) {
+//     // Split the URL string by '/'
+//     const parts = url.split("/");
+//
+//     // Extract the last part, which represents the customer ID
+//     const customerId = parts[parts.length - 1];
+//
+//     return customerId;
+// }
 
 export function encryptId(id: string) {
     return btoa(id);
@@ -218,13 +218,16 @@ const passwordSchema = z.string()
     // );
 
 
-export const formSchema = (type: string) => z.object({
 
+
+export const formSchema = (type: string, licenseType: string = 'no') => z.object({
+    // password: passwordSchema,
     // common
     name: z.string().min(1, "Name is required"),
     id: z.string().optional(),
     purchaseNotes: z.string().optional(),
     //asset
+    assetName: type === 'asset' ? z.string().min(1, "Asset name is required") : z.string().optional(),
     brand: type === 'asset' ? z.string().min(1, "Brand is required") : z.string().optional(),
     model:  type === 'asset' ? z.string().min(1, "Model is required") : z.string().optional(),
     serialNumber: type === 'asset' ? z.string().min(1, "Serial number is required") : z.string().optional(),
@@ -233,21 +236,24 @@ export const formSchema = (type: string) => z.object({
         .regex(/^\d+(\.\d{1,2})?$/, "Amount must be a number")
         .min(1, "Amount is too short") : z.string().optional(),
 
+    newLicenseName:  z.string().optional(),
+    existingLicenseName:  z.string().optional(),
 
-    issuedDate: type === 'license' ? z.string().min(0, 'Issued date is required') : z.string().optional(),
-    expirationDate: type === 'license' ? z.string().min(0, 'Expiration date is required') : z.string().optional(),
-    key: type === 'license' ? z.string().min(1, "Key is required") : z.string().optional(),
-    //
+
+    key:  z.string().optional(),
+    issuedDate:  z.string().optional(),
+    expirationDate:  z.string().optional(),
+    // //
     // // sign-up & sign-in
-    email: type === 'sign-up' ? z.string().email("Invalid email").min(1, "Email is required") : z.string().optional(),
-    password: type === 'sign-up'  ?  passwordSchema : z.string().optional(),
-
-    // // signup - register
-    repeatPassword: type === 'sign-up'  ? z.string().min(1, "Password is required") : z.string().optional(),
-    firstName: type === 'sign-up' ? z.string().min(1, "First name is required") : z.string().optional(),
-    lastName: type === 'sign-up' ? z.string().min(1, "Last name is required") : z.string().optional(),
-    phoneNumber: type === 'sign-up' ? z.string().min(1, "Phone number is required") : z.string().optional(),
-    companyName: type === 'sign-up' ? z.string().min(1, "Company name is required") : z.string().optional(),
+    // email: type === 'sign-up' ? z.string().email("Invalid email").min(1, "Email is required") : z.string().optional(),
+    // password: type === 'sign-up'  ?  passwordSchema : z.string().optional(),
+    //
+    // // // signup - register
+    // repeatPassword: type === 'sign-up'  ? z.string().min(1, "Password is required") : z.string().optional(),
+    // firstName: type === 'sign-up' ? z.string().min(1, "First name is required") : z.string().optional(),
+    // lastName: type === 'sign-up' ? z.string().min(1, "Last name is required") : z.string().optional(),
+    // phoneNumber: type === 'sign-up' ? z.string().min(1, "Phone number is required") : z.string().optional(),
+    // companyName: type === 'sign-up' ? z.string().min(1, "Company name is required") : z.string().optional(),
 })
 
 export function filterColumns<T>(data: T[], columnsToExclude: (keyof T)[]): Partial<T>[] {

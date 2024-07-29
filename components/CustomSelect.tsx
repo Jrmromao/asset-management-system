@@ -25,7 +25,7 @@ interface CustomInputProps {
     name: FieldPath<z.infer<typeof formSchema>>,
     label: string,
     placeholder: string,
-    data: Category[]
+    data: Category[] | License[]
 }
 
 const CustomSelect = ({control, name, label, placeholder, data}: CustomInputProps) => {

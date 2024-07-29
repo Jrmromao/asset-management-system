@@ -46,7 +46,7 @@ declare type User = {
 declare type Asset = {
     id?: number;
     name: string;
-    assigneeId: string;
+    assigneeId?: string;
     categoryId: number;
     brand: string;
     model: string;
@@ -54,6 +54,7 @@ declare type Asset = {
     purchasePrice: number;
     certificateUrl?: string;
     licenceUrl?: string;
+    license?: License;
     serialNumber: string;
     createdAt?: Date;
     updatedAt?: Date;
@@ -67,26 +68,27 @@ declare type Category = {
     updatedAt?: Date;
 };
 
-declare type LicenseType = {
-    id?: string;
+declare type License = {
+    id?: int;
     name: string;
     key: string;
     issuedDate: Date;
     expirationDate: Date;
+    licenseUrl: string;
     createdAt?: Date;
     updatedAt?: Date;
 };
 
-declare type Bank = {
-    $id: string;
-    accountId: string;
-    bankId: string;
-    accessToken: string;
-    fundingSourceUrl: string;
-    userId: string;
-    shareableId: string;
-};
-
+/**
+ *   id             Int
+ *   name           String
+ *   key            String
+ *   issuedDate     DateTime
+ *   expirationDate DateTime
+ *   userId         String?
+ *   createdAt      DateTime
+ *   updatedAt      DateTime
+ */
 
 
 declare interface RecentTransactionsProps {
@@ -120,7 +122,7 @@ declare interface CategoryTableProps {
 }
 
 declare interface LicenseTableProps {
-    licenses: LicenseType[];
+    licenses: License[];
 }
 
 

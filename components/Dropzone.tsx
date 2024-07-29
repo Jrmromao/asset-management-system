@@ -5,6 +5,7 @@ import {FormControl, FormLabel, FormMessage} from "@/components/ui/form";
 
 interface IProps {
     label?: string
+    docType?: string
 }
 
 const Dropzone: React.FC<IProps> = ({label}) => {
@@ -20,6 +21,7 @@ const Dropzone: React.FC<IProps> = ({label}) => {
     return (<>
             <div className="">
                 <div className={'flex w-full flex-col'}>
+                    <FormLabel className={'form-label'}>{label}</FormLabel>
                     <div {...getRootProps()}  className="flex items-center border border-gray-300 rounded-md p-2 cursor-pointer">
                         <FormControl>
                             <Input

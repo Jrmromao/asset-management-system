@@ -4,7 +4,7 @@ import React, {useEffect, useState} from 'react'
 import HeaderBox from "@/components/HeaderBox";
 import {get, remove, findById} from "@/lib/actions/assets.actions";
 import CustomAssetTable from "@/components/tables/CustomAssetTable";
-import {AssetDialog} from "@/components/modals/AssetDialog";
+// import {AssetDialog} from "@/components/modals/AssetDialog";
 import {useDialogStore} from "@/lib/stores/store";
 import {Button} from "@/components/ui/button";
 import {useAssetStore} from "@/lib/stores/assetStore";
@@ -59,13 +59,13 @@ const Assets = () => {
                     subtext="Manage your assets."
                 />
             </div>
-            <AssetDialog open={isOpen} onOpenChange={closeDialog}/>
+            {/*<AssetDialog open={isOpen} onOpenChange={closeDialog}/>*/}
             <div className="space-y-6">
                 <section className="flex">
                     <div className="flex justify-end">
                         <Button
                             variant={'link'}
-                            onClick={() => openDialog()}>Add Asset
+                            onClick={() => navigate.push('/assets/create')}>Add Asset
                         </Button>
                         <Button
                             variant={"link"}
@@ -80,8 +80,6 @@ const Assets = () => {
                 </section>
             </div>
 
-
-            <AssetWizard />
 
         </div>
     )

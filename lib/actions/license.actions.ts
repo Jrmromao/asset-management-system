@@ -7,7 +7,7 @@ const prisma = new PrismaClient()
 
 import {parseStringify} from "@/lib/utils";
 
-export const create = async (data: {
+export const insert = async (data: {
     key: string;
     expirationDate: Date;
     issuedDate: Date;
@@ -31,7 +31,7 @@ export const create = async (data: {
         await prisma.$disconnect()
     }
 }
-export const getLicenses = async () => {
+export const getAll = async () => {
     try {
 
 
@@ -61,15 +61,7 @@ export const findById = async (id: number) => {
         await prisma.$disconnect()
     }
 }
-
-// adding a new  comment
-export const update = async (data: {
-    id: number;
-    key: string;
-    expirationDate: Date;
-    issuedDate: Date;
-    name: string;
-}, id: number) => {
+export const update = async (data: License, id: number) => {
     try {
         const licenseTool = await prisma.license.update({
             where: {

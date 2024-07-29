@@ -7,7 +7,7 @@ import { usePathname } from "next/navigation"
 import Footer from "@/components/Footer";
 import {useSession} from "next-auth/react";
 
-const Sidebar = ({  }: SiderbarProps) => {
+const Sidebar = () => {
 
     const pathName = usePathname()
     const {data    } = useSession()

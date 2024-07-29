@@ -50,10 +50,6 @@ const CustomAssetTable = ({assets, findById, deleteAsset}: AssetTableProps) => {
                             <TableRow key={asset.id}
                                       onClick={() => { navigate.push(`/assets/view/?id=${asset.id}`)}}
                                       className={`cursor-pointer bg-[#F6FEF9]!over:bg-none !border-b-DEFAULT border-b-[1px]`}>
-                                {/*<div
-                                // onClick={() => {
-                                //     navigate.push(`/assets/view/?id=${asset.id}`)
-                                {/*}}>*/}
                                     <TableCell className="pl-2 pr-10">
                                         {asset?.name}
                                     </TableCell>

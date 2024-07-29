@@ -41,7 +41,7 @@ const LicensesTable = ({licenses = []}: LicenseTableProps) => {
             </TableHeader>
             <TableBody>
 
-                {licenses?.map((license: LicenseType) => {
+                {licenses?.map((license: License) => {
                     const createdAt = formatDateTime(license.createdAt!);
                     return (
                         <TableRow key={license.id} className={` bg-[#F6FEF9]!over:bg-none !border-b-DEFAULT`}>

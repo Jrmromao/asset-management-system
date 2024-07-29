@@ -8,15 +8,15 @@ const CreateNew = () => {
 
     return (
         <div className="assets">
-            <div className="transactions-header">
+            <div>
                 <HeaderBox
                     title="Create new asset"
                     subtext="Fill the form to create new asset."
                 />
             </div>
-            <div className="">
+
                     <AssetForm />
-            </div>
+
         </div>
 
     )

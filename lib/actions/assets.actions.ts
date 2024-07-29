@@ -3,39 +3,46 @@
 import {prisma} from "@/app/db";
 import {parseStringify} from "@/lib/utils";
 
-export const create = async (data: {
-    serialNumber: string;
-    datePurchased: string;
-    name: string;
-    model: string;
-    purchasePrice: number;
-    brand: string;
-    categoryId: string | number
-}) => {
 
-    console.log(data)
 
+export const create = async (data: Asset) => {
     try {
-        let prismaAssetClient = await prisma.asset.create({
+        const { license } = data;
+
+        const licenseData = license?.id
+            ? { connect: { id: license.id } } // use existing license
+            : {
+                create: {
+                    name: license?.name!,
+                    key: license?.key!,
+                    issuedDate: license?.issuedDate!,
+                    expirationDate: license?.expirationDate!,
+                    licenseUrl: license?.licenseUrl
+                }
+            };
+
+        await prisma.asset.create({
             data: {
                 name: data.name,
+                price: data.purchasePrice,
                 brand: data.brand,
                 model: data.model,
-                price: data.purchasePrice,
                 serialNumber: data.serialNumber,
-                licenceUrl: '',
-                certificateUrl: '',
-                categoryId: Number(data.categoryId),
-                createdAt: new Date(),
-                updatedAt: new Date()
-            }
+                category: {
+                    connect: {
+                        id: Number(data.categoryId)
+                    }
+                },
+                license: licenseData
+            },
         });
 
-
     } catch (error) {
-        console.log(error)
+        console.error('Error creating asset:', error);
     }
 }
+
+
 export const get = async () => {
     try {
         const assets = await prisma.asset.findMany({

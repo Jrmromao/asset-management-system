@@ -9,12 +9,12 @@ import {Form,} from "@/components/ui/form"
 import {zodResolver} from "@hookform/resolvers/zod";
 import {z} from "zod";
 import {formSchema as authFormSchema} from "@/lib/utils";
-import CustomInput from "@/components/forms/CustomInput";
 import {Loader2} from "lucide-react";
 import {registerCompany} from "@/lib/actions/company.actions";
 import CustomButton from "@/components/CustomButton";
 import {signIn} from "next-auth/react";
 import {FaGithub, FaGoogle} from "react-icons/fa";
+import CustomInput from "@/components/CustomInput";
 
 const AuthForm = ({type}: { type: string }) => {
     const [isLoading, setIsLoading] = useState(false)
