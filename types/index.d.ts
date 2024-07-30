@@ -26,20 +26,35 @@ declare type LoginUser = {
 };
 
 declare type User = {
-    $id: string;
+    id?: string;
     email: string;
-    userId: string;
-    dwollaCustomerUrl: string;
-    dwollaCustomerId: string;
     firstName: string;
     lastName: string;
-    name: string
-    address1: string;
-    city: string;
-    state: string;
-    postalCode: string;
-    dateOfBirth: string;
-    ssn: string;
+    phoneNumber: string;
+    createdAt?: Date;
+    updatedAt?: Date;
+    roleId?: number;
+    companyId?: number;
+    role?: Role;
+    company?: Company;
+};
+
+declare type RegUser = {
+    email: string;
+    password: string,
+    roleId: number,
+    companyId: number,
+    firstName?: string,
+    lastName?: string,
+    phoneNumber?: string
+};
+
+declare type Role = {
+    id?: int;
+    name: string;
+    note: string;
+    createdAt: Date;
+    updatedAt: Date;
 };
 
 
@@ -79,16 +94,6 @@ declare type License = {
     updatedAt?: Date;
 };
 
-/**
- *   id             Int
- *   name           String
- *   key            String
- *   issuedDate     DateTime
- *   expirationDate DateTime
- *   userId         String?
- *   createdAt      DateTime
- *   updatedAt      DateTime
- */
 
 
 declare interface RecentTransactionsProps {

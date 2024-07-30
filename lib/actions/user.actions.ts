@@ -6,15 +6,7 @@ import {signUp as CognitoSignUp} from "@/services/aws/Cognito";
 
 const prisma = new PrismaClient()
 
-export const registerUser = async (data: {
-    email: string;
-    password: string,
-    roleId: number,
-    companyId: number,
-    firstName?: string,
-    lastName?: string,
-    phoneNumber?: string
-}) => {
+export const registerUser = async (data: RegUser) => {
     try {
         const cognitoRegisterResult = await CognitoSignUp({
             clientId: process.env.COGNITO_CLIENT_ID!,
@@ -46,3 +38,80 @@ export const registerUser = async (data: {
         await prisma.$disconnect()
     }
 }
+
+
+export const insert = async (userData: User) => {
+    try {
+        await prisma.user.create({
+            data: {
+                id: userData.id,
+                roleId: 0,
+                companyId: 0,
+                email: userData.email,
+                firstName: userData.firstName,
+                lastName: userData.lastName,
+                phoneNumber: userData.phoneNumber,
+                createdAt: new Date(),
+                updatedAt: new Date()
+            }
+        })
+    } catch (error) {
+        console.log(error)
+    } finally {
+        await prisma.$disconnect()
+    }
+}
+export const getAll = async () => {
+    try {
+
+
+        const licenses = await prisma.user.findMany();
+
+
+        return parseStringify(licenses);
+    } catch (error) {
+        console.log(error)
+    } finally {
+        await prisma.$disconnect()
+    }
+}
+export const findById = async (id: number) => {
+    try {
+        const licenseTool = await prisma.user.findFirst({
+            where: {
+                id: String(id)
+            }
+        });
+        return parseStringify(licenseTool);
+    } catch (error) {
+        console.log(error)
+    } finally {
+        await prisma.$disconnect()
+    }
+}
+export const update = async (data: User, id: number) => {
+    try {
+        const licenseTool = await prisma.user.update({
+            where: {
+                id: String(id)
+            },
+            data: {
+                roleId: data.roleId,
+                companyId: data.companyId,
+                email: data.email,
+                firstName: data.firstName,
+                lastName: data.lastName,
+                phoneNumber: data.phoneNumber,
+            }
+        });
+        return parseStringify(licenseTool);
+    } catch (error) {
+        console.log(error)
+    } finally {
+        await prisma.$disconnect()
+    }
+}
+
+
+
+

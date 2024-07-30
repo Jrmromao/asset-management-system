@@ -42,7 +42,6 @@ export const create = async (data: Asset) => {
     }
 }
 
-
 export const get = async () => {
     try {
         const assets = await prisma.asset.findMany({

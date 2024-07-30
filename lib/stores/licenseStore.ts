@@ -6,11 +6,11 @@ import {getAll, insert, findById, update} from '@/lib/actions/license.actions';
 interface IAssetStore {
     licenses: License[];
     loading: boolean;
-    createLicense: (asset: License) => void;
-    updateLicense: (id: number, updatedAsset: License) => void;
+    create: (asset: License) => void;
+    update: (id: number, updatedAsset: License) => void;
     // deleteLicense: (id: number) => void;
-    getLicenseById: (id: number) => License | null;
-    fetchLicenses: () => void;
+    findById: (id: number) => License | null;
+    getAll: () => void;
 }
 
 
@@ -19,7 +19,7 @@ export const useLicenseStore = create(persist<IAssetStore>(
         licenses: [],
         loading: false,
 
-        fetchLicenses: async () => {
+        getAll: async () => {
             set({loading: true});
             getAll().then(licenses => {
                 set({licenses});
@@ -30,7 +30,7 @@ export const useLicenseStore = create(persist<IAssetStore>(
             });
         },
 
-        createLicense: async (license: License) => {
+        create: async (license: License) => {
             try {
                 await insert(license);
                 set(
@@ -46,7 +46,7 @@ export const useLicenseStore = create(persist<IAssetStore>(
         },
 
 
-        updateLicense: (id: number, updatedLicense: License) => {
+        update: (id: number, updatedLicense: License) => {
             set(
                 produce((state) => {
 
@@ -61,7 +61,7 @@ export const useLicenseStore = create(persist<IAssetStore>(
         },
 
 
-        getLicenseById: (id: number) => {
+        findById: (id: number) => {
 
             const license = get().licenses.find((license) => license.id === id);
             if (!license) return null

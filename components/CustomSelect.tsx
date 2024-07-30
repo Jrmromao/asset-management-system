@@ -39,13 +39,15 @@ const CustomSelect = ({control, name, label, placeholder, data}: CustomInputProp
                     <div className={'flex w-full flex-col'}>
                         <FormControl>
                             <Select onValueChange={field.onChange}>
-                                <SelectTrigger className="w-full input-class">
-                                    <SelectValue placeholder={placeholder}/>
+                                <SelectTrigger className="w-full input-class text-gray-100">
+                                    <div className={'text-gray-500'}>
+                                        <SelectValue placeholder={placeholder}/>
+                                    </div>
                                 </SelectTrigger>
                                 <SelectContent className="w-full bg-white">
                                     <SelectGroup>
                                         {data?.map((option) => (
-                                            <SelectItem  key={option.id} value={option.name!}  className="w-full cursor-pointer" >
+                                            <SelectItem  key={option.id} value={option.name!}>
                                                 {option.name}
                                             </SelectItem>
                                         ))}

@@ -6,9 +6,9 @@ import {createCategory, getCategories, remove} from '@/lib/actions/category.acti
 interface ICategoryStore {
     categories: Category[];
     loading: boolean;
-    createCategory: (category: Category) => void;
-    deleteCategory: (id: number) => void;
-    fetchCategories: () => void;
+    create: (category: Category) => void;
+    delete: (id: number) => void;
+    getAll: () => void;
 }
 
 
@@ -17,7 +17,7 @@ export const useCategoryStore = create(persist<ICategoryStore>(
         categories: [],
         loading: false,
 
-        fetchCategories: async () => {
+        getAll: async () => {
             set({loading: true});
             getCategories().then(categories => {
                 set({categories});
@@ -27,7 +27,7 @@ export const useCategoryStore = create(persist<ICategoryStore>(
                 set({loading: false});
             });
         },
-        createCategory: async (category: Category) => {
+        create: async (category: Category) => {
             try {
                 await createCategory(category);
                 set(
@@ -41,7 +41,7 @@ export const useCategoryStore = create(persist<ICategoryStore>(
                 throw error;
             }
         },
-        deleteCategory: (id: number) => {
+        delete: (id: number) => {
             set(
                 produce((state) => {
 
