@@ -1,22 +1,17 @@
 import React from 'react'
 import {FormControl, FormField, FormLabel, FormMessage} from "@/components/ui/form";
 import {Input} from "@/components/ui/input";
-import {Control, FieldPath} from 'react-hook-form'
-import {z} from "zod";
-import { formSchema as myFormSchema} from "@/lib/utils";
 
-const formSchema = myFormSchema('')
 
 interface CustomInputProps {
-    control: Control<z.infer<typeof formSchema>>,
-    name: FieldPath<z.infer<typeof formSchema>>,
-    label: string,
-    placeholder: string,
-    type: string
+    label: string;
+    placeholder?: string;
+    name: string;
+    control: any;
+    type: string;
 }
 
-
-const CustomInput = ({control, name, label, placeholder, type}: CustomInputProps) => {
+const CustomInput = ({control, name, label, placeholder, type, ...rest}: CustomInputProps) => {
     return (
         <FormField
             control={control}

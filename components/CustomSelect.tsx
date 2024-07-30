@@ -17,16 +17,14 @@ import {
 } from "@/components/ui/select";
 
 
-const formSchema = myFormSchema('')
-
-
 interface CustomInputProps {
-    control: Control<z.infer<typeof formSchema>>,
-    name: FieldPath<z.infer<typeof formSchema>>,
+    control: any,
+    name: string,
     label: string,
     placeholder: string,
     data: Category[] | License[]
 }
+
 
 const CustomSelect = ({control, name, label, placeholder, data}: CustomInputProps) => {
     return (

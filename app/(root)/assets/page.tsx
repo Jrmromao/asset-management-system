@@ -1,24 +1,20 @@
 'use client'
 
-import React, {useEffect, useState} from 'react'
+import React, {useEffect} from 'react'
 import HeaderBox from "@/components/HeaderBox";
-import {get, remove, findById} from "@/lib/actions/assets.actions";
 import CustomAssetTable from "@/components/tables/CustomAssetTable";
-// import {AssetDialog} from "@/components/modals/AssetDialog";
 import {useDialogStore} from "@/lib/stores/store";
 import {Button} from "@/components/ui/button";
 import {useAssetStore} from "@/lib/stores/assetStore";
-import {a} from "@aws-amplify/data-schema";
-import CustomTable from "@/components/tables/CustomTable";
 import {useRouter} from "next/navigation";
 import {filterColumns, renameColumns} from "@/lib/utils";
-import AssetWizard from "@/components/Wizard/AssetWizard";
 
 const Assets = () => {
 
     const [openDialog, closeDialog, isOpen] = useDialogStore(state => [state.onOpen, state.onClose, state.isOpen])
 
     const [assets, loading, fetchAssets, getAssetById, deleteAsset] = useAssetStore((state) => [state.assets, state.loading, state.fetchAssets, state.getAssetById, state.deleteAsset,]);
+
 
 
     const navigate = useRouter()
@@ -28,6 +24,7 @@ const Assets = () => {
         name: "name",
         purchasePrice: "Price",
         id: "id",
+        license: "License",
         createdAt: "Created At",
         updatedAt: "updatedAt",
         assigneeId: "assigneeId",
@@ -59,7 +56,6 @@ const Assets = () => {
                     subtext="Manage your assets."
                 />
             </div>
-            {/*<AssetDialog open={isOpen} onOpenChange={closeDialog}/>*/}
             <div className="space-y-6">
                 <section className="flex">
                     <div className="flex justify-end">

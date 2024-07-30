@@ -9,7 +9,7 @@ export const create = async (data: {
     action: string;
     entity: string;
     entityId: number;
-    userId: number;
+    userId: string;
     organizationId: number;
 
 }) => {
@@ -21,7 +21,7 @@ export const create = async (data: {
                 entity: data.entity,
                 entityId: data.entityId,
                 userId: data.userId,
-                organizationId: data.organizationId,
+                companyId: data.organizationId,
                 createdAt: new Date(),
             }
         })
@@ -38,7 +38,7 @@ export const findAllByOrganization = async (organizationId: number) => {
 
         const auditLog = await prisma.auditLog.findMany({
             where: {
-                organizationId: organizationId
+                companyId: organizationId
             }, include: {
                 user: true,
             }

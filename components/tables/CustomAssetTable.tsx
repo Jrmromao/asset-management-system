@@ -22,7 +22,8 @@ const CustomAssetTable = ({assets, findById, deleteAsset}: AssetTableProps) => {
         model: "Model",
         brand: "Brand",
         serialNumber: "Serial Number",
-        category: "Category"
+        category: "Category",
+        license: ""
     };
     const filteredData = filterColumns(assets, ['id', 'updatedAt', 'categoryId', 'datePurchased', 'certificateUrl', 'assigneeId', 'purchasePrice', 'licenceUrl']);
     const renamedData = renameColumns(filteredData, columnMappings);

@@ -8,12 +8,11 @@ import {z} from "zod";
 import {formSchema as myFormSchema} from "@/lib/utils";
 
 
-const formSchema = myFormSchema('')
 
 
 interface CustomInputProps {
-    control: Control<z.infer<typeof formSchema>>,
-    name: FieldPath<z.infer<typeof formSchema>>,
+    control: any,
+    name: string,
     label: string,
     placeholder: string,
 }

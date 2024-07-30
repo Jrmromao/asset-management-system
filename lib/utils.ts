@@ -102,6 +102,7 @@ export function formUrlQuery({params, key, value}: UrlQueryParams) {
         {skipNull: true}
     );
 }
+
 //
 // export function getAccountTypeColors(type: AccountTypes) {
 //     switch (type) {
@@ -200,60 +201,53 @@ export const getTransactionStatus = (date: Date) => {
 const asset = ['asset']
 const common = ['asset', 'category', 'license']
 const categoryLicense = ['asset', 'category', 'license']
-const license = [ 'license']
+const license = ['license']
 const signupSignin = ['sign-in', 'sign-up']
 const signup = ['sign-un']
 
 
 const passwordSchema = z.string()
-    .min(8, { message: "Password must be at least 8 characters long" })
-    .max(20, { message: "Password must not exceed 20 characters" })
-    // .refine(
-    //     (value) =>
-    //         /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/.test(value),
-    //     {
-    //         message:
-    //             "Password must include at least one uppercase letter, one lowercase letter, one number, and one special character (@$!%*?&)",
-    //     }
-    // );
+    .min(8, {message: "Password must be at least 8 characters long"})
+    .max(20, {message: "Password must not exceed 20 characters"})
+// .refine(
+//     (value) =>
+//         /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/.test(value),
+//     {
+//         message:
+//             "Password must include at least one uppercase letter, one lowercase letter, one number, and one special character (@$!%*?&)",
+//     }
+// );
 
 
+//      name: '',
+//     brand: '',
+//     model: '',
+//     serialNumber: '',
+//     purchasePrice: '',
+//     category: '',
+//     datePurchased: '',
+//     certificateUrl: '',
+//     licenceUrl: '',
+//     assigneeId: '',
+//     licenseName: '',
+//     key: '',
 
+export const formSchema = () => z.object({
 
-export const formSchema = (type: string, licenseType: string = 'no') => z.object({
-    // password: passwordSchema,
-    // common
-    name: z.string().min(1, "Name is required"),
     id: z.string().optional(),
-    purchaseNotes: z.string().optional(),
-    //asset
-    assetName: type === 'asset' ? z.string().min(1, "Asset name is required") : z.string().optional(),
-    brand: type === 'asset' ? z.string().min(1, "Brand is required") : z.string().optional(),
-    model:  type === 'asset' ? z.string().min(1, "Model is required") : z.string().optional(),
-    serialNumber: type === 'asset' ? z.string().min(1, "Serial number is required") : z.string().optional(),
-    category:   type === 'asset' ? z.string().min(1, "Category is required") : z.string().optional(),
-    purchasePrice: type === 'asset' ? z .string()
+    assetName: z.string().min(1, "Asset name is required"),
+    brand: z.string().min(1, "Brand is required"),
+    model: z.string().min(1, "Model is required"),
+    serialNumber: z.string().min(1, "Serial number is required"),
+    category: z.string().min(1, "Category is required"),
+    purchasePrice: z.string()
         .regex(/^\d+(\.\d{1,2})?$/, "Amount must be a number")
-        .min(1, "Amount is too short") : z.string().optional(),
-
-    newLicenseName:  z.string().optional(),
-    existingLicenseName:  z.string().optional(),
-
-
-    key:  z.string().optional(),
-    issuedDate:  z.string().optional(),
-    expirationDate:  z.string().optional(),
-    // //
-    // // sign-up & sign-in
-    // email: type === 'sign-up' ? z.string().email("Invalid email").min(1, "Email is required") : z.string().optional(),
-    // password: type === 'sign-up'  ?  passwordSchema : z.string().optional(),
-    //
-    // // // signup - register
-    // repeatPassword: type === 'sign-up'  ? z.string().min(1, "Password is required") : z.string().optional(),
-    // firstName: type === 'sign-up' ? z.string().min(1, "First name is required") : z.string().optional(),
-    // lastName: type === 'sign-up' ? z.string().min(1, "Last name is required") : z.string().optional(),
-    // phoneNumber: type === 'sign-up' ? z.string().min(1, "Phone number is required") : z.string().optional(),
-    // companyName: type === 'sign-up' ? z.string().min(1, "Company name is required") : z.string().optional(),
+        .min(1, "Amount is too short"),
+    newLicenseName: z.string().optional(),
+    existingLicenseName: z.string().optional(),
+    key: z.string().min(1, "Key is required"),
+    issuedDate: z.string().min(1, "Issued date is required"),
+    expirationDate: z.string().min(1, "Expiration date is required"),
 })
 
 export function filterColumns<T>(data: T[], columnsToExclude: (keyof T)[]): Partial<T>[] {
@@ -284,7 +278,7 @@ const key = new TextEncoder().encode(secretKey);
 
 export async function encrypt(payload: any) {
     return await new SignJWT(payload)
-        .setProtectedHeader({ alg: "HS256" })
+        .setProtectedHeader({alg: "HS256"})
         .setIssuedAt()
         .setExpirationTime("10 sec from now")
         .sign(key);

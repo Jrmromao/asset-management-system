@@ -22,13 +22,18 @@ const LicenseForm = () => {
     const [setLicenses, updateRefresh] = licenseStore((state) => [state.setLicenses, state.updateRefresh])
     const [date, setDate] = useState<Date>();
 
-    const catFormSchema = categoryFormSchema('category')
+    const catFormSchema = categoryFormSchema()
 
     const form = useForm<z.infer<typeof catFormSchema>>({
         resolver: zodResolver(catFormSchema),
         defaultValues: {
             id: '',
-            name: '',
+            assetName: '',
+            category: '',
+            brand: '',
+            model: '',
+            serialNumber: '',
+            purchasePrice: '',
             key: '',
             issuedDate: '',
             expirationDate: '',

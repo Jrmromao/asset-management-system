@@ -1,8 +1,7 @@
-import { formatAmount } from '@/lib/utils'
 import AnimatedAcounter from './AnimatedAcounter';
 import DoughntChart from './DoughntChart';
 
-const TotalBalanceBox = ({ accounts = [], totalBanks, totalCurrentBalance }: TotlaBalanceBoxProps) => {
+const TotalBalanceBox = ({ accounts = [], totalBanks, totalCurrentBalance }:    { accounts: any[], totalBanks: number, totalCurrentBalance: number }) => {
     return (
         <section className='total-balance'>
             <div className='total-balance-chart'>

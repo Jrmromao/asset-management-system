@@ -3,17 +3,18 @@ import {filterColumns, formatDateTime, renameColumns} from "@/lib/utils";
 import CustomTableCell from "@/components/tables/CustomTableCell";
 import React from "react";
 import {licenseStore} from "@/lib/stores/store";
-import {getLicenses, create, remove, findById} from "@/lib/actions/license.actions";
+import { findById} from "@/lib/actions/license.actions";
 
 
 const LicensesTable = ({licenses = []}: LicenseTableProps) => {
 
 
-    const columnMappings: { createdAt: string; name: string; id: string; key: string; updatedAt: string , issuedDate: string, expirationDate: string, userId: string} = {
+    const columnMappings: { createdAt: string; name: string; id: string; key: string; updatedAt: string , issuedDate: string, expirationDate: string, userId: string, licenseUrl: string} = {
         key: 'Key',
         name: 'Name',
         userId: 'User Id',
         id: "id",
+        licenseUrl: "License URL",
         issuedDate: "Issued Date",
         expirationDate: "Expiration Date",
         createdAt: "Created At",
@@ -68,7 +69,8 @@ const LicensesTable = ({licenses = []}: LicenseTableProps) => {
                                 created at
                             </TableCell>
                             <TableCell className="pl-2 pr-10 capitalize min-w-24">
-                                <CustomTableCell id={Number(license.id)} entity={license} deleteEntity={remove} updateEntity={() => {}} viewEntity={findById}/>
+                                test
+                                {/*<CustomTableCell id={Number(license.id)} entity={license} deleteEntity={remove} updateEntity={() => {}} viewEntity={findById}/>*/}
                             </TableCell>
                         </TableRow>
                     )

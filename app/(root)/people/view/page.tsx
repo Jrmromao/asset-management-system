@@ -46,7 +46,7 @@ const View = () => {
                                         </div>
                                         <div className="p-4">
                                             <h2 className="text-gray-500 mb-2">Price</h2>
-                                            <p className="font-semibold text-gray-600">{asset?.price}</p>
+                                            <p className="font-semibold text-gray-600">[PRICE]</p>
                                         </div>
                                         <div className="p-4">
                                             <h2 className="text-gray-500 mb-2">Created At</h2>
@@ -64,7 +64,7 @@ const View = () => {
                                         </div>
                                         <div className="p-4">
                                             <h2 className="text-gray-500 mb-2">Location</h2>
-                                            <p className="font-semibold text-gray-600">{asset?.location}</p>
+                                            <p className="font-semibold text-gray-600">[Some Location ID]</p>
                                         </div>
                                         <div className="p-4">
                                             <h2 className="text-gray-500 mb-2">Tag Num</h2>

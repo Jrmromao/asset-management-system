@@ -1,7 +1,6 @@
 'use client'
 import React, { useState } from 'react';
-import AuthForm from "@/components/forms/AuthForm";
-import AssetForm from "@/components/forms/asset/AssetForm";
+import RegisterForm from "@/components/forms/RegisterForm";
 
 // import library components or create your custom styles
 
@@ -14,7 +13,7 @@ function SideDrawer() {
         <>
             <button onClick={toggleDrawer}>Open Drawer</button>
             <div className={`sidedrawer ${isOpen ? 'open' : ''}`}>
-                <AssetForm/>
+
             </div>
             {isOpen && <div className="overlay" onClick={toggleDrawer} />}
         </>

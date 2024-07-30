@@ -4,7 +4,7 @@ import {signOut, useSession} from "next-auth/react";
 import {useRouter} from "next/navigation";
 import Image from "next/image";
 
-const Footer = ({type = 'desktop'}: FooterProps) => {
+const Footer = ({type = 'desktop'}: {type?: 'desktop' | 'mobile'}) => {
     const router = useRouter();
     const {data} = useSession()
 

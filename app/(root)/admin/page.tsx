@@ -14,7 +14,6 @@ import {Tabs, TabsContent, TabsList, TabsTrigger,} from "@/components/ui/tabs"
 import CategoryForm from "@/components/forms/CategoryForm";
 import CategoryTable from "@/components/tables/CategoryTable";
 import React, {useEffect, useMemo, useState} from "react";
-import LicenseForm from "@/components/forms/LicenseForm";
 import LicensesTable from "@/components/tables/LicensesTable";
 import {licenseStore} from "@/lib/stores/store";
 import {useCategoryStore} from "@/lib/stores/categoryStore";
@@ -278,7 +277,7 @@ const Admin = () => {
                                                 </CardDescription>
                                             </CardHeader>
                                             <CardContent>
-                                                <LicenseForm/>
+                                             test
                                             </CardContent>
                                             <CardFooter>
                                             </CardFooter>

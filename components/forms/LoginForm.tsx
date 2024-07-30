@@ -8,7 +8,6 @@ import {useForm} from "react-hook-form";
 import {Form,} from "@/components/ui/form"
 import {zodResolver} from "@hookform/resolvers/zod";
 import {z} from "zod";
-import {formSchema as authFormSchema} from "@/lib/utils";
 import {Loader2} from "lucide-react";
 import {registerCompany} from "@/lib/actions/company.actions";
 import CustomButton from "@/components/CustomButton";
@@ -16,54 +15,47 @@ import {signIn} from "next-auth/react";
 import {FaGithub, FaGoogle} from "react-icons/fa";
 import CustomInput from "@/components/CustomInput";
 
-const AuthForm = ({type}: { type: string }) => {
+const AuthForm = () => {
     const [isLoading, setIsLoading] = useState(false)
     const [user, setUser] = useState(null)
 
-    const formSchema = authFormSchema('')
-    const router = useRouter()
+    const authFormSchema = () => z.object({
+        email: z.string().email("Invalid email"),
+        password: z.string()
+            .min(8, {message: "Password must be at least 8 characters long"})
+            .max(20, {message: "Password must not exceed 20 characters"}),
+
+    });
+
+
+    const formSchema = authFormSchema()
+
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
             email: '',
             password: '',
-            firstName: '',
-            lastName: '',
-            phoneNumber: '',
-            companyName: '',
-            repeatPassword: ''
         },
-    })
+    });
 
+    const router = useRouter()
 
     const onSubmit = async (data: z.infer<typeof formSchema>) => {
         setIsLoading(true)
 
-
         try {
-            if (type === 'sign-up') {
 
-                if (data) {
-                    await registerCompany({
-                        companyName: data?.companyName || '',
-                        email: data.email || '',
-                        password: data.password || '',
-                        phoneNumber: data.phoneNumber || '',
-                        firstName: data.firstName || '',
-                        lastName: data.lastName || '',
-                    }).then(() => {
-                        router.push('/')
-                    })
-                }
-            }
-            if (type === 'sign-in') {
+            if (data.email !== '' && data.password !== '') {
+                console.log(data)
                 const response = await signIn('credentials', {
                     email: data.email,
                     password: data.password,
                     redirect: false
                 })
                 if (response?.ok) {
+                    form.reset()
                     router.push('/')
+
                 }
             }
         } catch (e) {
@@ -82,8 +74,13 @@ const AuthForm = ({type}: { type: string }) => {
                     <h1 className="sidebar-logo">Asset Sea</h1>
                 </Link>
                 <div className={'flex flex-col gap-1 md:gap-3'}>
+
+
                     <h1 className={'text-24 lg:text-36 font-semibold text-gray-900'}>
-                        {user ? 'Link Account' : type === 'sign-in' ? 'Sign In' : 'Sign Up'}
+
+                        {/*{user ? 'Link Account' : type === 'sign-in' ? 'Sign In' : 'Sign Up'}*/}
+
+
                         <p className={'text-16 font-normal text-gray-600'}>
                             {user ? 'Link your account' : 'Please enter your details'}
                         </p>
@@ -99,63 +96,30 @@ const AuthForm = ({type}: { type: string }) => {
 
                     <Form {...form}>
                         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                            {type === 'sign-up' && (
-                                <>
-                                    <div className={''}>
-                                        <CustomInput control={form.control} name={'companyName'} label={'Company Name'}
-                                                     placeholder={'ex: Qlientel'} type={'text'}/>
-                                        <div className={'text-12 text-gray-500 mt-4'}>
-                                            The company name will be used as a domain for your account. For example,
-                                            your account might be qlientel.pdfintel.com
-                                        </div>
-                                    </div>
-                                    <div className={'flex gap-4'}>
-                                        <CustomInput control={form.control} name={'firstName'} label={'First Name'}
-                                                     placeholder={'ex: Joe'} type={'text'}/>
-                                        <CustomInput control={form.control} name={'lastName'} label={'Last Name'}
-                                                     placeholder={'ex: Doe'} type={'text'}/>
-                                    </div>
-                                    <div className={'flex gap-4'}>
-                                        <CustomInput control={form.control} name={'password'} label={'Password'}
-                                                     placeholder={''} type={'text'}/>
-                                        <CustomInput control={form.control} name={'repeatPassword'}
-                                                     label={'Repeat Password'} placeholder={''} type={'text'}/>
-                                    </div>
-                                    <div className={'gap-4'}>
-                                        <CustomInput control={form.control} name={'email'} label={'Email address'}
-                                                     placeholder={'Enter your email'} type={'text'}/>
-                                    </div>
-                                    <div className={'gap-4'}>
-                                        <CustomInput control={form.control} name={'phoneNumber'} label={'Phone Number'}
-                                                     placeholder={'Enter your phone number'} type={'text'}/>
-                                    </div>
-                                </>
-                            )}
+                            <>
 
-                            {type === 'sign-in' && (
-                                <>
-                                    <CustomInput control={form.control} name={'email'}
-                                                 placeholder={'Please enter your email'} label={'Email'} type={'text'}/>
-                                    <CustomInput control={form.control} name={'password'}
-                                                 placeholder={'Please enter your password'} label={'Password'}
-                                                 type={'password'}/>
+                                <CustomInput control={form.control}  {...form.register("email")}
+                                             label={'Email'}
+                                             placeholder={'Enter your email'} type={'text'}/>
+                                <CustomInput control={form.control}  {...form.register("password")}
+                                             label={'Email address'}
+                                             placeholder={'Enter your email'} type={'password'}/>
 
-                                    <Link href={'/auth/forgot-password'} className={'text-12 text-gray-500'}>
-                                        Forgot Password
-                                    </Link>
-                                </>
-                            )}
+                                <Link href={'/auth/forgot-password'} className={'text-12 text-gray-500'}>
+                                    Forgot Password
+                                </Link>
+                            </>
+
                             <div className={'flex flex-col gap-4'}>
                                 <Button type="submit" className={'form-btn'} disabled={isLoading}>
-                                    {isLoading ? (<><Loader2 size={20}
-                                                             className={'animate-spin'}/>&nbsp; Loading... </>) : type === 'sign-in' ? 'Sign In' : 'Sign Up'}
+                                    {isLoading ? (<><Loader2 size={20} className={'animate-spin'}/>&nbsp; Loading... </>) :  'Sign In'}
                                 </Button>
                             </div>
                         </form>
                     </Form>
 
 
-                    {type === 'sign-in' && (
+
                         <>
                             <div className="relative">
                                 <div className="absolute inset-0 flex items-center" aria-hidden="true">
@@ -186,13 +150,13 @@ const AuthForm = ({type}: { type: string }) => {
                                 />
                             </div>
                         </>
-                    )}
+
 
 
                     <footer className={'flex justify-center gap-1'}>
-                        <p>{type === 'sign-in' ? 'Don\'t have an account?' : 'Already have an account?'}</p>
-                        <Link href={type === 'sign-in' ? '/sign-up' : '/sign-in'} className={'form-link'}>
-                            {type === 'sign-up' ? 'Sign In' : 'Sign Up'}
+                        <p>{'Don\'t have an account?'}</p>
+                        <Link href={ '/sign-up'} className={'form-link'}>
+                            Register
                         </Link>
                     </footer>
                 </>

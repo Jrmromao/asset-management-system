@@ -1,63 +1,78 @@
 'use client'
-import React, {useState} from 'react'
+import React, {useEffect, useState} from 'react'
 import {z} from "zod"
 import {zodResolver} from "@hookform/resolvers/zod"
 import {useForm} from "react-hook-form"
 import {Button} from "@/components/ui/button"
 import {Form,} from "@/components/ui/form"
-import {formSchema as assetFormSchema} from "@/lib/utils";
 import {useRouter} from "next/navigation";
 import {Loader2} from "lucide-react";
 import Dropzone from "@/components/Dropzone";
 import {Checkbox} from "@/components/ui/checkbox";
 import {Label} from "@/components/ui/label";
 import {useAssetStore} from "@/lib/stores/assetStore";
-import CustomInput from "@/components/CustomInput";
 import CustomSelect from "@/components/CustomSelect";
 import {Card} from "@/components/ui/card";
 import {useLicenseStore} from "@/lib/stores/licenseStore";
 import {useCategoryStore} from "@/lib/stores/categoryStore";
+import CustomInput from "@/components/CustomInput";
 
 const AssetForm = () => {
 
-    const [isLoading, setIsLoading] = useState(false)
-    const [user, setUser] = useState(null)
-    const router = useRouter()
-    const [date, setDate] = useState<Date | undefined>(new Date())
-
-    const [licenseQuestion, setLicenseQuestion] = useState('')
-
-    const formSchema = assetFormSchema('asset')
-    z
-    // Zustand Stores
-    const [createAsset] = useAssetStore((state) => [state.createAsset]);
-    const [licenses] = useLicenseStore((state) => [state.licenses]);
-    const [categories] = useCategoryStore((state) => [state.categories]);
-
-
     const INITIAL_VALUES = {
-        name: '',
+        assetName: '',
         brand: '',
         model: '',
         serialNumber: '',
-        purchaseNotes: '',
         purchasePrice: '',
         category: '',
-        datePurchased: '',
-        certificateUrl: '',
-        licenceUrl: '',
-        assigneeId: '',
-        licenseName: '',
+        existingLicenseName: '',
+        newLicenseName: '',
+        issuedDate: '',
+        expirationDate: '',
         key: '',
     }
 
-    const form = useForm<z.infer<typeof formSchema>>({
-        resolver: zodResolver(formSchema),
-        defaultValues: INITIAL_VALUES
+
+    const [isLoading, setIsLoading] = useState(false)
+    const [licenseQuestion, setLicenseQuestion] = useState('')
+
+    const [createAsset] = useAssetStore((state) => [state.createAsset]);
+    const [licenses, fetchLicenses] = useLicenseStore((state) => [state.licenses, state.fetchLicenses]);
+    const [categories] = useCategoryStore((state) => [state.categories]);
+
+
+    useEffect(() => {
+        fetchLicenses()
+    }, []);
+
+    const schema = z.object({
+
+        id: z.string().optional(),
+        assetName: z.string().min(1, "Asset name is required"),
+        brand: z.string().min(1, "Brand is required"),
+        model: z.string().min(1, "Model is required"),
+        serialNumber: z.string().min(1, "Serial number is required"),
+        category: z.string().min(1, "Category is required"),
+        purchasePrice: z.string()
+            .regex(/^\d+(\.\d{1,2})?$/, "Amount must be a number")
+            .min(1, "Amount is too short"),
+
+
+        newLicenseName: licenseQuestion === 'no' ? z.string().min(1, "License name is required") : z.string().optional(),
+        existingLicenseName: licenseQuestion === 'yes' ? z.string().min(1, "License name is required") : z.string().optional(),
+        key: licenseQuestion === 'no' ? z.string().min(1, "Key is required") : z.string().optional(),
+        issuedDate: licenseQuestion === 'no' ? z.string().min(1, "Issued date is required") : z.string().optional(),
+        expirationDate: licenseQuestion === 'no' ? z.string().min(1, "Expiration date is required") : z.string().optional()
     })
 
 
-    const onSubmit = async (data: z.infer<typeof formSchema>) => {
+    const form = useForm<z.infer<typeof schema>>({
+        resolver: zodResolver(schema),
+        defaultValues: INITIAL_VALUES
+    })
+
+    const onSubmit = async (data: z.infer<typeof schema>) => {
         setIsLoading(true)
         try {
             const categoryId = Number(categories.find(c => c.name === data.category?.toString())?.id)
@@ -65,10 +80,8 @@ const AssetForm = () => {
                 ? (licenses.find(l => l.name === data.existingLicenseName)?.id ?? 0)
                 : 0;
 
-
-            console.log(categoryId)
             const assetData: Asset = {
-                name: data.name || '',
+                name: data.assetName || '',
                 brand: data.brand || '',
                 model: data.model || '',
                 categoryId: categoryId,
@@ -77,15 +90,14 @@ const AssetForm = () => {
                 datePurchased: new Date().getDate().toString(),
                 license: {
                     id: licenseId,
-                    name: data.newLicenseName || data.existingLicenseName ||'' ,
+                    name: data.newLicenseName || data.existingLicenseName || '',
                     key: data.key || '',
                     licenseUrl: '',
                     issuedDate: new Date('2023-01-09'),
                     expirationDate: new Date('2026-01-09'),
                 }
             }
-
-
+            console.log(licenses)
             console.log(assetData)
 
             createAsset(assetData)
@@ -109,25 +121,28 @@ const AssetForm = () => {
                         <div className={'flex flex-col md:flex-row gap-4 pt-5'}>
 
                             <div className={'flex-1'}>
-                                <CustomInput control={form.control} name={'assetName'} label={'Asset Name'}
+                                <CustomInput control={form.control}   {...form.register("assetName")}
+                                             label={'Asset Name'}
                                              placeholder={'eg. Keyboard'}
                                              type={'text'}/>
                             </div>
 
                             <div className={'flex-1'}>
-                                <CustomSelect control={form.control} name={'category'} label={'Category'}
+                                <CustomSelect control={form.control}   {...form.register("category")} label={'Category'}
                                               data={categories}
                                               placeholder={'eg. IT Equipment'}/>
                             </div>
                         </div>
                         <div className={'flex flex-col md:flex-row gap-4  pt-5'}>
                             <div className={'flex-1'}>
-                                <CustomInput control={form.control} name={'brand'} label={'Brand'}
+                                <CustomInput control={form.control}  {...form.register("brand")} label={'Brand'}
                                              placeholder={'eg. Apple'}
                                              type={'text'}/>
                             </div>
                             <div className={'flex-1'}>
-                                <CustomInput control={form.control} name={'model'} label={'Model'}
+                                <CustomInput control={form.control}
+                                             {...form.register("model")}
+                                             label={'Model'}
                                              placeholder={'eg. Apple Keyboard'}
                                              type={'text'}/>
                             </div>
@@ -135,12 +150,14 @@ const AssetForm = () => {
                         <div className={'flex flex-col md:flex-row gap-4 pt-5'}>
 
                             <div className={'flex-1'}>
-                                <CustomInput control={form.control} name={'purchasePrice'} label={'Purchase Price'}
+                                <CustomInput control={form.control}   {...form.register("purchasePrice")}
+                                             label={'Purchase Price'}
                                              placeholder={'eg. 1000'} type={'number'}/>
                             </div>
 
                             <div className={'flex-1'}>
-                                <CustomInput control={form.control} name={'serialNumber'} label={'Serial Number'}
+                                <CustomInput control={form.control}   {...form.register("serialNumber")}
+                                             label={'Serial Number'}
                                              placeholder={'eg. 1234'} type={'string'}/>
                             </div>
                         </div>
@@ -157,13 +174,14 @@ const AssetForm = () => {
                         <div className="flex items-center space-x-2">
                             <Label> Yes</Label><Checkbox id="terms" checked={licenseQuestion === 'yes'}
                                                          onClick={() => setLicenseQuestion('yes')}/>
-                            <Label> No</Label> <Checkbox id="terms" checked={licenseQuestion === 'no'}  
+                            <Label> No</Label> <Checkbox id="terms" checked={licenseQuestion === 'no'}
                                                          onClick={() => setLicenseQuestion('no')}/>
                         </div>
 
-                        <CustomSelect control={form.control} name={'existingLicenseName'} label={'License'}
-                                      data={licenses}
-                                      placeholder={'eg. MS Office'}/>
+                        <CustomSelect control={form.control} name={'existingLicenseName'}
+
+                                      label={'License'}
+                                      data={licenses}  placeholder={'eg. MS Office'}/>
 
 
                         <div className={'flex flex-col md:flex-row gap-4 pt-5'}>
