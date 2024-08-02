@@ -6,11 +6,11 @@ import {get as fetch, create as insert, remove, update} from '@/lib/actions/asse
 interface IAssetStore {
     assets: Asset[];
     loading: boolean;
-    createAsset: (asset: Asset) => void;
-    updateAsset: (id: number, updatedAsset: Asset) => void;
-    deleteAsset: (id: number) => void;
-    getAssetById: (id: number) => Asset | null;
-    fetchAssets: () => void;
+    create: (asset: Asset) => void;
+    update: (id: number, updatedAsset: Asset) => void;
+    delete: (id: number) => void;
+    findById: (id: number) => Asset | null;
+    getAll: () => void;
 }
 
 
@@ -19,7 +19,7 @@ export const useAssetStore = create(persist<IAssetStore>(
         assets: [],
         loading: false,
 
-        fetchAssets: async () => {
+        getAll: async () => {
             set({loading: true});
             fetch().then(assets => {
                 set({assets});
@@ -30,7 +30,7 @@ export const useAssetStore = create(persist<IAssetStore>(
             });
         },
 
-        createAsset: async (asset: Asset) => {
+        create: async (asset: Asset) => {
             try {
                 await insert(asset);
                 set(
@@ -46,7 +46,7 @@ export const useAssetStore = create(persist<IAssetStore>(
         },
 
 
-        updateAsset: (id: number, updatedAsset: Asset) => {
+        update: (id: number, updatedAsset: Asset) => {
             set(
                 produce((state) => {
 
@@ -60,7 +60,7 @@ export const useAssetStore = create(persist<IAssetStore>(
             );
         },
 
-        deleteAsset: (id: number) => {
+        delete: (id: number) => {
             set(
                 produce((state) => {
 
@@ -73,7 +73,7 @@ export const useAssetStore = create(persist<IAssetStore>(
             );
         },
 
-        getAssetById: (id: number) => {
+        findById: (id: number) => {
 
             const asset = get().assets.find((asset) => asset.id === id);
             if (!asset) return null

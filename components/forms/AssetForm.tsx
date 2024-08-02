@@ -37,8 +37,8 @@ const AssetForm = () => {
     const [isLoading, setIsLoading] = useState(false)
     const [licenseQuestion, setLicenseQuestion] = useState('')
 
-    const [createAsset] = useAssetStore((state) => [state.createAsset]);
-    const [licenses, fetchLicenses] = useLicenseStore((state) => [state.licenses, state.fetchLicenses]);
+    const [createAsset] = useAssetStore((state) => [state.create]);
+    const [licenses, fetchLicenses] = useLicenseStore((state) => [state.licenses, state.getAll]);
     const [categories] = useCategoryStore((state) => [state.categories]);
 
 
@@ -128,9 +128,21 @@ const AssetForm = () => {
                             </div>
 
                             <div className={'flex-1'}>
-                                <CustomSelect control={form.control}   {...form.register("category")} label={'Category'}
-                                              data={categories}
-                                              placeholder={'eg. IT Equipment'}/>
+
+
+                                <div className={'flex'}>
+                                    <div className="flex-none w-9/12">
+                                        <CustomSelect control={form.control}   {...form.register("category")}
+                                                      label={'Category'}
+                                                      data={categories}
+                                                      placeholder={'eg. IT Equipment'}/>
+                                    </div>
+                                    <div className="flex-none w-3/12 mt-6 ml-8">
+                                        <Button type={'button'} variant={'default'}>Add Category</Button>
+                                    </div>
+                                </div>
+
+
                             </div>
                         </div>
                         <div className={'flex flex-col md:flex-row gap-4  pt-5'}>
@@ -165,23 +177,21 @@ const AssetForm = () => {
 
                         <hr className={'mt-9 border-1'}/>
 
-                        <div className={'mt-6 header-2'}>License Details</div>
+                        <div className={'mt-6 header-2 mb-4'}>License Details</div>
 
 
-                        <p className={'mt-2 text-sm'}>Do you have a license for this asset?</p>
+                        <div className={'flex'}>
+                            <div className="flex-none w-9/12">
+                                <CustomSelect control={form.control} name={'existingLicenseName'}
 
-
-                        <div className="flex items-center space-x-2">
-                            <Label> Yes</Label><Checkbox id="terms" checked={licenseQuestion === 'yes'}
-                                                         onClick={() => setLicenseQuestion('yes')}/>
-                            <Label> No</Label> <Checkbox id="terms" checked={licenseQuestion === 'no'}
-                                                         onClick={() => setLicenseQuestion('no')}/>
+                                              label={'License Name'}
+                                              data={licenses} placeholder={'eg. MS Office'}/>
+                            </div>
+                            <div className="flex-none w-3/12 mt-6 ml-8 end-0">
+                                <Button type={'button'} variant={'default'}>Add a License</Button>
+                            </div>
                         </div>
 
-                        <CustomSelect control={form.control} name={'existingLicenseName'}
-
-                                      label={'License'}
-                                      data={licenses}  placeholder={'eg. MS Office'}/>
 
 
                         <div className={'flex flex-col md:flex-row gap-4 pt-5'}>

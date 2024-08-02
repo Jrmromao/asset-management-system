@@ -17,12 +17,12 @@ export const sidebarLinks = [
         label: "Assets",
         visibleTo: ["admin", "user"],
     },
-    {
+/*    {
         imgURL: "/icons/transaction.svg",
         route: "/licenses",
         label: "Licenses",
         visibleTo: ["admin", "user"],
-    },
+    },*/
     {
         imgURL: "/icons/money-send.svg",
         route: "/consumables",

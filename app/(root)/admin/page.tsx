@@ -30,20 +30,20 @@ const Admin = () => {
 
     const [shouldRefresh, licenses] = licenseStore((state) => [state.shouldRefresh, state.licenses])
 
-    const [categories, deleteCategory, fetchCategories] = useCategoryStore(state => [state.categories, state.deleteCategory, state.fetchCategories])
+    const [categories, deleteCategory, getAll] = useCategoryStore(state => [state.categories, state.delete, state.getAll])
 
-    const categoriesMemo = useMemo(() => categories, [categories, fetchCategories])
+    const categoriesMemo = useMemo(() => categories, [categories, getAll])
 
 
     useEffect(() => {
-        fetchCategories()
+        getAll()
     }, []);
 
 
     useEffect(() => {
 
         if (refresh) {
-            fetchCategories()
+            getAll()
                 setRefresh(false)
         }
 

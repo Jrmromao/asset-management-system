@@ -1,5 +1,5 @@
 'use client'
-import React, { useState } from 'react';
+import React, {useState} from 'react';
 import RegisterForm from "@/components/forms/RegisterForm";
 
 // import library components or create your custom styles
@@ -13,9 +13,8 @@ function SideDrawer() {
         <>
             <button onClick={toggleDrawer}>Open Drawer</button>
             <div className={`sidedrawer ${isOpen ? 'open' : ''}`}>
-
             </div>
-            {isOpen && <div className="overlay" onClick={toggleDrawer} />}
+            {isOpen && <div className="overlay" onClick={toggleDrawer}/>}
         </>
     );
 }

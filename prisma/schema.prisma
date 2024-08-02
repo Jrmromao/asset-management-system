@@ -13,7 +13,7 @@ datasource db {
 }
 
 model User {
-  id          String     @id @default(uuid())
+  id          Int        @id @default(autoincrement())
   email       String     @unique
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
@@ -28,9 +28,11 @@ model User {
 }
 
 model Role {
-  id    Int    @id @default(autoincrement())
-  name  String @unique
-  users User[]
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  users     User[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Company {
@@ -56,19 +58,6 @@ model Asset {
   licenseId    Int?
   category     Category @relation(fields: [categoryId], references: [id])
   license      License? @relation(fields: [licenseId], references: [id])
-}
-
-model License {
-  id             Int      @id @default(autoincrement())
-  name           String
-  key            String
-  issuedDate     DateTime
-  expirationDate DateTime
-  userId         String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  licenseUrl     String?
-  assets         Asset[]
 }
 
 model Category {
@@ -106,7 +95,7 @@ model AuditLog {
   action    String
   entity    String
   entityId  Int?
-  userId    String
+  userId    Int
   details   String?
   createdAt DateTime @default(now())
   companyId Int

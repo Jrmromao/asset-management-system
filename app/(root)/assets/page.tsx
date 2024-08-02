@@ -13,7 +13,7 @@ const Assets = () => {
 
     const [openDialog, closeDialog, isOpen] = useDialogStore(state => [state.onOpen, state.onClose, state.isOpen])
 
-    const [assets, loading, fetchAssets, getAssetById, deleteAsset] = useAssetStore((state) => [state.assets, state.loading, state.fetchAssets, state.getAssetById, state.deleteAsset,]);
+    const [assets, loading, fetchAssets, getAssetById, deleteAsset] = useAssetStore((state) => [state.assets, state.loading, state.getAll, state.findById, state.delete,]);
 
 
 
@@ -52,31 +52,29 @@ const Assets = () => {
         <div className="assets">
             <div className="transactions-header">
                 <HeaderBox
-                    title="Assets"
+                    title="Assets232"
                     subtext="Manage your assets."
                 />
             </div>
-            <div className="space-y-6">
-                <section className="flex">
-                    <div className="flex justify-end">
-                        <Button
-                            variant={'link'}
-                            onClick={() => navigate.push('/assets/create')}>Add Asset
-                        </Button>
-                        <Button
-                            variant={"link"}
+            {/*<div className="space-y-6">*/}
+            {/*    <section className="flex">*/}
+            {/*        <div className="flex justify-end">*/}
+            {/*            <Button*/}
+            {/*                variant={'link'}*/}
+            {/*                onClick={() => navigate.push('/assets/create')}>Add Asset*/}
+            {/*            </Button>*/}
+            {/*            <Button*/}
+            {/*                variant={"link"}*/}
 
-                            onClick={() => openDialog()}>
-                            Export
-                        </Button>
-                    </div>
-                </section>
-                <section className="flex w-full flex-col gap-6">
-                    <CustomAssetTable assets={assets} deleteAsset={deleteAsset} findById={getAssetById}/>
-                </section>
-            </div>
-
-
+            {/*                onClick={() => openDialog()}>*/}
+            {/*                Export*/}
+            {/*            </Button>*/}
+            {/*        </div>*/}
+            {/*    </section>*/}
+            {/*    <section className="flex w-full flex-col gap-6">*/}
+            {/*        <CustomAssetTable assets={assets} deleteAsset={deleteAsset} findById={getAssetById}/>*/}
+            {/*    </section>*/}
+            {/*</div>*/}
         </div>
     )
 }
