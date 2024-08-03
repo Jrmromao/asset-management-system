@@ -3,38 +3,39 @@
 import {prisma} from "@/app/db";
 import {parseStringify} from "@/lib/utils";
 
-export const create = async (data: {
-    datePurchased: string;
-    name: string;
-    description: string | undefined;
-    location: string;
-    purchasePrice: number;
-    categoryId: number;
-    status: string
-}) => {
+
+
+export const create = async (data: Asset) => {
     try {
-        let prismaAssetClient = await prisma.asset.create({
+        const { license } = data;
+
+        await prisma.asset.create({
             data: {
                 name: data.name,
-                description: data.description,
                 price: data.purchasePrice,
-                categoryId: 2,
-                userId: 10,
-                createdAt: new Date(),
-                updatedAt: new Date()
-            }
+                brand: data.brand,
+                model: data.model,
+                serialNumber: data.serialNumber,
+                category: {
+                    connect: {
+                        id: Number(data.categoryId)
+                    }
+                },
+            },
         });
 
-
     } catch (error) {
-        console.log(error)
+        console.error('Error creating asset:', error);
     }
 }
+
 export const get = async () => {
     try {
-        const assets = await prisma.asset.findMany();
-
-        console.log(assets)
+        const assets = await prisma.asset.findMany({
+            include: {
+                category: true,
+            }
+        });
         return parseStringify(assets);
     } catch (error) {
         console.log(error)
@@ -67,24 +68,17 @@ export const remove = async (id: number) => {
     }
 }
 
-export const update = async (data: {
-    id: number;
-    datePurchased: string;
-    name: string;
-    description: string | undefined;
-    location: string;
-    purchasePrice: number;
-    categoryId: number;
-    status: string
-}, id: number) => {
+export const update = async (asset: Asset, id: number) => {
     try {
-        const assets = await prisma.asset.update({
-            where: {
-                id: id
-            },
-            data
-        });
-        return parseStringify(assets);
+        // const assets = await prisma.asset.update({
+        //     where: {
+        //         id: id
+        //     },
+        //     data: asset
+        // });
+        // return parseStringify(assets);
+
+        console.log(asset)
     } catch (error) {
         console.log(error)
     }

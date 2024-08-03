@@ -5,14 +5,35 @@ This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next
 First, run the development server:
 
 ```bash
-npm run dev
-# or
 yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
+
+
+For the climate data and Carbon footprint I'm going to use chatGPT 
+Just need to request the result in a template and the API will return the way i want:
+ 
+
+```json lines
+{
+  "model": "gpt-4",
+  "messages": [
+    {
+      "role": "user",
+      "content": "What is the CO2e of a desktop computer? Please provide the answer in the following JSON format: {\"CO2e\": \"value\", \"details\": \"short explanation\"}"
+    }
+  ],
+  "temperature": 0.2
+}
+
+```
+Then I can save this result in a DB
+
+
+
+[//]: # (Forget about the below API)
+[//]: # (Climate API [here]&#40;https://www.climatiq.io/docs/guides/tutorials/cloud#memory-example-serverless-functions&#41;)
+
+
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 

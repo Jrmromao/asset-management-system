@@ -4,21 +4,19 @@ import React from "react";
 import AssetForm from "@/components/forms/AssetForm";
 
 
-const CreateNew = () => {
+const Create = () => {
 
     return (
         <div className="assets">
-            <div className="transactions-header">
+            <div>
                 <HeaderBox
                     title="Create new asset"
                     subtext="Fill the form to create new asset."
                 />
             </div>
-            <div className="">
-                    <AssetForm />
-            </div>
+            <AssetForm/>
         </div>
 
     )
 }
-export default CreateNew
+export default Create

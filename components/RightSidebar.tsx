@@ -1,11 +1,9 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import React from 'react'
-import BankCard from './BankCard'
-import {countTransactionCategories} from "@/lib/utils";
-import Category from "@/components/Category";
 
-const RightSidebar = ({user, transactions, banks}: RightSidebarProps) => {
+
+const RightSidebar = ({user, transactions, banks}: any) => {
     // const categories: CategoryCount[] = countTransactionCategories(transactions)
 
     return (

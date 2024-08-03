@@ -1,6 +1,5 @@
 'use client'
 import Link from "next/link"
-import {File, Home, LineChart, ListFilter, Package, Package2, PanelLeft, ShoppingCart, Users2,} from "lucide-react"
 import {
     Breadcrumb,
     BreadcrumbItem,
@@ -10,25 +9,14 @@ import {
 } from "@/components/ui/breadcrumb"
 import {Button} from "@/components/ui/button"
 import {Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle,} from "@/components/ui/card"
-import {
-    DropdownMenu,
-    DropdownMenuCheckboxItem,
-    DropdownMenuContent,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import {Progress} from "@/components/ui/progress"
-import {Sheet, SheetContent, SheetTrigger} from "@/components/ui/sheet"
 import {Tabs, TabsContent, TabsList, TabsTrigger,} from "@/components/ui/tabs"
 import CategoryForm from "@/components/forms/CategoryForm";
 import CategoryTable from "@/components/tables/CategoryTable";
-import React, {useEffect, useState} from "react";
-import {getCategories} from "@/lib/actions/category.actions";
-import LicenseForm from "@/components/forms/LicenseForm";
-import {getLicenses} from "@/lib/actions/license.actions";
+import React, {useEffect, useMemo, useState} from "react";
 import LicensesTable from "@/components/tables/LicensesTable";
 import {licenseStore} from "@/lib/stores/store";
+import {useCategoryStore} from "@/lib/stores/categoryStore";
 
 // import {
 //     Tooltip,
@@ -40,30 +28,26 @@ const Admin = () => {
 
     const [refresh, setRefresh] = useState(false)
 
-    const [categoriesList, setCategoriesList] = useState<Category[]>()
-    const [shouldRefresh,licenses ] = licenseStore((state) => [state.shouldRefresh, state.licenses])
+    const [shouldRefresh, licenses] = licenseStore((state) => [state.shouldRefresh, state.licenses])
 
-    const [licensesList, setLicenseList] = useState<[]>()
+    const [categories, deleteCategory, getAll] = useCategoryStore(state => [state.categories, state.delete, state.getAll])
 
-    useEffect(() => {
-        getLicenses().then(licenses => setLicenseList(licenses))
-    }, [setLicenseList, shouldRefresh]);
+    const categoriesMemo = useMemo(() => categories, [categories, getAll])
 
 
     useEffect(() => {
+        getAll()
+    }, []);
 
-        if(refresh) {
-            setCategoriesList([])
-            getCategories().then(categories => {
-                setCategoriesList(categories)
+
+    useEffect(() => {
+
+        if (refresh) {
+            getAll()
                 setRefresh(false)
-            })
-
-
         }
-        getCategories().then(categories => setCategoriesList(categories))
 
-    }, [getCategories, setCategoriesList, refresh]);
+    }, [refresh]);
 
 
     return (
@@ -234,7 +218,7 @@ const Admin = () => {
                                     {/*</Button>*/}
                                 </div>
                             </div>
-                            
+
                             <TabsContent value="category">
                                 <Card x-chunk="dashboard-05-chunk-3">
                                     <CardHeader className="px-7">
@@ -254,7 +238,7 @@ const Admin = () => {
                                                 </CardDescription>
                                             </CardHeader>
                                             <CardContent>
-                                                <CategoryForm setRefresh={setRefresh}  />
+                                                <CategoryForm setRefresh={setRefresh}/>
                                             </CardContent>
                                             <CardFooter>
                                             </CardFooter>
@@ -267,7 +251,7 @@ const Admin = () => {
                                                 </CardDescription>
                                             </CardHeader>
                                             <CardContent>
-                                                <CategoryTable licenses={categoriesList || []} />
+                                                <CategoryTable licenses={categories} deleteCategory={deleteCategory} setRefresh={setRefresh}  />
                                             </CardContent>
                                             <CardFooter>
                                             </CardFooter>
@@ -293,7 +277,7 @@ const Admin = () => {
                                                 </CardDescription>
                                             </CardHeader>
                                             <CardContent>
-                                                <LicenseForm />
+                                             test
                                             </CardContent>
                                             <CardFooter>
                                             </CardFooter>
@@ -306,7 +290,7 @@ const Admin = () => {
                                                 </CardDescription>
                                             </CardHeader>
                                             <CardContent>
-                                                <LicensesTable licenses={licenses || []}/>
+                                                {/*<LicensesTable licenses={licenses || []}/>*/}
                                             </CardContent>
                                             <CardFooter>
                                             </CardFooter>
@@ -332,7 +316,7 @@ const Admin = () => {
                                                 </CardDescription>
                                             </CardHeader>
                                             <CardContent>
-                                                <CategoryForm setRefresh={setRefresh}  />
+                                                <CategoryForm setRefresh={setRefresh}/>
                                             </CardContent>
                                             <CardFooter>
                                             </CardFooter>
@@ -345,7 +329,7 @@ const Admin = () => {
                                                 </CardDescription>
                                             </CardHeader>
                                             <CardContent>
-                                                <CategoryTable licenses={categoriesList || []} />
+                                                <CategoryTable licenses={categories} deleteCategory={deleteCategory} setRefresh={setRefresh}/>
                                             </CardContent>
                                             <CardFooter>
                                             </CardFooter>

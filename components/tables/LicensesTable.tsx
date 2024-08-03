@@ -1,28 +1,39 @@
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow,} from "@/components/ui/table"
 import {filterColumns, formatDateTime, renameColumns} from "@/lib/utils";
 import CustomTableCell from "@/components/tables/CustomTableCell";
-import React from "react";
+import React, {useEffect} from "react";
 import {licenseStore} from "@/lib/stores/store";
-import {getLicenses, create, remove, findById} from "@/lib/actions/license.actions";
+import { findById} from "@/lib/actions/license.actions";
+import LinkTableCell from "@/components/tables/LinkTableCell";
+import {useLicenseStore} from "@/lib/stores/licenseStore";
 
 
-const LicensesTable = ({licenses = []}: LicenseTableProps) => {
+const LicensesTable = () => {
 
 
-    const columnMappings: { createdAt: string; name: string; id: string; key: string; updatedAt: string , issuedDate: string, expirationDate: string, userId: string} = {
-        key: 'Key',
+    const columnMappings: Record<keyof License, string> = {
+        id: 'ID',
         name: 'Name',
-        userId: 'User Id',
-        id: "id",
-        issuedDate: "Issued Date",
-        expirationDate: "Expiration Date",
-        createdAt: "Created At",
-        updatedAt: "updatedAt"
-    };
-    const filteredData = filterColumns(licenses, ['id', 'updatedAt']);
-    const renamedData = renameColumns(filteredData, columnMappings);
-    const refresh = licenseStore((state) => state.shouldRefresh)
+        licenseKey: 'License Key',
+        renewalDate: 'Renewal Date',
+        licenseUrl: 'License Url',
+        licensedEmail: 'Licensed Email',
+        purchaseDate: 'Purchase Date',
+        vendor: 'Vendor',
+        purchaseNotes: 'Purchase Notes',
+        minCopiesAlert: 'Min Copies Alert',
+        alertRenewalDays: 'Alert Renewal Days',
+        licenseCopiesCount: '# Copies',
+        purchasePrice: 'Purchase Price',
+        createdAt: "",
+        updatedAt: "",
 
+    };
+    // const filteredData = filterColumns(assets, ['id', 'updatedAt', 'categoryId', 'datePurchased', 'certificateUrl', 'assigneeId', 'purchasePrice', 'licenceUrl', 'licenseId']);
+    // const renamedData = renameColumns(filteredData, columnMappings);
+    const [licenses ] = useLicenseStore((state) => [state.licenses, state.getAll])
+    const filteredData = filterColumns(licenses, ['id', 'updatedAt', 'createdAt', 'licenseUrl', 'purchasePrice', 'alertRenewalDays', 'purchaseNotes', 'minCopiesAlert']);
+    const renamedData = renameColumns(filteredData, columnMappings);
 
     if (renamedData.length === 0) return <p>No assets found</p>
     const headers = Object.keys(renamedData[0])
@@ -41,34 +52,19 @@ const LicensesTable = ({licenses = []}: LicenseTableProps) => {
             </TableHeader>
             <TableBody>
 
-                {licenses?.map((license: LicenseType) => {
+                {licenses?.map((license: License) => {
                     const createdAt = formatDateTime(license.createdAt!);
                     return (
                         <TableRow key={license.id} className={` bg-[#F6FEF9]!over:bg-none !border-b-DEFAULT`}>
-
-                            <TableCell className="pl-2 pr-10">
-                                {license.name}
-                            </TableCell>
-
-                            <TableCell className="min-w-32 pl-2 pr-10">
-                                {license.key}
-                            </TableCell>
-
+                            <LinkTableCell navigateTo={'/licenses/' + license.id} value={license?.name}  />
+                            <LinkTableCell navigateTo={'/licenses/' + license.id} value={license?.licensedEmail}  />
+                            <LinkTableCell navigateTo={'/licenses/' + license.id} value={license?.licenseKey}  />
+                            <LinkTableCell navigateTo={'/licenses/' + license.id} value={license?.renewalDate?.toString()}  />
+                            <LinkTableCell navigateTo={'/licenses/' + license.id} value={license?.purchaseDate?.toString()}  />
+                            <LinkTableCell navigateTo={'/licenses/' + license.id} value={license?.vendor}  />
+                            <LinkTableCell navigateTo={'/licenses/' + license.id} value={license?.licenseCopiesCount}  />
                             <TableCell className="pl-2 pr-10 capitalize min-w-24">
-                                {license.issuedDate.toString()}
-                            </TableCell>
-                            <TableCell className="pl-2 pr-10 capitalize min-w-24">
-                                {license.expirationDate.toString()}
-                            </TableCell>
-
-                            <TableCell className="pl-2 pr-10 capitalize min-w-24">
-                                userID
-                            </TableCell>
-                            <TableCell className="pl-2 pr-10 capitalize min-w-24">
-                                created at
-                            </TableCell>
-                            <TableCell className="pl-2 pr-10 capitalize min-w-24">
-                                <CustomTableCell id={Number(license.id)} entity={license} deleteEntity={remove} updateEntity={() => {}} viewEntity={findById}/>
+                                <CustomTableCell id={Number(license.id)} entity={() => {}} deleteEntity={()=>{}} updateEntity={()=>{}} viewEntity={() => {}} setRefresh={()=>{}}/>
                             </TableCell>
                         </TableRow>
                     )

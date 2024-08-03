@@ -1,10 +1,6 @@
-
-
-
 'use client'
-import React, {useMemo, useState} from 'react'
+import React, {useState} from 'react'
 import HeaderBox from "@/components/HeaderBox";
-import LicenseForm from "@/components/forms/LicenseForm";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
 import LicensesTable from "@/components/tables/LicensesTable";
@@ -45,7 +41,7 @@ const Consumables = () => {
                                     </CardHeader>
                                     <CardContent
                                         className="grid gap-4 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-1 xl:grid-cols-1">
-                                        <LicensesTable licenses={licensesList || []}/>
+                                        {/*<LicensesTable licenses={licensesList || []}/>*/}
                                     </CardContent>
                                 </Card>
                             </TabsContent>
@@ -58,7 +54,7 @@ const Consumables = () => {
                                         </CardDescription>
                                     </CardHeader>
                                     <CardContent>
-                                        <LicenseForm/>
+                                        test
                                     </CardContent>
                                 </Card>
                             </TabsContent>

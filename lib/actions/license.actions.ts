@@ -1,54 +1,43 @@
 'use server';
 
 // import {prisma} from "@/app/db";
-import { PrismaClient } from '@prisma/client'
+import {PrismaClient} from '@prisma/client'
 
 const prisma = new PrismaClient()
 
 import {parseStringify} from "@/lib/utils";
 
-export const create = async (data: {
-    key: string;
-    expirationDate: Date;
-    issuedDate: Date;
-    name: string;
-}) => {
+export const insert = async (data: License) => {
     try {
-        await prisma.licenseTool.create({
-            data: {
-                key: data.key,
-                expirationDate: data.expirationDate,
-                issuedDate: data.issuedDate,
-                name: data.name,
-                createdAt: new Date(),
-                updatedAt: new Date()
-            }
-        })
+        console.log(data)
+
+        data.purchasePrice = Math.round(data.purchasePrice * 100) / 100
+
+
+        await prisma.license.create({data})
     } catch (error) {
         console.log(error)
-    }
-    finally {
+    } finally {
         await prisma.$disconnect()
     }
 }
-export const getLicenses = async () => {
+export const getAll = async () => {
     try {
 
 
-        const licenses = await prisma.licenseTool.findMany();
+        const licenses = await prisma.license.findMany();
 
 
         return parseStringify(licenses);
     } catch (error) {
         console.log(error)
-    }
-    finally {
+    } finally {
         await prisma.$disconnect()
     }
 }
 export const findById = async (id: number) => {
     try {
-        const licenseTool = await prisma.licenseTool.findFirst({
+        const licenseTool = await prisma.license.findFirst({
             where: {
                 id: id
             }
@@ -56,36 +45,13 @@ export const findById = async (id: number) => {
         return parseStringify(licenseTool);
     } catch (error) {
         console.log(error)
-    }
-    finally {
+    } finally {
         await prisma.$disconnect()
     }
 }
-export const remove = async (id: number) => {
+export const update = async (data: License, id: number) => {
     try {
-        const licenseTool = await prisma.licenseTool.delete({
-            where: {
-                id: id
-            }
-        })
-        return parseStringify(licenseTool);
-    } catch (error) {
-        console.log(error)
-    }
-    finally {
-        await prisma.$disconnect()
-    }
-}
-// adding a new  comment
-export const update = async (data: {
-    id: number;
-    key: string;
-    expirationDate: Date;
-    issuedDate: Date;
-    name: string;
-}, id: number) => {
-    try {
-        const licenseTool = await prisma.licenseTool.update({
+        const licenseTool = await prisma.license.update({
             where: {
                 id: id
             },
@@ -94,8 +60,7 @@ export const update = async (data: {
         return parseStringify(licenseTool);
     } catch (error) {
         console.log(error)
-    }
-    finally {
+    } finally {
         await prisma.$disconnect()
     }
 }

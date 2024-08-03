@@ -4,8 +4,9 @@ export const dynamic = 'force-dynamic'
 import type {Metadata} from "next";
 import {Inter, IBM_Plex_Serif} from "next/font/google";
 import "./globals.css";
-import { SessionProvider } from 'next-auth/react';
+import {SessionProvider} from 'next-auth/react';
 import {ClientProviders} from "@/lib/SessionProvider";
+import {ThemeProvider} from "@/components/providers/theme-provider";
 
 const inter = Inter({subsets: ["latin"], variable: '--font-inter'});
 const ibmPlexSerif = IBM_Plex_Serif({
@@ -22,16 +23,23 @@ export const metadata: Metadata = {
     }
 };
 
-export default async function RootLayout({ children}: Readonly<{
+export default async function RootLayout({children}: Readonly<{
     children: React.ReactNode;
 }>) {
 
     return (
         <html lang="en">
         <body className={`${inter.variable} ${ibmPlexSerif.variable}`}>
-        <ClientProviders>
-            {children}
-        </ClientProviders>
+        <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+        ><ClientProviders>
+
+                {children}
+
+        </ClientProviders> </ThemeProvider>
         </body>
         </html>
     );

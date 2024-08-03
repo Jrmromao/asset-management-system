@@ -1,8 +1,13 @@
 import React from 'react'
-import {prisma} from "@/app/db";
+
+type HeaderBoxProps = {
+    type?: "title" | "greeting"
+    title: string
+    subtext: string
+    user?: string
+}
 
 const HeaderBox =  ({type = "title", title, subtext, user}: HeaderBoxProps) => {
-
 
     return (
         <div className='header-box'>

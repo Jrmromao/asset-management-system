@@ -1,56 +1,86 @@
-// prisma/schema.prisma
-
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
-
 generator client {
   provider = "prisma-client-js"
 }
 
-model User {
-  id             Int           @id @default(autoincrement())
-  email          String        @unique
-  name           String
-  role           String
-  organizationId Int
-  organization   Organization  @relation(fields: [organizationId], references: [id])
-  licenses       LicenseTool[]
-  auditLogs      AuditLog[]
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+// npx prisma migrate dev --create-only --name <NAME>
+// npx prisma migrate dev
+// npx prisma generate
+// npx prisma db pull
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
 }
 
-model Organization {
-  id        Int        @id @default(autoincrement())
-  name      String
+model User {
+  id          Int          @id @default(autoincrement())
+  email       String       @unique
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  roleId      Int
+  companyId   Int
+  firstName   String
+  lastName    String
+  phoneNumber String       @unique
+  auditLogs   AuditLog[]
+  company     Company      @relation(fields: [companyId], references: [id])
+  role        Role         @relation(fields: [roleId], references: [id])
+  co2eRecords Co2eRecord[]
+}
+
+model Co2eRecord {
+  id               Int      @id @default(autoincrement())
+  asset            Asset    @relation(fields: [assetId], references: [id])
+  assetId          Int
+  co2e             Float // CO2e in kg
+  co2eType         String // Type of CO2e (e.g., Scope 1, Scope 2, Scope 3)
+  sourceOrActivity String // Description of the source or activity
+  date             DateTime // Date of the CO2e record
+  createdAt        DateTime @default(now())
+  User             User?    @relation(fields: [userId], references: [id])
+  userId           Int?
+}
+
+model Role {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
   users     User[]
-  auditLogs AuditLog[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Company {
+  id        Int        @id @default(autoincrement())
+  name      String     @unique
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
+  auditLogs AuditLog[]
+  users     User[]
 }
 
 model Asset {
-  id           Int           @id @default(autoincrement())
+  id           Int          @id @default(autoincrement())
   name         String
-  description  String?
   price        Float
   categoryId   Int
-  transactions Transaction[]
-  category     Category      @relation(fields: [categoryId], references: [id])
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  userId       Int?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  assigneeId   Int?
+  brand        String
+  model        String
+  serialNumber String
+  licenseId    Int?
+  category     Category     @relation(fields: [categoryId], references: [id])
+  license      License?     @relation(fields: [licenseId], references: [id])
+  Co2eRecord   Co2eRecord[]
 }
 
 model Category {
   id        Int      @id @default(autoincrement())
-  name      String
-  assets    Asset[]
-  note      String?
+  name      String   @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  assets    Asset[]
 }
 
 model Transaction {
@@ -58,32 +88,39 @@ model Transaction {
   type      String
   amount    Float
   assetId   Int
-  asset     Asset    @relation(fields: [assetId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
-model LicenseTool {
-  id             Int      @id @default(autoincrement())
-  name           String
-  key            String
-  issuedDate     DateTime
-  expirationDate DateTime
-  userId         Int?
-  user           User?    @relation(fields: [userId], references: [id])
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+model License {
+  id                 Int      @id @default(autoincrement())
+  name               String
+  licensedEmail      String
+  licenseKey         String
+  renewalDate        DateTime
+  purchaseDate       DateTime
+  userId             String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  vendor             String?
+  purchaseNotes      String?
+  licenseUrl         String?
+  minCopiesAlert     Int
+  alertRenewalDays   Int
+  licenseCopiesCount Int
+  purchasePrice      Decimal
+  assets             Asset[]
 }
 
 model AuditLog {
-  id             Int          @id @default(autoincrement())
-  action         String
-  entity         String
-  entityId       Int?
-  userId         Int
-  user           User         @relation(fields: [userId], references: [id])
-  organizationId Int
-  organization   Organization @relation(fields: [organizationId], references: [id])
-  details        String?
-  createdAt      DateTime     @default(now())
+  id        Int      @id @default(autoincrement())
+  action    String
+  entity    String
+  entityId  Int?
+  userId    Int
+  details   String?
+  createdAt DateTime @default(now())
+  companyId Int
+  company   Company  @relation(fields: [companyId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
 }

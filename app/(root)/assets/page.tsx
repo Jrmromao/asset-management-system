@@ -1,25 +1,50 @@
 'use client'
 
-import React, {useEffect, useState} from 'react'
+import React, {useEffect} from 'react'
 import HeaderBox from "@/components/HeaderBox";
-import {useRouter, useSearchParams} from "next/navigation"
-import {get} from "@/lib/actions/assets.actions";
-import CustomAssetTable from "@/components/tables/CustomAssetTable";
-import {AssetDialog} from "@/components/modals/AssetDialog";
+import AssetTable from "@/components/tables/AssetTable";
 import {useDialogStore} from "@/lib/stores/store";
 import {Button} from "@/components/ui/button";
+import {useAssetStore} from "@/lib/stores/assetStore";
+import {useRouter} from "next/navigation";
+import {filterColumns, renameColumns} from "@/lib/utils";
 
 const Assets = () => {
-    const [open, setOpen] = useState(false);
-    const [assetList, setAssetList] = useState([])
-    const navigate = useRouter()
-
 
     const [openDialog, closeDialog, isOpen] = useDialogStore(state => [state.onOpen, state.onClose, state.isOpen])
+    const [assets, loading, fetchAssets, getAssetById, deleteAsset] = useAssetStore((state) => [state.assets, state.loading, state.getAll, state.findById, state.delete,]);
+
+
+
+    const navigate = useRouter()
+    const columnMappings: Record<keyof Asset, string> = {
+        categoryId: "categoryId",
+        datePurchased: "Date Purchased",
+        name: "name",
+        purchasePrice: "Price",
+        id: "id",
+        license: "License",
+        createdAt: "Created At",
+        updatedAt: "updatedAt",
+        assigneeId: "assigneeId",
+        certificateUrl: "certificateUrl",
+        licenceUrl: "licenceUrl",
+        model: "Model",
+        brand: "Brand",
+        serialNumber: "Serial Number",
+        category: "Category",
+        price: '',
+        licenseId: ''
+    };
 
     useEffect(() => {
-        get().then(assets => setAssetList(assets))
-    }, [setAssetList, isOpen]);
+        fetchAssets();
+    }, []);
+
+    const filteredData = filterColumns(assets, ['id', 'updatedAt', 'categoryId', 'datePurchased', 'certificateUrl', 'assigneeId', 'purchasePrice', 'licenceUrl']);
+    const renamedData = renameColumns(filteredData, columnMappings);
+    // if (renamedData?.length === 0) return <p>No assets found</p>
+    const headers = renamedData?.length > 0 ? Object?.keys(renamedData[0]) : []
 
 
     return (
@@ -30,13 +55,12 @@ const Assets = () => {
                     subtext="Manage your assets."
                 />
             </div>
-            <AssetDialog open={isOpen} onOpenChange={closeDialog} />
             <div className="space-y-6">
                 <section className="flex">
                     <div className="flex justify-end">
                         <Button
                             variant={'link'}
-                            onClick={() => openDialog()}>Add Asset
+                            onClick={() => navigate.push('/assets/create')}>Add Asset
                         </Button>
                         <Button
                             variant={"link"}
@@ -47,12 +71,9 @@ const Assets = () => {
                     </div>
                 </section>
                 <section className="flex w-full flex-col gap-6">
-                    <CustomAssetTable assets={assetList}/>
-
+                    <AssetTable assets={assets} deleteAsset={deleteAsset} findById={getAssetById}/>
                 </section>
             </div>
-
-
         </div>
     )
 }

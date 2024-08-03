@@ -6,8 +6,10 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import Footer from "@/components/Footer";
 import {useSession} from "next-auth/react";
+import {ModeToggle} from "@/components/ModeToggle";
+import React from "react";
 
-const Sidebar = ({  }: SiderbarProps) => {
+const Sidebar = () => {
 
     const pathName = usePathname()
     const {data    } = useSession()
@@ -35,8 +37,7 @@ const Sidebar = ({  }: SiderbarProps) => {
                         <Link href={item.route} id={item.label} className={cn('sidebar-link',  {'bg-bank-gradient':isActive})} key={item.label} >
 
                             <div className="relative size-6">
-                                <Image src={item.imgURL} alt={item.label} fill 
-                                className={cn({'brightness-[3] invert-0': isActive})}/>
+                                <Image src={item.imgURL} alt={item.label} fill  className={cn({'brightness-[3] invert-0': isActive})}/>
                             </div>
                             <p className={cn('sidebar-label', {
                                 '!text-white': isActive
@@ -47,7 +48,7 @@ const Sidebar = ({  }: SiderbarProps) => {
                     )
                 })}
                 {/* <PlaidLink user={user} /> */}
-
+                <ModeToggle />
             </nav>
             <Footer />
         </section>
