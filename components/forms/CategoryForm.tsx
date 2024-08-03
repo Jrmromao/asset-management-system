@@ -8,10 +8,13 @@ import {Form} from "@/components/ui/form"
 import {Loader2} from "lucide-react";
 import CustomInput from "@/components/CustomInput";
 import {createCategory} from "@/lib/actions/category.actions";
+import {useDialogStore} from "@/lib/stores/store";
+import {useCategoryStore} from "@/lib/stores/categoryStore";
 
 const CategoryForm = ({setRefresh}: { setRefresh: (flag: boolean) => void }) => {
     const [isLoading, setIsLoading] = useState(false)
-
+    const [closeDialog] = useDialogStore(state => [ state.onClose, state.onClose])
+    const [ fetchAll] = useCategoryStore((state) => [state.getAll]);
 
     const schema = z.object({
         name: z
@@ -30,6 +33,8 @@ const CategoryForm = ({setRefresh}: { setRefresh: (flag: boolean) => void }) => 
             await createCategory(categoryData).then(_ => {
                 setRefresh(true)
                 form.reset()
+                fetchAll()
+                closeDialog()
             })
         } catch (e) {
             console.error(e)

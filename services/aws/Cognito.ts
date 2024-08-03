@@ -1,7 +1,4 @@
 import {CognitoIdentityProviderClient, SignUpCommand,} from "@aws-sdk/client-cognito-identity-provider";
-import {createHmac} from "crypto";
-import {AuthenticationDetails, CognitoUser, CognitoUserPool} from "amazon-cognito-identity-js";
-import {CognitoIdentityServiceProvider} from "aws-sdk";
 
 
 export const signUp = async ({clientId, username, password, email, companyId}: {

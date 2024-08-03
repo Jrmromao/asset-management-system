@@ -16,6 +16,9 @@ import {Card} from "@/components/ui/card";
 import {useLicenseStore} from "@/lib/stores/licenseStore";
 import {useCategoryStore} from "@/lib/stores/categoryStore";
 import CustomInput from "@/components/CustomInput";
+import {useDialogStore} from "@/lib/stores/store";
+import {AssetDialog} from "@/components/modals/AssetDialog";
+import CategoryForm from "@/components/forms/CategoryForm";
 
 const AssetForm = () => {
 
@@ -25,6 +28,8 @@ const AssetForm = () => {
         model: '',
         serialNumber: '',
         purchasePrice: '',
+        categoryId: '',
+        licenseId: '',
         category: '',
         existingLicenseName: '',
         newLicenseName: '',
@@ -36,14 +41,17 @@ const AssetForm = () => {
 
     const [isLoading, setIsLoading] = useState(false)
     const [licenseQuestion, setLicenseQuestion] = useState('')
+    const [openDialog, closeDialog, isOpen] = useDialogStore(state => [state.onOpen, state.onClose, state.isOpen])
 
     const [createAsset] = useAssetStore((state) => [state.create]);
     const [licenses, fetchLicenses] = useLicenseStore((state) => [state.licenses, state.getAll]);
-    const [categories] = useCategoryStore((state) => [state.categories]);
+    const [categories, fetchAll] = useCategoryStore((state) => [state.categories, state.getAll]);
 
 
     useEffect(() => {
+        closeDialog()
         fetchLicenses()
+        fetchAll()
     }, []);
 
     const schema = z.object({
@@ -84,24 +92,16 @@ const AssetForm = () => {
                 name: data.assetName || '',
                 brand: data.brand || '',
                 model: data.model || '',
-                categoryId: categoryId,
+                categoryId: categoryId || 0,
                 serialNumber: data.serialNumber || '',
                 purchasePrice: Number(data.purchasePrice) || 0,
-                datePurchased: new Date().getDate().toString(),
-                license: {
-                    id: licenseId,
-                    name: data.newLicenseName || data.existingLicenseName || '',
-                    key: data.key || '',
-                    licenseUrl: '',
-                    issuedDate: new Date('2023-01-09'),
-                    expirationDate: new Date('2026-01-09'),
-                }
+                datePurchased: new Date().getDate().toString()
             }
             console.log(licenses)
             console.log(assetData)
 
             createAsset(assetData)
-            form.reset()
+            form.reset({})
 
         } catch (e) {
             console.error(e)
@@ -112,6 +112,13 @@ const AssetForm = () => {
 
     return (
         <section className="w-full bg-white z-50 max-h-[700px] overflow-y-auto p-4">
+            <AssetDialog open={isOpen} onOpenChange={closeDialog} title={'New Category'}
+                         description={'Add a new Category'}
+                         form={<CategoryForm setRefresh={() => {
+                         }}/>}
+            />
+
+
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)}>
 
@@ -122,7 +129,7 @@ const AssetForm = () => {
 
                             <div className={'flex-1'}>
                                 <CustomInput control={form.control}   {...form.register("assetName")}
-                                             label={'Asset Name'}
+                                             label={'Asset Title'}
                                              placeholder={'eg. Keyboard'}
                                              type={'text'}/>
                             </div>
@@ -138,7 +145,8 @@ const AssetForm = () => {
                                                       placeholder={'eg. IT Equipment'}/>
                                     </div>
                                     <div className="flex-none w-3/12 mt-6 ml-8">
-                                        <Button type={'button'} variant={'default'}>Add Category</Button>
+                                        <Button type={'button'} variant={'secondary'} className={'form-secondary-btn md:w-auto'} onClick={(() => openDialog())}>Add
+                                            Category</Button>
                                     </div>
                                 </div>
 
@@ -171,62 +179,6 @@ const AssetForm = () => {
                                 <CustomInput control={form.control}   {...form.register("serialNumber")}
                                              label={'Serial Number'}
                                              placeholder={'eg. 1234'} type={'string'}/>
-                            </div>
-                        </div>
-
-
-                        <hr className={'mt-9 border-1'}/>
-
-                        <div className={'mt-6 header-2 mb-4'}>License Details</div>
-
-
-                        <div className={'flex'}>
-                            <div className="flex-none w-9/12">
-                                <CustomSelect control={form.control} name={'existingLicenseName'}
-
-                                              label={'License Name'}
-                                              data={licenses} placeholder={'eg. MS Office'}/>
-                            </div>
-                            <div className="flex-none w-3/12 mt-6 ml-8 end-0">
-                                <Button type={'button'} variant={'default'}>Add a License</Button>
-                            </div>
-                        </div>
-
-
-
-                        <div className={'flex flex-col md:flex-row gap-4 pt-5'}>
-                            <div className={'flex-1'}>
-                                <CustomInput control={form.control} name={'newLicenseName'} label={'License Name'}
-                                             placeholder={'eg. MS Office'}
-                                             type={'text'}/>
-                            </div>
-                            <div className={'flex-1'}>
-                                <CustomInput control={form.control} name={'key'} label={'License Key'}
-                                             placeholder={'eg. XX-XX-XX-XX-XX-XX'}
-                                             type={'text'}/>
-                            </div>
-                        </div>
-
-                        <div className={'flex flex-col md:flex-row gap-4 pt-5'}>
-                            <div className={'flex-1'}>
-                                <CustomInput control={form.control} name={'issuedDate'} label={'Issued Date'}
-                                             placeholder={'eg. 2022-12-31'}
-                                             type={'text'}/>
-                            </div>
-                            <div className={'flex-1'}>
-                                <CustomInput control={form.control} name={'expirationDate'} label={'Expiration Date'}
-                                             placeholder={'eg. 2026-12-31'}
-                                             type={'text'}/>
-
-                            </div>
-                        </div>
-
-                        <div className={'flex flex-col md:flex-row gap-4 pt-5'}>
-                            <div className={'flex-1'}>
-                                <Dropzone label={'License Certificate'} docType={'certificate'}/>
-                            </div>
-                            <div className={'flex-1'}>
-                                <Dropzone label={'Asset key'} docType={'key'}/>
                             </div>
                         </div>
                     </Card>

@@ -67,13 +67,15 @@ declare type Asset = {
     model: string;
     datePurchased: string;
     purchasePrice: number;
+    price?: number;
     certificateUrl?: string;
     licenceUrl?: string;
     license?: License;
     serialNumber: string;
     createdAt?: Date;
     updatedAt?: Date;
-    category?: Category
+    category?: Category,
+    licenseId?: string
 }
 declare type Category = {
     id?: string;
@@ -86,10 +88,17 @@ declare type Category = {
 declare type License = {
     id?: int;
     name: string;
-    key: string;
-    issuedDate: Date;
-    expirationDate: Date;
-    licenseUrl: string;
+    licenseKey: string;
+    renewalDate: Date;
+    licenseUrl?: string;
+    licensedEmail: string;
+    purchaseDate: Date;
+    vendor: string;
+    purchaseNotes: string;
+    minCopiesAlert: number;
+    alertRenewalDays: number;
+    licenseCopiesCount: number;
+    purchasePrice: number;
     createdAt?: Date;
     updatedAt?: Date;
 };

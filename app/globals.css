@@ -301,6 +301,11 @@
     @apply text-16 rounded-lg border border-bankGradient bg-bank-gradient font-semibold text-white shadow-form;
   }
 
+  .form-secondary-btn {
+    @apply text-14 rounded-lg border  bg-transparent font-semibold text-gray-600 shadow-none;
+  }
+
+
   .form-link {
     @apply text-14 cursor-pointer font-medium text-bankGradient;
   }

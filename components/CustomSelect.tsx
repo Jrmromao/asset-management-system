@@ -39,8 +39,10 @@ const CustomSelect = ({control, name, label, placeholder, data}: CustomInputProp
                     <div className={'flex w-full flex-col'}>
                         <FormControl>
                             <Select onValueChange={field.onChange}>
+
+
                                 <SelectTrigger className="w-full input-class text-gray-100">
-                                    <div className={'text-gray-500'}>
+                                    <div className={`${field.value ? '' : 'text-gray-600'}`}>
                                         <SelectValue placeholder={placeholder}/>
                                     </div>
                                 </SelectTrigger>

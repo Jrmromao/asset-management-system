@@ -9,18 +9,6 @@ export const create = async (data: Asset) => {
     try {
         const { license } = data;
 
-        const licenseData = license?.id
-            ? { connect: { id: license.id } } // use existing license
-            : {
-                create: {
-                    name: license?.name!,
-                    key: license?.key!,
-                    issuedDate: license?.issuedDate!,
-                    expirationDate: license?.expirationDate!,
-                    licenseUrl: license?.licenseUrl
-                }
-            };
-
         await prisma.asset.create({
             data: {
                 name: data.name,
@@ -33,7 +21,6 @@ export const create = async (data: Asset) => {
                         id: Number(data.categoryId)
                     }
                 },
-                license: licenseData
             },
         });
 

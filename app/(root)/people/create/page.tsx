@@ -3,7 +3,7 @@ import AssetForm from "@/components/forms/AssetForm";
 import React from "react";
 import PersonForm from "@/components/forms/PersonForm";
 
-const CreateNew = () => {
+const Create = () => {
 
     return (
         <div className="assets">
@@ -22,4 +22,4 @@ const CreateNew = () => {
 
     )
 }
-export default CreateNew
+export default Create

@@ -1,33 +1,23 @@
 'use server';
 
 // import {prisma} from "@/app/db";
-import { PrismaClient } from '@prisma/client'
+import {PrismaClient} from '@prisma/client'
 
 const prisma = new PrismaClient()
 
 import {parseStringify} from "@/lib/utils";
 
-export const insert = async (data: {
-    key: string;
-    expirationDate: Date;
-    issuedDate: Date;
-    name: string;
-}) => {
+export const insert = async (data: License) => {
     try {
-        await prisma.license.create({
-            data: {
-                key: data.key,
-                expirationDate: data.expirationDate,
-                issuedDate: data.issuedDate,
-                name: data.name,
-                createdAt: new Date(),
-                updatedAt: new Date()
-            }
-        })
+        console.log(data)
+
+        data.purchasePrice = Math.round(data.purchasePrice * 100) / 100
+
+
+        await prisma.license.create({data})
     } catch (error) {
         console.log(error)
-    }
-    finally {
+    } finally {
         await prisma.$disconnect()
     }
 }
@@ -41,8 +31,7 @@ export const getAll = async () => {
         return parseStringify(licenses);
     } catch (error) {
         console.log(error)
-    }
-    finally {
+    } finally {
         await prisma.$disconnect()
     }
 }
@@ -56,8 +45,7 @@ export const findById = async (id: number) => {
         return parseStringify(licenseTool);
     } catch (error) {
         console.log(error)
-    }
-    finally {
+    } finally {
         await prisma.$disconnect()
     }
 }
@@ -72,8 +60,7 @@ export const update = async (data: License, id: number) => {
         return parseStringify(licenseTool);
     } catch (error) {
         console.log(error)
-    }
-    finally {
+    } finally {
         await prisma.$disconnect()
     }
 }

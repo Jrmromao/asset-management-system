@@ -17,12 +17,12 @@ export const sidebarLinks = [
         label: "Assets",
         visibleTo: ["admin", "user"],
     },
-/*    {
+{
         imgURL: "/icons/transaction.svg",
         route: "/licenses",
         label: "Licenses",
         visibleTo: ["admin", "user"],
-    },*/
+    },
     {
         imgURL: "/icons/money-send.svg",
         route: "/consumables",
@@ -35,6 +35,19 @@ export const sidebarLinks = [
         label: "People",
         visibleTo: ["admin", "user"],
     },
+    // {
+    //     imgURL: "/icons/money-send.svg",
+    //     route: "/locations",
+    //     label: "locations",
+    //     visibleTo: ["admin", "user"],
+    // },
+    //
+    // {
+    //     imgURL: "/icons/arrow-right.svg",
+    //     route: "/import",
+    //     label: "Import",
+    //     visibleTo: ["admin", "user"],
+    // },
 
 ];
 

@@ -11,15 +11,14 @@ import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/compo
 import LicensesTable from "@/components/tables/LicensesTable";
 import {licenseStore} from "@/lib/stores/store";
 import {Button} from "@/components/ui/button";
-import CustomAssetTable from "@/components/tables/CustomAssetTable";
+import AssetTable from "@/components/tables/AssetTable";
 import {useRouter} from "next/navigation";
 import {usePeopleStore} from "@/lib/stores/userStore";
 
 
 const People = () => {
     const [refresh, setRefresh] = useState(0)
-    // const memoAssetList = useMemo(() => getLicenses().then(licenses => setLicenseList(licenses)), [setLicenseList, refresh]);
-    const navigate = useRouter()
+     const navigate = useRouter()
 
     return (
 
@@ -40,8 +39,7 @@ const People = () => {
                     </div>
                 </section>
                 <section className="flex w-full flex-col gap-6">
-                    <CustomAssetTable assets={[]} deleteAsset={(id) => (id)} findById={(id) => (id)}/>
-                </section>
+                 </section>
             </div>
         </div>
     )

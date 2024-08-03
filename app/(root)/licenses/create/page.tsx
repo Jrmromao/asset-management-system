@@ -2,6 +2,7 @@
 import HeaderBox from "@/components/HeaderBox";
 import React from "react";
 import AssetForm from "@/components/forms/AssetForm";
+import LicenseForm from "@/components/forms/LicenseForm";
 
 
 const Create = () => {
@@ -10,11 +11,11 @@ const Create = () => {
         <div className="assets">
             <div>
                 <HeaderBox
-                    title="Create new asset"
-                    subtext="Fill the form to create new asset."
+                    title="Create new License"
+                    subtext="Fill the form to create new License."
                 />
             </div>
-            <AssetForm/>
+            <LicenseForm/>
         </div>
 
     )

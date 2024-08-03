@@ -20,7 +20,7 @@ export const create = async (data: {
                 action: data.action,
                 entity: data.entity,
                 entityId: data.entityId,
-                userId: data.userId,
+                userId: Number(data.userId),
                 companyId: data.organizationId,
                 createdAt: new Date(),
             }

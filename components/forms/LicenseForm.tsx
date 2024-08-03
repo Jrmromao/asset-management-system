@@ -1,182 +1,277 @@
 'use client'
-import React, {useState} from 'react'
+import React, {useEffect, useState} from 'react'
 import {z} from "zod"
 import {zodResolver} from "@hookform/resolvers/zod"
 import {useForm} from "react-hook-form"
 import {Button} from "@/components/ui/button"
-import {Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage,} from "@/components/ui/form"
-// import CustomInput from "@/components/forms/CustomInput";
-import {cn, formSchema as categoryFormSchema, formSchema as licenseFormSchema} from "@/lib/utils";
-import {useRouter} from "next/navigation";
-import {CalendarIcon, Loader2} from "lucide-react";
-import {licenseStore, useDialogStore} from "@/lib/stores/store";
-import {Calendar} from "@/components/ui/calendar";
-import {Popover, PopoverContent, PopoverTrigger} from "@/components/ui/popover";
-import {format} from "date-fns";
-import {Input} from "@/components/ui/input";
+import {Form,} from "@/components/ui/form"
+import {InfoIcon, Loader2} from "lucide-react";
+import {useAssetStore} from "@/lib/stores/assetStore";
+import {Card} from "@/components/ui/card";
+import {useLicenseStore} from "@/lib/stores/licenseStore";
 import CustomInput from "@/components/CustomInput";
+import {useDialogStore} from "@/lib/stores/store";
+import {AssetDialog} from "@/components/modals/AssetDialog";
+import CategoryForm from "@/components/forms/CategoryForm";
+import {Alert, AlertDescription, AlertTitle} from "@/components/ui/alert"
+import CustomTextarea from "@/components/CustomTextarea";
 
 const LicenseForm = () => {
+
+    const INITIAL_VALUES = {
+        licenseName: '',
+        licenseCopiesCount: '',
+        minCopiesAlert: '',
+        licensedEmail: '',
+        renewalDate: '',
+        alertRenewalDays: '',
+        purchasePrice: '',
+        vendor: '',
+        licenseKey: '',
+        purchaseDate: '',
+        notes: '',
+    }
+
+
     const [isLoading, setIsLoading] = useState(false)
-    const router = useRouter()
-    const [setLicenses, updateRefresh] = licenseStore((state) => [state.setLicenses, state.updateRefresh])
-    const [date, setDate] = useState<Date>();
+    const [licenseQuestion, setLicenseQuestion] = useState('')
+    const [needLicense, setNeedLicense] = useState('')
+    const [openDialog, closeDialog, isOpen] = useDialogStore(state => [state.onOpen, state.onClose, state.isOpen])
 
-    const catFormSchema = categoryFormSchema()
+    const [createAsset] = useAssetStore((state) => [state.create]);
+    const [licenses, createLicense] = useLicenseStore((state) => [state.licenses, state.create]);
 
-    const form = useForm<z.infer<typeof catFormSchema>>({
-        resolver: zodResolver(catFormSchema),
-        defaultValues: {
-            id: '',
-            assetName: '',
-            category: '',
-            brand: '',
-            model: '',
-            serialNumber: '',
-            purchasePrice: '',
-            key: '',
-            issuedDate: '',
-            expirationDate: '',
-        },
+
+    useEffect(() => {
+        closeDialog()
+    }, []);
+
+    const schema = z.object({
+
+        licenseName: z.string().min(1, "License name is required"),
+
+
+        licenseCopiesCount: z.string().refine((val) => !Number.isNaN(parseInt(val, 10)), {
+            message: "License copies count is required"
+        }),
+        minCopiesAlert: z.string().refine((val) => !Number.isNaN(parseInt(val, 10)), {
+            message: "Min. copies alert is required"
+        }),
+        licensedEmail: z.string().email().min(1, "Licensee email is required"),
+        renewalDate: z.string().min(1, "Renewal date is required"),
+        alertRenewalDays: z.string().min(1, "Alert renewal days is required"),
+        purchasePrice: z.string().refine((val) => !Number.isNaN(parseInt(val, 10)), {
+            message: "Purchase price is required"
+        }),
+
+        vendor: z.string().min(1, "Vendor is required"),
+        licenseKey: z.string().min(1, "Product key is required"),
+        purchaseDate: z.string().min(1, "Purchase date is required"),
+        notes: z.string().optional()//z.string().min(1, "Notes is required"),
+
+    })
+        .refine((data) => data.licenseCopiesCount >= data.minCopiesAlert, {
+            message: "Min. Copies must be less than or equal to license copies count",
+            path: ["minCopiesAlert"],
+        })
+
+
+    const form = useForm<z.infer<typeof schema>>({
+        resolver: zodResolver(schema),
+        defaultValues: INITIAL_VALUES
     })
 
-
-    const onSubmit = async (data: z.infer<typeof catFormSchema>) => {
+    const onSubmit = async (data: z.infer<typeof schema>) => {
         setIsLoading(true)
 
+        console.log('data')
+        try {
+            createLicense({
+                name: data.licenseName || '',
+                licenseCopiesCount: Number(data.licenseCopiesCount),
+                minCopiesAlert: Number(data.minCopiesAlert),
+                licensedEmail: data.licensedEmail || '',
+                renewalDate: new Date(), //data.renewalDate || '',
+                alertRenewalDays: Number(data.alertRenewalDays),
+                purchasePrice: Number(data.purchasePrice),
+                vendor: data.vendor || '',
+                licenseKey: data.licenseKey || '',
+                purchaseDate: new Date(),// data.purchaseDate || '',
+                purchaseNotes: data.notes || '',
+            })
+            form.reset({})
 
+        } catch (e) {
+            console.error(e)
+        } finally {
+            setIsLoading(false)
+        }
     }
+
     return (
-        <section className="w-full bg-white z-50">
+        <section className="w-full bg-white z-50 max-h-[700px] overflow-y-auto p-4">
+
             <Form {...form}>
-                <form>
 
-                    <div className={'flex flex-col md:flex-row gap-4 pt-5'}>
-                        <div className={'flex-1'}>
 
+                <form onSubmit={form.handleSubmit(onSubmit)}>
+
+                    <Card className={'p-3.5 mb-5'}>
+                        <div className={'mt-6 header-2'}>License Title and Copies count</div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="bg-white p-4">
+                                <div className="flex flex-col gap-4 pt-5">
+                                    <div className="flex-1">
+                                        <CustomInput
+                                            control={form.control}
+                                            {...form.register("licenseName")}
+                                            label="License Title"
+                                            placeholder="e.g. MS Office"
+                                            type="text"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="flex flex-col gap-4 pt-5">
+                                    <div className="flex-1">
+                                        <CustomInput
+                                            control={form.control}
+                                            {...form.register("licenseCopiesCount")}
+                                            label="License Copies purchased"
+                                            placeholder="e.g. 50"
+                                            type="number"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="flex flex-col gap-4 pt-5">
+                                    <div className="flex-1">
+                                        <CustomInput
+                                            control={form.control}
+                                            {...form.register("minCopiesAlert")}
+                                            label="Min. Copies"
+                                            placeholder="e.g. 15"
+                                            type="number"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="bg-white p-4 md:mt-11 ">
+                                <Alert>
+                                    <InfoIcon className="h-4 w-4"/>
+                                    <AlertTitle>Note</AlertTitle>
+                                    <AlertDescription>
+                                        An automatic email will be sent when the number of available licenses reaches
+                                        the minimum required count.
+                                    </AlertDescription>
+                                </Alert>
+                            </div>
                         </div>
-                        <div className={'flex-1'}>
 
+                    </Card>
+
+
+                    <Card className={'p-3.5 mb-5'}>
+                        <div className={'header-2'}>Notification Settings</div>
+                        <div className={'flex flex-col md:flex-row gap-4 pt-5'}>
+                            <div className={'flex-1'}>
+                                <CustomInput control={form.control}   {...form.register("licensedEmail")}
+                                             label={'Licensed To Email'}
+                                             placeholder={'eg. joe@ecokeepr.com'}
+                                             type={'text'}/>
+                            </div>
+                            <div className={'flex-1'}/>
                         </div>
-                    </div>
-
-                    <div className={'flex flex-col md:flex-row gap-4 pt-5'}>
-                        <div className={'flex-1'}>
-
+                        <div className={'flex flex-col md:flex-row gap-4 pt-5'}>
+                            <div className={'flex-1'}>
+                                <CustomInput control={form.control}   {...form.register("renewalDate")}
+                                             label={'Expiration/ Renewal Date'}
+                                             placeholder={'eg. 2022-12-31'}
+                                             type={'text'}/>
+                            </div>
+                            <div className={'flex-1'}/>
                         </div>
-                        <div className={'flex-1'}>
+                        <div className={'flex flex-col md:flex-row gap-4 pt-5'}>
+                            <div className={'flex-1'}>
+                                <CustomInput control={form.control}   {...form.register("alertRenewalDays")}
+                                             label={'Alert Notification Days'}
+                                             placeholder={'eg. 4'}
+                                             type={'number'}/>
+                            </div>
+                            <div className={'flex-1'}/>
+                        </div>
+                    </Card>
 
 
+                    <Card className={'p-3.5 mb-5'}>
+                        <div className={'header-2'}>Vendor & Key details</div>
+                        <div className={'flex flex-col md:flex-row gap-4 pt-5'}>
+                            <div className={'flex-1'}>
+                                <CustomInput control={form.control}   {...form.register("vendor")}
+                                             label={'Vendor'}
+                                             placeholder={'eg. Microsoft'}
+                                             type={'text'}/>
+                            </div>
+                            <div className={'flex-1'}/>
                         </div>
 
-                    </div>
+                        <div className={'flex flex-col md:flex-row gap-4 pt-5'}>
+                            <div className={'flex-1'}>
+                                <CustomInput control={form.control}   {...form.register("licenseKey")}
+                                             label={'Product Key'}
+                                             placeholder={'eg. 12345-12345-12345-12345-12345'}
+                                             type={'text'}/>
+                            </div>
+                            <div className={'flex-1'}/>
+                        </div>
+
+                        <div className={'flex flex-col md:flex-row gap-4 pt-5'}>
+                            <div className={'flex-1'}>
+                                <CustomInput control={form.control}   {...form.register("purchaseDate")}
+                                             label={'Purchase Date'}
+                                             placeholder={'eg. 2023-12-31'}
+                                             type={'text'}/>
+                            </div>
+                            <div className={'flex-1'}/>
+                        </div>
+
+                        <div className={'flex flex-col md:flex-row gap-4 pt-5'}>
+                            <div className={'flex-1'}>
+                                <CustomInput control={form.control}   {...form.register("purchasePrice")}
+                                             label={'Purchase Price'}
+                                             placeholder={'eg. €100'}
+                                             type={'number'}/>
+                            </div>
+                            <div className={'flex-1'}/>
+                        </div>
+
+                        <div className={'flex flex-col md:flex-row gap-4 pt-5'}>
+                            <div className={'flex-1'}>
+                                <CustomTextarea control={form.control}   {...form.register("notes")}
+                                                label={'Notes'}
+                                                placeholder={'eg. This is a note'}/>
+                            </div>
+                            <div className={'flex-1'}/>
+                        </div>
+
+                    </Card>
 
 
-                    <Button type="submit" className={'form-btn mt-6 w-full md:w-auto'} disabled={isLoading}>
+                    <Button type="submit" className={'form-btn mt-6 w-full  md:w-auto'} disabled={isLoading}>
                         {isLoading ? (
                                 <>
                                     <Loader2 size={20} className={'animate-spin'}/>&nbsp;
                                     Loading...
                                 </>
                             ) :
-                            'Submit'}
+                            'Submit License'}
                     </Button>
                 </form>
             </Form>
+
         </section>
     )
 }
-// export default LicenseForm
-//
-// import React, { useState, useRef } from 'react';
-// import { useForm, FormProvider } from 'react-hook-form';
-// import { FiCheckCircle } from 'react-icons/fi';
-//
-// const Step = ({ step, title, isActive, isCompleted }: { step: number, title: string, isActive: boolean, isCompleted: boolean }) => (
-//     <div className="flex items-center">
-//         <div className={`flex items-center justify-center w-8 h-8 rounded-full border-2 ${isCompleted ? 'bg-blue-600 text-white border-blue-600' : isActive ? 'bg-blue-100 text-blue-600 border-blue-600' : 'bg-gray-100 text-gray-600 border-gray-300'}`}>
-//             {isCompleted ? <FiCheckCircle /> : step}
-//         </div>
-//         <div className="ml-2">
-//             <div className={`${isActive || isCompleted ? 'text-blue-600' : 'text-gray-600'}`}>{title}</div>
-//         </div>
-//     </div>
-// );
-//
-// const Stepper = ({ steps, currentStep } : { steps: string[], currentStep: number }) => (
-//     <div className="flex justify-between mb-8">
-//         {steps.map((step, index) => (
-//             <React.Fragment key={index}>
-//                 <Step
-//                     step={index + 1}
-//                     title={step}
-//                     isActive={currentStep === index}
-//                     isCompleted={currentStep > index}
-//                 />
-//                 {index < steps.length - 1 && (
-//                     <div className={`flex-1 border-t-2 ${currentStep > index ? 'border-blue-600' : 'border-gray-300'}`}></div>
-//                 )}
-//             </React.Fragment>
-//         ))}
-//     </div>
-// );
-//
-// const LicenseForm = () => {
-//     const methods = useForm();
-//     const [currentStep, setCurrentStep] = useState(0);
-//     const steps = ['Asset Info', 'Licenses', 'Review'];
-//
-//     // const contactInfoRef = useRef(null);
-//     // const dateTimeRef = useRef(null);
-//     // const roomsRef = useRef(null);
-//
-//     const handleNext = () => {
-//         setCurrentStep((prev) => prev + 1);
-//     };
-//
-//     const handleBack = () => {
-//         setCurrentStep((prev) => prev - 1);
-//     };
-//
-//     return (
-//         <FormProvider {...methods}>
-//             <form>
-//                 <Stepper steps={steps} currentStep={currentStep} />
-//                 {currentStep === 0 && (
-//                     <div>
-//                         <label>Asset Info</label>
-//
-//
-//                         <input name="contactInfo" className="block border-2 border-gray-300 p-2 rounded w-full" />
-//
-//                     </div>
-//
-//
-//
-//                 )}
-//                 {currentStep === 1 && (
-//                     <div>
-//                         <label>Licenses</label>
-//                         <input  name="dateTime" className="block border-2 border-gray-300 p-2 rounded w-full" />
-//                     </div>
-//                 )}
-//                 {currentStep === 2 && (
-//                     <div>
-//                         <label>Review</label>
-//                         <input  name="rooms" className="block border-2 border-gray-300 p-2 rounded w-full" />
-//                     </div>
-//                 )}
-//                 <div className="flex justify-between mt-4">
-//                     <button type="button" onClick={handleBack} disabled={currentStep === 0} className="bg-gray-500 text-white py-2 px-4 rounded disabled:opacity-50">
-//                         Back
-//                     </button>
-//                     <button type="button" onClick={handleNext} disabled={currentStep === steps.length - 1} className="bg-blue-600 text-white py-2 px-4 rounded">
-//                         Next
-//                     </button>
-//                 </div>
-//             </form>
-//         </FormProvider>
-//     );
-// };
-//
-// export default LicenseForm;
+export default LicenseForm

@@ -2,7 +2,7 @@
 import HeaderBox from '@/components/HeaderBox'
 import RightSidebar from '@/components/RightSidebar';
 import TotalBalanceBox from '@/components/TotalBalanceBox';
-import CustomAssetTable from "@/components/tables/CustomAssetTable";
+import AssetTable from "@/components/tables/AssetTable";
 import RegisterForm from "@/components/forms/RegisterForm";
 import {useSession, signOut} from "next-auth/react";
 import {Button} from "@/components/ui/button";

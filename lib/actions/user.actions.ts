@@ -44,7 +44,6 @@ export const insert = async (userData: User) => {
     try {
         await prisma.user.create({
             data: {
-                id: userData.id,
                 roleId: 0,
                 companyId: 0,
                 email: userData.email,
@@ -79,7 +78,7 @@ export const findById = async (id: number) => {
     try {
         const licenseTool = await prisma.user.findFirst({
             where: {
-                id: String(id)
+                id: id
             }
         });
         return parseStringify(licenseTool);
@@ -93,7 +92,7 @@ export const update = async (data: User, id: number) => {
     try {
         const licenseTool = await prisma.user.update({
             where: {
-                id: String(id)
+                id: id
             },
             data: {
                 roleId: data.roleId,

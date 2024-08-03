@@ -3,7 +3,7 @@ import {persist} from "zustand/middleware";
 import produce from 'immer';
 import {getAll, insert, findById, update} from '@/lib/actions/license.actions';
 
-interface IAssetStore {
+interface ILicenseStore {
     licenses: License[];
     loading: boolean;
     create: (asset: License) => void;
@@ -14,7 +14,7 @@ interface IAssetStore {
 }
 
 
-export const useLicenseStore = create(persist<IAssetStore>(
+export const useLicenseStore = create(persist<ILicenseStore>(
     (set, get) => ({
         licenses: [],
         loading: false,

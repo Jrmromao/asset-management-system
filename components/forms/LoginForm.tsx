@@ -102,8 +102,8 @@ const AuthForm = () => {
                                              label={'Email'}
                                              placeholder={'Enter your email'} type={'text'}/>
                                 <CustomInput control={form.control}  {...form.register("password")}
-                                             label={'Email address'}
-                                             placeholder={'Enter your email'} type={'password'}/>
+                                             label={'Password'}
+                                             placeholder={'Password'} type={'password'}/>
 
                                 <Link href={'/auth/forgot-password'} className={'text-12 text-gray-500'}>
                                     Forgot Password

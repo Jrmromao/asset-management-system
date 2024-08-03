@@ -290,7 +290,7 @@ const Admin = () => {
                                                 </CardDescription>
                                             </CardHeader>
                                             <CardContent>
-                                                <LicensesTable licenses={licenses || []}/>
+                                                {/*<LicensesTable licenses={licenses || []}/>*/}
                                             </CardContent>
                                             <CardFooter>
                                             </CardFooter>

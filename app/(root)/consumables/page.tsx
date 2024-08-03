@@ -41,7 +41,7 @@ const Consumables = () => {
                                     </CardHeader>
                                     <CardContent
                                         className="grid gap-4 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-1 xl:grid-cols-1">
-                                        <LicensesTable licenses={licensesList || []}/>
+                                        {/*<LicensesTable licenses={licensesList || []}/>*/}
                                     </CardContent>
                                 </Card>
                             </TabsContent>
