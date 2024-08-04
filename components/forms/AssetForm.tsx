@@ -17,8 +17,9 @@ import {useLicenseStore} from "@/lib/stores/licenseStore";
 import {useCategoryStore} from "@/lib/stores/categoryStore";
 import CustomInput from "@/components/CustomInput";
 import {useDialogStore} from "@/lib/stores/store";
-import {AssetDialog} from "@/components/modals/AssetDialog";
+import {DialogContainer} from "@/components/dialogs/DialogContainer";
 import CategoryForm from "@/components/forms/CategoryForm";
+import {useStatusLabelStore} from "@/lib/stores/statusLabelStore";
 
 const AssetForm = () => {
 
@@ -46,12 +47,14 @@ const AssetForm = () => {
     const [createAsset] = useAssetStore((state) => [state.create]);
     const [licenses, fetchLicenses] = useLicenseStore((state) => [state.licenses, state.getAll]);
     const [categories, fetchAll] = useCategoryStore((state) => [state.categories, state.getAll]);
+    const [statusLabels, fetchAllStatusLabels] = useStatusLabelStore((state) => [state.statusLabels, state.getAll]);
 
 
     useEffect(() => {
         closeDialog()
         fetchLicenses()
         fetchAll()
+        fetchAllStatusLabels()
     }, []);
 
     const schema = z.object({
@@ -112,9 +115,9 @@ const AssetForm = () => {
 
     return (
         <section className="w-full bg-white z-50 max-h-[700px] overflow-y-auto p-4">
-            <AssetDialog open={isOpen} onOpenChange={closeDialog} title={'New Category'}
-                         description={'Add a new Category'}
-                         form={<CategoryForm setRefresh={() => {
+            <DialogContainer open={isOpen} onOpenChange={closeDialog} title={'New Category'}
+                             description={'Add a new Category'}
+                             form={<CategoryForm setRefresh={() => {
                          }}/>}
             />
 
@@ -135,7 +138,6 @@ const AssetForm = () => {
                             </div>
 
                             <div className={'flex-1'}>
-
 
                                 <div className={'flex'}>
                                     <div className="flex-none w-9/12">

@@ -3,7 +3,7 @@ import {filterColumns, formatDateTime, renameColumns} from "@/lib/utils";
 import CustomTableCell from "@/components/tables/CustomTableCell";
 import React, {useEffect} from "react";
 import {licenseStore} from "@/lib/stores/store";
-import { findById} from "@/lib/actions/license.actions";
+import {findById} from "@/lib/actions/license.actions";
 import LinkTableCell from "@/components/tables/LinkTableCell";
 import {useLicenseStore} from "@/lib/stores/licenseStore";
 
@@ -27,12 +27,10 @@ const LicensesTable = () => {
         purchasePrice: 'Purchase Price',
         createdAt: "",
         updatedAt: "",
-
     };
-    // const filteredData = filterColumns(assets, ['id', 'updatedAt', 'categoryId', 'datePurchased', 'certificateUrl', 'assigneeId', 'purchasePrice', 'licenceUrl', 'licenseId']);
-    // const renamedData = renameColumns(filteredData, columnMappings);
-    const [licenses ] = useLicenseStore((state) => [state.licenses, state.getAll])
-    const filteredData = filterColumns(licenses, ['id', 'updatedAt', 'createdAt', 'licenseUrl', 'purchasePrice', 'alertRenewalDays', 'purchaseNotes', 'minCopiesAlert']);
+    const [licenses] = useLicenseStore((state) => [state.licenses, state.getAll])
+    // @ts-ignore
+    const filteredData = filterColumns(licenses, ['id', 'userId', 'updatedAt', 'createdAt', 'licenseUrl', 'purchasePrice', 'alertRenewalDays', 'purchaseNotes', 'minCopiesAlert']);
     const renamedData = renameColumns(filteredData, columnMappings);
 
     if (renamedData.length === 0) return <p>No assets found</p>
@@ -56,15 +54,23 @@ const LicensesTable = () => {
                     const createdAt = formatDateTime(license.createdAt!);
                     return (
                         <TableRow key={license.id} className={` bg-[#F6FEF9]!over:bg-none !border-b-DEFAULT`}>
-                            <LinkTableCell navigateTo={'/licenses/' + license.id} value={license?.name}  />
-                            <LinkTableCell navigateTo={'/licenses/' + license.id} value={license?.licensedEmail}  />
-                            <LinkTableCell navigateTo={'/licenses/' + license.id} value={license?.licenseKey}  />
-                            <LinkTableCell navigateTo={'/licenses/' + license.id} value={license?.renewalDate?.toString()}  />
-                            <LinkTableCell navigateTo={'/licenses/' + license.id} value={license?.purchaseDate?.toString()}  />
-                            <LinkTableCell navigateTo={'/licenses/' + license.id} value={license?.vendor}  />
-                            <LinkTableCell navigateTo={'/licenses/' + license.id} value={license?.licenseCopiesCount}  />
+                            <LinkTableCell navigateTo={'/licenses/' + license.id} value={license?.name}/>
+                            <LinkTableCell navigateTo={'/licenses/' + license.id} value={license?.licensedEmail}/>
+                            <LinkTableCell navigateTo={'/licenses/' + license.id} value={license?.licenseKey}/>
+                            <LinkTableCell navigateTo={'/licenses/' + license.id}
+                                           value={license?.renewalDate?.toString().split('T')[0]}/>
+
+                            <LinkTableCell navigateTo={'/licenses/' + license.id}
+                                           value={license?.purchaseDate?.toString().split('T')[0]}/>
+                            <LinkTableCell navigateTo={'/licenses/' + license.id} value={license?.vendor}/>
+                            <LinkTableCell navigateTo={'/licenses/' + license.id} value={license?.licenseCopiesCount}/>
                             <TableCell className="pl-2 pr-10 capitalize min-w-24">
-                                <CustomTableCell id={Number(license.id)} entity={() => {}} deleteEntity={()=>{}} updateEntity={()=>{}} viewEntity={() => {}} setRefresh={()=>{}}/>
+                                <CustomTableCell id={Number(license.id)} entity={() => {
+                                }} deleteEntity={() => {
+                                }} updateEntity={() => {
+                                }} viewEntity={() => {
+                                }} setRefresh={() => {
+                                }}/>
                             </TableCell>
                         </TableRow>
                     )

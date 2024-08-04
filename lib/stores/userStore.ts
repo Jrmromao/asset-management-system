@@ -1,19 +1,20 @@
 import {create} from "zustand"
 import {persist} from "zustand/middleware";
 import produce from 'immer';
-import {getAll, insert, findById, update} from '@/lib/actions/user.actions';
+import {getAll, insert, update, remove} from '@/lib/actions/user.actions';
 
 interface IUserStore {
     users: User[];
     loading: boolean;
-    create: (asset: User) => void;
-    update: (id: number, updatedAsset: User) => void;
-    findById: (id: string) => User | null;
+    create: (user: User) => void;
+    update: (id: number, updatedUser: User) => void;
+    findById: (id: number) => User | null;
+    delete: (id: number) => void;
     getAll: () => void;
 }
 
 
-export const usePeopleStore = create(persist<IUserStore>(
+export const useUserStore = create(persist<IUserStore>(
     (set, get) => ({
         users: [],
         loading: false,
@@ -24,74 +25,52 @@ export const usePeopleStore = create(persist<IUserStore>(
                 set({users});
             }).catch(error => {
                 set({users: [], loading: false});
-                console.error("Error fetching assets:", error);
+                console.error("Error fetching users:", error);
                 set({loading: false});
             });
         },
-
-
-
-//  model User {
-//     id          Int        @id @default(autoincrement())
-//     email       String     @unique
-//     createdAt   DateTime   @default(now())
-//     updatedAt   DateTime   @updatedAt
-//     roleId      Int
-//     companyId   Int
-//     firstName   String
-//     lastName    String
-//     phoneNumber String     @unique
-//     auditLogs   AuditLog[]
-//     company     Company    @relation(fields: [companyId], references: [id])
-//     role        Role       @relation(fields: [roleId], references: [id])
-// }
-
-
-create: async (user: User) => {
+        create: async (data: User) => {
             try {
-                await insert({
-                        roleId: 1,
-                        companyId:1,
-                        email: 'Joao@email',
-                        firstName:'Kpsp',
-                        lastName: 'Romao',
-                        phoneNumber: '123456789',
-                    }
-                );
-                set(
-                    produce((state) => {
-                        state.users.push(user);
-                    })
-                );
-                return user;
+                await insert(data).then(_ =>{
+                    set(
+                        produce((state) => {
+                            state.users.push(data);
+                        })
+                    );
+                })
             } catch (error) {
-                console.error("Error creating asset:", error);
+                console.error("Error creating user:", error);
                 throw error;
             }
         },
-
-
         update: (id: number, updatedUser: User) => {
             set(
                 produce((state) => {
 
                     update(updatedUser, id).then(() => {
-                        const index = state.users.findIndex((asset: Asset) => asset.id === id);
+                        const index = state.users.findIndex((user: User) => user.id === id);
                         if (index !== -1) {
-                            state.assets[index] = updatedUser;
+                            state.users[index] = updatedUser;
                         }
-                    }).catch(error => console.log(error))
+                    }).catch(error => console.error(error))
                 })
             );
         },
+        delete: (id: number) => {
+            set(
+                produce((state) => {
+                    remove(id).then(() => {
+                            state.users = state.users.filter((a: User) => a.id !== id)
+                        }
+                    ).catch(error => console.error(error))
 
-
-        findById: (id: string) => {
-
+                })
+            );
+        },
+        findById: (id: number) => {
             const user = get().users.find((user) => user.id === id);
             if (!user) return null
-
             return user;
         },
 
-    }), {name: 'asset_store',}));
+    }), {name: 'user_store',}));

@@ -13,27 +13,22 @@ interface CustomInputProps {
 
 const CustomInput = ({control, name, label, placeholder, type, ...rest}: CustomInputProps) => {
     return (
-        <FormField
-            control={control}
-            name={name}
-            render={({field}) => (
-                <div className={'form-item'}>
-                    <FormLabel className={'form-label'}>
-                        {label}
-                    </FormLabel>
-                    <div className={'flex w-full flex-col'}>
-                        <FormControl>
-                            <Input
-                                placeholder={placeholder}
-                                className={'input-class'} {...field}
-                                type={type}
-                            />
-                        </FormControl>
-                        <FormMessage className={'form-message mt-2'}/>
-                    </div>
-                </div>
-            )}
-        />
+        <div className="w-full">
+            <FormLabel className="block text-sm font-medium text-gray-700 mb-1">
+                {label}
+            </FormLabel>
+            <div className="flex flex-col space-y-2">
+                <FormControl>
+                    <Input
+                        placeholder={placeholder}
+                        className="w-full border border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                        {...rest}
+                        type={type}
+                    />
+                </FormControl>
+
+            </div>
+        </div>
     )
 }
 export default CustomInput

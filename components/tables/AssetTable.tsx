@@ -55,7 +55,7 @@ const AssetTable = ({assets, findById, deleteAsset}: AssetTableProps) => {
                             <TableRow key={asset.id} className={`cursor-pointer bg-[#F6FEF9]!over:bg-none !border-b-DEFAULT border-b-[1px]`}>
                                 <LinkTableCell value={asset?.name} navigateTo={`/assets/view/?id=${asset.id}`} />
                                 <LinkTableCell value={asset?.price} navigateTo={`/assets/view/?id=${asset.id}`} />
-                                <LinkTableCell value={asset?.createdAt?.toString()} navigateTo={`/assets/view/?id=${asset.id}`} />
+                                <LinkTableCell value={asset?.createdAt?.toString().split('T')[0]} navigateTo={`/assets/view/?id=${asset.id}`} />
                                 <LinkTableCell value={asset?.brand} navigateTo={`/assets/view/?id=${asset.id}`} />
                                 <LinkTableCell value={asset?.model} navigateTo={`/assets/view/?id=${asset.id}`} />
                                 <LinkTableCell value={asset?.serialNumber} navigateTo={`/assets/view/?id=${asset.id}`} />

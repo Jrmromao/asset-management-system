@@ -1,7 +1,7 @@
 import HeaderBox from "@/components/HeaderBox";
 import AssetForm from "@/components/forms/AssetForm";
 import React from "react";
-import PersonForm from "@/components/forms/PersonForm";
+import UserForm from "@/components/forms/UserForm";
 
 const Create = () => {
 
@@ -13,11 +13,7 @@ const Create = () => {
                     subtext="Fill the form to register a new employee."
                 />
             </div>
-
-            <PersonForm />
-
-
-
+            <UserForm/>
         </div>
 
     )

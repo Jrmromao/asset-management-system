@@ -6,9 +6,10 @@ generator client {
 // npx prisma migrate dev
 // npx prisma generate
 // npx prisma db pull
+// npx prisma db push -
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -17,15 +18,17 @@ model User {
   email       String       @unique
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
+  oauthId     String?
   roleId      Int
   companyId   Int
   firstName   String
   lastName    String
-  phoneNumber String       @unique
+  title       String?
   auditLogs   AuditLog[]
   company     Company      @relation(fields: [companyId], references: [id])
   role        Role         @relation(fields: [roleId], references: [id])
   co2eRecords Co2eRecord[]
+  employeeId  String?
 }
 
 model Co2eRecord {
@@ -59,20 +62,33 @@ model Company {
 }
 
 model Asset {
-  id           Int          @id @default(autoincrement())
+  id            Int          @id @default(autoincrement())
+  name          String
+  price         Float
+  categoryId    Int
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  assigneeId    Int?
+  brand         String
+  model         String
+  serialNumber  String
+  licenseId     Int?
+  statusLableId Int?
+  statusLabel   StatusLable? @relation(fields: [statusLableId], references: [id])
+  category      Category     @relation(fields: [categoryId], references: [id])
+  license       License?     @relation(fields: [licenseId], references: [id])
+  Co2eRecord    Co2eRecord[]
+}
+
+model StatusLable {
+  id           Int      @id @default(autoincrement())
   name         String
-  price        Float
-  categoryId   Int
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
-  assigneeId   Int?
-  brand        String
-  model        String
-  serialNumber String
-  licenseId    Int?
-  category     Category     @relation(fields: [categoryId], references: [id])
-  license      License?     @relation(fields: [licenseId], references: [id])
-  Co2eRecord   Co2eRecord[]
+  colorCode    String
+  isArchivable Boolean
+  allowLoan    Boolean
+  Asset        Asset[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
 
 model Category {
@@ -99,7 +115,6 @@ model License {
   licenseKey         String
   renewalDate        DateTime
   purchaseDate       DateTime
-  userId             String?
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
   vendor             String?

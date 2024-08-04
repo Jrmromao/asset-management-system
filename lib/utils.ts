@@ -264,7 +264,7 @@ export function filterColumns<T>(data: T[], columnsToExclude: (keyof T)[]): Part
 
 export function renameColumns<T>(data: T[], columnMappings: Record<keyof T, string>): any[] {
     return data?.map(item => {
-        const renamedItem: any = {}; // Using 'any' for flexibility
+        const renamedItem: any = {};
         for (const key in item) {
             const newKey = columnMappings[key] || key; // Rename if mapping exists
             renamedItem[newKey] = item[key];
