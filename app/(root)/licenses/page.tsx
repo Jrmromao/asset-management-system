@@ -34,6 +34,13 @@ const Licenses = () => {
                             onClick={() => navigate.push('/licenses/export')}>
                             Export
                         </Button>
+
+                        <Button
+                            variant={"link"}
+                            className={'flex justify-end'}
+                            onClick={() => navigate.push('/licenses/export')}>
+                            Import
+                        </Button>
                     </div>
                 </section>
                 <section className="flex w-full flex-col gap-6">

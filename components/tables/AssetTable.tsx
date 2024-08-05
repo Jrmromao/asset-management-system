@@ -26,10 +26,12 @@ const AssetTable = ({assets, findById, deleteAsset}: AssetTableProps) => {
         category: "Category",
         license: "",
         licenseId: "",
-        price: "Price"
+        price: "Price",
+        statusLabel: "Status Label",
+        statusLabelId: ""
     };
 
-    const filteredData = filterColumns(assets, ['id', 'updatedAt', 'categoryId', 'datePurchased', 'certificateUrl', 'assigneeId', 'purchasePrice', 'licenceUrl', 'licenseId']);
+    const filteredData = filterColumns(assets, ['id', 'updatedAt', 'categoryId', 'datePurchased', 'certificateUrl', 'assigneeId', 'purchasePrice', 'licenceUrl', 'licenseId', "license", "statusLabelId"]);
     const renamedData = renameColumns(filteredData, columnMappings);
     if (renamedData?.length === 0) return <p>No assets found</p>
 
@@ -52,20 +54,31 @@ const AssetTable = ({assets, findById, deleteAsset}: AssetTableProps) => {
                 <TableBody>
                     {assets?.map((asset: Asset) => {
                         return (
-                            <TableRow key={asset.id} className={`cursor-pointer bg-[#F6FEF9]!over:bg-none !border-b-DEFAULT border-b-[1px]`}>
-                                <LinkTableCell value={asset?.name} navigateTo={`/assets/view/?id=${asset.id}`} />
-                                <LinkTableCell value={asset?.price} navigateTo={`/assets/view/?id=${asset.id}`} />
-                                <LinkTableCell value={asset?.createdAt?.toString()} navigateTo={`/assets/view/?id=${asset.id}`} />
-                                <LinkTableCell value={asset?.brand} navigateTo={`/assets/view/?id=${asset.id}`} />
-                                <LinkTableCell value={asset?.model} navigateTo={`/assets/view/?id=${asset.id}`} />
-                                <LinkTableCell value={asset?.serialNumber} navigateTo={`/assets/view/?id=${asset.id}`} />
-                                <LinkTableCell value={asset?.category?.name} navigateTo={`/assets/view/?id=${asset.id}`} />
-                                 <TableCell className=" cusor-pointer pl-2 pr-10 capitalize min-w-24">
+                            <TableRow key={asset.id}
+                                      className={`cursor-pointer bg-[#F6FEF9]!over:bg-none !border-b-DEFAULT border-b-[1px]`}>
+                                <LinkTableCell value={asset?.name} navigateTo={`/assets/view/?id=${asset.id}`}/>
+                                <LinkTableCell value={asset?.price} navigateTo={`/assets/view/?id=${asset.id}`}/>
+                                <LinkTableCell value={asset?.createdAt?.toString().split('T')[0]}
+                                               navigateTo={`/assets/view/?id=${asset.id}`}/>
+                                <LinkTableCell value={asset?.brand} navigateTo={`/assets/view/?id=${asset.id}`}/>
+                                <LinkTableCell value={asset?.model} navigateTo={`/assets/view/?id=${asset.id}`}/>
+                                <LinkTableCell value={asset?.serialNumber} navigateTo={`/assets/view/?id=${asset.id}`}/>
+                                <LinkTableCell value={asset?.category?.name}
+                                               navigateTo={`/assets/view/?id=${asset.id}`}/>
+
+
+                                <LinkTableCell value={asset?.statusLabel?.name} label={asset?.statusLabel}/>
+
+
+                                <TableCell className=" cusor-pointer pl-2 pr-10 capitalize min-w-24">
                                     <CustomTableCell id={asset.id!} entity={asset}
                                                      deleteEntity={() => deleteAsset(asset.id!)}
                                                      setRefresh={(flag: boolean) => console.log(flag)}
-                                                     updateEntity={() => {}}
-                                                     viewEntity={() => {navigate.push(`/assets/view/?id=${asset.id}`)}}/>
+                                                     updateEntity={() => {
+                                                     }}
+                                                     viewEntity={() => {
+                                                         navigate.push(`/assets/view/?id=${asset.id}`)
+                                                     }}/>
                                 </TableCell>
 
                             </TableRow>

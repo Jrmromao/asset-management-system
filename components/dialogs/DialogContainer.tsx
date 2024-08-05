@@ -10,7 +10,7 @@ interface IProps {
 
 }
 
-export function AssetDialog({open, onOpenChange, title, description, form}: IProps) {
+export function DialogContainer({open, onOpenChange, title, description, form}: IProps) {
 
     return (
         <div className={"asset-dialog"}>

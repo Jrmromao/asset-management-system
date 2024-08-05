@@ -1,73 +1,105 @@
 'use server';
-
-import {PrismaClient} from '@prisma/client'
 import {parseStringify} from "@/lib/utils";
 import {signUp as CognitoSignUp} from "@/services/aws/Cognito";
-
-const prisma = new PrismaClient()
+import {prisma} from "@/app/db";
 
 export const registerUser = async (data: RegUser) => {
+    let cognitoRegisterResult: any;
     try {
-        const cognitoRegisterResult = await CognitoSignUp({
+        cognitoRegisterResult = await CognitoSignUp({
             clientId: process.env.COGNITO_CLIENT_ID!,
             username: data.email.split('@')[0],
             email: data.email,
             password: data.password,
             companyId: data.companyId
-        }).then(async (result) => {
-            await prisma.user.create({
-                data: {
-                    id: cognitoRegisterResult.UserSub,
-                    roleId: 4,
-                    companyId: data.companyId,
-                    email: data.email,
-                    firstName: data.firstName!,
-                    lastName: data.lastName!,
-                    phoneNumber: data.phoneNumber!,
-                    createdAt: new Date(),
-                    updatedAt: new Date()
-                }
-            });
-        }).catch((error) => {
-            return error
         });
+
+        const role = await prisma.role.findUnique({
+            where: {
+                name: 'Admin'
+            }
+        });
+
+        if (!role) {
+            throw new Error('Role not found');
+        }
+
+        await prisma.user.create({
+            data: {
+                oauthId: cognitoRegisterResult.UserSub,
+                email: data.email,
+                firstName: data.firstName!,
+                lastName: data.lastName!,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                company: {
+                    connect: {
+                        id: data.companyId
+                    }
+                },
+                role: {
+                    connect: {
+                        id: role.id
+                    }
+                }
+            }
+        });
+
         return parseStringify(cognitoRegisterResult);
+
     } catch (error) {
-        console.log(error)
+        // Handle errors and log them
+        console.error("Error registering user:", error);
+        throw error;  // Optionally rethrow the error
     } finally {
-        await prisma.$disconnect()
+        // Ensure that the Prisma client disconnects properly
+        await prisma.$disconnect();
     }
 }
-
-
 export const insert = async (userData: User) => {
     try {
         await prisma.user.create({
             data: {
-                roleId: 0,
-                companyId: 0,
                 email: userData.email,
-                firstName: userData.firstName,
-                lastName: userData.lastName,
-                phoneNumber: userData.phoneNumber,
+                firstName: userData.firstName!,
+                lastName: userData.lastName!,
                 createdAt: new Date(),
-                updatedAt: new Date()
+                updatedAt: new Date(),
+                employeeId: userData.employeeId,
+                title: userData.title,
+                company: {
+                    connect: {
+                        id: 1
+                    }
+                },
+                role: {
+                    connect: {
+                        id: userData.roleId
+                    }
+                }
             }
         })
     } catch (error) {
-        console.log(error)
+        console.error(error)
     } finally {
         await prisma.$disconnect()
     }
 }
 export const getAll = async () => {
     try {
+        const users = await prisma.user.findMany({
+            include: {
+                role: true,
+                company: true,
+            },
+            orderBy: {
+                createdAt: 'desc'
+            }
+        });
 
+        console.log(users)
 
-        const licenses = await prisma.user.findMany();
-
-
-        return parseStringify(licenses);
+        return parseStringify(users);
     } catch (error) {
         console.log(error)
     } finally {
@@ -100,7 +132,6 @@ export const update = async (data: User, id: number) => {
                 email: data.email,
                 firstName: data.firstName,
                 lastName: data.lastName,
-                phoneNumber: data.phoneNumber,
             }
         });
         return parseStringify(licenseTool);
@@ -108,6 +139,18 @@ export const update = async (data: User, id: number) => {
         console.log(error)
     } finally {
         await prisma.$disconnect()
+    }
+}
+export const remove = async (id: number) => {
+    try {
+        const asset = await prisma.user.delete({
+            where: {
+                id: id
+            }
+        })
+        return parseStringify(asset);
+    } catch (error) {
+        console.log(error)
     }
 }
 

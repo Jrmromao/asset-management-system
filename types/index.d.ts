@@ -25,12 +25,24 @@ declare type LoginUser = {
     password: string;
 };
 
+
+declare type StatusLabel = {
+    id?: number;
+    name: string;
+    colorCode: string;
+    description: string;
+    isArchived: boolean;
+    allowLoan: boolean;
+};
+
 declare type User = {
-    id?: string;
+    id?: number;
+    oauthId?: string;
     email: string;
     firstName: string;
     lastName: string;
-    phoneNumber: string;
+    title: string;
+    employeeId: string;
     createdAt?: Date;
     updatedAt?: Date;
     roleId?: number;
@@ -74,8 +86,10 @@ declare type Asset = {
     serialNumber: string;
     createdAt?: Date;
     updatedAt?: Date;
-    category?: Category,
-    licenseId?: string
+    category?: Category;
+    licenseId?: string;
+    statusLabelId?: number;
+    statusLabel?: StatusLabel;
 }
 declare type Category = {
     id?: string;
@@ -125,6 +139,12 @@ declare interface CategoryBadgeProps {
 declare interface AssetTableProps {
     assets: Asset[];
     deleteAsset: (id: number) => void;
+    findById: (id: number) => void;
+}
+
+declare interface UserTableProps {
+    users: User[];
+    deleteUser: (id: number) => void;
     findById: (id: number) => void;
 }
 

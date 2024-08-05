@@ -1,24 +1,24 @@
-
-
-
-
 'use client'
-import React, {useMemo, useState} from 'react'
+import React, {useEffect} from 'react'
 import HeaderBox from "@/components/HeaderBox";
-// import {getLicenses} from "@/lib/actions/licenseTool.actions";
-import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs";
-import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
-import LicensesTable from "@/components/tables/LicensesTable";
-import {licenseStore} from "@/lib/stores/store";
+import {useDialogStore} from "@/lib/stores/store";
 import {Button} from "@/components/ui/button";
-import AssetTable from "@/components/tables/AssetTable";
-import {useRouter} from "next/navigation";
-import {usePeopleStore} from "@/lib/stores/userStore";
+import {useUserStore} from "@/lib/stores/userStore";
+import {DialogContainer} from "@/components/dialogs/DialogContainer";
+import UserForm from "@/components/forms/UserForm";
+import UserTable from "@/components/tables/UserTable";
+
 
 
 const People = () => {
-    const [refresh, setRefresh] = useState(0)
-     const navigate = useRouter()
+    const [openDialog, closeDialog, isOpen] = useDialogStore(state => [state.onOpen, state.onClose, state.isOpen])
+    const [users, findById] = useUserStore(state => [state.users, state.findById])
+
+
+useEffect(()=>{
+    useUserStore.getState().getAll()
+},[])
+
 
     return (
 
@@ -29,17 +29,24 @@ const People = () => {
                     subtext="Manage asset assignees."
                 />
             </div>
+
+            <DialogContainer open={isOpen} onOpenChange={closeDialog} title={'New User'}
+                             description={'Register a new user for your organization.'}
+                             form={<UserForm/>}
+            />
             <div className="space-y-6">
                 <section className="flex">
                     <div className="flex justify-end">
                         <Button
                             variant={'link'}
-                            onClick={() => navigate.push('/people/create')}>Add Assignee
+                            onClick={openDialog}>Add People
                         </Button>
                     </div>
                 </section>
                 <section className="flex w-full flex-col gap-6">
-                 </section>
+                    <UserTable users={users} findById={findById} deleteUser={findById}/>
+
+                </section>
             </div>
         </div>
     )

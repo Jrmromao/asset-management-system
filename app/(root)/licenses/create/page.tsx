@@ -17,7 +17,6 @@ const Create = () => {
             </div>
             <LicenseForm/>
         </div>
-
     )
 }
 export default Create

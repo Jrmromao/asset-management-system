@@ -17,7 +17,7 @@ export const sidebarLinks = [
         label: "Assets",
         visibleTo: ["admin", "user"],
     },
-{
+    {
         imgURL: "/icons/transaction.svg",
         route: "/licenses",
         label: "Licenses",
@@ -25,8 +25,8 @@ export const sidebarLinks = [
     },
     {
         imgURL: "/icons/money-send.svg",
-        route: "/consumables",
-        label: "Consumables",
+        route: "/accessories",
+        label: "Accessories",
         visibleTo: ["admin", "user"],
     },
     {
@@ -35,21 +35,17 @@ export const sidebarLinks = [
         label: "People",
         visibleTo: ["admin", "user"],
     },
-    // {
-    //     imgURL: "/icons/money-send.svg",
-    //     route: "/locations",
-    //     label: "locations",
-    //     visibleTo: ["admin", "user"],
-    // },
-    //
-    // {
-    //     imgURL: "/icons/arrow-right.svg",
-    //     route: "/import",
-    //     label: "Import",
-    //     visibleTo: ["admin", "user"],
-    // },
-
-];
+    {
+        imgURL: "/icons/money-send.svg",
+        route: "/kits",
+        label: "Kits",
+        visibleTo: ["admin"],
+    },
+].sort((a, b) => {
+    if (a.label === "Home") return -1;
+    if (b.label === "Home") return 1;  
+    return a.label.localeCompare(b.label);
+});
 
 // good_user / good_password - Bank of America
 export const TEST_USER_ID = "6627ed3d00267aa6fa3e";

@@ -22,7 +22,7 @@ interface CustomInputProps {
     name: string,
     label: string,
     placeholder: string,
-    data: Category[] | License[]
+    data: Category[] | License[] | StatusLabel[]
 }
 
 

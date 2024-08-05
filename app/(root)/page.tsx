@@ -40,17 +40,16 @@ const Home = ({searchParams: {id, page}}: SearchParamProps) => {
 
 
                     TODO
-                    <p>- register new users</p>
-                    <p> - register consumables</p>
-                    <p> - register licenses // complete</p>
+                    <p>- register new users - done</p>
+                    <p> - register Accessories</p>
+                    <p> - register licenses - done</p>
                     <p> - assign assets to people</p>
-                    <p> - assign consumables to people</p>
+                    <p> - assign consumables to people??</p>
                     <p> - assign licenses to people</p>
                     <p> - create kits</p>
-                    <p> - reformat the create asset pages </p>
-                    <p> - Fix the DB relations</p>
-                    <p>- Protect the API</p>
-                    <p>- All the additions will be done via a modal</p>
+                    <p> - reformat the create asset pages - done</p>
+                    <p> - Fix the DB relations - done</p>
+                    <p>- Protect the API ?? </p>
 
 
                 </header>

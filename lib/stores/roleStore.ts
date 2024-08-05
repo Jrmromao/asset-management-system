@@ -20,8 +20,6 @@ export const useRoleStore = create(persist<IAssetStore>(
 
         getAll: async () => {
             set({loading: true});
-
-
             fetch().then(roles => {
                 set({roles});
             }).catch(error => {

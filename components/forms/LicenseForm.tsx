@@ -11,7 +11,7 @@ import {Card} from "@/components/ui/card";
 import {useLicenseStore} from "@/lib/stores/licenseStore";
 import CustomInput from "@/components/CustomInput";
 import {useDialogStore} from "@/lib/stores/store";
-import {AssetDialog} from "@/components/modals/AssetDialog";
+import {DialogContainer} from "@/components/dialogs/DialogContainer";
 import CategoryForm from "@/components/forms/CategoryForm";
 import {Alert, AlertDescription, AlertTitle} from "@/components/ui/alert"
 import CustomTextarea from "@/components/CustomTextarea";
