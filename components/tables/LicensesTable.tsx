@@ -13,7 +13,7 @@ const LicensesTable = () => {
 
     const columnMappings: Record<keyof License, string> = {
         id: 'ID',
-        name: 'Name',
+        name: 'License Name',
         licenseKey: 'License Key',
         renewalDate: 'Renewal Date',
         licenseUrl: 'License Url',
@@ -55,15 +55,13 @@ const LicensesTable = () => {
                     return (
                         <TableRow key={license.id} className={` bg-[#F6FEF9]!over:bg-none !border-b-DEFAULT`}>
                             <LinkTableCell navigateTo={'/licenses/' + license.id} value={license?.name}/>
-                            <LinkTableCell navigateTo={'/licenses/' + license.id} value={license?.licensedEmail}/>
-                            <LinkTableCell navigateTo={'/licenses/' + license.id} value={license?.licenseKey}/>
-                            <LinkTableCell navigateTo={'/licenses/' + license.id}
-                                           value={license?.renewalDate?.toString().split('T')[0]}/>
-
-                            <LinkTableCell navigateTo={'/licenses/' + license.id}
-                                           value={license?.purchaseDate?.toString().split('T')[0]}/>
-                            <LinkTableCell navigateTo={'/licenses/' + license.id} value={license?.vendor}/>
                             <LinkTableCell navigateTo={'/licenses/' + license.id} value={license?.licenseCopiesCount}/>
+                            <LinkTableCell navigateTo={'/licenses/' + license.id} value={license?.licensedEmail}/>
+                            <LinkTableCell navigateTo={'/licenses/' + license.id} value={license?.renewalDate?.toString().split('T')[0]}/>
+                            <LinkTableCell navigateTo={'/licenses/' + license.id}
+                                           value={license?.vendor}/>
+                            <LinkTableCell navigateTo={'/licenses/' + license.id} value={license?.licenseKey}/>
+                            <LinkTableCell navigateTo={'/licenses/' + license.id} value={license?.purchaseDate?.toString().split('T')[0]}/>
                             <TableCell className="pl-2 pr-10 capitalize min-w-24">
                                 <CustomTableCell id={Number(license.id)} entity={() => {
                                 }} deleteEntity={() => {

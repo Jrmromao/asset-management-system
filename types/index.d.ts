@@ -27,10 +27,11 @@ declare type LoginUser = {
 
 
 declare type StatusLabel = {
-    id: number;
+    id?: number;
     name: string;
     colorCode: string;
-    isArchivable: boolean;
+    description: string;
+    isArchived: boolean;
     allowLoan: boolean;
 };
 
@@ -85,8 +86,10 @@ declare type Asset = {
     serialNumber: string;
     createdAt?: Date;
     updatedAt?: Date;
-    category?: Category,
-    licenseId?: string
+    category?: Category;
+    licenseId?: string;
+    statusLabelId?: number;
+    statusLabel?: StatusLabel;
 }
 declare type Category = {
     id?: string;

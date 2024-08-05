@@ -2,6 +2,7 @@ import {create} from "zustand"
 import {persist} from "zustand/middleware";
 import produce from 'immer';
 import {getAll, insert, remove} from '@/lib/actions/statusLabel.actions';
+import {Actions} from "@/lib/stores/store";
 
 interface IStatusLabelStore {
     statusLabels: StatusLabel[];
@@ -11,6 +12,10 @@ interface IStatusLabelStore {
     findById: (id: number) => StatusLabel | null;
     delete: (id: number) => void;
     getAll: () => void;
+    isOpen: boolean;
+    onOpen: () => void;
+    onClose: () => void;
+
 }
 
 
@@ -72,5 +77,9 @@ export const useStatusLabelStore = create(persist<IStatusLabelStore>(
             if (!statusLabel) return null
             return statusLabel;
         },
+
+        isOpen: false,
+        onOpen: () => set({isOpen: true}),
+        onClose: () => set({isOpen: false}),
 
     }), {name: 'user_store',}));

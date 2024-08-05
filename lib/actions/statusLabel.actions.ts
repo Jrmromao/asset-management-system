@@ -8,8 +8,9 @@ export const insert = async (data: StatusLabel) => {
             data: {
                 name: data.name,
                 colorCode: data.colorCode,
-                isArchivable: data.isArchivable,
-                allowLoan: data.allowLoan
+                isArchived: data.isArchived,
+                allowLoan: data.allowLoan,
+                description: data.description,
             }
         })
     } catch (error) {

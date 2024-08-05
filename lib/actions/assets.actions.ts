@@ -19,7 +19,12 @@ export const create = async (data: Asset) => {
                 category: {
                     connect: {
                         id: Number(data.categoryId)
-                    }
+                    },
+                },
+                statusLabel: {
+                    connect: {
+                        id: data.statusLabelId
+                    },
                 },
             },
         });
@@ -34,6 +39,11 @@ export const get = async () => {
         const assets = await prisma.asset.findMany({
             include: {
                 category: true,
+                license: true,
+                statusLabel: true
+            },
+            orderBy: {
+                createdAt: 'desc'
             }
         });
         return parseStringify(assets);

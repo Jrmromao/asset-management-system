@@ -73,22 +73,23 @@ model Asset {
   model         String
   serialNumber  String
   licenseId     Int?
-  statusLableId Int?
-  statusLabel   StatusLable? @relation(fields: [statusLableId], references: [id])
+  statusLabelId Int?
+  statusLabel   StatusLable? @relation(fields: [statusLabelId], references: [id])
   category      Category     @relation(fields: [categoryId], references: [id])
   license       License?     @relation(fields: [licenseId], references: [id])
   Co2eRecord    Co2eRecord[]
 }
 
 model StatusLable {
-  id           Int      @id @default(autoincrement())
-  name         String
-  colorCode    String
-  isArchivable Boolean
-  allowLoan    Boolean
-  Asset        Asset[]
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  colorCode   String
+  isArchived  Boolean
+  allowLoan   Boolean
+  description String
+  Asset       Asset[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model Category {

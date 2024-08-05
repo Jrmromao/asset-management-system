@@ -1,24 +1,27 @@
 'use client'
-import React, {useEffect, useMemo, useState} from 'react'
+import React, {useState} from 'react'
 import HeaderBox from "@/components/HeaderBox";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
 import LicensesTable from "@/components/tables/LicensesTable";
 import {licenseStore} from "@/lib/stores/store";
 import {Button} from "@/components/ui/button";
-import AssetTable from "@/components/tables/AssetTable";
 import {useRouter} from "next/navigation";
-import {useLicenseStore} from "@/lib/stores/licenseStore";
 
 
-const Licenses = () => {
+const Consumables = () => {
+    const [licensesList, setLicenseList] = useState<[]>()
+    const refresh = licenseStore((state) => state.shouldRefresh)
+    // const memoAssetList = useMemo(() => getLicenses().then(aceessories => setLicenseList(aceessories)), [setLicenseList, refresh]);
+
     const navigate = useRouter()
+
     return (
         <div className="assets">
             <div className="transactions-header">
                 <HeaderBox
-                    title="Licenses"
-                    subtext="Manage your licenses."
+                    title="Accessories"
+                    subtext="Manage your accessories."
                 />
             </div>
             <div className="space-y-6">
@@ -26,19 +29,19 @@ const Licenses = () => {
                     <div className="flex justify-end">
                         <Button
                             variant={'link'}
-                            onClick={() => navigate.push('/licenses/create')}>Add License
+                            onClick={() => navigate.push('/accessories/create')}>Add License
                         </Button>
                         <Button
                             variant={"link"}
 
-                            onClick={() => navigate.push('/licenses/export')}>
+                            onClick={() => navigate.push('/accessories/export')}>
                             Export
                         </Button>
 
                         <Button
                             variant={"link"}
                             className={'flex justify-end'}
-                            onClick={() => navigate.push('/licenses/export')}>
+                            onClick={() => navigate.push('/accessories/export')}>
                             Import
                         </Button>
                     </div>
@@ -47,7 +50,6 @@ const Licenses = () => {
                     <LicensesTable/>
                 </section>
             </div>
-        </div>
-    )
+        </div>)
 }
-export default Licenses
+export default Consumables

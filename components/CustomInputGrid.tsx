@@ -17,19 +17,22 @@ const CustomInput = ({control, name, label, placeholder, type, ...rest}: CustomI
             control={control}
             name={name}
             render={({field}) => (
-                <div className={'form-item'}>
-                    <FormLabel className={'form-label'}>
-                        {label}
-                    </FormLabel>
-                    <div className={'flex w-full flex-col'}>
+                <div className="grid grid-cols-3 gap-4">
+                    <div className="col-span-1">
+                        <FormLabel className="block text-sm font-medium text-gray-700 mb-1">
+                            {label}
+                        </FormLabel>
+                    </div>
+                    <div className="col-span-2">
+
                         <FormControl>
                             <Input
                                 placeholder={placeholder}
-                                className={'input-class'} {...field}
+                                className="w-full border border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                                {...rest}
                                 type={type}
                             />
                         </FormControl>
-                        <FormMessage className={'form-message mt-2'}/>
                     </div>
                 </div>
             )}
