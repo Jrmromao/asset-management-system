@@ -70,6 +70,20 @@ declare type Role = {
 };
 
 
+declare type Accessory = {
+    id?: number;
+    title: string;
+    purchaseDate: Date;
+    vendor: string;
+    alertEmail: string
+    minQuantityAlert: number
+    totalQuantityCount: number
+    description: string;
+    categoryId: number;
+    companyId: number;
+}
+
+
 declare type Asset = {
     id?: number;
     name: string;
@@ -116,7 +130,6 @@ declare type License = {
     createdAt?: Date;
     updatedAt?: Date;
 };
-
 
 
 declare interface RecentTransactionsProps {
@@ -171,6 +184,7 @@ declare interface DoughnutChartProps {
 declare interface PaymentTransferFormProps {
     accounts: Account[];
 }
+
 declare interface CompanyRegistrationProps {
     companyName: string;
     email: string;

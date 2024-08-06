@@ -53,12 +53,30 @@ model Role {
 }
 
 model Company {
-  id        Int        @id @default(autoincrement())
-  name      String     @unique
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-  auditLogs AuditLog[]
-  users     User[]
+  id          Int         @id @default(autoincrement())
+  name        String      @unique
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  auditLogs   AuditLog[]
+  users       User[]
+  accessories Accessory[]
+}
+
+model Accessory {
+  id                 Int       @id @default(autoincrement())
+  title              String
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  alertEmail         String
+  minQuantityAlert   Int
+  totalQuantityCount Int
+  vendor             String
+  purchaseDate       DateTime
+  description        String?
+  categoryId         Int?      @unique
+  category           Category? @relation(fields: [categoryId], references: [id]) // Made optional
+  companyId          Int?
+  company            Company?  @relation(fields: [companyId], references: [id])
 }
 
 model Asset {
@@ -93,11 +111,12 @@ model StatusLable {
 }
 
 model Category {
-  id        Int      @id @default(autoincrement())
-  name      String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id        Int        @id @default(autoincrement())
+  name      String     @unique
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
   assets    Asset[]
+  accessory Accessory?
 }
 
 model Transaction {
