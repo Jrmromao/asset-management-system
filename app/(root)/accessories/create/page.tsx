@@ -1,8 +1,7 @@
 'use client'
 import HeaderBox from "@/components/HeaderBox";
 import React from "react";
-import AssetForm from "@/components/forms/AssetForm";
-import LicenseForm from "@/components/forms/LicenseForm";
+import AccessoryForm from "@/components/forms/AccessoryForm";
 
 
 const Create = () => {
@@ -15,7 +14,7 @@ const Create = () => {
                     subtext="Fill the form to create an Accessory."
                 />
             </div>
-            <LicenseForm/>
+            <AccessoryForm />
         </div>
     )
 }
