@@ -29,6 +29,7 @@ model User {
   role        Role         @relation(fields: [roleId], references: [id])
   co2eRecords Co2eRecord[]
   employeeId  String?
+  kits        UserKit[]
 }
 
 model Co2eRecord {
@@ -71,13 +72,14 @@ model Asset {
   assigneeId    Int?
   brand         String
   model         String
-  serialNumber  String
+  serialNumber  String       @unique
   licenseId     Int?
   statusLabelId Int?
   statusLabel   StatusLable? @relation(fields: [statusLabelId], references: [id])
   category      Category     @relation(fields: [categoryId], references: [id])
   license       License?     @relation(fields: [licenseId], references: [id])
   Co2eRecord    Co2eRecord[]
+  kits          KitAsset[]
 }
 
 model StatusLable {
@@ -111,7 +113,7 @@ model Transaction {
 
 model License {
   id                 Int      @id @default(autoincrement())
-  name               String
+  name               String   @unique
   licensedEmail      String
   licenseKey         String
   renewalDate        DateTime
@@ -140,3 +142,29 @@ model AuditLog {
   company   Company  @relation(fields: [companyId], references: [id])
   user      User     @relation(fields: [userId], references: [id])
 }
+
+//
+// model Kit {
+//   id          Int        @id @default(autoincrement())
+//   name        String
+//   description String?
+//   assets      KitAsset[]
+//   users       UserKit[]
+// }
+//
+// model KitAsset {
+//   kitId   Int
+//   assetId Int
+//   kit     Kit   @relation(fields: [kitId], references: [id])
+//   asset   Asset? @relation(fields: [assetId], references: [id])
+//   @@id([kitId, assetId])
+// }
+//
+// model UserKit {
+//   userId Int
+//   kitId  Int
+//   user   User @relation(fields: [userId], references: [id])
+//   kit    Kit? @relation(fields: [kitId], references: [id])
+//
+//   @@id([userId, kitId])
+// }

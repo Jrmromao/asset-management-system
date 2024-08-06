@@ -18,7 +18,7 @@ const Consumables = () => {
 
     return (
         <div className="assets">
-            ar <div className="transactions-header">
+            <div className="transactions-header">
                 <HeaderBox
                     title="Kits"
                     subtext="Manage your kits and assign them to users"

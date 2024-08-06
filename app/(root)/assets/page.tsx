@@ -34,7 +34,9 @@ const Assets = () => {
         serialNumber: "Serial Number",
         category: "Category",
         price: '',
-        licenseId: ''
+        licenseId: '',
+        statusLabelId: '',
+        statusLabel: ''
     };
 
     useEffect(() => {
