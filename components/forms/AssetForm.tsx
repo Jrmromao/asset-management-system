@@ -23,34 +23,32 @@ import {useStatusLabelStore} from "@/lib/stores/statusLabelStore";
 import {Alert, AlertDescription, AlertTitle} from "@/components/ui/alert";
 import StatusLabelForm from "@/components/forms/StatusLabelForm";
 
-const AssetForm = () => {
+
+interface AssetFormProps{
+    asset?: Asset
+}
+const AssetForm = ({asset}:AssetFormProps) => {
 
     const INITIAL_VALUES = {
-        assetName: '',
-        brand: '',
-        model: '',
-        serialNumber: '',
-        purchasePrice: '',
-        categoryId: '',
-        licenseId: '',
-        category: '',
-        existingLicenseName: '',
-        statusLabel: '',
-        newLicenseName: '',
-        issuedDate: '',
-        expirationDate: '',
-        key: '',
+        name: asset?.name || '',
+        brand: asset?.brand || '',
+        model: asset?.model || '',
+        categoryId:  0,
+        statusLabelId:  0,
+        serialNumber: asset?.serialNumber || '',
+        purchasePrice: asset?.purchasePrice || 0,
+        datePurchased: asset?.datePurchased || new Date().getDate().toString()
     }
+
+
 
 
     const [isLoading, setIsLoading] = useState(false)
     const [licenseQuestion, setLicenseQuestion] = useState('')
     const [openDialog, closeDialog, isOpen] = useDialogStore(state => [state.onOpen, state.onClose, state.isOpen])
-
     const [createAsset] = useAssetStore((state) => [state.create]);
     const [licenses, fetchLicenses] = useLicenseStore((state) => [state.licenses, state.getAll]);
     const [categories, fetchAll] = useCategoryStore((state) => [state.categories, state.getAll]);
-
     const [statusLabels, fetchAllStatusLabels, closeSL, openSL, isOpenSL] = useStatusLabelStore((state) => [state.statusLabels, state.getAll,
 
     state.onClose, state.onOpen, state.isOpen]);
@@ -72,9 +70,7 @@ const AssetForm = () => {
         serialNumber: z.string().min(1, "Serial number is required"),
         category: z.string().min(1, "Category is required"),
         statusLabel: z.string().min(1, "Status label is required"),
-        purchasePrice: z.string()
-            .regex(/^\d+(\.\d{1,2})?$/, "Amount must be a number")
-            .min(1, "Amount is too short"),
+        purchasePrice: z.number().min(1, "Price is required"),
 
         newLicenseName: licenseQuestion === 'no' ? z.string().min(1, "License name is required") : z.string().optional(),
         existingLicenseName: licenseQuestion === 'yes' ? z.string().min(1, "License name is required") : z.string().optional(),
@@ -119,7 +115,7 @@ const AssetForm = () => {
                 brand: '',
                 model: '',
                 serialNumber: '',
-                purchasePrice: '',
+                purchasePrice: 0,
                 category: '',
                 existingLicenseName: '',
                 statusLabel: '',

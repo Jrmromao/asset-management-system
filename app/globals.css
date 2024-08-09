@@ -193,7 +193,6 @@
     @apply flex h-screen max-h-screen w-full flex-col gap-8 bg-gray-25 p-8 xl:py-12;
   }
 
-  /* My Banks */
   .assets {
     @apply flex max-h-screen w-full flex-col gap-8 overflow-y-scroll  p-8 xl:py-12
   }

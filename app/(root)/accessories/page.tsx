@@ -29,13 +29,7 @@ const Consumables = () => {
                     <div className="flex justify-end">
                         <Button
                             variant={'link'}
-                            onClick={() => navigate.push('/accessories/create')}>Add License
-                        </Button>
-                        <Button
-                            variant={"link"}
-
-                            onClick={() => navigate.push('/accessories/export')}>
-                            Export
+                            onClick={() => navigate.push('/accessories/create')}>Create Accessory
                         </Button>
 
                         <Button

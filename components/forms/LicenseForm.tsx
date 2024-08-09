@@ -172,88 +172,40 @@ const LicenseForm = () => {
 
                     </Card>
 
-
                     <Card className={'p-3.5 mb-5'}>
-                        <div className={'header-2'}>Notification Settings</div>
-                        <div className={'flex flex-col md:flex-row gap-4 pt-5'}>
-                            <div className={'flex-1'}>
-                                <CustomInput control={form.control}   {...form.register("licensedEmail")}
-                                             label={'Licensed To Email'}
-                                             placeholder={'eg. joe@ecokeepr.com'}
-                                             type={'text'}/>
+                        <div className={'mt-6 header-2'}>Notification Settings</div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="bg-white p-4">
+                                <div className="flex flex-col gap-4 pt-5">
+                                    <div className="flex-1">
+                                        <CustomInput control={form.control}   {...form.register("licensedEmail")}
+                                                     label={'Licensed To Email'}
+                                                     placeholder={'eg. joe@ecokeepr.com'}
+                                                     type={'text'}/>
+                                    </div>
+                                </div>
+
+                                <div className="flex flex-col gap-4 pt-5">
+                                    <div className="flex-1">
+                                        <CustomInput control={form.control}   {...form.register("renewalDate")}
+                                                     label={'Expiration/ Renewal Date'}
+                                                     placeholder={'eg. 2022-12-31'}
+                                                     type={'text'}/>
+                                    </div>
+                                </div>
+
+                                <div className="flex flex-col gap-4 pt-5">
+                                    <div className="flex-1">
+                                        <CustomInput control={form.control}   {...form.register("alertRenewalDays")}
+                                                     label={'Alert Notification Days'}
+                                                     placeholder={'eg. 4'}
+                                                     type={'number'}/>
+                                    </div>
+                                </div>
                             </div>
-                            <div className={'flex-1'}/>
-                        </div>
-                        <div className={'flex flex-col md:flex-row gap-4 pt-5'}>
-                            <div className={'flex-1'}>
-                                <CustomInput control={form.control}   {...form.register("renewalDate")}
-                                             label={'Expiration/ Renewal Date'}
-                                             placeholder={'eg. 2022-12-31'}
-                                             type={'text'}/>
-                            </div>
-                            <div className={'flex-1'}/>
-                        </div>
-                        <div className={'flex flex-col md:flex-row gap-4 pt-5'}>
-                            <div className={'flex-1'}>
-                                <CustomInput control={form.control}   {...form.register("alertRenewalDays")}
-                                             label={'Alert Notification Days'}
-                                             placeholder={'eg. 4'}
-                                             type={'number'}/>
-                            </div>
-                            <div className={'flex-1'}/>
-                        </div>
-                    </Card>
 
 
-                    <Card className={'p-3.5 mb-5'}>
-                        <div className={'header-2'}>Vendor & Key details</div>
-                        <div className={'flex flex-col md:flex-row gap-4 pt-5'}>
-                            <div className={'flex-1'}>
-                                <CustomInput control={form.control}   {...form.register("vendor")}
-                                             label={'Vendor'}
-                                             placeholder={'eg. Microsoft'}
-                                             type={'text'}/>
-                            </div>
-                            <div className={'flex-1'}/>
-                        </div>
-
-                        <div className={'flex flex-col md:flex-row gap-4 pt-5'}>
-                            <div className={'flex-1'}>
-                                <CustomInput control={form.control}   {...form.register("licenseKey")}
-                                             label={'Product Key'}
-                                             placeholder={'eg. 12345-12345-12345-12345-12345'}
-                                             type={'text'}/>
-                            </div>
-                            <div className={'flex-1'}/>
-                        </div>
-
-                        <div className={'flex flex-col md:flex-row gap-4 pt-5'}>
-                            <div className={'flex-1'}>
-                                <CustomInput control={form.control}   {...form.register("purchaseDate")}
-                                             label={'Purchase Date'}
-                                             placeholder={'eg. 2023-12-31'}
-                                             type={'text'}/>
-                            </div>
-                            <div className={'flex-1'}/>
-                        </div>
-
-                        <div className={'flex flex-col md:flex-row gap-4 pt-5'}>
-                            <div className={'flex-1'}>
-                                <CustomInput control={form.control}   {...form.register("purchasePrice")}
-                                             label={'Purchase Price'}
-                                             placeholder={'eg. €100'}
-                                             type={'number'}/>
-                            </div>
-                            <div className={'flex-1'}/>
-                        </div>
-
-                        <div className={'flex flex-col md:flex-row gap-4 pt-5'}>
-                            <div className={'flex-1'}>
-                                <CustomTextarea control={form.control}   {...form.register("notes")}
-                                                label={'Notes'}
-                                                placeholder={'eg. This is a note'}/>
-                            </div>
-                            <div className={'flex-1'}/>
                         </div>
 
                     </Card>

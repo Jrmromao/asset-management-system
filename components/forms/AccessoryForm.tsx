@@ -9,19 +9,22 @@ import {InfoIcon, Loader2} from "lucide-react";
 import {Card} from "@/components/ui/card";
 import CustomInput from "@/components/CustomInput";
 import {Alert, AlertDescription, AlertTitle} from "@/components/ui/alert"
-import CustomTextarea from "@/components/CustomTextarea";
 import {useAccessoryStore} from "@/lib/stores/accessoryStore";
 
-const AccessoryForm = () => {
+interface AccessoryFormProps {
+    accessory?: Accessory
+}
+
+const AccessoryForm = ({accessory}: AccessoryFormProps) => {
 
     const INITIAL_VALUES = {
-        title: '',
-        totalQuantityCount: '',
-        minQuantityAlert: '',
-        alertEmail: '',
-        vendor: '',
-        purchaseDate: '',
-        description: '',
+        title: accessory?.title || '',
+        totalQuantityCount: accessory?.totalQuantityCount || 0,
+        minQuantityAlert: accessory?.minQuantityAlert || 0,
+        alertEmail: accessory?.alertEmail || '',
+        vendor: accessory?.vendor || '',
+        purchaseDate: accessory?.purchaseDate,
+        description: accessory?.description || '',
     }
 
 
@@ -42,15 +45,11 @@ const AccessoryForm = () => {
         title: z.string().min(1, "Title name is required"),
 
 
-        totalQuantityCount: z.string().refine((val) => !Number.isNaN(parseInt(val, 10)), {
-            message: "License copies count is required"
-        }),
-        minQuantityAlert: z.string().refine((val) => !Number.isNaN(parseInt(val, 10)), {
-            message: "Min. copies alert is required"
-        }),
+        totalQuantityCount: z.number().min(1, "License copies count is required"),
+        minQuantityAlert: z.number().min(1, "Min. copies alert is required"),
         alertEmail: z.string().email().min(1, "Alert email is required"),
         vendor: z.string().min(1, "Vendor is required"),
-        purchaseDate: z.string().min(1, "Purchase date is required"),
+        purchaseDate: z.date().min(new Date(1900, 0, 1), 'Date must be after January 1, 1900').max(new Date(), 'Date must be before today'),
         description: z.string().optional()
 
     })
@@ -160,58 +159,42 @@ const AccessoryForm = () => {
                                 </Alert>
                             </div>
                         </div>
-
-
-
                     </Card>
-
 
                     <Card className={'p-3.5 mb-5'}>
-                        <div className={'header-2'}>Vendor & Purchase details</div>
-                        <div className={'flex flex-col md:flex-row gap-4 pt-5'}>
-                            <div className={'flex-1'}>
-                                <CustomInput control={form.control}   {...form.register("vendor")}
-                                             label={'Vendor'}
-                                             placeholder={'eg. Microsoft'}
-                                             type={'text'}/>
+                        <div className={'mt-6 header-2'}>Vendor & Purchase details</div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="bg-white p-4">
+                                <div className="flex flex-col gap-4 pt-5">
+                                    <div className="flex-1">
+                                        <CustomInput control={form.control}   {...form.register("vendor")}
+                                                     label={'Vendor'}
+                                                     placeholder={'eg. Microsoft'}
+                                                     type={'text'}/>
+                                    </div>
+                                </div>
+                                <div className="flex flex-col gap-4 pt-5">
+                                    <div className="flex-1">
+                                        <CustomInput control={form.control}   {...form.register("purchaseDate")}
+                                                     label={'Purchase Date'}
+                                                     placeholder={'eg. 2023-12-31'}
+                                                     type={'text'}/>
+                                    </div>
+                                </div>
+
+                                <div className="flex flex-col gap-4 pt-5">
+                                    <div className="flex-1">
+                                        <CustomInput control={form.control}   {...form.register("description")}
+                                                     label={'Description'}
+                                                     placeholder={'eg. This is a description'}
+                                                     type={'text'}/>
+                                    </div>
+                                    <div className={'flex-1'}/>
+                                </div>
                             </div>
-                            <div className={'flex-1'}/>
                         </div>
-
-                        <div className={'flex flex-col md:flex-row gap-4 pt-5'}>
-                            <div className={'flex-1'}>
-                                <CustomInput control={form.control}   {...form.register("vendor")}
-                                             label={'Vendor'}
-                                             placeholder={'eg. Microsoft'}
-                                             type={'text'}/>
-                            </div>
-                            <div className={'flex-1'}/>
-                        </div>
-
-                        <div className={'flex flex-col md:flex-row gap-4 pt-5'}>
-                            <div className={'flex-1'}>
-                                <CustomInput control={form.control}   {...form.register("purchaseDate")}
-                                             label={'Purchase Date'}
-                                             placeholder={'eg. 2023-12-31'}
-                                             type={'text'}/>
-                            </div>
-                            <div className={'flex-1'}/>
-                        </div>
-
-                        <div className={'flex flex-col md:flex-row gap-4 pt-5'}>
-                            <div className={'flex-1'}>
-                                <CustomInput control={form.control}   {...form.register("description")}
-                                             label={'Description'}
-                                             placeholder={'eg. This is a description'}
-                                             type={'text'}/>
-                            </div>
-                            <div className={'flex-1'}/>
-                        </div>
-
-
                     </Card>
-
-
                     <Button type="submit" className={'form-btn mt-6 w-full  md:w-auto'} disabled={isLoading}>
                         {isLoading ? (
                                 <>
