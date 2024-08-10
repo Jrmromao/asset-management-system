@@ -22,11 +22,12 @@ interface CustomInputProps {
     name: string,
     label: string,
     placeholder: string,
+    value: any,
     data: Category[] | License[] | StatusLabel[]
 }
 
 
-const CustomSelect = ({control, name, label, placeholder, data}: CustomInputProps) => {
+const CustomSelect = ({control, name, label, placeholder, data, value}: CustomInputProps) => {
     return (
         <FormField
             control={control}
@@ -38,9 +39,7 @@ const CustomSelect = ({control, name, label, placeholder, data}: CustomInputProp
                     </FormLabel>
                     <div className={'flex w-full flex-col'}>
                         <FormControl>
-                            <Select onValueChange={field.onChange}>
-
-
+                            <Select onValueChange={field.onChange} value={value}>
                                 <SelectTrigger className="w-full input-class text-gray-100">
                                     <div className={`${field.value ? '' : 'text-gray-600'}`}>
                                         <SelectValue placeholder={placeholder}/>

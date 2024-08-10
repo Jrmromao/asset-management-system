@@ -71,7 +71,7 @@ const LicenseForm = () => {
 
     })
         .refine((data) => data.licenseCopiesCount >= data.minCopiesAlert, {
-            message: "Min. Copies must be less than or equal to license copies count",
+            message: "Min. Copies must be greater than or equal to license copies count",
             path: ["minCopiesAlert"],
         })
 

@@ -3,13 +3,14 @@ import {persist} from "zustand/middleware";
 import produce from 'immer';
 import {get as fetch, create as insert, remove, update} from '@/lib/actions/assets.actions';
 
+
 interface IAssetStore {
     assets: Asset[];
     loading: boolean;
     create: (asset: Asset) => void;
-    update: (id: number, updatedAsset: Asset) => void;
+    update: (id: number, updatedAsset: Asset) => Promise<Asset>;
     delete: (id: number) => void;
-    findById: (id: number) => Asset | null;
+    findById: (id: number) => Promise<Asset | null>;
     getAll: () => void;
 }
 
@@ -46,19 +47,27 @@ export const useAssetStore = create(persist<IAssetStore>(
         },
 
 
-        update: (id: number, updatedAsset: Asset) => {
-            set(
-                produce((state) => {
 
-                    update(updatedAsset, id).then(() => {
+        update: async (id: number, updatedAsset: Asset) => {
+            try {
+                set(
+                    produce((state) => {
+                        update(updatedAsset, id).then(() => {
+                                state.assets = state.assets.filter((a: Asset) => a.id !== id)
+                            }
+                        ).catch(error => console.log(error))
                         const index = state.assets.findIndex((asset: Asset) => asset.id === id);
                         if (index !== -1) {
                             state.assets[index] = updatedAsset;
                         }
-                    }).catch(error => console.log(error))
-                })
-            );
+                    })
+                );
+                return updatedAsset;
+            } catch (error) {
+               throw error
+            }
         },
+
 
         delete: (id: number) => {
             set(
@@ -73,12 +82,27 @@ export const useAssetStore = create(persist<IAssetStore>(
             );
         },
 
-        findById: (id: number) => {
 
-            const asset = get().assets.find((asset) => asset.id === id);
-            if (!asset) return null
+        findById: async (id: number) => {
+            const existingAsset = get().assets.find(asset => asset.id === id);
+            if (existingAsset) return existingAsset;
 
-            return asset;
+            if (!get().loading) {
+                set({loading: true});
+                try {
+                    const fetchedAssets = await fetch();
+                    set({assets: fetchedAssets, loading: false});
+
+                    return fetchedAssets.find((asset: Asset) => asset.id === id) || null;
+                } catch (error) {
+                    set({loading: false});
+                    console.error("Error fetching assets:", error);
+                    return null;
+                }
+            } else {
+                await new Promise(resolve => setTimeout(resolve, 500)); // Wait a bit
+                return get().findById(id);
+            }
         },
 
     }), {name: 'asset_store',}));

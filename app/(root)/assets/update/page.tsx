@@ -6,37 +6,29 @@ import AssetForm from "@/components/forms/AssetForm";
 import {useSearchParams} from "next/navigation";
 import {useAccessoryStore} from "@/lib/stores/accessoryStore";
 import {useCategoryStore} from "@/lib/stores/categoryStore";
+import {useAssetStore} from "@/lib/stores/assetStore";
 
 const Update = () => {
 
 
     const searchParams = useSearchParams()
     const id = +searchParams.get('id')!
-
-    const [categories, fetchAll] = useCategoryStore((state) => [state.categories, state.getAll]);
     const [asset, setAsset] = useState<Asset | null>()
-   const [findById] =  useAccessoryStore((state) => [state.findById])
+    const [findById] = useAssetStore((state) => [state.findById])
 
-    useEffect(()=>{
-        const asset = findById(id)
-        // setAsset(asset | null)
-
-    })
+    useEffect(() => {
+        findById(id).then(assetResult => setAsset(assetResult))
+    }, [findById, id])
 
     return (
         <div className="assets">
             <div>
                 <HeaderBox
-                    title="Create new asset"
-                    subtext="Fill the form to create new asset."
+                    title={`Update asset with id: ${id}`}
+                    subtext="Change the fileds you'd like to update."
                 />
             </div>
-            <AssetForm asset={{
-                name: 'test',
-                categoryId: 0,
-                brand: '', model: 'Tesla', datePurchased: ' ', purchasePrice: 0, serialNumber: ''
-
-            }}/>
+            <AssetForm asset={asset} isUpdate={true}/>
         </div>)
 
 }

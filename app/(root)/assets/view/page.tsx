@@ -35,7 +35,7 @@ const View = () => {
             <div className="space-y-6">
                 <section className="flex w-full flex-col gap-6">
                     <Card className={'w-full'}>
-                        <CardHeader className="text-xl">MacBook M1 Pro</CardHeader>
+                        <CardHeader className="text-xl">{`${asset?.brand}, ${asset?.name}`}</CardHeader>
                         <CardContent>
                             <div className="grid grid-cols-1 lg:grid-cols-6 gap-4 mt-6">
                                 <div className="lg:col-span-5 p-4">
@@ -46,7 +46,7 @@ const View = () => {
                                         </div>
                                         <div className="p-4">
                                             <h2 className="text-gray-500 mb-2">Price</h2>
-                                            <p className="font-semibold text-gray-600">[PRICE]</p>
+                                            <p className="font-semibold text-gray-600">{asset?.price}</p>
                                         </div>
                                         <div className="p-4">
                                             <h2 className="text-gray-500 mb-2">Created At</h2>
@@ -59,8 +59,8 @@ const View = () => {
                                     </div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                                         <div className="p-4 ">
-                                            <h2 className="text-gray-500 mb-2">Status</h2>
-                                            <p className="font-semibold text-gray-600">[ACTIVE]</p>
+                                            <h2 className="text-gray-500 mb-2">Status Label</h2>
+                                            <p className="font-semibold text-gray-600">{asset?.statusLabel?.name}</p>
                                         </div>
                                         <div className="p-4">
                                             <h2 className="text-gray-500 mb-2">Location</h2>
@@ -68,7 +68,7 @@ const View = () => {
                                         </div>
                                         <div className="p-4">
                                             <h2 className="text-gray-500 mb-2">Tag Num</h2>
-                                            <p className="font-semibold text-gray-600">[Some Tag ID]</p>
+                                            <p className="font-semibold text-gray-600">{asset?.serialNumber}</p>
                                         </div>
                                         <div className="p-4">
                                             <h2 className="text-gray-500 mb-2">Tag Num</h2>
@@ -78,7 +78,8 @@ const View = () => {
                                     </div>
                                 </div>
                                 <div className=" p-4 flex items-center justify-center">
-                                    <Image src={'/qr-code/sample.png'} alt={''} width={158} height={150} className={'mt-5'}/>
+                                    <Image src={'/qr-code/sample.png'} alt={''} width={158} height={150}
+                                           className={'mt-5'}/>
                                 </div>
 
                             </div>
@@ -117,7 +118,7 @@ const View = () => {
                                     className={'w-full sm:w-auto md:w-auto'}
                                     size="sm"
                                     variant="outline"
-                                    action={navigate.back}
+                                    action={() => navigate.push(`/assets/update/?id=${asset?.id}`)}
                                     value="Edit"
                                     Icon={FaPen}
                                 />
@@ -138,16 +139,18 @@ const View = () => {
                 <Card className="w-full mx-auto py-3 max-h-900 overflow-y-auto">
                     <CardHeader className="px-4 text-xl">Activity Log</CardHeader>
                     <CardContent className="max-h-900 overflow-y-auto">
-                        {auditLogs?.length === 0 ?  <p>No Activity Log</p> :  (<Table className="w-full table-auto bg-gray-100 text-gray-600 rounded-lg">
-                            <TableBody>
-                                {auditLogs?.map((auditLog) => (
-                                    <TableRow className="w-full bg-gray-100" key={auditLog?.id}>
-                                        <TableCell className="border px-4 py-2 sm:w-1/6">{auditLog?.createdAt.toDateString()}</TableCell>
-                                        <TableCell className="border px-4 py-2">{auditLog?.action}</TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>)}
+                        {auditLogs?.length === 0 ? <p>No Activity Log</p> : (
+                            <Table className="w-full table-auto bg-gray-100 text-gray-600 rounded-lg">
+                                <TableBody>
+                                    {auditLogs?.map((auditLog) => (
+                                        <TableRow className="w-full bg-gray-100" key={auditLog?.id}>
+                                            <TableCell
+                                                className="border px-4 py-2 sm:w-1/6">{auditLog?.createdAt.toDateString()}</TableCell>
+                                            <TableCell className="border px-4 py-2">{auditLog?.action}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>)}
                     </CardContent>
                 </Card>
 

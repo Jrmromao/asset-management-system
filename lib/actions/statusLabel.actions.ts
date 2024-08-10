@@ -26,9 +26,6 @@ export const getAll = async () => {
                 createdAt: 'desc'
             }
         });
-
-        console.log(labels)
-
         return parseStringify(labels);
     } catch (error) {
         console.log(error)

@@ -92,8 +92,7 @@ declare type Asset = {
     brand: string;
     model: string;
     datePurchased: string;
-    purchasePrice: number;
-    price?: number;
+    price: number;
     certificateUrl?: string;
     licenceUrl?: string;
     license?: License;

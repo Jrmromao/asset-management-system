@@ -3,16 +3,12 @@
 import {prisma} from "@/app/db";
 import {parseStringify} from "@/lib/utils";
 
-
-
 export const create = async (data: Asset) => {
     try {
-        const { license } = data;
-
         await prisma.asset.create({
             data: {
                 name: data.name,
-                price: data.purchasePrice,
+                price: data.price,
                 brand: data.brand,
                 model: data.model,
                 serialNumber: data.serialNumber,
@@ -28,9 +24,9 @@ export const create = async (data: Asset) => {
                 },
             },
         });
-
     } catch (error) {
         console.error('Error creating asset:', error);
+        throw error;
     }
 }
 
@@ -55,10 +51,17 @@ export const get = async () => {
 export const findById = async (id: number) => {
     try {
         const asset = await prisma.asset.findFirst({
+            include: {
+                category: true,
+                license: true,
+                statusLabel: true
+            },
             where: {
                 id: id
             }
         });
+
+        console.log(asset)
         return parseStringify(asset);
     } catch (error) {
         console.log(error)
@@ -80,15 +83,21 @@ export const remove = async (id: number) => {
 
 export const update = async (asset: Asset, id: number) => {
     try {
-        // const assets = await prisma.asset.update({
-        //     where: {
-        //         id: id
-        //     },
-        //     data: asset
-        // });
-        // return parseStringify(assets);
-
-        console.log(asset)
+        const assets = await prisma.asset.update({
+            where: {
+                id: id
+            },
+            data: {
+                name: asset.name,
+                price: asset.price,
+                brand: asset.brand,
+                model: asset.model,
+                serialNumber: asset.serialNumber,
+                categoryId: asset.categoryId,
+                statusLabelId: asset.statusLabelId
+            }
+        });
+        return parseStringify(assets);
     } catch (error) {
         console.log(error)
     }

@@ -5,61 +5,59 @@ import {zodResolver} from "@hookform/resolvers/zod"
 import {useForm} from "react-hook-form"
 import {Button} from "@/components/ui/button"
 import {Form,} from "@/components/ui/form"
-import {useRouter} from "next/navigation";
-import {InfoIcon, Loader2} from "lucide-react";
-import Dropzone from "@/components/Dropzone";
-import {Checkbox} from "@/components/ui/checkbox";
-import {Label} from "@/components/ui/label";
+import {Loader2} from "lucide-react";
 import {useAssetStore} from "@/lib/stores/assetStore";
 import CustomSelect from "@/components/CustomSelect";
-import {Card, CardHeader} from "@/components/ui/card";
-import {useLicenseStore} from "@/lib/stores/licenseStore";
+import {Card} from "@/components/ui/card";
 import {useCategoryStore} from "@/lib/stores/categoryStore";
 import CustomInput from "@/components/CustomInput";
 import {useDialogStore} from "@/lib/stores/store";
 import {DialogContainer} from "@/components/dialogs/DialogContainer";
 import CategoryForm from "@/components/forms/CategoryForm";
 import {useStatusLabelStore} from "@/lib/stores/statusLabelStore";
-import {Alert, AlertDescription, AlertTitle} from "@/components/ui/alert";
 import StatusLabelForm from "@/components/forms/StatusLabelForm";
+import {useRouter} from "next/navigation";
 
 
-interface AssetFormProps{
-    asset?: Asset
+interface AssetFormProps {
+    asset?: Asset | null | undefined
+    isUpdate?: boolean
 }
-const AssetForm = ({asset}:AssetFormProps) => {
+
+const AssetForm = ({asset, isUpdate = false}: AssetFormProps) => {
 
     const INITIAL_VALUES = {
-        name: asset?.name || '',
-        brand: asset?.brand || '',
-        model: asset?.model || '',
-        categoryId:  0,
-        statusLabelId:  0,
-        serialNumber: asset?.serialNumber || '',
-        purchasePrice: asset?.purchasePrice || 0,
-        datePurchased: asset?.datePurchased || new Date().getDate().toString()
+        assetName: '',
+        brand: '',
+        model: '',
+        categoryId: 0,
+        statusLabelId: 0,
+        serialNumber: '',
+        datePurchased: new Date().getDate().toString()
     }
-
-
-
-
+    const navigate = useRouter()
     const [isLoading, setIsLoading] = useState(false)
-    const [licenseQuestion, setLicenseQuestion] = useState('')
     const [openDialog, closeDialog, isOpen] = useDialogStore(state => [state.onOpen, state.onClose, state.isOpen])
-    const [createAsset] = useAssetStore((state) => [state.create]);
-    const [licenses, fetchLicenses] = useLicenseStore((state) => [state.licenses, state.getAll]);
+    const [createAsset, updateAsset] = useAssetStore((state) => [state.create, state.update]);
     const [categories, fetchAll] = useCategoryStore((state) => [state.categories, state.getAll]);
-    const [statusLabels, fetchAllStatusLabels, closeSL, openSL, isOpenSL] = useStatusLabelStore((state) => [state.statusLabels, state.getAll,
-
-    state.onClose, state.onOpen, state.isOpen]);
+    const [statusLabels, fetchAllStatusLabels, closeSL, openSL, isOpenSL] = useStatusLabelStore((state) => [state.statusLabels, state.getAll, state.onClose, state.onOpen, state.isOpen]);
 
 
     useEffect(() => {
+        if (isUpdate) {
+            form.setValue('assetName', asset?.name!);
+            form.setValue('brand', asset?.brand!);
+            form.setValue('model', asset?.model!);
+            form.setValue('serialNumber', asset?.serialNumber!);
+            form.setValue('category', asset?.category?.name!);
+            form.setValue('statusLabel', asset?.statusLabel?.name!);
+            form.setValue('price', asset?.price!);
+            form.setValue('category', asset?.category?.name!);
+        }
         closeDialog()
-        fetchLicenses()
         fetchAll()
         fetchAllStatusLabels()
-    }, []);
+    }, [asset]);
 
     const schema = z.object({
 
@@ -70,13 +68,11 @@ const AssetForm = ({asset}:AssetFormProps) => {
         serialNumber: z.string().min(1, "Serial number is required"),
         category: z.string().min(1, "Category is required"),
         statusLabel: z.string().min(1, "Status label is required"),
-        purchasePrice: z.number().min(1, "Price is required"),
+        price: z
+            .string({ required_error: "Price is required" })
+            .transform((value) => Number(value))
+            .refine((value) => value >= 1, { message: "Price must be at least 1" })
 
-        newLicenseName: licenseQuestion === 'no' ? z.string().min(1, "License name is required") : z.string().optional(),
-        existingLicenseName: licenseQuestion === 'yes' ? z.string().min(1, "License name is required") : z.string().optional(),
-        key: licenseQuestion === 'no' ? z.string().min(1, "Key is required") : z.string().optional(),
-        issuedDate: licenseQuestion === 'no' ? z.string().min(1, "Issued date is required") : z.string().optional(),
-        expirationDate: licenseQuestion === 'no' ? z.string().min(1, "Expiration date is required") : z.string().optional()
     })
 
 
@@ -85,16 +81,12 @@ const AssetForm = ({asset}:AssetFormProps) => {
         defaultValues: INITIAL_VALUES
     })
 
+
     const onSubmit = async (data: z.infer<typeof schema>) => {
         setIsLoading(true)
         try {
             const categoryId = Number(categories.find(c => c.name === data.category?.toString())?.id)
             const statusLabelId = Number(statusLabels.find(c => c.name === data.statusLabel?.toString())?.id)
-            const licenseId = licenseQuestion === 'yes'
-                ? (licenses.find(l => l.name === data.existingLicenseName)?.id ?? 0)
-                : 0;
-
-            console.log(data.statusLabel)
 
             const assetData: Asset = {
                 name: data.assetName || '',
@@ -103,28 +95,19 @@ const AssetForm = ({asset}:AssetFormProps) => {
                 categoryId: categoryId || 0,
                 statusLabelId: statusLabelId || 0,
                 serialNumber: data.serialNumber || '',
-                purchasePrice: Number(data.purchasePrice) || 0,
+                price: data.price,
                 datePurchased: new Date().getDate().toString()
             }
-            console.log(licenses)
-            console.log(assetData)
 
-            createAsset(assetData)
-            form.reset({
-                assetName: '',
-                brand: '',
-                model: '',
-                serialNumber: '',
-                purchasePrice: 0,
-                category: '',
-                existingLicenseName: '',
-                statusLabel: '',
-                newLicenseName: '',
-                issuedDate: '',
-                expirationDate: '',
-                key: '',
-            })
-
+            if (isUpdate) {
+                updateAsset(Number(asset?.id), assetData).then(_ => {
+                    // need to show success message
+                    navigate.back()
+                })
+            } else {
+                createAsset(assetData)
+            }
+            form.reset(INITIAL_VALUES)
         } catch (e) {
             console.error(e)
         } finally {
@@ -136,11 +119,13 @@ const AssetForm = ({asset}:AssetFormProps) => {
         <section className="w-full bg-white z-50 max-h-[700px] overflow-y-auto p-4">
             <DialogContainer open={isOpen} onOpenChange={closeDialog} title={'New Category'}
                              description={'Add a new Category'}
-                             form={<CategoryForm setRefresh={() => { }}/>}/>
+                             form={<CategoryForm setRefresh={() => {
+                             }}/>}/>
 
             <DialogContainer open={isOpenSL} onOpenChange={closeSL} title={'New Status Label'}
                              description={'Add a new Status Label'}
-                             form={<StatusLabelForm setRefresh={() => { }}/>}/>
+                             form={<StatusLabelForm setRefresh={() => {
+                             }}/>}/>
 
 
             <Form {...form}>
@@ -149,7 +134,7 @@ const AssetForm = ({asset}:AssetFormProps) => {
 
                     <Card className={'flex flex-col gap-4 p-3.5 mb-5'}>
 
-                        <CustomInput control={form.control}   {...form.register("assetName")}
+                        <CustomInput control={form.control} {...form.register("assetName")}
                                      label={'Asset Title'}
                                      placeholder={'eg. Keyboard'}
                                      type={'text'}/>
@@ -160,7 +145,10 @@ const AssetForm = ({asset}:AssetFormProps) => {
                                 <CustomSelect control={form.control}   {...form.register("category")}
                                               label={'Category'}
                                               data={categories}
-                                              placeholder={'eg. IT Equipment'}/>
+                                              placeholder={'eg. IT Equipment'}
+                                              value={form.watch('category')}
+
+                                />
                             </div>
                             <div className="flex-none w-3/12 mt-6 ml-8">
                                 <Button type={'button'} variant={'secondary'}
@@ -181,7 +169,7 @@ const AssetForm = ({asset}:AssetFormProps) => {
                                      placeholder={'eg. Apple Keyboard'}
                                      type={'text'}/>
 
-                        <CustomInput control={form.control}   {...form.register("purchasePrice")}
+                        <CustomInput control={form.control}   {...form.register("price")}
                                      label={'Purchase Price'}
                                      placeholder={'eg. 1000'} type={'number'}/>
 
@@ -195,7 +183,10 @@ const AssetForm = ({asset}:AssetFormProps) => {
                                 <CustomSelect control={form.control}   {...form.register("statusLabel")}
                                               label={'Status Label'}
                                               data={statusLabels}
-                                              placeholder={'eg. Available'}/>
+                                              placeholder={'eg. Available'}
+                                              value={form.watch('statusLabel')}
+
+                                />
                             </div>
                             <div className="flex-none w-3/12 mt-6 ml-8">
                                 <Button type={'button'} variant={'secondary'}
@@ -207,12 +198,11 @@ const AssetForm = ({asset}:AssetFormProps) => {
                     </Card>
                     <Button type="submit" className={'form-btn mt-6 w-full  md:w-auto'} disabled={isLoading}>
                         {isLoading ? (
-                                <>
-                                    <Loader2 size={20} className={'animate-spin'}/>&nbsp;
-                                    Loading...
-                                </>
-                            ) :
-                            'Submit'}
+                            <>
+                                <Loader2 size={20} className={'animate-spin'}/>&nbsp;
+                                Loading...
+                            </>
+                        ) : isUpdate ? 'Update' : 'Submit'}
                     </Button>
                 </form>
             </Form>

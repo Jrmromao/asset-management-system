@@ -8,6 +8,9 @@ import {Button} from "@/components/ui/button";
 import {useAssetStore} from "@/lib/stores/assetStore";
 import {useRouter} from "next/navigation";
 import {filterColumns, renameColumns} from "@/lib/utils";
+import {DialogContainer} from "@/components/dialogs/DialogContainer";
+import AssetForm from "@/components/forms/AssetForm";
+import UploadAssetsForm from "@/components/forms/UploadAssetsForm";
 
 const Assets = () => {
 
@@ -15,13 +18,12 @@ const Assets = () => {
     const [assets, loading, fetchAssets, getAssetById, deleteAsset] = useAssetStore((state) => [state.assets, state.loading, state.getAll, state.findById, state.delete,]);
 
 
-
     const navigate = useRouter()
     const columnMappings: Record<keyof Asset, string> = {
         categoryId: "categoryId",
         datePurchased: "Date Purchased",
         name: "name",
-        purchasePrice: "Price",
+        price: "Price",
         id: "id",
         license: "License",
         createdAt: "Created At",
@@ -33,7 +35,6 @@ const Assets = () => {
         brand: "Brand",
         serialNumber: "Serial Number",
         category: "Category",
-        price: '',
         licenseId: '',
         statusLabelId: '',
         statusLabel: ''
@@ -43,7 +44,7 @@ const Assets = () => {
         fetchAssets();
     }, []);
 
-    const filteredData = filterColumns(assets, ['id', 'updatedAt', 'categoryId', 'datePurchased', 'certificateUrl', 'assigneeId', 'purchasePrice', 'licenceUrl']);
+    const filteredData = filterColumns(assets, ['id', 'updatedAt', 'categoryId', 'datePurchased', 'certificateUrl', 'assigneeId', 'licenceUrl']);
     const renamedData = renameColumns(filteredData, columnMappings);
     // if (renamedData?.length === 0) return <p>No assets found</p>
     const headers = renamedData?.length > 0 ? Object?.keys(renamedData[0]) : []
@@ -57,6 +58,10 @@ const Assets = () => {
                     subtext="Manage your assets."
                 />
             </div>
+            <DialogContainer open={isOpen} onOpenChange={closeDialog} title={'Import Assets'}
+                             description={'Import assets from a CSV file'}
+                             form={<UploadAssetsForm/>}
+            />
             <div className="space-y-6">
                 <section className="flex">
                     <div className="flex justify-end">
@@ -68,7 +73,7 @@ const Assets = () => {
                             variant={"link"}
 
                             onClick={() => openDialog()}>
-                            Export
+                            Import
                         </Button>
                     </div>
                 </section>
