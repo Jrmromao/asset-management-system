@@ -9,10 +9,14 @@ import {Button} from "@/components/ui/button";
 import AssetTable from "@/components/tables/AssetTable";
 import {useRouter} from "next/navigation";
 import {useLicenseStore} from "@/lib/stores/licenseStore";
+import {DataTable} from "@/components/tables/DataTable/data-table";
+import {licenseColumns} from "@/components/tables/LicensesColumns";
 
 
 const Licenses = () => {
     const navigate = useRouter()
+    const [licenses] = useLicenseStore((state) => [state.licenses, state.getAll])
+
     return (
         <div className="assets">
             <div className="transactions-header">
@@ -44,7 +48,9 @@ const Licenses = () => {
                     </div>
                 </section>
                 <section className="flex w-full flex-col gap-6">
-                    <LicensesTable/>
+
+
+                    <DataTable columns={licenseColumns} data={licenses} />
                 </section>
             </div>
         </div>

@@ -63,12 +63,7 @@ const LicensesTable = () => {
                             <LinkTableCell navigateTo={'/licenses/' + license.id} value={license?.licenseKey}/>
                             <LinkTableCell navigateTo={'/licenses/' + license.id} value={license?.purchaseDate?.toString().split('T')[0]}/>
                             <TableCell className="pl-2 pr-10 capitalize min-w-24">
-                                <CustomTableCell id={Number(license.id)} entity={() => {
-                                }} deleteEntity={() => {
-                                }} updateEntity={() => {
-                                }} viewEntity={() => {
-                                }} setRefresh={() => {
-                                }}/>
+
                             </TableCell>
                         </TableRow>
                     )

@@ -7,9 +7,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import Swal from 'sweetalert2'
 import withReactContent from 'sweetalert2-react-content'
+import {useRouter} from "next/navigation";
 
-const CustomTableCell = ({id, entity, deleteEntity, updateEntity, viewEntity, setRefresh}: { id: number, entity: Object, deleteEntity: (id: number) => void, updateEntity: (id: number) => void, viewEntity: (id: number) => void, setRefresh: (flag: boolean) => void}) => {
-
+const CustomTableCell = ({id, deleteEntity, updateEntity, viewPath, setRefresh}: { id: number, entity: Object, deleteEntity: (id: number) => void, updateEntity: (id: number) => void, viewPath: string, setRefresh: (flag: boolean) => void}) => {
+    const navigate = useRouter()
     const handleDelete = (id: number) => {
 
         Swal.fire({
@@ -44,7 +45,7 @@ const CustomTableCell = ({id, entity, deleteEntity, updateEntity, viewEntity, se
                     <span className="cusor-pointer sr-only sm:not-sr-only">...</span>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
-                    <DropdownMenuCheckboxItem  onClick={()=> viewEntity(id)}>
+                    <DropdownMenuCheckboxItem  onClick={()=> navigate.push(`${viewPath}`)}>
                         <div className={'cursor-pointer text-[#344054]'}>View</div>
                     </DropdownMenuCheckboxItem>
                     <DropdownMenuCheckboxItem onClick={() => updateEntity(id)}>

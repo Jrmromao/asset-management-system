@@ -1,17 +1,17 @@
 'use client'
 import React, {useState} from 'react'
 import HeaderBox from "@/components/HeaderBox";
-import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs";
-import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
-import LicensesTable from "@/components/tables/LicensesTable";
-import {licenseStore} from "@/lib/stores/store";
+import {useAccessoryStore} from "@/lib/stores/accessoryStore";
 import {Button} from "@/components/ui/button";
 import {useRouter} from "next/navigation";
+import {DataTable} from "@/components/tables/DataTable/data-table";
+import {accessoriesColumns} from "@/components/tables/AccessoriesColumns";
+import {licenseColumns} from "@/components/tables/LicensesColumns";
 
 
 const Consumables = () => {
     const [licensesList, setLicenseList] = useState<[]>()
-    const refresh = licenseStore((state) => state.shouldRefresh)
+    const [accessories] = useAccessoryStore((state) => [state.accessories])
     // const memoAssetList = useMemo(() => getLicenses().then(aceessories => setLicenseList(aceessories)), [setLicenseList, refresh]);
 
     const navigate = useRouter()
@@ -41,7 +41,7 @@ const Consumables = () => {
                     </div>
                 </section>
                 <section className="flex w-full flex-col gap-6">
-                    <LicensesTable/>
+                    <DataTable columns={accessoriesColumns} data={accessories} />
                 </section>
             </div>
         </div>)

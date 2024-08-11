@@ -29,7 +29,7 @@ model User {
   role        Role         @relation(fields: [roleId], references: [id])
   co2eRecords Co2eRecord[]
   employeeId  String?
-  kits        UserKit[]
+  // kits        UserKit[]
 }
 
 model Co2eRecord {
@@ -97,7 +97,7 @@ model Asset {
   category      Category     @relation(fields: [categoryId], references: [id])
   license       License?     @relation(fields: [licenseId], references: [id])
   Co2eRecord    Co2eRecord[]
-  kits          KitAsset[]
+  // kits          KitAsset[]
 }
 
 model StatusLable {

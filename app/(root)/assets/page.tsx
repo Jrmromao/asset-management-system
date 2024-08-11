@@ -1,6 +1,6 @@
 'use client'
 
-import React, {useEffect} from 'react'
+import React, {useCallback, useEffect, useMemo} from 'react'
 import HeaderBox from "@/components/HeaderBox";
 import AssetTable from "@/components/tables/AssetTable";
 import {useDialogStore} from "@/lib/stores/store";
@@ -11,44 +11,33 @@ import {filterColumns, renameColumns} from "@/lib/utils";
 import {DialogContainer} from "@/components/dialogs/DialogContainer";
 import AssetForm from "@/components/forms/AssetForm";
 import UploadAssetsForm from "@/components/forms/UploadAssetsForm";
+import {DataTable} from "@/components/tables/DataTable/data-table";
+import {assetColumns} from "@/components/tables/AssetColumns";
 
 const Assets = () => {
 
     const [openDialog, closeDialog, isOpen] = useDialogStore(state => [state.onOpen, state.onClose, state.isOpen])
     const [assets, loading, fetchAssets, getAssetById, deleteAsset] = useAssetStore((state) => [state.assets, state.loading, state.getAll, state.findById, state.delete,]);
 
+    const handleDelete = async (id: number) => {
+        await deleteAsset(id).then(_ => fetchAssets());
+    }
+
+
+    const handleView = async (id: number) => {
+        navigate.push(`/assets/view/?id=${id}`)
+    }
 
     const navigate = useRouter()
-    const columnMappings: Record<keyof Asset, string> = {
-        categoryId: "categoryId",
-        datePurchased: "Date Purchased",
-        name: "name",
-        price: "Price",
-        id: "id",
-        license: "License",
-        createdAt: "Created At",
-        updatedAt: "updatedAt",
-        assigneeId: "assigneeId",
-        certificateUrl: "certificateUrl",
-        licenceUrl: "licenceUrl",
-        model: "Model",
-        brand: "Brand",
-        serialNumber: "Serial Number",
-        category: "Category",
-        licenseId: '',
-        statusLabelId: '',
-        statusLabel: ''
-    };
+
+    const onDelete = useCallback((asset: Asset) => handleDelete(asset?.id!), [])
+    const onView = useCallback((asset: Asset) => handleView(asset?.id!), [])
+
+    const columns = useMemo(() => assetColumns({onDelete, onView}), []);
 
     useEffect(() => {
         fetchAssets();
     }, []);
-
-    const filteredData = filterColumns(assets, ['id', 'updatedAt', 'categoryId', 'datePurchased', 'certificateUrl', 'assigneeId', 'licenceUrl']);
-    const renamedData = renameColumns(filteredData, columnMappings);
-    // if (renamedData?.length === 0) return <p>No assets found</p>
-    const headers = renamedData?.length > 0 ? Object?.keys(renamedData[0]) : []
-
 
     return (
         <div className="assets">
@@ -71,14 +60,13 @@ const Assets = () => {
                         </Button>
                         <Button
                             variant={"link"}
-
                             onClick={() => openDialog()}>
                             Import
                         </Button>
                     </div>
                 </section>
                 <section className="flex w-full flex-col gap-6">
-                    <AssetTable assets={assets} deleteAsset={deleteAsset} findById={getAssetById}/>
+                    <DataTable columns={columns} data={assets}/>
                 </section>
             </div>
         </div>

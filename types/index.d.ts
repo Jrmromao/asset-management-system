@@ -20,11 +20,6 @@ declare type SignUpParams = {
     password: string;
 };
 
-declare type LoginUser = {
-    email: string;
-    password: string;
-};
-
 
 declare type StatusLabel = {
     id?: number;
@@ -83,6 +78,12 @@ declare type Accessory = {
     companyId: number;
 }
 
+declare type Kit = {
+    id?: number;
+    name: string;
+    description: String;
+}
+
 
 declare type Asset = {
     id?: number;
@@ -104,6 +105,7 @@ declare type Asset = {
     statusLabelId?: number;
     statusLabel?: StatusLabel;
 }
+
 declare type Category = {
     id?: string;
     name: string;

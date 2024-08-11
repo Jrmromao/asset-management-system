@@ -14,7 +14,6 @@ const AssetTable = ({assets, findById, deleteAsset}: AssetTableProps) => {
         datePurchased: "Date Purchased",
         serialNumber: "Serial Number",
         name: "Asset Title",
-        purchasePrice: "Purchase price",
         id: "id",
         createdAt: "Created At",
         updatedAt: "updatedAt",
@@ -31,7 +30,7 @@ const AssetTable = ({assets, findById, deleteAsset}: AssetTableProps) => {
         statusLabelId: ""
     };
 
-    const filteredData = filterColumns(assets, ['id', 'updatedAt', 'categoryId', 'datePurchased', 'certificateUrl', 'assigneeId', 'purchasePrice', 'licenceUrl', 'licenseId', "license", "statusLabelId"]);
+    const filteredData = filterColumns(assets, ['id', 'updatedAt', 'categoryId', 'datePurchased', 'certificateUrl', 'assigneeId', 'licenceUrl', 'licenseId', "license", "statusLabelId"]);
     const renamedData = renameColumns(filteredData, columnMappings);
     if (renamedData?.length === 0) return <p>No assets found</p>
 
@@ -71,14 +70,7 @@ const AssetTable = ({assets, findById, deleteAsset}: AssetTableProps) => {
 
 
                                 <TableCell className=" cusor-pointer pl-2 pr-10 capitalize min-w-24">
-                                    <CustomTableCell id={asset.id!} entity={asset}
-                                                     deleteEntity={() => deleteAsset(asset.id!)}
-                                                     setRefresh={(flag: boolean) => console.log(flag)}
-                                                     updateEntity={() => {
-                                                     }}
-                                                     viewEntity={() => {
-                                                         navigate.push(`/assets/view/?id=${asset.id}`)
-                                                     }}/>
+
                                 </TableCell>
 
                             </TableRow>
