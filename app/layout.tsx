@@ -7,6 +7,7 @@ import "./globals.css";
 import {SessionProvider} from 'next-auth/react';
 import {ClientProviders} from "@/lib/SessionProvider";
 import {ThemeProvider} from "@/components/providers/theme-provider";
+import {Toaster} from "sonner";
 
 const inter = Inter({subsets: ["latin"], variable: '--font-inter'});
 const ibmPlexSerif = IBM_Plex_Serif({
@@ -30,9 +31,10 @@ export default async function RootLayout({children}: Readonly<{
     return (
         <html lang="en">
         <body className={`${inter.variable} ${ibmPlexSerif.variable}`}>
+        <Toaster richColors  />
         <ThemeProvider
             attribute="class"
-            defaultTheme="system"
+            defaultTheme="newyork"
             enableSystem
             disableTransitionOnChange
         ><ClientProviders>

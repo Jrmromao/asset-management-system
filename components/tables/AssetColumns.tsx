@@ -7,7 +7,6 @@ import DataTableRowActions from "@/components/tables/DataTable/DataTableRowActio
 
 
 // const navigate = useRouter() ncannot use hook in a non hook component
-// export const assetColumns= ({}): ColumnDef<Assets>[] = [
 interface AssetColumnsProps {
     onDelete: (value: Asset) => void
     onView: (value: Asset) => void

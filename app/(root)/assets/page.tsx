@@ -13,23 +13,27 @@ import AssetForm from "@/components/forms/AssetForm";
 import UploadAssetsForm from "@/components/forms/UploadAssetsForm";
 import {DataTable} from "@/components/tables/DataTable/data-table";
 import {assetColumns} from "@/components/tables/AssetColumns";
+import {toast} from "sonner";
 
 const Assets = () => {
 
     const [openDialog, closeDialog, isOpen] = useDialogStore(state => [state.onOpen, state.onClose, state.isOpen])
     const [assets, loading, fetchAssets, getAssetById, deleteAsset] = useAssetStore((state) => [state.assets, state.loading, state.getAll, state.findById, state.delete,]);
+    const navigate = useRouter()
 
     const handleDelete = async (id: number) => {
-        await deleteAsset(id).then(_ => fetchAssets());
-    }
+        await deleteAsset(id).then(_ => {
+            fetchAssets()
+            toast.success('Event has been created')
+        }).catch(err =>{
+            toast.error(err)
+        });
 
+    }
 
     const handleView = async (id: number) => {
         navigate.push(`/assets/view/?id=${id}`)
     }
-
-    const navigate = useRouter()
-
     const onDelete = useCallback((asset: Asset) => handleDelete(asset?.id!), [])
     const onView = useCallback((asset: Asset) => handleView(asset?.id!), [])
 

@@ -44,16 +44,23 @@ const AccessoryForm = ({accessory}: AccessoryFormProps) => {
 
         title: z.string().min(1, "Title name is required"),
 
+        totalQuantityCount: z.string({required_error: "Quantity count is required"})
+            .transform((value) => Number(value))
+            .refine((value) => value >= 1, {message: "Quantity count must be at least 1"}),
+        minQuantityAlert: z.string({required_error: "Min. quantity is required"})
+            .transform((value) => Number(value))
+            .refine((value) => value >= 1, {message: "Min. quantity must be at least 1"}),
 
-        totalQuantityCount: z.number().min(1, "License copies count is required"),
-        minQuantityAlert: z.number().min(1, "Min. copies alert is required"),
+
         alertEmail: z.string().email().min(1, "Alert email is required"),
+
+
         vendor: z.string().min(1, "Vendor is required"),
-        purchaseDate: z.date().min(new Date(1900, 0, 1), 'Date must be after January 1, 1900').max(new Date(), 'Date must be before today'),
+        purchaseDate: z.date().optional(),//z.date().min(new Date(1900, 0, 1), 'Date must be after January 1, 1900').max(new Date(), 'Date must be before today'),
         description: z.string().optional()
 
     })
-        .refine((data) => data.totalQuantityCount >= data.minQuantityAlert, {
+        .refine((data) => data.totalQuantityCount <= data.minQuantityAlert, {
             message: "Min. quantity must be less than or equal to quantity count.",
             path: ["minQuantityAlert"],
         })
@@ -117,7 +124,7 @@ const AccessoryForm = ({accessory}: AccessoryFormProps) => {
                                     <div className="flex-1">
                                         <CustomInput
                                             control={form.control}
-                                            {...form.register("totalQuantityCount")}
+                                            {...form.register("totalQuantityCount", {valueAsNumber: true})}
                                             label="Quantity Count"
                                             placeholder="e.g. 50"
                                             type="number"
@@ -129,7 +136,7 @@ const AccessoryForm = ({accessory}: AccessoryFormProps) => {
                                     <div className="flex-1">
                                         <CustomInput
                                             control={form.control}
-                                            {...form.register("minQuantityAlert")}
+                                            {...form.register("minQuantityAlert", {valueAsNumber: true, min: 1})}
                                             label="Min. Quantity Alert"
                                             placeholder="e.g. 15"
                                             type="number"
@@ -179,7 +186,7 @@ const AccessoryForm = ({accessory}: AccessoryFormProps) => {
                                         <CustomInput control={form.control}   {...form.register("purchaseDate")}
                                                      label={'Purchase Date'}
                                                      placeholder={'eg. 2023-12-31'}
-                                                     type={'text'}/>
+                                                     type={'date'}/>
                                     </div>
                                 </div>
 

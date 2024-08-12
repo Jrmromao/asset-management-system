@@ -9,24 +9,28 @@ import CustomTableCell from "@/components/tables/CustomTableCell";
 import {TableCell} from "@/components/ui/table";
 
 import {useAssetStore} from "@/lib/stores/assetStore";
+import DataTableRowActions from "@/components/tables/DataTable/DataTableRowActions";
 
-// This type is used to define the shape of our data.
-// You can use a Zod schema here if you want.
-export type Assets = {
-    id?: number;
-    title: string;
-    purchaseDate: Date;
-    vendor: string;
+interface AccessoriesColumnsProps {
+    onDelete: (value: Accessory) => void
+    onView: (value: Accessory) => void
+}
+
+export interface Accessory {
+    id: number,
+    title: string,
+    createdAt: Date,
+    updatedAt: Date,
+    datePurchased: Date,
+    vendor: string,
+    description: string
     alertEmail: string
-    minQuantityAlert: number
     totalQuantityCount: number
-    description: string;
-    categoryId: number;
-    companyId: number;
+    minQuantityAlert: number
 }
 
 // const navigate = useRouter() ncannot use hook in a non hook component
-export const accessoriesColumns: ColumnDef<Assets>[] = [
+export const accessoriesColumns = ({onDelete, onView}: AccessoriesColumnsProps): ColumnDef<Accessory>[] => [
     {
         accessorKey: "title",
         header: ({column}) => {
@@ -41,43 +45,73 @@ export const accessoriesColumns: ColumnDef<Assets>[] = [
             )
         }
     },
+    // createdAt, updatedAt
     {
-        accessorKey: "purchaseDate",
-        header: "Purchase Date",
+        accessorKey: "createdAt",
+        header: "Created At",
+    },
+    {
+        accessorKey: "updatedAt",
+        header: "Updated At",
     },
     {
         accessorKey: "datePurchased",
         header: "Date Purchased",
         cell: ({row}) => {
-            const asset = row.original
-            return (<div className={'cursor-pointer'}><LinkTableCell value={''} navigateTo={`/assets/view/?id=${asset.id}`}/></div>)
+            const accessory = row.original
+            return (<div className={'cursor-pointer'}><LinkTableCell value={'Now'}
+                                                                     navigateTo={`/accessories/view/?id=${accessory.id}`}/>
+            </div>)
+        }
+    },
+    {
+        accessorKey: "vendor",
+        header: "Vendor",
+        cell: ({row}) => {
+            const accessory = row.original
+            return <LinkTableCell value={accessory.vendor} navigateTo={`/accessories/view/?id=${accessory.id}`}/>
+        }
+    },
+    {
+        accessorKey: "alertEmail",
+        header: "Alert Email",
+        cell: ({row}) => {
+            const accessory = row.original
+            return <LinkTableCell value={accessory.alertEmail} navigateTo={`/accessories/view/?id=${accessory.id}`}/>
+        }
+    },
+    {
+        accessorKey: "minQuantityAlert",
+        header: "Min Quantity Alert",
+        cell: ({row}) => {
+            const accessory = row.original
+            return <LinkTableCell value={accessory.minQuantityAlert}
+                                  navigateTo={`/accessories/view/?id=${accessory.id}`}/>
+        }
+    },
+    {
+        accessorKey: "totalQuantityCount",
+        header: "Total Quantity Count",
+        cell: ({row}) => {
+            const accessory = row.original
+            return <LinkTableCell value={accessory.totalQuantityCount}
+                                  navigateTo={`/accessories/view/?id=${accessory.id}`}/>
         }
     },
     {
         accessorKey: "description",
-        header: "Description",
+        header: "Note",
         cell: ({row}) => {
             const value = row.getValue('price')
-            const asset = row.original
-            return <LinkTableCell value={value as string} navigateTo={`/assets/view/?id=${asset.id}`}/>
+            const accessory = row.original
+            return <LinkTableCell value={value as string} navigateTo={`/accessories/view/?id=${accessory.id}`}/>
         }
-
     },
     {
         id: "actions",
         cell: ({row}) => {
-
-            const asset = row.original
-            const [deleteAsset] = useAssetStore((state) => [state.delete]);
             return (
-                <TableCell className=" cusor-pointer pl-2 pr-10 capitalize min-w-24">
-                    <CustomTableCell id={asset.id!} entity={asset}
-                                     deleteEntity={() => deleteAsset(asset.id!)}
-                                     setRefresh={(flag: boolean) => console.log(flag)}
-                                     updateEntity={() => {
-                                     }}
-                                     viewPath={`/assets/view/?id=${asset.id}`}/>
-                </TableCell>
+                <DataTableRowActions row={row} onDelete={onDelete} onView={onView}/>
             )
         },
     },
