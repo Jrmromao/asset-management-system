@@ -4,9 +4,19 @@ import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import {PrismaClient} from "@prisma/client";
 import {cognitoSignIn} from "@/lib/AWSAuth";
+import { JWT } from 'next-auth/jwt';
+import { SignJWT, jwtVerify } from 'jose';
+import  * as jose  from 'jose';
+import { createSecretKey } from 'crypto';
+import crypto from "crypto"
 
+interface CustomJWT {
+    id?: string;
+    email?: string;
+}
 
 const prisma = new PrismaClient()
+
 
 const options: NextAuthOptions = {
     providers: [
@@ -35,10 +45,24 @@ const options: NextAuthOptions = {
     ],
     session: {
         strategy: 'jwt',
-        maxAge:  900,
-        updateAge:  600
+        maxAge: 30 * 24 * 60 * 60,
     },
     secret: process.env.NEXTAUTH_SECRET,
+
+    // jwt: {
+    //
+    //     decode: async ({ token }) => {
+    //         if (!token) {
+    //             throw new Error('No token provided');
+    //         }
+    //         const key = createSecretKey(process.env.NEXTAUTH_SECRET as string, 'utf-8');
+    //         const { payload } = await jwtVerify(token, key, {
+    //             algorithms: ['HS256'],
+    //         });
+    //         return payload;
+    //     },
+    // },
+
     pages: {
         signIn: "/sign-in"
     },

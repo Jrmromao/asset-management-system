@@ -1,20 +1,21 @@
 'use client'
-import React, {useCallback, useMemo, useState} from 'react'
+import React, {useCallback, useEffect, useMemo, useState} from 'react'
 import HeaderBox from "@/components/HeaderBox";
 import {useAccessoryStore} from "@/lib/stores/accessoryStore";
 import {Button} from "@/components/ui/button";
 import {useRouter} from "next/navigation";
 import {DataTable} from "@/components/tables/DataTable/data-table";
 import {accessoriesColumns} from "@/components/tables/AccessoriesColumns";
-import {licenseColumns} from "@/components/tables/LicensesColumns";
-import {assetColumns} from "@/components/tables/AssetColumns";
 import {toast} from "sonner";
-import {Accessory} from "@prisma/client";
 
 
 const Consumables = () => {
     const [licensesList, setLicenseList] = useState<[]>()
     const [accessories, getAll, deleteAccessory] = useAccessoryStore((state) => [state.accessories, state.getAll, state.delete])
+
+    useEffect(()=>{
+        getAll()
+    }, [])
 
     const handleDelete = async (id: number) => {
         await deleteAccessory(id).then(_ => {

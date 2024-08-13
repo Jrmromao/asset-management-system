@@ -10,6 +10,8 @@ import {Card} from "@/components/ui/card";
 import CustomInput from "@/components/CustomInput";
 import {Alert, AlertDescription, AlertTitle} from "@/components/ui/alert"
 import {useAccessoryStore} from "@/lib/stores/accessoryStore";
+import {Calendar} from "@/components/ui/calendar";
+import CustomDatePicker from "@/components/CustomDatePicker";
 
 interface AccessoryFormProps {
     accessory?: Accessory
@@ -18,16 +20,16 @@ interface AccessoryFormProps {
 const AccessoryForm = ({accessory}: AccessoryFormProps) => {
 
     const INITIAL_VALUES = {
-        title: accessory?.title || '',
-        totalQuantityCount: accessory?.totalQuantityCount || 0,
-        minQuantityAlert: accessory?.minQuantityAlert || 0,
-        alertEmail: accessory?.alertEmail || '',
-        vendor: accessory?.vendor || '',
+        title: accessory?.title,
+        totalQuantityCount: accessory?.totalQuantityCount,
+        minQuantityAlert: accessory?.minQuantityAlert,
+        alertEmail: accessory?.alertEmail,
+        vendor: accessory?.vendor,
         purchaseDate: accessory?.purchaseDate,
-        description: accessory?.description || '',
+        description: accessory?.description,
     }
 
-
+    const [date, setDate] = useState<Date>()
     const [isLoading, setIsLoading] = useState(false)
     const [licenseQuestion, setLicenseQuestion] = useState('')
     const [needLicense, setNeedLicense] = useState('')
@@ -44,9 +46,11 @@ const AccessoryForm = ({accessory}: AccessoryFormProps) => {
 
         title: z.string().min(1, "Title name is required"),
 
+
         totalQuantityCount: z.string({required_error: "Quantity count is required"})
             .transform((value) => Number(value))
             .refine((value) => value >= 1, {message: "Quantity count must be at least 1"}),
+
         minQuantityAlert: z.string({required_error: "Min. quantity is required"})
             .transform((value) => Number(value))
             .refine((value) => value >= 1, {message: "Min. quantity must be at least 1"}),
@@ -60,7 +64,7 @@ const AccessoryForm = ({accessory}: AccessoryFormProps) => {
         description: z.string().optional()
 
     })
-        .refine((data) => data.totalQuantityCount <= data.minQuantityAlert, {
+        .refine((data) => data.minQuantityAlert <= data.totalQuantityCount, {
             message: "Min. quantity must be less than or equal to quantity count.",
             path: ["minQuantityAlert"],
         })
@@ -74,7 +78,9 @@ const AccessoryForm = ({accessory}: AccessoryFormProps) => {
     const onSubmit = async (data: z.infer<typeof schema>) => {
         setIsLoading(true)
 
-        console.log('data')
+        data.purchaseDate = date
+
+        console.log(data)
         try {
             createAccessory({
                 title: data.title || '',
@@ -168,6 +174,7 @@ const AccessoryForm = ({accessory}: AccessoryFormProps) => {
                         </div>
                     </Card>
 
+
                     <Card className={'p-3.5 mb-5'}>
                         <div className={'mt-6 header-2'}>Vendor & Purchase details</div>
 
@@ -183,10 +190,14 @@ const AccessoryForm = ({accessory}: AccessoryFormProps) => {
                                 </div>
                                 <div className="flex flex-col gap-4 pt-5">
                                     <div className="flex-1">
-                                        <CustomInput control={form.control}   {...form.register("purchaseDate")}
-                                                     label={'Purchase Date'}
-                                                     placeholder={'eg. 2023-12-31'}
-                                                     type={'date'}/>
+
+                                        <CustomDatePicker control={form.control}   {...form.register("purchaseDate")}
+                                                          label={'Purchase Date'}
+                                                          placeholder={'eg. 2023-12-31'}
+                                                          type={'date'}
+                                                          date={date}
+                                                          setDate={setDate}
+                                        />
                                     </div>
                                 </div>
 

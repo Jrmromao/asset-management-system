@@ -10,6 +10,7 @@ import {TableCell} from "@/components/ui/table";
 
 import {useAssetStore} from "@/lib/stores/assetStore";
 import DataTableRowActions from "@/components/tables/DataTable/DataTableRowActions";
+import {formatDateTime} from "@/lib/utils";
 
 interface AccessoriesColumnsProps {
     onDelete: (value: Accessory) => void
@@ -49,17 +50,32 @@ export const accessoriesColumns = ({onDelete, onView}: AccessoriesColumnsProps):
     {
         accessorKey: "createdAt",
         header: "Created At",
+        cell: ({row}) => {
+            const accessory = row.original
+            console.log(accessory.datePurchased)
+            return (<div className={'cursor-pointer'}><LinkTableCell value={formatDateTime(accessory.createdAt).dateOnly}
+                                                                     navigateTo={`/accessories/view/?id=${accessory.id}`}/>
+            </div>)
+        }
     },
     {
         accessorKey: "updatedAt",
         header: "Updated At",
+        cell: ({row}) => {
+            const accessory = row.original
+            console.log(accessory.datePurchased)
+            return (<div className={'cursor-pointer'}><LinkTableCell value={formatDateTime(accessory.updatedAt).dateOnly}
+                                                                     navigateTo={`/accessories/view/?id=${accessory.id}`}/>
+            </div>)
+        }
     },
     {
         accessorKey: "datePurchased",
         header: "Date Purchased",
         cell: ({row}) => {
             const accessory = row.original
-            return (<div className={'cursor-pointer'}><LinkTableCell value={'Now'}
+            console.log(accessory.datePurchased)
+            return (<div className={'cursor-pointer'}><LinkTableCell value={formatDateTime(accessory.updatedAt).dateOnly}
                                                                      navigateTo={`/accessories/view/?id=${accessory.id}`}/>
             </div>)
         }
@@ -102,7 +118,7 @@ export const accessoriesColumns = ({onDelete, onView}: AccessoriesColumnsProps):
         accessorKey: "description",
         header: "Note",
         cell: ({row}) => {
-            const value = row.getValue('price')
+            const value = row.getValue('description')
             const accessory = row.original
             return <LinkTableCell value={value as string} navigateTo={`/accessories/view/?id=${accessory.id}`}/>
         }
