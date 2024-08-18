@@ -14,57 +14,123 @@ datasource db {
 }
 
 model User {
-  id          Int          @id @default(autoincrement())
-  email       String       @unique
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  oauthId     String?
-  roleId      Int
-  companyId   Int
-  firstName   String
-  lastName    String
-  title       String?
-  auditLogs   AuditLog[]
-  company     Company      @relation(fields: [companyId], references: [id])
-  role        Role         @relation(fields: [roleId], references: [id])
-  co2eRecords Co2eRecord[]
-  employeeId  String?
+  id            String       @id @default(cuid())
+  email         String       @unique
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  oauthId       String?
+  roleId        String
+  companyId     String
+  firstName     String
+  lastName      String
+  name          String
+  Images        String?
+  emailVerified DateTime?
+  title         String?
+  auditLogs     AuditLog[]
+  company       Company      @relation(fields: [companyId], references: [id])
+  role          Role         @relation(fields: [roleId], references: [id])
+  co2eRecords   Co2eRecord[]
+  employeeId    String?
+  accounts      Account[]
   // kits        UserKit[]
 }
 
+model Account {
+  id                String  @id @default(cuid())
+  userId            String  @map("user_id")
+  type              String
+  provider          String
+  providerAccountId String  @map("provider_account_id")
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+// model User_ {
+//   id            String          @id @default(cuid())
+//   name          String?
+//   email         String          @unique
+//   emailVerified DateTime?
+//   image         String?
+//   accounts      Account[]
+//   sessions      Session[]
+//   // Optional for WebAuthn support
+//   Authenticator Authenticator[]
+//
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+// }
+
+// model Account {
+//   userId            String
+//   type              String
+//   provider          String
+//   providerAccountId String
+//   refresh_token     String?
+//   access_token      String?
+//   expires_at        Int?
+//   token_type        String?
+//   scope             String?
+//   id_token          String?
+//   session_state     String?
+//
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+//
+//   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+//
+//   @@id([provider, providerAccountId])
+// }
+
 model Co2eRecord {
-  id               Int      @id @default(autoincrement())
+  id               String   @id @default(cuid())
   asset            Asset    @relation(fields: [assetId], references: [id])
-  assetId          Int
+  assetId          String
   co2e             Float // CO2e in kg
   co2eType         String // Type of CO2e (e.g., Scope 1, Scope 2, Scope 3)
   sourceOrActivity String // Description of the source or activity
   date             DateTime // Date of the CO2e record
   createdAt        DateTime @default(now())
   User             User?    @relation(fields: [userId], references: [id])
-  userId           Int?
+  userId           String?
 }
 
 model Role {
-  id        Int      @id @default(autoincrement())
+  id        String   @id @default(cuid())
   name      String   @unique
   users     User[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  Company   Company? @relation(fields: [companyId], references: [id])
+  companyId String?
 }
 
 model Company {
-  id          Int         @id @default(autoincrement())
-  name        String      @unique
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  auditLogs   AuditLog[]
-  users       User[]
-  accessories Accessory[]
+  id           String        @id @default(cuid())
+  name         String        @unique
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  auditLogs    AuditLog[]
+  users        User[]
+  assets       Asset[]
+  accessories  Accessory[]
+  categories   Category[]
+  roles        Role[]
+  statusLabels StatusLable[]
 }
 
 model Accessory {
-  id                 Int       @id @default(autoincrement())
+  id                 String    @id @default(cuid())
   title              String
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
@@ -74,34 +140,36 @@ model Accessory {
   vendor             String
   purchaseDate       DateTime
   description        String?
-  categoryId         Int?      @unique
+  categoryId         String?   @unique
   category           Category? @relation(fields: [categoryId], references: [id]) // Made optional
-  companyId          Int?
+  companyId          String?
   company            Company?  @relation(fields: [companyId], references: [id])
 }
 
 model Asset {
-  id            Int          @id @default(autoincrement())
+  id            String       @id @default(cuid())
   name          String
   price         Float
-  categoryId    Int
+  categoryId    String
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
-  assigneeId    Int?
+  assigneeId    String?
   brand         String
   model         String
   serialNumber  String       @unique
-  licenseId     Int?
-  statusLabelId Int?
+  licenseId     String?
+  statusLabelId String?
   statusLabel   StatusLable? @relation(fields: [statusLabelId], references: [id])
   category      Category     @relation(fields: [categoryId], references: [id])
   license       License?     @relation(fields: [licenseId], references: [id])
   Co2eRecord    Co2eRecord[]
+  companyId     String
+  company       Company      @relation(fields: [companyId], references: [id])
   // kits          KitAsset[]
 }
 
 model StatusLable {
-  id          Int      @id @default(autoincrement())
+  id          String   @id @default(cuid())
   name        String   @unique
   colorCode   String
   isArchived  Boolean
@@ -110,19 +178,23 @@ model StatusLable {
   Asset       Asset[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  Company     Company? @relation(fields: [companyId], references: [id])
+  companyId   String?
 }
 
 model Category {
-  id        Int        @id @default(autoincrement())
-  name      String     @unique
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  id        String      @id @default(cuid())
+  name      String      @unique
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
   assets    Asset[]
-  accessory Accessory?
+  accessory Accessory[]
+  companyId String?
+  company   Company?    @relation(fields: [companyId], references: [id])
 }
 
 model Transaction {
-  id        Int      @id @default(autoincrement())
+  id        String   @id @default(cuid())
   type      String
   amount    Float
   assetId   Int
@@ -131,7 +203,7 @@ model Transaction {
 }
 
 model License {
-  id                 Int      @id @default(autoincrement())
+  id                 String   @id @default(cuid())
   name               String   @unique
   licensedEmail      String
   licenseKey         String
@@ -150,14 +222,14 @@ model License {
 }
 
 model AuditLog {
-  id        Int      @id @default(autoincrement())
+  id        String   @id @default(cuid())
   action    String
   entity    String
-  entityId  Int?
-  userId    Int
+  entityId  String?
+  userId    String
   details   String?
   createdAt DateTime @default(now())
-  companyId Int
+  companyId String
   company   Company  @relation(fields: [companyId], references: [id])
   user      User     @relation(fields: [userId], references: [id])
 }

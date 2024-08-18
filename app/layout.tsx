@@ -1,10 +1,7 @@
-import {getServerSession} from "next-auth";
-
 export const dynamic = 'force-dynamic'
 import type {Metadata} from "next";
 import {Inter, IBM_Plex_Serif} from "next/font/google";
 import "./globals.css";
-import {SessionProvider} from 'next-auth/react';
 import {ClientProviders} from "@/lib/SessionProvider";
 import {ThemeProvider} from "@/components/providers/theme-provider";
 import {Toaster} from "sonner";
@@ -18,7 +15,7 @@ const ibmPlexSerif = IBM_Plex_Serif({
 
 export const metadata: Metadata = {
     title: "Asset Management System",
-    description: "This is my banking app for the people",
+    description: "This is my asset management system",
     icons: {
         icon: '/icons/logo.svg'
     }

@@ -76,7 +76,7 @@ export const assetColumns = ({onDelete, onView}: AssetColumnsProps): ColumnDef<A
         header: "Status",
         cell: ({row}) => {
             const value = row.getValue('statusLabel') as StatusLabel
-            return <div>{value?.name}</div>
+            return <LinkTableCell value={value?.name} label={value} navigateTo={`#`}/>
         }
     },
     {

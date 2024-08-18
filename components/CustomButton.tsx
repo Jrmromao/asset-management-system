@@ -14,13 +14,15 @@ interface CustomButtonProps {
     value: string
     Icon: IconType;
     className?: string
+    disabled?: boolean
 
 }
 
-const CustomButton = ({size = 'sm', variant, action, value, Icon, className}: CustomButtonProps) => {
+const CustomButton = ({size = 'sm', variant, action, value, Icon, className, disabled}: CustomButtonProps) => {
     return (
         <div>
             <Button variant={variant} size={size} onClick={action}
+                    disabled={disabled}
                     className={cn("flex items-center space-x-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 ", className)}>
                 <Icon className="w-4 h-4 mr-2"/>
                 <span>{value}</span>

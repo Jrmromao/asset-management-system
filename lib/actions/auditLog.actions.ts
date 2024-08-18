@@ -5,12 +5,12 @@ import {parseStringify} from "@/lib/utils";
 const prisma = new PrismaClient()
 
 export const create = async (data: {
-    id: number;
+    id: string;
     action: string;
     entity: string;
-    entityId: number;
+    entityId: string;
     userId: string;
-    organizationId: number;
+    organizationId: string;
 
 }) => {
     try {
@@ -20,7 +20,7 @@ export const create = async (data: {
                 action: data.action,
                 entity: data.entity,
                 entityId: data.entityId,
-                userId: Number(data.userId),
+                userId: data.userId,
                 companyId: data.organizationId,
                 createdAt: new Date(),
             }
@@ -33,7 +33,7 @@ export const create = async (data: {
 }
 
 
-export const findAllByOrganization = async (organizationId: number) => {
+export const findAllByOrganization = async (organizationId: string) => {
     try {
 
         const auditLog = await prisma.auditLog.findMany({

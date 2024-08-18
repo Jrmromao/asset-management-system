@@ -8,8 +8,13 @@ export const createCategory = async (categoryData: { name: string }) => {
 
         const category = await prisma.category.create({
             data: {
-                name: categoryData.name,
-            }
+                name: 'IT Support',
+                company: {
+                    connect: {
+                        id: '0c82b08e-2391-4819-8ba7-1af8e5721c74'
+                    },
+                },
+            },
         }).then(result => console.log(result))
             .catch(error => console.log(error))
 
@@ -33,7 +38,7 @@ export const getCategories = async () => {
     }
 }
 
-export const remove = async (id: number) => {
+export const remove = async (id: string) => {
     try {
         const licenseTool = await prisma.category.delete({
             where: {

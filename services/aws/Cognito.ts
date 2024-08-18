@@ -6,7 +6,7 @@ export const signUp = async ({clientId, username, password, email, companyId}: {
     username: string,
     password: string,
     email: string,
-    companyId: number
+    companyId: string
 }) => {
 
     const client = new CognitoIdentityProviderClient({region: process.env.AWS_REGION!});

@@ -1,35 +1,48 @@
-// // middleware.ts
-// import { NextResponse } from 'next/server';
-// import type { NextRequest } from 'next/server';
-// import { getToken } from 'next-auth/jwt';
-// import { getSession } from 'next-auth/react';
-//
-// const protectedPaths = ['/assets', '/assets/view', '/', '/admin'];
-//
-// export async function middleware(request: NextRequest) {
-//     const {pathname} = request.nextUrl;
-//     const secret = process.env.NEXTAUTH_SECRET;
-//     const token = await getToken({req: request, secret});
-//     // const authorizationHeader = request.headers.get('authorization');
-//     // console.log(authorizationHeader)
-//     // console.log(pathname)
-//     // console.log('TOKEN: ', token)
-//
-//     // 1. Check if the request is about a protected path
-//     if (protectedPaths.includes(pathname)) {
-//         // 2. If it is, check if the user is authenticated
-//         if (!request.cookies.get('token')) {
-//             console.log('NOT AUTHENTICATED')
-//             // 3. If not authenticated, redirect to the login page
-//             return NextResponse.redirect(new URL('/sign-in', request.url));
-//         }
-//     }
-//
-//     // 4. Allow the request if not a protected path or authenticated
-//     return NextResponse.next();
-// }
+import authConfig from "./auth.config"
+import NextAuth from "next-auth"
 
 
-export { default } from 'next-auth/middleware'
+import {
+    publicRoutes,
+    authRoutes,
+    apiAuthPrefix,
+    DEFAULT_LOGIN_REDIRECT
+} from '@/routes'
+import {NextRequest} from "next/server";
 
-export const config = { matcher: ['/admin', '/assets', '/assets/view', '/', "/admin"] }
+
+const {auth} = NextAuth(authConfig)
+
+
+export default auth(async (req) => {
+
+    const {nextUrl} = req
+    const isLoggedIn = !!req.auth
+    const isAPIAuthRoute = nextUrl.pathname.startsWith(apiAuthPrefix)
+    const isPublicRoute = publicRoutes.includes(nextUrl.pathname)
+    const isAuthRoute = authRoutes.includes(nextUrl.pathname)
+
+    if (isAPIAuthRoute) {
+        return
+    }
+
+    if (isAuthRoute) {
+        if (isLoggedIn) {
+            return Response.redirect(new URL(DEFAULT_LOGIN_REDIRECT, nextUrl))
+        }
+        return
+    }
+
+    if (!isLoggedIn && !isPublicRoute) {
+        return Response.redirect(new URL('/sign-in', nextUrl))
+    }
+    return
+})
+
+export const config = {
+    matcher: [
+        '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
+        '/(api|trpc)(.*)',
+    ],
+}
+

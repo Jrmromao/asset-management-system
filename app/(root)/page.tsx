@@ -1,32 +1,15 @@
 'use client'
 import HeaderBox from '@/components/HeaderBox'
-import RightSidebar from '@/components/RightSidebar';
-import TotalBalanceBox from '@/components/TotalBalanceBox';
-import AssetTable from "@/components/tables/AssetTable";
-import RegisterForm from "@/components/forms/RegisterForm";
-import {useSession, signOut} from "next-auth/react";
-import {Button} from "@/components/ui/button";
-import {useRouter} from "next/navigation";
+import { auth } from "@/auth"
 
 
-const Home = ({searchParams: {id, page}}: SearchParamProps) => {
-    const currentPage = Number(page as string) || 1;
+const Home = async ({searchParams}: SearchParamProps) => {
 
+    const session = await auth()
 
-    const navigate = useRouter();
-    const {data} = useSession()
-
-
-    // if (!accounts) return;
-    // const accountsData = accounts?.data;
-    // const appwriteItemId = (id as string) || accountsData[0]?.appwriteItemId;
-    // const account = await getAccount({appwriteItemId})
-    const {data: session, status} = useSession();
-
-// if(status === 'unauthenticated') {
-//     navigate.push('/sign-in')
-// }
     return (
+
+
         <section className="home">
             <div className=" flex flex-col flex-grow">
                 <header className="home-header">
@@ -38,7 +21,8 @@ const Home = ({searchParams: {id, page}}: SearchParamProps) => {
                         subtext="Access and manage your account and transactions efficiently."
                     />
 
-
+                    {JSON.stringify(session, null, 2)}
+<br/>
                     TODO
                     <p>- register new users - done</p>
                     <p> - register Accessories</p>

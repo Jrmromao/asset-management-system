@@ -41,6 +41,12 @@ export const sidebarLinks = [
         label: "Kits",
         visibleTo: ["admin"],
     },
+    {
+        imgURL: "/icons/plus.svg",
+        route: "/ai-assistant",
+        label: "AI Assistant",
+        visibleTo: ["admin"],
+    },
 ].sort((a, b) => {
     if (a.label === "Home") return -1;
     if (b.label === "Home") return 1;  

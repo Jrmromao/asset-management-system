@@ -1,6 +1,6 @@
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow,} from "@/components/ui/table"
 import {filterColumns, formatDateTime, renameColumns} from "@/lib/utils";
-import CustomTableCell from "@/components/tables/CustomTableCell";
+import LEGACY_CustomTableCell from "@/components/tables/LEGACY_CustomTableCell";
 import React, {useEffect} from "react";
 import {licenseStore} from "@/lib/stores/store";
 import {findById} from "@/lib/actions/license.actions";

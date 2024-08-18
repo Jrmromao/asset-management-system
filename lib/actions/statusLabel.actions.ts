@@ -11,7 +11,12 @@ export const insert = async (data: StatusLabel) => {
                 isArchived: data.isArchived,
                 allowLoan: data.allowLoan,
                 description: data.description,
-            }
+                Company: {
+                    connect: {
+                        id: '0c82b08e-2391-4819-8ba7-1af8e5721c74'
+                    },
+                },
+            },
         })
     } catch (error) {
         console.error(error)
@@ -33,7 +38,7 @@ export const getAll = async () => {
         await prisma.$disconnect()
     }
 }
-export const findById = async (id: number) => {
+export const findById = async (id: string) => {
     try {
         const labels = await prisma.statusLable.findFirst({
             where: {
@@ -47,7 +52,7 @@ export const findById = async (id: number) => {
         await prisma.$disconnect()
     }
 }
-export const remove = async (id: number) => {
+export const remove = async (id: string) => {
     try {
         const labels = await prisma.statusLable.delete({
             where: {

@@ -1,7 +1,7 @@
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow,} from "@/components/ui/table"
 import {filterColumns, formatDateTime, renameColumns} from "@/lib/utils"
 import React, {useState} from "react";
-import CustomTableCell from "@/components/tables/CustomTableCell";
+import LEGACY_CustomTableCell from "@/components/tables/LEGACY_CustomTableCell";
 import {useRouter} from "next/navigation";
 import LinkTableCell from "@/components/tables/LinkTableCell";
 
@@ -60,12 +60,12 @@ const UserTable = ({users, findById, deleteUser}: UserTableProps) => {
                                 <LinkTableCell value={user?.employeeId} navigateTo={`/assets/view/?id=${user.id}`}/>
 
                                 <TableCell className=" cusor-pointer pl-2 pr-10 capitalize min-w-24">
-                                    <CustomTableCell id={user.id!} entity={user}
-                                                     deleteEntity={() => deleteUser(user.id!)}
-                                                     setRefresh={(flag: boolean) => console.log(flag)}
-                                                     updateEntity={() => {
+                                    <LEGACY_CustomTableCell id={user.id!} entity={user}
+                                                            deleteEntity={() => deleteUser(user.id!)}
+                                                            setRefresh={(flag: boolean) => console.log(flag)}
+                                                            updateEntity={() => {
                                                      }}
-                                                     viewEntity={() => {
+                                                            viewEntity={() => {
                                                          navigate.push(`/assets/view/?id=${user.id}`)
                                                      }}/>
                                 </TableCell>

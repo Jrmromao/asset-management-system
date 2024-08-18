@@ -5,33 +5,21 @@ import {Button} from "@/components/ui/button";
 import {ArrowUpDown} from "lucide-react";
 import LinkTableCell from "@/components/tables/LinkTableCell";
 import React from "react";
-import CustomTableCell from "@/components/tables/CustomTableCell";
+import LEGACY_CustomTableCell from "@/components/tables/LEGACY_CustomTableCell";
 import {TableCell} from "@/components/ui/table";
 
 import {useAssetStore} from "@/lib/stores/assetStore";
+import {formatDateTime} from "@/lib/utils";
+import DataTableRowActions from "@/components/tables/DataTable/DataTableRowActions";
 
-// This type is used to define the shape of our data.
-// You can use a Zod schema here if you want.
-export type License = {
-    id?: number;
-    name: string;
-    licenseKey: string;
-    renewalDate: Date;
-    licenseUrl?: string;
-    licensedEmail: string;
-    purchaseDate: Date;
-    vendor: string;
-    purchaseNotes: string;
-    minCopiesAlert: number;
-    alertRenewalDays: number;
-    licenseCopiesCount: number;
-    purchasePrice: number;
-    createdAt?: Date;
-    updatedAt?: Date;
+
+interface LicenseColumnsProps {
+    onDelete: (value: License) => void
+    onView: (value: License) => void
 }
-
 // const navigate = useRouter() ncannot use hook in a non hook component
-export const licenseColumns: ColumnDef<License>[] = [
+
+export const licenseColumns = ({onDelete, onView}: LicenseColumnsProps): ColumnDef<License>[] => [
     {
         accessorKey: "name",
         header: ({column}) => {
@@ -47,37 +35,52 @@ export const licenseColumns: ColumnDef<License>[] = [
         }
     },
     {
-        accessorKey: "licenseKey",
-        header: "Key",
+        accessorKey: "datePurchased",
+        header: "Date Purchased",
         cell: ({row}) => {
-            const value = row.getValue('model')
-            const asset = row.original
-            return <LinkTableCell value={value as string} navigateTo={`/assets/view/?id=${asset.id}`}/>
+            const license = row.original
+            return (<div className={'cursor-pointer'}>
+                <LinkTableCell value={formatDateTime(license.purchaseDate).dateOnly}
+                               navigateTo={`/assets/view/?id=${license.id}`}/>
+            </div>)
         }
+    },
+    {
+        accessorKey: "renewalDate",
+        header: "Renewal Date",
+        cell: ({row}) => {
+            const license = row.original
+            return (<div className={'cursor-pointer'}>
+                <LinkTableCell value={formatDateTime(license.renewalDate).dateOnly}
+                               navigateTo={`/assets/view/?id=${license.id}`}/>
+            </div>)
+        }
+    },
+    {
+        accessorKey: "minCopiesAlert",
+        header: "Min. Copies Alert",
+    },
+    {
+        accessorKey: "alertRenewalDays",
+        header: "Alert Renewal Days",
+    },
+    {
+        accessorKey: "purchasePrice",
+        header: "Purchase Price",
+    },
+    {
+        accessorKey: "licenseCopiesCount",
+        header: "License Copies Count",
     },
     {
         accessorKey: "licensedEmail",
         header: "Licensed Email",
-        cell: ({row}) => {
-            const asset = row.original
-            return (<div className={'cursor-pointer'}><LinkTableCell value={''} navigateTo={`/assets/view/?id=${asset.id}`}/></div>)
-        }
     },
     {
         id: "actions",
         cell: ({row}) => {
-
-            const asset = row.original
-            const [deleteAsset] = useAssetStore((state) => [state.delete]);
             return (
-                <TableCell className=" cusor-pointer pl-2 pr-10 capitalize min-w-24">
-                    <CustomTableCell id={asset.id!} entity={asset}
-                                     deleteEntity={() => deleteAsset(asset.id!)}
-                                     setRefresh={(flag: boolean) => console.log(flag)}
-                                     updateEntity={() => {
-                                     }}
-                                     viewPath={`/assets/view/?id=${asset.id}`}/>
-                </TableCell>
+                <DataTableRowActions row={row} onDelete={onDelete} onView={onView}/>
             )
         },
     },

@@ -7,22 +7,9 @@ declare type SearchParamProps = {
 
 // ========================================
 
-declare type SignUpParams = {
-    firstName: string;
-    lastName: string;
-    address1: string;
-    city: string;
-    state: string;
-    postalCode: string;
-    dateOfBirth: string;
-    ssn: string;
-    email: string;
-    password: string;
-};
-
 
 declare type StatusLabel = {
-    id?: number;
+    id?: string;
     name: string;
     colorCode: string;
     description: string;
@@ -31,7 +18,7 @@ declare type StatusLabel = {
 };
 
 declare type User = {
-    id?: number;
+    id?: string;
     oauthId?: string;
     email: string;
     firstName: string;
@@ -40,8 +27,8 @@ declare type User = {
     employeeId: string;
     createdAt?: Date;
     updatedAt?: Date;
-    roleId?: number;
-    companyId?: number;
+    roleId?: string;
+    companyId?: string;
     role?: Role;
     company?: Company;
 };
@@ -49,24 +36,25 @@ declare type User = {
 declare type RegUser = {
     email: string;
     password: string,
-    roleId: number,
-    companyId: number,
+    roleId: string,
+    companyId: string,
     firstName?: string,
     lastName?: string,
     phoneNumber?: string
 };
 
 declare type Role = {
-    id?: int;
+    id?: string;
     name: string;
     note: string;
+    roleCode: number;
     createdAt: Date;
     updatedAt: Date;
 };
 
 
 declare type Accessory = {
-    id?: number;
+    id?: string;
     title: string;
     purchaseDate: Date;
     vendor: string;
@@ -74,22 +62,24 @@ declare type Accessory = {
     minQuantityAlert: number
     totalQuantityCount: number
     description: string;
-    categoryId: number;
-    companyId: number;
+    categoryId: string;
+    companyId: string;
+    createdAt: Date
+    updatedAt: Date
 }
 
 declare type Kit = {
-    id?: number;
+    id?: string;
     name: string;
     description: String;
 }
 
 
 declare type Asset = {
-    id?: number;
+    id?: string;
     name: string;
     assigneeId?: string;
-    categoryId: number;
+    categoryId: string;
     brand: string;
     model: string;
     datePurchased: string;
@@ -102,7 +92,7 @@ declare type Asset = {
     updatedAt?: Date;
     category?: Category;
     licenseId?: string;
-    statusLabelId?: number;
+    statusLabelId?: string;
     statusLabel?: StatusLabel;
 }
 
@@ -115,7 +105,7 @@ declare type Category = {
 };
 
 declare type License = {
-    id?: int;
+    id?: number;
     name: string;
     licenseKey: string;
     renewalDate: Date;

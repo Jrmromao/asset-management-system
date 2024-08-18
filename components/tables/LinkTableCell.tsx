@@ -12,11 +12,14 @@ import {useRouter} from "next/navigation";
 import {Popover, PopoverContent, PopoverTrigger} from "@/components/ui/popover";
 import {InfoIcon} from "lucide-react";
 
-const CustomTableCell = ({value, navigateTo, label}: {value?: string | number, navigateTo?: string, label?: StatusLabel }) => {
+const CustomTableCell = ({value, navigateTo, label}: {
+    value?: string | number,
+    navigateTo?: string,
+    label?: StatusLabel
+}) => {
     const navigate = useRouter()
 
     const InfoPopover = (description: string, colorCode: string) => {
-
         return (
             <div className="text-right align-top">
                 <Popover>
@@ -28,7 +31,6 @@ const CustomTableCell = ({value, navigateTo, label}: {value?: string | number, n
                     </PopoverContent>
                 </Popover>
             </div>
-
         )
     }
 
@@ -39,13 +41,13 @@ const CustomTableCell = ({value, navigateTo, label}: {value?: string | number, n
                        onClick={() => navigate.push(navigateTo || '#')}>
                 <div className="flex">
                     <div className="w-9/12"> {value ? value : "n/a"}</div>
-                    <div className={`w-3/12 text-[${label?.colorCode}]`}> {label ? InfoPopover(label?.description, label?.colorCode) : null}</div>
+                    <div
+                        className={`w-3/12 text-[${label?.colorCode}]`}> {label ? InfoPopover(label?.description, label?.colorCode) : null}</div>
                 </div>
             </TableCell>
         </>
     )
 }
-
 
 
 export default CustomTableCell

@@ -1,5 +1,5 @@
 'use client'
-import React, {useEffect, useMemo, useState} from 'react'
+import React, {useCallback, useEffect, useMemo, useState} from 'react'
 import HeaderBox from "@/components/HeaderBox";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
@@ -11,11 +11,29 @@ import {useRouter} from "next/navigation";
 import {useLicenseStore} from "@/lib/stores/licenseStore";
 import {DataTable} from "@/components/tables/DataTable/data-table";
 import {licenseColumns} from "@/components/tables/LicensesColumns";
+import {toast} from "sonner";
+import {accessoriesColumns} from "@/components/tables/AccessoriesColumns";
 
 
 const Licenses = () => {
     const navigate = useRouter()
-    const [licenses] = useLicenseStore((state) => [state.licenses, state.getAll])
+    const [licenses, getAll, deleteLicense] = useLicenseStore((state) => [state.licenses, state.getAll, state.delete])
+    const handleDelete = async (id: number) => {
+        await deleteLicense(id).then(_ => {
+            getAll()
+        })
+    }
+    const handleView = async (id: number) => {
+        navigate.push(`/assets/view/?id=${id}`)
+    }
+    const onDelete = useCallback((accessory: any) => handleDelete(accessory?.id!), [])
+    const onView = useCallback((accessory: any) => handleView(accessory?.id!), [])
+    const columns = useMemo(() => licenseColumns({onDelete, onView}), []);
+
+    useEffect(() => {
+        getAll();
+    }, []);
+
 
     return (
         <div className="assets">
@@ -34,11 +52,9 @@ const Licenses = () => {
                         </Button>
                         <Button
                             variant={"link"}
-
                             onClick={() => navigate.push('/licenses/export')}>
                             Export
                         </Button>
-
                         <Button
                             variant={"link"}
                             className={'flex justify-end'}
@@ -48,9 +64,7 @@ const Licenses = () => {
                     </div>
                 </section>
                 <section className="flex w-full flex-col gap-6">
-
-
-                    <DataTable columns={licenseColumns} data={licenses} />
+                    <DataTable columns={columns} data={licenses}/>
                 </section>
             </div>
         </div>

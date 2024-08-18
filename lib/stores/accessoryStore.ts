@@ -18,7 +18,6 @@ export const useAccessoryStore = create(persist<IAccessoryStore>(
     (set, get) => ({
         accessories: [],
         loading: false,
-
         getAll: async () => {
             set({loading: true});
             fetch().then(accessories => {
@@ -29,7 +28,6 @@ export const useAccessoryStore = create(persist<IAccessoryStore>(
                 set({loading: false});
             });
         },
-
         create: async (accessory: Accessory) => {
             try {
                 await insert(accessory);
@@ -44,8 +42,6 @@ export const useAccessoryStore = create(persist<IAccessoryStore>(
                 throw error;
             }
         },
-
-
         update: (id: number, data: Accessory) => {
             set(
                 produce((state) => {
@@ -59,7 +55,6 @@ export const useAccessoryStore = create(persist<IAccessoryStore>(
                 })
             );
         },
-
         delete: async (id: number) => {
             try {
                 await remove(id);
@@ -70,8 +65,6 @@ export const useAccessoryStore = create(persist<IAccessoryStore>(
                 console.error(error);
             }
         },
-
-
         findById: (id: number) => {
 
             const accessory = get().accessories.find((accessory: Accessory) => accessory.id === id);

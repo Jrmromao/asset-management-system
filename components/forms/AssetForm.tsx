@@ -17,6 +17,7 @@ import CategoryForm from "@/components/forms/CategoryForm";
 import {useStatusLabelStore} from "@/lib/stores/statusLabelStore";
 import StatusLabelForm from "@/components/forms/StatusLabelForm";
 import {useRouter} from "next/navigation";
+import {toast} from "sonner";
 
 
 interface AssetFormProps {
@@ -27,12 +28,15 @@ interface AssetFormProps {
 const AssetForm = ({asset, isUpdate = false}: AssetFormProps) => {
 
     const INITIAL_VALUES = {
-        assetName: '',
-        brand: '',
-        model: '',
-        categoryId: 0,
-        statusLabelId: 0,
-        serialNumber: '',
+        assetName: asset?.name,
+        brand: asset?.brand,
+        model: asset?.model,
+        categoryId: asset?.categoryId,
+        statusLabelId: asset?.statusLabelId,
+        serialNumber: asset?.serialNumber,
+        price: asset?.price,
+        category: asset?.category?.name,
+        statusLabel: asset?.statusLabel?.name,
         datePurchased: new Date().getDate().toString()
     }
     const navigate = useRouter()
@@ -85,23 +89,25 @@ const AssetForm = ({asset, isUpdate = false}: AssetFormProps) => {
     const onSubmit = async (data: z.infer<typeof schema>) => {
         setIsLoading(true)
         try {
-            const categoryId = Number(categories.find(c => c.name === data.category?.toString())?.id)
-            const statusLabelId = Number(statusLabels.find(c => c.name === data.statusLabel?.toString())?.id)
+            const categoryId = categories.find(c => c.name === data.category?.toString())?.id
+            const statusLabelId = statusLabels.find(c => c.name === data.statusLabel?.toString())?.id
 
             const assetData: Asset = {
-                name: data.assetName || '',
-                brand: data.brand || '',
-                model: data.model || '',
-                categoryId: categoryId || 0,
-                statusLabelId: statusLabelId || 0,
-                serialNumber: data.serialNumber || '',
+                name: data.assetName,
+                brand: data.brand,
+                model: data.model,
+                categoryId: categoryId!,
+                statusLabelId: statusLabelId,
+                serialNumber: data.serialNumber,
                 price: data.price,
                 datePurchased: new Date().getDate().toString()
             }
 
             if (isUpdate) {
                 updateAsset(Number(asset?.id), assetData).then(_ => {
-                    // need to show success message
+                    toast.success('Asset updated successfully', {
+                        position: 'top-right',
+                    })
                     navigate.back()
                 })
             } else {

@@ -1,14 +1,17 @@
 'use client'
 import React from 'react'
-import {signOut, useSession} from "next-auth/react";
 import {useRouter} from "next/navigation";
 import Image from "next/image";
+import {signOut} from "@/auth";
+
 
 const Footer = ({type = 'desktop'}: {type?: 'desktop' | 'mobile'}) => {
     const router = useRouter();
-    const {data} = useSession()
 
-    const name = data?.user?.name || 'Guest'
+    const handleSignOut = async () => {
+        await signOut().then(_ => router.push('/'));
+    }
+    const name = 'Guest'
     return (
         <footer className="footer">
             <div className={type === 'mobile' ? 'footer_name-mobile' : 'footer_name'}>
@@ -21,11 +24,11 @@ const Footer = ({type = 'desktop'}: {type?: 'desktop' | 'mobile'}) => {
                     {name}
                 </h1>
                 <p className="text-14 truncate font-normal text-gray-600">
-                    {data?.user?.email}
+
                 </p>
             </div>
 
-            <div className="footer_image" onClick={() => signOut({callbackUrl: '/sign-in'})}>
+            <div className="footer_image" onClick={handleSignOut}>
                 <Image src="icons/logout.svg" fill alt="jsm"/>
             </div>
         </footer>

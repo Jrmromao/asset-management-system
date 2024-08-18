@@ -15,21 +15,31 @@ import {DialogContainer} from "@/components/dialogs/DialogContainer";
 import CategoryForm from "@/components/forms/CategoryForm";
 import {Alert, AlertDescription, AlertTitle} from "@/components/ui/alert"
 import CustomTextarea from "@/components/CustomTextarea";
+import CustomDatePicker from "@/components/CustomDatePicker";
+import {licenseSchema} from "@/lib/schemas";
 
-const LicenseForm = () => {
+
+interface LicenseFormProps {
+    license?: License
+}
+
+
+const LicenseForm = ({license}: LicenseFormProps) => {
 
     const INITIAL_VALUES = {
-        licenseName: '',
-        licenseCopiesCount: '',
-        minCopiesAlert: '',
-        licensedEmail: '',
-        renewalDate: '',
-        alertRenewalDays: '',
-        purchasePrice: '',
-        vendor: '',
-        licenseKey: '',
-        purchaseDate: '',
-        notes: '',
+        licenseName: license?.name,
+        licenseCopiesCount: license?.licenseCopiesCount.toString(),
+        minCopiesAlert: license?.minCopiesAlert.toString(),
+        licensedEmail: license?.licensedEmail,
+
+        purchaseDate: license?.purchaseDate,
+        renewalDate: license?.renewalDate,
+
+        alertRenewalDays: license?.alertRenewalDays.toString(),
+        purchasePrice: license?.purchasePrice.toString(),
+        vendor: license?.vendor,
+        licenseKey: license?.licenseKey,
+        notes: license?.purchaseNotes,
     }
 
 
@@ -40,67 +50,40 @@ const LicenseForm = () => {
 
     const [createAsset] = useAssetStore((state) => [state.create]);
     const [licenses, createLicense] = useLicenseStore((state) => [state.licenses, state.create]);
+    const [purchaseDate, setPurchaseDate] = useState<Date>()
+    const [renewalDate, setRenewalDate] = useState<Date>()
 
 
     useEffect(() => {
         closeDialog()
     }, []);
 
-    const schema = z.object({
 
-        licenseName: z.string().min(1, "License name is required"),
-
-
-        licenseCopiesCount: z.string().refine((val) => !Number.isNaN(parseInt(val, 10)), {
-            message: "License copies count is required"
-        }),
-        minCopiesAlert: z.string().refine((val) => !Number.isNaN(parseInt(val, 10)), {
-            message: "Min. copies alert is required"
-        }),
-        licensedEmail: z.string().email().min(1, "Licensee email is required"),
-        renewalDate: z.string().min(1, "Renewal date is required"),
-        alertRenewalDays: z.string().min(1, "Alert renewal days is required"),
-        purchasePrice: z.string().refine((val) => !Number.isNaN(parseInt(val, 10)), {
-            message: "Purchase price is required"
-        }),
-
-        vendor: z.string().min(1, "Vendor is required"),
-        licenseKey: z.string().min(1, "Product key is required"),
-        purchaseDate: z.string().min(1, "Purchase date is required"),
-        notes: z.string().optional()//z.string().min(1, "Notes is required"),
-
-    })
-        .refine((data) => data.licenseCopiesCount >= data.minCopiesAlert, {
-            message: "Min. Copies must be greater than or equal to license copies count",
-            path: ["minCopiesAlert"],
-        })
-
-
-    const form = useForm<z.infer<typeof schema>>({
-        resolver: zodResolver(schema),
+    const form = useForm<z.infer<typeof licenseSchema>>({
+        resolver: zodResolver(licenseSchema),
         defaultValues: INITIAL_VALUES
     })
 
-    const onSubmit = async (data: z.infer<typeof schema>) => {
+    const onSubmit = async (data: z.infer<typeof licenseSchema>) => {
         setIsLoading(true)
 
-        console.log('data')
+        console.log('Client data: ',data)
         try {
             createLicense({
-                name: data.licenseName || '',
+                name: data.licenseName,
                 licenseCopiesCount: Number(data.licenseCopiesCount),
                 minCopiesAlert: Number(data.minCopiesAlert),
-                licensedEmail: data.licensedEmail || '',
-                renewalDate: new Date(), //data.renewalDate || '',
+                licensedEmail: data.licensedEmail,
+                renewalDate: new Date(data.renewalDate),
                 alertRenewalDays: Number(data.alertRenewalDays),
                 purchasePrice: Number(data.purchasePrice),
-                vendor: data.vendor || '',
-                licenseKey: data.licenseKey || '',
-                purchaseDate: new Date(),// data.purchaseDate || '',
+                vendor: data.vendor,
+                licenseKey: data.licenseKey,
+                purchaseDate: new Date(data.purchaseDate),
                 purchaseNotes: data.notes || '',
             })
-            form.reset({})
 
+            form.reset(INITIAL_VALUES)
         } catch (e) {
             console.error(e)
         } finally {
@@ -177,20 +160,37 @@ const LicenseForm = () => {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="bg-white p-4">
+
+
                                 <div className="flex flex-col gap-4 pt-5">
                                     <div className="flex-1">
-                                        <CustomInput control={form.control}   {...form.register("licensedEmail")}
-                                                     label={'Licensed To Email'}
-                                                     placeholder={'eg. joe@ecokeepr.com'}
-                                                     type={'text'}/>
+                                        <CustomDatePicker control={form.control}   {...form.register("purchaseDate")}
+                                                          label={'Purchase Date'}
+                                                          placeholder={'eg. 2023-12-31'}
+                                                          name={'purchaseDate'}
+                                                          date={purchaseDate}
+                                                          setDate={setPurchaseDate}
+                                        />
                                     </div>
                                 </div>
 
                                 <div className="flex flex-col gap-4 pt-5">
                                     <div className="flex-1">
-                                        <CustomInput control={form.control}   {...form.register("renewalDate")}
-                                                     label={'Expiration/ Renewal Date'}
-                                                     placeholder={'eg. 2022-12-31'}
+                                        <CustomDatePicker control={form.control}   {...form.register("renewalDate")}
+                                                          label={'Renewal Date'}
+                                                          placeholder={'eg. 2025-12-31'}
+                                                          name={'renewalDate'}
+                                                          date={renewalDate}
+                                                          setDate={setRenewalDate}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="flex flex-col gap-4 pt-5">
+                                    <div className="flex-1">
+                                        <CustomInput control={form.control}   {...form.register("licensedEmail")}
+                                                     label={'Licensed To Email'}
+                                                     placeholder={'eg. joe@ecokeepr.com'}
                                                      type={'text'}/>
                                     </div>
                                 </div>
@@ -203,6 +203,8 @@ const LicenseForm = () => {
                                                      type={'number'}/>
                                     </div>
                                 </div>
+
+
                             </div>
 
 
@@ -210,6 +212,44 @@ const LicenseForm = () => {
 
                     </Card>
 
+                    <Card className={'p-3.5 mb-5'}>
+                        <div className={'mt-6 header-2'}>Vendor & License Key</div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="bg-white p-4">
+                                <div className="flex flex-col gap-4 pt-5">
+                                    <div className="flex-1">
+                                        <CustomInput control={form.control}
+                                                     {...form.register("vendor")}
+                                                     label={'Vendor Name'}
+                                                     placeholder={'eg. EcoKeepr'}
+                                                     type={'text'}/>
+                                    </div>
+                                </div>
+
+                                <div className="flex flex-col gap-4 pt-5">
+                                    <div className="flex-1">
+                                        <CustomInput control={form.control}   {...form.register("licenseKey")}
+                                                     label={'Licensed Key'}
+                                                     placeholder={'eg. 1234-1234-1234-1234'}
+                                                     type={'text'}/>
+                                    </div>
+                                </div>
+
+                                <div className="flex flex-col gap-4 pt-5">
+                                    <div className="flex-1">
+                                        <CustomInput control={form.control}   {...form.register("purchasePrice")}
+                                                     label={'Purchase Price'}
+                                                     placeholder={'eg. $15.00'}
+                                                     type={'number'}/>
+                                    </div>
+                                </div>
+                            </div>
+
+
+                        </div>
+
+                    </Card>
 
                     <Button type="submit" className={'form-btn mt-6 w-full  md:w-auto'} disabled={isLoading}>
                         {isLoading ? (

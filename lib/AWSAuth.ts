@@ -1,6 +1,7 @@
 import {NextAuthUser, UserAttributes} from "@/models/user";
 import * as AmazonCognitoIdentity from "amazon-cognito-identity-js";
 import {createHmac} from "crypto";
+import loginForm from "@/components/forms/LoginForm";
 
 export const cognitoSignIn = (email: string, password: string): Promise<NextAuthUser> => {
     return new Promise((resolve, reject) => {
@@ -15,9 +16,14 @@ export const cognitoSignIn = (email: string, password: string): Promise<NextAuth
         });
         const cognitoUser = new AmazonCognitoIdentity.CognitoUser({ Username: email, Pool: userPool });
 
+
+
         cognitoUser.authenticateUser(authenticationDetails, {
             onSuccess: function (result: AmazonCognitoIdentity.CognitoUserSession) {
                 const userAttributes = getUserAttributes(cognitoUser);
+
+
+
 
 
                 const authUser: NextAuthUser = {
@@ -35,14 +41,15 @@ export const cognitoSignIn = (email: string, password: string): Promise<NextAuth
 };
 
 const getUserAttributes = (cognitoUser: AmazonCognitoIdentity.CognitoUser): UserAttributes | null => {
+let userAttributes: UserAttributes | null = null
     const attributes = cognitoUser.getSignInUserSession()?.getIdToken().decodePayload();
     if (attributes && typeof attributes === 'object' && 'sub' in attributes) {
-        return {
+        userAttributes = {
             id: attributes['sub'],
             email: attributes['email']
         }
     }
-    return null;
+    return userAttributes;
 };
 
 

@@ -17,12 +17,12 @@ export const create = async (data: Accessory) => {
                     totalQuantityCount: data.totalQuantityCount,
                     company: {
                         connect: {
-                            id: 1//data.companyId
+                            id: '0c82b08e-2391-4819-8ba7-1af8e5721c74'//data.companyId
                         }
                     },
                     category: {
                         connect: {
-                            id: 1//data.categoryId
+                            id: 'a3c25ff4-7af1-4c7b-92d8-de57351b6f8e'//data.categoryId
                         },
                     },
                 },
@@ -51,7 +51,7 @@ export const get = async () => {
     }
 }
 
-export const findById = async (id: number) => {
+export const findById = async (id: string) => {
     try {
         const asset = await prisma.accessory.findFirst({
             where: {
@@ -64,7 +64,7 @@ export const findById = async (id: number) => {
     }
 }
 
-export const remove = async (id: number) => {
+export const remove = async (id: string) => {
     try {
         const asset = await prisma.accessory.delete({
             where: {
@@ -77,7 +77,7 @@ export const remove = async (id: number) => {
     }
 }
 
-export const update = async (asset: Accessory, id: number) => {
+export const update = async (asset: Accessory, id: string) => {
     try {
         const assets = await prisma.asset.update({
             where: {

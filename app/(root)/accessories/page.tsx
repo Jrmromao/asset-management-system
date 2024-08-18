@@ -7,6 +7,7 @@ import {useRouter} from "next/navigation";
 import {DataTable} from "@/components/tables/DataTable/data-table";
 import {accessoriesColumns} from "@/components/tables/AccessoriesColumns";
 import {toast} from "sonner";
+import {useAssetStore} from "@/lib/stores/assetStore";
 
 
 const Consumables = () => {

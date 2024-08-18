@@ -9,9 +9,10 @@ interface CustomInputProps {
     name: string;
     control: any;
     type: string;
+    disabled?: boolean
 }
 
-const CustomInput = ({control, name, label, placeholder, type, ...rest}: CustomInputProps) => {
+const CustomInput = ({control, name, label, placeholder, type, disabled, ...rest}: CustomInputProps) => {
     return (
         <FormField
             control={control}
@@ -24,6 +25,7 @@ const CustomInput = ({control, name, label, placeholder, type, ...rest}: CustomI
                     <div className={'flex w-full flex-col'}>
                         <FormControl>
                             <Input
+                                disabled={disabled}
                                 placeholder={placeholder}
                                 className={'input-class'} {...field}
                                 type={type}

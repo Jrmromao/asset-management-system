@@ -10,33 +10,16 @@ import {zodResolver} from "@hookform/resolvers/zod";
 import {z} from "zod";
 import {Loader2} from "lucide-react";
 import {registerCompany} from "@/lib/actions/company.actions";
-import CustomButton from "@/components/CustomButton";
-import {signIn} from "next-auth/react";
-import {FaGithub, FaGoogle} from "react-icons/fa";
 import CustomInput from "@/components/CustomInput";
+import {registerSchema} from "@/lib/schemas";
 
 const RegisterForm = () => {
     const [isLoading, setIsLoading] = useState(false)
     const [user, setUser] = useState(null)
 
-    const authFormSchema = () => z.object({
-        email: z.string().email("Invalid email"),
-        password: z.string()
-            .min(8, {message: "Password must be at least 8 characters long"})
-            .max(20, {message: "Password must not exceed 20 characters"}),
-        repeatPassword: z.string().min(1, "Password is required"),
-        firstName: z.string().min(1, "First name is required"),
-        lastName: z.string().min(1, "Last name is required"),
-        phoneNumber: z.string().min(1, "Phone number is required"),
-        companyName: z.string().min(1, "Company name is required"),
 
-    });
-
-
-    const formSchema = authFormSchema()
-
-    const form = useForm<z.infer<typeof formSchema>>({
-        resolver: zodResolver(formSchema),
+    const form = useForm<z.infer<typeof registerSchema>>({
+        resolver: zodResolver(registerSchema),
         defaultValues: {
             email: '',
             password: '',
@@ -50,7 +33,7 @@ const RegisterForm = () => {
 
     const router = useRouter()
 
-    const onSubmit = async (data: z.infer<typeof formSchema>) => {
+    const onSubmit = async (data: z.infer<typeof registerSchema>) => {
         setIsLoading(true)
 
         try {

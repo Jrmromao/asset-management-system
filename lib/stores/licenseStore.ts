@@ -1,14 +1,14 @@
 import {create} from "zustand"
 import {persist} from "zustand/middleware";
 import produce from 'immer';
-import {getAll, insert, findById, update} from '@/lib/actions/license.actions';
+import {getAll, insert, update, remove} from '@/lib/actions/license.actions';
 
 interface ILicenseStore {
     licenses: License[];
     loading: boolean;
     create: (asset: License) => void;
     update: (id: number, updatedAsset: License) => void;
-    // deleteLicense: (id: number) => void;
+    delete: (id: number) => Promise<void>;
     findById: (id: number) => License | null;
     getAll: () => void;
 }
@@ -32,6 +32,7 @@ export const useLicenseStore = create(persist<ILicenseStore>(
 
         create: async (license: License) => {
             try {
+
                 await insert(license);
                 set(
                     produce((state) => {
@@ -44,7 +45,6 @@ export const useLicenseStore = create(persist<ILicenseStore>(
                 throw error;
             }
         },
-
 
         update: (id: number, updatedLicense: License) => {
             set(
@@ -60,13 +60,22 @@ export const useLicenseStore = create(persist<ILicenseStore>(
             );
         },
 
-
         findById: (id: number) => {
 
             const license = get().licenses.find((license) => license.id === id);
             if (!license) return null
 
             return license;
+        },
+
+        delete: async (id: number) => {
+                await remove(id).then(_ => {
+                    set(produce((state) => {
+                        state.licenses = state.licenses?.filter((a: Asset) => a.id !== id);
+                    }));
+                }).catch(error => {
+                    throw error
+                });
         },
 
     }), {name: 'asset_store',}));

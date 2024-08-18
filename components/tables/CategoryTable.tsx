@@ -1,6 +1,6 @@
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow,} from "@/components/ui/table"
 import {filterColumns, formatDateTime, renameColumns} from "@/lib/utils";
-import CustomTableCell from "@/components/tables/CustomTableCell";
+import LEGACY_CustomTableCell from "@/components/tables/LEGACY_CustomTableCell";
 import React from "react";
 import {useRouter} from "next/navigation"
 
@@ -48,9 +48,7 @@ const CustomAssetTable = ({licenses, deleteCategory, setRefresh}: CategoryTableP
                             </TableCell>
 
                             <TableCell className="pl-2 pr-10 capitalize min-w-24">
-                                <CustomTableCell id={Number(category.id)} entity={category} viewEntity={() => {
-                                }} deleteEntity={() => deleteCategory(Number(category.id))} updateEntity={() => {
-                                }} setRefresh={setRefresh}/>
+
                             </TableCell>
                         </TableRow>
                     )

@@ -11,24 +11,13 @@ import {useDialogStore} from "@/lib/stores/store";
 import {useStatusLabelStore} from "@/lib/stores/statusLabelStore";
 import CustomColorPicker from "@/components/CustomColorPicker";
 import CustomSwitch from "@/components/CustomSwitch";
+import {statusLabelSchema} from "@/lib/schemas";
 
 const CategoryForm = ({setRefresh}: { setRefresh: (flag: boolean) => void }) => {
     const [isLoading, setIsLoading] = useState(false)
     const [closeDialog, createStatusLabel] = useStatusLabelStore(state => [state.onClose, state.create])
 
-    const schema = z.object({
-        name: z
-            .string()
-            .min(3, {message: 'Name must be at least 3 characters'})
-            .max(50, {message: 'Name must not be more than 50 characters'}),
-        description: z.string().min(1, "Description is required"),
-        colorCode: z.string().optional(),
-        isArchived: z.boolean().optional(),
-        allowLoan: z.boolean().optional(),
-    });
-
-
-    const onSubmit = async (data: z.infer<typeof schema>) => {
+    const onSubmit = async (data: z.infer<typeof statusLabelSchema>) => {
         setIsLoading(true)
         try {
 
@@ -50,8 +39,8 @@ const CategoryForm = ({setRefresh}: { setRefresh: (flag: boolean) => void }) => 
 
     }
 
-    const form = useForm<z.infer<typeof schema>>({
-        resolver: zodResolver(schema),
+    const form = useForm<z.infer<typeof statusLabelSchema>>({
+        resolver: zodResolver(statusLabelSchema),
         defaultValues: {
             name: '',
         },

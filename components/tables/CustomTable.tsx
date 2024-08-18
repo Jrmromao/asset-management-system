@@ -1,7 +1,7 @@
 import React, {FC} from 'react'
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow,} from "@/components/ui/table"
 import {formatDateTime} from "@/lib/utils";
-import CustomTableCell from "@/components/tables/CustomTableCell";
+import LEGACY_CustomTableCell from "@/components/tables/LEGACY_CustomTableCell";
 import Column from "@/components/tables/Column";
 
 

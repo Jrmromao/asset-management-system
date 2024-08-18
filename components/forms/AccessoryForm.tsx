@@ -12,6 +12,7 @@ import {Alert, AlertDescription, AlertTitle} from "@/components/ui/alert"
 import {useAccessoryStore} from "@/lib/stores/accessoryStore";
 import {Calendar} from "@/components/ui/calendar";
 import CustomDatePicker from "@/components/CustomDatePicker";
+import {AssetSchema} from "@/lib/schemas";
 
 interface AccessoryFormProps {
     accessory?: Accessory
@@ -31,67 +32,30 @@ const AccessoryForm = ({accessory}: AccessoryFormProps) => {
 
     const [date, setDate] = useState<Date>()
     const [isLoading, setIsLoading] = useState(false)
-    const [licenseQuestion, setLicenseQuestion] = useState('')
-    const [needLicense, setNeedLicense] = useState('')
-    // const [openDialog, closeDialog, isOpen] = useDialogStore(state => [state.onOpen, state.onClose, state.isOpen])
-
     const [createAccessory] = useAccessoryStore((state) => [state.create]);
 
 
-    useEffect(() => {
-        // closeDialog()
-    }, []);
-
-    const schema = z.object({
-
-        title: z.string().min(1, "Title name is required"),
-
-
-        totalQuantityCount: z.string({required_error: "Quantity count is required"})
-            .transform((value) => Number(value))
-            .refine((value) => value >= 1, {message: "Quantity count must be at least 1"}),
-
-        minQuantityAlert: z.string({required_error: "Min. quantity is required"})
-            .transform((value) => Number(value))
-            .refine((value) => value >= 1, {message: "Min. quantity must be at least 1"}),
-
-
-        alertEmail: z.string().email().min(1, "Alert email is required"),
-
-
-        vendor: z.string().min(1, "Vendor is required"),
-        purchaseDate: z.date().optional(),//z.date().min(new Date(1900, 0, 1), 'Date must be after January 1, 1900').max(new Date(), 'Date must be before today'),
-        description: z.string().optional()
-
-    })
-        .refine((data) => data.minQuantityAlert <= data.totalQuantityCount, {
-            message: "Min. quantity must be less than or equal to quantity count.",
-            path: ["minQuantityAlert"],
-        })
-
-
-    const form = useForm<z.infer<typeof schema>>({
-        resolver: zodResolver(schema),
+    const form = useForm<z.infer<typeof AssetSchema>>({
+        resolver: zodResolver(AssetSchema),
         defaultValues: INITIAL_VALUES
     })
 
-    const onSubmit = async (data: z.infer<typeof schema>) => {
+    const onSubmit = async (data: z.infer<typeof AssetSchema>) => {
         setIsLoading(true)
 
-        data.purchaseDate = date
-
-        console.log(data)
         try {
             createAccessory({
-                title: data.title || '',
+                title: data.title,
                 totalQuantityCount: Number(data.totalQuantityCount),
                 minQuantityAlert: Number(data.minQuantityAlert),
-                alertEmail: data.alertEmail || '',
-                vendor: data.vendor || '',
-                purchaseDate: new Date(), // data.purchaseDate || '',
+                alertEmail: data.alertEmail,
+                vendor: data.vendor,
+                purchaseDate: new Date(data.purchaseDate),
                 description: data.description || '',
                 categoryId: 0,
-                companyId: 0
+                companyId: 0,
+                createdAt: new Date(),
+                updatedAt: new Date(),
             })
             form.reset({})
 
@@ -104,14 +68,10 @@ const AccessoryForm = ({accessory}: AccessoryFormProps) => {
 
     return (
         <section className="w-full bg-white z-50 max-h-[700px] overflow-y-auto p-4">
-
             <Form {...form}>
-
-
                 <form onSubmit={form.handleSubmit(onSubmit)}>
                     <Card className={'p-3.5 mb-5'}>
                         <div className={'mt-6 header-2'}>Accessory Title and Quantity count</div>
-
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="bg-white p-4">
                                 <div className="flex flex-col gap-4 pt-5">
@@ -190,11 +150,9 @@ const AccessoryForm = ({accessory}: AccessoryFormProps) => {
                                 </div>
                                 <div className="flex flex-col gap-4 pt-5">
                                     <div className="flex-1">
-
                                         <CustomDatePicker control={form.control}   {...form.register("purchaseDate")}
                                                           label={'Purchase Date'}
                                                           placeholder={'eg. 2023-12-31'}
-                                                          type={'date'}
                                                           date={date}
                                                           setDate={setDate}
                                         />

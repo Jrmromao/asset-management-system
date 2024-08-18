@@ -5,7 +5,7 @@ import {Button} from "@/components/ui/button";
 import {ArrowUpDown} from "lucide-react";
 import LinkTableCell from "@/components/tables/LinkTableCell";
 import React from "react";
-import CustomTableCell from "@/components/tables/CustomTableCell";
+import LEGACY_CustomTableCell from "@/components/tables/LEGACY_CustomTableCell";
 import {TableCell} from "@/components/ui/table";
 
 import {useAssetStore} from "@/lib/stores/assetStore";
@@ -17,20 +17,7 @@ interface AccessoriesColumnsProps {
     onView: (value: Accessory) => void
 }
 
-export interface Accessory {
-    id: number,
-    title: string,
-    createdAt: Date,
-    updatedAt: Date,
-    datePurchased: Date,
-    vendor: string,
-    description: string
-    alertEmail: string
-    totalQuantityCount: number
-    minQuantityAlert: number
-}
-
-// const navigate = useRouter() ncannot use hook in a non hook component
+// const navigate = useRouter() cannot use hook in a non hook component
 export const accessoriesColumns = ({onDelete, onView}: AccessoriesColumnsProps): ColumnDef<Accessory>[] => [
     {
         accessorKey: "title",
@@ -52,10 +39,10 @@ export const accessoriesColumns = ({onDelete, onView}: AccessoriesColumnsProps):
         header: "Created At",
         cell: ({row}) => {
             const accessory = row.original
-            console.log(accessory.datePurchased)
-            return (<div className={'cursor-pointer'}><LinkTableCell value={formatDateTime(accessory.createdAt).dateOnly}
-                                                                     navigateTo={`/accessories/view/?id=${accessory.id}`}/>
-            </div>)
+            return (
+                <div className={'cursor-pointer'}><LinkTableCell value={formatDateTime(accessory.createdAt).dateOnly}
+                                                                 navigateTo={`/accessories/view/?id=${accessory.id}`}/>
+                </div>)
         }
     },
     {
@@ -63,10 +50,10 @@ export const accessoriesColumns = ({onDelete, onView}: AccessoriesColumnsProps):
         header: "Updated At",
         cell: ({row}) => {
             const accessory = row.original
-            console.log(accessory.datePurchased)
-            return (<div className={'cursor-pointer'}><LinkTableCell value={formatDateTime(accessory.updatedAt).dateOnly}
-                                                                     navigateTo={`/accessories/view/?id=${accessory.id}`}/>
-            </div>)
+            return (
+                <div className={'cursor-pointer'}><LinkTableCell value={formatDateTime(accessory.updatedAt).dateOnly}
+                                                                 navigateTo={`/accessories/view/?id=${accessory.id}`}/>
+                </div>)
         }
     },
     {
@@ -74,10 +61,10 @@ export const accessoriesColumns = ({onDelete, onView}: AccessoriesColumnsProps):
         header: "Date Purchased",
         cell: ({row}) => {
             const accessory = row.original
-            console.log(accessory.datePurchased)
-            return (<div className={'cursor-pointer'}><LinkTableCell value={formatDateTime(accessory.updatedAt).dateOnly}
-                                                                     navigateTo={`/accessories/view/?id=${accessory.id}`}/>
-            </div>)
+            return (
+                <div className={'cursor-pointer'}><LinkTableCell value={formatDateTime(accessory.updatedAt).dateOnly}
+                                                                 navigateTo={`/accessories/view/?id=${accessory.id}`}/>
+                </div>)
         }
     },
     {

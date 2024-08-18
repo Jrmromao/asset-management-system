@@ -36,7 +36,6 @@ const Assets = () => {
     }
     const onDelete = useCallback((asset: Asset) => handleDelete(asset?.id!), [])
     const onView = useCallback((asset: Asset) => handleView(asset?.id!), [])
-
     const columns = useMemo(() => assetColumns({onDelete, onView}), []);
 
     useEffect(() => {

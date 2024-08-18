@@ -24,7 +24,7 @@ export const registerCompany = async (data: CompanyRegistrationProps) => {
             email: data.email,
             companyId: company.id,
             password: data.password,
-            roleId: 4,
+            roleId: '2',
         })
 
 

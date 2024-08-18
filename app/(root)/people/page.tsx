@@ -13,15 +13,11 @@ import UserTable from "@/components/tables/UserTable";
 const People = () => {
     const [openDialog, closeDialog, isOpen] = useDialogStore(state => [state.onOpen, state.onClose, state.isOpen])
     const [users, findById] = useUserStore(state => [state.users, state.findById])
-
-
 useEffect(()=>{
     useUserStore.getState().getAll()
 },[])
 
-
     return (
-
         <div className="assets">
             <div className="transactions-header">
                 <HeaderBox

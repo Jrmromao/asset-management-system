@@ -14,6 +14,7 @@ import {useRoleStore} from "@/lib/stores/roleStore";
 import CustomSelect from "@/components/CustomSelect";
 import {Alert, AlertDescription, AlertTitle} from "@/components/ui/alert";
 import {useDialogStore} from "@/lib/stores/store";
+import {personSchema} from "@/lib/schemas";
 
 const UserForm = () => {
 
@@ -28,25 +29,12 @@ const UserForm = () => {
     }
 
     const [isLoading, setIsLoading] = useState(false)
-    const [licenseQuestion, setLicenseQuestion] = useState('')
     const [create] = useUserStore(state => [state.create])
     const [roles, fetchRoles] = useRoleStore((state) => [state.roles, state.getAll]);
     const [onClose] = useDialogStore(state => [state.onClose])
 
-    const schema = z.object({
-
-        id: z.string().optional(),
-        firstName: z.string().min(1, "First name is required"),
-        lastName: z.string().min(1, "Last name is required"),
-        email: z.string().min(1, "Email is required").email("Invalid email"),
-        roleId: z.string().min(1, "Role is required"),
-        companyId: z.number().optional(),
-        title: z.string().min(1, "Title is required"),
-        employeeId: z.string().min(1, "Employee Id is required"),
-    })
-
-    const form = useForm<z.infer<typeof schema>>({
-        resolver: zodResolver(schema),
+    const form = useForm<z.infer<typeof personSchema>>({
+        resolver: zodResolver(personSchema),
         defaultValues: INITIAL_VALUES
     })
 
@@ -56,7 +44,7 @@ const UserForm = () => {
     }, []);
 
 
-    const onSubmit = async (data: z.infer<typeof schema>) => {
+    const onSubmit = async (data: z.infer<typeof personSchema>) => {
 
         setIsLoading(true)
         try {
@@ -143,6 +131,7 @@ const UserForm = () => {
                     <div className={'flex flex-col md:flex-row gap-4 pt-5'}>
                         <div className={'flex-1'}>
                             <CustomSelect
+                                value={[]}
                                 control={form.control}
                                 {...form.register("roleId")} label={'Role'}
                                 placeholder={'Select Role'}

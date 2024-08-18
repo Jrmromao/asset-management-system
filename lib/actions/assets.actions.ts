@@ -5,6 +5,10 @@ import {parseStringify} from "@/lib/utils";
 
 export const create = async (data: Asset) => {
     try {
+
+        console.log(data)
+
+
         await prisma.asset.create({
             data: {
                 name: data.name,
@@ -14,7 +18,12 @@ export const create = async (data: Asset) => {
                 serialNumber: data.serialNumber,
                 category: {
                     connect: {
-                        id: Number(data.categoryId)
+                        id: data.categoryId
+                    },
+                },
+                company: {
+                    connect: {
+                        id: '0c82b08e-2391-4819-8ba7-1af8e5721c74'
                     },
                 },
                 statusLabel: {
@@ -48,7 +57,7 @@ export const get = async () => {
     }
 }
 
-export const findById = async (id: number) => {
+export const findById = async (id: string) => {
     try {
         const asset = await prisma.asset.findFirst({
             include: {
@@ -68,7 +77,7 @@ export const findById = async (id: number) => {
     }
 }
 
-export const remove = async (id: number) => {
+export const remove = async (id: string) => {
     try {
         const asset = await prisma.asset.delete({
             where: {
@@ -81,7 +90,7 @@ export const remove = async (id: number) => {
     }
 }
 
-export const update = async (asset: Asset, id: number) => {
+export const update = async (asset: Asset, id: string) => {
     try {
         const assets = await prisma.asset.update({
             where: {
