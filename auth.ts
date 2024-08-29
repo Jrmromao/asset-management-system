@@ -5,15 +5,13 @@ import {prisma} from "@/app/db";
 
 
 export const {auth, handlers, signIn, signOut} = NextAuth({
-    adapter: PrismaAdapter(prisma),
+    // adapter: PrismaAdapter(prisma),
     session: {strategy: "jwt"},
     callbacks: {
 
         async jwt({token, user}) {
 
-            // to extend the user details i need to add it to the token
-
-            console.log(token)
+            console.log(user)
 
             return token
         },

@@ -1,6 +1,6 @@
 'use server';
 import {parseStringify} from "@/lib/utils";
-import {signUp as CognitoSignUp} from "@/services/aws/Cognito";
+import {signUp} from "@/services/aws/Cognito";
 import {prisma} from "@/app/db";
 import {loginSchema} from "@/lib/schemas";
 import {z} from "zod";
@@ -35,13 +35,11 @@ export const login = async (values: z.infer<typeof loginSchema>) => {
 export const registerUser = async (data: RegUser) => {
     let cognitoRegisterResult: any;
     try {
-        cognitoRegisterResult = await CognitoSignUp({
-            clientId: process.env.COGNITO_CLIENT_ID!,
-            username: data.email.split('@')[0],
-            email: data.email,
+        cognitoRegisterResult = await signUp({
+             email: data.email,
             password: data.password,
             companyId: data.companyId
-        });
+        })
 
         const role = await prisma.role.findUnique({
             where: {
@@ -52,14 +50,16 @@ export const registerUser = async (data: RegUser) => {
         if (!role) {
             return {error: 'Role not found'};
         }
+        console.log(JSON.stringify(cognitoRegisterResult, null, 2));
+
+
         await prisma.user.create({
             data: {
+                name: 'Joao',
                 oauthId: cognitoRegisterResult.UserSub,
                 email: data.email,
                 firstName: data.firstName!,
                 lastName: data.lastName!,
-                createdAt: new Date(),
-                updatedAt: new Date(),
                 company: {
                     connect: {
                         id: data.companyId
@@ -84,35 +84,34 @@ export const registerUser = async (data: RegUser) => {
         await prisma.$disconnect();
     }
 }
-export const insert = async (userData: User) => {
-    try {
-        await prisma.user.create({
-            data: {
-                email: userData.email,
-                firstName: userData.firstName!,
-                lastName: userData.lastName!,
-                createdAt: new Date(),
-                updatedAt: new Date(),
-                employeeId: userData.employeeId,
-                title: userData.title,
-                company: {
-                    connect: {
-                        id: String(2)
-                    }
-                },
-                role: {
-                    connect: {
-                        id: userData.roleId
-                    }
-                }
-            }
-        })
-    } catch (error) {
-        console.error(error)
-    } finally {
-        await prisma.$disconnect()
-    }
-}
+// export const insert = async (userData: User) => {
+//     try {
+//         await prisma.user.create({
+//             data: {
+//                 name: 'Joao',
+//                 email: userData.email,
+//                 firstName: userData.firstName!,
+//                 lastName: userData.lastName!,
+//                 employeeId: userData.employeeId,
+//                 title: userData.title,
+//                 company: {
+//                     connect: {
+//                         id: String(2)
+//                     }
+//                 },
+//                 role: {
+//                     connect: {
+//                         id: userData.roleId
+//                     }
+//                 }
+//             }
+//         })
+//     } catch (error) {
+//         console.error(error)
+//     } finally {
+//         await prisma.$disconnect()
+//     }
+// }
 export const getAll = async () => {
     try {
         const users = await prisma.user.findMany({

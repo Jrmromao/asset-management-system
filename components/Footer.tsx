@@ -2,16 +2,24 @@
 import React from 'react'
 import {useRouter} from "next/navigation";
 import Image from "next/image";
-import {signOut} from "@/auth";
+import {signOut} from "next-auth/react";
+import { useSession } from "next-auth/react"
+
 
 
 const Footer = ({type = 'desktop'}: {type?: 'desktop' | 'mobile'}) => {
     const router = useRouter();
+    const { data: session, status } = useSession()
+
+    console.log(session, status)
 
     const handleSignOut = async () => {
-        await signOut().then(_ => router.push('/'));
+        await signOut({callbackUrl: '/sign-in'});
     }
-    const name = 'Guest'
+
+
+
+    const name = session?.user?.name || 'Guest';
     return (
         <footer className="footer">
             <div className={type === 'mobile' ? 'footer_name-mobile' : 'footer_name'}>

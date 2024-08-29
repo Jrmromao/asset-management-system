@@ -1,9 +1,10 @@
 import type {NextAuthConfig} from "next-auth"
 import Credentials from "@auth/core/providers/credentials";
 import {loginSchema} from "@/lib/schemas";
-import {findByEmail} from "@/helpers/data"
+import {findByEmail} from "@/lib/actions/user.actions";
 import Google from "@auth/core/providers/google";
 import GitHub from "@auth/core/providers/github";
+import {signIn} from "@/services/aws/Cognito";
 import {cognitoSignIn} from "@/lib/AWSAuth";
 import {LiaObjectGroup} from "react-icons/lia";
 import {prisma} from "@/app/db";
@@ -27,22 +28,13 @@ export default {
 
             name: "Credentials",
             async authorize(credentials) {
-
-
                 const validation = loginSchema.safeParse(credentials)
                 if (!validation.success) return null
                 const {email, password} = validation.data
-                const result = await cognitoSignIn(email, password)
-                if (!result) return null
-                const user = await findByEmail(email)
-                if (!user) return null
+                const result = await signIn(email, password)
 
-                console.log({
-                    ...user,
-                    ...result
-                })
+
                 return {
-                    ...user,
                     ...result
                 }
 
