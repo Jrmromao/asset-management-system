@@ -48,7 +48,7 @@ const RegisterForm = () => {
                     lastName: data.lastName || '',
                 }).then(() => {
                     form.reset()
-                    router.push('/')
+                    router.push('/verify-account?email=' + data.email)
                 })
             }
         } catch (e) {
@@ -122,16 +122,16 @@ const RegisterForm = () => {
                                                  placeholder={'ex: Doe'}
                                                  type={'text'}/>
                                 </div>
-                                <div className={'flex gap-4'}>
+
                                     <CustomInput control={form.control}
                                                  label={'Password'}
                                                  {...form.register("password")}
-                                                 placeholder={''}
-                                                 type={'text'}/>
+                                                 placeholder={'eg: Qlientel120..'}
+                                                 type={'password'}/>
 
                                     <CustomInput control={form.control}  {...form.register("repeatPassword")}
-                                                 label={'Repeat Password'} placeholder={''} type={'text'}/>
-                                </div>
+                                                 label={'Repeat Password'} placeholder={'eg: Qlientel120..'} type={'password'}/>
+
                                 <div className={'gap-4'}>
                                     <CustomInput control={form.control}  {...form.register("email")}
                                                  label={'Email address'}

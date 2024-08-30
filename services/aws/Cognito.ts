@@ -2,23 +2,21 @@ import {
     AuthFlowType,
     CognitoIdentityProviderClient,
     InitiateAuthCommand,
-    SignUpCommand
-} from "@aws-sdk/client-cognito-identity-provider";
+    ConfirmSignUpCommand,
+    ForgotPasswordCommand,
+    SignUpCommand, ConfirmForgotPasswordCommand,
 
+} from "@aws-sdk/client-cognito-identity-provider";
 
 function getClient() {
     return new CognitoIdentityProviderClient({region: process.env.AWS_REGION!});
 }
-
-
 
 export const signUp = async ({password, email, companyId}: {
     password: string,
     email: string,
     companyId: string
 }) => {
-
-
     try {
         const command = new SignUpCommand({
             ClientId: String(process.env.NEXT_PUBLIC_USER_POOL_CLIENT_ID),
@@ -37,16 +35,13 @@ export const signUp = async ({password, email, companyId}: {
         });
         return await getClient().send(command);
     } catch (error) {
-        console.log(error);
+        console.error(error);
         return error
     }
 }
 
 export const signIn = async (email: string, password: string) => {
     try {
-        // ALLOW_CUSTOM_AUTH
-        // ALLOW_REFRESH_TOKEN_AUTH
-        // ALLOW_USER_SRP_AUTH
         const params = {
             AuthFlow: AuthFlowType.USER_PASSWORD_AUTH,
             ClientId: String(process.env.NEXT_PUBLIC_USER_POOL_CLIENT_ID),
@@ -59,7 +54,52 @@ export const signIn = async (email: string, password: string) => {
         return await getClient().send(command);
     } catch (error) {
         console.log('error');
-       return null
+        return null
 
+    }
+}
+
+export const forgetPasswordRequestCode = async (email: string) => {
+    try {
+
+        await getClient().send(new ForgotPasswordCommand({
+            ClientId: String(process.env.NEXT_PUBLIC_USER_POOL_CLIENT_ID),
+            Username: email
+        }))
+
+    } catch (error) {
+        console.error(error);
+    }
+}
+
+export const forgetPasswordConfirm = async (email: string, newPassword: string, confirmationCode: string) => {
+    try {
+
+        await getClient().send(new ConfirmForgotPasswordCommand({
+            ClientId: String(process.env.NEXT_PUBLIC_USER_POOL_CLIENT_ID),
+            Username: email,
+            Password: newPassword,
+            ConfirmationCode: confirmationCode
+        }))
+        return {success: true};
+
+    } catch (error) {
+        return {error:  error ?? 'Invalid email, password or confirmation code'}
+    }
+}
+
+
+
+
+export const verifyCognitoAccount =  async (email: string, confirmationCode: string) => {
+    try {
+        await getClient().send(new ConfirmSignUpCommand({
+            ClientId: String(process.env.NEXT_PUBLIC_USER_POOL_CLIENT_ID),
+            Username: email,
+            ConfirmationCode: confirmationCode
+        }))
+
+    } catch (error) {
+        console.error(error);
     }
 }

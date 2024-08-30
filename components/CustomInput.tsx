@@ -10,9 +10,10 @@ interface CustomInputProps {
     control: any;
     type: string;
     disabled?: boolean
+    readonly ?: boolean
 }
 
-const CustomInput = ({control, name, label, placeholder, type, disabled, ...rest}: CustomInputProps) => {
+const CustomInput = ({control, name, label, placeholder, type, disabled, readonly = false,...rest}: CustomInputProps) => {
     return (
         <FormField
             control={control}
@@ -25,6 +26,7 @@ const CustomInput = ({control, name, label, placeholder, type, disabled, ...rest
                     <div className={'flex w-full flex-col'}>
                         <FormControl>
                             <Input
+                                readOnly={readonly}
                                 disabled={disabled}
                                 placeholder={placeholder}
                                 className={'input-class'} {...field}

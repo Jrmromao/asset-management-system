@@ -1,8 +1,8 @@
 'use server';
 import {parseStringify} from "@/lib/utils";
-import {signUp} from "@/services/aws/Cognito";
+import {forgetPasswordConfirm, forgetPasswordRequestCode, signUp, verifyCognitoAccount} from "@/services/aws/Cognito";
 import {prisma} from "@/app/db";
-import {loginSchema} from "@/lib/schemas";
+import {accountVerificationSchema, forgotPasswordConfirmSchema, forgotPasswordSchema, loginSchema} from "@/lib/schemas";
 import {z} from "zod";
 import {DEFAULT_LOGIN_REDIRECT} from "@/routes";
 import {AuthError} from "next-auth";
@@ -32,14 +32,43 @@ export const login = async (values: z.infer<typeof loginSchema>) => {
     }
 }
 
+export const forgotPassword = async (values: z.infer<typeof forgotPasswordSchema>) => {
+    try {
+        const validation = forgotPasswordSchema.safeParse(values)
+        if (!validation.success) return {error: 'Invalid email address'}
+        const {email} = validation.data
+
+        await forgetPasswordRequestCode(email)
+
+
+        return {success: true};
+    } catch (error) {
+        return {error: 'Invalid email or password'};
+    }
+}
+
+
+export const forgetPasswordConfirmDetails = async (values: z.infer<typeof forgotPasswordConfirmSchema>) => {
+    const validation = forgotPasswordConfirmSchema.safeParse(values)
+    if (!validation.success) return {error: 'Invalid email, password or confirmation code'}
+    const {email, newPassword, code} = validation.data
+
+    const result = await forgetPasswordConfirm(email, newPassword, code)
+
+    return parseStringify(result);
+}
+
+
 export const registerUser = async (data: RegUser) => {
     let cognitoRegisterResult: any;
     try {
         cognitoRegisterResult = await signUp({
-             email: data.email,
+            email: data.email,
             password: data.password,
             companyId: data.companyId
         })
+        console.log('cognitoRegisterResult: ', cognitoRegisterResult)
+        console.log('Data: ', data)
 
         const role = await prisma.role.findUnique({
             where: {
@@ -50,12 +79,11 @@ export const registerUser = async (data: RegUser) => {
         if (!role) {
             return {error: 'Role not found'};
         }
-        console.log(JSON.stringify(cognitoRegisterResult, null, 2));
 
 
         await prisma.user.create({
             data: {
-                name: 'Joao',
+                name: `${data.firstName} ${data.lastName}`,
                 oauthId: cognitoRegisterResult.UserSub,
                 email: data.email,
                 firstName: data.firstName!,
@@ -84,6 +112,18 @@ export const registerUser = async (data: RegUser) => {
         await prisma.$disconnect();
     }
 }
+
+export const verifyAccount = async (values: z.infer<typeof accountVerificationSchema>) => {
+    const validation = accountVerificationSchema.safeParse(values)
+    if (!validation.success) return {error: 'Invalid email or password'}
+    const {email, code} = validation.data
+
+    await verifyCognitoAccount(email, code);
+
+
+}
+
+
 // export const insert = async (userData: User) => {
 //     try {
 //         await prisma.user.create({

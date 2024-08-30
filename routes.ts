@@ -11,7 +11,7 @@ export const publicRoutes: string[] = [
  * These routes will redirect to the logged-in user to the dashboard
  * @type {string[]}
  */
-export const authRoutes: string[] = ["/sign-in", "/sign-up"];
+export const authRoutes: string[] = ["/sign-in", "/sign-up", '/account-verification', '/forgot-password', '/reset-password', '/forgot-password/confirm'];
 
 /**
  * The prefix for API authentication routes.
