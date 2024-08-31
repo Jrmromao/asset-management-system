@@ -24,6 +24,9 @@ export const findById = async (id: string) => {
         const licenseTool = await prisma.user.findFirst({
             where: {
                 id: id
+            },
+            include: {
+                role: true,
             }
         });
         return parseStringify(licenseTool);

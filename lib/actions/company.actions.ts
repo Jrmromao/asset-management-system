@@ -32,3 +32,16 @@ export const registerCompany = async (data: CompanyRegistrationProps) => {
         console.error("An error occurred while getting the accounts:", error);
     }
 };
+
+
+export const validateCompany = async (companyName: string) => {
+    try {
+        return await prisma.company.findUnique({
+            where: {
+                name:   companyName,
+            },
+        });
+    } catch (error) {
+        console.error('An error occurred while getting the accounts:', error);
+    }
+};

@@ -1,11 +1,11 @@
 import {
     AuthFlowType,
     CognitoIdentityProviderClient,
-    InitiateAuthCommand,
+    ConfirmForgotPasswordCommand,
     ConfirmSignUpCommand,
     ForgotPasswordCommand,
-    SignUpCommand, ConfirmForgotPasswordCommand,
-
+    InitiateAuthCommand,
+    SignUpCommand,
 } from "@aws-sdk/client-cognito-identity-provider";
 
 function getClient() {
@@ -50,8 +50,10 @@ export const signIn = async (email: string, password: string) => {
                 PASSWORD: password
             }
         };
+
         const command = new InitiateAuthCommand(params);
-        return await getClient().send(command);
+
+        return await getClient().send(command)
     } catch (error) {
         console.log('error');
         return null

@@ -61,20 +61,14 @@ export const registerUser = async (data: RegUser) => {
             password: data.password,
             companyId: data.companyId
         })
-        console.log('cognitoRegisterResult: ', cognitoRegisterResult)
-        console.log('Data: ', data)
-
         const role = await prisma.role.findUnique({
             where: {
                 name: 'Admin'
             }
         });
-
         if (!role) {
             return {error: 'Role not found'};
         }
-
-
         await prisma.user.create({
             data: {
                 name: `${data.firstName} ${data.lastName}`,
@@ -98,11 +92,9 @@ export const registerUser = async (data: RegUser) => {
         return parseStringify(cognitoRegisterResult);
 
     } catch (error) {
-        // Handle errors and log them
         console.error("Error registering user:", error);
-        throw error;  // Optionally rethrow the error
+        throw error;
     } finally {
-        // Ensure that the Prisma client disconnects properly
         await prisma.$disconnect();
     }
 }
@@ -110,10 +102,22 @@ export const verifyAccount = async (values: z.infer<typeof accountVerificationSc
     const validation = accountVerificationSchema.safeParse(values)
     if (!validation.success) return {error: 'Invalid email or password'}
     const {email, code} = validation.data
-
-    await verifyCognitoAccount(email, code);
-
-
+    try {
+        await verifyCognitoAccount(email, code);
+        prisma.user.update({
+            where: {
+                email
+            },
+            data: {
+                emailVerified: new Date()
+            }
+        })
+        return {success: true};
+    } catch (e) {
+        return {error: 'Account count not be verified'}
+    } finally {
+        await prisma.$disconnect();
+    }
 }
 export const insert = async (userData: User) => {
     try {

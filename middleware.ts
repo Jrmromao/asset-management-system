@@ -1,18 +1,25 @@
 import authConfig from "./auth.config"
 import NextAuth from "next-auth"
-
-
-import {
-    publicRoutes,
-    authRoutes,
-    apiAuthPrefix,
-    DEFAULT_LOGIN_REDIRECT
-} from '@/routes'
-import {NextRequest} from "next/server";
-
+import {apiAuthPrefix, authRoutes, DEFAULT_LOGIN_REDIRECT, publicRoutes} from '@/routes'
+import {NextRequest, NextResponse} from 'next/server';
+import {validateCompany} from "@/lib/actions/company.actions";
 
 const {auth} = NextAuth(authConfig)
 
+// export function middleware(request: NextRequest) {
+//     const url = request.nextUrl;
+//
+//     const hostname = url.hostname;
+//
+//     // Extract the subdomain (customer name)
+//     const currentHost = process.env.NODE_ENV === "production" ? "ecokeepr.com" : "localhost:3000"
+//     const subdomain = hostname.replace(`.${currentHost}`, '');
+//
+//     if (!validateCompany(subdomain)) {
+//         // Handle invalid subdomains (e.g., redirect to a 404 page)
+//         return new NextResponse(null, { status: 404 });
+//     }
+// }
 
 export default auth(async (req) => {
 

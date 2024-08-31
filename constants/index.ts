@@ -58,7 +58,7 @@ export const  ACCEPTED_FILE_FORMAT = [".csv, text/csv, application/vnd.ms-excel,
 export const MAX_FILE_SIZE = 10 * 1024 * 1024;
 export const MAX_FILES = 1
 
-export const APP_NAME = "Eco Keepr"
+export const APP_NAME = "EcoKeepr"
 
 
 export const topCategoryStyles = {
