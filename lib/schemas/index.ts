@@ -94,10 +94,10 @@ const passwordSchema = z.string().refine(
     }
 );
 export const forgotPasswordConfirmSchema =  z.object({
-    email: z.string().email("Invalid email"),
-    code: z.string({required_error: "Verification Code is required"}),
+    email: z.string().optional(),
+    code: z.string().min(1,  "Verification Code is required"),
     newPassword: passwordSchema,
-    confirmNewPassword: z.string().min(1, "Password is required"),
+    confirmNewPassword: z.string().min(1, "Repeat password is required"),
 }).refine((data) => data.newPassword === data.confirmNewPassword, {
     message: "Passwords do not match",
     path: ["confirmNewPassword"],
