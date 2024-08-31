@@ -18,6 +18,7 @@ import {forgotPassword, login} from "@/lib/actions/user.actions";
 import {signIn} from "next-auth/react";
 import {DEFAULT_LOGIN_REDIRECT} from "@/routes";
 import {Alert, AlertDescription, AlertTitle} from "@/components/ui/alert";
+import {APP_NAME} from "@/constants";
 
 const ForgotPasswordForm = () => {
     const [error, setError] = useState<string>('')
@@ -56,7 +57,7 @@ const ForgotPasswordForm = () => {
                 <Link href="/" className="mb-12 cursor-pointer flex items-center gap-1">
                     <Image src='/icons/logo.svg' width={34} height={34} alt="Logo"
                            className="size-[24px] max-xl:size-14"/>
-                    <h1 className="sidebar-logo">Asset Sea</h1>
+                    <h1 className="sidebar-logo">{APP_NAME}</h1>
                 </Link>
                 <div className={'flex flex-col gap-1 md:gap-3'}>
                     <Alert className={'w-full bg-teal-50'}>

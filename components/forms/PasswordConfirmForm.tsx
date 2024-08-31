@@ -16,6 +16,7 @@ import {useRouter, useSearchParams} from "next/navigation";
 import {Alert, AlertDescription, AlertTitle} from "@/components/ui/alert";
 import {hideEmailAddress} from "@/lib/utils";
 import {toast} from "sonner";
+import {APP_NAME} from "@/constants";
 
 
 const PasswordConfirmForm = () => {
@@ -74,7 +75,7 @@ const PasswordConfirmForm = () => {
                 <Link href="/" className="mb-12 cursor-pointer flex items-center gap-1">
                     <Image src='/icons/logo.svg' width={34} height={34} alt="Logo"
                            className="size-[24px] max-xl:size-14"/>
-                    <h1 className="sidebar-logo">Asset Sea</h1>
+                    <h1 className="sidebar-logo">{APP_NAME}</h1>
                 </Link>
                 <div className={'flex flex-col gap-1 md:gap-3'}>
 
