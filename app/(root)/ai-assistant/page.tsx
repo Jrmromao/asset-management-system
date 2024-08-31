@@ -7,15 +7,9 @@ const AIAssistant = () => {
     const [message, setMessage] = useState('')
 
     return (
-        <div className="flex flex-col h-screen bg-gray-100">
+        <div className="flex flex-col h-screen bg-white">
             <div className="flex-grow p-4 overflow-y-auto">
-                {/* Here you would map through messages to display them */}
-                <div className="mb-4 p-2 rounded-lg bg-green-100">
-                    User: Hello!
-                </div>
-                <div className="mb-4 p-2 rounded-lg bg-blue-100">
-                    AI: How can I help you today?
-                </div>
+
             </div>
             <div className="flex items-center p-4 bg-white border-t border-gray-200">
                 <Input

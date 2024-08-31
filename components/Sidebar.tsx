@@ -12,7 +12,7 @@ import React from "react";
 const Sidebar = () => {
 
     const pathName = usePathname()
-    const {data    } = useSession()
+    const {data } = useSession()
 
     const user: any = {
         role: 'admin'
@@ -47,8 +47,6 @@ const Sidebar = () => {
                         </Link>
                     )
                 })}
-                {/* <PlaidLink user={user} /> */}
-                <ModeToggle />
             </nav>
             <Footer />
         </section>

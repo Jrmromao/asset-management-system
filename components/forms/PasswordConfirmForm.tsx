@@ -7,13 +7,11 @@ import {useForm} from "react-hook-form";
 import {Form,} from "@/components/ui/form"
 import {zodResolver} from "@hookform/resolvers/zod";
 import {z} from "zod";
-import {InfoIcon, Loader2} from "lucide-react";
+import {Loader2} from "lucide-react";
 import CustomInput from "@/components/CustomInput";
-import {accountVerificationSchema, forgotPasswordConfirmSchema} from "@/lib/schemas";
+import {forgotPasswordConfirmSchema} from "@/lib/schemas";
 import {FormError} from "@/components/forms/form-error";
-import {forgetPasswordConfirmDetails, verifyAccount} from "@/lib/actions/user.actions";
-import {signIn} from "next-auth/react";
-import {DEFAULT_LOGIN_REDIRECT} from "@/routes";
+import {forgetPasswordConfirmDetails} from "@/lib/actions/user.actions";
 import {useRouter, useSearchParams} from "next/navigation";
 import {Alert, AlertDescription, AlertTitle} from "@/components/ui/alert";
 import {hideUsername} from "@/lib/utils";
@@ -25,7 +23,7 @@ const PasswordConfirmForm = () => {
     const [isPending, startTransition] = useTransition()
     const searchParams = useSearchParams()
     const router = useRouter()
-    const email = searchParams.get('email')
+    const email = String(searchParams.get('email'))
 
     const hiddenEmail = hideUsername(email || '')
 
