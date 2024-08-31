@@ -6,7 +6,7 @@ import {Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@/compon
 import {InfoIcon} from "lucide-react";
 
 
-interface CustomInputProps {
+export interface CustomInputProps {
     label: string;
     placeholder?: string;
     name: string;
