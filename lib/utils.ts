@@ -104,7 +104,10 @@ export function formUrlQuery({params, key, value}: UrlQueryParams) {
 }
 
 
-export function hideUsername(email: string): string {
+export function hideEmailAddress(email: string): string {
+    if (!email) {
+        throw new Error("utils:hideUsername:: Email is required");
+    }
     const parts = email.split("@");
     if (parts.length !== 2) {
         throw new Error("Invalid email format");
@@ -116,6 +119,7 @@ export function hideUsername(email: string): string {
 
     return hiddenUsername + "@" + parts[1];
 }
+
 //
 // export function getAccountTypeColors(type: AccountTypes) {
 //     switch (type) {
@@ -193,8 +197,6 @@ export function hideUsername(email: string): string {
 //
 //     return customerId;
 // }
-
-
 
 
 export const formSchema = () => z.object({

@@ -14,7 +14,7 @@ import {FormError} from "@/components/forms/form-error";
 import {forgetPasswordConfirmDetails} from "@/lib/actions/user.actions";
 import {useRouter, useSearchParams} from "next/navigation";
 import {Alert, AlertDescription, AlertTitle} from "@/components/ui/alert";
-import {hideUsername} from "@/lib/utils";
+import {hideEmailAddress} from "@/lib/utils";
 import {toast} from "sonner";
 
 
@@ -25,7 +25,7 @@ const PasswordConfirmForm = () => {
     const router = useRouter()
     const email = String(searchParams.get('email'))
 
-    const hiddenEmail = hideUsername(email || '')
+    const hiddenEmail = hideEmailAddress(email || '')
 
 
 

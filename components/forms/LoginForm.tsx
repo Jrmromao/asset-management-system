@@ -106,32 +106,16 @@ const AuthForm = () => {
                                 <span className="px-2 bg-white text-gray-500">OR</span>
                             </div>
                         </div>
-
-                        <div className={'flex flex-col gap-4'}>
-                            <CustomButton
-                                className={'bg-white border border-gray-300 rounded-md py-2 px-4 flex items-center hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 text-black-1 w-full'}
-                                size="lg"
-                                variant="outline"
-                                action={() => handleSocialLogin('google')}
-                                value="Sign In with Google"
-                                Icon={FaGoogle}
-                                disabled={isPending}
-
-                            />
-
-                            <CustomButton
-                                className={'bg-[#24292F] text-white border border-gray-600 rounded-md py-2 px-4 flex items-center hover:bg-[#333] focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 w-full'}
-                                size="lg"
-                                variant="default"
-                                action={() => handleSocialLogin('github')}
-                                value="Sign In with Github"
-                                Icon={FaGithub}
-                                disabled={isPending}
-                            />
-                        </div>
+                        <CustomButton
+                            className={'bg-white border border-gray-300 rounded-md py-2 px-4 flex items-center hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 text-black-1 w-full'}
+                            size="lg"
+                            variant="outline"
+                            action={() => handleSocialLogin('google')}
+                            value="Sign In with Google"
+                            Icon={FaGoogle}
+                            disabled={isPending}
+                        />
                     </>
-
-
                     <footer className={'flex justify-center gap-1'}>
                         <p>{'Don\'t have an account?'}</p>
                         <Link href={'/sign-up'} className={'form-link'}>

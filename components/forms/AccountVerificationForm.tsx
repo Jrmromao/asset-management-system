@@ -16,7 +16,7 @@ import {signIn} from "next-auth/react";
 import {DEFAULT_LOGIN_REDIRECT} from "@/routes";
 import {useRouter, useSearchParams} from "next/navigation";
 import {Alert, AlertDescription, AlertTitle} from "@/components/ui/alert";
-import { hideUsername} from "@/lib/utils";
+import { hideEmailAddress} from "@/lib/utils";
 
 
 const AuthForm = () => {
@@ -70,7 +70,7 @@ const AuthForm = () => {
                         <Alert className={'w-full bg-teal-50'}>
                             <AlertTitle className={'mb-3'}>We send you an email</AlertTitle>
                             <AlertDescription className={''}>
-                                Your code is on the way. To log in, enter the code we emailed to {hideUsername(email!)}. It may take a minute to arrive.
+                                Your code is on the way. To log in, enter the code we emailed to {hideEmailAddress(email!)}. It may take a minute to arrive.
                             </AlertDescription>
                         </Alert>
 
