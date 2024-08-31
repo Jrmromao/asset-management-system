@@ -30,6 +30,7 @@
     "@tanstack/react-table": "^8.20.1",
     "@testing-library/react": "^16.0.1",
     "@types/next": "^9.0.0",
+    "@vercel/speed-insights": "^1.0.12",
     "amazon-cognito-identity-js": "^6.3.12",
     "aws-amplify": "^6.4.1",
     "aws-sdk": "^2.1659.0",

@@ -5,6 +5,8 @@ import "./globals.css";
 import {ClientProviders} from "@/lib/SessionProvider";
 import {ThemeProvider} from "@/components/providers/theme-provider";
 import {Toaster} from "sonner";
+import { SpeedInsights } from "@vercel/speed-insights/next"
+
 
 const inter = Inter({subsets: ["latin"], variable: '--font-inter'});
 const ibmPlexSerif = IBM_Plex_Serif({
@@ -29,6 +31,7 @@ export default async function RootLayout({children}: Readonly<{
         <html lang="en">
         <body className={`${inter.variable} ${ibmPlexSerif.variable}`}>
         <Toaster richColors  />
+        <SpeedInsights/>
         <ThemeProvider
             attribute="class"
             defaultTheme="newyork"
