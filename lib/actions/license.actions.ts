@@ -6,8 +6,9 @@ const prisma = new PrismaClient()
 export const insert = async (data: License) => {
     try {
 
-        console.log('DARA: ',data)
         data.purchasePrice = Math.round(data.purchasePrice * 100) / 100
+
+
         await prisma.license.create({data})
     } catch (error) {
         console.log(error)
@@ -29,7 +30,7 @@ export const getAll = async () => {
         await prisma.$disconnect()
     }
 }
-export const findById = async (id: number) => {
+export const findById = async (id: string) => {
     try {
         const licenseTool = await prisma.license.findFirst({
             where: {
@@ -43,7 +44,7 @@ export const findById = async (id: number) => {
         await prisma.$disconnect()
     }
 }
-export const update = async (data: License, id: number) => {
+export const update = async (data: License, id: string) => {
     try {
         const licenseTool = await prisma.license.update({
             where: {
@@ -58,7 +59,7 @@ export const update = async (data: License, id: number) => {
         await prisma.$disconnect()
     }
 }
-export const remove = async (id: number) => {
+export const remove = async (id: string) => {
 
     console.log(id)
 

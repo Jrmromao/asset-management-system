@@ -2,14 +2,11 @@
 
 import React, {useCallback, useEffect, useMemo} from 'react'
 import HeaderBox from "@/components/HeaderBox";
-import AssetTable from "@/components/tables/AssetTable";
 import {useDialogStore} from "@/lib/stores/store";
 import {Button} from "@/components/ui/button";
 import {useAssetStore} from "@/lib/stores/assetStore";
 import {useRouter} from "next/navigation";
-import {filterColumns, renameColumns} from "@/lib/utils";
 import {DialogContainer} from "@/components/dialogs/DialogContainer";
-import AssetForm from "@/components/forms/AssetForm";
 import UploadAssetsForm from "@/components/forms/UploadAssetsForm";
 import {DataTable} from "@/components/tables/DataTable/data-table";
 import {assetColumns} from "@/components/tables/AssetColumns";
@@ -21,7 +18,7 @@ const Assets = () => {
     const [assets, loading, fetchAssets, getAssetById, deleteAsset] = useAssetStore((state) => [state.assets, state.loading, state.getAll, state.findById, state.delete,]);
     const navigate = useRouter()
 
-    const handleDelete = async (id: number) => {
+    const handleDelete = async (id: string) => {
         await deleteAsset(id).then(_ => {
             fetchAssets()
             toast.success('Event has been created')
@@ -31,7 +28,7 @@ const Assets = () => {
 
     }
 
-    const handleView = async (id: number) => {
+    const handleView = async (id: string) => {
         navigate.push(`/assets/view/?id=${id}`)
     }
     const onDelete = useCallback((asset: Asset) => handleDelete(asset?.id!), [])

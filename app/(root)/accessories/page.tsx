@@ -7,7 +7,6 @@ import {useRouter} from "next/navigation";
 import {DataTable} from "@/components/tables/DataTable/data-table";
 import {accessoriesColumns} from "@/components/tables/AccessoriesColumns";
 import {toast} from "sonner";
-import {useAssetStore} from "@/lib/stores/assetStore";
 
 
 const Consumables = () => {
@@ -18,14 +17,14 @@ const Consumables = () => {
         getAll()
     }, [])
 
-    const handleDelete = async (id: number) => {
+    const handleDelete = async (id: string) => {
         await deleteAccessory(id).then(_ => {
             getAll()
             toast.success('Accessory has been created')
         })
     }
 
-    const handleView = async (id: number) => {
+    const handleView = async (id: string) => {
         navigate.push(`/assets/view/?id=${id}`)
     }
     const onDelete = useCallback((accessory: any) => handleDelete(accessory?.id!), [])

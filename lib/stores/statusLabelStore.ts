@@ -8,9 +8,9 @@ interface IStatusLabelStore {
     statusLabels: StatusLabel[];
     loading: boolean;
     create: (user: StatusLabel) => void;
-    // update: (id: number, data: StatusLabel) => void;
-    findById: (id: number) => StatusLabel | null;
-    delete: (id: number) => void;
+    // update: (id: string, data: StatusLabel) => void;
+    findById: (id: string) => StatusLabel | null;
+    delete: (id: string) => void;
     getAll: () => void;
     isOpen: boolean;
     onOpen: () => void;
@@ -48,7 +48,7 @@ export const useStatusLabelStore = create(persist<IStatusLabelStore>(
                 throw error;
             }
         },
-        // update: (id: number, updatedUser: User) => {
+        // update: (id: string, updatedUser: User) => {
         //     set(
         //         produce((state) => {
         //
@@ -61,7 +61,7 @@ export const useStatusLabelStore = create(persist<IStatusLabelStore>(
         //         })
         //     );
         // },
-        delete: (id: number) => {
+        delete: (id: string) => {
             set(
                 produce((state) => {
                     remove(id).then(() => {
@@ -72,7 +72,7 @@ export const useStatusLabelStore = create(persist<IStatusLabelStore>(
                 })
             );
         },
-        findById: (id: number) => {
+        findById: (id: string) => {
             const statusLabel = get().statusLabels.find((statusLabel) => statusLabel.id === id);
             if (!statusLabel) return null
             return statusLabel;

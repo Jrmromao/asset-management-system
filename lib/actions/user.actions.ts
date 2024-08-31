@@ -123,35 +123,34 @@ export const verifyAccount = async (values: z.infer<typeof accountVerificationSc
 
 }
 
-
-// export const insert = async (userData: User) => {
-//     try {
-//         await prisma.user.create({
-//             data: {
-//                 name: 'Joao',
-//                 email: userData.email,
-//                 firstName: userData.firstName!,
-//                 lastName: userData.lastName!,
-//                 employeeId: userData.employeeId,
-//                 title: userData.title,
-//                 company: {
-//                     connect: {
-//                         id: String(2)
-//                     }
-//                 },
-//                 role: {
-//                     connect: {
-//                         id: userData.roleId
-//                     }
-//                 }
-//             }
-//         })
-//     } catch (error) {
-//         console.error(error)
-//     } finally {
-//         await prisma.$disconnect()
-//     }
-// }
+export const insert = async (userData: User) => {
+    try {
+        await prisma.user.create({
+            data: {
+                name: 'Joao',
+                email: userData.email,
+                firstName: userData.firstName!,
+                lastName: userData.lastName!,
+                employeeId: userData.employeeId,
+                title: userData.title,
+                company: {
+                    connect: {
+                        id: String(2)
+                    }
+                },
+                role: {
+                    connect: {
+                        id: userData.roleId
+                    }
+                }
+            }
+        })
+    } catch (error) {
+        console.error(error)
+    } finally {
+        await prisma.$disconnect()
+    }
+}
 export const getAll = async () => {
     try {
         const users = await prisma.user.findMany({

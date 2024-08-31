@@ -24,8 +24,6 @@ export default {
                 clientSecret: '25d9c29cfbe2b58b3f4722cc0d154632a9329846'
             }
         ), Credentials({
-
-
             name: "Credentials",
             async authorize(credentials) {
                 const validation = loginSchema.safeParse(credentials)
@@ -33,11 +31,12 @@ export default {
                 const {email, password} = validation.data
                 const result = await signIn(email, password)
 
-
                 return {
-                    ...result
+                    id: 'result.user.sub',
+                    name: 'John Doe',
+                    email: 'jSb7T@example.com',
+                    image: 'https://i.pravatar.cc/300'
                 }
-
             }
 
         })]

@@ -104,7 +104,7 @@ const AssetForm = ({asset, isUpdate = false}: AssetFormProps) => {
             }
 
             if (isUpdate) {
-                updateAsset(Number(asset?.id), assetData).then(_ => {
+                updateAsset(String(asset?.id), assetData).then(_ => {
                     toast.success('Asset updated successfully', {
                         position: 'top-right',
                     })

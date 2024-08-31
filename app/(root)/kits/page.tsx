@@ -17,11 +17,11 @@ const Consumables = () => {
     const refresh = licenseStore((state) => state.shouldRefresh)
     // const memoAssetList = useMemo(() => getLicenses().then(aceessories => setLicenseList(aceessories)), [setLicenseList, refresh]);
 
-    const handleDelete = async (id: number) => {
+    const handleDelete = async (id: string) => {
 
     }
 
-    const handleView = async (id: number) => {
+    const handleView = async (id: string) => {
         navigate.push(`/kits/view/?id=${id}`)
     }
 

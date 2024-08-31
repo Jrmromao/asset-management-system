@@ -7,9 +7,9 @@ interface ILicenseStore {
     licenses: License[];
     loading: boolean;
     create: (asset: License) => void;
-    update: (id: number, updatedAsset: License) => void;
-    delete: (id: number) => Promise<void>;
-    findById: (id: number) => License | null;
+    update: (id: string, updatedAsset: License) => void;
+    delete: (id: string) => Promise<void>;
+    findById: (id: string) => License | null;
     getAll: () => void;
 }
 
@@ -46,7 +46,7 @@ export const useLicenseStore = create(persist<ILicenseStore>(
             }
         },
 
-        update: (id: number, updatedLicense: License) => {
+        update: (id: string, updatedLicense: License) => {
             set(
                 produce((state) => {
 
@@ -60,7 +60,7 @@ export const useLicenseStore = create(persist<ILicenseStore>(
             );
         },
 
-        findById: (id: number) => {
+        findById: (id: string) => {
 
             const license = get().licenses.find((license) => license.id === id);
             if (!license) return null
@@ -68,7 +68,7 @@ export const useLicenseStore = create(persist<ILicenseStore>(
             return license;
         },
 
-        delete: async (id: number) => {
+        delete: async (id: string) => {
                 await remove(id).then(_ => {
                     set(produce((state) => {
                         state.licenses = state.licenses?.filter((a: Asset) => a.id !== id);

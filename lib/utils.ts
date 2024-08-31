@@ -103,6 +103,19 @@ export function formUrlQuery({params, key, value}: UrlQueryParams) {
     );
 }
 
+
+export function hideUsername(email: string): string {
+    const parts = email.split("@");
+    if (parts.length !== 2) {
+        throw new Error("Invalid email format");
+    }
+
+    const username = parts[0];
+    const lettersToHide = Math.floor(username.length * 0.8);
+    const hiddenUsername = username.slice(0, -lettersToHide) + "*".repeat(lettersToHide);
+
+    return hiddenUsername + "@" + parts[1];
+}
 //
 // export function getAccountTypeColors(type: AccountTypes) {
 //     switch (type) {

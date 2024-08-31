@@ -140,7 +140,7 @@ export  const personSchema = z.object({
     lastName: z.string().min(1, "Last name is required"),
     email: z.string().min(1, "Email is required").email("Invalid email"),
     roleId: z.string().min(1, "Role is required"),
-    companyId: z.number().optional(),
+    companyId: z.string().optional(),
     title: z.string().min(1, "Title is required"),
     employeeId: z.string().min(1, "Employee Id is required"),
 })

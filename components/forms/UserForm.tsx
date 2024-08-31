@@ -25,7 +25,7 @@ const UserForm = () => {
         title: '',
         employeeId: '',
         roleId: '',
-        companyId: 0
+        companyId: ''
     }
 
     const [isLoading, setIsLoading] = useState(false)
@@ -57,7 +57,7 @@ const UserForm = () => {
                 role: roleSelected,
                 title: data.title || '',
                 employeeId: data.employeeId || '',
-                companyId: Number(data.companyId),
+                companyId: data.companyId || '',
             }
             create(userData)
             form.reset()

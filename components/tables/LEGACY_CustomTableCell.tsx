@@ -6,12 +6,11 @@ import {
     DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import Swal from 'sweetalert2'
-import withReactContent from 'sweetalert2-react-content'
 import {useRouter} from "next/navigation";
 
-const LEGACY_CustomTableCell = ({id, deleteEntity, updateEntity, viewPath, setRefresh}: { id: number, entity: Object, deleteEntity: (id: number) => void, updateEntity: (id: number) => void, viewPath: string, setRefresh: (flag: boolean) => void}) => {
+const LEGACY_CustomTableCell = ({id, deleteEntity, updateEntity, viewPath, setRefresh}: { id: string, entity: Object, deleteEntity: (id: string) => void, updateEntity: (id: string) => void, viewPath: string, setRefresh: (flag: boolean) => void}) => {
     const navigate = useRouter()
-    const handleDelete = (id: number) => {
+    const handleDelete = (id: string) => {
 
         Swal.fire({
             title: "Are you sure?",

@@ -16,6 +16,8 @@ import {signIn} from "next-auth/react";
 import {DEFAULT_LOGIN_REDIRECT} from "@/routes";
 import {useRouter, useSearchParams} from "next/navigation";
 import {Alert, AlertDescription, AlertTitle} from "@/components/ui/alert";
+import {hideUsername} from "@/lib/utils";
+import {toast} from "sonner";
 
 
 const PasswordConfirmForm = () => {
@@ -25,26 +27,40 @@ const PasswordConfirmForm = () => {
     const router = useRouter()
     const email = searchParams.get('email')
 
+    const hiddenEmail = hideUsername(email || '')
+
+
+
     const form = useForm<z.infer<typeof forgotPasswordConfirmSchema>>({
         resolver: zodResolver(forgotPasswordConfirmSchema),
         defaultValues: {
             code: '',
-            email: email || '',
+            email: hiddenEmail,
             newPassword: '',
             confirmNewPassword: '',
         },
     });
-    const onSubmit = async (data: z.infer<typeof forgotPasswordConfirmSchema>) => {
 
-        console.log('submitting...')
+    const handleResend = async () => {
+
+
+        toast.success('Code resent successfully'+email, {
+            position: 'top-right',
+        })
+    }
+
+    const onSubmit = async (data: z.infer<typeof forgotPasswordConfirmSchema>) => {
 
         startTransition(async () => {
             try {
                 const result = await forgetPasswordConfirmDetails(data)
 
-                console.log('result: ', result)
-
-                        setError(error)
+                if(result.success === true) {
+                    toast.message('Password reset successful, please log in!')
+                    router.push('/sign-in')
+                }else{
+                    setError(result.message)
+                }
 
 
             } catch (e) {
@@ -68,7 +84,7 @@ const PasswordConfirmForm = () => {
                     <Alert className={'w-full bg-teal-50'}>
                         <AlertTitle className={'mb-3'}>We send you an email</AlertTitle>
                         <AlertDescription className={''}>
-                            Your code is on the way. To log in, enter the code we emailed to {email}. It may take a
+                            Your code is on the way. To log in, enter the code we emailed to {hiddenEmail}. It may take a
                             minute to arrive.
                         </AlertDescription>
                     </Alert>
@@ -104,20 +120,16 @@ const PasswordConfirmForm = () => {
                         </>
                         <FormError message={error}/>
 
-                        <div className={'flex flex-col gap-4'}>
+                        <div className={'flex flex-col'}>
                             <Button type="submit" className={'form-btn'} disabled={isPending}>
-                                {isPending ? (<><Loader2 size={20}
-                                                         className={'animate-spin'}/>&nbsp; Loading... </>) : 'Confirm'}
-                            </Button>
-
-                            <Button type="submit" className={'bg-auto bg-gray-100'} disabled={isPending}>
-                                {isPending ? (<><Loader2 size={20}
-                                                         className={'animate-spin'}/>&nbsp; Loading... </>) : 'Resend'}
+                                {isPending ? (<><Loader2 size={20} className={'animate-spin'}/>&nbsp; Loading... </>) : 'Confirm'}
                             </Button>
                         </div>
-
                     </form>
                 </Form>
+                <Button className={'bg-auto bg-gray-100'} disabled={isPending} onClick={handleResend}>
+                    {isPending ? (<><Loader2 size={20} className={'animate-spin'}/>&nbsp; Loading... </>) : 'Resend'}
+                </Button>
             </>
 
         </section>

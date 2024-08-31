@@ -1,29 +1,22 @@
 'use client'
-import React, {useCallback, useEffect, useMemo, useState} from 'react'
+import React, {useCallback, useEffect, useMemo} from 'react'
 import HeaderBox from "@/components/HeaderBox";
-import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs";
-import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
-import LicensesTable from "@/components/tables/LicensesTable";
-import {licenseStore} from "@/lib/stores/store";
 import {Button} from "@/components/ui/button";
-import AssetTable from "@/components/tables/AssetTable";
 import {useRouter} from "next/navigation";
 import {useLicenseStore} from "@/lib/stores/licenseStore";
 import {DataTable} from "@/components/tables/DataTable/data-table";
 import {licenseColumns} from "@/components/tables/LicensesColumns";
-import {toast} from "sonner";
-import {accessoriesColumns} from "@/components/tables/AccessoriesColumns";
 
 
 const Licenses = () => {
     const navigate = useRouter()
     const [licenses, getAll, deleteLicense] = useLicenseStore((state) => [state.licenses, state.getAll, state.delete])
-    const handleDelete = async (id: number) => {
+    const handleDelete = async (id: string) => {
         await deleteLicense(id).then(_ => {
             getAll()
         })
     }
-    const handleView = async (id: number) => {
+    const handleView = async (id: string) => {
         navigate.push(`/assets/view/?id=${id}`)
     }
     const onDelete = useCallback((accessory: any) => handleDelete(accessory?.id!), [])
