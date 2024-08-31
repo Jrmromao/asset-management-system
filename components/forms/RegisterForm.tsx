@@ -8,10 +8,11 @@ import {useForm} from "react-hook-form";
 import {Form,} from "@/components/ui/form"
 import {zodResolver} from "@hookform/resolvers/zod";
 import {z} from "zod";
-import {Loader2} from "lucide-react";
+import {InfoIcon, Loader2} from "lucide-react";
 import {registerCompany} from "@/lib/actions/company.actions";
 import CustomInput from "@/components/CustomInput";
 import {registerSchema} from "@/lib/schemas";
+import {Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@/components/ui/tooltip";
 
 const RegisterForm = () => {
     const [isLoading, setIsLoading] = useState(false)
@@ -48,7 +49,7 @@ const RegisterForm = () => {
                     lastName: data.lastName || '',
                 }).then(() => {
                     form.reset()
-                    router.push('/')
+                    router.push('/verify-account?email=' + data.email)
                 })
             }
         } catch (e) {
@@ -122,16 +123,14 @@ const RegisterForm = () => {
                                                  placeholder={'ex: Doe'}
                                                  type={'text'}/>
                                 </div>
-                                <div className={'flex gap-4'}>
-                                    <CustomInput control={form.control}
-                                                 label={'Password'}
-                                                 {...form.register("password")}
-                                                 placeholder={''}
-                                                 type={'text'}/>
+                                <CustomInput control={form.control} {...form.register("password")}
+                                             label={'Password'} placeholder={'eg: **********'}
+                                             type={'password'}/>
 
-                                    <CustomInput control={form.control}  {...form.register("repeatPassword")}
-                                                 label={'Repeat Password'} placeholder={''} type={'text'}/>
-                                </div>
+                                <CustomInput control={form.control}  {...form.register("repeatPassword")}
+                                             label={'Repeat Password'} placeholder={'eg: **********'}
+                                             type={'password'}/>
+
                                 <div className={'gap-4'}>
                                     <CustomInput control={form.control}  {...form.register("email")}
                                                  label={'Email address'}
@@ -146,27 +145,26 @@ const RegisterForm = () => {
 
                             <div className={'flex flex-col gap-4'}>
                                 <Button type="submit" className={'form-btn'} disabled={isLoading}>
-                                    {isLoading ? (<><Loader2 size={20}
-                                                             className={'animate-spin'}/>&nbsp; Loading... </>) : 'Sign Up'}
+                                    {isLoading ? (<><Loader2 size={20} className={'animate-spin'}/>&nbsp; Loading... </>) : 'Sign Up'}
                                 </Button>
                             </div>
                         </form>
                     </Form>
-                            <div className="relative">
-                                <div className="absolute inset-0 flex items-center" aria-hidden="true">
-                                    <div className="w-full border-t border-gray-300"></div>
-                                </div>
-                            </div>
-                        </>
-                    )}
+                    <div className="relative">
+                        <div className="absolute inset-0 flex items-center" aria-hidden="true">
+                            <div className="w-full border-t border-gray-300"></div>
+                        </div>
+                    </div>
+                </>
+            )}
 
 
-                    <footer className={'flex justify-center gap-1'}>
-                        <p>{'Already have an account?'}</p>
-                        <Link href={'/sign-in'} className={'form-link'}>
-                            Sign In
-                        </Link>
-                    </footer>
+            <footer className={'flex justify-center gap-1'}>
+                <p>{'Already have an account?'}</p>
+                <Link href={'/sign-in'} className={'form-link'}>
+                    Sign In
+                </Link>
+            </footer>
 
         </section>
     )

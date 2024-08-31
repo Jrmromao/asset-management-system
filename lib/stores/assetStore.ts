@@ -8,10 +8,9 @@ interface IAssetStore {
     assets: Asset[];
     loading: boolean;
     create: (asset: Asset) => void;
-    update: (id: number, updatedAsset: Asset) => Promise<Asset>;
-    // delete: (id: number) => void;
-    delete: (id: number) => Promise<void>;
-    findById: (id: number) => Promise<Asset | null>;
+    update: (id: string, updatedAsset: Asset) => Promise<Asset>;
+    delete: (id: string) => Promise<void>;
+    findById: (id: string) => Promise<Asset | null>;
     getAll: () => void;
 }
 
@@ -47,7 +46,7 @@ export const useAssetStore = create(persist<IAssetStore>(
             }
         },
 
-        update: async (id: number, updatedAsset: Asset) => {
+        update: async (id: string, updatedAsset: Asset) => {
             try {
                 set(
                     produce((state) => {
@@ -67,7 +66,7 @@ export const useAssetStore = create(persist<IAssetStore>(
             }
         },
 
-        delete: async (id: number) => {
+        delete: async (id: string) => {
             set(
                 produce((state) => {
                     try {
@@ -82,7 +81,7 @@ export const useAssetStore = create(persist<IAssetStore>(
             );
         },
 
-        findById: async (id: number) => {
+        findById: async (id: string) => {
             const existingAsset = get().assets.find(asset => asset.id === id);
             if (existingAsset) return existingAsset;
 

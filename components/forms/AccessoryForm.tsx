@@ -1,5 +1,5 @@
 'use client'
-import React, {useEffect, useState} from 'react'
+import React, {useState} from 'react'
 import {z} from "zod"
 import {zodResolver} from "@hookform/resolvers/zod"
 import {useForm} from "react-hook-form"
@@ -10,7 +10,6 @@ import {Card} from "@/components/ui/card";
 import CustomInput from "@/components/CustomInput";
 import {Alert, AlertDescription, AlertTitle} from "@/components/ui/alert"
 import {useAccessoryStore} from "@/lib/stores/accessoryStore";
-import {Calendar} from "@/components/ui/calendar";
 import CustomDatePicker from "@/components/CustomDatePicker";
 import {AssetSchema} from "@/lib/schemas";
 
@@ -52,8 +51,8 @@ const AccessoryForm = ({accessory}: AccessoryFormProps) => {
                 vendor: data.vendor,
                 purchaseDate: new Date(data.purchaseDate),
                 description: data.description || '',
-                categoryId: 0,
-                companyId: 0,
+                categoryId: '0',
+                companyId: '0',
                 createdAt: new Date(),
                 updatedAt: new Date(),
             })

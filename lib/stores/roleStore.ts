@@ -7,9 +7,9 @@ interface IAssetStore {
     roles: Role[];
     loading: boolean;
     create: (asset: Asset) => void;
-    // update: (id: number, role: Role) => void;
-    // delete: (id: number) => void;
-    // findById: (id: number) => Role | null;
+    // update: (id: string, role: Role) => void;
+    // delete: (id: string) => void;
+    // findById: (id: string) => Role | null;
     getAll: () => void;
 }
 
@@ -44,7 +44,7 @@ export const useRoleStore = create(persist<IAssetStore>(
             }
         },
 
-        findById: (id: number) => {
+        findById: (id: string) => {
             const role = get().roles.find((asset) => asset.id === id);
             if (!role) return null
             return role;

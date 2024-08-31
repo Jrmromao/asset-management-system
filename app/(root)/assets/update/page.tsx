@@ -12,7 +12,7 @@ const Update = () => {
 
 
     const searchParams = useSearchParams()
-    const id = +searchParams.get('id')!
+    const id = String(searchParams.get('id'))
     const [asset, setAsset] = useState<Asset | null>()
     const [findById] = useAssetStore((state) => [state.findById])
 

@@ -105,7 +105,7 @@ declare type Category = {
 };
 
 declare type License = {
-    id?: number;
+    id?: string;
     name: string;
     licenseKey: string;
     renewalDate: Date;
@@ -142,19 +142,19 @@ declare interface CategoryBadgeProps {
 
 declare interface AssetTableProps {
     assets: Asset[];
-    deleteAsset: (id: number) => void;
-    findById: (id: number) => void;
+    deleteAsset: (id: string) => void;
+    findById: (id: string) => void;
 }
 
 declare interface UserTableProps {
     users: User[];
-    deleteUser: (id: number) => void;
-    findById: (id: number) => void;
+    deleteUser: (id: string) => void;
+    findById: (id: string) => void;
 }
 
 declare interface CategoryTableProps {
     licenses: Category[];
-    deleteCategory: (id: number) => void;
+    deleteCategory: (id: string) => void;
     setRefresh: (flag: boolean) => void;
 
 }

@@ -7,9 +7,9 @@ interface IAccessoryStore {
     accessories: Accessory[];
     loading: boolean;
     create: (asset: Accessory) => void;
-    update: (id: number, data: Accessory) => void;
-    delete: (id: number) => Promise<void>;
-    findById: (id: number) => Accessory | null;
+    update: (id: string, data: Accessory) => void;
+    delete: (id: string) => Promise<void>;
+    findById: (id: string) => Accessory | null;
     getAll: () => void;
 }
 
@@ -42,7 +42,7 @@ export const useAccessoryStore = create(persist<IAccessoryStore>(
                 throw error;
             }
         },
-        update: (id: number, data: Accessory) => {
+        update: (id: string, data: Accessory) => {
             set(
                 produce((state) => {
 
@@ -55,7 +55,7 @@ export const useAccessoryStore = create(persist<IAccessoryStore>(
                 })
             );
         },
-        delete: async (id: number) => {
+        delete: async (id: string) => {
             try {
                 await remove(id);
                 set(produce((state) => {
@@ -65,7 +65,7 @@ export const useAccessoryStore = create(persist<IAccessoryStore>(
                 console.error(error);
             }
         },
-        findById: (id: number) => {
+        findById: (id: string) => {
 
             const accessory = get().accessories.find((accessory: Accessory) => accessory.id === id);
             if (!accessory) return null

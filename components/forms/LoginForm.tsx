@@ -75,14 +75,14 @@ const AuthForm = () => {
 
                                 <CustomInput control={form.control}  {...form.register("email")}
                                              label={'Email'}
-                                             placeholder={'Enter your email'} type={'text'}
+                                             placeholder={'Enter your email'} type={'email'}
                                              disabled={isPending}/>
                                 <CustomInput control={form.control}  {...form.register("password")}
                                              label={'Password'}
                                              disabled={isPending}
                                              placeholder={'Password'} type={'password'}/>
 
-                                <Link href={'/auth/forgot-password'} className={'text-12 text-gray-500'}>
+                                <Link href={'/forgot-password'} className={'text-12 text-gray-500'}>
                                     Forgot Password
                                 </Link>
                             </>

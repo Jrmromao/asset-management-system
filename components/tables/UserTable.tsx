@@ -60,14 +60,14 @@ const UserTable = ({users, findById, deleteUser}: UserTableProps) => {
                                 <LinkTableCell value={user?.employeeId} navigateTo={`/assets/view/?id=${user.id}`}/>
 
                                 <TableCell className=" cusor-pointer pl-2 pr-10 capitalize min-w-24">
-                                    <LEGACY_CustomTableCell id={user.id!} entity={user}
-                                                            deleteEntity={() => deleteUser(user.id!)}
-                                                            setRefresh={(flag: boolean) => console.log(flag)}
-                                                            updateEntity={() => {
-                                                     }}
-                                                            viewEntity={() => {
-                                                         navigate.push(`/assets/view/?id=${user.id}`)
-                                                     }}/>
+                                    {/*<LEGACY_CustomTableCell id={user.id!} entity={user}*/}
+                                    {/*                        deleteEntity={() => deleteUser(user.id!)}*/}
+                                    {/*                        setRefresh={(flag: boolean) => console.log(flag)}*/}
+                                    {/*                        updateEntity={() => {*/}
+                                    {/*                 }}*/}
+                                    {/*                        viewEntity={() => {*/}
+                                    {/*                     navigate.push(`/assets/view/?id=${user.id}`)*/}
+                                    {/*                 }}/>*/}
                                 </TableCell>
 
                             </TableRow>

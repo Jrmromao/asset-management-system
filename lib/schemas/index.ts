@@ -79,18 +79,46 @@ export const loginSchema =  z.object({
         .max(20, {message: "Password must not exceed 20 characters"}),
 });
 
+export const accountVerificationSchema =  z.object({
+    email: z.string().email("Invalid email"),
+    code: z.string({required_error: "Verification Code is required"})
+});
+
+
+
+
+const passwordSchema = z.string().refine(
+    (value) => /^(?=.*\d)(?=.*[!@#$%^&*])(?=.*[A-Z])(?=.*[a-z]).{8,}$/.test(value),
+    {
+        message: "Password must contain at least one number, one special character, one uppercase letter, one lowercase letter, and be at least 8 characters long.",
+    }
+);
+export const forgotPasswordConfirmSchema =  z.object({
+    email: z.string().email("Invalid email"),
+    code: z.string({required_error: "Verification Code is required"}),
+    newPassword: passwordSchema,
+    confirmNewPassword: z.string().min(1, "Password is required"),
+}).refine((data) => data.newPassword === data.confirmNewPassword, {
+    message: "Passwords do not match",
+    path: ["confirmNewPassword"],
+});
+
+export const forgotPasswordSchema =  z.object({
+    email: z.string().email("Invalid email"),
+});
 
 export  const registerSchema = z.object({
     email: z.string().email("Invalid email"),
-    password: z.string()
-        .min(8, {message: "Password must be at least 8 characters long"})
-        .max(20, {message: "Password must not exceed 20 characters"}),
+    password: passwordSchema,
     repeatPassword: z.string().min(1, "Password is required"),
     firstName: z.string().min(1, "First name is required"),
     lastName: z.string().min(1, "Last name is required"),
     phoneNumber: z.string().min(1, "Phone number is required"),
     companyName: z.string().min(1, "Company name is required"),
 
+}).refine((data) => data.password === data.repeatPassword, {
+    message: "Passwords do not match",
+    path: ["repeatPassword"],
 });
 
 export const statusLabelSchema = z.object({
@@ -112,7 +140,7 @@ export  const personSchema = z.object({
     lastName: z.string().min(1, "Last name is required"),
     email: z.string().min(1, "Email is required").email("Invalid email"),
     roleId: z.string().min(1, "Role is required"),
-    companyId: z.number().optional(),
+    companyId: z.string().optional(),
     title: z.string().min(1, "Title is required"),
     employeeId: z.string().min(1, "Employee Id is required"),
 })

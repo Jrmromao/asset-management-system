@@ -7,9 +7,9 @@ interface IUserStore {
     users: User[];
     loading: boolean;
     create: (user: User) => void;
-    update: (id: number, updatedUser: User) => void;
-    findById: (id: number) => User | null;
-    delete: (id: number) => void;
+    update: (id: string, updatedUser: User) => void;
+    findById: (id: string) => User | null;
+    delete: (id: string) => void;
     getAll: () => void;
 }
 
@@ -43,7 +43,7 @@ export const useUserStore = create(persist<IUserStore>(
                 throw error;
             }
         },
-        update: (id: number, updatedUser: User) => {
+        update: (id: string, updatedUser: User) => {
             set(
                 produce((state) => {
 
@@ -56,7 +56,7 @@ export const useUserStore = create(persist<IUserStore>(
                 })
             );
         },
-        delete: (id: number) => {
+        delete: (id: string) => {
             set(
                 produce((state) => {
                     remove(id).then(() => {
@@ -67,7 +67,7 @@ export const useUserStore = create(persist<IUserStore>(
                 })
             );
         },
-        findById: (id: number) => {
+        findById: (id: string) => {
             const user = get().users.find((user) => user.id === id);
             if (!user) return null
             return user;

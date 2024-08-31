@@ -7,7 +7,7 @@ interface ICategoryStore {
     categories: Category[];
     loading: boolean;
     create: (category: Category) => void;
-    delete: (id: number) => void;
+    delete: (id: string) => void;
     getAll: () => void;
 }
 
@@ -41,7 +41,7 @@ export const useCategoryStore = create(persist<ICategoryStore>(
                 throw error;
             }
         },
-        delete: (id: number) => {
+        delete: (id: string) => {
             set(
                 produce((state) => {
 

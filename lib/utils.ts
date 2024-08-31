@@ -103,6 +103,19 @@ export function formUrlQuery({params, key, value}: UrlQueryParams) {
     );
 }
 
+
+export function hideUsername(email: string): string {
+    const parts = email.split("@");
+    if (parts.length !== 2) {
+        throw new Error("Invalid email format");
+    }
+
+    const username = parts[0];
+    const lettersToHide = Math.floor(username.length * 0.8);
+    const hiddenUsername = username.slice(0, -lettersToHide) + "*".repeat(lettersToHide);
+
+    return hiddenUsername + "@" + parts[1];
+}
 //
 // export function getAccountTypeColors(type: AccountTypes) {
 //     switch (type) {
@@ -181,59 +194,10 @@ export function formUrlQuery({params, key, value}: UrlQueryParams) {
 //     return customerId;
 // }
 
-export function encryptId(id: string) {
-    return btoa(id);
-}
-
-export function decryptId(id: string) {
-    return atob(id);
-}
-
-export const getTransactionStatus = (date: Date) => {
-    const today = new Date();
-    const twoDaysAgo = new Date(today);
-    twoDaysAgo.setDate(today.getDate() - 2);
-
-    return date > twoDaysAgo ? "Processing" : "Success";
-};
 
 
-const asset = ['asset']
-const common = ['asset', 'category', 'license']
-const categoryLicense = ['asset', 'category', 'license']
-const license = ['license']
-const signupSignin = ['sign-in', 'sign-up']
-const signup = ['sign-un']
-
-
-const passwordSchema = z.string()
-    .min(8, {message: "Password must be at least 8 characters long"})
-    .max(20, {message: "Password must not exceed 20 characters"})
-// .refine(
-//     (value) =>
-//         /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/.test(value),
-//     {
-//         message:
-//             "Password must include at least one uppercase letter, one lowercase letter, one number, and one special character (@$!%*?&)",
-//     }
-// );
-
-
-//      name: '',
-//     brand: '',
-//     model: '',
-//     serialNumber: '',
-//     purchasePrice: '',
-//     category: '',
-//     datePurchased: '',
-//     certificateUrl: '',
-//     licenceUrl: '',
-//     assigneeId: '',
-//     licenseName: '',
-//     key: '',
 
 export const formSchema = () => z.object({
-
     id: z.string().optional(),
     assetName: z.string().min(1, "Asset name is required"),
     brand: z.string().min(1, "Brand is required"),

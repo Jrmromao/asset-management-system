@@ -16,7 +16,7 @@ const View = () => {
     const [auditLogs, setAuditLogs] = useState<AuditLog[]>()
     const searchParams = useSearchParams()
     const navigate = useRouter()
-    const id = +searchParams.get('id')!
+    const id = String(searchParams.get('id'))
 
 
     useEffect(() => {
