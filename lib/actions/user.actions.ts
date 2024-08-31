@@ -8,7 +8,6 @@ import {DEFAULT_LOGIN_REDIRECT} from "@/routes";
 import {AuthError} from "next-auth";
 import {signIn} from "@/auth";
 
-
 export const login = async (values: z.infer<typeof loginSchema>) => {
     const validation = loginSchema.safeParse(values)
     if (!validation.success) return {error: 'Invalid email or password'}
@@ -31,7 +30,6 @@ export const login = async (values: z.infer<typeof loginSchema>) => {
         throw error;
     }
 }
-
 export const forgotPassword = async (values: z.infer<typeof forgotPasswordSchema>) => {
     try {
         const validation = forgotPasswordSchema.safeParse(values)
@@ -46,19 +44,15 @@ export const forgotPassword = async (values: z.infer<typeof forgotPasswordSchema
         return {error: 'Invalid email or password'};
     }
 }
-
-
 export const forgetPasswordConfirmDetails = async (values: z.infer<typeof forgotPasswordConfirmSchema>) => {
     const validation = forgotPasswordConfirmSchema.safeParse(values)
     if (!validation.success) return {error: 'Invalid email, password or confirmation code'}
     const {email, newPassword, code} = validation.data
 
-    const result = await forgetPasswordConfirm(email, newPassword, code)
+    const result = await forgetPasswordConfirm(String(email), newPassword, code)
 
     return parseStringify(result);
 }
-
-
 export const registerUser = async (data: RegUser) => {
     let cognitoRegisterResult: any;
     try {
@@ -112,7 +106,6 @@ export const registerUser = async (data: RegUser) => {
         await prisma.$disconnect();
     }
 }
-
 export const verifyAccount = async (values: z.infer<typeof accountVerificationSchema>) => {
     const validation = accountVerificationSchema.safeParse(values)
     if (!validation.success) return {error: 'Invalid email or password'}
@@ -122,7 +115,6 @@ export const verifyAccount = async (values: z.infer<typeof accountVerificationSc
 
 
 }
-
 export const insert = async (userData: User) => {
     try {
         await prisma.user.create({
