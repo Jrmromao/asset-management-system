@@ -4,7 +4,7 @@ import {Input} from "@/components/ui/input";
 import {GrCircleInformation} from "react-icons/gr";
 import {Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@/components/ui/tooltip";
 import {InfoIcon} from "lucide-react";
-
+import {usePathname} from 'next/navigation';
 
 export interface CustomInputProps {
     label: string;
@@ -16,11 +16,13 @@ export interface CustomInputProps {
     readonly?: boolean
 }
 
-const PasswordRules = ({label}: {label: string}) => {
+const PasswordRules = ({label}: { label: string }) => {
+
+
     return (
         <TooltipProvider>
             <Tooltip>
-                <TooltipTrigger >
+                <TooltipTrigger>
                     {label} <GrCircleInformation className={'inline'}/>
                 </TooltipTrigger>
                 <TooltipContent className={'ag-tooltip w-[300px] max-w-[300px] bg-white'}>
@@ -39,7 +41,6 @@ const PasswordRules = ({label}: {label: string}) => {
 }
 
 
-
 const CustomInput = ({
                          control,
                          name,
@@ -51,9 +52,12 @@ const CustomInput = ({
                          ...rest
                      }: CustomInputProps) => {
 
-
-
-
+    const pathname = usePathname();
+    const showTooltip =
+        !pathname.includes('sign-in') &&
+        !name.includes('repeatPassword') &&
+        !name.includes('confirmNewPassword') &&
+        type === 'password';
 
     return (
         <FormField
@@ -62,7 +66,7 @@ const CustomInput = ({
             render={({field}) => (
                 <div className={'form-item'}>
                     <FormLabel className={'form-label'}>
-                        {type === 'password' ? <PasswordRules label={label}/> : label}
+                        {showTooltip ? <PasswordRules label={label}/> : label}
                     </FormLabel>
                     <div className={'flex w-full flex-col'}>
                         <FormControl>
