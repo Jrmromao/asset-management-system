@@ -8,11 +8,10 @@ import {useForm} from "react-hook-form";
 import {Form,} from "@/components/ui/form"
 import {zodResolver} from "@hookform/resolvers/zod";
 import {z} from "zod";
-import {InfoIcon, Loader2} from "lucide-react";
+import {Loader2} from "lucide-react";
 import {registerCompany} from "@/lib/actions/company.actions";
 import CustomInput from "@/components/CustomInput";
 import {registerSchema} from "@/lib/schemas";
-import {Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@/components/ui/tooltip";
 import {APP_NAME} from "@/constants";
 
 const RegisterForm = () => {
@@ -37,18 +36,9 @@ const RegisterForm = () => {
 
     const onSubmit = async (data: z.infer<typeof registerSchema>) => {
         setIsLoading(true)
-
         try {
-
             if (data) {
-                await registerCompany({
-                    companyName: data?.companyName || '',
-                    email: data.email || '',
-                    password: data.password || '',
-                    phoneNumber: data.phoneNumber || '',
-                    firstName: data.firstName || '',
-                    lastName: data.lastName || '',
-                }).then(() => {
+                await registerCompany(data).then(() => {
                     form.reset()
                     router.push('/account-verification?email=' + data.email)
                 })

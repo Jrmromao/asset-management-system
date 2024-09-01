@@ -84,8 +84,7 @@ const ForgotPasswordForm = () => {
                         <FormError message={error}/>
                         <div className={'flex flex-col gap-4'}>
                             <Button type="submit" className={'form-btn'} disabled={isPending}>
-                                {isPending ? (<><Loader2 size={20}
-                                                         className={'animate-spin'}/>&nbsp; Loading... </>) : 'Request code'}
+                                {isPending ? (<><Loader2 size={20} className={'animate-spin'}/>&nbsp; Loading... </>) : 'Request code'}
                             </Button>
                         </div>
                     </form>

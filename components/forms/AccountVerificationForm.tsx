@@ -7,16 +7,14 @@ import {useForm} from "react-hook-form";
 import {Form,} from "@/components/ui/form"
 import {zodResolver} from "@hookform/resolvers/zod";
 import {z} from "zod";
-import {InfoIcon, Loader2} from "lucide-react";
+import {Loader2} from "lucide-react";
 import CustomInput from "@/components/CustomInput";
 import {accountVerificationSchema} from "@/lib/schemas";
 import {FormError} from "@/components/forms/form-error";
-import {verifyAccount} from "@/lib/actions/user.actions";
-import {signIn} from "next-auth/react";
-import {DEFAULT_LOGIN_REDIRECT} from "@/routes";
+import {forgotPassword, resendCode, verifyAccount} from "@/lib/actions/user.actions";
 import {useRouter, useSearchParams} from "next/navigation";
 import {Alert, AlertDescription, AlertTitle} from "@/components/ui/alert";
-import { hideEmailAddress} from "@/lib/utils";
+import {hideEmailAddress} from "@/lib/utils";
 import {APP_NAME} from "@/constants";
 
 
@@ -24,6 +22,7 @@ const AuthForm = () => {
     const [error, setError] = useState<string>('')
     const [user, setUser] = useState(null)
     const [isPending, startTransition] = useTransition()
+    const [isLoading, setIsLoading] = useState(false)
     const searchParams = useSearchParams()
     const router = useRouter()
     const email = searchParams.get('email')
@@ -53,10 +52,17 @@ const AuthForm = () => {
         })
     }
 
-    const handleSocialLogin = async (provider: 'github' | 'google') => {
-        await signIn(provider,
-            {callbackUrl: DEFAULT_LOGIN_REDIRECT})
+    const handleResendCode = async () => {
+        try {
+            setIsLoading(true)
+            await resendCode(email!).then(_ => {
+                setIsLoading(false)
+            })
+        } catch (e) {
+            console.error(e)
+        }
     }
+
     return (
         <section className={'auth-form'}>
             <header className={'flex flex-col gap-5 md:gap-8'}>
@@ -68,12 +74,13 @@ const AuthForm = () => {
                 <div className={'flex flex-col gap-1 md:gap-3'}>
 
 
-                        <Alert className={'w-full bg-teal-50'}>
-                            <AlertTitle className={'mb-3'}>We send you an email</AlertTitle>
-                            <AlertDescription className={''}>
-                                Your code is on the way. To log in, enter the code we emailed to {hideEmailAddress(email!)}. It may take a minute to arrive.
-                            </AlertDescription>
-                        </Alert>
+                    <Alert className={'w-full bg-teal-50'}>
+                        <AlertTitle className={'mb-3'}>We send you an email</AlertTitle>
+                        <AlertDescription className={''}>
+                            Your code is on the way. To log in, enter the code we emailed to {hideEmailAddress(email!)}.
+                            It may take a minute to arrive.
+                        </AlertDescription>
+                    </Alert>
 
 
                 </div>
@@ -103,11 +110,11 @@ const AuthForm = () => {
                                     {isPending ? (<><Loader2 size={20}
                                                              className={'animate-spin'}/>&nbsp; Loading... </>) : 'Confirm'}
                                 </Button>
-
-                                <Button type="submit" className={'bg-auto bg-gray-100'} disabled={isPending}>
-                                    {isPending ? (<><Loader2 size={20}
-                                                             className={'animate-spin'}/>&nbsp; Loading... </>) : 'Resend'}
+                                <Button type="button" className={'bg-auto bg-gray-100'} disabled={isPending || isLoading} onClick={handleResendCode}>
+                                    {isLoading ? (<><Loader2 size={20}
+                                                             className={'animate-spin'}/>&nbsp; Loading... </>) : 'Resend code'}
                                 </Button>
+
                             </div>
 
                         </form>

@@ -1,5 +1,5 @@
 'use server';
-import {parseStringify} from "@/lib/utils";
+import {parseStringify, validateEmail} from "@/lib/utils";
 import {forgetPasswordConfirm, forgetPasswordRequestCode, signUp, verifyCognitoAccount} from "@/services/aws/Cognito";
 import {prisma} from "@/app/db";
 import {
@@ -34,6 +34,24 @@ export const login = async (values: z.infer<typeof loginSchema>) => {
             }
         }
         throw error;
+    }
+}
+
+export const resendCode = async (email: string) => {
+    try {
+        const isValid = validateEmail(email)
+
+        if (!isValid) return {error: 'Invalid email address'}
+
+        const user = await findByEmail(email)
+
+        if (!user) return {error: 'Your account does not exist'}
+
+        const result = await forgetPasswordRequestCode(email)
+
+        return {success: true};
+    } catch (error) {
+        return {error: 'Invalid email or password'};
     }
 }
 export const forgotPassword = async (values: z.infer<typeof forgotPasswordSchema>) => {

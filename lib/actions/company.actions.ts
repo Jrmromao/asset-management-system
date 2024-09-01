@@ -8,7 +8,7 @@ import {z} from "zod";
 
 const prisma = new PrismaClient()
 
-export const registerCompany = async (values: z.infer<typeof forgotPasswordConfirmSchema>) => {
+export const registerCompany = async (values: z.infer<typeof registerSchema>) => {
 
     try {
 
