@@ -20,6 +20,7 @@ export const {auth, handlers, signIn} = NextAuth({
                 return token
 
             token.role = existingUser.role.name
+            token.companyId = existingUser.company.id
 
             return token
         },
@@ -30,6 +31,7 @@ export const {auth, handlers, signIn} = NextAuth({
             }
 
             if (token.role && session.user) {
+                session.user.companyId = token.companyId as string
                 session.user.role = token.role as string
             }
 

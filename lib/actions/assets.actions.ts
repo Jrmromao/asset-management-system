@@ -2,12 +2,12 @@
 
 import {prisma} from "@/app/db";
 import {parseStringify} from "@/lib/utils";
+import {auth} from "@/auth";
+
 
 export const create = async (data: Asset) => {
     try {
-
-        console.log(data)
-
+        const session = await auth()
 
         await prisma.asset.create({
             data: {
@@ -23,7 +23,7 @@ export const create = async (data: Asset) => {
                 },
                 company: {
                     connect: {
-                        id: '0c82b08e-2391-4819-8ba7-1af8e5721c74'
+                        id: session?.user?.companyId
                     },
                 },
                 statusLabel: {
@@ -41,6 +41,7 @@ export const create = async (data: Asset) => {
 
 export const get = async () => {
     try {
+        const session = await auth()
         const assets = await prisma.asset.findMany({
             include: {
                 category: true,
@@ -49,6 +50,9 @@ export const get = async () => {
             },
             orderBy: {
                 createdAt: 'desc'
+            },
+            where: {
+                companyId: session?.user?.companyId
             }
         });
         return parseStringify(assets);
@@ -70,7 +74,6 @@ export const findById = async (id: string) => {
             }
         });
 
-        console.log(asset)
         return parseStringify(asset);
     } catch (error) {
         console.log(error)

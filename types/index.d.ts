@@ -36,7 +36,7 @@ declare type User = {
 declare type RegUser = {
     email: string;
     password: string,
-    roleId: string,
+    roleId?: string,
     companyId: string,
     firstName?: string,
     lastName?: string,

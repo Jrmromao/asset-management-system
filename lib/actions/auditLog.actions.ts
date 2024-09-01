@@ -1,6 +1,8 @@
 'use server';
 import {PrismaClient} from '@prisma/client'
 import {parseStringify} from "@/lib/utils";
+import {auth} from "@/auth";
+
 
 const prisma = new PrismaClient()
 

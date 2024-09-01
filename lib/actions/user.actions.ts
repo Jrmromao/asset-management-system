@@ -2,11 +2,17 @@
 import {parseStringify} from "@/lib/utils";
 import {forgetPasswordConfirm, forgetPasswordRequestCode, signUp, verifyCognitoAccount} from "@/services/aws/Cognito";
 import {prisma} from "@/app/db";
-import {accountVerificationSchema, forgotPasswordConfirmSchema, forgotPasswordSchema, loginSchema} from "@/lib/schemas";
+import {
+    accountVerificationSchema,
+    forgotPasswordConfirmSchema,
+    forgotPasswordSchema,
+    loginSchema,
+    registerSchema
+} from "@/lib/schemas";
 import {z} from "zod";
 import {DEFAULT_LOGIN_REDIRECT} from "@/routes";
 import {AuthError} from "next-auth";
-import {signIn} from "@/auth";
+import {auth, signIn} from "@/auth";
 
 export const login = async (values: z.infer<typeof loginSchema>) => {
     const validation = loginSchema.safeParse(values)
@@ -54,6 +60,7 @@ export const forgetPasswordConfirmDetails = async (values: z.infer<typeof forgot
     return parseStringify(result);
 }
 export const registerUser = async (data: RegUser) => {
+
     let cognitoRegisterResult: any;
     try {
         cognitoRegisterResult = await signUp({
@@ -61,6 +68,8 @@ export const registerUser = async (data: RegUser) => {
             password: data.password,
             companyId: data.companyId
         })
+
+        //Every company has an admin role
         const role = await prisma.role.findUnique({
             where: {
                 name: 'Admin'
@@ -121,9 +130,10 @@ export const verifyAccount = async (values: z.infer<typeof accountVerificationSc
 }
 export const insert = async (userData: User) => {
     try {
+        const session = await auth()
         await prisma.user.create({
             data: {
-                name: 'Joao',
+                name: `${userData.firstName} ${userData.lastName}`,
                 email: userData.email,
                 firstName: userData.firstName!,
                 lastName: userData.lastName!,
@@ -131,7 +141,7 @@ export const insert = async (userData: User) => {
                 title: userData.title,
                 company: {
                     connect: {
-                        id: String(2)
+                        id: session?.user?.companyId
                     }
                 },
                 role: {

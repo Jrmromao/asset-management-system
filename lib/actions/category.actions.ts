@@ -1,17 +1,18 @@
 'use server';
 import {prisma} from "@/app/db";
 import {parseStringify} from "@/lib/utils";
+import {auth} from "@/auth";
 
 
 export const createCategory = async (categoryData: { name: string }) => {
     try {
-
+        const session = await auth()
         const category = await prisma.category.create({
             data: {
                 name: 'IT Support',
                 company: {
                     connect: {
-                        id: '0c82b08e-2391-4819-8ba7-1af8e5721c74'
+                        id: session?.user?.companyId
                     },
                 },
             },
@@ -26,9 +27,13 @@ export const createCategory = async (categoryData: { name: string }) => {
 
 export const getCategories = async () => {
     try {
+        const session = await auth()
         const categories = await prisma.category.findMany({
             orderBy: {
                 name: 'asc'
+            },
+            where: {
+                companyId: session?.user?.companyId
             }
         });
 

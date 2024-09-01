@@ -2,29 +2,35 @@
 
 import {registerUser} from "./user.actions";
 import {PrismaClient} from "@prisma/client";
+import {forgotPasswordConfirmSchema, registerSchema} from "@/lib/schemas";
+import {z} from "zod";
 
 
 const prisma = new PrismaClient()
 
-export const registerCompany = async (data: CompanyRegistrationProps) => {
+export const registerCompany = async (values: z.infer<typeof forgotPasswordConfirmSchema>) => {
 
     try {
 
+        const validation = registerSchema.safeParse(values)
+        if (!validation.success) return {error: validation.error.issues[0].message}
+
+        const {companyName, lastName, firstName, email, password, phoneNumber} = validation.data
+
         const company = await prisma.company.create({
             data: {
-                name: data.companyName,
+                name: companyName,
                 createdAt: new Date(),
                 updatedAt: new Date(),
             },
         })
-        const user = await registerUser({
-           firstName: data.firstName,
-           lastName: data.lastName,
-            phoneNumber: data.phoneNumber,
-            email: data.email,
-            companyId: company.id,
-            password: data.password,
-            roleId: '2',
+        await registerUser({
+            email,
+            password,
+            firstName,
+            lastName,
+            phoneNumber,
+            companyId: company.id
         })
 
 
