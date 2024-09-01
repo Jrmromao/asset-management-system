@@ -1,12 +1,11 @@
 'use client'
-import React from 'react'
+import React, {useEffect, useState} from 'react'
 import Image from "next/image";
-import {signOut} from "next-auth/react";
-import {auth} from "@/auth";
+import {signOut, useSession} from "next-auth/react";
 
 
-const Footer = async ({type = 'desktop'}: { type?: 'desktop' | 'mobile' }) => {
-    const session = await auth()
+const Footer = ({type = 'desktop'}: { type?: 'desktop' | 'mobile' }) => {
+    const {data: session} = useSession();
 
     const name = session?.user?.name || 'Guest';
     return (
@@ -29,7 +28,7 @@ const Footer = async ({type = 'desktop'}: { type?: 'desktop' | 'mobile' }) => {
                 <Image src="icons/logout.svg" fill alt="jsm"/>
             </div>
         </footer>
-    )
+    );
 }
 
-export default Footer
+export default Footer;

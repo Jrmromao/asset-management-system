@@ -6,9 +6,6 @@ export const {auth, handlers, signIn} = NextAuth({
     session: {strategy: "jwt"},
     callbacks: {
         async signIn({user}) {
-
-            console.log(user)
-
             if (!user) return false
             return await findById(user?.id!);
         },

@@ -1,20 +1,6 @@
 import React from 'react'
 import {FormControl, FormField, FormLabel, FormMessage} from "@/components/ui/form";
-
-import {Textarea} from "@/components/ui/textarea"
-
-import {Control, FieldPath} from 'react-hook-form'
-import {date, z} from "zod";
-import {formSchema as myFormSchema} from "@/lib/utils";
-import {
-    Select,
-    SelectContent,
-    SelectGroup,
-    SelectItem,
-    SelectLabel,
-    SelectTrigger,
-    SelectValue
-} from "@/components/ui/select";
+import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
 
 
 interface CustomInputProps {

@@ -117,7 +117,6 @@ const AssetForm = ({asset, isUpdate = false}: AssetFormProps) => {
                 createAsset(assetData)
             }
             form.reset(INITIAL_VALUES)
-            revalidatePath('/assets/create')
         } catch (e) {
             console.error(e)
         } finally {
