@@ -103,7 +103,6 @@ export const verifyAccount = async (values: z.infer<typeof accountVerificationSc
     if (!validation.success) return {error: 'Invalid email or password'}
     const {email, code} = validation.data
     try {
-        await verifyCognitoAccount(email, code);
         prisma.user.update({
             where: {
                 email
@@ -112,6 +111,7 @@ export const verifyAccount = async (values: z.infer<typeof accountVerificationSc
                 emailVerified: new Date()
             }
         })
+        await verifyCognitoAccount(email, code);
         return {success: true};
     } catch (e) {
         return {error: 'Account count not be verified'}

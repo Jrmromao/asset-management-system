@@ -101,6 +101,8 @@ export const verifyCognitoAccount =  async (email: string, confirmationCode: str
             ConfirmationCode: confirmationCode
         }))
 
+
+
     } catch (error) {
         console.error(error);
     }

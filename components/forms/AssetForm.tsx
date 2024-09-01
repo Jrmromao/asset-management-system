@@ -18,6 +18,7 @@ import {useStatusLabelStore} from "@/lib/stores/statusLabelStore";
 import StatusLabelForm from "@/components/forms/StatusLabelForm";
 import {useRouter} from "next/navigation";
 import {toast} from "sonner";
+import {revalidatePath} from "next/cache";
 
 
 interface AssetFormProps {
@@ -38,6 +39,8 @@ const AssetForm = ({asset, isUpdate = false}: AssetFormProps) => {
         category: asset?.category?.name,
         statusLabel: asset?.statusLabel?.name,
         datePurchased: new Date().getDate().toString()
+
+
     }
     const navigate = useRouter()
     const [isLoading, setIsLoading] = useState(false)
@@ -114,6 +117,7 @@ const AssetForm = ({asset, isUpdate = false}: AssetFormProps) => {
                 createAsset(assetData)
             }
             form.reset(INITIAL_VALUES)
+            revalidatePath('/assets/create')
         } catch (e) {
             console.error(e)
         } finally {
@@ -159,7 +163,7 @@ const AssetForm = ({asset, isUpdate = false}: AssetFormProps) => {
                             <div className="flex-none w-3/12 mt-6 ml-8">
                                 <Button type={'button'} variant={'secondary'}
                                         className={'form-secondary-btn md:w-auto'}
-                                        onClick={(() => openDialog())}>Add
+                                        onClick={openDialog}>Add
                                     Category</Button>
                             </div>
                         </div>
