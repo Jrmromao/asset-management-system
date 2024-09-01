@@ -19,8 +19,10 @@ export default {
                 const {email, password} = validation.data
                 if (!await signIn(email, password))
                     return null
+
                 const user = await findByEmail(email)
                 if(!user) return null
+
 
                 return {
                     ...user

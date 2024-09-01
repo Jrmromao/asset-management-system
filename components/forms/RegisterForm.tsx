@@ -50,7 +50,7 @@ const RegisterForm = () => {
                     lastName: data.lastName || '',
                 }).then(() => {
                     form.reset()
-                    router.push('/verify-account?email=' + data.email)
+                    router.push('/account-verification?email=' + data.email)
                 })
             }
         } catch (e) {
