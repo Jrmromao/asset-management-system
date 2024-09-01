@@ -26,14 +26,21 @@ const PasswordRules = ({label}: { label: string }) => {
                     {label} <GrCircleInformation className={'inline'}/>
                 </TooltipTrigger>
                 <TooltipContent className={'ag-tooltip w-[300px] max-w-[300px] bg-white'}>
-                    <p>Password Rules:</p>
                     <ul>
-                        <li>Be at least 8 characters long</li>
-                        <li>One number</li>
-                        <li>One special character</li>
-                        <li>One uppercase letter</li>
-                        <li>One lowercase letter</li>
+                        <li>Your password should:</li>
+                        <ul>
+                            <li>Be at least 8 characters long</li>
+                            <li>Include a mix of:</li>
+                            <ul>
+                                <li>Uppercase letters (A-Z)</li>
+                                <li>Lowercase letters (a-z)</li>
+                                <li>Numbers (0-9)</li>
+                                <li>Special characters (e.g., !@#$%^&*)</li>
+                            </ul>
+                        </ul>
                     </ul>
+
+
                 </TooltipContent>
             </Tooltip>
         </TooltipProvider>

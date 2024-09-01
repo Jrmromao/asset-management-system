@@ -1,5 +1,5 @@
 'use client'
-import React, {useState, useTransition} from 'react'
+import React, {useEffect, useState, useTransition} from 'react'
 import Link from "next/link";
 import Image from "next/image";
 import {Button} from "@/components/ui/button";
@@ -19,13 +19,17 @@ import {signIn} from "next-auth/react";
 import {DEFAULT_LOGIN_REDIRECT} from "@/routes";
 import {Alert, AlertDescription, AlertTitle} from "@/components/ui/alert";
 import {APP_NAME} from "@/constants";
+import useEmailStore from "@/lib/stores/emailStore";
 
 const ForgotPasswordForm = () => {
     const [error, setError] = useState<string>('')
-    const [user, setUser] = useState(null)
+    const [errorForm, setErrorForm] = useState('')
     const [isPending, startTransition] = useTransition()
     const router = useRouter()
+    const searchParams = useSearchParams()
+    const pathError = String(searchParams.get('error'))
 
+    const { setEmail } = useEmailStore()
 
     const form = useForm<z.infer<typeof forgotPasswordSchema>>({
         resolver: zodResolver(forgotPasswordSchema),
@@ -33,23 +37,33 @@ const ForgotPasswordForm = () => {
             email: '',
         },
     });
+
+
+
     const onSubmit = async (data: z.infer<typeof forgotPasswordSchema>) => {
         startTransition(async () => {
             try {
                 await forgotPassword(data)
                     .then((_) => {
                             form.reset()
-                            router.push(`/forgot-password/confirm?email=${data.email}`)
+                            router.push(`/forgot-password/confirm`)
                         }
                     )
                     .catch(error => {
                         setError(error)
                     })
+                setEmail(data.email)
             } catch (e) {
                 console.error(e)
             }
         })
     }
+
+    useEffect(() => {
+        if (pathError) {
+            setErrorForm(pathError)
+        }
+    }, []);
 
     return (
         <section className={'auth-form'}>
@@ -81,7 +95,7 @@ const ForgotPasswordForm = () => {
                                          disabled={isPending}/>
 
                         </>
-                        <FormError message={error}/>
+                        <FormError message={error || errorForm}/>
                         <div className={'flex flex-col gap-4'}>
                             <Button type="submit" className={'form-btn'} disabled={isPending}>
                                 {isPending ? (<><Loader2 size={20} className={'animate-spin'}/>&nbsp; Loading... </>) : 'Request code'}

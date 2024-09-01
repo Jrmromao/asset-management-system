@@ -1,5 +1,5 @@
 'use client'
-import React, {useState, useTransition} from 'react'
+import React, {useEffect, useState, useTransition} from 'react'
 import Link from "next/link";
 import Image from "next/image";
 import {Button} from "@/components/ui/button";
@@ -17,33 +17,33 @@ import {Alert, AlertDescription, AlertTitle} from "@/components/ui/alert";
 import {hideEmailAddress} from "@/lib/utils";
 import {toast} from "sonner";
 import {APP_NAME} from "@/constants";
+import useEmailStore from "@/lib/stores/emailStore";
 
 
 const PasswordConfirmForm = () => {
     const [error, setError] = useState<string>('')
     const [isPending, startTransition] = useTransition()
-    const searchParams = useSearchParams()
     const router = useRouter()
-    const email = String(searchParams.get('email'))
+    const [hiddenEmail, setHiddenEmail] = useState('')
+    const { email } = useEmailStore()
 
-    const hiddenEmail = hideEmailAddress(email || '')
-
-
+    useEffect(() => {
+        const localHiddenEmail = hideEmailAddress(String(email))
+        localHiddenEmail ? setHiddenEmail(localHiddenEmail) : router.push('/forgot-password?error=Please%20resubmit%20the%20form')
+    }, []);
 
     const form = useForm<z.infer<typeof forgotPasswordConfirmSchema>>({
         resolver: zodResolver(forgotPasswordConfirmSchema),
         defaultValues: {
             code: '',
-            email: hiddenEmail,
+            email: String(email),
             newPassword: '',
             confirmNewPassword: '',
         },
     });
 
     const handleResend = async () => {
-
-
-        toast.success('Code resent successfully'+email, {
+        toast.success('Code resent successfully', {
             position: 'top-right',
         })
     }
@@ -97,9 +97,9 @@ const PasswordConfirmForm = () => {
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
                         <>
                             <CustomInput control={form.control}  {...form.register("email")}
-                                         label={'Email'}
-                                         placeholder={'Enter your email'} type={'email'}
-                                         disabled={!!email}/>
+                                         label={String()}
+                                         placeholder={'Enter your email'} type={'hidden'}
+                                        />
 
                             <CustomInput control={form.control}  {...form.register("code")}
                                          label={'Verification code'}

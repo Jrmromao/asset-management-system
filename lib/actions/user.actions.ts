@@ -7,7 +7,6 @@ import {
     forgotPasswordConfirmSchema,
     forgotPasswordSchema,
     loginSchema,
-    registerSchema
 } from "@/lib/schemas";
 import {z} from "zod";
 import {DEFAULT_LOGIN_REDIRECT} from "@/routes";
@@ -72,6 +71,8 @@ export const forgetPasswordConfirmDetails = async (values: z.infer<typeof forgot
     const validation = forgotPasswordConfirmSchema.safeParse(values)
     if (!validation.success) return {error: 'Invalid email, password or confirmation code'}
     const {email, newPassword, code} = validation.data
+
+    console.log(validation.data)
 
     const result = await forgetPasswordConfirm(String(email), newPassword, code)
 

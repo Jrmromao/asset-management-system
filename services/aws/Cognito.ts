@@ -76,17 +76,19 @@ export const forgetPasswordRequestCode = async (email: string) => {
 
 export const forgetPasswordConfirm = async (email: string, newPassword: string, confirmationCode: string) => {
     try {
-
-        await getClient().send(new ConfirmForgotPasswordCommand({
+       const resuklt =  await getClient().send(new ConfirmForgotPasswordCommand({
             ClientId: String(process.env.NEXT_PUBLIC_USER_POOL_CLIENT_ID),
             Username: email,
             Password: newPassword,
             ConfirmationCode: confirmationCode
         }))
+
+
+        console.log(resuklt)
         return {success: true};
 
     } catch (error) {
-        return {error:  error ?? 'Invalid email, password or confirmation code'}
+        return {error:'Invalid email, password or confirmation code'}
     }
 }
 

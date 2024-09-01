@@ -26,6 +26,7 @@ const AuthForm = () => {
     const searchParams = useSearchParams()
     const router = useRouter()
     const email = searchParams.get('email')
+    // const hiddenEmail = hideEmailAddress(email || '')
 
 
     const form = useForm<z.infer<typeof accountVerificationSchema>>({
@@ -77,7 +78,7 @@ const AuthForm = () => {
                     <Alert className={'w-full bg-teal-50'}>
                         <AlertTitle className={'mb-3'}>We send you an email</AlertTitle>
                         <AlertDescription className={''}>
-                            Your code is on the way. To log in, enter the code we emailed to {hideEmailAddress(email!)}.
+                            Your code is on the way. To log in, enter the code we emailed to {email}.
                             It may take a minute to arrive.
                         </AlertDescription>
                     </Alert>

@@ -4,6 +4,7 @@ import qs from "query-string";
 import {twMerge} from "tailwind-merge";
 import {z} from "zod";
 import {SignJWT} from "jose";
+import {useRouter} from "next/navigation";
 
 export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -104,20 +105,16 @@ export function formUrlQuery({params, key, value}: UrlQueryParams) {
 }
 
 
-export function hideEmailAddress(email: string): string {
-    if (!email) {
-        throw new Error("utils:hideUsername:: Email is required");
-    }
-    const parts = email.split("@");
-    if (parts.length !== 2) {
-        throw new Error("Invalid email format");
+export function hideEmailAddress(email: string): string | null {
+    if (!email || email.split("@").length !== 2) {
+        return null; // Or return an error message if needed
     }
 
-    const username = parts[0];
+    const [username, domain] = email.split("@");
     const lettersToHide = Math.floor(username.length * 0.8);
     const hiddenUsername = username.slice(0, -lettersToHide) + "*".repeat(lettersToHide);
 
-    return hiddenUsername + "@" + parts[1];
+    return hiddenUsername + "@" + domain;
 }
 
 //
