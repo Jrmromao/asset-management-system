@@ -27,7 +27,7 @@ const ForgotPasswordForm = () => {
     const [isPending, startTransition] = useTransition()
     const router = useRouter()
     const searchParams = useSearchParams()
-    const pathError = String(searchParams.get('error'))
+    const pathError = searchParams.get('error')
 
     const { setEmail } = useEmailStore()
 
@@ -62,7 +62,8 @@ const ForgotPasswordForm = () => {
     useEffect(() => {
         if (pathError) {
             setErrorForm(pathError)
-        }
+        }else
+            setErrorForm('')
     }, []);
 
     return (
