@@ -11,13 +11,14 @@ import {Loader2} from "lucide-react";
 import CustomInput from "@/components/CustomInput";
 import {forgotPasswordConfirmSchema} from "@/lib/schemas";
 import {FormError} from "@/components/forms/form-error";
-import {forgetPasswordConfirmDetails} from "@/lib/actions/user.actions";
+import {forgetPasswordConfirmDetails, resendCode} from "@/lib/actions/user.actions";
 import {useRouter, useSearchParams} from "next/navigation";
 import {Alert, AlertDescription, AlertTitle} from "@/components/ui/alert";
 import {hideEmailAddress} from "@/lib/utils";
 import {toast} from "sonner";
 import {APP_NAME} from "@/constants";
 import useEmailStore from "@/lib/stores/emailStore";
+import {revalidatePath} from "next/cache";
 
 
 const PasswordConfirmForm = () => {
@@ -43,8 +44,12 @@ const PasswordConfirmForm = () => {
     });
 
     const handleResend = async () => {
-        toast.success('Code resent successfully', {
-            position: 'top-right',
+        await resendCode(email!).then(_ => {
+            toast.success('Code resent successfully', {
+                position: 'top-right',
+            })
+        }).catch(error => {
+            revalidatePath('/forgot-password')
         })
     }
 
@@ -127,7 +132,7 @@ const PasswordConfirmForm = () => {
                     </form>
                 </Form>
                 <Button className={'bg-auto bg-gray-100'} disabled={isPending} onClick={handleResend}>
-                    {isPending ? (<><Loader2 size={20} className={'animate-spin'}/>&nbsp; Loading... </>) : 'Resend'}
+                    {isPending ? (<><Loader2 size={20} className={'animate-spin'}/>&nbsp; Loading... </>) : 'Resend code'}
                 </Button>
             </>
 

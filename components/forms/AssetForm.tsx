@@ -1,5 +1,5 @@
 'use client'
-import React, {useEffect, useState} from 'react'
+import React, {useEffect, useMemo, useState} from 'react'
 import {z} from "zod"
 import {zodResolver} from "@hookform/resolvers/zod"
 import {useForm} from "react-hook-form"
@@ -19,6 +19,8 @@ import StatusLabelForm from "@/components/forms/StatusLabelForm";
 import {useRouter} from "next/navigation";
 import {toast} from "sonner";
 import {revalidatePath} from "next/cache";
+import {licenseColumns} from "@/components/tables/LicensesColumns";
+import {sleep} from "@/lib/utils";
 
 
 interface AssetFormProps {
@@ -44,9 +46,8 @@ const AssetForm = ({asset, isUpdate = false}: AssetFormProps) => {
     }
     const navigate = useRouter()
     const [isLoading, setIsLoading] = useState(false)
-    const [openDialog, closeDialog, isOpen] = useDialogStore(state => [state.onOpen, state.onClose, state.isOpen])
-    const [createAsset, updateAsset] = useAssetStore((state) => [state.create, state.update]);
-    const [categories, fetchAll] = useCategoryStore((state) => [state.categories, state.getAll]);
+    const [createAsset, updateAsset] = useAssetStore((state) => [state.create, state.update, ]);
+    const [categories, fetchAll, openDialog, closeDialog, isOpen] = useCategoryStore((state) => [state.categories, state.getAll, state.onOpen, state.onClose, state.isOpen]);
     const [statusLabels, fetchAllStatusLabels, closeSL, openSL, isOpenSL] = useStatusLabelStore((state) => [state.statusLabels, state.getAll, state.onClose, state.onOpen, state.isOpen]);
 
 
@@ -64,7 +65,7 @@ const AssetForm = ({asset, isUpdate = false}: AssetFormProps) => {
         closeDialog()
         fetchAll()
         fetchAllStatusLabels()
-    }, [asset]);
+    }, [ ]);
 
     const schema = z.object({
 
@@ -111,10 +112,17 @@ const AssetForm = ({asset, isUpdate = false}: AssetFormProps) => {
                     toast.success('Asset updated successfully', {
                         position: 'top-right',
                     })
+                    sleep(1000)
                     navigate.back()
                 })
             } else {
                 createAsset(assetData)
+
+                toast.success('Asset created successfully', {
+                        position: 'top-right',
+                    })
+                navigate.back()
+
             }
             form.reset(INITIAL_VALUES)
         } catch (e) {

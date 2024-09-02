@@ -1,9 +1,11 @@
 'use server';
 import {parseStringify} from "@/lib/utils";
 import {prisma} from "@/app/db";
+import {auth} from "@/auth";
 
 export const insert = async (data: StatusLabel) => {
     try {
+        const session = await auth()
         await prisma.statusLable.create({
             data: {
                 name: data.name,
@@ -13,7 +15,7 @@ export const insert = async (data: StatusLabel) => {
                 description: data.description,
                 Company: {
                     connect: {
-                        id: '0c82b08e-2391-4819-8ba7-1af8e5721c74'
+                        id: session?.user?.companyId
                     },
                 },
             },

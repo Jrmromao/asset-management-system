@@ -89,6 +89,7 @@ interface UrlQueryParams {
     key: string;
     value: string;
 }
+export const sleep = (ms = 1000) => new Promise(resolve => setTimeout(resolve, ms));
 
 export function formUrlQuery({params, key, value}: UrlQueryParams) {
     const currentUrl = qs.parse(params);

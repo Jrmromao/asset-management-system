@@ -1,14 +1,17 @@
 import {create} from "zustand"
 import {persist} from "zustand/middleware";
 import produce from 'immer';
-import {createCategory, getCategories, remove} from '@/lib/actions/category.actions';
+import {insert, getCategories, remove} from '@/lib/actions/category.actions';
 
 interface ICategoryStore {
     categories: Category[];
     loading: boolean;
-    create: (category: Category) => void;
+    createCat: (category: Category) => Promise<Category>;
     delete: (id: string) => void;
     getAll: () => void;
+    isOpen: boolean;
+    onOpen: () => void;
+    onClose: () => void;
 }
 
 
@@ -27,9 +30,10 @@ export const useCategoryStore = create(persist<ICategoryStore>(
                 set({loading: false});
             });
         },
-        create: async (category: Category) => {
+        createCat: async (category: Category) => {
             try {
-                await createCategory(category);
+
+                await insert(category);
                 set(
                     produce((state) => {
                         state.assets.push(category);
@@ -52,6 +56,12 @@ export const useCategoryStore = create(persist<ICategoryStore>(
 
                 })
             );
+        },
+        isOpen: false,
+        onOpen: () => set({isOpen: true}),
+        onClose: () => {
+            console.log("closed")
+            set({isOpen: false})
         },
 
     }), {name: 'category_store',}));

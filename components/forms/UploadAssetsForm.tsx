@@ -7,7 +7,7 @@ import {Button} from "@/components/ui/button"
 import {Form} from "@/components/ui/form"
 import {Loader2} from "lucide-react";
 import CustomInput from "@/components/CustomInput";
-import {createCategory} from "@/lib/actions/category.actions";
+import {creatw} from "@/lib/actions/category.actions";
 import {useDialogStore} from "@/lib/stores/store";
 import {useCategoryStore} from "@/lib/stores/categoryStore";
 import Dropzone from "@/components/Dropzone";
@@ -31,7 +31,7 @@ const UploadAssetsForm = () => {
             const categoryData = {
                 name: data.name || '',
             }
-            await createCategory(categoryData).then(_ => {
+            await creatw(categoryData).then(_ => {
                 form.reset()
                 fetchAll()
                 closeDialog()

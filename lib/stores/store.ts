@@ -30,5 +30,5 @@ export const licenseStore = create<LicenseAction>()(persist(set => ({
     updateRefresh: (flag: boolean) => set({shouldRefresh: flag}),
     licenses: [],
     setLicenses: (licenses: License[]) => set({licenses: licenses}),
-    }), {name: "dialog_store"})
+    }), {name: "license_store"})
 )

@@ -7,15 +7,17 @@ import {Button} from "@/components/ui/button"
 import {Form} from "@/components/ui/form"
 import {Loader2} from "lucide-react";
 import CustomInput from "@/components/CustomInput";
-import {createCategory} from "@/lib/actions/category.actions";
 import {useDialogStore} from "@/lib/stores/store";
 import {useCategoryStore} from "@/lib/stores/categoryStore";
 import {categorySchema} from "@/lib/schemas";
+import {sleep} from "@/lib/utils";
+import {toast} from "sonner";
+
 
 const CategoryForm = ({setRefresh}: { setRefresh: (flag: boolean) => void }) => {
     const [isLoading, setIsLoading] = useState(false)
-    const [closeDialog] = useDialogStore(state => [ state.onClose, state.onClose])
-    const [ fetchAll] = useCategoryStore((state) => [state.getAll]);
+
+    const [ fetchAll, createCat, closeDialog] = useCategoryStore((state) => [state.getAll, state.createCat, state.onClose]);
 
     const onSubmit = async (data: z.infer<typeof categorySchema>) => {
         setIsLoading(true)
@@ -23,15 +25,18 @@ const CategoryForm = ({setRefresh}: { setRefresh: (flag: boolean) => void }) => 
             const categoryData = {
                 name: data.name || '',
             }
-            await createCategory(categoryData).then(_ => {
+            await createCat(categoryData)
+            await sleep()
+        } catch (e) {
+            console.error(e)
+        } finally {
+            await sleep().then(_ => {
+                toast.success('Category created successfully')
                 setRefresh(true)
                 form.reset()
                 fetchAll()
                 closeDialog()
             })
-        } catch (e) {
-            console.error(e)
-        } finally {
             setIsLoading(false)
         }
 

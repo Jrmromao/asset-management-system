@@ -12,6 +12,7 @@ import {useStatusLabelStore} from "@/lib/stores/statusLabelStore";
 import CustomColorPicker from "@/components/CustomColorPicker";
 import CustomSwitch from "@/components/CustomSwitch";
 import {statusLabelSchema} from "@/lib/schemas";
+import {sleep} from "@/lib/utils";
 
 const CategoryForm = ({setRefresh}: { setRefresh: (flag: boolean) => void }) => {
     const [isLoading, setIsLoading] = useState(false)
@@ -33,8 +34,10 @@ const CategoryForm = ({setRefresh}: { setRefresh: (flag: boolean) => void }) => 
             console.error(e)
 
         } finally {
-            closeDialog()
-            setIsLoading(false)
+           await sleep(2000).then(_ =>{
+               closeDialog()
+               setIsLoading(false)
+           })
         }
 
     }

@@ -9,14 +9,10 @@ import {Form,} from "@/components/ui/form"
 import {zodResolver} from "@hookform/resolvers/zod";
 import {z} from "zod";
 import {Loader2} from "lucide-react";
-import CustomButton from "@/components/CustomButton";
-import {FaGithub, FaGoogle} from "react-icons/fa";
 import CustomInput from "@/components/CustomInput";
-import {forgotPasswordSchema, loginSchema} from "@/lib/schemas";
+import {forgotPasswordSchema} from "@/lib/schemas";
 import {FormError} from "@/components/forms/form-error";
-import {forgotPassword, login} from "@/lib/actions/user.actions";
-import {signIn} from "next-auth/react";
-import {DEFAULT_LOGIN_REDIRECT} from "@/routes";
+import {forgotPassword} from "@/lib/actions/user.actions";
 import {Alert, AlertDescription, AlertTitle} from "@/components/ui/alert";
 import {APP_NAME} from "@/constants";
 import useEmailStore from "@/lib/stores/emailStore";

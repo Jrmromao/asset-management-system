@@ -33,6 +33,13 @@ declare type User = {
     company?: Company;
 };
 
+
+declare type  APICallResponse = {
+    success: boolean;
+    message: string;
+}
+
+
 declare type RegUser = {
     email: string;
     password: string,
@@ -99,7 +106,7 @@ declare type Asset = {
 declare type Category = {
     id?: string;
     name: string;
-    note: string;
+    note?: string;
     createdAt?: Date;
     updatedAt?: Date;
 };

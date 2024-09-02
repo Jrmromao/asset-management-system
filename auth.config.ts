@@ -23,7 +23,6 @@ export default {
                 const user = await findByEmail(email)
                 if(!user) return null
 
-
                 return {
                     ...user
                 }

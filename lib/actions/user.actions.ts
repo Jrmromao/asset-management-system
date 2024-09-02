@@ -46,11 +46,11 @@ export const resendCode = async (email: string) => {
 
         if (!user) return {error: 'Your account does not exist'}
 
-        const result = await forgetPasswordRequestCode(email)
-
-        return {success: true};
+        return await forgetPasswordRequestCode(email)
     } catch (error) {
-        return {error: 'Invalid email or password'};
+        console.log('Caught error in USER.acyion: ',error)
+
+        // return {success: false, message: 'Invalid email or password'};
     }
 }
 export const forgotPassword = async (values: z.infer<typeof forgotPasswordSchema>) => {

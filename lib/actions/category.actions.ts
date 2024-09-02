@@ -4,12 +4,15 @@ import {parseStringify} from "@/lib/utils";
 import {auth} from "@/auth";
 
 
-export const createCategory = async (categoryData: { name: string }) => {
+export const insert = async (categoryData: { name: string }) => {
     try {
+        console.log(categoryData)
         const session = await auth()
         const category = await prisma.category.create({
             data: {
-                name: 'IT Support',
+                name: categoryData.name,
+                createdAt: new Date(),
+                updatedAt: new Date(),
                 company: {
                     connect: {
                         id: session?.user?.companyId
@@ -18,8 +21,8 @@ export const createCategory = async (categoryData: { name: string }) => {
             },
         }).then(result => console.log(result))
             .catch(error => console.log(error))
-
-        return parseStringify(category);
+        console.log(category)
+        // return parseStringify(category);
     } catch (error) {
         console.log(error)
     }
@@ -30,7 +33,7 @@ export const getCategories = async () => {
         const session = await auth()
         const categories = await prisma.category.findMany({
             orderBy: {
-                name: 'asc'
+                name: 'desc'
             },
             where: {
                 companyId: session?.user?.companyId

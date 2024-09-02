@@ -27,6 +27,7 @@ export const findById = async (id: string) => {
             },
             include: {
                 role: true,
+                company: true
             }
         });
         return parseStringify(licenseTool);
