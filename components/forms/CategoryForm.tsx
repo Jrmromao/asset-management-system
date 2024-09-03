@@ -7,14 +7,13 @@ import {Button} from "@/components/ui/button"
 import {Form} from "@/components/ui/form"
 import {Loader2} from "lucide-react";
 import CustomInput from "@/components/CustomInput";
-import {useDialogStore} from "@/lib/stores/store";
 import {useCategoryStore} from "@/lib/stores/categoryStore";
 import {categorySchema} from "@/lib/schemas";
 import {sleep} from "@/lib/utils";
 import {toast} from "sonner";
 
 
-const CategoryForm = ({setRefresh}: { setRefresh: (flag: boolean) => void }) => {
+const CategoryForm = () => {
     const [isLoading, setIsLoading] = useState(false)
 
     const [ fetchAll, createCat, closeDialog] = useCategoryStore((state) => [state.getAll, state.createCat, state.onClose]);
@@ -32,7 +31,6 @@ const CategoryForm = ({setRefresh}: { setRefresh: (flag: boolean) => void }) => 
         } finally {
             await sleep().then(_ => {
                 toast.success('Category created successfully')
-                setRefresh(true)
                 form.reset()
                 fetchAll()
                 closeDialog()

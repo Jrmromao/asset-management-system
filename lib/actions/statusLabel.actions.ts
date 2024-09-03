@@ -9,7 +9,7 @@ export const insert = async (data: StatusLabel) => {
         await prisma.statusLable.create({
             data: {
                 name: data.name,
-                colorCode: data.colorCode,
+                colorCode: data.colorCode || '#000000',
                 isArchived: data.isArchived,
                 allowLoan: data.allowLoan,
                 description: data.description,
@@ -28,9 +28,13 @@ export const insert = async (data: StatusLabel) => {
 }
 export const getAll = async () => {
     try {
+        const session = await auth()
         const labels = await prisma.statusLable.findMany({
             orderBy: {
                 createdAt: 'desc'
+            },
+            where: {
+                companyId: session?.user?.companyId
             }
         });
         return parseStringify(labels);

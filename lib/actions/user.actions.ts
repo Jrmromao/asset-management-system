@@ -178,6 +178,8 @@ export const insert = async (userData: User) => {
 }
 export const getAll = async () => {
     try {
+
+        const session = await auth()
         const users = await prisma.user.findMany({
             include: {
                 role: true,
@@ -185,6 +187,9 @@ export const getAll = async () => {
             },
             orderBy: {
                 createdAt: 'desc'
+            },
+            where: {
+                companyId: session?.user?.companyId
             }
         });
 

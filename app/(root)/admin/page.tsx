@@ -238,7 +238,7 @@ const Admin = () => {
                                                 </CardDescription>
                                             </CardHeader>
                                             <CardContent>
-                                                <CategoryForm setRefresh={setRefresh}/>
+                                                <CategoryForm />
                                             </CardContent>
                                             <CardFooter>
                                             </CardFooter>
@@ -316,7 +316,7 @@ const Admin = () => {
                                                 </CardDescription>
                                             </CardHeader>
                                             <CardContent>
-                                                <CategoryForm setRefresh={setRefresh}/>
+                                                <CategoryForm/>
                                             </CardContent>
                                             <CardFooter>
                                             </CardFooter>

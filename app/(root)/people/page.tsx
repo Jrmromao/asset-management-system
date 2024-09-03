@@ -7,16 +7,16 @@ import {useUserStore} from "@/lib/stores/userStore";
 import {DialogContainer} from "@/components/dialogs/DialogContainer";
 import UserForm from "@/components/forms/UserForm";
 import UserTable from "@/components/tables/UserTable";
-
-
+import {useRoleStore} from "@/lib/stores/roleStore";
 
 const People = () => {
     const [openDialog, closeDialog, isOpen] = useDialogStore(state => [state.onOpen, state.onClose, state.isOpen])
     const [users, findById] = useUserStore(state => [state.users, state.findById])
+    const [fetchRoles] = useRoleStore(state => [state.getAll])
 useEffect(()=>{
     useUserStore.getState().getAll()
+    fetchRoles()
 },[])
-
     return (
         <div className="assets">
             <div className="transactions-header">
@@ -25,7 +25,6 @@ useEffect(()=>{
                     subtext="Manage asset assignees."
                 />
             </div>
-
             <DialogContainer open={isOpen} onOpenChange={closeDialog} title={'New User'}
                              description={'Register a new user for your organization.'}
                              form={<UserForm/>}

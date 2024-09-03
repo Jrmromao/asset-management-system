@@ -116,8 +116,9 @@ const AssetForm = ({asset, isUpdate = false}: AssetFormProps) => {
                     navigate.back()
                 })
             } else {
-                createAsset(assetData)
 
+                createAsset(assetData)
+                await sleep(1000)
                 toast.success('Asset created successfully', {
                         position: 'top-right',
                     })
@@ -134,15 +135,8 @@ const AssetForm = ({asset, isUpdate = false}: AssetFormProps) => {
 
     return (
         <section className="w-full bg-white z-50 max-h-[700px] overflow-y-auto p-4">
-            <DialogContainer open={isOpen} onOpenChange={closeDialog} title={'New Category'}
-                             description={'Add a new Category'}
-                             form={<CategoryForm setRefresh={() => {
-                             }}/>}/>
-
-            <DialogContainer open={isOpenSL} onOpenChange={closeSL} title={'New Status Label'}
-                             description={'Add a new Status Label'}
-                             form={<StatusLabelForm setRefresh={() => {
-                             }}/>}/>
+            <DialogContainer open={isOpen} onOpenChange={closeDialog} title={'New Category'}     description={'Add a new Category'} form={<CategoryForm />}/>
+            <DialogContainer open={isOpenSL} onOpenChange={closeSL} title={'New Status Label'} description={'Add a new Status Label'} form={<StatusLabelForm />}/>
 
 
             <Form {...form}>
@@ -168,10 +162,7 @@ const AssetForm = ({asset, isUpdate = false}: AssetFormProps) => {
                                 />
                             </div>
                             <div className="flex-none w-3/12 mt-6 ml-8">
-                                <Button type={'button'} variant={'secondary'}
-                                        className={'form-secondary-btn md:w-auto'}
-                                        onClick={openDialog}>Add
-                                    Category</Button>
+                                <Button type={'button'} variant={'secondary'} className={'form-secondary-btn md:w-auto'} onClick={openDialog}>Add Category</Button>
                             </div>
                         </div>
 
@@ -206,9 +197,7 @@ const AssetForm = ({asset, isUpdate = false}: AssetFormProps) => {
                                 />
                             </div>
                             <div className="flex-none w-3/12 mt-6 ml-8">
-                                <Button type={'button'} variant={'secondary'}
-                                        className={'form-secondary-btn md:w-auto'}
-                                        onClick={(() => openSL())}>Add Status Label</Button>
+                                <Button type={'button'} variant={'secondary'}  className={'form-secondary-btn md:w-auto'} onClick={openSL}>Add Status Label</Button>
                             </div>
                         </div>
 

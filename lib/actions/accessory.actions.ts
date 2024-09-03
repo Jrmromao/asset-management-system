@@ -2,10 +2,12 @@
 
 import {prisma} from "@/app/db";
 import {parseStringify} from "@/lib/utils";
+import {auth} from "@/auth";
 
 
 export const create = async (data: Accessory) => {
     try {
+        const session = await auth()
         await prisma.accessory.create({
                 data: {
                     title: data.title,
@@ -17,7 +19,7 @@ export const create = async (data: Accessory) => {
                     totalQuantityCount: data.totalQuantityCount,
                     company: {
                         connect: {
-                            id: '0c82b08e-2391-4819-8ba7-1af8e5721c74'//data.companyId
+                            id:  session?.user.companyId
                         }
                     },
                     category: {

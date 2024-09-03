@@ -15,6 +15,8 @@ import CustomSelect from "@/components/CustomSelect";
 import {Alert, AlertDescription, AlertTitle} from "@/components/ui/alert";
 import {useDialogStore} from "@/lib/stores/store";
 import {personSchema} from "@/lib/schemas";
+import {toast} from "sonner";
+import {sleep} from "@/lib/utils";
 
 const UserForm = () => {
 
@@ -38,11 +40,9 @@ const UserForm = () => {
         defaultValues: INITIAL_VALUES
     })
 
-
     useEffect(() => {
         fetchRoles()
     }, []);
-
 
     const onSubmit = async (data: z.infer<typeof personSchema>) => {
 
@@ -60,9 +60,11 @@ const UserForm = () => {
                 companyId: data.companyId || '',
             }
             create(userData)
-            form.reset()
-            onClose()
-
+            await sleep().then(_ => {
+                onClose()
+                form.reset()
+                toast.success('User created successfully')
+            })
         } catch (e) {
             console.error(e)
         } finally {
@@ -131,7 +133,7 @@ const UserForm = () => {
                     <div className={'flex flex-col md:flex-row gap-4 pt-5'}>
                         <div className={'flex-1'}>
                             <CustomSelect
-                                value={[]}
+                                value={form.watch('roleId')}
                                 control={form.control}
                                 {...form.register("roleId")} label={'Role'}
                                 placeholder={'Select Role'}

@@ -9,6 +9,8 @@ export const create = async (data: Asset) => {
     try {
         const session = await auth()
 
+
+        console.log(data)
         await prisma.asset.create({
             data: {
                 name: data.name,

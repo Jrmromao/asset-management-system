@@ -11,6 +11,9 @@ interface IUserStore {
     findById: (id: string) => User | null;
     delete: (id: string) => void;
     getAll: () => void;
+    isOpen: boolean;
+    onOpen: () => void;
+    onClose: () => void;
 }
 
 
@@ -72,5 +75,8 @@ export const useUserStore = create(persist<IUserStore>(
             if (!user) return null
             return user;
         },
+        isOpen: false,
+        onOpen: () => set({isOpen: true}),
+        onClose: () => set({isOpen: false}),
 
     }), {name: 'user_store',}));

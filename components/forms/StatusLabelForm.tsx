@@ -7,21 +7,20 @@ import {Button} from "@/components/ui/button"
 import {Form} from "@/components/ui/form"
 import {Loader2} from "lucide-react";
 import CustomInput from "@/components/CustomInput";
-import {useDialogStore} from "@/lib/stores/store";
 import {useStatusLabelStore} from "@/lib/stores/statusLabelStore";
 import CustomColorPicker from "@/components/CustomColorPicker";
 import CustomSwitch from "@/components/CustomSwitch";
 import {statusLabelSchema} from "@/lib/schemas";
 import {sleep} from "@/lib/utils";
+import {toast} from "sonner";
 
-const CategoryForm = ({setRefresh}: { setRefresh: (flag: boolean) => void }) => {
+const CategoryForm = () => {
     const [isLoading, setIsLoading] = useState(false)
-    const [closeDialog, createStatusLabel] = useStatusLabelStore(state => [state.onClose, state.create])
+    const [closeDialog, createStatusLabel, fetchAll] = useStatusLabelStore(state => [state.onClose, state.create, state.getAll])
 
     const onSubmit = async (data: z.infer<typeof statusLabelSchema>) => {
         setIsLoading(true)
         try {
-
             createStatusLabel({
                 name: data.name,
                 colorCode: data.colorCode!,
@@ -32,12 +31,15 @@ const CategoryForm = ({setRefresh}: { setRefresh: (flag: boolean) => void }) => 
 
         } catch (e) {
             console.error(e)
-
         } finally {
-           await sleep(2000).then(_ =>{
-               closeDialog()
-               setIsLoading(false)
-           })
+            await sleep(2000).then(_ => {
+                toast.success('Status Label created successfully')
+                closeDialog()
+                setIsLoading(false)
+                fetchAll()
+                closeDialog()
+
+            })
         }
 
     }
