@@ -6,13 +6,29 @@ import {
     accountVerificationSchema,
     forgotPasswordConfirmSchema,
     forgotPasswordSchema,
-    loginSchema,
+    loginSchema, waitlistSchema,
 } from "@/lib/schemas";
 import {z} from "zod";
 import {DEFAULT_LOGIN_REDIRECT} from "@/routes";
 import {AuthError} from "next-auth";
 import {auth, signIn} from "@/auth";
 
+export const waitlist = async (values: z.infer<typeof waitlistSchema>) => {
+    const validation = waitlistSchema.safeParse(values)
+    if (!validation.success) return {error: 'Invalid email '}
+    const {email} = validation.data
+    try {
+
+          await prisma.waitlist.create({
+            data: {
+                email: email
+            }
+        })
+
+    } catch (error) {
+        throw error;
+    }
+}
 export const login = async (values: z.infer<typeof loginSchema>) => {
     const validation = loginSchema.safeParse(values)
     if (!validation.success) return {error: 'Invalid email or password'}
@@ -35,7 +51,6 @@ export const login = async (values: z.infer<typeof loginSchema>) => {
         throw error;
     }
 }
-
 export const resendCode = async (email: string) => {
     try {
         const isValid = validateEmail(email)

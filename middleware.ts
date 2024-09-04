@@ -41,7 +41,7 @@ export default auth(async (req) => {
     }
 
     if (!isLoggedIn && !isPublicRoute) {
-        return Response.redirect(new URL('/sign-in', nextUrl))
+                return Response.redirect(new URL('/waitlist', nextUrl))
     }
     return
 })

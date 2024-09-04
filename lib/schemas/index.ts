@@ -63,6 +63,13 @@ export const licenseSchema = z.object({
         message: "Renewal date must in the future",
         path: ["renewalDate"],
     })
+export const waitlistSchema = z.object({
+    email: z
+        .string()
+        .min(1, "Email is required")
+        .email("Invalid email")
+
+});
 
 
 export const categorySchema = z.object({

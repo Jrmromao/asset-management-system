@@ -12,20 +12,6 @@ const Home = ({searchParams}: SearchParamProps) => {
             <div className=" flex flex-col flex-grow">
                 <header className="home-header">
 
-                    {session?.user?.name && <HeaderBox
-                      type="greeting"
-                      title="Welcome"
-                      user={String(session?.user?.name)}
-                      subtext="Select an option to continue"
-                    />}
-
-
-                    <p> - register Accessories</p>
-                    <p> - assign assets to people</p>
-                    <p> - assign consumables to people??</p>
-                    <p> - assign licenses to people</p>
-                    <p> - create kits</p>
-
                 </header>
             </div>
         </section>
