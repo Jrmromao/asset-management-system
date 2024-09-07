@@ -3,14 +3,13 @@
 import {prisma} from "@/app/db";
 import {parseStringify} from "@/lib/utils";
 import {auth} from "@/auth";
+import {z} from "zod";
+import {assetAssignSchema, loginSchema} from "@/lib/schemas";
 
 
 export const create = async (data: Asset) => {
     try {
         const session = await auth()
-
-
-        console.log(data)
         await prisma.asset.create({
             data: {
                 name: data.name,
@@ -69,13 +68,15 @@ export const findById = async (id: string) => {
             include: {
                 category: true,
                 license: true,
-                statusLabel: true
+                statusLabel: true,
+                assignee: true,
             },
             where: {
                 id: id
-            }
+            },
         });
 
+        console.log(asset)
         return parseStringify(asset);
     } catch (error) {
         console.log(error)
@@ -117,6 +118,37 @@ export const update = async (asset: Asset, id: string) => {
     }
 }
 
+export const assign = async (values: z.infer<typeof assetAssignSchema>) => {
+    try {
+        const validation = assetAssignSchema.safeParse(values)
+        if(!validation.success) return {error: 'Invalid email or password'}
+        const {assetId, userId} = values
 
 
+        console.log('validation.data: ',validation.data)
 
+        const updatedAsset = await prisma.asset.update({
+            where: { id: assetId },
+            data: {
+                assigneeId: userId,
+            },
+        });
+        return parseStringify(updatedAsset);
+    } catch (error) {
+        console.log(error)
+    }
+}
+
+export const unassign = async (assetId: string) => {
+    try {
+        const updatedAsset = await prisma.asset.update({
+            where: { id: assetId },
+            data: {
+                assigneeId: null,
+            },
+        });
+        return parseStringify(updatedAsset);
+    } catch (error) {
+        console.log(error)
+    }
+}

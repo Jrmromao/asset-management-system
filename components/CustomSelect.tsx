@@ -9,11 +9,12 @@ interface CustomInputProps {
     label: string,
     placeholder: string,
     value: any,
-    data: Category[] | License[] | StatusLabel[]
+    disabled?: boolean,
+    data: Category[] | License[] | StatusLabel[] | User[]
 }
 
 
-const CustomSelect = ({control, name, label, placeholder, data, value}: CustomInputProps) => {
+const CustomSelect = ({control, name, label, placeholder, data, value, disabled}: CustomInputProps) => {
     return (
         <FormField
             control={control}
@@ -25,7 +26,7 @@ const CustomSelect = ({control, name, label, placeholder, data, value}: CustomIn
                     </FormLabel>
                     <div className={'flex w-full flex-col'}>
                         <FormControl>
-                            <Select onValueChange={field.onChange} value={value}>
+                            <Select onValueChange={field.onChange} value={value} disabled={disabled}>
                                 <SelectTrigger className="w-full input-class text-gray-100">
                                     <div className={`${field.value ? '' : 'text-gray-600'}`}>
                                         <SelectValue placeholder={placeholder}/>
@@ -34,7 +35,7 @@ const CustomSelect = ({control, name, label, placeholder, data, value}: CustomIn
                                 <SelectContent className="w-full bg-white">
                                     <SelectGroup>
                                         {data?.map((option) => (
-                                            <SelectItem  key={option.id} value={option.name!}>
+                                            <SelectItem  key={option.id} value={option.id!}>
                                                 {option.name}
                                             </SelectItem>
                                         ))}

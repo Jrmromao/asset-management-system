@@ -112,7 +112,7 @@ const AssetForm = ({asset, isUpdate = false}: AssetFormProps) => {
                     toast.success('Asset updated successfully', {
                         position: 'top-right',
                     })
-                    sleep(1000)
+                    sleep(2000)
                     navigate.back()
                 })
             } else {
@@ -153,7 +153,8 @@ const AssetForm = ({asset, isUpdate = false}: AssetFormProps) => {
 
                         <div className={'flex '}>
                             <div className="flex-none w-9/12">
-                                <CustomSelect control={form.control}   {...form.register("category")}
+                                <CustomSelect control={form.control}
+                                              {...form.register("category")}
                                               label={'Category'}
                                               data={categories}
                                               placeholder={'eg. IT Equipment'}

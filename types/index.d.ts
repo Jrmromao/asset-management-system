@@ -21,6 +21,7 @@ declare type User = {
     id?: string;
     oauthId?: string;
     email: string;
+    name: string;
     firstName: string;
     lastName: string;
     title: string;
@@ -95,6 +96,7 @@ declare type Asset = {
     licenceUrl?: string;
     license?: License;
     serialNumber: string;
+    companyId: string;
     createdAt?: Date;
     updatedAt?: Date;
     category?: Category;

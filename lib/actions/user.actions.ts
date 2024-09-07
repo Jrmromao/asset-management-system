@@ -35,7 +35,6 @@ export const login = async (values: z.infer<typeof loginSchema>) => {
         throw error;
     }
 }
-
 export const resendCode = async (email: string) => {
     try {
         const isValid = validateEmail(email)

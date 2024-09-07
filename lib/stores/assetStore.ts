@@ -1,7 +1,7 @@
 import {create} from "zustand"
 import {persist} from "zustand/middleware";
 import produce from 'immer';
-import {get as fetch, create as insert, remove, update} from '@/lib/actions/assets.actions';
+import {get as fetch, create as insert, remove, update, unassign} from '@/lib/actions/assets.actions';
 
 
 interface IAssetStore {
@@ -12,6 +12,11 @@ interface IAssetStore {
     delete: (id: string) => Promise<void>;
     findById: (id: string) => Promise<Asset | null>;
     getAll: () => void;
+    isAssignOpen: boolean;
+    onAssignOpen: () => void;
+    onAssignClose: () => void;
+    unassign: (assetId: string) => Promise<void>;
+    assign: (assetId: string, userId: string) => void;
 }
 
 
@@ -19,7 +24,7 @@ export const useAssetStore = create(persist<IAssetStore>(
     (set, get) => ({
         assets: [],
         loading: false,
-
+        isAssignOpen: false,
         getAll: async () => {
             set({loading: true});
             fetch().then(assets => {
@@ -30,7 +35,6 @@ export const useAssetStore = create(persist<IAssetStore>(
                 set({loading: false});
             });
         },
-
         create: async (asset: Asset) => {
             try {
                 await insert(asset);
@@ -45,7 +49,6 @@ export const useAssetStore = create(persist<IAssetStore>(
                 throw error;
             }
         },
-
         update: async (id: string, updatedAsset: Asset) => {
             try {
                 set(
@@ -65,7 +68,6 @@ export const useAssetStore = create(persist<IAssetStore>(
                 throw error
             }
         },
-
         delete: async (id: string) => {
             set(
                 produce((state) => {
@@ -80,7 +82,6 @@ export const useAssetStore = create(persist<IAssetStore>(
                 })
             );
         },
-
         findById: async (id: string) => {
             const existingAsset = get().assets.find(asset => asset.id === id);
             if (existingAsset) return existingAsset;
@@ -88,10 +89,7 @@ export const useAssetStore = create(persist<IAssetStore>(
             if (!get().loading) {
                 set({loading: true});
                 try {
-                    const fetchedAssets = await fetch();
-                    set({assets: fetchedAssets, loading: false});
-
-                    return fetchedAssets.find((asset: Asset) => asset.id === id) || null;
+                    return get().assets.find((asset: Asset) => asset.id === id) || null;
                 } catch (error) {
                     set({loading: false});
                     console.error("Error fetching assets:", error);
@@ -102,5 +100,25 @@ export const useAssetStore = create(persist<IAssetStore>(
                 return get().findById(id);
             }
         },
+        onAssignOpen: () => set({isAssignOpen: true}),
+        onAssignClose: () => set({isAssignOpen: false}),
+        unassign: async (assetId: string) => {
+            await unassign(assetId)
+        },
+        assign: (assetId: string, userId: string) => {
+            set(
+                produce((state) => {
+                    // Find the index of the asset to update
+                    const assetIndex = state.assets.findIndex((asset: Asset) => asset.id === assetId);
 
+                    if (assetIndex !== -1) {
+                        // Update the assigneeId directly
+                        state.assets[assetIndex].assigneeId = userId;
+                    } else {
+                        console.error("Asset not found!");
+                        // Optionally, you can throw an error or handle it in a more user-friendly way
+                    }
+                })
+            );
+        },
     }), {name: 'asset_store',}));

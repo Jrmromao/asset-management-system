@@ -21,7 +21,6 @@ export const AssetSchema = z.object({
         path: ["minQuantityAlert"],
     })
 
-
 export const licenseSchema = z.object({
 
     licenseName: z.string({
@@ -64,7 +63,6 @@ export const licenseSchema = z.object({
         path: ["renewalDate"],
     })
 
-
 export const categorySchema = z.object({
     name: z
         .string()
@@ -85,11 +83,7 @@ export const accountVerificationSchema =  z.object({
     code: z.string({required_error: "Verification Code is required"})
 });
 
-
-
-
-const passwordSchema = z.string().refine(
-    (value) => /^(?=.*\d)(?=.*[!@#$%^&*])(?=.*[A-Z])(?=.*[a-z]).{8,}$/.test(value),
+const passwordSchema = z.string().refine( (value) => /^(?=.*\d)(?=.*[!@#$%^&*])(?=.*[A-Z])(?=.*[a-z]).{8,}$/.test(value),
     {
         message: "Password must contain at least one number, one special character, one uppercase letter, one lowercase letter, and be at least 8 characters long.",
     }
@@ -135,7 +129,6 @@ export const statusLabelSchema = z.object({
 
 
 export  const personSchema = z.object({
-
     id: z.string().optional(),
     firstName: z.string().min(1, "First name is required"),
     lastName: z.string().min(1, "Last name is required"),
@@ -144,4 +137,10 @@ export  const personSchema = z.object({
     companyId: z.string().optional(),
     title: z.string().min(1, "Title is required"),
     employeeId: z.string().min(1, "Employee Id is required"),
+})
+
+
+export  const assetAssignSchema = z.object({
+    assetId: z.string().optional(),
+    userId: z.string().min(1, "User is required"),
 })
