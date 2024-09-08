@@ -103,7 +103,6 @@ const AssetForm = ({id, isUpdate = false}: AssetFormProps) => {
         defaultValues: INITIAL_VALUES
     })
 
-
     const onSubmit = async (data: z.infer<typeof schema>) => {
         setIsLoading(true)
         try {

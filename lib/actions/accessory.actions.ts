@@ -22,11 +22,6 @@ export const create = async (data: Accessory) => {
                             id:  session?.user.companyId
                         }
                     },
-                    category: {
-                        connect: {
-                            id: 'a3c25ff4-7af1-4c7b-92d8-de57351b6f8e'//data.categoryId
-                        },
-                    },
                 },
             }
         );
@@ -40,7 +35,6 @@ export const get = async () => {
     try {
         const assets = await prisma.accessory.findMany({
             include: {
-                category: true,
                 company: true
             },
             orderBy: {

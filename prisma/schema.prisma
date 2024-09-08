@@ -105,10 +105,12 @@ model Accessory {
   vendor             String
   purchaseDate       DateTime
   description        String?
-  categoryId         String?   @unique
-  category           Category? @relation(fields: [categoryId], references: [id]) // Made optional
+  // categoryId         String?   @unique
+  // category           Category? @relation(fields: [categoryId], references: [id]) // Made optional
   companyId          String?
   company            Company?  @relation(fields: [companyId], references: [id])
+  Category           Category? @relation(fields: [categoryId], references: [id])
+  categoryId         String?
 }
 
 model Asset {

@@ -67,7 +67,6 @@ const LicenseForm = ({license}: LicenseFormProps) => {
     const onSubmit = async (data: z.infer<typeof licenseSchema>) => {
         setIsLoading(true)
 
-        console.log('Client data: ',data)
         try {
             createLicense({
                 name: data.licenseName,
