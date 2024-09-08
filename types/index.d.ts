@@ -21,7 +21,7 @@ declare type User = {
     id?: string;
     oauthId?: string;
     email: string;
-    name: string;
+    name?: string;
     firstName: string;
     lastName: string;
     title: string;

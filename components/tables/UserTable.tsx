@@ -10,6 +10,7 @@ const UserTable = ({users, findById, deleteUser}: UserTableProps) => {
 
     const navigate = useRouter()
     const columnMappings: Record<keyof User, string> = {
+        name: 'Name',
         id: 'ID',
         email: 'Email',
         oauthId: '',
@@ -26,7 +27,7 @@ const UserTable = ({users, findById, deleteUser}: UserTableProps) => {
     };
 
 
-    const filteredData = filterColumns(users, ["lastName", 'role', "createdAt", "updatedAt", 'oauthId', 'id']);
+    const filteredData = filterColumns(users, ["lastName", 'role', "createdAt", "updatedAt", 'oauthId', 'id', 'name']);
     const renamedData = renameColumns(filteredData, columnMappings);
     if (renamedData?.length === 0) return <p>No Users found</p>
 
@@ -60,14 +61,6 @@ const UserTable = ({users, findById, deleteUser}: UserTableProps) => {
                                 <LinkTableCell value={user?.employeeId} navigateTo={`/assets/view/?id=${user.id}`}/>
 
                                 <TableCell className=" cusor-pointer pl-2 pr-10 capitalize min-w-24">
-                                    {/*<LEGACY_CustomTableCell id={user.id!} entity={user}*/}
-                                    {/*                        deleteEntity={() => deleteUser(user.id!)}*/}
-                                    {/*                        setRefresh={(flag: boolean) => console.log(flag)}*/}
-                                    {/*                        updateEntity={() => {*/}
-                                    {/*                 }}*/}
-                                    {/*                        viewEntity={() => {*/}
-                                    {/*                     navigate.push(`/assets/view/?id=${user.id}`)*/}
-                                    {/*                 }}/>*/}
                                 </TableCell>
 
                             </TableRow>
