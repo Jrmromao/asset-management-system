@@ -76,7 +76,6 @@ export const findById = async (id: string) => {
             },
         });
 
-        console.log(asset)
         return parseStringify(asset);
     } catch (error) {
         console.log(error)

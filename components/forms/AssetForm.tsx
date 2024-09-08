@@ -1,5 +1,5 @@
 'use client'
-import React, {useEffect, useMemo, useState} from 'react'
+import React, {useEffect, useState} from 'react'
 import {z} from "zod"
 import {zodResolver} from "@hookform/resolvers/zod"
 import {useForm} from "react-hook-form"
@@ -11,26 +11,49 @@ import CustomSelect from "@/components/CustomSelect";
 import {Card} from "@/components/ui/card";
 import {useCategoryStore} from "@/lib/stores/categoryStore";
 import CustomInput from "@/components/CustomInput";
-import {useDialogStore} from "@/lib/stores/store";
 import {DialogContainer} from "@/components/dialogs/DialogContainer";
 import CategoryForm from "@/components/forms/CategoryForm";
 import {useStatusLabelStore} from "@/lib/stores/statusLabelStore";
 import StatusLabelForm from "@/components/forms/StatusLabelForm";
 import {useRouter} from "next/navigation";
 import {toast} from "sonner";
-import {revalidatePath} from "next/cache";
-import {licenseColumns} from "@/components/tables/LicensesColumns";
 import {sleep} from "@/lib/utils";
 
 
 interface AssetFormProps {
-    asset?: Asset | null | undefined
+    id?: string
     isUpdate?: boolean
 }
 
-const AssetForm = ({asset, isUpdate = false}: AssetFormProps) => {
+const AssetForm = ({id, isUpdate = false}: AssetFormProps) => {
+
+    const [asset, setAsset] = useState<Asset | null>()
+    const [findById] = useAssetStore((state) => [state.findById])
+
+
+    useEffect(() => {
+        if (isUpdate) {
+            if (!id) {
+                navigate.back();
+                return;
+            }
+            findById(id as string)
+                .then(asset => {
+                    setAsset(asset);
+                    form.setValue('assetName', asset?.name!);
+                    form.setValue('brand', asset?.brand!);
+                    form.setValue('model', asset?.model!);
+                    form.setValue('serialNumber', asset?.serialNumber!);
+                    form.setValue('category', asset?.category?.id!);
+                    form.setValue('statusLabel', asset?.statusLabel?.id!);
+                    form.setValue('price', asset?.price!);
+                })
+        }
+
+    }, []);
 
     const INITIAL_VALUES = {
+        id: asset?.id,
         assetName: asset?.name,
         brand: asset?.brand,
         model: asset?.model,
@@ -40,32 +63,22 @@ const AssetForm = ({asset, isUpdate = false}: AssetFormProps) => {
         price: asset?.price,
         category: asset?.category?.name,
         statusLabel: asset?.statusLabel?.name,
-        datePurchased: new Date().getDate().toString()
+        datePurchased: new Date(asset?.datePurchased!).getDate().toString()
 
 
     }
     const navigate = useRouter()
     const [isLoading, setIsLoading] = useState(false)
-    const [createAsset, updateAsset] = useAssetStore((state) => [state.create, state.update, ]);
+    const [createAsset, updateAsset] = useAssetStore((state) => [state.create, state.update,]);
     const [categories, fetchAll, openDialog, closeDialog, isOpen] = useCategoryStore((state) => [state.categories, state.getAll, state.onOpen, state.onClose, state.isOpen]);
     const [statusLabels, fetchAllStatusLabels, closeSL, openSL, isOpenSL] = useStatusLabelStore((state) => [state.statusLabels, state.getAll, state.onClose, state.onOpen, state.isOpen]);
 
-
     useEffect(() => {
-        if (isUpdate) {
-            form.setValue('assetName', asset?.name!);
-            form.setValue('brand', asset?.brand!);
-            form.setValue('model', asset?.model!);
-            form.setValue('serialNumber', asset?.serialNumber!);
-            form.setValue('category', asset?.category?.name!);
-            form.setValue('statusLabel', asset?.statusLabel?.name!);
-            form.setValue('price', asset?.price!);
-            form.setValue('category', asset?.category?.name!);
-        }
+
         closeDialog()
         fetchAll()
         fetchAllStatusLabels()
-    }, [ ]);
+    }, []);
 
     const schema = z.object({
 
@@ -77,9 +90,10 @@ const AssetForm = ({asset, isUpdate = false}: AssetFormProps) => {
         category: z.string().min(1, "Category is required"),
         statusLabel: z.string().min(1, "Status label is required"),
         price: z
-            .string({ required_error: "Price is required" })
+            .string({required_error: "Price is required"})
             .transform((value) => Number(value))
-            .refine((value) => value >= 1, { message: "Price must be at least 1" })
+            .refine((value) => value >= 1, {message: "Price must be at least 1"})
+
 
     })
 
@@ -93,15 +107,13 @@ const AssetForm = ({asset, isUpdate = false}: AssetFormProps) => {
     const onSubmit = async (data: z.infer<typeof schema>) => {
         setIsLoading(true)
         try {
-            const categoryId = categories.find(c => c.name === data.category?.toString())?.id
-            const statusLabelId = statusLabels.find(c => c.name === data.statusLabel?.toString())?.id
 
             const assetData: Asset = {
                 name: data.assetName,
                 brand: data.brand,
                 model: data.model,
-                categoryId: categoryId!,
-                statusLabelId: statusLabelId,
+                categoryId: data.category!,
+                statusLabelId: data.statusLabel,
                 serialNumber: data.serialNumber,
                 price: data.price,
                 datePurchased: new Date().getDate().toString()
@@ -117,12 +129,14 @@ const AssetForm = ({asset, isUpdate = false}: AssetFormProps) => {
                 })
             } else {
 
-                createAsset(assetData)
-                await sleep(1000)
-                toast.success('Asset created successfully', {
+                createAsset(assetData).then(async r => {
+                    await sleep(1000)
+                    toast.success('Asset created successfully', {
                         position: 'top-right',
                     })
-                navigate.back()
+                    navigate.back()
+                })
+
 
             }
             form.reset(INITIAL_VALUES)
@@ -135,8 +149,10 @@ const AssetForm = ({asset, isUpdate = false}: AssetFormProps) => {
 
     return (
         <section className="w-full bg-white z-50 max-h-[700px] overflow-y-auto p-4">
-            <DialogContainer open={isOpen} onOpenChange={closeDialog} title={'New Category'}     description={'Add a new Category'} form={<CategoryForm />}/>
-            <DialogContainer open={isOpenSL} onOpenChange={closeSL} title={'New Status Label'} description={'Add a new Status Label'} form={<StatusLabelForm />}/>
+            <DialogContainer open={isOpen} onOpenChange={closeDialog} title={'New Category'}
+                             description={'Add a new Category'} form={<CategoryForm/>}/>
+            <DialogContainer open={isOpenSL} onOpenChange={closeSL} title={'New Status Label'}
+                             description={'Add a new Status Label'} form={<StatusLabelForm/>}/>
 
 
             <Form {...form}>
@@ -163,7 +179,8 @@ const AssetForm = ({asset, isUpdate = false}: AssetFormProps) => {
                                 />
                             </div>
                             <div className="flex-none w-3/12 mt-6 ml-8">
-                                <Button type={'button'} variant={'secondary'} className={'form-secondary-btn md:w-auto'} onClick={openDialog}>Add Category</Button>
+                                <Button type={'button'} variant={'secondary'} className={'form-secondary-btn md:w-auto'}
+                                        onClick={openDialog}>Add Category</Button>
                             </div>
                         </div>
 
@@ -198,7 +215,8 @@ const AssetForm = ({asset, isUpdate = false}: AssetFormProps) => {
                                 />
                             </div>
                             <div className="flex-none w-3/12 mt-6 ml-8">
-                                <Button type={'button'} variant={'secondary'}  className={'form-secondary-btn md:w-auto'} onClick={openSL}>Add Status Label</Button>
+                                <Button type={'button'} variant={'secondary'} className={'form-secondary-btn md:w-auto'}
+                                        onClick={openSL}>Add Status Label</Button>
                             </div>
                         </div>
 

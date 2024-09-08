@@ -59,26 +59,6 @@ const View = () => {
         }
     }
 
-
-    // useEffect(() => {
-    //     async function fetchAuditLogs() {
-    //         try {
-    //             const logs = await findAllByOrganization(String(asset?.companyId));
-    //
-    //             console.log(logs)
-    //             setAuditLogs(logs);
-    //         } catch (error) {
-    //             console.error("Error fetching audit logs:", error);
-    //             // Handle the error appropriately
-    //         }
-    //     }
-    //
-    //     if (asset?.companyId) {
-    //         fetchAuditLogs();
-    //     }
-    // }, [asset?.companyId, findAllByOrganization]); // Include dependencies
-    //
-
     const handleUnassign = () => {
         Swal.fire({
             title: "Are you sure?",
@@ -135,30 +115,53 @@ const View = () => {
                               <p className="font-semibold text-gray-600">{asset?.price}</p>
                             </div>
                             <div className="p-4">
-                              <h2 className="text-gray-500 mb-2">Created At</h2>
-                              <p className="font-semibold text-gray-600">{new Date().toDateString()}</p>
+                              <h2 className="text-gray-500 mb-2">Category</h2>
+                              <p className="font-semibold text-gray-600">{asset?.category?.name}</p>
                             </div>
-                            <div className="p-4">
-                              <h2 className="text-gray-500 mb-2">Created At</h2>
-                              <p className="font-semibold text-gray-600">{new Date().toDateString()}</p>
-                            </div>
+
                           </div>
                           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                             <div className="p-4 ">
                               <h2 className="text-gray-500 mb-2">Status Label</h2>
-                              <p className={`font-semibold text-${asset?.statusLabel?.colorCode}`}>{asset?.statusLabel?.name}</p>
+                              <p
+                                className={`font-semibold text-[${asset?.statusLabel?.colorCode}]`}>{asset?.statusLabel?.name}</p>
+                            </div>
+                            <div className="p-4">
+                              <h2 className="text-gray-500 mb-2">Location</h2>
+                              <p className="font-semibold text-gray-600">[Some Location ID]</p>
+                            </div>
+
+
+                            <div className="p-4">
+                              <h2 className="text-gray-500 mb-2">{asset?.assigneeId ? 'Assigned To' : 'Not Assigned'}</h2>
+                              <p className="font-semibold text-gray-600">{asset?.assigneeId ? asset?.assignee?.name : ''}</p>
+                            </div>
+
+
+
+                            <div className="p-4">
+                              <h2 className="text-gray-500 mb-2">Tag Num</h2>
+                              <p className="font-semibold text-gray-600">{asset?.serialNumber}</p>
+                            </div>
+
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div className="p-4 ">
+                              <h2 className="text-gray-500 mb-2">CO2 Metric</h2>
+                                <p  className={`font-semibold text-[${asset?.statusLabel?.colorCode}]`}>{asset?.statusLabel?.name}</p>
                             </div>
                             <div className="p-4">
                               <h2 className="text-gray-500 mb-2">Location</h2>
                               <p className="font-semibold text-gray-600">[Some Location ID]</p>
                             </div>
                             <div className="p-4">
-                              <h2 className="text-gray-500 mb-2">Tag Num</h2>
-                              <p className="font-semibold text-gray-600">{asset?.serialNumber}</p>
+                              <h2 className="text-gray-500 mb-2">Created At</h2>
+                              <p className="font-semibold text-gray-600">{new Date(asset?.createdAt!).toLocaleString()}</p>
                             </div>
                             <div className="p-4">
-                              <h2 className="text-gray-500 mb-2">Tag Num</h2>
-                              <p className="font-semibold text-gray-600">[Some Tag ID]</p>
+                              <h2 className="text-gray-500 mb-2">Last Updated At</h2>
+                              <p
+                                className="font-semibold text-gray-600">{new Date(asset?.createdAt!).toLocaleString()}</p>
                             </div>
 
                           </div>

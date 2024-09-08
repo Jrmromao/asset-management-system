@@ -7,7 +7,6 @@ import {auth} from "@/auth";
 const prisma = new PrismaClient()
 
 export const create = async (data: {
-    id: string;
     action: string;
     entity: string;
     entityId: string;
@@ -18,13 +17,11 @@ export const create = async (data: {
     try {
         await prisma.auditLog.create({
             data: {
-                id: data.id,
                 action: data.action,
                 entity: data.entity,
                 entityId: data.entityId,
                 userId: data.userId,
                 companyId: data.organizationId,
-                createdAt: new Date(),
             }
         })
     } catch (error) {

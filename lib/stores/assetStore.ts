@@ -7,7 +7,7 @@ import {get as fetch, create as insert, remove, update, unassign} from '@/lib/ac
 interface IAssetStore {
     assets: Asset[];
     loading: boolean;
-    create: (asset: Asset) => void;
+    create: (asset: Asset) => Promise<Asset>;
     update: (id: string, updatedAsset: Asset) => Promise<Asset>;
     delete: (id: string) => Promise<void>;
     findById: (id: string) => Promise<Asset | null>;
@@ -53,6 +53,7 @@ export const useAssetStore = create(persist<IAssetStore>(
             try {
                 set(
                     produce((state) => {
+                        updatedAsset.id = id
                         update(updatedAsset, id).then(() => {
                                 state.assets = state.assets.filter((a: Asset) => a.id !== id)
                             }

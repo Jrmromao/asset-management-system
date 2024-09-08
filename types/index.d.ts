@@ -86,6 +86,7 @@ declare type Kit = {
 declare type Asset = {
     id?: string;
     name: string;
+    assignee?: User;
     assigneeId?: string;
     categoryId: string;
     brand: string;
@@ -96,7 +97,7 @@ declare type Asset = {
     licenceUrl?: string;
     license?: License;
     serialNumber: string;
-    companyId: string;
+    companyId?: string;
     createdAt?: Date;
     updatedAt?: Date;
     category?: Category;

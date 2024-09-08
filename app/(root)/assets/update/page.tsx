@@ -3,22 +3,15 @@
 import React, {useEffect, useState} from 'react'
 import HeaderBox from "@/components/HeaderBox";
 import AssetForm from "@/components/forms/AssetForm";
-import {useSearchParams} from "next/navigation";
-import {useAccessoryStore} from "@/lib/stores/accessoryStore";
-import {useCategoryStore} from "@/lib/stores/categoryStore";
-import {useAssetStore} from "@/lib/stores/assetStore";
+import {useRouter, useSearchParams} from "next/navigation";
+
+
 
 const Update = () => {
 
 
     const searchParams = useSearchParams()
     const id = String(searchParams.get('id'))
-    const [asset, setAsset] = useState<Asset | null>()
-    const [findById] = useAssetStore((state) => [state.findById])
-
-    useEffect(() => {
-        findById(id).then(assetResult => setAsset(assetResult))
-    }, [findById, id])
 
     return (
         <div className="assets">
@@ -28,7 +21,7 @@ const Update = () => {
                     subtext="Change the fileds you'd like to update."
                 />
             </div>
-            <AssetForm asset={asset} isUpdate={true}/>
+            <AssetForm id={id} isUpdate={true}/>
         </div>)
 
 }
