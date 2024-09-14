@@ -7,6 +7,14 @@ import {useRouter} from "next/navigation";
 import {DataTable} from "@/components/tables/DataTable/data-table";
 import {accessoriesColumns} from "@/components/tables/AccessoriesColumns";
 import {toast} from "sonner";
+import {
+    Breadcrumb,
+    BreadcrumbItem,
+    BreadcrumbLink,
+    BreadcrumbList,
+    BreadcrumbSeparator
+} from "@/components/ui/breadcrumb";
+import Link from "next/link";
 
 
 const Consumables = () => {
@@ -37,6 +45,16 @@ const Consumables = () => {
 
     return (
         <div className="assets">
+            <Breadcrumb className="hidden md:flex">
+                <BreadcrumbList>
+                    <BreadcrumbItem>
+                        <BreadcrumbLink asChild>
+                            <Link href="/accessories">Accessories</Link>
+                        </BreadcrumbLink>
+                    </BreadcrumbItem>
+                    <BreadcrumbSeparator/>
+                </BreadcrumbList>
+            </Breadcrumb>
             <div className="transactions-header">
                 <HeaderBox
                     title="Accessories"

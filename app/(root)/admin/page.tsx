@@ -46,13 +46,11 @@ const Admin = () => {
             getAll()
                 setRefresh(false)
         }
-
     }, [refresh]);
 
-
     return (
-        <div className="flex min-h-screen w-full flex-col bg-muted/40 admin ">
-            <div className="pt-5">
+        <div className="flex min-h-screen w-full flex-col bg-muted/40 admin">
+            <div className="">
                 <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
 
                     <Breadcrumb className="hidden md:flex pb-5">

@@ -7,9 +7,11 @@ import {ACCEPTED_FILE_FORMAT, MAX_FILE_SIZE, MAX_FILES} from "@/constants";
 interface IProps {
     label?: string
     docType?: string
+    acceptFormat?: string[]
+    description?: string
 }
 
-const Dropzone: React.FC<IProps> = ({label}) => {
+const Dropzone: React.FC<IProps> = ({label, acceptFormat = ACCEPTED_FILE_FORMAT, description = 'Supported Formats: CSV'}) => {
     const [file, setFile] = useState<File>();
 
     const onDrop = useCallback((acceptedFiles: File[]) => {
@@ -19,7 +21,7 @@ const Dropzone: React.FC<IProps> = ({label}) => {
 
     const {getRootProps, getInputProps, isDragActive} = useDropzone({
         onDrop, maxFiles: MAX_FILES,
-        accept: {'application/pdf': ACCEPTED_FILE_FORMAT},
+        accept: {'application/pdf': acceptFormat},
         maxSize: MAX_FILE_SIZE
     });
 
@@ -41,7 +43,7 @@ const Dropzone: React.FC<IProps> = ({label}) => {
                 ) : (
                     <p className="mt-4 text-lg text-gray-600">Click to upload or drag and drop</p>
                 )}
-                <p className="mt-2 text-sm text-gray-500">Supported Formats: CSV</p>
+                <p className="mt-2 text-sm text-gray-500">{description}</p>
                 <p className="text-sm text-gray-500">Max size: 25MB</p>
                 {/*<input type="file" className="hidden"/> */}
             </div>

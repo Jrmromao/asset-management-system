@@ -17,6 +17,7 @@ import {Alert, AlertDescription, AlertTitle} from "@/components/ui/alert"
 import CustomTextarea from "@/components/CustomTextarea";
 import CustomDatePicker from "@/components/CustomDatePicker";
 import {licenseSchema} from "@/lib/schemas";
+import Dropzone from "@/components/Dropzone";
 
 
 interface LicenseFormProps {
@@ -250,6 +251,28 @@ const LicenseForm = ({license}: LicenseFormProps) => {
 
                     </Card>
 
+                    <Card className={'p-3.5 mb-5'}>
+                        <div className={'mt-6 header-2'}>Attachments</div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="bg-white p-4">
+
+
+                                <Dropzone description={'Supported Formats: PDF'} acceptFormat={['application/pdf']}/>
+                            </div>
+                            <div className="bg-white p-4 md:mt-11 ">
+                                <Alert>
+                                    <InfoIcon className="h-4 w-4"/>
+                                    <AlertTitle>Note</AlertTitle>
+                                    <AlertDescription>
+                                       You can upload up to 10 attachments. Please upload only PDF files.
+                                    </AlertDescription>
+                                </Alert>
+                            </div>
+
+                        </div>
+
+                    </Card>
                     <Button type="submit" className={'form-btn mt-6 w-full  md:w-auto'} disabled={isLoading}>
                         {isLoading ? (
                                 <>

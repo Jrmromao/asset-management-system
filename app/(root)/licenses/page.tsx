@@ -6,6 +6,14 @@ import {useRouter} from "next/navigation";
 import {useLicenseStore} from "@/lib/stores/licenseStore";
 import {DataTable} from "@/components/tables/DataTable/data-table";
 import {licenseColumns} from "@/components/tables/LicensesColumns";
+import {
+    Breadcrumb,
+    BreadcrumbItem,
+    BreadcrumbLink,
+    BreadcrumbList,
+    BreadcrumbSeparator
+} from "@/components/ui/breadcrumb";
+import Link from "next/link";
 
 
 const Licenses = () => {
@@ -30,6 +38,16 @@ const Licenses = () => {
 
     return (
         <div className="assets">
+            <Breadcrumb className="hidden md:flex">
+                <BreadcrumbList>
+                    <BreadcrumbItem>
+                        <BreadcrumbLink asChild>
+                            <Link href="/licenses">Licenses</Link>
+                        </BreadcrumbLink>
+                    </BreadcrumbItem>
+                    <BreadcrumbSeparator/>
+                </BreadcrumbList>
+            </Breadcrumb>
             <div className="transactions-header">
                 <HeaderBox
                     title="Licenses"

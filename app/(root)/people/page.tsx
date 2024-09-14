@@ -8,6 +8,14 @@ import {DialogContainer} from "@/components/dialogs/DialogContainer";
 import UserForm from "@/components/forms/UserForm";
 import UserTable from "@/components/tables/UserTable";
 import {useRoleStore} from "@/lib/stores/roleStore";
+import {
+    Breadcrumb,
+    BreadcrumbItem,
+    BreadcrumbLink,
+    BreadcrumbList,
+    BreadcrumbSeparator
+} from "@/components/ui/breadcrumb";
+import Link from "next/link";
 
 const People = () => {
     const [openDialog, closeDialog, isOpen] = useDialogStore(state => [state.onOpen, state.onClose, state.isOpen])
@@ -19,6 +27,16 @@ useEffect(()=>{
 },[])
     return (
         <div className="assets">
+            <Breadcrumb className="hidden md:flex">
+                <BreadcrumbList>
+                    <BreadcrumbItem>
+                        <BreadcrumbLink asChild>
+                            <Link href="/people">People</Link>
+                        </BreadcrumbLink>
+                    </BreadcrumbItem>
+                    <BreadcrumbSeparator/>
+                </BreadcrumbList>
+            </Breadcrumb>
             <div className="transactions-header">
                 <HeaderBox
                     title="People"

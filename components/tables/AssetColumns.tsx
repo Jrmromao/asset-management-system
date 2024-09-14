@@ -4,6 +4,7 @@ import {ArrowUpDown} from "lucide-react";
 import LinkTableCell from "@/components/tables/LinkTableCell";
 import React from "react";
 import DataTableRowActions from "@/components/tables/DataTable/DataTableRowActions";
+import {formatAmount} from "@/lib/utils";
 
 
 // const navigate = useRouter() ncannot use hook in a non hook component
@@ -54,8 +55,10 @@ export const assetColumns = ({onDelete, onView}: AssetColumnsProps): ColumnDef<A
         header: "Price",
         cell: ({row}) => {
             const value = row.getValue('price')
+            const formattedValue = formatAmount(value as number)
             const asset = row.original
-            return <LinkTableCell value={value as string} navigateTo={`/assets/view/?id=${asset.id}`}/>
+
+            return <LinkTableCell value={formattedValue as string} navigateTo={`/assets/view/?id=${asset.id}`}/>
         }
 
     },
@@ -73,7 +76,7 @@ export const assetColumns = ({onDelete, onView}: AssetColumnsProps): ColumnDef<A
     },
     {
         accessorKey: "statusLabel",
-        header: "Status",
+        header: "Status Label",
         cell: ({row}) => {
             const value = row.getValue('statusLabel') as StatusLabel
             return <LinkTableCell value={value?.name} label={value} navigateTo={`#`}/>
@@ -83,7 +86,7 @@ export const assetColumns = ({onDelete, onView}: AssetColumnsProps): ColumnDef<A
         accessorKey: "createdAt",
         header: "Created At",
         cell: ({row}) => {
-            const value = new Date(row.getValue('updatedAt'))
+            const value = new Date(row.getValue('createdAt'))
             const formattedDate = value.toLocaleDateString()
             return <div>{formattedDate}</div>
         }

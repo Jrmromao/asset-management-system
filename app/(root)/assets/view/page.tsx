@@ -16,6 +16,15 @@ import {DialogContainer} from "@/components/dialogs/DialogContainer";
 import AssignAssetForm from "@/components/forms/AsignAssetForm";
 import Swal from "sweetalert2";
 import {toast} from "sonner";
+import {formatAmount} from "@/lib/utils";
+import {
+    Breadcrumb,
+    BreadcrumbItem,
+    BreadcrumbLink,
+    BreadcrumbList,
+    BreadcrumbSeparator
+} from "@/components/ui/breadcrumb";
+import Link from "next/link";
 
 const View = () => {
     const [asset, setAsset] = useState<Asset>()
@@ -89,8 +98,27 @@ const View = () => {
 
     }
 
+
+
     return (
         <div className="assets">
+
+            <Breadcrumb className="hidden md:flex pb-5">
+                <BreadcrumbList>
+                    <BreadcrumbItem>
+                        <BreadcrumbLink asChild>
+                            <Link href="/assets">Assets</Link>
+                        </BreadcrumbLink>
+                    </BreadcrumbItem>
+                    <BreadcrumbSeparator/>
+                    <BreadcrumbItem>
+                        <BreadcrumbLink asChild>
+                            <Link href={`/assets/view/?id=${id}`}>View</Link>
+                        </BreadcrumbLink>
+                    </BreadcrumbItem>
+                    <BreadcrumbSeparator/>
+                </BreadcrumbList>
+            </Breadcrumb>
 
             <DialogContainer open={isAssignOpen} onOpenChange={onOpen} title={'Assign Asset'}
                              description={'Assign this asset to a user'}
@@ -112,7 +140,7 @@ const View = () => {
                             </div>
                             <div className="p-4">
                               <h2 className="text-gray-500 mb-2">Price</h2>
-                              <p className="font-semibold text-gray-600">{asset?.price}</p>
+                              <p className="font-semibold text-gray-600">{formatAmount(asset?.price) }</p>
                             </div>
                             <div className="p-4">
                               <h2 className="text-gray-500 mb-2">Category</h2>
@@ -161,7 +189,7 @@ const View = () => {
                             <div className="p-4">
                               <h2 className="text-gray-500 mb-2">Last Updated At</h2>
                               <p
-                                className="font-semibold text-gray-600">{new Date(asset?.createdAt!).toLocaleString()}</p>
+                                className="font-semibold text-gray-600">{new Date(asset?.updatedAt!).toLocaleString()}</p>
                             </div>
 
                           </div>

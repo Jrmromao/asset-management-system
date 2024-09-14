@@ -11,6 +11,14 @@ import UploadAssetsForm from "@/components/forms/UploadAssetsForm";
 import {DataTable} from "@/components/tables/DataTable/data-table";
 import {assetColumns} from "@/components/tables/AssetColumns";
 import {toast} from "sonner";
+import {
+    Breadcrumb,
+    BreadcrumbItem,
+    BreadcrumbLink,
+    BreadcrumbList,
+    BreadcrumbSeparator
+} from "@/components/ui/breadcrumb";
+import Link from "next/link";
 
 const Assets = () => {
 
@@ -41,6 +49,17 @@ const Assets = () => {
 
     return (
         <div className="assets">
+            <Breadcrumb className="hidden md:flex">
+                <BreadcrumbList>
+                    <BreadcrumbItem>
+                        <BreadcrumbLink asChild>
+                            <Link href="/assets">Assets</Link>
+                        </BreadcrumbLink>
+                    </BreadcrumbItem>
+                    <BreadcrumbSeparator/>
+                </BreadcrumbList>
+            </Breadcrumb>
+
             <div className="transactions-header">
                 <HeaderBox
                     title="Assets"

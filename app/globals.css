@@ -106,7 +106,7 @@
 
   /* Home */
   .home {
-    @apply no-scrollbar flex w-full flex-row max-xl:max-h-screen max-xl:overflow-y-scroll;
+    @apply no-scrollbar flex w-full flex-row max-xl:max-h-screen max-xl:overflow-y-scroll bg-bankGradient;
   }
 
 
@@ -194,11 +194,11 @@
   }
 
   .assets {
-    @apply flex max-h-screen w-full flex-col gap-8 overflow-y-scroll  p-8 xl:py-12
+    @apply flex max-h-screen  w-full flex-col gap-8 overflow-y-scroll  p-4 xl:py-5 bg-amber-800;
   }
 
   .admin {
-    @apply flex max-h-screen w-full flex-col overflow-y-scroll ;
+    @apply flex max-h-screen w-full flex-col overflow-y-scroll p-4 xl:py-5;
   }
 
   .transactions-header {
@@ -270,9 +270,7 @@
     @apply flex cursor-pointer items-center justify-center gap-3 rounded-lg px-3 py-7 hover:bg-white lg:justify-start;
   }
 
-  .plaidlink-default {
-    @apply flex !justify-start cursor-pointer gap-3 rounded-lg !bg-transparent flex-row;
-  }
+
 
   /* Auth */
   .auth-asset {
@@ -309,40 +307,14 @@
     @apply text-14 cursor-pointer font-medium text-bankGradient;
   }
 
-  /* Payment Transfer */
-  .payment-transfer {
-    @apply no-scrollbar flex flex-col overflow-y-scroll bg-gray-25 p-8 md:max-h-screen xl:py-12;
-  }
 
-  .payment-transfer_form-item {
-    @apply flex w-full max-w-[850px] flex-col gap-3 md:flex-row lg:gap-8;
-  }
 
-  .payment-transfer_form-content {
-    @apply flex w-full max-w-[280px] flex-col gap-2;
-  }
-
-  .payment-transfer_form-details {
-    @apply flex flex-col gap-1 border-t border-gray-200 pb-5 pt-6;
-  }
-
-  .payment-transfer_btn-box {
-    @apply mt-5 flex w-full max-w-[850px] gap-3 border-gray-200 py-5;
-  }
-
-  .payment-transfer_btn {
-    @apply text-14 w-full bg-bank-gradient font-semibold text-white shadow-form !important;
-  }
 
   /* Root Layout */
   .root-layout {
-    @apply flex h-16 items-center justify-between p-5 shadow-creditCard sm:p-8 md:hidden;
+    @apply flex  items-center justify-between p-5 shadow-creditCard sm:p-8 md:hidden bg-blue-25/20;
   }
 
-  /* Bank Info */
-  .bank-info_content {
-    @apply flex flex-1 items-center justify-between gap-2 overflow-hidden;
-  }
 
   /* Footer */
   .footer {
@@ -375,7 +347,7 @@
 
   /* Sidebar */
   .sidebar {
-    @apply sticky left-0 top-0 flex h-screen w-fit flex-col  justify-between border-r border-gray-200 bg-white pt-8 text-white max-md:hidden z-10 sm:p-4 xl:p-6 2xl:w-[280px] ;
+    @apply sticky left-0 top-0 flex h-screen w-fit flex-col justify-between border-r border-gray-200 bg-white pt-8 text-white max-md:hidden  z-10 sm:p-4 xl:p-6 2xl:w-[290px] ;
   }
 
   .sidebar-logo {
