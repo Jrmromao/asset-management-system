@@ -147,7 +147,7 @@ const AssetForm = ({id, isUpdate = false}: AssetFormProps) => {
     }
 
     return (
-        <section className="w-full bg-white z-50 max-h-[700px] overflow-y-auto p-4">
+        <section className="w-full bg-white z-50 max-h-[900px] overflow-y-auto p-4">
             <DialogContainer open={isOpen} onOpenChange={closeDialog} title={'New Category'}
                              description={'Add a new Category'} form={<CategoryForm/>}/>
             <DialogContainer open={isOpenSL} onOpenChange={closeSL} title={'New Status Label'}

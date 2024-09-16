@@ -35,15 +35,36 @@ export const licenseColumns = ({onDelete, onView}: LicenseColumnsProps): ColumnD
         }
     },
     {
+        accessorKey: "createdAt",
+        header: "Created At",
+        cell: ({row}) => {
+            const value = new Date(row.getValue('createdAt'))
+            const formattedDate = value.toLocaleDateString()
+            return <div>{formattedDate}</div>
+        }
+    },
+    {
+        accessorKey: "updatedAt",
+        header: "Last Updated",
+
+        cell: ({row}) => {
+            const value = new Date(row.getValue('updatedAt'))
+            const formattedDate = value.toLocaleDateString()
+            return <div>{formattedDate}</div>
+        }
+    },
+    {
         accessorKey: "datePurchased",
         header: "Date Purchased",
         cell: ({row}) => {
+            // TODO: use fix this issue with the date format
             const license = row.original
             return (<div className={'cursor-pointer'}>
                 <LinkTableCell value={formatDateTime(license.purchaseDate).dateOnly}
                                navigateTo={`/assets/view/?id=${license.id}`}/>
             </div>)
-        }
+        },
+
     },
     {
         accessorKey: "renewalDate",

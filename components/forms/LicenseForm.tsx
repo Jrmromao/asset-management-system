@@ -92,7 +92,7 @@ const LicenseForm = ({license}: LicenseFormProps) => {
     }
 
     return (
-        <section className="w-full bg-white z-50 max-h-[700px] overflow-y-auto p-4">
+        <section className="w-full bg-white z-50 max-h-[900px] overflow-y-auto p-4">
 
             <Form {...form}>
 

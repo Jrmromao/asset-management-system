@@ -6,13 +6,12 @@ import React from "react";
 import DataTableRowActions from "@/components/tables/DataTable/DataTableRowActions";
 
 
-// const navigate = useRouter() ncannot use hook in a non hook component
-// export const assetColumns= ({}): ColumnDef<Assets>[] = [
-interface AssetColumnsProps {
+
+interface KitColumnsProps {
     onDelete: (value: Kit) => void
     onView: (value: Kit) => void
 }
-export const kitColumns = ({onDelete, onView}: AssetColumnsProps): ColumnDef<Kit>[] => [
+export const kitColumns = ({onDelete, onView}: KitColumnsProps): ColumnDef<Kit>[] => [
     {
         accessorKey: "name",
         header: ({column}) => {

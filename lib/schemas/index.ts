@@ -139,8 +139,21 @@ export  const personSchema = z.object({
     employeeId: z.string().min(1, "Employee Id is required"),
 })
 
+export  const kitSchema = z.object({
+    name: z.string().min(1, "Kit name is required"),
+    assetId: z.string().optional(),
+    accessoryId: z.string().optional(),
+    licenseId: z.string().optional(),
+})
+export  const kitItemSchema = z.object({
+    name: z.string().optional()
+
+})
+
 
 export  const assetAssignSchema = z.object({
     assetId: z.string().optional(),
     userId: z.string().min(1, "User is required"),
 })
+
+

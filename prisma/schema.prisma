@@ -35,6 +35,7 @@ model User {
   accounts      Account[]
   // kits        UserKit[]
   Asset         Asset[]      @relation(name: "assignedToUser")
+  UserKit       UserKit[]
 }
 
 model Account {
@@ -92,6 +93,7 @@ model Company {
   categories   Category[]
   roles        Role[]
   statusLabels StatusLable[]
+  kits         Kit[]
 }
 
 model Accessory {
@@ -111,6 +113,7 @@ model Accessory {
   company            Company?  @relation(fields: [companyId], references: [id])
   Category           Category? @relation(fields: [categoryId], references: [id])
   categoryId         String?
+  KitAsset           KitItem[]
 }
 
 model Asset {
@@ -134,6 +137,7 @@ model Asset {
   companyId     String
   company       Company      @relation(fields: [companyId], references: [id])
   // kits          KitAsset[]
+  KitAsset      KitItem[]
 }
 
 model StatusLable {
@@ -171,14 +175,14 @@ model Transaction {
 }
 
 model License {
-  id                 String   @id @default(cuid())
-  name               String   @unique
+  id                 String    @id @default(cuid())
+  name               String    @unique
   licensedEmail      String
   licenseKey         String
   renewalDate        DateTime
   purchaseDate       DateTime
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
   vendor             String?
   purchaseNotes      String?
   licenseUrl         String?
@@ -187,6 +191,7 @@ model License {
   licenseCopiesCount Int
   purchasePrice      Decimal
   assets             Asset[]
+  KitAsset           KitItem[]
 }
 
 model AuditLog {
@@ -209,28 +214,47 @@ model Waitlist {
   updatedAt DateTime @updatedAt
 }
 
-//
-// model Kit {
-//   id          Int        @id @default(autoincrement())
-//   name        String
-//   description String?
-//   assets      KitAsset[]
-//   users       UserKit[]
-// }
-//
-// model KitAsset {
-//   kitId   Int
-//   assetId Int
-//   kit     Kit   @relation(fields: [kitId], references: [id])
-//   asset   Asset? @relation(fields: [assetId], references: [id])
-//   @@id([kitId, assetId])
-// }
-//
-// model UserKit {
-//   userId Int
-//   kitId  Int
-//   user   User @relation(fields: [userId], references: [id])
-//   kit    Kit? @relation(fields: [kitId], references: [id])
-//
-//   @@id([userId, kitId])
-// }
+model Kit {
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  assets      KitItem[] @relation(name: "KitAssets")
+  accessories KitItem[] @relation(name: "KitAccessories")
+  licenses    KitItem[] @relation(name: "KitLicenses")
+  licenseIds  String[] // Optional: For direct access to license IDs associated with the kit
+  users       UserKit[]
+  companyId   String
+  company     Company   @relation(fields: [companyId], references: [id])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model KitItem {
+  id           String     @id @default(cuid())
+  kitId        String
+  itemId       String
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @default(now())
+  kitAsset     Kit        @relation(name: "KitAssets", fields: [kitId], references: [id], map: "KitItem_kitAsset_fkey")
+  kitAccessory Kit        @relation(name: "KitAccessories", fields: [kitId], references: [id], map: "KitItem_kitAccessory_fkey")
+  kitLicense   Kit        @relation(name: "KitLicenses", fields: [kitId], references: [id], map: "KitItem_kitLicense_fkey")
+  accessory    Accessory? @relation(fields: [accessoryId], references: [id])
+  accessoryId  String?
+  asset        Asset?     @relation(fields: [assetId], references: [id])
+  assetId      String?
+  license      License?   @relation(fields: [licenseId], references: [id])
+  licenseId    String?
+
+  @@unique([kitId, itemId])
+}
+
+model UserKit {
+  userId    String
+  kitId     String
+  user      User     @relation(fields: [userId], references: [id])
+  kit       Kit      @relation(fields: [kitId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@id([userId, kitId])
+}

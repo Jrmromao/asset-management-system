@@ -14,7 +14,6 @@ import {Tabs, TabsContent, TabsList, TabsTrigger,} from "@/components/ui/tabs"
 import CategoryForm from "@/components/forms/CategoryForm";
 import CategoryTable from "@/components/tables/CategoryTable";
 import React, {useEffect, useMemo, useState} from "react";
-import LicensesTable from "@/components/tables/LicensesTable";
 import {licenseStore} from "@/lib/stores/store";
 import {useCategoryStore} from "@/lib/stores/categoryStore";
 

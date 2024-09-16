@@ -1,12 +1,11 @@
 'use client'
-import React, {useEffect} from 'react'
+import React, {useCallback, useEffect, useMemo} from 'react'
 import HeaderBox from "@/components/HeaderBox";
 import {useDialogStore} from "@/lib/stores/store";
 import {Button} from "@/components/ui/button";
 import {useUserStore} from "@/lib/stores/userStore";
 import {DialogContainer} from "@/components/dialogs/DialogContainer";
 import UserForm from "@/components/forms/UserForm";
-import UserTable from "@/components/tables/UserTable";
 import {useRoleStore} from "@/lib/stores/roleStore";
 import {
     Breadcrumb,
@@ -16,11 +15,30 @@ import {
     BreadcrumbSeparator
 } from "@/components/ui/breadcrumb";
 import Link from "next/link";
+import {assetColumns} from "@/components/tables/AssetColumns";
+import {useRouter} from "next/navigation";
+import {toast} from "sonner";
+import {DataTable} from "@/components/tables/DataTable/data-table";
+import {peopleColumns} from "@/components/tables/PeopleColumns";
 
 const People = () => {
     const [openDialog, closeDialog, isOpen] = useDialogStore(state => [state.onOpen, state.onClose, state.isOpen])
-    const [users, findById] = useUserStore(state => [state.users, state.findById])
+    const [users] = useUserStore(state => [state.users, state.findById])
     const [fetchRoles] = useRoleStore(state => [state.getAll])
+
+    const navigate = useRouter()
+    const handleView = async (id: string) => {
+        navigate.push(`/assets/view/?id=${id}`)
+    }
+
+    const handleDelete = async (id: string) => {
+
+    }
+    const onDelete = useCallback((user: User) => handleDelete(user?.id!), [])
+    const onView = useCallback((user: User) => handleView(user?.id!), [])
+    const columns = useMemo(() => peopleColumns({onDelete, onView}), []);
+
+
 useEffect(()=>{
     useUserStore.getState().getAll()
     fetchRoles()
@@ -57,8 +75,7 @@ useEffect(()=>{
                     </div>
                 </section>
                 <section className="flex w-full flex-col gap-6">
-                    <UserTable users={users} findById={findById} deleteUser={findById}/>
-
+                    <DataTable columns={columns} data={users}/>
                 </section>
             </div>
         </div>

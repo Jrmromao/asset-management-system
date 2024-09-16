@@ -132,17 +132,25 @@ declare type License = {
     updatedAt?: Date;
 };
 
-
-declare interface RecentTransactionsProps {
-    accounts: Account[];
-    transactions: Transaction[];
-    appwriteItemId: string;
-    page: number;
+declare type  KitItem  = {
+    id:      string
+    itemId:       string
+    quantity:      number
+    remaining:     number
 }
 
-declare interface TransactionHistoryTableProps {
-    transactions: Transaction[];
-    page: number;
+declare type  Kit  = {
+    id:         string
+    name:       string
+    assets:     KitItem[]
+    licenses:   KitItem[]
+    accessories: KitItem[]
+}
+
+declare type  KitAsset  = {
+    id:      string
+    kitId: string
+    assetId: string
 }
 
 declare interface CategoryBadgeProps {
@@ -194,4 +202,8 @@ declare interface CompanyRegistrationProps {
     firstName: string;
     lastName: string;
 }
+
+
+
+
 

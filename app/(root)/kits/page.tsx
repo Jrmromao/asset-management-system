@@ -1,15 +1,9 @@
 'use client'
-import React, {useMemo, useState} from 'react'
+import React, {useState} from 'react'
 import HeaderBox from "@/components/HeaderBox";
-import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs";
-import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
-import LicensesTable from "@/components/tables/LicensesTable";
 import {licenseStore} from "@/lib/stores/store";
 import {Button} from "@/components/ui/button";
 import {useRouter} from "next/navigation";
-import {DataTable} from "@/components/tables/DataTable/data-table";
-import {kitColumns} from "@/components/tables/KitsColumns";
-import {assetColumns} from "@/components/tables/AssetColumns";
 
 
 const Consumables = () => {
@@ -33,7 +27,7 @@ const Consumables = () => {
         <div className="assets">
             <div className="transactions-header">
                 <HeaderBox
-                    title="Kits"
+                    title="Pre-Defined Kits"
                     subtext="Manage your kits and assign them to users"
                 />
             </div>
@@ -42,7 +36,7 @@ const Consumables = () => {
                     <div className="flex justify-end">
                         <Button
                             variant={'link'}
-                            onClick={() => navigate.push('/accessories/create')}>Create Kit
+                            onClick={() => navigate.push('/kits/create')}>Create Kit
                         </Button>
                     </div>
                 </section>
