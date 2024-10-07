@@ -150,10 +150,62 @@ export  const kitItemSchema = z.object({
 
 })
 
-
 export  const assetAssignSchema = z.object({
     assetId: z.string().optional(),
     userId: z.string().min(1, "User is required"),
 })
+
+
+const requiredString = (message: string) => z.string({required_error: message});
+const nameField = (name: string) => {
+    return {
+        name: requiredString(`${name} name is required`)
+    };
+};
+
+const addressFields = {
+    addressLine1: requiredString("Address line 1 is required"),
+    addressLine2: z.string().optional(),
+    city: requiredString("City is required"),
+    zip: requiredString('Zipcode is required'),
+    country: requiredString('Country is required')
+};
+
+export  const manufacturerSchema = z.object({
+    ...nameField,
+    url: requiredString('URL is required'),
+    supportUrl: requiredString('Support URL is required'),
+    supportPhone: z.string().optional(),
+    supportEmail: z.string().optional()
+})
+
+export  const modelSchema = z.object({
+    locationName: requiredString('Location name is required'),
+    modelNo: z.string().min(1, "Model number is required"),
+})
+
+export  const locationSchema = z.object({
+    ...nameField('Location'),
+    ...addressFields
+})
+
+export  const inventorySchema = z.object({
+    ...nameField('Inventory'),
+})
+
+export  const departmentSchema = z.object({
+    ...nameField('Department'),
+    userId: z.string().min(1, "User is required"),
+})
+
+export  const supplierSchema = z.object({
+    ...nameField('Supplier'),
+    contactName: requiredString('Contact name is required'),
+    email: z.string().email('Email is required'),
+    phoneNum: z.string().optional(),
+    url: z.string().url().optional(),
+    notes: z.string().optional()
+})
+
 
 
