@@ -146,7 +146,7 @@ export  const kitSchema = z.object({
     licenseId: z.string().optional(),
 })
 export  const kitItemSchema = z.object({
-    name: z.string().optional()
+    itemID: z.string().optional()
 
 })
 

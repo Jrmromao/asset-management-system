@@ -1,33 +1,113 @@
 'use client'
-import HeaderBox from '@/components/HeaderBox'
-import {auth} from "@/auth"
-import { useSession } from "next-auth/react";
-import {date} from "zod";
+import Link from "next/link"
+import {
+    Breadcrumb,
+    BreadcrumbItem,
+    BreadcrumbLink,
+    BreadcrumbList,
+    BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb"
+import {Button} from "@/components/ui/button"
+import {Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle,} from "@/components/ui/card"
+import {Progress} from "@/components/ui/progress"
+import {Tabs, TabsContent, TabsList, TabsTrigger,} from "@/components/ui/tabs"
+import CategoryForm from "@/components/forms/CategoryForm";
+import CategoryTable from "@/components/tables/CategoryTable";
+import React, {useEffect, useMemo, useState} from "react";
+import {licenseStore} from "@/lib/stores/store";
+import {useCategoryStore} from "@/lib/stores/categoryStore";
+import {useAssetStore} from "@/lib/stores/assetStore";
+import {useAccessoryStore} from "@/lib/stores/accessoryStore";
 
-const Home = ({searchParams}: SearchParamProps) => {
-    const { data: session } = useSession();
+// import {
+//     Tooltip,
+//     TooltipContent,
+//     TooltipTrigger,
+// } from "@/components/ui/tooltip"
+
+const Home = () => {
+
+
+
+    const [licenses] = licenseStore((state) => [ state.licenses])
+    const [accessories] = useAccessoryStore(state => [state.accessories])
+    const [assets] = useAssetStore(state => [state.assets])
+
+
+
+
 
     return (
-        <section className="home">
-            <div className=" flex flex-col flex-grow">
-                <header className="home-header">
+        <div className="flex min-h-screen w-full flex-col bg-muted/40 admin">
+            <div className="">
+                <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
 
-                    {session?.user?.name && <HeaderBox
-                      type="greeting"
-                      title="Welcome"
-                      user={String(session?.user?.name)}
-                      subtext="Select an option to continue"
-                    />}
+                    <Breadcrumb className="hidden md:flex pb-5">
+                        <BreadcrumbList>
+                            <BreadcrumbItem>
+                                <BreadcrumbLink asChild>
+                                    <Link href="#">Home</Link>
+                                </BreadcrumbLink>
+                            </BreadcrumbItem>
+                            <BreadcrumbSeparator/>
+                            {/*<BreadcrumbItem>*/}
+                            {/*    <BreadcrumbLink asChild>*/}
+                            {/*        <Link href="#">Orders</Link>*/}
+                            {/*    </BreadcrumbLink>*/}
+                            {/*</BreadcrumbItem>*/}
+                            {/*<BreadcrumbSeparator />*/}
+                            {/*<BreadcrumbItem>*/}
+                            {/*    <BreadcrumbPage>Recent Orders</BreadcrumbPage>*/}
+                            {/*</BreadcrumbItem>*/}
+                        </BreadcrumbList>
+                    </Breadcrumb>
 
-
-
-                    <p> - create kits</p>
 
                 </header>
-            </div>
-        </section>
-    )
+                <main  className="grid flex-1 items-start gap-4 p-4 sm:px-1 sm:py-0 md:gap-2 lg:grid-cols-1 xl:grid-cols-1">
+                    <div className="grid auto-rows-max items-start gap-4 md:gap-8 lg:col-span-2">
+                        <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
+                            <Card x-chunk="dashboard-05-chunk-1">
+                                <CardHeader className="pb-2">
+                                    <CardTitle className="text-2xl">Accessories</CardTitle>
+                                    <CardDescription></CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    {accessories.length}
+                                </CardContent>
 
+                            </Card>
+
+                            <Card x-chunk="dashboard-05-chunk-1">
+                                <CardHeader className="pb-2">
+                                    <CardTitle className="text-2xl">Assets</CardTitle>
+                                    <CardDescription></CardDescription>
+                                </CardHeader>
+                                <CardContent>{assets.length}</CardContent>
+                            </Card>
+
+                            <Card x-chunk="dashboard-05-chunk-1">
+                                <CardHeader className="pb-2">
+                                    <CardTitle className="text-2xl">Consumables</CardTitle>
+                                    <CardDescription></CardDescription>
+                                </CardHeader>
+                                <CardContent>90</CardContent>
+                            </Card>
+
+                            <Card x-chunk="dashboard-05-chunk-1">
+                                <CardHeader className="pb-2">
+                                    <CardTitle className="text-2xl">Licenses</CardTitle>
+                                    <CardDescription></CardDescription>
+                                </CardHeader>
+                                <CardContent>{licenses.length}</CardContent>
+                            </Card>
+                        </div>
+
+                    </div>
+                </main>
+            </div>
+        </div>
+    )
 }
 
 export default Home

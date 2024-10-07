@@ -1,6 +1,6 @@
 'use client'
 import HeaderBox from "@/components/HeaderBox";
-import React, {useEffect, useState} from "react";
+import React, {useCallback, useEffect, useMemo, useState} from "react";
 import AssetForm from "@/components/forms/AssetForm";
 import LicenseForm from "@/components/forms/LicenseForm";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs";
@@ -28,7 +28,12 @@ import {useCategoryStore} from "@/lib/stores/categoryStore";
 import {toast} from "sonner";
 import {sleep} from "@/lib/utils";
 import KitItemForm from "@/components/forms/KitItemForm";
-import { useRef } from 'react';
+import {useRef} from 'react';
+import {useAccessoryStore} from "@/lib/stores/accessoryStore";
+import {DataTable} from "@/components/tables/DataTable/data-table";
+import {licenseColumns} from "@/components/tables/LicensesColumns";
+import kitItemForm from "@/components/forms/KitItemForm";
+import {KiltItemColumns} from "@/components/tables/KitItemColumns";
 
 const Create = () => {
     const [isLoading, setIsLoading] = useState()
@@ -37,7 +42,12 @@ const Create = () => {
         state.isAccessoryOpen, state.onAccessoryClose, state.onAccessoryOpen]);
     const [allAssets] = useAssetStore((state) => [state.assets]);
     const [allLicenses] = useLicenseStore((state) => [state.licenses]);
-    const [allCategories] = useCategoryStore((state) => [state.categories]);
+    const [allAccessories] = useAccessoryStore((state) => [state.accessories]);
+
+    const [assetsList, setAssetsList] = useState<Asset[]>([]);
+    const [licensesList, setLicensesList] = useState([])
+    const [accessoriesList, setAccessoriesList] = useState([])
+
 
     const form = useForm<z.infer<typeof kitSchema>>({
         resolver: zodResolver(kitSchema),
@@ -49,27 +59,33 @@ const Create = () => {
         }
     })
 
-    const assetIdRef = useRef<string | undefined>('');
-    const licenseIdRef = useRef<string | undefined>('');
-    const accessoryIdRef = useRef<string | undefined>('');
-
     const assetId = form.watch('assetId');
     const licenseId = form.watch('licenseId');
     const accessoryId = form.watch('accessoryId');
 
     useEffect(() => {
-        assetIdRef.current = assetId;
-        licenseIdRef.current = licenseId;
-        accessoryIdRef.current = accessoryId;
+        // assetIdRef.current = assetId;
+        // licenseIdRef.current = licenseId;
+        // accessoryIdRef.current = accessoryId;
+
+        console.log(assetId)
+        console.log(licenseId)
+        console.log(accessoryId)
+        const newAsset = allAssets.find(asset => asset.id === assetId)
+        if (newAsset) {
+            setAssetsList(prevAssetsList => [...prevAssetsList, newAsset]);
+        }
+
 
     }, [assetId, licenseId, accessoryId]);
+
+
+    const columns = useMemo(() => KiltItemColumns(), []);
 
     const onSubmit = async (data: z.infer<typeof kitSchema>) => {
 
         try {
             console.log(data)
-
-
         } catch (e) {
             console.error(e)
         } finally {
@@ -130,62 +146,63 @@ const Create = () => {
 
                                 </div>
                             </div>
-                            <div className={'w-full bg-white p-4 h-[340px] overflow-auto'}>
-
-
+                            <div className={'w-full bg-white p-4 h-full overflow-auto'}>
                                 <TabsContent value="assets">
-
-                                    <div className="text-right">
+                                    <div className="flex flex-row justify-between items-center gap-4 mb-3">
+                                        <h2 className="header-2">Assets</h2>
                                         <Button
                                             type="button"
-                                            variant="outline"
+                                            variant="link"
                                             onClick={onAssetOpen}
                                         >
                                             Add Asset
                                         </Button>
                                     </div>
-
-
+                                    <DataTable columns={columns} data={assetsList}/>
                                     <div className="w-full md:w-full lg:w-1/3">
                                         <DialogContainer open={isAssetOpen} onOpenChange={onAssetClose}
                                                          title={'Select an Asset'} description={''}
                                                          form={<KitItemForm label={'Add Asset'}
                                                                             onClose={onAssetClose}
                                                                             data={allAssets}
-                                                                            control={form.control} name={'assetId'}
-                                                                            placeholder={'eg. Keyboard'}
+                                                                            // control={form.control}
+                                                                            name={'assetId'}
+                                                                            placeholder={'eg. Laptop'}
                                                                             value={form.watch('assetId')}/>}/>
                                     </div>
                                 </TabsContent>
+
+
                                 <TabsContent value="accessories">
-                                    <h2 className="header-2">Accessories</h2>
-                                    <div className="text-right">
+                                    <div className="flex flex-row justify-between items-center gap-4 mb-3">
+                                        <h2 className="header-2">Accessories</h2>
                                         <Button
                                             type="button"
-                                            variant="outline"
+                                            variant="link"
                                             onClick={onAccessoryOpen}
                                         >
                                             Add Accessory
                                         </Button>
                                     </div>
-                                    
                                     <div className="w-full md:w-full lg:w-1/3">
                                         <DialogContainer open={isAccessoryOpen} onOpenChange={onAccessoryClose}
                                                          title={'Select an Asset'} description={''}
                                                          form={<KitItemForm label={'Add Asset'}
                                                                             onClose={onAssetClose}
                                                                             data={allAssets}
-                                                                            control={form.control} name={'assetId'}
+                                                                            // control={form.control}
+                                                                            name={'accessoryId'}
                                                                             placeholder={'eg. Keyboard'}
-                                                                            value={form.watch('assetId')}/>}/>
+                                                                            value={form.watch('accessoryId')}/>}/>
                                     </div>
+                                    <DataTable columns={columns} data={accessoriesList}/>
                                 </TabsContent>
                                 <TabsContent value="licenses">
-                                    <h2 className="header-2">Licenses</h2>
-                                    <div className="text-right">
+                                    <div className="flex flex-row justify-between items-center gap-4 mb-3">
+                                        <h2 className="header-2">Licenses</h2>
                                         <Button
                                             type="button"
-                                            variant="outline"
+                                            variant="link"
                                             onClick={onLicenseOpen}
                                         >
                                             Add License
@@ -199,10 +216,12 @@ const Create = () => {
                                                          form={<KitItemForm label={'Add License'}
                                                                             onClose={onLicenseClose}
                                                                             data={allAssets}
-                                                                            control={form.control} name={'assetId'}
-                                                                            placeholder={'eg. Keyboard'}
-                                                                            value={form.watch('assetId')}/>}/>
+                                                                            // control={form.control}
+                                                                            name={'licenseId'}
+                                                                            placeholder={'eg. Office 365'}
+                                                                            value={form.watch('licenseId')}/>}/>
                                     </div>
+                                    <DataTable columns={columns} data={licensesList}/>
                                 </TabsContent>
                             </div>
                         </Tabs>

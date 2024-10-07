@@ -1,10 +1,10 @@
 export const sidebarLinks = [
-    {
-        imgURL: "/icons/monitor.svg",
-        route: "/admin",
-        label: "Admin",
-        visibleTo: ["admin"],
-    },
+    // {
+    //     imgURL: "/icons/monitor.svg",
+    //     route: "/admin",
+    //     label: "Admin",
+    //     visibleTo: ["admin"],
+    // },
     {
         imgURL: "/icons/home.svg",
         route: "/",
@@ -35,18 +35,18 @@ export const sidebarLinks = [
         label: "People",
         visibleTo: ["admin", "user"],
     },
-    {
-        imgURL: "/icons/money-send.svg",
-        route: "/kits",
-        label: "Kits",
-        visibleTo: ["admin"],
-    },
-    {
-        imgURL: "/icons/plus.svg",
-        route: "/ai-assistant",
-        label: "AI Assistant",
-        visibleTo: ["admin"],
-    },
+    // {
+    //     imgURL: "/icons/money-send.svg",
+    //     route: "/kits",
+    //     label: "Kits",
+    //     visibleTo: ["admin"],
+    // },
+    // {
+    //     imgURL: "/icons/plus.svg",
+    //     route: "/ai-assistant",
+    //     label: "AI Assistant",
+    //     visibleTo: ["admin"],
+    // },
 ].sort((a, b) => {
     if (a.label === "Home") return -1;
     if (b.label === "Home") return 1;  

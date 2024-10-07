@@ -33,9 +33,8 @@ model User {
   co2eRecords   Co2eRecord[]
   employeeId    String?
   accounts      Account[]
-  // kits        UserKit[]
   Asset         Asset[]      @relation(name: "assignedToUser")
-  UserKit       UserKit[]
+  // UserKit       UserKit[]
 }
 
 model Account {
@@ -59,15 +58,17 @@ model Account {
 }
 
 model Co2eRecord {
-  id               String   @id @default(cuid())
-  asset            Asset    @relation(fields: [assetId], references: [id])
+  id               String    @id @default(cuid())
+  asset            Asset     @relation(fields: [assetId], references: [id])
   assetId          String
+  accessoryId      String
+  assessory        Accessory @relation(fields: [accessoryId], references: [id])
   co2e             Float // CO2e in kg
   co2eType         String // Type of CO2e (e.g., Scope 1, Scope 2, Scope 3)
   sourceOrActivity String // Description of the source or activity
-  date             DateTime // Date of the CO2e record
-  createdAt        DateTime @default(now())
-  User             User?    @relation(fields: [userId], references: [id])
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  User             User?     @relation(fields: [userId], references: [id])
   userId           String?
 }
 
@@ -93,41 +94,95 @@ model Company {
   categories   Category[]
   roles        Role[]
   statusLabels StatusLable[]
-  kits         Kit[]
+  // kits         Kit[]
+  locations    Location[] // Company has many locations
+  departments  Department[] // Company has many departments
+  inventories  Inventory[] // Company has many inventories
 }
 
-model Accessory {
-  id                 String    @id @default(cuid())
-  title              String
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
-  alertEmail         String
-  minQuantityAlert   Int
-  totalQuantityCount Int
-  vendor             String
-  purchaseDate       DateTime
-  description        String?
-  // categoryId         String?   @unique
-  // category           Category? @relation(fields: [categoryId], references: [id]) // Made optional
-  companyId          String?
-  company            Company?  @relation(fields: [companyId], references: [id])
-  Category           Category? @relation(fields: [categoryId], references: [id])
-  categoryId         String?
-  KitAsset           KitItem[]
+model Manufacturer {
+  id           String   @id @default(cuid())
+  name         String   @unique
+  url          String
+  supportUrl   String   @unique
+  supportPhone String   @unique
+  supportEmail String   @unique
+  models       Model[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Model {
+  id             String       @id @default(cuid())
+  name           String
+  modelNo        String
+  categoryId     String
+  category       Category     @relation(fields: [categoryId], references: [id])
+  manufacturerId String
+  manufacturer   Manufacturer @relation(fields: [manufacturerId], references: [id])
+  assets         Asset[]
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+model Location {
+  id           String   @id @default(cuid())
+  locName      String   @unique
+  addressLine1 String
+  addressLine2 String
+  city         String
+  state        String
+  zip          String
+  country      String
+  companyId    String
+  company      Company  @relation(fields: [companyId], references: [id])
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Inventory {
+  id        String   @id @default(cuid())
+  name      String
+  Company   Company? @relation(fields: [companyId], references: [id])
+  companyId String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Department {
+  id        String   @id @default(cuid())
+  name      String
+  Company   Company? @relation(fields: [companyId], references: [id])
+  companyId String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Supplier {
+  id           String   @id @default(cuid())
+  name         String
+  addressLine1 String
+  addressLine2 String
+  city         String
+  state        String
+  zip          String
+  country      String
+  phone        String
+  contactName  String
+  email        String
+  phoneNum     String
+  url          String
+  notes        String
+  Asset        Asset[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
 
 model Asset {
   id            String       @id @default(cuid())
   name          String
-  price         Float
-  categoryId    String
-  category      Category     @relation(fields: [categoryId], references: [id])
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
   assigneeId    String?
   assignee      User?        @relation(fields: [assigneeId], references: [id], onDelete: Cascade, name: "assignedToUser") // Added a name to this relation
-  brand         String
-  model         String
   serialNumber  String       @unique
   licenseId     String?
   license       License?     @relation(fields: [licenseId], references: [id])
@@ -137,8 +192,82 @@ model Asset {
   companyId     String
   company       Company      @relation(fields: [companyId], references: [id])
   // kits          KitAsset[]
-  KitAsset      KitItem[]
+  supplierId    String? // An asset can have one supplier
+  supplier      Supplier?    @relation(fields: [supplierId], references: [id])
+  // KitAsset      KitItem[]
+  Model         Model?       @relation(fields: [modelId], references: [id])
+  modelId       String?
+  endOfLife     DateTime
+  material      String
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
 }
+
+model Accessory {
+  id                 String       @id @default(cuid())
+  title              String
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+  alertEmail         String
+  minQuantityAlert   Int
+  totalQuantityCount Int
+  vendor             String
+  purchaseDate       DateTime
+  description        String?
+  companyId          String?
+  company            Company?     @relation(fields: [companyId], references: [id])
+  categoryId         String?
+  endOfLife          DateTime
+  material           String
+  // KitAsset           KitItem[]
+  Co2eRecord         Co2eRecord[]
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  type      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  model     Model[]
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id])
+}
+
+model License {
+  id                 String   @id @default(cuid())
+  name               String   @unique
+  licensedEmail      String
+  licenseKey         String
+  renewalDate        DateTime
+  purchaseDate       DateTime
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  vendor             String?
+  purchaseNotes      String?
+  licenseUrl         String?
+  minCopiesAlert     Int
+  alertRenewalDays   Int
+  licenseCopiesCount Int
+  purchasePrice      Decimal
+  assets             Asset[]
+  // KitAsset           KitItem[]
+}
+
+// model Kit {
+//   id          String   @id @default(cuid())
+//   name        String
+//   description String?
+//   // assets      KitItem[] @relation(name: "KitAssets")
+//   // accessories KitItem[] @relation(name: "KitAccessories")
+//   // licenses    KitItem[] @relation(name: "KitLicenses")
+//   licenseIds  String[] // Optional: For direct access to license IDs associated with the kit
+//   // users       UserKit[]
+//   companyId   String
+//   // company     Company   @relation(fields: [companyId], references: [id])
+//   createdAt   DateTime @default(now())
+//   updatedAt   DateTime @updatedAt
+// }
 
 model StatusLable {
   id          String   @id @default(cuid())
@@ -154,16 +283,25 @@ model StatusLable {
   companyId   String?
 }
 
-model Category {
-  id        String      @id @default(cuid())
-  name      String      @unique
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
-  assets    Asset[]
-  accessory Accessory[]
-  companyId String?
-  company   Company?    @relation(fields: [companyId], references: [id])
-}
+//
+// model KitItem {
+//   id          String   @id @default(cuid())
+//   kitId       String
+//   itemId      String
+//   createdAt   DateTime @default(now())
+//   updatedAt   DateTime @default(now())
+//   // kitAsset     Kit      @relation(name: "KitAssets", fields: [kitId], references: [id], map: "KitItem_kitAsset_fkey")
+//   // kitAccessory Kit      @relation(name: "KitAccessories", fields: [kitId], references: [id], map: "KitItem_kitAccessory_fkey")
+//   // kitLicense   Kit      @relation(name: "KitLicenses", fields: [kitId], references: [id], map: "KitItem_kitLicense_fkey")
+//   // accessory    Accessory? @relation(fields: [accessoryId], references: [id])
+//   accessoryId String?
+//   // asset        Asset?     @relation(fields: [assetId], references: [id])
+//   assetId     String?
+//   // license      License?   @relation(fields: [licenseId], references: [id])
+//   licenseId   String?
+//
+//   @@unique([kitId, itemId])
+// }
 
 model Transaction {
   id        String   @id @default(cuid())
@@ -172,26 +310,6 @@ model Transaction {
   assetId   Int
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-}
-
-model License {
-  id                 String    @id @default(cuid())
-  name               String    @unique
-  licensedEmail      String
-  licenseKey         String
-  renewalDate        DateTime
-  purchaseDate       DateTime
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
-  vendor             String?
-  purchaseNotes      String?
-  licenseUrl         String?
-  minCopiesAlert     Int
-  alertRenewalDays   Int
-  licenseCopiesCount Int
-  purchasePrice      Decimal
-  assets             Asset[]
-  KitAsset           KitItem[]
 }
 
 model AuditLog {
@@ -214,45 +332,11 @@ model Waitlist {
   updatedAt DateTime @updatedAt
 }
 
-model Kit {
-  id          String    @id @default(cuid())
-  name        String
-  description String?
-  assets      KitItem[] @relation(name: "KitAssets")
-  accessories KitItem[] @relation(name: "KitAccessories")
-  licenses    KitItem[] @relation(name: "KitLicenses")
-  licenseIds  String[] // Optional: For direct access to license IDs associated with the kit
-  users       UserKit[]
-  companyId   String
-  company     Company   @relation(fields: [companyId], references: [id])
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-}
-
-model KitItem {
-  id           String     @id @default(cuid())
-  kitId        String
-  itemId       String
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @default(now())
-  kitAsset     Kit        @relation(name: "KitAssets", fields: [kitId], references: [id], map: "KitItem_kitAsset_fkey")
-  kitAccessory Kit        @relation(name: "KitAccessories", fields: [kitId], references: [id], map: "KitItem_kitAccessory_fkey")
-  kitLicense   Kit        @relation(name: "KitLicenses", fields: [kitId], references: [id], map: "KitItem_kitLicense_fkey")
-  accessory    Accessory? @relation(fields: [accessoryId], references: [id])
-  accessoryId  String?
-  asset        Asset?     @relation(fields: [assetId], references: [id])
-  assetId      String?
-  license      License?   @relation(fields: [licenseId], references: [id])
-  licenseId    String?
-
-  @@unique([kitId, itemId])
-}
-
 model UserKit {
   userId    String
   kitId     String
-  user      User     @relation(fields: [userId], references: [id])
-  kit       Kit      @relation(fields: [kitId], references: [id])
+  // user      User     @relation(fields: [userId], references: [id])
+  // kit       Kit      @relation(fields: [kitId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

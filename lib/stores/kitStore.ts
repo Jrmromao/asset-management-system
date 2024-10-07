@@ -6,6 +6,7 @@ import {getAll, insert, update, remove} from '@/lib/actions/license.actions';
 interface IKitStore {
     kits: Kit[];
     loading: boolean;
+    appendItem: (id: string) => Promise<void>;
     create: (kit: Kit) => void;
     update: (id: string, updatedKit: Kit) => void;
     delete: (id: string) => Promise<void>;
@@ -63,5 +64,16 @@ export const useKitStore = create(persist<IKitStore>(
             set({isAccessoryOpen: false})
         },
 
+        appendItem: async (id: string) => {
+            // need to write the code to append a new kit to the kits list
+
+            set({
+
+
+
+            })
+
+
+        },
 
     }), {name: 'kit_store',}));

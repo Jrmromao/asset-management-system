@@ -161,52 +161,56 @@ const AssetForm = ({id, isUpdate = false}: AssetFormProps) => {
                     <Card className={'flex flex-col gap-4 p-3.5 mb-5'}>
 
                         <CustomInput control={form.control} {...form.register("assetName")}
-                                     label={'Asset Title'}
-                                     placeholder={'eg. Keyboard'}
+                                     label={'Asset Name'}
+                                     placeholder={'Enter a name'}
                                      type={'text'}/>
+
+                        <CustomInput control={form.control}   {...form.register("serialNumber")}
+                                     label={'Asset tag'}
+                                     placeholder={'eg. 1234'} type={'text'}/>
+
+                        {/*<div className={'flex '}>*/}
+                        {/*    <div className="flex-none w-9/12">*/}
+                        {/*        <CustomSelect control={form.control}*/}
+                        {/*                      {...form.register("category")}*/}
+                        {/*                      label={'Category'}*/}
+                        {/*                      data={categories}*/}
+                        {/*                      placeholder={'eg. IT Equipment'}*/}
+                        {/*                      value={form.watch('category')}*/}
+
+                        {/*        />*/}
+                        {/*    </div>*/}
+                        {/*    <div className="flex-none w-3/12 mt-6 ml-8">*/}
+                        {/*        <Button type={'button'} variant={'secondary'} className={'form-secondary-btn md:w-auto'}*/}
+                        {/*                onClick={openDialog}>Add Category</Button>*/}
+                        {/*    </div>*/}
+                        {/*</div>*/}
+
+                        {/*<CustomInput control={form.control}  {...form.register("brand")} label={'Brand'}*/}
+                        {/*             placeholder={'eg. Apple'}*/}
+                        {/*             type={'text'}/>*/}
 
 
                         <div className={'flex '}>
                             <div className="flex-none w-9/12">
-                                <CustomSelect control={form.control}
-                                              {...form.register("category")}
-                                              label={'Category'}
-                                              data={categories}
-                                              placeholder={'eg. IT Equipment'}
-                                              value={form.watch('category')}
-
-                                />
+                                <CustomInput control={form.control}
+                                             {...form.register("model")}
+                                             label={'Model'}
+                                             placeholder={'Select a Model'}
+                                             type={'text'}/>
                             </div>
                             <div className="flex-none w-3/12 mt-6 ml-8">
-                                <Button type={'button'} variant={'secondary'} className={'form-secondary-btn md:w-auto'}
-                                        onClick={openDialog}>Add Category</Button>
+                                <Button type={'button'} variant={'secondary'}
+                                        className={'form-secondary-btn md:w-auto'}
+                                        onClick={openDialog}>New</Button>
                             </div>
                         </div>
 
-                        <CustomInput control={form.control}  {...form.register("brand")} label={'Brand'}
-                                     placeholder={'eg. Apple'}
-                                     type={'text'}/>
-
-
-                        <CustomInput control={form.control}
-                                     {...form.register("model")}
-                                     label={'Model'}
-                                     placeholder={'eg. Apple Keyboard'}
-                                     type={'text'}/>
-
-                        <CustomInput control={form.control}   {...form.register("price")}
-                                     label={'Purchase Price'}
-                                     placeholder={'eg. 1000'} type={'number'}/>
-
-
-                        <CustomInput control={form.control}   {...form.register("serialNumber")}
-                                     label={'Serial Number'}
-                                     placeholder={'eg. 1234'} type={'text'}/>
 
                         <div className={'flex'}>
                             <div className="flex-none w-9/12">
                                 <CustomSelect control={form.control}   {...form.register("statusLabel")}
-                                              label={'Status Label'}
+                                              label={'Status'}
                                               data={statusLabels}
                                               placeholder={'eg. Available'}
                                               value={form.watch('statusLabel')}
@@ -214,20 +218,103 @@ const AssetForm = ({id, isUpdate = false}: AssetFormProps) => {
                                 />
                             </div>
                             <div className="flex-none w-3/12 mt-6 ml-8">
-                                <Button type={'button'} variant={'secondary'} className={'form-secondary-btn md:w-auto'}
-                                        onClick={openSL}>Add Status Label</Button>
+                                <Button type={'button'} variant={'secondary'}
+                                        className={'form-secondary-btn md:w-auto'}
+                                        onClick={openSL}>New</Button>
+                            </div>
+                        </div>
+                        <CustomInput control={form.control}   {...form.register("serialNumber")}
+                                     label={'Serial'}
+                                     placeholder={'eg. 1234'} type={'text'}/>
+
+                        <div className={'flex '}>
+                            <div className="flex-none w-9/12">
+                                <CustomInput control={form.control}
+                                             {...form.register("model")}
+                                             label={'Department'}
+                                             placeholder={'eg. Apple Keyboard'}
+                                             type={'text'}/>
+                            </div>
+                            <div className="flex-none w-3/12 mt-6 ml-8">
+                                <Button type={'button'} variant={'secondary'}
+                                        className={'form-secondary-btn md:w-auto'}
+                                        onClick={openDialog}>New</Button>
                             </div>
                         </div>
 
+
+                        <div className={'flex '}>
+                            <div className="flex-none w-9/12">
+                                <CustomInput control={form.control}
+                                             {...form.register("model")}
+                                             label={'Inventory'}
+                                             placeholder={'eg. Apple Keyboard'}
+                                             type={'text'}/>
+                            </div>
+                            <div className="flex-none w-3/12 mt-6 ml-8">
+                                <Button type={'button'} variant={'secondary'}
+                                        className={'form-secondary-btn md:w-auto'}
+                                        onClick={openDialog}>New</Button>
+                            </div>
+                        </div>
+
+
+                        <div className={'flex '}>
+                            <div className="flex-none w-9/12">
+                                <CustomInput control={form.control}
+                                             {...form.register("model")}
+                                             label={'Location'}
+                                             placeholder={'eg. Apple Keyboard'}
+                                             type={'text'}/>
+                            </div>
+                            <div className="flex-none w-3/12 mt-6 ml-8">
+                                <Button type={'button'} variant={'secondary'}
+                                        className={'form-secondary-btn md:w-auto'}
+                                        onClick={openDialog}>New</Button>
+                            </div>
+                        </div>
+
+                        <div className={'flex '}>
+                            <div className="flex-none w-9/12">
+                                <CustomInput control={form.control}
+                                             {...form.register("model")}
+                                             label={'Supplier'}
+                                             placeholder={'eg. Apple Keyboard'}
+                                             type={'text'}/>
+                            </div>
+                            <div className="flex-none w-3/12 mt-6 ml-8">
+                                <Button type={'button'} variant={'secondary'}
+                                        className={'form-secondary-btn md:w-auto'}
+                                        onClick={openDialog}>New</Button>
+                            </div>
+                        </div>
+
+
+                        {/*<CustomInput control={form.control}   {...form.register("price")}*/}
+                        {/*             label={'Purchase Price'}*/}
+                        {/*             placeholder={'eg. 1000'} type={'number'}/>*/}
+
+
                     </Card>
-                    <Button type="submit" className={'form-btn mt-6 w-full  md:w-auto'} disabled={isLoading}>
-                        {isLoading ? (
-                            <>
-                                <Loader2 size={20} className={'animate-spin'}/>&nbsp;
-                                Loading...
-                            </>
-                        ) : isUpdate ? 'Update' : 'Submit'}
-                    </Button>
+
+                    <div className={'flex'}>
+                        <div className="flex-none w-9/12">
+                            <Button type="submit" className={'form-btn mt-6 w-full  md:w-auto'} disabled={isLoading}>
+                                {isLoading ? (
+                                    <>
+                                        <Loader2 size={20} className={'animate-spin'}/>&nbsp;
+                                        Loading...
+                                    </>
+                                ) : isUpdate ? 'Update' : 'Submit'}
+                            </Button>
+                        </div>
+                        <div>
+                            <Button type="button" className={'bg-zinc-200 mt-6 w-full  md:w-auto'}
+                                    onClick={() => navigate.back()} disabled={isLoading}>
+                                Cancel
+                            </Button>
+                    </div>
+                        </div>
                 </form>
             </Form>
 

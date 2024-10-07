@@ -76,13 +76,6 @@ declare type Accessory = {
     updatedAt: Date
 }
 
-declare type Kit = {
-    id?: string;
-    name: string;
-    description: String;
-}
-
-
 declare type Asset = {
     id?: string;
     name: string;
@@ -142,6 +135,7 @@ declare type  KitItem  = {
 declare type  Kit  = {
     id:         string
     name:       string
+    description: string
     assets:     KitItem[]
     licenses:   KitItem[]
     accessories: KitItem[]
