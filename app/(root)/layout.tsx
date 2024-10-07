@@ -2,7 +2,7 @@ import MobileNav from "@/components/MobileNav";
 import Sidebar from "@/components/Sidebar";
 import Image from "next/image";
 import Script from "next/script";
-import { GoogleAnalytics } from '@next/third-parties/google'
+
 
 
 export default async function RootLayout({
@@ -35,7 +35,7 @@ export default async function RootLayout({
                     </div>
                 </div>
                 {children}
-                <GoogleAnalytics gaId="G-K3TNF3MCG4" />
+
             </div>
         </main>
     );
