@@ -12,6 +12,7 @@ import {Alert, AlertDescription, AlertTitle} from "@/components/ui/alert"
 import {useAccessoryStore} from "@/lib/stores/accessoryStore";
 import CustomDatePicker from "@/components/CustomDatePicker";
 import {AssetSchema} from "@/lib/schemas";
+import {insert} from "@/lib/actions/category.actions";
 
 interface AccessoryFormProps {
     accessory?: Accessory
@@ -43,19 +44,9 @@ const AccessoryForm = ({accessory}: AccessoryFormProps) => {
         setIsLoading(true)
 
         try {
-            createAccessory({
-                title: data.title,
-                totalQuantityCount: Number(data.totalQuantityCount),
-                minQuantityAlert: Number(data.minQuantityAlert),
-                alertEmail: data.alertEmail,
-                vendor: data.vendor,
-                purchaseDate: new Date(data.purchaseDate),
-                description: data.description || '',
-                categoryId: '0',
-                companyId: '0',
-                createdAt: new Date(),
-                updatedAt: new Date(),
-            })
+            insert()
+
+
             form.reset({})
 
         } catch (e) {

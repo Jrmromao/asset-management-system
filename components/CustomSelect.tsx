@@ -21,9 +21,7 @@ const CustomSelect = ({control, name, label, placeholder, data, value, disabled}
             name={name}
             render={({field}) => (
                 <div className={'form-item'}>
-                    <FormLabel className={'form-label'}>
-                        {label}
-                    </FormLabel>
+
                     <div className={'flex w-full flex-col'}>
                         <FormControl>
                             <Select onValueChange={field.onChange} value={value} disabled={disabled}>

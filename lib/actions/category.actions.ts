@@ -1,63 +1,177 @@
 'use server';
-import {prisma} from "@/app/db";
-import {parseStringify} from "@/lib/utils";
-import {auth} from "@/auth";
+
+import { prisma } from "@/app/db";
+import { auth } from "@/auth";
+import { revalidatePath } from 'next/cache';
+import {z} from "zod";
+import {categorySchema} from "@/lib/schemas";
+import {Prisma} from "@prisma/client";
 
 
-export const insert = async (categoryData: { name: string }) => {
+
+// Define the ActionResponse type
+type ActionResponse<T> = {
+    success?: boolean;
+    data?: T;
+    error?: string;
+}
+
+/**
+ * Creates a new category for the authenticated user's company
+ */
+export async function insert(values: z.infer<typeof categorySchema>): Promise<ActionResponse<void>> {
     try {
-        console.log(categoryData)
-        const session = await auth()
-        const category = await prisma.category.create({
+        // Validate input against schema
+        const validation = categorySchema.safeParse(values);
+
+        if (!validation.success) {
+            return {
+                success: false,
+                error: 'Invalid input data'
+            };
+        }
+
+        // Validate session
+        // const session = await auth();
+        // if (!session?.user?.companyId) {
+        //     return {
+        //         success: false,
+        //         error: 'Unauthorized: No valid session found'
+        //     };
+        // }
+
+        const {name} = validation.data;
+
+        await prisma.category.create({
             data: {
-                name: categoryData.name,
-                createdAt: new Date(),
-                updatedAt: new Date(),
+                name: name,
+                type: '',
                 company: {
                     connect: {
-                        id: session?.user?.companyId
+                        id: 'bf40528b-ae07-4531-a801-ede53fb31f04'
                     },
                 },
             },
-        }).then(result => console.log(result))
-            .catch(error => console.log(error))
-        console.log(category)
-        // return parseStringify(category);
+        });
+
+
+        // revalidatePath('/assets/create');
+
+        return {
+            success: true
+        };
+
     } catch (error) {
-        console.log(error)
+        console.error('Error creating category:', error);
+
+        // Handle specific database errors
+        if (error instanceof Error) {
+            if (error.message.includes('Unique constraint')) {
+                return {
+                    success: false,
+                    error: 'A category with this name already exists'
+                };
+            }
+        }
+
+        return {
+            success: false,
+            error: 'Failed to create category'
+        };
     }
 }
 
-export const getCategories = async () => {
+
+
+/**
+ * Fetches all categories for a given company with optional filtering and sorting
+ */
+export async function findAll(options?: {
+    orderBy?: 'name' | 'createdAt';
+    order?: 'asc' | 'desc';
+    search?: string;
+}): Promise<ActionResponse<Category[]>> {
     try {
-        const session = await auth()
+        // Validate session
+        const session = await auth();
+        // if (!session?.user?.companyId) {
+        //     return {
+        //         success: false,
+        //         error: 'Unauthorized: No valid session found'
+        //     };
+        // }
+
+        // Build the where clause with proper Prisma types
+        const where: Prisma.CategoryWhereInput = {
+            companyId: 'bf40528b-ae07-4531-a801-ede53fb31f04', //session.user.companyId,
+            ...(options?.search ? {
+                OR: [
+                    {
+                        name: {
+                            contains: options.search,
+                            mode: 'insensitive'
+                        }
+                    },
+                    {
+                        type: {
+                            contains: options.search,
+                            mode: 'insensitive'
+                        }
+                    }
+                ]
+            } : {})
+        };
+
+        // Build the orderBy with proper Prisma types
+        const orderBy: Prisma.CategoryOrderByWithRelationInput = options?.orderBy
+            ? { [options.orderBy]: options.order || 'asc' }
+            : { name: 'asc' };
+
+        // Get the categories
         const categories = await prisma.category.findMany({
-            orderBy: {
-                name: 'desc'
-            },
-            where: {
-                companyId: session?.user?.companyId
+            where,
+            orderBy,
+            select: {
+                id: true,
+                name: true,
+                type: true,
+                companyId: true,
+                createdAt: true,
+                updatedAt: true,
             }
         });
 
-        return parseStringify(categories);
+        return {
+            success: true,
+            data: categories
+        };
+
     } catch (error) {
-        console.log(error)
+        console.error('Error fetching categories:', error);
+        return {
+            success: false,
+            error: 'Failed to fetch categories'
+        };
     }
 }
 
-export const remove = async (id: string) => {
-    try {
-        const licenseTool = await prisma.category.delete({
-            where: {
-                id: id
-            }
-        })
-        return parseStringify(licenseTool);
-    } catch (error) {
-        console.log(error)
-    }
-    finally {
-        await prisma.$disconnect()
-    }
-}
+/**
+ * Example usage with form:
+ *
+ * const form = useForm<z.infer<typeof categorySchema>>({
+ *   resolver: zodResolver(categorySchema),
+ *   defaultValues: {
+ *     name: '',
+ *     type: ''
+ *   }
+ * });
+ *
+ * async function onSubmit(values: z.infer<typeof categorySchema>) {
+ *   const result = await insert(values);
+ *   if (result.success) {
+ *     // Handle success
+ *   } else {
+ *     // Handle error
+ *   }
+ * }
+ */

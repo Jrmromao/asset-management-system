@@ -1,95 +1,137 @@
-import React from 'react'
-import {FormControl, FormField, FormLabel, FormMessage} from "@/components/ui/form";
-import {Input} from "@/components/ui/input";
-import {GrCircleInformation} from "react-icons/gr";
-import {Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@/components/ui/tooltip";
-import {InfoIcon} from "lucide-react";
-import {usePathname} from 'next/navigation';
+import React, { forwardRef, useState } from 'react'
+import { FormControl, FormField, FormLabel, FormMessage } from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { GrCircleInformation } from "react-icons/gr"
+import { usePathname } from 'next/navigation'
+import { Control } from 'react-hook-form'
 
 export interface CustomInputProps {
-    label: string;
-    placeholder?: string;
+    label?: string;
     name: string;
-    control: any;
-    type: string;
-    disabled?: boolean
-    readonly?: boolean
+    control: Control<any>;
+    type?: string;
+    placeholder?: string;
+    disabled?: boolean;
+    readonly?: boolean;
+    tooltip?: string;
+    className?: string;
 }
 
-const PasswordRules = ({label}: { label: string }) => {
-
+const PasswordRules = ({ label }: { label: string }) => {
+    const [isHovered, setIsHovered] = useState(false);
 
     return (
-        <TooltipProvider>
-            <Tooltip>
-                <TooltipTrigger>
-                    {label} <GrCircleInformation className={'inline'}/>
-                </TooltipTrigger>
-                <TooltipContent className={'ag-tooltip w-[300px] max-w-[300px] bg-white'}>
-                    <ul>
-                        <li>Your password should:</li>
-                        <ul>
-                            <li>Be at least 8 characters long</li>
-                            <li>Include a mix of:</li>
-                            <ul>
-                                <li>Uppercase letters (A-Z)</li>
-                                <li>Lowercase letters (a-z)</li>
-                                <li>Numbers (0-9)</li>
-                                <li>Special characters (e.g., !@#$%^&*)</li>
-                            </ul>
+        <div
+            className="relative inline-flex items-center gap-1"
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+        >
+            {label} <GrCircleInformation className="h-4 w-4" />
+            {isHovered && (
+                <div className="absolute left-full top-0 ml-2 w-80 bg-white p-2 rounded-md shadow-lg z-50">
+                    <div className="space-y-2 text-sm">
+                        <p className="font-medium">Password Requirements:</p>
+                        <ul className="list-disc pl-4 space-y-1">
+                            <li>Minimum 8 characters</li>
+                            <li>At least one uppercase letter (A-Z)</li>
+                            <li>At least one lowercase letter (a-z)</li>
+                            <li>At least one number (0-9)</li>
+                            <li>At least one special character (!@#$%^&*)</li>
                         </ul>
-                    </ul>
-
-
-                </TooltipContent>
-            </Tooltip>
-        </TooltipProvider>
+                    </div>
+                </div>
+            )}
+        </div>
     )
 }
 
+const TooltipLabel = ({ label, tooltip }: { label: string; tooltip: string }) => {
+    const [isHovered, setIsHovered] = useState(false);
 
-const CustomInput = ({
-                         control,
-                         name,
-                         label,
-                         placeholder,
-                         type,
-                         disabled,
-                         readonly = false,
-                         ...rest
-                     }: CustomInputProps) => {
+    return (
+        <div
+            className="relative inline-flex items-center gap-1"
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+        >
+            {label} <GrCircleInformation className="h-4 w-4" />
+            {isHovered && (
+                <div className="absolute left-full top-0 ml-2 bg-white p-2 rounded-md shadow-lg z-50 min-w-[200px]">
+                    {tooltip}
+                </div>
+            )}
+        </div>
+    );
+};
 
-    const pathname = usePathname();
-    const showTooltip =
+const CustomInput = forwardRef<HTMLInputElement, CustomInputProps>(({
+                                                                        control,
+                                                                        name,
+                                                                        label,
+                                                                        placeholder,
+                                                                        type = "text",
+                                                                        disabled = false,
+                                                                        readonly = false,
+                                                                        tooltip,
+                                                                        className,
+                                                                        ...props
+                                                                    }, ref) => {
+    const pathname = usePathname()
+    const isPassword = type === 'password'
+    const showPasswordTooltip = isPassword &&
         !pathname.includes('sign-in') &&
         !name.includes('repeatPassword') &&
-        !name.includes('confirmNewPassword') &&
-        type === 'password';
+        !name.includes('confirmNewPassword')
+
+    const isTextArea = type === 'textarea'
 
     return (
         <FormField
             control={control}
             name={name}
-            render={({field}) => (
-                <div className={'form-item'}>
-                    <FormLabel className={'form-label'}>
-                        {showTooltip ? <PasswordRules label={label}/> : label}
-                    </FormLabel>
-                    <div className={'flex w-full flex-col'}>
-                        <FormControl>
-                            <Input
-                                readOnly={readonly}
-                                disabled={disabled}
+            render={({ field }) => (
+                <div className="space-y-2">
+                    {label && <FormLabel>
+                        {showPasswordTooltip ? (
+                            <PasswordRules label={label} />
+                        ) : tooltip ? (
+                            <TooltipLabel label={label} tooltip={tooltip} />
+                        ) : (
+                            label
+                        )}
+                    </FormLabel>}
+
+                    <FormControl>
+                        {isTextArea ? (
+                            <Textarea
+                                {...field}
                                 placeholder={placeholder}
-                                className={'input-class'} {...field}
-                                type={type}
+                                disabled={disabled}
+                                className={className}
+                                rows={4}
                             />
-                        </FormControl>
-                        <FormMessage className={'form-message mt-2'}/>
-                    </div>
+                        ) : (
+                            <Input
+                                {...field}
+                                {...props}
+                                ref={ref}
+                                type={type}
+                                placeholder={placeholder}
+                                disabled={disabled}
+                                readOnly={readonly}
+                                className={className}
+                            />
+                        )}
+                    </FormControl>
+
+                    <FormMessage />
                 </div>
             )}
         />
     )
-}
+})
+
+CustomInput.displayName = 'CustomInput'
+
 export default CustomInput

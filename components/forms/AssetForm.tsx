@@ -1,324 +1,318 @@
 'use client'
-import React, {useEffect, useState} from 'react'
-import {z} from "zod"
-import {zodResolver} from "@hookform/resolvers/zod"
-import {useForm} from "react-hook-form"
-import {Button} from "@/components/ui/button"
-import {Form,} from "@/components/ui/form"
-import {Loader2} from "lucide-react";
-import {useAssetStore} from "@/lib/stores/assetStore";
-import CustomSelect from "@/components/CustomSelect";
-import {Card} from "@/components/ui/card";
-import {useCategoryStore} from "@/lib/stores/categoryStore";
-import CustomInput from "@/components/CustomInput";
-import {DialogContainer} from "@/components/dialogs/DialogContainer";
-import CategoryForm from "@/components/forms/CategoryForm";
-import {useStatusLabelStore} from "@/lib/stores/statusLabelStore";
-import StatusLabelForm from "@/components/forms/StatusLabelForm";
-import {useRouter} from "next/navigation";
-import {toast} from "sonner";
-import {sleep} from "@/lib/utils";
 
+import React from 'react'
+import { z } from "zod"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { useForm } from "react-hook-form"
+import { Button } from "@/components/ui/button"
+import { Form, FormLabel } from "@/components/ui/form"
+import { Loader2, Plus } from "lucide-react"
+import { Card } from "@/components/ui/card"
+import { useRouter } from "next/navigation"
+import { toast } from "sonner"
+import { useTransition } from 'react'
+
+// Components
+import CustomInput from "@/components/CustomInput"
+import CustomSelect from "@/components/CustomSelect"
+import { DialogContainer } from "@/components/dialogs/DialogContainer"
+import CustomDatePicker from "@/components/CustomDatePicker"
+
+// Forms
+import ModelForm from "@/components/forms/ModelForm"
+import StatusLabelForm from "@/components/forms/StatusLabelForm"
+// import LocationForm from "@/components/forms/LocationForm"
+// import DepartmentForm from "@/components/forms/DepartmentForm"
+// import InventoryForm from "@/components/forms/InventoryForm"
+// import SupplierForm from "@/components/forms/SupplierForm"
+
+// Stores
+import { useAssetStore } from "@/lib/stores/assetStore"
+import { useStatusLabelStore } from "@/lib/stores/statusLabelStore"
+import { useModelStore } from "@/lib/stores/modelStore"
+import {useLocationStore} from "@/lib/stores/locationStore";
+// import { useLocationStore } from "@/lib/stores/locationStore"
+// import { useDepartmentStore } from "@/lib/stores/departmentStore"
+// import { useInventoryStore } from "@/lib/stores/inventoryStore"
+// import { useSupplierStore } from "@/lib/stores/supplierStore"
+
+const assetSchema = z.object({
+    name: z.string().min(1, "Asset name is required"),
+    serialNumber: z.string().min(1, "Serial number is required"),
+    modelId: z.string().min(1, "Model is required"),
+    statusLabelId: z.string().min(1, "Status is required"),
+    departmentId: z.string().min(1, "Department is required"),
+    inventoryId: z.string().min(1, "Inventory is required"),
+    locationId: z.string().min(1, "Location is required"),
+    supplierId: z.string().min(1, "Supplier is required"),
+    endOfLife: z.date({
+        required_error: "End of life date is required",
+    }),
+    material: z.string().optional(),
+});
+
+type AssetFormValues = z.infer<typeof assetSchema>;
 
 interface AssetFormProps {
-    id?: string
-    isUpdate?: boolean
+    id?: string;
+    isUpdate?: boolean;
 }
 
-const AssetForm = ({id, isUpdate = false}: AssetFormProps) => {
+const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
+    const [isPending, startTransition] = useTransition()
+    const router = useRouter()
 
-    const [asset, setAsset] = useState<Asset | null>()
-    const [findById] = useAssetStore((state) => [state.findById])
+    // Stores
+    const { create: createAsset, update: updateAsset, findById } = useAssetStore()
+    const { statusLabels, getAll: fetchStatusLabels, isOpen: isStatusOpen, onOpen: openStatus, onClose: closeStatus } = useStatusLabelStore()
+    const { models, fetchModels, isOpen: isModelOpen, onOpen: openModel, onClose: closeModel } = useModelStore()
+    const { locations, fetchLocations, isOpen: isLocationOpen, onOpen: openLocation, onClose: closeLocation } = useLocationStore()
+    // const { departments, fetchDepartments, isOpen: isDepartmentOpen, onOpen: openDepartment, onClose: closeDepartment } = useDepartmentStore()
+    // const { inventories, fetchInventories, isOpen: isInventoryOpen, onOpen: openInventory, onClose: closeInventory } = useInventoryStore()
+    // const { suppliers, fetchSuppliers, isOpen: isSupplierOpen, onOpen: openSupplier, onClose: closeSupplier } = useSupplierStore()
 
-
-    useEffect(() => {
-        if (isUpdate) {
-            if (!id) {
-                navigate.back();
-                return;
-            }
-            findById(id as string)
-                .then(asset => {
-                    setAsset(asset);
-                    form.setValue('assetName', asset?.name!);
-                    form.setValue('brand', asset?.brand!);
-                    form.setValue('model', asset?.model!);
-                    form.setValue('serialNumber', asset?.serialNumber!);
-                    form.setValue('category', asset?.category?.id!);
-                    form.setValue('statusLabel', asset?.statusLabel?.id!);
-                    form.setValue('price', asset?.price!);
-                })
-        }
-
-    }, []);
-
-    const INITIAL_VALUES = {
-        id: asset?.id,
-        assetName: asset?.name,
-        brand: asset?.brand,
-        model: asset?.model,
-        categoryId: asset?.categoryId,
-        statusLabelId: asset?.statusLabelId,
-        serialNumber: asset?.serialNumber,
-        price: asset?.price,
-        category: asset?.category?.name,
-        statusLabel: asset?.statusLabel?.name,
-        datePurchased: new Date(asset?.datePurchased!).getDate().toString()
-
-
-    }
-    const navigate = useRouter()
-    const [isLoading, setIsLoading] = useState(false)
-    const [createAsset, updateAsset] = useAssetStore((state) => [state.create, state.update,]);
-    const [categories, fetchAll, openDialog, closeDialog, isOpen] = useCategoryStore((state) => [state.categories, state.getAll, state.onOpen, state.onClose, state.isOpen]);
-    const [statusLabels, fetchAllStatusLabels, closeSL, openSL, isOpenSL] = useStatusLabelStore((state) => [state.statusLabels, state.getAll, state.onClose, state.onOpen, state.isOpen]);
-
-    useEffect(() => {
-
-        closeDialog()
-        fetchAll()
-        fetchAllStatusLabels()
-    }, []);
-
-    const schema = z.object({
-
-        id: z.string().optional(),
-        assetName: z.string().min(1, "Asset name is required"),
-        brand: z.string().min(1, "Brand is required"),
-        model: z.string().min(1, "Model is required"),
-        serialNumber: z.string().min(1, "Serial number is required"),
-        category: z.string().min(1, "Category is required"),
-        statusLabel: z.string().min(1, "Status label is required"),
-        price: z
-            .string({required_error: "Price is required"})
-            .transform((value) => Number(value))
-            .refine((value) => value >= 1, {message: "Price must be at least 1"})
-
-
+    // Form
+    const form = useForm<AssetFormValues>({
+        resolver: zodResolver(assetSchema),
+        defaultValues: {
+            name: '',
+            serialNumber: '',
+            modelId: '',
+            statusLabelId: '',
+            departmentId: '',
+            inventoryId: '',
+            locationId: '',
+            supplierId: '',
+            endOfLife: undefined,
+            material: '',
+        },
     })
 
+    // Load data
+    React.useEffect(() => {
+        fetchStatusLabels()
+        fetchModels()
+        fetchLocations()
+        // fetchDepartments()
+        // fetchInventories()
+        // fetchSuppliers()
 
-    const form = useForm<z.infer<typeof schema>>({
-        resolver: zodResolver(schema),
-        defaultValues: INITIAL_VALUES
-    })
-
-    const onSubmit = async (data: z.infer<typeof schema>) => {
-        setIsLoading(true)
-        try {
-
-            const assetData: Asset = {
-                name: data.assetName,
-                brand: data.brand,
-                model: data.model,
-                categoryId: data.category!,
-                statusLabelId: data.statusLabel,
-                serialNumber: data.serialNumber,
-                price: data.price,
-                datePurchased: new Date().getDate().toString()
-            }
-
-            if (isUpdate) {
-                updateAsset(String(asset?.id), assetData).then(_ => {
-                    toast.success('Asset updated successfully', {
-                        position: 'top-right',
-                    })
-                    sleep(2000)
-                    navigate.back()
-                })
-            } else {
-
-                createAsset(assetData).then(async r => {
-                    await sleep(1000)
-                    toast.success('Asset created successfully', {
-                        position: 'top-right',
-                    })
-                    navigate.back()
-                })
-
-
-            }
-            form.reset(INITIAL_VALUES)
-        } catch (e) {
-            console.error(e)
-        } finally {
-            setIsLoading(false)
+        if (isUpdate && id) {
+            startTransition(async () => {
+                const asset = await findById(id)
+                if (asset) {
+                    form.reset(asset)
+                } else {
+                    toast.error('Asset not found')
+                    router.back()
+                }
+            })
         }
+    }, [isUpdate, id])
+
+    async function onSubmit(data: AssetFormValues) {
+        startTransition(async () => {
+            try {
+                // if (isUpdate) {
+                //     const result = await updateAsset(id!, data)
+                //     if (result.error) {
+                //         toast.error(result.error)
+                //         return
+                //     }
+                //     toast.success('Asset updated successfully')
+                // } else {
+                //     const result = await createAsset(data)
+                //     if (result.error) {
+                //         toast.error(result.error)
+                //         return
+                //     }
+                //     toast.success('Asset created successfully')
+                // }
+                router.back()
+            } catch (error) {
+                toast.error('Something went wrong')
+                console.error(error)
+            }
+        })
     }
+
+    const SelectWithButton = ({
+                                  name,
+                                  label,
+                                  data,
+                                  onNew,
+                                  placeholder,
+                              }: {
+        name: keyof AssetFormValues;
+        label: string;
+        data: any[];
+        onNew: () => void;
+        placeholder: string;
+    }) => (
+        <div className="flex gap-2">
+            <div className="flex-1">
+                <CustomSelect
+                    value={form.watch(name)}
+                    name={name}
+                    label={label}
+                    control={form.control}
+                    data={data}
+                    placeholder={placeholder}
+                />
+            </div>
+            <Button
+                type="button"
+                variant="outline"
+                onClick={onNew}
+                className="self-end h-10"
+                disabled={isPending}
+            >
+                <Plus className="h-4 w-4" />
+            </Button>
+        </div>
+    );
 
     return (
-        <section className="w-full bg-white z-50 max-h-[900px] overflow-y-auto p-4">
-            <DialogContainer open={isOpen} onOpenChange={closeDialog} title={'New Category'}
-                             description={'Add a new Category'} form={<CategoryForm/>}/>
-            <DialogContainer open={isOpenSL} onOpenChange={closeSL} title={'New Status Label'}
-                             description={'Add a new Status Label'} form={<StatusLabelForm/>}/>
-
+        <section className="w-full mx-auto p-6">
+            {/* Modals */}
+            <DialogContainer
+                description={''}
+                open={isModelOpen}
+                onOpenChange={closeModel}
+                title="Add Model"
+                form={<ModelForm />}
+            />
+            <DialogContainer
+                description={''}
+                open={isStatusOpen}
+                onOpenChange={closeStatus}
+                title="Add Status"
+                form={<StatusLabelForm />}
+            />
+            {/* Add other modals */}
 
             <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                    <Card className="p-6 space-y-6">
+                        {/* Basic Information */}
+                        <div className="grid grid-cols-2 gap-6">
+                            <CustomInput
+                                name="name"
+                                label="Asset Name"
+                                control={form.control}
+                                type="text"
+                                placeholder="Enter asset name"
+                            />
 
-                <form onSubmit={form.handleSubmit(onSubmit)}>
-
-                    <Card className={'flex flex-col gap-4 p-3.5 mb-5'}>
-
-                        <CustomInput control={form.control} {...form.register("assetName")}
-                                     label={'Asset Name'}
-                                     placeholder={'Enter a name'}
-                                     type={'text'}/>
-
-                        <CustomInput control={form.control}   {...form.register("serialNumber")}
-                                     label={'Asset tag'}
-                                     placeholder={'eg. 1234'} type={'text'}/>
-
-                        {/*<div className={'flex '}>*/}
-                        {/*    <div className="flex-none w-9/12">*/}
-                        {/*        <CustomSelect control={form.control}*/}
-                        {/*                      {...form.register("category")}*/}
-                        {/*                      label={'Category'}*/}
-                        {/*                      data={categories}*/}
-                        {/*                      placeholder={'eg. IT Equipment'}*/}
-                        {/*                      value={form.watch('category')}*/}
-
-                        {/*        />*/}
-                        {/*    </div>*/}
-                        {/*    <div className="flex-none w-3/12 mt-6 ml-8">*/}
-                        {/*        <Button type={'button'} variant={'secondary'} className={'form-secondary-btn md:w-auto'}*/}
-                        {/*                onClick={openDialog}>Add Category</Button>*/}
-                        {/*    </div>*/}
-                        {/*</div>*/}
-
-                        {/*<CustomInput control={form.control}  {...form.register("brand")} label={'Brand'}*/}
-                        {/*             placeholder={'eg. Apple'}*/}
-                        {/*             type={'text'}/>*/}
-
-
-                        <div className={'flex '}>
-                            <div className="flex-none w-9/12">
-                                <CustomInput control={form.control}
-                                             {...form.register("model")}
-                                             label={'Model'}
-                                             placeholder={'Select a Model'}
-                                             type={'text'}/>
-                            </div>
-                            <div className="flex-none w-3/12 mt-6 ml-8">
-                                <Button type={'button'} variant={'secondary'}
-                                        className={'form-secondary-btn md:w-auto'}
-                                        onClick={openDialog}>New</Button>
-                            </div>
+                            <CustomInput
+                                name="serialNumber"
+                                label="Serial Number"
+                                control={form.control}
+                                type="text"
+                                placeholder="Enter serial number"
+                            />
                         </div>
 
+                        {/* Selections */}
+                        <div className="space-y-6">
+                            <SelectWithButton
+                                name="modelId"
+                                label="Model"
+                                data={models}
+                                onNew={openModel}
+                                placeholder="Select model"
+                            />
 
-                        <div className={'flex'}>
-                            <div className="flex-none w-9/12">
-                                <CustomSelect control={form.control}   {...form.register("statusLabel")}
-                                              label={'Status'}
-                                              data={statusLabels}
-                                              placeholder={'eg. Available'}
-                                              value={form.watch('statusLabel')}
+                            <SelectWithButton
+                                name="statusLabelId"
+                                label="Status"
+                                data={statusLabels}
+                                onNew={openStatus}
+                                placeholder="Select status"
+                            />
 
+                            <SelectWithButton
+                                name="departmentId"
+                                label="Department"
+                                data={[]}
+                                onNew={() => {
+                                }}
+                                placeholder="Select department"
+                            />
+
+                            <SelectWithButton
+                                name="locationId"
+                                label="Location"
+                                data={locations}
+                                onNew={openLocation}
+                                placeholder="Select location"
+                            />
+
+                            <SelectWithButton
+                                name="supplierId"
+                                label="Supplier"
+                                data={[]}
+                                onNew={() => {
+                                }}
+                                placeholder="Select supplier"
+                            />
+                        </div>
+
+                        {/* Additional Information */}
+                        <div className="grid grid-cols-2 gap-6">
+                            {/* Each form field gets its own container with consistent heights */}
+                            <div className="flex flex-col space-y-2">
+                                <FormLabel>End of Life</FormLabel>
+                                <CustomDatePicker
+                                    name="endOfLife"
+                                    form={form}
+                                    placeholder="Select date"
                                 />
                             </div>
-                            <div className="flex-none w-3/12 mt-6 ml-8">
-                                <Button type={'button'} variant={'secondary'}
-                                        className={'form-secondary-btn md:w-auto'}
-                                        onClick={openSL}>New</Button>
+
+                            <div className="flex flex-col space-y-2">
+                                <FormLabel>Material</FormLabel>
+                                <CustomInput
+                                    name="material"
+                                    label=""  // Remove label from component as we're handling it above
+                                    control={form.control}
+                                    placeholder="Enter material"
+                                    type="text"
+                                />
                             </div>
                         </div>
-                        <CustomInput control={form.control}   {...form.register("serialNumber")}
-                                     label={'Serial'}
-                                     placeholder={'eg. 1234'} type={'text'}/>
-
-                        <div className={'flex '}>
-                            <div className="flex-none w-9/12">
-                                <CustomInput control={form.control}
-                                             {...form.register("model")}
-                                             label={'Department'}
-                                             placeholder={'eg. Apple Keyboard'}
-                                             type={'text'}/>
-                            </div>
-                            <div className="flex-none w-3/12 mt-6 ml-8">
-                                <Button type={'button'} variant={'secondary'}
-                                        className={'form-secondary-btn md:w-auto'}
-                                        onClick={openDialog}>New</Button>
-                            </div>
-                        </div>
-
-
-                        <div className={'flex '}>
-                            <div className="flex-none w-9/12">
-                                <CustomInput control={form.control}
-                                             {...form.register("model")}
-                                             label={'Inventory'}
-                                             placeholder={'eg. Apple Keyboard'}
-                                             type={'text'}/>
-                            </div>
-                            <div className="flex-none w-3/12 mt-6 ml-8">
-                                <Button type={'button'} variant={'secondary'}
-                                        className={'form-secondary-btn md:w-auto'}
-                                        onClick={openDialog}>New</Button>
-                            </div>
-                        </div>
-
-
-                        <div className={'flex '}>
-                            <div className="flex-none w-9/12">
-                                <CustomInput control={form.control}
-                                             {...form.register("model")}
-                                             label={'Location'}
-                                             placeholder={'eg. Apple Keyboard'}
-                                             type={'text'}/>
-                            </div>
-                            <div className="flex-none w-3/12 mt-6 ml-8">
-                                <Button type={'button'} variant={'secondary'}
-                                        className={'form-secondary-btn md:w-auto'}
-                                        onClick={openDialog}>New</Button>
-                            </div>
-                        </div>
-
-                        <div className={'flex '}>
-                            <div className="flex-none w-9/12">
-                                <CustomInput control={form.control}
-                                             {...form.register("model")}
-                                             label={'Supplier'}
-                                             placeholder={'eg. Apple Keyboard'}
-                                             type={'text'}/>
-                            </div>
-                            <div className="flex-none w-3/12 mt-6 ml-8">
-                                <Button type={'button'} variant={'secondary'}
-                                        className={'form-secondary-btn md:w-auto'}
-                                        onClick={openDialog}>New</Button>
-                            </div>
-                        </div>
-
-
-                        {/*<CustomInput control={form.control}   {...form.register("price")}*/}
-                        {/*             label={'Purchase Price'}*/}
-                        {/*             placeholder={'eg. 1000'} type={'number'}/>*/}
-
-
                     </Card>
 
-                    <div className={'flex'}>
-                        <div className="flex-none w-9/12">
-                            <Button type="submit" className={'form-btn mt-6 w-full  md:w-auto'} disabled={isLoading}>
-                                {isLoading ? (
-                                    <>
-                                        <Loader2 size={20} className={'animate-spin'}/>&nbsp;
-                                        Loading...
-                                    </>
-                                ) : isUpdate ? 'Update' : 'Submit'}
-                            </Button>
-                        </div>
-                        <div>
-                            <Button type="button" className={'bg-zinc-200 mt-6 w-full  md:w-auto'}
-                                    onClick={() => navigate.back()} disabled={isLoading}>
-                                Cancel
-                            </Button>
+                    {/* Form Actions */}
+                    <div className="flex justify-end gap-4">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => router.back()}
+                            disabled={isPending}
+                        >
+                            Cancel
+                        </Button>
+
+                        <Button
+                            type="submit"
+                            disabled={isPending}
+                            className="min-w-[120px]"
+                        >
+                            {isPending ? (
+                                <>
+                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                    {isUpdate ? 'Updating...' : 'Creating...'}
+                                </>
+                            ) : (
+                                isUpdate ? 'Update Asset' : 'Create Asset'
+                            )}
+                        </Button>
                     </div>
-                        </div>
                 </form>
             </Form>
-
         </section>
-    )
-}
-export default AssetForm
+    );
+};
+
+export default AssetForm;

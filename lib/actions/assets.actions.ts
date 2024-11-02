@@ -5,38 +5,36 @@ import {parseStringify} from "@/lib/utils";
 import {auth} from "@/auth";
 import {z} from "zod";
 import {assetAssignSchema, loginSchema} from "@/lib/schemas";
-
+import {Asset} from "@/types";
 
 export const create = async (data: Asset) => {
     try {
-        const session = await auth()
-        await prisma.asset.create({
+        const newAsset = await prisma.asset.create({
             data: {
                 name: data.name,
-                price: data.price,
-                brand: data.brand,
-                model: data.model,
                 serialNumber: data.serialNumber,
-                category: {
-                    connect: {
-                        id: data.categoryId
-                    },
-                },
-                company: {
-                    connect: {
-                        id: session?.user?.companyId
-                    },
-                },
-                statusLabel: {
-                    connect: {
-                        id: data.statusLabelId
-                    },
-                },
+                companyId: data.companyId,
+                material: data.material,
+                modelId: data.modelId,
+                endOfLife: data.endOfLife,
+                licenseId: data.licenseId,
+                statusLabelId: data.statusLabelId,
+                supplierId: data.supplierId,
+            },
+            include: {
+                Company: true,
+                Supplier: true,
+                StatusLabel: true,
+                License: true,
+                Co2eRecord: true,
             },
         });
+
+        console.log('Asset created successfully:', newAsset);
     } catch (error) {
         console.error('Error creating asset:', error);
-        throw error;
+    } finally {
+        await prisma.$disconnect();
     }
 }
 
@@ -45,9 +43,11 @@ export const get = async () => {
         const session = await auth()
         const assets = await prisma.asset.findMany({
             include: {
-                category: true,
-                license: true,
-                statusLabel: true
+                License: true,
+                Model: true,
+                Company: true,
+                Co2eRecord: true,
+                StatusLabel: true
             },
             orderBy: {
                 createdAt: 'desc'
@@ -66,10 +66,11 @@ export const findById = async (id: string) => {
     try {
         const asset = await prisma.asset.findFirst({
             include: {
-                category: true,
-                license: true,
-                statusLabel: true,
-                assignee: true,
+                License: true,
+                Model: true,
+                Company: true,
+                Co2eRecord: true,
+                StatusLabel: true
             },
             where: {
                 id: id
@@ -103,12 +104,17 @@ export const update = async (asset: Asset, id: string) => {
             },
             data: {
                 name: asset.name,
-                price: asset.price,
-                brand: asset.brand,
-                model: asset.model,
                 serialNumber: asset.serialNumber,
-                categoryId: asset.categoryId,
-                statusLabelId: asset.statusLabelId
+                Company: {
+                    connect: {
+                        id: asset.companyId
+                    },
+                },
+                StatusLabel: {
+                    connect: {
+                        id: asset.statusLabelId
+                    },
+                },
             }
         });
         return parseStringify(assets);
@@ -120,14 +126,11 @@ export const update = async (asset: Asset, id: string) => {
 export const assign = async (values: z.infer<typeof assetAssignSchema>) => {
     try {
         const validation = assetAssignSchema.safeParse(values)
-        if(!validation.success) return {error: 'Invalid email or password'}
+        if (!validation.success) return {error: 'Invalid email or password'}
         const {assetId, userId} = values
 
-
-        console.log('validation.data: ',validation.data)
-
         const updatedAsset = await prisma.asset.update({
-            where: { id: assetId },
+            where: {id: assetId},
             data: {
                 assigneeId: userId,
             },
@@ -141,7 +144,7 @@ export const assign = async (values: z.infer<typeof assetAssignSchema>) => {
 export const unassign = async (assetId: string) => {
     try {
         const updatedAsset = await prisma.asset.update({
-            where: { id: assetId },
+            where: {id: assetId},
             data: {
                 assigneeId: null,
             },

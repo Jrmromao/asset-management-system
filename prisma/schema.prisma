@@ -2,39 +2,39 @@ generator client {
   provider = "prisma-client-js"
 }
 
-// npx prisma migrate dev --create-only --name <NAME>
-// npx prisma migrate dev
-// npx prisma generate
-// npx prisma db pull
-// npx prisma db push -
-
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
 model User {
-  id            String       @id @default(cuid())
-  email         String       @unique
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
-  oauthId       String?
-  roleId        String
-  companyId     String
+  id            String    @id @default(cuid())
+  email         String    @unique
   firstName     String
   lastName      String
   name          String
-  Images        String?
-  emailVerified DateTime?
   title         String?
-  auditLogs     AuditLog[]
-  company       Company      @relation(fields: [companyId], references: [id])
-  role          Role         @relation(fields: [roleId], references: [id])
-  co2eRecords   Co2eRecord[]
   employeeId    String?
-  accounts      Account[]
-  Asset         Asset[]      @relation(name: "assignedToUser")
-  // UserKit       UserKit[]
+  images        String?
+  emailVerified DateTime?
+  oauthId       String?
+  roleId        String
+  companyId     String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  company     Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  role        Role         @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  assets      Asset[]      @relation("assignedToUser")
+  auditLogs   AuditLog[]
+  co2eRecords Co2eRecord[]
+  accounts    Account[]
+  userKits    UserKit[]
+
+  @@index([companyId])
+  @@index([roleId])
+  @@index([email])
 }
 
 model Account {
@@ -43,61 +43,54 @@ model Account {
   type              String
   provider          String
   providerAccountId String  @map("provider_account_id")
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
+  refresh_token     String?
+  access_token      String?
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? @db.Text
+  id_token          String?
   session_state     String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
+  @@index([userId])
   @@map("accounts")
-}
-
-model Co2eRecord {
-  id               String    @id @default(cuid())
-  asset            Asset     @relation(fields: [assetId], references: [id])
-  assetId          String
-  accessoryId      String
-  assessory        Accessory @relation(fields: [accessoryId], references: [id])
-  co2e             Float // CO2e in kg
-  co2eType         String // Type of CO2e (e.g., Scope 1, Scope 2, Scope 3)
-  sourceOrActivity String // Description of the source or activity
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-  User             User?     @relation(fields: [userId], references: [id])
-  userId           String?
 }
 
 model Role {
   id        String   @id @default(cuid())
   name      String   @unique
-  users     User[]
+  companyId String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  Company   Company? @relation(fields: [companyId], references: [id])
-  companyId String?
+
+  company Company? @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  users   User[]
+
+  @@index([companyId])
 }
 
 model Company {
-  id           String        @id @default(cuid())
-  name         String        @unique
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  auditLogs    AuditLog[]
-  users        User[]
-  assets       Asset[]
-  accessories  Accessory[]
-  categories   Category[]
-  roles        Role[]
-  statusLabels StatusLable[]
-  // kits         Kit[]
-  locations    Location[] // Company has many locations
-  departments  Department[] // Company has many departments
-  inventories  Inventory[] // Company has many inventories
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  users         User[]
+  roles         Role[]
+  assets        Asset[]
+  accessories   Accessory[]
+  categories    Category[]
+  departments   Department[]
+  locations     Location[]
+  manufacturers Manufacturer[]
+  models        Model[]
+  inventories   Inventory[]
+  statusLabels  StatusLabel[]
+  auditLogs     AuditLog[]
+  kits          Kit[]
 }
 
 model Manufacturer {
@@ -105,211 +98,227 @@ model Manufacturer {
   name         String   @unique
   url          String
   supportUrl   String   @unique
-  supportPhone String   @unique
-  supportEmail String   @unique
-  models       Model[]
+  supportPhone String? // Made optional
+  supportEmail String? // Made optional
+  companyId    String
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  models  Model[]
+
+  @@index([companyId])
 }
 
 model Model {
-  id             String       @id @default(cuid())
+  id             String   @id @default(cuid())
   name           String
   modelNo        String
   categoryId     String
-  category       Category     @relation(fields: [categoryId], references: [id])
   manufacturerId String
-  manufacturer   Manufacturer @relation(fields: [manufacturerId], references: [id])
-  assets         Asset[]
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  companyId      String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  category     Category     @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  manufacturer Manufacturer @relation(fields: [manufacturerId], references: [id], onDelete: Restrict)
+  company      Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  assets       Asset[]
+
+  @@unique([modelNo, companyId])
+  @@index([categoryId])
+  @@index([manufacturerId])
+  @@index([companyId])
 }
 
 model Location {
   id           String   @id @default(cuid())
-  locName      String   @unique
+  name         String // Changed from locName for consistency
   addressLine1 String
-  addressLine2 String
+  addressLine2 String? // Made optional
   city         String
   state        String
   zip          String
   country      String
   companyId    String
-  company      Company  @relation(fields: [companyId], references: [id])
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([name, companyId])
+  @@index([companyId])
 }
 
 model Inventory {
   id        String   @id @default(cuid())
   name      String
-  Company   Company? @relation(fields: [companyId], references: [id])
-  companyId String?
+  companyId String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([name, companyId])
+  @@index([companyId])
 }
 
 model Department {
   id        String   @id @default(cuid())
   name      String
-  Company   Company? @relation(fields: [companyId], references: [id])
-  companyId String?
+  companyId String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([name, companyId])
+  @@index([companyId])
 }
 
 model Supplier {
   id           String   @id @default(cuid())
   name         String
+  contactName  String
+  email        String
+  phoneNum     String? // Made optional
+  url          String? // Made optional
   addressLine1 String
-  addressLine2 String
+  addressLine2 String? // Made optional
   city         String
   state        String
   zip          String
   country      String
-  phone        String
-  contactName  String
-  email        String
-  phoneNum     String
-  url          String
-  notes        String
-  Asset        Asset[]
+  notes        String? // Made optional
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  assets Asset[]
+
+  @@unique([email])
 }
 
 model Asset {
-  id            String       @id @default(cuid())
+  id            String   @id @default(cuid())
   name          String
-  assigneeId    String?
-  assignee      User?        @relation(fields: [assigneeId], references: [id], onDelete: Cascade, name: "assignedToUser") // Added a name to this relation
-  serialNumber  String       @unique
-  licenseId     String?
-  license       License?     @relation(fields: [licenseId], references: [id])
-  statusLabelId String?
-  statusLabel   StatusLable? @relation(fields: [statusLabelId], references: [id])
-  Co2eRecord    Co2eRecord[]
-  companyId     String
-  company       Company      @relation(fields: [companyId], references: [id])
-  // kits          KitAsset[]
-  supplierId    String? // An asset can have one supplier
-  supplier      Supplier?    @relation(fields: [supplierId], references: [id])
-  // KitAsset      KitItem[]
-  Model         Model?       @relation(fields: [modelId], references: [id])
-  modelId       String?
-  endOfLife     DateTime
+  serialNumber  String   @unique
   material      String
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+  endOfLife     DateTime
+  assigneeId    String?
+  licenseId     String?
+  statusLabelId String?
+  companyId     String
+  supplierId    String?
+  modelId       String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  assignee     User?         @relation("assignedToUser", fields: [assigneeId], references: [id], onDelete: SetNull)
+  company      Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  license      License?      @relation(fields: [licenseId], references: [id], onDelete: SetNull)
+  model        Model?        @relation(fields: [modelId], references: [id], onDelete: SetNull)
+  statusLabel  StatusLabel?  @relation(fields: [statusLabelId], references: [id], onDelete: SetNull)
+  supplier     Supplier?     @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  co2eRecords  Co2eRecord[]
+  transactions Transaction[]
+
+  @@index([assigneeId])
+  @@index([companyId])
+  @@index([licenseId])
+  @@index([statusLabelId])
+  @@index([supplierId])
+  @@index([modelId])
 }
 
 model Accessory {
-  id                 String       @id @default(cuid())
+  id                 String   @id @default(cuid())
   title              String
-  createdAt          DateTime     @default(now())
-  updatedAt          DateTime     @updatedAt
   alertEmail         String
   minQuantityAlert   Int
   totalQuantityCount Int
   vendor             String
   purchaseDate       DateTime
   description        String?
-  companyId          String?
-  company            Company?     @relation(fields: [companyId], references: [id])
-  categoryId         String?
-  endOfLife          DateTime
   material           String
-  // KitAsset           KitItem[]
-  Co2eRecord         Co2eRecord[]
+  endOfLife          DateTime
+  companyId          String
+  categoryId         String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  company     Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  co2eRecords Co2eRecord[]
+
+  @@index([companyId])
+  @@index([categoryId])
 }
 
 model Category {
   id        String   @id @default(cuid())
-  name      String   @unique
+  name      String
   type      String
+  companyId String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  model     Model[]
-  companyId String?
-  company   Company? @relation(fields: [companyId], references: [id])
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  models  Model[]
+
+  @@unique([name, companyId])
+  @@index([companyId])
 }
 
 model License {
   id                 String   @id @default(cuid())
-  name               String   @unique
+  name               String
   licensedEmail      String
   licenseKey         String
   renewalDate        DateTime
   purchaseDate       DateTime
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
-  vendor             String?
+  vendor             String
   purchaseNotes      String?
   licenseUrl         String?
   minCopiesAlert     Int
   alertRenewalDays   Int
   licenseCopiesCount Int
   purchasePrice      Decimal
-  assets             Asset[]
-  // KitAsset           KitItem[]
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  assets Asset[]
+
+  @@unique([licenseKey])
 }
 
-// model Kit {
-//   id          String   @id @default(cuid())
-//   name        String
-//   description String?
-//   // assets      KitItem[] @relation(name: "KitAssets")
-//   // accessories KitItem[] @relation(name: "KitAccessories")
-//   // licenses    KitItem[] @relation(name: "KitLicenses")
-//   licenseIds  String[] // Optional: For direct access to license IDs associated with the kit
-//   // users       UserKit[]
-//   companyId   String
-//   // company     Company   @relation(fields: [companyId], references: [id])
-//   createdAt   DateTime @default(now())
-//   updatedAt   DateTime @updatedAt
-// }
-
-model StatusLable {
+model StatusLabel {
   id          String   @id @default(cuid())
-  name        String   @unique
+  name        String
   colorCode   String
-  isArchived  Boolean
-  allowLoan   Boolean
+  isArchived  Boolean  @default(false)
+  allowLoan   Boolean  @default(false)
   description String
-  Asset       Asset[]
+  companyId   String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  Company     Company? @relation(fields: [companyId], references: [id])
-  companyId   String?
-}
 
-//
-// model KitItem {
-//   id          String   @id @default(cuid())
-//   kitId       String
-//   itemId      String
-//   createdAt   DateTime @default(now())
-//   updatedAt   DateTime @default(now())
-//   // kitAsset     Kit      @relation(name: "KitAssets", fields: [kitId], references: [id], map: "KitItem_kitAsset_fkey")
-//   // kitAccessory Kit      @relation(name: "KitAccessories", fields: [kitId], references: [id], map: "KitItem_kitAccessory_fkey")
-//   // kitLicense   Kit      @relation(name: "KitLicenses", fields: [kitId], references: [id], map: "KitItem_kitLicense_fkey")
-//   // accessory    Accessory? @relation(fields: [accessoryId], references: [id])
-//   accessoryId String?
-//   // asset        Asset?     @relation(fields: [assetId], references: [id])
-//   assetId     String?
-//   // license      License?   @relation(fields: [licenseId], references: [id])
-//   licenseId   String?
-//
-//   @@unique([kitId, itemId])
-// }
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  assets  Asset[]
+
+  @@unique([name, companyId])
+  @@index([companyId])
+}
 
 model Transaction {
   id        String   @id @default(cuid())
   type      String
-  amount    Float
-  assetId   Int
+  amount    Decimal
+  assetId   String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  asset Asset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@index([assetId])
 }
 
 model AuditLog {
@@ -317,28 +326,69 @@ model AuditLog {
   action    String
   entity    String
   entityId  String?
-  userId    String
   details   String?
-  createdAt DateTime @default(now())
+  userId    String
   companyId String
-  company   Company  @relation(fields: [companyId], references: [id])
-  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([companyId])
 }
 
-model Waitlist {
+model Co2eRecord {
+  id               String   @id @default(cuid())
+  assetId          String
+  accessoryId      String
+  userId           String?
+  co2e             Float
+  co2eType         String
+  sourceOrActivity String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  accessory Accessory @relation(fields: [accessoryId], references: [id], onDelete: Cascade)
+  asset     Asset     @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  user      User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([assetId])
+  @@index([accessoryId])
+  @@index([userId])
+}
+
+model Kit {
   id        String   @id @default(cuid())
-  email     String
+  name      String
+  companyId String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  company  Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  userKits UserKit[]
+
+  @@unique([name, companyId])
+  @@index([companyId])
 }
 
 model UserKit {
   userId    String
   kitId     String
-  // user      User     @relation(fields: [userId], references: [id])
-  // kit       Kit      @relation(fields: [kitId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kit  Kit  @relation(fields: [kitId], references: [id], onDelete: Cascade)
+
   @@id([userId, kitId])
+  @@index([userId])
+  @@index([kitId])
+}
+
+model Waitlist {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

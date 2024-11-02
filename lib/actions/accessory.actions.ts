@@ -11,16 +11,17 @@ export const create = async (data: Accessory) => {
         await prisma.accessory.create({
                 data: {
                     title: data.title,
-                    description: data.description,
                     purchaseDate: data.purchaseDate,
                     vendor: data.vendor,
                     alertEmail: data.alertEmail,
                     minQuantityAlert: data.minQuantityAlert,
                     totalQuantityCount: data.totalQuantityCount,
+                    material: data.material,
+                    endOfLife: data.endOfLife,
                     company: {
                         connect: {
                             id:  session?.user.companyId
-                        }
+                        },
                     },
                 },
             }

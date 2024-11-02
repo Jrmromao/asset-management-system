@@ -1,79 +1,98 @@
 'use client'
-import React, {useState} from 'react'
-import {z, ZodIssue} from "zod"
-import {zodResolver} from "@hookform/resolvers/zod"
-import {useForm} from "react-hook-form"
-import {Button} from "@/components/ui/button"
-import {Form} from "@/components/ui/form"
-import {Loader2} from "lucide-react";
-import CustomInput from "@/components/CustomInput";
-import {useCategoryStore} from "@/lib/stores/categoryStore";
-import {categorySchema} from "@/lib/schemas";
-import {sleep} from "@/lib/utils";
-import {toast} from "sonner";
 
+import React from 'react'
+import { z } from "zod"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { useForm } from "react-hook-form"
+import { Button } from "@/components/ui/button"
+import { Form } from "@/components/ui/form"
+import { Loader2 } from "lucide-react"
+import { toast } from "sonner"
+import { useTransition } from 'react'
+import CustomInput from "@/components/CustomInput"
+import { categorySchema } from "@/lib/schemas"
+import { insert } from "@/lib/actions/category.actions"
+import { useCategoryStore } from "@/lib/stores/categoryStore"
 
 const CategoryForm = () => {
-    const [isLoading, setIsLoading] = useState(false)
-
-    const [ fetchAll, createCat, closeDialog] = useCategoryStore((state) => [state.getAll, state.createCat, state.onClose]);
-
-    const onSubmit = async (data: z.infer<typeof categorySchema>) => {
-        setIsLoading(true)
-        try {
-            const categoryData = {
-                name: data.name || '',
-            }
-            await createCat(categoryData)
-            await sleep()
-        } catch (e) {
-            console.error(e)
-        } finally {
-            await sleep().then(_ => {
-                toast.success('Category created successfully')
-                form.reset()
-                fetchAll()
-                closeDialog()
-            })
-            setIsLoading(false)
-        }
-
-    }
+    const [isPending, startTransition] = useTransition()
+    const { onClose, getAll: fetchCategories } = useCategoryStore()
 
     const form = useForm<z.infer<typeof categorySchema>>({
         resolver: zodResolver(categorySchema),
         defaultValues: {
             name: '',
         },
-    });
+    })
 
-    const {register} = form
+    async function onSubmit(data: z.infer<typeof categorySchema>) {
+        startTransition(async () => {
+            try {
+                const result = await insert(data)
+
+                if (result.error) {
+                    toast.error(result.error)
+                    return
+                }
+
+                await fetchCategories()
+                toast.success('Category created successfully')
+                onClose()
+                form.reset()
+            } catch (error) {
+                console.error('Category creation error:', error)
+                toast.error('Failed to create category')
+            }
+        })
+    }
 
     return (
-        <section className={''}>
-            <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)}>
-                    <div className={'flex flex-col md:flex-col gap-4 pt-5'}>
-                        <CustomInput
-                            label="Name"
-                            placeholder="name"
-                            control={form.control}
-                            {...register("name")}
-                            type={'text'}
-                        />
-                    </div>
-                    <Button type="submit" className={'form-btn mt-6 w-full md:w-auto'} disabled={isLoading}>
-                        {isLoading ? (
-                                <>
-                                    <Loader2 size={20} className={'animate-spin'}/>&nbsp;
-                                    Loading...
-                                </>
-                            ) :
-                            'Submit'}
+        <Form {...form}>
+            <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-6"
+            >
+                <CustomInput
+                    name="name"
+                    label="Category Name"
+                    control={form.control}
+                    type="text"
+                    placeholder="Enter category name"
+                    disabled={isPending}
+                    tooltip="A unique name for this category"
+                />
+
+                <div className="flex justify-end gap-4 pt-4">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                            form.reset()
+                            onClose()
+                        }}
+                        disabled={isPending}
+                    >
+                        Cancel
                     </Button>
-                </form>
-            </Form>
-        </section>
+
+                    <Button
+                        type="submit"
+                        disabled={isPending}
+                        className="min-w-[120px]"
+                    >
+                        {isPending ? (
+                            <>
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                Creating...
+                            </>
+                        ) : (
+                            'Create Category'
+                        )}
+                    </Button>
+                </div>
+            </form>
+        </Form>
     )
 }
+
 export default CategoryForm
