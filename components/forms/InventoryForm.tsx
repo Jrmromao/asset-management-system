@@ -10,22 +10,22 @@ import { Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { useTransition } from 'react'
 import CustomInput from "@/components/CustomInput"
-import { categorySchema } from "@/lib/schemas"
-import { insert } from "@/lib/actions/category.actions"
-import { useCategoryStore } from "@/lib/stores/categoryStore"
+import {inventorySchema} from "@/lib/schemas"
+import { insert } from "@/lib/actions/inventory.actions"
+import { useInventoryStore } from "@/lib/stores/inventoryStore"
 
 const CategoryForm = () => {
     const [isPending, startTransition] = useTransition()
-    const { onClose, getAll: fetchCategories } = useCategoryStore()
+    const { onClose, getAll: fetchInventories } = useInventoryStore()
 
-    const form = useForm<z.infer<typeof categorySchema>>({
-        resolver: zodResolver(categorySchema),
+    const form = useForm<z.infer<typeof inventorySchema>>({
+        resolver: zodResolver(inventorySchema),
         defaultValues: {
             name: '',
         },
     })
 
-    async function onSubmit(data: z.infer<typeof categorySchema>) {
+    async function onSubmit(data: z.infer<typeof inventorySchema>) {
         startTransition(async () => {
             try {
                 const result = await insert(data)
@@ -33,13 +33,13 @@ const CategoryForm = () => {
                     toast.error(result.error)
                     return
                 }
-                await fetchCategories()
-                toast.success('Category created successfully')
+                fetchInventories()
+                toast.success('Inventory created successfully')
                 onClose()
                 form.reset()
             } catch (error) {
-                console.error('Category creation error:', error)
-                toast.error('Failed to create category')
+                console.error('Inventory creation error:', error)
+                toast.error('Failed to create Inventory')
             }
         })
     }

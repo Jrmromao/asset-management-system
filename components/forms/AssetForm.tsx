@@ -1,21 +1,21 @@
 'use client'
 
-import React from 'react'
-import { z } from "zod"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import { Button } from "@/components/ui/button"
-import { Form, FormLabel } from "@/components/ui/form"
-import { Loader2, Plus } from "lucide-react"
-import { Card } from "@/components/ui/card"
-import { useRouter } from "next/navigation"
-import { toast } from "sonner"
-import { useTransition } from 'react'
+import React, {useEffect} from 'react'
+import {undefined, z} from "zod"
+import {zodResolver} from "@hookform/resolvers/zod"
+import {useForm} from "react-hook-form"
+import {Button} from "@/components/ui/button"
+import {Form, FormLabel} from "@/components/ui/form"
+import {Loader2, Plus} from "lucide-react"
+import {Card} from "@/components/ui/card"
+import {useRouter} from "next/navigation"
+import {toast} from "sonner"
+import {useTransition} from 'react'
 
 // Components
 import CustomInput from "@/components/CustomInput"
 import CustomSelect from "@/components/CustomSelect"
-import { DialogContainer } from "@/components/dialogs/DialogContainer"
+import {DialogContainer} from "@/components/dialogs/DialogContainer"
 import CustomDatePicker from "@/components/CustomDatePicker"
 
 // Forms
@@ -27,10 +27,22 @@ import StatusLabelForm from "@/components/forms/StatusLabelForm"
 // import SupplierForm from "@/components/forms/SupplierForm"
 
 // Stores
-import { useAssetStore } from "@/lib/stores/assetStore"
-import { useStatusLabelStore } from "@/lib/stores/statusLabelStore"
-import { useModelStore } from "@/lib/stores/modelStore"
+import {useAssetStore} from "@/lib/stores/assetStore"
+import {useStatusLabelStore} from "@/lib/stores/statusLabelStore"
+import {useModelStore} from "@/lib/stores/modelStore"
 import {useLocationStore} from "@/lib/stores/locationStore";
+import DepartmentForm from "@/components/forms/DepartmentForm";
+import {useDepartmentStore} from "@/lib/stores/departmentStore";
+import LocationForm from "@/components/forms/LocationForm";
+import {useSupplierStore} from "@/lib/stores/SupplierStore";
+import {getAllSimple} from "@/lib/actions/supplier.actions";
+import SupplierForm from "@/components/forms/SupplierForm";
+import {useInventoryStore} from "@/lib/stores/inventoryStore";
+import InventoryForm from "@/components/forms/InventoryForm";
+import {create} from "@/lib/actions/assets.actions";
+import {categorySchema} from "@/lib/schemas";
+import CategoryForm from "@/components/forms/CategoryForm";
+import {useCategoryStore} from "@/lib/stores/categoryStore";
 // import { useLocationStore } from "@/lib/stores/locationStore"
 // import { useDepartmentStore } from "@/lib/stores/departmentStore"
 // import { useInventoryStore } from "@/lib/stores/inventoryStore"
@@ -45,6 +57,7 @@ const assetSchema = z.object({
     inventoryId: z.string().min(1, "Inventory is required"),
     locationId: z.string().min(1, "Location is required"),
     supplierId: z.string().min(1, "Supplier is required"),
+    categoryId: z.string().min(1, "Category is required"),
     endOfLife: z.date({
         required_error: "End of life date is required",
     }),
@@ -58,18 +71,56 @@ interface AssetFormProps {
     isUpdate?: boolean;
 }
 
-const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
+const AssetForm = ({id, isUpdate = false}: AssetFormProps) => {
     const [isPending, startTransition] = useTransition()
     const router = useRouter()
 
     // Stores
-    const { create: createAsset, update: updateAsset, findById } = useAssetStore()
-    const { statusLabels, getAll: fetchStatusLabels, isOpen: isStatusOpen, onOpen: openStatus, onClose: closeStatus } = useStatusLabelStore()
-    const { models, fetchModels, isOpen: isModelOpen, onOpen: openModel, onClose: closeModel } = useModelStore()
-    const { locations, fetchLocations, isOpen: isLocationOpen, onOpen: openLocation, onClose: closeLocation } = useLocationStore()
-    // const { departments, fetchDepartments, isOpen: isDepartmentOpen, onOpen: openDepartment, onClose: closeDepartment } = useDepartmentStore()
-    // const { inventories, fetchInventories, isOpen: isInventoryOpen, onOpen: openInventory, onClose: closeInventory } = useInventoryStore()
-    // const { suppliers, fetchSuppliers, isOpen: isSupplierOpen, onOpen: openSupplier, onClose: closeSupplier } = useSupplierStore()
+    const {create: createAsset, update: updateAsset, findById} = useAssetStore()
+    const {
+        statusLabels,
+        getAll: fetchStatusLabels,
+        isOpen: isStatusOpen,
+        onOpen: openStatus,
+        onClose: closeStatus
+    } = useStatusLabelStore()
+    const {models, fetchModels, isOpen: isModelOpen, onOpen: openModel, onClose: closeModel} = useModelStore()
+    const {
+        locations,
+        fetchLocations,
+        isOpen: isLocationOpen,
+        onOpen: openLocation,
+        onClose: closeLocation
+    } = useLocationStore()
+    const {
+        departments,
+        getAll: fetchDepartments,
+        isOpen: isDepartmentOpen,
+        onOpen: openDepartment,
+        onClose: closeDepartment
+    } = useDepartmentStore()
+    const {
+        inventories,
+        getAll: fetchInventories,
+        isOpen: isInventoryOpen,
+        onOpen: openInventory,
+        onClose: closeInventory
+    } = useInventoryStore()
+    const {
+        suppliers,
+        getAll: fetchSuppliers,
+        isOpen: isSupplierOpen,
+        onOpen: openSupplier,
+        onClose: closeSupplier
+    } = useSupplierStore()
+
+    const {
+        categories,
+        getAll: fetchCategories,
+        isOpen: isCategoryOpen,
+        onOpen: openCategory,
+        onClose: closeCategory
+    } = useCategoryStore()
 
     // Form
     const form = useForm<AssetFormValues>({
@@ -82,20 +133,20 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
             departmentId: '',
             inventoryId: '',
             locationId: '',
+            categoryId: '',
             supplierId: '',
-            endOfLife: undefined,
+            endOfLife: new Date(),
             material: '',
         },
     })
 
-    // Load data
-    React.useEffect(() => {
+    useEffect(() => {
         fetchStatusLabels()
         fetchModels()
         fetchLocations()
-        // fetchDepartments()
-        // fetchInventories()
-        // fetchSuppliers()
+        fetchDepartments()
+        fetchInventories()
+        fetchSuppliers()
 
         if (isUpdate && id) {
             startTransition(async () => {
@@ -108,7 +159,7 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
                 }
             })
         }
-    }, [isUpdate, id])
+    }, [isUpdate, id, fetchStatusLabels, fetchModels, fetchLocations, fetchDepartments, fetchInventories, fetchSuppliers])
 
     async function onSubmit(data: AssetFormValues) {
         startTransition(async () => {
@@ -121,14 +172,32 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
                 //     }
                 //     toast.success('Asset updated successfully')
                 // } else {
-                //     const result = await createAsset(data)
-                //     if (result.error) {
-                //         toast.error(result.error)
-                //         return
-                //     }
-                //     toast.success('Asset created successfully')
-                // }
-                router.back()
+                //     const result = await createAsset({
+                //         ...data,
+                //         endOfLife: data.endOfLife.toISOString()
+                //     })
+
+                // console.log(new Date(data.endOfLife))
+                //
+                //
+                await create({
+                    brand: "",
+                    categoryId: data.categoryId,
+                    datePurchased: new Date(), price: 0,
+                    name: data.name,
+                    serialNumber: data.serialNumber,
+                    material: data.material,
+                    modelId: data.modelId,
+                    endOfLife: data.endOfLife,
+                    licenseId: '33333333-ae07-4531-a801-ede53fb31f04',
+                    statusLabelId: data.statusLabelId,
+                    supplierId: data.supplierId,
+                    companyId: 'bf40528b-ae07-4531-a801-ede53fb31f04'
+                }).then(r => {
+                    form.reset()
+                    toast.success('Asset created successfully')
+                })
+
             } catch (error) {
                 toast.error('Something went wrong')
                 console.error(error)
@@ -142,18 +211,21 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
                                   data,
                                   onNew,
                                   placeholder,
+                                  required = false
                               }: {
         name: keyof AssetFormValues;
         label: string;
         data: any[];
         onNew: () => void;
         placeholder: string;
+        required?: boolean;
     }) => (
         <div className="flex gap-2">
             <div className="flex-1">
                 <CustomSelect
                     value={form.watch(name)}
                     name={name}
+                    required={required}
                     label={label}
                     control={form.control}
                     data={data}
@@ -167,7 +239,7 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
                 className="self-end h-10"
                 disabled={isPending}
             >
-                <Plus className="h-4 w-4" />
+                <Plus className="h-4 w-4"/>
             </Button>
         </div>
     );
@@ -180,23 +252,63 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
                 open={isModelOpen}
                 onOpenChange={closeModel}
                 title="Add Model"
-                form={<ModelForm />}
+                form={<ModelForm/>}
             />
             <DialogContainer
                 description={''}
                 open={isStatusOpen}
                 onOpenChange={closeStatus}
                 title="Add Status"
-                form={<StatusLabelForm />}
+                form={<StatusLabelForm/>}
             />
-            {/* Add other modals */}
+            <DialogContainer
+                description={''}
+                open={isLocationOpen}
+                onOpenChange={closeLocation}
+                title="Add Location"
+                form={<LocationForm/>}
+            />
+
+            <DialogContainer
+                description={''}
+                open={isDepartmentOpen}
+                onOpenChange={closeDepartment}
+                title="Add Department"
+                form={<DepartmentForm/>}
+            />
+
+            <DialogContainer
+                description={''}
+                open={isSupplierOpen}
+                onOpenChange={closeSupplier}
+                title="Add Supplier"
+                form={<SupplierForm/>}
+            />
+            <DialogContainer
+                description={''}
+                open={isInventoryOpen}
+                onOpenChange={closeInventory}
+                title="Add Inventory"
+                form={<InventoryForm/>}
+            />
+
+            <DialogContainer
+                description={''}
+                open={isCategoryOpen}
+                onOpenChange={closeCategory}
+                title="Add Inventory"
+                form={<CategoryForm/>}
+            />
 
             <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <form
+                    onSubmit={form.handleSubmit(onSubmit)}
+                    className="space-y-6">
                     <Card className="p-6 space-y-6">
                         {/* Basic Information */}
                         <div className="grid grid-cols-2 gap-6">
                             <CustomInput
+                                required
                                 name="name"
                                 label="Asset Name"
                                 control={form.control}
@@ -205,6 +317,7 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
                             />
 
                             <CustomInput
+                                required
                                 name="serialNumber"
                                 label="Serial Number"
                                 control={form.control}
@@ -215,12 +328,22 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
 
                         {/* Selections */}
                         <div className="space-y-6">
+
+                            <SelectWithButton
+                                name="categoryId"
+                                label="Category"
+                                data={categories}
+                                onNew={openCategory}
+                                placeholder="Select an inventory"
+                                required
+                            />
                             <SelectWithButton
                                 name="modelId"
                                 label="Model"
                                 data={models}
                                 onNew={openModel}
                                 placeholder="Select model"
+                                required
                             />
 
                             <SelectWithButton
@@ -229,15 +352,16 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
                                 data={statusLabels}
                                 onNew={openStatus}
                                 placeholder="Select status"
+                                required
                             />
 
                             <SelectWithButton
                                 name="departmentId"
                                 label="Department"
-                                data={[]}
-                                onNew={() => {
-                                }}
+                                data={departments}
+                                onNew={openDepartment}
                                 placeholder="Select department"
+                                required
                             />
 
                             <SelectWithButton
@@ -246,16 +370,28 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
                                 data={locations}
                                 onNew={openLocation}
                                 placeholder="Select location"
+                                required
                             />
 
                             <SelectWithButton
                                 name="supplierId"
                                 label="Supplier"
-                                data={[]}
-                                onNew={() => {
-                                }}
+                                data={suppliers}
+                                onNew={openSupplier}
                                 placeholder="Select supplier"
+                                required
                             />
+
+                            <SelectWithButton
+                                name="inventoryId"
+                                label="Inventory"
+                                data={inventories}
+                                onNew={openInventory}
+                                placeholder="Select an inventory"
+                                required
+                            />
+
+
                         </div>
 
                         {/* Additional Information */}
@@ -301,7 +437,7 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
                         >
                             {isPending ? (
                                 <>
-                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                    <Loader2 className="w-4 h-4 mr-2 animate-spin"/>
                                     {isUpdate ? 'Updating...' : 'Creating...'}
                                 </>
                             ) : (

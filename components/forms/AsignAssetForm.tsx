@@ -81,7 +81,7 @@ const AssignAssetForm = ({assetId}: Props) => {
                                       placeholder={'Select User'}
                                       disabled={isPending}
                                       name={'userId'}
-                                      data={users}
+                                      data={[]}
                                       value={form.watch('userId')}
                         />
 

@@ -1,6 +1,6 @@
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
-import { getAll, findById } from "@/lib/actions/model.actions"
+import {getAll, findById, getAllSimple} from "@/lib/actions/model.actions"
 
 
 interface ModelStore {
@@ -47,7 +47,7 @@ export const useModelStore = create(
             fetchModels: async (params) => {
                 set({ isLoading: true, error: null });
                 try {
-                    const result = await getAll(params);
+                    const result = await getAllSimple(params);
                     if (result.error) {
                         set({ error: result.error });
                         return;

@@ -24,13 +24,13 @@ model User {
   updatedAt     DateTime  @updatedAt
 
   // Relations
-  company     Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  role        Role         @relation(fields: [roleId], references: [id], onDelete: Restrict)
-  assets      Asset[]      @relation("assignedToUser")
-  auditLogs   AuditLog[]
-  co2eRecords Co2eRecord[]
-  accounts    Account[]
-  userKits    UserKit[]
+  company   Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  role      Role       @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  assets    Asset[]    @relation("assignedToUser")
+  auditLogs AuditLog[]
+  // co2eRecords Co2eRecord[]
+  accounts  Account[]
+  userKits  UserKit[]
 
   @@index([companyId])
   @@index([roleId])
@@ -84,13 +84,14 @@ model Company {
   accessories   Accessory[]
   categories    Category[]
   departments   Department[]
-  locations     Location[]
+  locations     DepartmentLocation[]
   manufacturers Manufacturer[]
   models        Model[]
   inventories   Inventory[]
   statusLabels  StatusLabel[]
   auditLogs     AuditLog[]
   kits          Kit[]
+  suppliers     Supplier[] // Add this relation
 }
 
 model Manufacturer {
@@ -111,19 +112,19 @@ model Manufacturer {
 }
 
 model Model {
-  id             String   @id @default(cuid())
+  id             String       @id @default(cuid())
   name           String
   modelNo        String
   categoryId     String
   manufacturerId String
   companyId      String
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  category     Category     @relation(fields: [categoryId], references: [id], onDelete: Restrict)
-  manufacturer Manufacturer @relation(fields: [manufacturerId], references: [id], onDelete: Restrict)
-  company      Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  assets       Asset[]
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  notes          String?
+  category       Category     @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  manufacturer   Manufacturer @relation(fields: [manufacturerId], references: [id], onDelete: Restrict)
+  company        Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  assets         Asset[]
 
   @@unique([modelNo, companyId])
   @@index([categoryId])
@@ -131,7 +132,7 @@ model Model {
   @@index([companyId])
 }
 
-model Location {
+model DepartmentLocation {
   id           String   @id @default(cuid())
   name         String // Changed from locName for consistency
   addressLine1 String
@@ -180,7 +181,7 @@ model Supplier {
   id           String   @id @default(cuid())
   name         String
   contactName  String
-  email        String
+  email        String   @unique
   phoneNum     String? // Made optional
   url          String? // Made optional
   addressLine1 String
@@ -193,9 +194,12 @@ model Supplier {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  assets Asset[]
+  // Relations
+  assets    Asset[]
+  company   Company @relation(fields: [companyId], references: [id])
+  companyId String
 
-  @@unique([email])
+  @@unique([email, companyId]) // Updated to make email unique per company
 }
 
 model Asset {
@@ -205,7 +209,6 @@ model Asset {
   material      String
   endOfLife     DateTime
   assigneeId    String?
-  licenseId     String?
   statusLabelId String?
   companyId     String
   supplierId    String?
@@ -215,12 +218,13 @@ model Asset {
 
   assignee     User?         @relation("assignedToUser", fields: [assigneeId], references: [id], onDelete: SetNull)
   company      Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  license      License?      @relation(fields: [licenseId], references: [id], onDelete: SetNull)
   model        Model?        @relation(fields: [modelId], references: [id], onDelete: SetNull)
   statusLabel  StatusLabel?  @relation(fields: [statusLabelId], references: [id], onDelete: SetNull)
   supplier     Supplier?     @relation(fields: [supplierId], references: [id], onDelete: SetNull)
-  co2eRecords  Co2eRecord[]
+  // co2eRecords  Co2eRecord[]
   transactions Transaction[]
+  License      License?      @relation(fields: [licenseId], references: [id])
+  licenseId    String?
 
   @@index([assigneeId])
   @@index([companyId])
@@ -246,8 +250,8 @@ model Accessory {
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
-  company     Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  co2eRecords Co2eRecord[]
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  // co2eRecords Co2eRecord[]
 
   @@index([companyId])
   @@index([categoryId])
@@ -338,25 +342,25 @@ model AuditLog {
   @@index([companyId])
 }
 
-model Co2eRecord {
-  id               String   @id @default(cuid())
-  assetId          String
-  accessoryId      String
-  userId           String?
-  co2e             Float
-  co2eType         String
-  sourceOrActivity String
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-
-  accessory Accessory @relation(fields: [accessoryId], references: [id], onDelete: Cascade)
-  asset     Asset     @relation(fields: [assetId], references: [id], onDelete: Cascade)
-  user      User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
-
-  @@index([assetId])
-  @@index([accessoryId])
-  @@index([userId])
-}
+// model Co2eRecord {
+//   id               String   @id @default(cuid())
+//   assetId          String?
+//   accessoryId      String
+//   userId           String?
+//   co2e             Float
+//   co2eType         String
+//   sourceOrActivity String
+//   createdAt        DateTime @default(now())
+//   updatedAt        DateTime @updatedAt
+//
+//   accessory Accessory @relation(fields: [accessoryId], references: [id], onDelete: Cascade)
+//   asset     Asset?    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+//   user      User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+//
+//   @@index([assetId])
+//   @@index([accessoryId])
+//   @@index([userId])
+// }
 
 model Kit {
   id        String   @id @default(cuid())

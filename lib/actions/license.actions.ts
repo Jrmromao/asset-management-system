@@ -1,7 +1,6 @@
 'use server';
 import {parseStringify} from "@/lib/utils";
 import {PrismaClient} from "@prisma/client";
-import {License} from "@/types";
 const prisma = new PrismaClient()
 
 export const insert = async (data: License) => {

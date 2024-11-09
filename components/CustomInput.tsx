@@ -1,10 +1,11 @@
-import React, { forwardRef, useState } from 'react'
-import { FormControl, FormField, FormLabel, FormMessage } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { GrCircleInformation } from "react-icons/gr"
-import { usePathname } from 'next/navigation'
-import { Control } from 'react-hook-form'
+import React, {forwardRef} from 'react'
+import {FormControl, FormField, FormLabel, FormMessage} from "@/components/ui/form"
+import {Input} from "@/components/ui/input"
+import {Textarea} from "@/components/ui/textarea"
+import {usePathname} from 'next/navigation'
+import {Control} from 'react-hook-form'
+import {PasswordRules} from "@/components/PasswordRules";
+import {TooltipLabel} from "@/components/TooltipLabel";
 
 export interface CustomInputProps {
     label?: string;
@@ -14,60 +15,19 @@ export interface CustomInputProps {
     placeholder?: string;
     disabled?: boolean;
     readonly?: boolean;
+    required?: boolean;
     tooltip?: string;
     className?: string;
 }
 
-const PasswordRules = ({ label }: { label: string }) => {
-    const [isHovered, setIsHovered] = useState(false);
-
-    return (
-        <div
-            className="relative inline-flex items-center gap-1"
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
-        >
-            {label} <GrCircleInformation className="h-4 w-4" />
-            {isHovered && (
-                <div className="absolute left-full top-0 ml-2 w-80 bg-white p-2 rounded-md shadow-lg z-50">
-                    <div className="space-y-2 text-sm">
-                        <p className="font-medium">Password Requirements:</p>
-                        <ul className="list-disc pl-4 space-y-1">
-                            <li>Minimum 8 characters</li>
-                            <li>At least one uppercase letter (A-Z)</li>
-                            <li>At least one lowercase letter (a-z)</li>
-                            <li>At least one number (0-9)</li>
-                            <li>At least one special character (!@#$%^&*)</li>
-                        </ul>
-                    </div>
-                </div>
-            )}
-        </div>
-    )
-}
-
-const TooltipLabel = ({ label, tooltip }: { label: string; tooltip: string }) => {
-    const [isHovered, setIsHovered] = useState(false);
-
-    return (
-        <div
-            className="relative inline-flex items-center gap-1"
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
-        >
-            {label} <GrCircleInformation className="h-4 w-4" />
-            {isHovered && (
-                <div className="absolute left-full top-0 ml-2 bg-white p-2 rounded-md shadow-lg z-50 min-w-[200px]">
-                    {tooltip}
-                </div>
-            )}
-        </div>
-    );
-};
+const RequiredIndicator = () => (
+    <span className="text-red-500 ml-1">*</span>
+);
 
 const CustomInput = forwardRef<HTMLInputElement, CustomInputProps>(({
                                                                         control,
                                                                         name,
+                                                                        required,
                                                                         label,
                                                                         placeholder,
                                                                         type = "text",
@@ -80,27 +40,38 @@ const CustomInput = forwardRef<HTMLInputElement, CustomInputProps>(({
     const pathname = usePathname()
     const isPassword = type === 'password'
     const showPasswordTooltip = isPassword &&
-        !pathname.includes('sign-in') &&
-        !name.includes('repeatPassword') &&
-        !name.includes('confirmNewPassword')
+        (!pathname.includes('sign-in') ||
+            !name.includes('repeatPassword') ||
+            !name.includes('confirmNewPassword'))
 
     const isTextArea = type === 'textarea'
+
+    const renderLabel = () => {
+        if (!label) return null;
+
+        const labelContent = showPasswordTooltip ? (
+            <PasswordRules label={label}/>
+        ) : tooltip ? (
+            <TooltipLabel label={label} tooltip={tooltip}/>
+        ) : (
+            <span>{label}</span>
+        );
+
+        return (
+            <FormLabel className="flex items-center gap-1">
+                {required && <RequiredIndicator />}
+                {labelContent}
+            </FormLabel>
+        );
+    };
 
     return (
         <FormField
             control={control}
             name={name}
-            render={({ field }) => (
+            render={({field}) => (
                 <div className="space-y-2">
-                    {label && <FormLabel>
-                        {showPasswordTooltip ? (
-                            <PasswordRules label={label} />
-                        ) : tooltip ? (
-                            <TooltipLabel label={label} tooltip={tooltip} />
-                        ) : (
-                            label
-                        )}
-                    </FormLabel>}
+                    {renderLabel()}
 
                     <FormControl>
                         {isTextArea ? (
@@ -117,6 +88,7 @@ const CustomInput = forwardRef<HTMLInputElement, CustomInputProps>(({
                                 {...props}
                                 ref={ref}
                                 type={type}
+                                required={required}
                                 placeholder={placeholder}
                                 disabled={disabled}
                                 readOnly={readonly}
@@ -125,7 +97,7 @@ const CustomInput = forwardRef<HTMLInputElement, CustomInputProps>(({
                         )}
                     </FormControl>
 
-                    <FormMessage />
+                    <FormMessage/>
                 </div>
             )}
         />

@@ -63,7 +63,7 @@ const PasswordConfirmForm = () => {
                     toast.message('Password reset successful, please log in!')
                     router.push('/sign-in')
                 }else{
-                    setError(result.message)
+                    setError('Invalid code')
                 }
 
 

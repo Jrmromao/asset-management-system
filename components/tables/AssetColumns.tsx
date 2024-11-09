@@ -27,53 +27,63 @@ export const assetColumns = ({onDelete, onView}: AssetColumnsProps): ColumnDef<A
             )
         }
     },
-    {
-        accessorKey: "brand",
-        header: "Brand",
-    },
+    // {
+    //     accessorKey: "brand",
+    //     header: "Brand",
+    // },
     {
         accessorKey: "model",
         header: "Model",
         cell: ({row}) => {
-            const value = row.getValue('model')
-            const asset = row.original
-            return <LinkTableCell value={value as string} navigateTo={`/assets/view/?id=${asset.id}`}/>
+            const value = row.getValue('model') as Model
+            const model = row.original
+            return <div>{model.name}</div>
         }
     },
-    {
-        accessorKey: "datePurchased",
-        header: "Date Purchased",
-        cell: ({row}) => {
-            const asset = row.original
-            return (<div className={'cursor-pointer'}><LinkTableCell value={''}
-                                                                     navigateTo={`/assets/view/?id=${asset.id}`}/>
-            </div>)
-        }
-    },
-    {
-        accessorKey: "price",
-        header: "Price",
-        cell: ({row}) => {
-            const value = row.getValue('price')
-            const formattedValue = formatAmount(value as number)
-            const asset = row.original
 
-            return <LinkTableCell value={formattedValue as string} navigateTo={`/assets/view/?id=${asset.id}`}/>
-        }
+    // {
+    //     accessorKey: "category",
+    //     header: "Category",
+    //     cell: ({row}) => {
+    //         const value = row.getValue('category') as Category
+    //         return <div>{value?.name}</div>
+    //     }
+    // },
 
-    },
+    // {
+    //     accessorKey: "datePurchased",
+    //     header: "Date Purchased",
+    //     cell: ({row}) => {
+    //         const asset = row.original
+    //         return (<div className={'cursor-pointer'}><LinkTableCell value={''}
+    //                                                                  navigateTo={`/assets/view/?id=${asset.id}`}/>
+    //         </div>)
+    //     }
+    // },
+    // {
+    //     accessorKey: "price",
+    //     header: "Price",
+    //     cell: ({row}) => {
+    //         const value = row.getValue('price')
+    //         const formattedValue = formatAmount(value as number)
+    //         const asset = row.original
+    //
+    //         return <LinkTableCell value={formattedValue as string} navigateTo={`/assets/view/?id=${asset.id}`}/>
+    //     }
+    //
+    // },
     {
         accessorKey: "serialNumber",
         header: "Serial Number",
     },
-    {
-        accessorKey: "category",
-        header: "Category",
-        cell: ({row}) => {
-            const value = row.getValue('category') as Category
-            return <div>{value?.name}</div>
-        }
-    },
+    // {
+    //     accessorKey: "category",
+    //     header: "Category",
+    //     cell: ({row}) => {
+    //         const value = row.getValue('category') as Category
+    //         return <div>{value?.name}</div>
+    //     }
+    // },
     {
         accessorKey: "statusLabel",
         header: "Status Label",
@@ -91,16 +101,16 @@ export const assetColumns = ({onDelete, onView}: AssetColumnsProps): ColumnDef<A
             return <div>{formattedDate}</div>
         }
     },
-    {
-        accessorKey: "updatedAt",
-        header: "Last Updated",
+        {
+            accessorKey: "updatedAt",
+            header: "Last Updated",
 
-        cell: ({row}) => {
-            const value = new Date(row.getValue('updatedAt'))
-            const formattedDate = value.toLocaleDateString()
-            return <div>{formattedDate}</div>
-        }
-    },
+            cell: ({row}) => {
+                const value = new Date(row.getValue('updatedAt'))
+                const formattedDate = value.toLocaleDateString()
+                return <div>{formattedDate}</div>
+            }
+        },
     {
         id: "actions",
         cell: ({row}) => {

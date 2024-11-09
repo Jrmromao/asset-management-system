@@ -1,7 +1,7 @@
 import {create} from "zustand"
 import {persist} from "zustand/middleware";
 import produce from 'immer';
-import {get as fetch} from '@/lib/actions/role.actions';
+import {getRoles} from '@/lib/actions/role.actions';
 
 
 interface IAssetStore {
@@ -19,8 +19,8 @@ export const useRoleStore = create(persist<IAssetStore>(
         getAll: async () => {
 
             set({loading: true});
-            fetch().then(roles => {
-                set({roles});
+            getRoles().then(roles => {
+                set({roles: roles.data});
             }).catch(error => {
                 set({roles: [], loading: false});
                 console.error("Error fetching assets:", error);

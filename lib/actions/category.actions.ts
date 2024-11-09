@@ -8,14 +8,6 @@ import {categorySchema} from "@/lib/schemas";
 import {Prisma} from "@prisma/client";
 
 
-
-// Define the ActionResponse type
-type ActionResponse<T> = {
-    success?: boolean;
-    data?: T;
-    error?: string;
-}
-
 /**
  * Creates a new category for the authenticated user's company
  */

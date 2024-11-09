@@ -5,19 +5,16 @@ import {auth} from "@/auth";
 
 export const insert = async (data: StatusLabel) => {
     try {
-        const session = await auth()
-        await prisma.statusLable.create({
+        // const session = await auth()
+        await prisma.statusLabel.create({
             data: {
                 name: data.name,
                 colorCode: data.colorCode || '#000000',
                 isArchived: data.isArchived,
                 allowLoan: data.allowLoan,
                 description: data.description,
-                Company: {
-                    connect: {
-                        id: session?.user?.companyId
-                    },
-                },
+                // companyId: session?.user?.companyId!
+                companyId: 'bf40528b-ae07-4531-a801-ede53fb31f04'
             },
         })
     } catch (error) {
@@ -28,13 +25,14 @@ export const insert = async (data: StatusLabel) => {
 }
 export const getAll = async () => {
     try {
-        const session = await auth()
-        const labels = await prisma.statusLable.findMany({
+        // const session = await auth()
+        const labels = await prisma.statusLabel.findMany({
             orderBy: {
                 createdAt: 'desc'
             },
             where: {
-                companyId: session?.user?.companyId
+                // companyId: session?.user?.companyId
+                companyId: 'bf40528b-ae07-4531-a801-ede53fb31f04'
             }
         });
         return parseStringify(labels);
@@ -46,7 +44,7 @@ export const getAll = async () => {
 }
 export const findById = async (id: string) => {
     try {
-        const labels = await prisma.statusLable.findFirst({
+        const labels = await prisma.statusLabel.findFirst({
             where: {
                 id: id
             }
@@ -60,7 +58,7 @@ export const findById = async (id: string) => {
 }
 export const remove = async (id: string) => {
     try {
-        const labels = await prisma.statusLable.delete({
+        const labels = await prisma.statusLabel.delete({
             where: {
                 id: id
             }

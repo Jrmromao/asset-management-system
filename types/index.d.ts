@@ -103,7 +103,7 @@ declare global {
         assignee?: User;
         assigneeId?: string;
         categoryId: string;
-        material: string;
+        material?: string;
         brand: string;
         modelId: string;
         datePurchased: Date;
@@ -140,6 +140,8 @@ declare global {
         createdAt?: Date;
         updatedAt?: Date;
     };
+
+
 
     // ==================== Reusable Interfaces ====================
     interface BaseEntity {
@@ -187,10 +189,15 @@ declare global {
         asset?: Asset[];
     };
 
-    type Location = BaseEntity & AddressFields & {
-        locName: string;
-        companyId: string;
-        company?: Company;
+    type Location = BaseEntity & {
+        name: string;
+        addressLine1: string;
+        addressLine2?: string;
+        city: string;
+        state: string;
+        zip: string;
+        country: string;
+        companyId?: string;
     };
 
     type Manufacturer = BaseEntity & {
@@ -208,6 +215,7 @@ declare global {
         success?: boolean;
     };
 
+
     type Model = BaseEntity & {
         name: string;
         modelNo: string;
@@ -217,7 +225,6 @@ declare global {
         category?: Category;
         manufacturer?: Manufacturer;
     };
-
 }
 
     // ==================== Props for Components ====================

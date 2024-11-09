@@ -28,7 +28,7 @@ export const useAssetStore = create(persist<IAssetStore>(
         getAll: async () => {
             set({loading: true});
             fetch().then(assets => {
-                set({assets});
+                set({assets: assets.data});
             }).catch(error => {
                 set({assets: [], loading: false});
                 console.error("Error fetching assets:", error);

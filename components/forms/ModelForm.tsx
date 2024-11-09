@@ -1,24 +1,23 @@
 'use client'
 
-import React from 'react'
-import { z } from "zod"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import { Button } from "@/components/ui/button"
-import { Form } from "@/components/ui/form"
-import { Loader2, Plus } from "lucide-react"
-import { toast } from "sonner"
-import { useTransition } from 'react'
+import React, {useTransition} from 'react'
+import {z} from "zod"
+import {zodResolver} from "@hookform/resolvers/zod"
+import {useForm} from "react-hook-form"
+import {Button} from "@/components/ui/button"
+import {Form} from "@/components/ui/form"
+import {Loader2, Plus} from "lucide-react"
+import {toast} from "sonner"
 import CustomInput from "@/components/CustomInput"
 import CustomSelect from "@/components/CustomSelect"
-import CustomDatePicker from "@/components/CustomDatePicker"
-import { DialogContainer } from "@/components/dialogs/DialogContainer"
+import {DialogContainer} from "@/components/dialogs/DialogContainer"
 import ManufacturerForm from "@/components/forms/ManufacturerForm"
 import CategoryForm from "@/components/forms/CategoryForm"
-import { useCategoryStore } from "@/lib/stores/categoryStore"
-import { useManufacturerStore } from "@/lib/stores/manufacturerStore"
-import { modelSchema } from "@/lib/schemas"
+import {useCategoryStore} from "@/lib/stores/categoryStore"
+import {useManufacturerStore} from "@/lib/stores/manufacturerStore"
+import {modelSchema} from "@/lib/schemas"
 import {useModelStore} from "@/lib/stores/modelStore";
+import {insert} from "@/lib/actions/model.actions";
 
 const ModelForm = () => {
     const [isPending, startTransition] = useTransition()
@@ -63,9 +62,11 @@ const ModelForm = () => {
     const onSubmit = async (data: z.infer<typeof modelSchema>) => {
         startTransition(async () => {
             try {
-                // Your submit logic here
-                toast.success('Model created successfully')
-                form.reset()
+                await insert(data).then(_ => {
+                    toast.success('Model created successfully')
+                    form.reset()
+                    closeModelModal()
+                })
             } catch (error) {
                 console.error(error)
                 toast.error('Something went wrong')
@@ -87,7 +88,7 @@ const ModelForm = () => {
                 onOpenChange={closeManufacturerModal}
                 title="Add Manufacturer"
                 description="Add a new manufacturer to your inventory"
-                form={<ManufacturerForm />}
+                form={<ManufacturerForm/>}
             />
 
             <DialogContainer
@@ -95,7 +96,7 @@ const ModelForm = () => {
                 onOpenChange={closeCategoryModal}
                 title="Add Category"
                 description="Add a new category for your models"
-                form={<CategoryForm />}
+                form={<CategoryForm/>}
             />
 
             {/* Main Form */}
@@ -139,7 +140,7 @@ const ModelForm = () => {
                                 className="self-end h-10"
                                 onClick={() => openManufacturerModal()}
                             >
-                                <Plus className="h-4 w-4 mr-1" />
+                                <Plus className="h-4 w-4 mr-1"/>
                                 New
                             </Button>
                         </div>
@@ -164,7 +165,7 @@ const ModelForm = () => {
                                 className="self-end h-10"
                                 onClick={() => openCategoryModal()}
                             >
-                                <Plus className="h-4 w-4 mr-1" />
+                                <Plus className="h-4 w-4 mr-1"/>
                                 New
                             </Button>
                         </div>
@@ -207,7 +208,7 @@ const ModelForm = () => {
                         >
                             {isPending ? (
                                 <>
-                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                    <Loader2 className="w-4 h-4 mr-2 animate-spin"/>
                                     Saving...
                                 </>
                             ) : (

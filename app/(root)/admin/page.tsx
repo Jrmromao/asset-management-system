@@ -29,20 +29,20 @@ const Admin = () => {
 
     const [shouldRefresh, licenses] = licenseStore((state) => [state.shouldRefresh, state.licenses])
 
-    const [categories, deleteCategory, getAll] = useCategoryStore(state => [state.categories, state.delete, state.getAll])
+    // const [categories, deleteCategory, getAll] = useCategoryStore(state => [state.categories, state.delete, state.getAll])
 
-    const categoriesMemo = useMemo(() => categories, [categories, getAll])
+    // const categoriesMemo = useMemo(() => categories, [categories, getAll])
 
 
     useEffect(() => {
-        getAll()
+        // getAll()
     }, []);
 
 
     useEffect(() => {
 
         if (refresh) {
-            getAll()
+            // getAll()
                 setRefresh(false)
         }
     }, [refresh]);
@@ -193,7 +193,7 @@ const Admin = () => {
                                                 </CardDescription>
                                             </CardHeader>
                                             <CardContent>
-                                                <CategoryTable licenses={categories} deleteCategory={deleteCategory} setRefresh={setRefresh}  />
+                                                {/*<CategoryTable licenses={categories} deleteCategory={deleteCategory} setRefresh={setRefresh}  />*/}
                                             </CardContent>
                                             <CardFooter>
                                             </CardFooter>
@@ -271,7 +271,7 @@ const Admin = () => {
                                                 </CardDescription>
                                             </CardHeader>
                                             <CardContent>
-                                                <CategoryTable licenses={categories} deleteCategory={deleteCategory} setRefresh={setRefresh}/>
+                                                {/*<CategoryTable licenses={categories} deleteCategory={deleteCategory} setRefresh={setRefresh}/>*/}
                                             </CardContent>
                                             <CardFooter>
                                             </CardFooter>

@@ -8,6 +8,7 @@ const nameField = (name: string) => ({
 const addressFields = {
     addressLine1: requiredString("Address line 1 is required"),
     addressLine2: z.string().optional(),
+    state: requiredString("State is required"),
     city: requiredString("City is required"),
     zip: requiredString('Zipcode is required'),
     country: requiredString('Country is required')
@@ -182,7 +183,6 @@ export const inventorySchema = z.object({
 
 export const departmentSchema = z.object({
     ...nameField('Department'),
-    userId: z.string().min(1, "User is required"),
 });
 
 export const supplierSchema = z.object({
@@ -191,5 +191,12 @@ export const supplierSchema = z.object({
     email: emailField,
     phoneNum: z.string().optional(),
     url: z.string().url().optional(),
-    notes: z.string().optional()
+    notes: z.string().optional(),
+    name: z.string().min(1, "Company name is required"),
+    addressLine1: z.string().min(1, "Address is required"),
+    addressLine2: z.string().optional(),
+    city: z.string().min(1, "City is required"),
+    state: z.string().min(1, "State is required"),
+    zip: z.string().min(1, "Postal code is required"),
+    country: z.string().min(1, "Country is required"),
 });

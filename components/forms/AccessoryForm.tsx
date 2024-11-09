@@ -44,7 +44,7 @@ const AccessoryForm = ({accessory}: AccessoryFormProps) => {
         setIsLoading(true)
 
         try {
-            insert()
+            // await insert()
 
 
             form.reset({})
@@ -140,12 +140,12 @@ const AccessoryForm = ({accessory}: AccessoryFormProps) => {
                                 </div>
                                 <div className="flex flex-col gap-4 pt-5">
                                     <div className="flex-1">
-                                        <CustomDatePicker control={form.control}   {...form.register("purchaseDate")}
-                                                          label={'Purchase Date'}
-                                                          placeholder={'eg. 2023-12-31'}
-                                                          date={date}
-                                                          setDate={setDate}
-                                        />
+                                        {/*<CustomDatePicker control={form.control}   {...form.register("purchaseDate")}*/}
+                                        {/*                  label={'Purchase Date'}*/}
+                                        {/*                  placeholder={'eg. 2023-12-31'}*/}
+                                        {/*                  // date={new Date()}*/}
+                                        {/*                  // setDate={setDate}*/}
+                                        {/*/>*/}
                                     </div>
                                 </div>
 

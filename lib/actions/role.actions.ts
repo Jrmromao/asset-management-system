@@ -4,7 +4,6 @@ import { PrismaClient, Prisma } from '@prisma/client'
 import { parseStringify } from "@/lib/utils";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
-import { Role } from '@/types'
 
 const prisma = new PrismaClient()
 

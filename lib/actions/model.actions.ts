@@ -1,40 +1,47 @@
 'use server';
 
-import {Prisma, PrismaClient} from "@prisma/client";
-import { parseStringify } from "@/lib/utils";
-import { auth } from "@/auth";
-import { revalidatePath } from "next/cache";
+import {Prisma} from "@prisma/client";
+import {parseStringify} from "@/lib/utils";
+import {auth} from "@/auth";
+import {revalidatePath} from "next/cache";
+import {z} from "zod";
+import {modelSchema} from "@/lib/schemas";
+import {prisma} from "@/app/db";
 
-const prisma = new PrismaClient();
 
-// Fixed return type definition
-type ActionReturn<T> = {
-    data?: T;
-    error?: string;
-};
 
-export async function insert(data: Model): Promise<ActionReturn<Model>> {
+export async function insert
+
+(values: z.infer<typeof modelSchema>):
+    Promise<ActionResponse<Manufacturer>> {
     try {
-        const session = await auth();
-        if (!session) {
-            return { error: "Not authenticated" };
+        // const session = await auth();
+        // if (!session) {
+        //     return { error: "Not authenticated" };
+        // }
+
+        const validation = modelSchema.safeParse(values);
+        if (!validation.success) {
+            return {error: validation.error.errors[0].message};
         }
 
+        console.log(validation.error)
         const model = await prisma.model.create({
             data: {
-                name: data.name,
-                modelNo: data.modelNo,
-                categoryId: data.categoryId,
-                manufacturerId: data.manufacturerId,
-                companyId: session.user.companyId!
+                ...validation.data,
+                companyId: 'bf40528b-ae07-4531-a801-ede53fb31f04'//session.user.companyId!
             }
+        }).then( model => {
+            console.log('SUCCESS: ', model)
+        }).catch(er =>{
+            console.log('ERROR: ', er)
         });
 
-        revalidatePath('/models');
-        return { data: parseStringify(model) };
+        revalidatePath('/assets/create');
+        return {data: parseStringify(model)};
     } catch (error) {
         console.error('Insert model error:', error);
-        return { error: "Failed to create model" };
+        return {error: "Failed to create model"};
     } finally {
         await prisma.$disconnect();
     }
@@ -43,19 +50,19 @@ export async function insert(data: Model): Promise<ActionReturn<Model>> {
 export async function getAll(params?: {
     search?: string;
     categoryId?: string;
-}): Promise<ActionReturn<Model[]>> {
+}): Promise<ActionResponse<Model[]>> {
     try {
-        const session = await auth();
-        if (!session) {
-            return { error: "Not authenticated" };
-        }
+        // const session = await auth();
+        // if (!session) {
+        //     return {error: "Not authenticated"};
+        // }
         const where: Prisma.ModelWhereInput = {
-            companyId: session.user.companyId,
-            ...(params?.categoryId && { categoryId: params.categoryId }),
+            companyId: 'bf40528b-ae07-4531-a801-ede53fb31f04',
+            ...(params?.categoryId && {categoryId: params.categoryId}),
             ...(params?.search && {
                 OR: [
-                    { name: { contains: params.search, mode: 'insensitive' as Prisma.QueryMode } },
-                    { modelNo: { contains: params.search, mode: 'insensitive' as Prisma.QueryMode } }
+                    {name: {contains: params.search, mode: 'insensitive' as Prisma.QueryMode}},
+                    {modelNo: {contains: params.search, mode: 'insensitive' as Prisma.QueryMode}}
                 ]
             })
         };
@@ -64,19 +71,19 @@ export async function getAll(params?: {
             where,
             include: {
                 category: {
-                    select: { name: true }
+                    select: {name: true}
                 },
                 manufacturer: {
-                    select: { name: true }
+                    select: {name: true}
                 }
             },
-            orderBy: { createdAt: 'desc' }
+            orderBy: {createdAt: 'desc'}
         });
 
-        return { data: parseStringify(models) };
+        return {data: parseStringify(models)};
     } catch (error) {
         console.error('Get all models error:', error);
-        return { error: "Failed to fetch models" };
+        return {error: "Failed to fetch models"};
     } finally {
         await prisma.$disconnect();
     }
@@ -86,20 +93,20 @@ export async function getAll(params?: {
 export async function getAllSimple(params?: {
     search?: string;
     categoryId?: string;
-}): Promise<ActionReturn<Model[]>> {
+}): Promise<ActionResponse<Model[]>> {
     try {
-        const session = await auth();
-        if (!session) {
-            return { error: "Not authenticated" };
-        }
+        // const session = await auth();
+        // if (!session) {
+        //     return {error: "Not authenticated"};
+        // }
 
         const where: Prisma.ModelWhereInput = {
-            companyId: session.user.companyId,
-            ...(params?.categoryId && { categoryId: params.categoryId }),
+            companyId: 'bf40528b-ae07-4531-a801-ede53fb31f04',
+            ...(params?.categoryId && {categoryId: params.categoryId}),
             ...(params?.search && {
                 OR: [
-                    { name: { contains: params.search } },
-                    { modelNo: { contains: params.search } }
+                    {name: {contains: params.search}},
+                    {modelNo: {contains: params.search}}
                 ]
             })
         };
@@ -108,19 +115,19 @@ export async function getAllSimple(params?: {
             where,
             include: {
                 category: {
-                    select: { name: true }
+                    select: {name: true}
                 },
                 manufacturer: {
-                    select: { name: true }
+                    select: {name: true}
                 }
             },
-            orderBy: { createdAt: 'desc' }
+            orderBy: {createdAt: 'desc'}
         });
 
-        return { data: parseStringify(models) };
+        return {data: parseStringify(models)};
     } catch (error) {
         console.error('Get all models error:', error);
-        return { error: "Failed to fetch models" };
+        return {error: "Failed to fetch models"};
     } finally {
         await prisma.$disconnect();
     }
@@ -131,22 +138,22 @@ export async function getAllSimple(params?: {
 export async function getAllWithLowerCase(params?: {
     search?: string;
     categoryId?: string;
-}): Promise<ActionReturn<Model[]>> {
+}): Promise<ActionResponse<Model[]>> {
     try {
         const session = await auth();
         if (!session) {
-            return { error: "Not authenticated" };
+            return {error: "Not authenticated"};
         }
 
         const searchLower = params?.search?.toLowerCase();
 
         const where: Prisma.ModelWhereInput = {
             companyId: session.user.companyId,
-            ...(params?.categoryId && { categoryId: params.categoryId }),
+            ...(params?.categoryId && {categoryId: params.categoryId}),
             ...(searchLower && {
                 OR: [
-                    { name: { contains: searchLower } },
-                    { modelNo: { contains: searchLower } }
+                    {name: {contains: searchLower}},
+                    {modelNo: {contains: searchLower}}
                 ]
             })
         };
@@ -155,29 +162,29 @@ export async function getAllWithLowerCase(params?: {
             where,
             include: {
                 category: {
-                    select: { name: true }
+                    select: {name: true}
                 },
                 manufacturer: {
-                    select: { name: true }
+                    select: {name: true}
                 }
             },
-            orderBy: { createdAt: 'desc' }
+            orderBy: {createdAt: 'desc'}
         });
 
-        return { data: parseStringify(models) };
+        return {data: parseStringify(models)};
     } catch (error) {
         console.error('Get all models error:', error);
-        return { error: "Failed to fetch models" };
+        return {error: "Failed to fetch models"};
     } finally {
         await prisma.$disconnect();
     }
 }
 
-export async function findById(id: string): Promise<ActionReturn<Model>> {
+export async function findById(id: string): Promise<ActionResponse<Model>> {
     try {
         const session = await auth();
         if (!session) {
-            return { error: "Not authenticated" };
+            return {error: "Not authenticated"};
         }
 
         const model = await prisma.model.findFirst({
@@ -205,23 +212,23 @@ export async function findById(id: string): Promise<ActionReturn<Model>> {
         });
 
         if (!model) {
-            return { error: "Model not found" };
+            return {error: "Model not found"};
         }
 
-        return { data: parseStringify(model) };
+        return {data: parseStringify(model)};
     } catch (error) {
         console.error('Find model by id error:', error);
-        return { error: "Failed to fetch model" };
+        return {error: "Failed to fetch model"};
     } finally {
         await prisma.$disconnect();
     }
 }
 
-export async function update(data: Model, id: string): Promise<ActionReturn<Model>> {
+export async function update(data: Model, id: string): Promise<ActionResponse<Model>> {
     try {
         const session = await auth();
         if (!session) {
-            return { error: "Not authenticated" };
+            return {error: "Not authenticated"};
         }
 
         // Check if model exists and belongs to company
@@ -233,11 +240,11 @@ export async function update(data: Model, id: string): Promise<ActionReturn<Mode
         });
 
         if (!existingModel) {
-            return { error: "Model not found" };
+            return {error: "Model not found"};
         }
 
         const model = await prisma.model.update({
-            where: { id },
+            where: {id},
             data: {
                 name: data.name,
                 modelNo: data.modelNo,
@@ -249,20 +256,20 @@ export async function update(data: Model, id: string): Promise<ActionReturn<Mode
 
         revalidatePath('/models');
         revalidatePath(`/models/${id}`);
-        return { data: parseStringify(model) };
+        return {data: parseStringify(model)};
     } catch (error) {
         console.error('Update model error:', error);
-        return { error: "Failed to update model" };
+        return {error: "Failed to update model"};
     } finally {
         await prisma.$disconnect();
     }
 }
 
-export async function remove(id: string): Promise<ActionReturn<Model>> {
+export async function remove(id: string): Promise<ActionResponse<Model>> {
     try {
         const session = await auth();
         if (!session) {
-            return { error: "Not authenticated" };
+            return {error: "Not authenticated"};
         }
 
         // Check if model exists and belongs to company
@@ -273,29 +280,29 @@ export async function remove(id: string): Promise<ActionReturn<Model>> {
             },
             include: {
                 assets: {
-                    select: { id: true },
+                    select: {id: true},
                     take: 1
                 }
             }
         });
 
         if (!existingModel) {
-            return { error: "Model not found" };
+            return {error: "Model not found"};
         }
 
         if (existingModel.assets.length > 0) {
-            return { error: "Cannot delete model with associated assets" };
+            return {error: "Cannot delete model with associated assets"};
         }
 
         const model = await prisma.model.delete({
-            where: { id }
+            where: {id}
         });
 
         revalidatePath('/models');
-        return { data: parseStringify(model) };
+        return {data: parseStringify(model)};
     } catch (error) {
         console.error('Delete model error:', error);
-        return { error: "Failed to delete model" };
+        return {error: "Failed to delete model"};
     } finally {
         await prisma.$disconnect();
     }
@@ -313,7 +320,7 @@ export async function isModelNumberUnique(
             where: {
                 modelNo,
                 companyId: session.user.companyId,
-                id: excludeId ? { not: excludeId } : undefined
+                id: excludeId ? {not: excludeId} : undefined
             }
         });
 

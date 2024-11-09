@@ -164,25 +164,25 @@ const LicenseForm = ({license}: LicenseFormProps) => {
 
                                 <div className="flex flex-col gap-4 pt-5">
                                     <div className="flex-1">
-                                        <CustomDatePicker control={form.control}   {...form.register("purchaseDate")}
-                                                          label={'Purchase Date'}
-                                                          placeholder={'eg. 2023-12-31'}
-                                                          name={'purchaseDate'}
-                                                          date={purchaseDate}
-                                                          setDate={setPurchaseDate}
-                                        />
+                                        {/*<CustomDatePicker control={form.control}   {...form.register("purchaseDate")}*/}
+                                        {/*                  label={'Purchase Date'}*/}
+                                        {/*                  placeholder={'eg. 2023-12-31'}*/}
+                                        {/*                  name={'purchaseDate'}*/}
+                                        {/*                  date={purchaseDate}*/}
+                                        {/*                  setDate={setPurchaseDate}*/}
+                                        {/*/>*/}
                                     </div>
                                 </div>
 
                                 <div className="flex flex-col gap-4 pt-5">
                                     <div className="flex-1">
-                                        <CustomDatePicker control={form.control}   {...form.register("renewalDate")}
-                                                          label={'Renewal Date'}
-                                                          placeholder={'eg. 2025-12-31'}
-                                                          name={'renewalDate'}
-                                                          date={renewalDate}
-                                                          setDate={setRenewalDate}
-                                        />
+                                        {/*<CustomDatePicker control={form.control}   {...form.register("renewalDate")}*/}
+                                        {/*                  label={'Renewal Date'}*/}
+                                        {/*                  placeholder={'eg. 2025-12-31'}*/}
+                                        {/*                  name={'renewalDate'}*/}
+                                        {/*                  date={renewalDate}*/}
+                                        {/*                  setDate={setRenewalDate}*/}
+                                        {/*/>*/}
                                     </div>
                                 </div>
 

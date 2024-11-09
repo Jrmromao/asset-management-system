@@ -18,6 +18,7 @@ import CustomSwitch from "@/components/CustomSwitch"
 // Store and Schema
 import { useStatusLabelStore } from "@/lib/stores/statusLabelStore"
 import { statusLabelSchema } from "@/lib/schemas"
+import {insert} from "@/lib/actions/statusLabel.actions";
 
 type FormValues = z.infer<typeof statusLabelSchema>
 
@@ -52,7 +53,9 @@ const StatusLabelForm = () => {
                 //     return
                 // }
 
-                await fetchStatusLabels()
+                insert
+
+                fetchStatusLabels()
                 toast.success('Status Label created successfully')
                 form.reset()
                 onClose()
@@ -75,6 +78,7 @@ const StatusLabelForm = () => {
                     />
 
                     <CustomInput
+                        type="textarea"
                         name="description"
                         label="Description"
                         control={form.control}

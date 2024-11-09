@@ -1,10 +1,11 @@
 'use server';
 
 import {Prisma, PrismaClient} from "@prisma/client";
-import { Location } from "@/types";
-import { parseStringify } from "@/lib/utils";
-import { auth } from "@/auth";
-import { revalidatePath } from "next/cache";
+import {parseStringify} from "@/lib/utils";
+import {auth} from "@/auth";
+import {revalidatePath} from "next/cache";
+import {z} from "zod";
+import {locationSchema} from "@/lib/schemas";
 
 const prisma = new PrismaClient();
 
@@ -13,28 +14,30 @@ type ActionReturn<T> = {
     error?: string;
 };
 
-export async function insert(data: Location): Promise<ActionReturn<Location>> {
+export async function insert(values: z.infer<typeof locationSchema>):
+    Promise<ActionResponse<Location>> {
     try {
-        const session = await auth();
-        if (!session) {
-            return { error: "Not authenticated" };
+
+        // const session = await auth();
+        // if (!session) {
+        //     return { error: "Not authenticated" };
+        // }
+
+        const validation = locationSchema.safeParse(values);
+        if (!validation.success) {
+            return {error: validation.error.errors[0].message};
         }
 
-        const location = await prisma.location.create({
+        const location = await prisma.departmentLocation.create({
             data: {
-                name: data.locName, // Changed to match schema
-                companyId: session.user.companyId,
-                addressLine1: data.addressLine1,
-                addressLine2: data.addressLine2 || "",
-                city: data.city,
-                state: data.state,
-                zip: data.zip,
-                country: data.country,
+                ...validation.data,
+                companyId: 'bf40528b-ae07-4531-a801-ede53fb31f04'//session.user.companyId!
             },
         });
 
-        revalidatePath('/locations');
+        revalidatePath('/assets/create');
         return { data: parseStringify(location) };
+
     } catch (error) {
         console.error('Create location error:', error);
         return { error: "Failed to create location" };
@@ -47,13 +50,13 @@ export async function getAll(params?: {
     search?: string;
 }): Promise<ActionReturn<Location[]>> {
     try {
-        const session = await auth();
-        if (!session) {
-            return { error: "Not authenticated" };
-        }
+        // const session = await auth();
+        // if (!session) {
+        //     return { error: "Not authenticated" };
+        // }
 
-        const where: Prisma.LocationWhereInput = {
-            companyId: session.user.companyId,
+        const where: Prisma.DepartmentLocationWhereInput = {
+            companyId: 'bf40528b-ae07-4531-a801-ede53fb31f04',//session.user.companyId!
             ...(params?.search && {
                 OR: [
                     {
@@ -78,7 +81,7 @@ export async function getAll(params?: {
             }),
         };
 
-        const locations = await prisma.location.findMany({
+        const locations = await prisma.departmentLocation.findMany({
             where,
             orderBy: { createdAt: 'desc' },
         });
@@ -102,7 +105,7 @@ export async function getAllSimple(params?: {
             return { error: "Not authenticated" };
         }
 
-        const where: Prisma.LocationWhereInput = {
+        const where: Prisma.DepartmentLocationWhereInput = {
             companyId: session.user.companyId,
             ...(params?.search && {
                 OR: [
@@ -113,7 +116,7 @@ export async function getAllSimple(params?: {
             }),
         };
 
-        const locations = await prisma.location.findMany({
+        const locations = await prisma.departmentLocation.findMany({
             where,
             orderBy: { createdAt: 'desc' },
         });
@@ -137,7 +140,7 @@ export async function getAllExact(params?: {
             return { error: "Not authenticated" };
         }
 
-        const where: Prisma.LocationWhereInput = {
+        const where: Prisma.DepartmentLocationWhereInput = {
             companyId: session.user.companyId,
             ...(params?.search && {
                 OR: [
@@ -148,7 +151,7 @@ export async function getAllExact(params?: {
             }),
         };
 
-        const locations = await prisma.location.findMany({
+        const locations = await prisma.departmentLocation.findMany({
             where,
             orderBy: { createdAt: 'desc' },
         });
@@ -169,7 +172,7 @@ export async function findById(id: string): Promise<ActionReturn<Location>> {
             return { error: "Not authenticated" };
         }
 
-        const location = await prisma.location.findFirst({
+        const location = await prisma.departmentLocation.findFirst({
             where: {
                 id,
                 companyId: session.user.companyId,
@@ -200,7 +203,7 @@ export async function update(
         }
 
         // Check if location exists and belongs to company
-        const existingLocation = await prisma.location.findFirst({
+        const existingLocation = await prisma.departmentLocation.findFirst({
             where: {
                 id,
                 companyId: session.user.companyId,
@@ -211,16 +214,10 @@ export async function update(
             return { error: "Location not found" };
         }
 
-        const location = await prisma.location.update({
+        const location = await prisma.departmentLocation.update({
             where: { id },
             data: {
-                name: data.locName,
-                addressLine1: data.addressLine1,
-                addressLine2: data.addressLine2,
-                city: data.city,
-                state: data.state,
-                zip: data.zip,
-                country: data.country,
+                ...data,
                 companyId: session.user.companyId, // Ensure companyId doesn't change
             },
         });
@@ -244,7 +241,7 @@ export async function remove(id: string): Promise<ActionReturn<Location>> {
         }
 
         // Check if location exists and belongs to company
-        const existingLocation = await prisma.location.findFirst({
+        const existingLocation = await prisma.departmentLocation.findFirst({
             where: {
                 id,
                 companyId: session.user.companyId,
@@ -265,7 +262,7 @@ export async function remove(id: string): Promise<ActionReturn<Location>> {
         //   return { error: "Cannot delete location with associated assets" };
         // }
 
-        const location = await prisma.location.delete({
+        const location = await prisma.departmentLocation.delete({
             where: { id },
         });
 
@@ -288,7 +285,7 @@ export async function isLocationNameUnique(
         const session = await auth();
         if (!session) return false;
 
-        const existingLocation = await prisma.location.findFirst({
+        const existingLocation = await prisma.departmentLocation.findFirst({
             where: {
                 name,
                 companyId: session.user.companyId,

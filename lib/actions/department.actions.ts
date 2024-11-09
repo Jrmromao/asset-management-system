@@ -1,41 +1,28 @@
 'use server';
 
-import { PrismaClient, Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { parseStringify } from "@/lib/utils";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
+import {prisma} from "@/app/db";
 
-const prisma = new PrismaClient();
 
-// Types
-type Department = {
-    id: string;
-    name: string;
-    companyId: string;
-    createdAt: Date;
-    updatedAt: Date;
-}
-
-type ActionReturn<T> = {
-    data?: T;
-    error?: string;
-};
-
-export async function insert(data: Pick<Department, 'name'>): Promise<ActionReturn<Department>> {
+export async function insert(data: Pick<Department, 'name'>): Promise<ActionResponse<Department>> {
     try {
-        const session = await auth();
-        if (!session) {
-            return { error: "Not authenticated" };
-        }
+        // const session = await auth();
+        // if (!session) {
+        //     return { error: "Not authenticated" };
+        // }
 
         const department = await prisma.department.create({
             data: {
-                name: data.name,
-                companyId: session.user.companyId,
+               ...data,
+                companyId: 'bf40528b-ae07-4531-a801-ede53fb31f04',
+                //companyId: session.user.companyId,
             },
         });
 
-        revalidatePath('/departments');
+        revalidatePath('/assets/create');
         return { data: parseStringify(department) };
     } catch (error) {
         if (error instanceof Prisma.PrismaClientKnownRequestError) {
@@ -53,15 +40,15 @@ export async function insert(data: Pick<Department, 'name'>): Promise<ActionRetu
 
 export async function getAll(params?: {
     search?: string;
-}): Promise<ActionReturn<Department[]>> {
+}): Promise<ActionResponse<Department[]>> {
     try {
-        const session = await auth();
-        if (!session) {
-            return { error: "Not authenticated" };
-        }
+        // const session = await auth();
+        // if (!session) {
+        //     return { error: "Not authenticated" };
+        // }
 
         const where: Prisma.DepartmentWhereInput = {
-            companyId: session.user.companyId,
+            companyId:  'bf40528b-ae07-4531-a801-ede53fb31f04', //session.user.companyId,
             ...(params?.search && {
                 name: {
                     contains: params.search,
@@ -77,7 +64,12 @@ export async function getAll(params?: {
             },
         });
 
-        return { data: parseStringify(departments) };
+
+        return {
+            success: true,
+            data: parseStringify(departments)
+        };
+
     } catch (error) {
         console.error('Get departments error:', error);
         return { error: "Failed to fetch departments" };
@@ -86,7 +78,7 @@ export async function getAll(params?: {
     }
 }
 
-export async function findById(id: string): Promise<ActionReturn<Department>> {
+export async function findById(id: string): Promise<ActionResponse<Department>> {
     try {
         const session = await auth();
         if (!session) {
@@ -116,7 +108,7 @@ export async function findById(id: string): Promise<ActionReturn<Department>> {
 export async function update(
     id: string,
     data: Pick<Department, 'name'>
-): Promise<ActionReturn<Department>> {
+): Promise<ActionResponse<Department>> {
     try {
         const session = await auth();
         if (!session) {
@@ -152,7 +144,7 @@ export async function update(
     }
 }
 
-export async function remove(id: string): Promise<ActionReturn<Department>> {
+export async function remove(id: string): Promise<ActionResponse<Department>> {
     try {
         const session = await auth();
         if (!session) {

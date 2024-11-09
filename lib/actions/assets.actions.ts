@@ -4,153 +4,190 @@ import {prisma} from "@/app/db";
 import {parseStringify} from "@/lib/utils";
 import {auth} from "@/auth";
 import {z} from "zod";
-import {assetAssignSchema, loginSchema} from "@/lib/schemas";
-import {Asset} from "@/types";
+import {assetAssignSchema} from "@/lib/schemas";
+import {Prisma} from "@prisma/client";
 
-export const create = async (data: Asset) => {
+// Common include object for consistent asset queries
+const assetIncludes = {
+    // license: true,
+    model: true,
+    company: true,
+    statusLabel: true,
+} as const;
+
+// Type for the API response
+type ApiResponse<T> = {
+    data?: T;
+    error?: string;
+};
+
+export async function create(data: Asset): Promise<ApiResponse<Asset>> {
     try {
         const newAsset = await prisma.asset.create({
             data: {
                 name: data.name,
                 serialNumber: data.serialNumber,
-                companyId: data.companyId,
-                material: data.material,
+                material: data.material || '',
                 modelId: data.modelId,
                 endOfLife: data.endOfLife,
-                licenseId: data.licenseId,
+                // licenseId: data.licenseId,
                 statusLabelId: data.statusLabelId,
                 supplierId: data.supplierId,
+
+                companyId: 'bf40528b-ae07-4531-a801-ede53fb31f04'
             },
-            include: {
-                Company: true,
-                Supplier: true,
-                StatusLabel: true,
-                License: true,
-                Co2eRecord: true,
-            },
+            include: assetIncludes,
         });
 
-        console.log('Asset created successfully:', newAsset);
+        console.log(newAsset)
+
+
+        return {data: parseStringify(newAsset)};
     } catch (error) {
         console.error('Error creating asset:', error);
-    } finally {
-        await prisma.$disconnect();
+        if (error instanceof Prisma.PrismaClientKnownRequestError) {
+            if (error.code === 'P2002') {
+                return {error: 'Serial number already exists'};
+            }
+        }
+        return {error: 'Failed to create asset'};
     }
 }
 
-export const get = async () => {
+export async function get(): Promise<ApiResponse<Asset[]>> {
     try {
-        const session = await auth()
+        // const session = await auth();
+        // if (!session?.user?.companyId) {
+        //     return {error: 'Unauthorized access'};
+        // }
+
         const assets = await prisma.asset.findMany({
-            include: {
-                License: true,
-                Model: true,
-                Company: true,
-                Co2eRecord: true,
-                StatusLabel: true
-            },
-            orderBy: {
-                createdAt: 'desc'
-            },
-            where: {
-                companyId: session?.user?.companyId
-            }
+            include: assetIncludes,
+            orderBy: {createdAt: 'desc'},
+            where: {companyId: 'bf40528b-ae07-4531-a801-ede53fb31f04'}
         });
-        return parseStringify(assets);
+
+        console.log(assets)
+
+        return {data: parseStringify(assets)};
     } catch (error) {
-        console.log(error)
+        console.error('Error fetching assets:', error);
+        return {error: 'Failed to fetch assets'};
     }
 }
 
-export const findById = async (id: string) => {
+export async function findById(id: string): Promise<ApiResponse<Asset>> {
     try {
+        if (!id) {
+            return {error: 'Asset ID is required'};
+        }
+
         const asset = await prisma.asset.findFirst({
-            include: {
-                License: true,
-                Model: true,
-                Company: true,
-                Co2eRecord: true,
-                StatusLabel: true
-            },
-            where: {
-                id: id
-            },
+            include: assetIncludes,
+            where: {id}
         });
 
-        return parseStringify(asset);
+        if (!asset) {
+            return {error: 'Asset not found'};
+        }
+
+        return {data: parseStringify(asset)};
     } catch (error) {
-        console.log(error)
+        console.error('Error finding asset:', error);
+        return {error: 'Failed to find asset'};
     }
 }
 
-export const remove = async (id: string) => {
+export async function remove(id: string): Promise<ApiResponse<Asset>> {
     try {
+        if (!id) {
+            return {error: 'Asset ID is required'};
+        }
+
         const asset = await prisma.asset.delete({
-            where: {
-                id: id
-            }
-        })
-        return parseStringify(asset);
+            where: {id}
+        });
+
+        return {data: parseStringify(asset)};
     } catch (error) {
-        console.log(error)
+        console.error('Error deleting asset:', error);
+        if (error instanceof Prisma.PrismaClientKnownRequestError) {
+            if (error.code === 'P2025') {
+                return {error: 'Asset not found'};
+            }
+        }
+        return {error: 'Failed to delete asset'};
     }
 }
 
-export const update = async (asset: Asset, id: string) => {
+export async function update(asset: Asset, id: string): Promise<ApiResponse<Asset>> {
     try {
-        const assets = await prisma.asset.update({
-            where: {
-                id: id
-            },
+        if (!id || !asset) {
+            return {error: 'Asset ID and data are required'};
+        }
+
+        const updatedAsset = await prisma.asset.update({
+            where: {id},
             data: {
                 name: asset.name,
                 serialNumber: asset.serialNumber,
-                Company: {
-                    connect: {
-                        id: asset.companyId
-                    },
+                company: {
+                    connect: {id: asset.companyId}
                 },
-                StatusLabel: {
-                    connect: {
-                        id: asset.statusLabelId
-                    },
+                statusLabel: {
+                    connect: {id: asset.statusLabelId}
                 },
             }
         });
-        return parseStringify(assets);
+
+        return {data: parseStringify(updatedAsset)};
     } catch (error) {
-        console.log(error)
+        console.error('Error updating asset:', error);
+        if (error instanceof Prisma.PrismaClientKnownRequestError) {
+            if (error.code === 'P2025') {
+                return {error: 'Asset not found'};
+            }
+        }
+        return {error: 'Failed to update asset'};
     }
 }
 
-export const assign = async (values: z.infer<typeof assetAssignSchema>) => {
+export async function assign(values: z.infer<typeof assetAssignSchema>): Promise<ApiResponse<Asset>> {
     try {
-        const validation = assetAssignSchema.safeParse(values)
-        if (!validation.success) return {error: 'Invalid email or password'}
-        const {assetId, userId} = values
+        const validation = assetAssignSchema.safeParse(values);
+        if (!validation.success) {
+            return {error: 'Invalid assignment data'};
+        }
 
+        const {assetId, userId} = values;
         const updatedAsset = await prisma.asset.update({
             where: {id: assetId},
-            data: {
-                assigneeId: userId,
-            },
+            data: {assigneeId: userId},
+            include: assetIncludes
         });
-        return parseStringify(updatedAsset);
+
+        return {data: parseStringify(updatedAsset)};
     } catch (error) {
-        console.log(error)
+        console.error('Error assigning asset:', error);
+        return {error: 'Failed to assign asset'};
     }
 }
 
-export const unassign = async (assetId: string) => {
+export async function unassign(assetId: string): Promise<ApiResponse<Asset>> {
     try {
+        if (!assetId) {
+            return {error: 'Asset ID is required'};
+        }
+
         const updatedAsset = await prisma.asset.update({
             where: {id: assetId},
-            data: {
-                assigneeId: null,
-            },
+            data: {assigneeId: null},
+            include: assetIncludes
         });
-        return parseStringify(updatedAsset);
+
+        return {data: parseStringify(updatedAsset)};
     } catch (error) {
-        console.log(error)
+        console.error('Error unassigning asset:', error);
+        return {error: 'Failed to unassign asset'};
     }
 }

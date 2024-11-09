@@ -4,6 +4,7 @@ import { topCategoryStyles } from "@/constants";
 import { cn } from "@/lib/utils";
 
 import { Progress } from "./ui/progress";
+import {CategoryProps} from "@/types";
 
 const Category = ({ category }: CategoryProps) => {
     const {

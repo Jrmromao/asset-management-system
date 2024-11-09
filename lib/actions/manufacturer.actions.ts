@@ -19,6 +19,7 @@ export async function insert(
     values: z.infer<typeof manufacturerSchema>
 ): Promise<ActionResponse<Manufacturer>> {
     try {
+        //TODO: remove the comments
         // const session = await auth();
         // if (!session) {
         //     return { error: "Not authenticated" };

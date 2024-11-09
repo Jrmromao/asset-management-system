@@ -24,7 +24,7 @@ const View = () => {
             navigate.back()
             return
         }
-        findById(id).then(asset => setAsset(asset))
+        findById(id).then(asset => setAsset(asset.data))
         findAllByOrganization(id).then(auditLog => setAuditLogs(auditLog))
 
     }, [setAsset, findById]);

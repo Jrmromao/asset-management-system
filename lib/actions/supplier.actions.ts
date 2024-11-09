@@ -1,59 +1,38 @@
-'use server';
+'use server'
 
-import { PrismaClient, Prisma } from "@prisma/client";
-import { Supplier } from "@/types";
-import { parseStringify } from "@/lib/utils";
-import { auth } from "@/auth";
-import { revalidatePath } from "next/cache";
+import { prisma } from "@/app/db"
+import { auth } from "@/auth"
+import { parseStringify } from "@/lib/utils"
+import { supplierSchema } from "@/lib/schemas"
+import { revalidatePath } from "next/cache"
+import { z } from "zod"
 
-const prisma = new PrismaClient();
 
-type ActionReturn<T> = {
-    data?: T;
-    error?: string;
-};
 
-export async function insert(data: Supplier): Promise<ActionReturn<Supplier>> {
+export async function insert(values: z.infer<typeof supplierSchema>):
+    Promise<ActionResponse<Supplier>> {
     try {
-        const session = await auth();
-        if (!session) {
-            return { error: "Not authenticated" };
+        const validation = supplierSchema.safeParse(values);
+        if (!validation.success) {
+            return { error: validation.error.errors[0].message };
         }
 
-        // Check for unique email
-        const existingSupplier = await prisma.supplier.findUnique({
-            where: { email: data.email },
-        });
-
-        if (existingSupplier) {
-            return { error: "A supplier with this email already exists" };
-        }
+        // const session = await auth();
+        // if (!session?.user?.companyId) {
+        //     return { error: "Not authenticated" };
+        // }
+        //
 
         const supplier = await prisma.supplier.create({
             data: {
-                name: data.name,
-                contactName: data.contactName,
-                email: data.email,
-                phoneNum: data.phoneNum || null,
-                url: data.url || null,
-                addressLine1: data.addressLine1,
-                addressLine2: data.addressLine2 || null,
-                city: data.city,
-                state: data.state,
-                zip: data.zip,
-                country: data.country,
-                notes: data.notes || null,
+                ...validation.data,
+                companyId: 'bf40528b-ae07-4531-a801-ede53fb31f04'
             },
         });
 
-        revalidatePath('/suppliers');
+        revalidatePath('/assets/create');
         return { data: parseStringify(supplier) };
     } catch (error) {
-        if (error instanceof Prisma.PrismaClientKnownRequestError) {
-            if (error.code === 'P2002') {
-                return { error: "A supplier with this email already exists" };
-            }
-        }
         console.error('Create supplier error:', error);
         return { error: "Failed to create supplier" };
     } finally {
@@ -61,184 +40,108 @@ export async function insert(data: Supplier): Promise<ActionReturn<Supplier>> {
     }
 }
 
-export async function getAll(params?: {
-    search?: string;
-}): Promise<ActionReturn<Supplier[]>> {
-    try {
-        const session = await auth();
-        if (!session) {
-            return { error: "Not authenticated" };
-        }
 
-        const where: Prisma.SupplierWhereInput = {
-            ...(params?.search && {
-                OR: [
-                    { name: { contains: params.search, mode: 'insensitive' } },
-                    { contactName: { contains: params.search, mode: 'insensitive' } },
-                    { email: { contains: params.search, mode: 'insensitive' } },
-                    { city: { contains: params.search, mode: 'insensitive' } },
-                    { country: { contains: params.search, mode: 'insensitive' } },
-                ],
-            }),
-        };
+// export async function getAll(params?: PaginationParams): Promise<ActionResponse<GetAllResponse<Supplier>>> {
+//     try {
+//         // const session = await auth();
+//         // if (!session?.user?.companyId) {
+//         //     return { error: "Not authenticated" };
+//         // }
+//
+//         // Default values
+//         const page = Math.max(1, params?.page ?? 1);
+//         const limit = Math.max(1, params?.limit ?? 10);
+//         const search = params?.search?.trim() ?? '';
+//         const sortBy = params?.sortBy ?? 'createdAt';
+//         const sortOrder = params?.sortOrder ?? 'desc';
+//
+//         // Calculate skip for pagination
+//         const skip = (page - 1) * limit;
+//
+//         // Base query filter
+//         const baseFilter = {
+//             companyId: session.user.companyId,
+//             ...(search ? {
+//                 OR: [
+//                     { name: { contains: search, mode: 'insensitive' } },
+//                     { email: { contains: search, mode: 'insensitive' } },
+//                     { contactName: { contains: search, mode: 'insensitive' } },
+//                     { city: { contains: search, mode: 'insensitive' } },
+//                     { country: { contains: search, mode: 'insensitive' } },
+//                 ]
+//             } : {})
+//         };
+//
+//         // Get total count
+//         const total = await prisma.supplier.count({
+//             where: baseFilter
+//         });
+//
+//         // Get paginated data
+//         const items = await prisma.supplier.findMany({
+//             where: baseFilter,
+//             orderBy: {
+//                 [sortBy]: sortOrder
+//             },
+//             include: {
+//                 _count: {
+//                     select: { assets: true }
+//                 }
+//             },
+//             skip,
+//             take: limit,
+//         });
+//
+//         const totalPages = Math.ceil(total / limit);
+//
+//         return {
+//             data: {
+//                 items: parseStringify(items),
+//                 metadata: {
+//                     total,
+//                     page,
+//                     limit,
+//                     totalPages,
+//                     hasMore: page < totalPages
+//                 }
+//             }
+//         };
+//
+//     } catch (error) {
+//         console.error('Failed to fetch suppliers:', error);
+//         return { error: 'Failed to fetch suppliers' };
+//     } finally {
+//         await prisma.$disconnect();
+//     }
+// }
+
+// Simple version without pagination
+export async function getAllSimple(): Promise<ActionResponse<Supplier[]>> {
+    try {
+        // const session = await auth();
+        // if (!session?.user?.companyId) {
+        //     return { error: "Not authenticated" };
+        // }
 
         const suppliers = await prisma.supplier.findMany({
-            where,
-            include: {
-                _count: {
-                    select: { assets: true }
-                }
+            where: {
+                // companyId: session.user.companyId
+                companyId: 'bf40528b-ae07-4531-a801-ede53fb31f04'
             },
-            orderBy: { createdAt: 'desc' },
+            orderBy: {
+                createdAt: 'desc'
+            }
         });
 
+        if (!suppliers) {
+            return { error: "No suppliers found" };
+        }
+
+        console.log(suppliers)
         return { data: parseStringify(suppliers) };
     } catch (error) {
-        console.error('Get suppliers error:', error);
-        return { error: "Failed to fetch suppliers" };
-    } finally {
-        await prisma.$disconnect();
-    }
-}
-
-export async function findById(id: string): Promise<ActionReturn<Supplier>> {
-    try {
-        const session = await auth();
-        if (!session) {
-            return { error: "Not authenticated" };
-        }
-
-        const supplier = await prisma.supplier.findUnique({
-            where: { id },
-            include: {
-                assets: {
-                    select: {
-                        id: true,
-                        name: true,
-                        serialNumber: true,
-                        statusLabel: {
-                            select: {
-                                name: true,
-                                colorCode: true
-                            }
-                        }
-                    }
-                }
-            }
-        });
-
-        if (!supplier) {
-            return { error: "Supplier not found" };
-        }
-
-        return { data: parseStringify(supplier) };
-    } catch (error) {
-        console.error('Find supplier error:', error);
-        return { error: "Failed to fetch supplier" };
-    } finally {
-        await prisma.$disconnect();
-    }
-}
-
-export async function update(
-    id: string,
-    data: Supplier
-): Promise<ActionReturn<Supplier>> {
-    try {
-        const session = await auth();
-        if (!session) {
-            return { error: "Not authenticated" };
-        }
-
-        // Check if supplier exists
-        const existingSupplier = await prisma.supplier.findUnique({
-            where: { id },
-        });
-
-        if (!existingSupplier) {
-            return { error: "Supplier not found" };
-        }
-
-        // Check email uniqueness if email is being changed
-        if (data.email !== existingSupplier.email) {
-            const emailExists = await prisma.supplier.findUnique({
-                where: { email: data.email },
-            });
-
-            if (emailExists) {
-                return { error: "A supplier with this email already exists" };
-            }
-        }
-
-        const supplier = await prisma.supplier.update({
-            where: { id },
-            data: {
-                name: data.name,
-                contactName: data.contactName,
-                email: data.email,
-                phoneNum: data.phoneNum || null,
-                url: data.url || null,
-                addressLine1: data.addressLine1,
-                addressLine2: data.addressLine2 || null,
-                city: data.city,
-                state: data.state,
-                zip: data.zip,
-                country: data.country,
-                notes: data.notes || null,
-            },
-        });
-
-        revalidatePath('/suppliers');
-        revalidatePath(`/suppliers/${id}`);
-        return { data: parseStringify(supplier) };
-    } catch (error) {
-        if (error instanceof Prisma.PrismaClientKnownRequestError) {
-            if (error.code === 'P2002') {
-                return { error: "A supplier with this email already exists" };
-            }
-        }
-        console.error('Update supplier error:', error);
-        return { error: "Failed to update supplier" };
-    } finally {
-        await prisma.$disconnect();
-    }
-}
-
-export async function remove(id: string): Promise<ActionReturn<Supplier>> {
-    try {
-        const session = await auth();
-        if (!session) {
-            return { error: "Not authenticated" };
-        }
-
-        // Check if supplier exists and has no related assets
-        const existingSupplier = await prisma.supplier.findUnique({
-            where: { id },
-            include: {
-                assets: {
-                    select: { id: true },
-                    take: 1,
-                },
-            },
-        });
-
-        if (!existingSupplier) {
-            return { error: "Supplier not found" };
-        }
-
-        if (existingSupplier.assets.length > 0) {
-            return { error: "Cannot delete supplier with associated assets" };
-        }
-
-        const supplier = await prisma.supplier.delete({
-            where: { id },
-        });
-
-        revalidatePath('/suppliers');
-        return { data: parseStringify(supplier) };
-    } catch (error) {
-        console.error('Delete supplier error:', error);
-        return { error: "Failed to delete supplier" };
+        console.error('Failed to fetch suppliers:', error);
+        return { error: 'Failed to fetch suppliers' };
     } finally {
         await prisma.$disconnect();
     }

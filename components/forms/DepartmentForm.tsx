@@ -1,31 +1,32 @@
 'use client'
 
 import React from 'react'
-import { z } from "zod"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import { Button } from "@/components/ui/button"
-import { Form } from "@/components/ui/form"
-import { Loader2 } from "lucide-react"
-import { toast } from "sonner"
-import { useTransition } from 'react'
+import {z} from "zod"
+import {zodResolver} from "@hookform/resolvers/zod"
+import {useForm} from "react-hook-form"
+import {Button} from "@/components/ui/button"
+import {Form} from "@/components/ui/form"
+import {Loader2} from "lucide-react"
+import {toast} from "sonner"
+import {useTransition} from 'react'
 import CustomInput from "@/components/CustomInput"
-import { categorySchema } from "@/lib/schemas"
-import { insert } from "@/lib/actions/category.actions"
-import { useCategoryStore } from "@/lib/stores/categoryStore"
+import {departmentSchema} from "@/lib/schemas"
+import {insert} from "@/lib/actions/department.actions"
+import {useDepartmentStore} from "@/lib/stores/departmentStore";
 
-const CategoryForm = () => {
+
+const DepartmentForm = () => {
     const [isPending, startTransition] = useTransition()
-    const { onClose, getAll: fetchCategories } = useCategoryStore()
+    const {onClose, getAll: fetchDepartments} = useDepartmentStore()
 
-    const form = useForm<z.infer<typeof categorySchema>>({
-        resolver: zodResolver(categorySchema),
+    const form = useForm<z.infer<typeof departmentSchema>>({
+        resolver: zodResolver(departmentSchema),
         defaultValues: {
             name: '',
         },
     })
 
-    async function onSubmit(data: z.infer<typeof categorySchema>) {
+    const onSubmit = async (data: z.infer<typeof departmentSchema>) => {
         startTransition(async () => {
             try {
                 const result = await insert(data)
@@ -33,13 +34,13 @@ const CategoryForm = () => {
                     toast.error(result.error)
                     return
                 }
-                await fetchCategories()
-                toast.success('Category created successfully')
+                await fetchDepartments()
+                toast.success('Department created successfully')
                 onClose()
                 form.reset()
             } catch (error) {
-                console.error('Category creation error:', error)
-                toast.error('Failed to create category')
+                console.error('Department creation error:', error)
+                toast.error('Failed to create department')
             }
         })
     }
@@ -52,12 +53,12 @@ const CategoryForm = () => {
             >
                 <CustomInput
                     name="name"
-                    label="Category Name"
+                    label="Name"
                     control={form.control}
                     type="text"
-                    placeholder="Enter category name"
+                    placeholder="Enter department name"
                     disabled={isPending}
-                    tooltip="A unique name for this category"
+                    tooltip="A unique name for this department."
                 />
 
                 <div className="flex justify-end gap-4 pt-4">
@@ -80,7 +81,7 @@ const CategoryForm = () => {
                     >
                         {isPending ? (
                             <>
-                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin"/>
                                 Creating...
                             </>
                         ) : (
@@ -93,4 +94,4 @@ const CategoryForm = () => {
     )
 }
 
-export default CategoryForm
+export default DepartmentForm

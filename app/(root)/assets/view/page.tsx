@@ -41,7 +41,7 @@ const View = () => {
         }
         findById(id as string)
             .then(asset => {
-                setAsset(asset);
+                setAsset(asset.data);
             })
     }, [isAssignOpen]);
 
