@@ -14,14 +14,15 @@ type ActionReturn<T> = {
 
 export async function getRoles(): Promise<ActionReturn<Role[]>> {
     try {
-        const session = await auth();
-        if (!session) {
-            return { error: "Not authenticated" };
-        }
+        // const session = await auth();
+        // if (!session) {
+        //     return { error: "Not authenticated" };
+        // }
 
         const roles = await prisma.role.findMany({
             where: {
-                companyId: session.user.companyId,
+                // companyId: session.user.companyId,
+            companyId: 'bf40528b-ae07-4531-a801-ede53fb31f04'
             },
             orderBy: {
                 name: 'asc'

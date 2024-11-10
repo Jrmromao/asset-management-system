@@ -4,7 +4,7 @@ import {ChatGPTResponse} from "@/services/ChatGPT/tempales";
 import {registerUser} from "@/lib/actions/user.actions";
 import {CompanyRegistrationProps} from "@/types";
 
-export const registerCompany = async (data: CompanyRegistrationProps) => {
+export const registerCompany = async (data:    CompanyRegistrationProps) => {
 
     try {
     } catch (error) {

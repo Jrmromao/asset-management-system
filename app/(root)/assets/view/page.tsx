@@ -17,6 +17,7 @@ import AssignAssetForm from "@/components/forms/AsignAssetForm";
 import Swal from "sweetalert2";
 import {toast} from "sonner";
 import {formatAmount} from "@/lib/utils";
+import QRCode from "react-qr-code";
 import {
     Breadcrumb,
     BreadcrumbItem,
@@ -195,8 +196,14 @@ const View = () => {
                           </div>
                         </div>
                         <div className=" p-4 flex items-center justify-center">
-                          <Image src={'/qr-code/sample.png'} alt={''} width={158} height={150}
-                                 className={'mt-5'}/>
+                          {/*<Image src={'/qr-code/sample.png'} alt={''} width={158} height={150}*/}
+                          {/*       className={'mt-5'}/>*/}
+
+                            <QRCode
+                                value={asset.name}
+                                size={140}
+                            />
+
                         </div>
 
                       </div>

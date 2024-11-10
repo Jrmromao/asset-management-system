@@ -1,173 +1,221 @@
 'use client'
 
-import React, {useEffect, useState} from 'react'
-import {z} from "zod";
-import {useForm} from "react-hook-form";
-import {zodResolver} from "@hookform/resolvers/zod";
-import {Form} from "@/components/ui/form";
-import {Card} from "@/components/ui/card";
-import CustomInput from "@/components/CustomInput";
-import {Button} from "@/components/ui/button";
-import {InfoIcon, Loader2} from "lucide-react";
-import {useUserStore} from "@/lib/stores/userStore";
-import {useRoleStore} from "@/lib/stores/roleStore";
-import CustomSelect from "@/components/CustomSelect";
-import {Alert, AlertDescription, AlertTitle} from "@/components/ui/alert";
-import {useDialogStore} from "@/lib/stores/store";
-import {personSchema} from "@/lib/schemas";
-import {toast} from "sonner";
-import {sleep} from "@/lib/utils";
+import React, { useEffect } from 'react'
+import { z } from "zod"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { Form, FormLabel } from "@/components/ui/form"
+import { Card } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { InfoIcon, Loader2 } from "lucide-react"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { toast } from "sonner"
+import { useTransition } from 'react'
+import { useRouter } from "next/navigation"
 
-const UserForm = () => {
+// Components
+import CustomInput from "@/components/CustomInput"
+import CustomSelect from "@/components/CustomSelect"
 
-    const INITIAL_VALUES = {
-        firstName: '',
-        lastName: '',
-        email: '',
-        title: '',
-        employeeId: '',
-        roleId: '',
-        companyId: ''
-    }
+// Stores
+import { useUserStore } from "@/lib/stores/userStore"
+import { useRoleStore } from "@/lib/stores/roleStore"
+import {userSchema} from "@/lib/schemas";
 
-    const [isLoading, setIsLoading] = useState(false)
-    const [create] = useUserStore(state => [state.create])
-    const [roles, fetchRoles] = useRoleStore((state) => [state.roles, state.getAll]);
-    const [onClose] = useDialogStore(state => [state.onClose])
+type UserFormValues = z.infer<typeof userSchema>;
 
-    const form = useForm<z.infer<typeof personSchema>>({
-        resolver: zodResolver(personSchema),
-        defaultValues: INITIAL_VALUES
+interface UserFormProps {
+    id?: string;
+    isUpdate?: boolean;
+}
+
+const UserForm = ({ id, isUpdate = false }: UserFormProps) => {
+    const [isPending, startTransition] = useTransition()
+    const router = useRouter()
+
+    // Stores
+    const { create: createUser, update: updateUser, findById } = useUserStore()
+    const { roles, getAll: fetchRoles } = useRoleStore()
+
+    // Form
+    const form = useForm<UserFormValues>({
+        resolver: zodResolver(userSchema),
+        defaultValues: {
+            firstName: '',
+            lastName: '',
+            phoneNum: '',
+            email: '',
+            title: '',
+            employeeId: '',
+            roleId: '',
+            companyId: ''
+        }
     })
 
     useEffect(() => {
         fetchRoles()
-    }, []);
 
-    const onSubmit = async (data: z.infer<typeof personSchema>) => {
-
-        setIsLoading(true)
-        try {
-            const roleSelected = roles?.find((role) => role.name === data.roleId)
-            const userData: User = {
-                firstName: data.firstName || '',
-                lastName: data.lastName || '',
-                email: data.email || '',
-                roleId: roleSelected?.id || '',
-                role: roleSelected,
-                title: data.title || '',
-                employeeId: data.employeeId || '',
-                companyId: data.companyId || '',
-            }
-            create(userData)
-            await sleep().then(_ => {
-                onClose()
-                form.reset()
-                toast.success('User created successfully')
+        if (isUpdate && id) {
+            startTransition(async () => {
+                const user = await findById(id)
+                if (user) {
+                    form.reset(user)
+                } else {
+                    toast.error('User not found')
+                    router.back()
+                }
             })
-        } catch (e) {
-            console.error(e)
-        } finally {
-            setIsLoading(false)
         }
+    }, [isUpdate, id, fetchRoles])
+
+    async function onSubmit(data: UserFormValues) {
+        startTransition(async () => {
+            try {
+                if (isUpdate && id) {
+                    await updateUser(id, data)
+                    toast.success('User updated successfully')
+                } else {
+                    await createUser(data)
+                    form.reset()
+                    toast.success('User created successfully')
+                }
+            } catch (error) {
+                toast.error('Something went wrong')
+                console.error(error)
+            }
+        })
     }
 
     return (
-        <section className="w-full bg-white z-50 max-h-[900px] overflow-y-auto p-4">
+        <section className="w-full mx-auto p-6">
             <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                    <Card className="p-6 space-y-6">
+                        {/* Personal Details */}
+                        <div>
+                            <h2 className="text-lg font-semibold mb-4">Personal Details</h2>
+                            <div className="grid grid-cols-2 gap-6">
+                                <CustomInput
+                                    required
+                                    name="firstName"
+                                    label="First Name"
+                                    control={form.control}
+                                    type="text"
+                                    placeholder="Enter first name"
+                                />
 
-
-                    <div className={'mt-6 header-2'}>Personal Details</div>
-
-                    <div className={'flex flex-col md:flex-row gap-4 pt-5'}>
-
-                        <div className={'flex-1'}>
-                            <CustomInput control={form.control}   {...form.register("firstName")}
-                                         label={'First Name'}
-                                         placeholder={'eg. Joe'}
-                                         type={'text'}/>
+                                <CustomInput
+                                    required
+                                    name="lastName"
+                                    label="Last Name"
+                                    control={form.control}
+                                    type="text"
+                                    placeholder="Enter last name"
+                                />
+                            </div>
                         </div>
 
-                    </div>
+                        {/* Contact Information */}
+                        <div>
+                            <div className="grid grid-cols-2 gap-6">
+                                <CustomInput
+                                    required
+                                    name="email"
+                                    label="Email Address"
+                                    control={form.control}
+                                    type="email"
+                                    placeholder="Enter email address"
+                                />
 
-                    <div className={'flex flex-col md:flex-row gap-4 pt-5'}>
-                        <div className={'flex-1'}>
-                            <CustomInput control={form.control}  {...form.register("lastName")} label={'Last Name'}
-                                         placeholder={'eg. Smith'}
-                                         type={'text'}/>
+                                <CustomInput
+                                    required
+                                    name="phoneNum"
+                                    label="Phome number"
+                                    control={form.control}
+                                    type="text"
+                                    placeholder="Enter your phone number"
+                                />
+
+                            </div>
                         </div>
-                    </div>
 
-                    <div className={'flex flex-col md:flex-row gap-4  pt-5'}>
-                        <div className={'flex-1'}>
-                            <CustomInput control={form.control}
-                                         {...form.register("email")}
-                                         label={'Email Address'}
-                                         placeholder={'eg. joe.smith@example.com'}
-                                         type={'email'}/>
-                        </div>
-                    </div>
+                        {/* Role Information */}
+                        <div>
+                            <h2 className="text-lg font-semibold mb-4">Role Information</h2>
 
 
-                    <div className={'flex flex-col md:flex-row gap-4  pt-5'}>
-                        <div className={'flex-1'}>
-                            <CustomInput control={form.control}   {...form.register("title")}
-                                         label={'Title'}
-                                         placeholder={'eg. Software Developer'} type={'text'}/>
-                        </div>
-                    </div>
+                            <div className="grid grid-cols-3 gap-6">
+                                <CustomInput
+                                    required
+                                    name="employeeId"
+                                    label="Employee ID"
+                                    control={form.control}
+                                    type="text"
+                                    placeholder="Enter employee ID"
+                                />
 
-                    <div className={'flex flex-col md:flex-row gap-4  pt-5'}>
-                        <div className={'flex-1'}>
-                            <CustomInput control={form.control}   {...form.register("employeeId")}
-                                         label={'Employee Id'}
-                                         placeholder={'eg. xxxxxxx'} type={'text'}/>
-                        </div>
-                    </div>
+                                <CustomInput
+                                    required
+                                    name="title"
+                                    label="Job Title"
+                                    control={form.control}
+                                    type="text"
+                                    placeholder="Enter job title"
+                                />
 
-
-                    <div className={'mt-6 header-2'}>Access Role</div>
-
-
-                    <div className={'flex flex-col md:flex-row gap-4 pt-5'}>
-                        <div className={'flex-1'}>
-                            <CustomSelect
-                                value={form.watch('roleId')}
-                                control={form.control}
-                                {...form.register("roleId")} label={'Role'}
-                                placeholder={'Select Role'}
-                                data={roles}/>
-
-                            <div className={'pt-2'}>
-                                <Alert variant={'destructive'} className={'w-full bg-blue-25 text-gray-500'}>
-                                    <InfoIcon className="h-4 w-4"/>
-                                    <AlertTitle>Role Note</AlertTitle>
-                                    <AlertDescription>
-                                        Please note that users with the &apos;Loanee&apos; role are not able to log in
-                                        to the application.
-                                    </AlertDescription>
-                                </Alert>
+                                <div className="space-y-2">
+                                    <CustomSelect
+                                        label={'Role'}
+                                        value={form.watch('roleId')}
+                                        name="roleId"
+                                        required
+                                        control={form.control}
+                                        data={roles}
+                                        placeholder="Select role"
+                                    />
+                                </div>
                             </div>
 
-
+                            <Alert className="mt-4 bg-blue-50">
+                                <InfoIcon className="h-4 w-4"/>
+                                <AlertTitle>Role Note</AlertTitle>
+                                <AlertDescription>
+                                    Please note that users with the Loanee role are not able to log in to the application.
+                                </AlertDescription>
+                            </Alert>
                         </div>
-                    </div>
+                    </Card>
 
+                    {/* Form Actions */}
+                    <div className="flex justify-end gap-4">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => router.back()}
+                            disabled={isPending}
+                        >
+                            Cancel
+                        </Button>
 
-                    <Button type="submit" className={'form-btn mt-6 w-full  md:w-auto'} disabled={isLoading}>
-                        {isLoading ? (
+                        <Button
+                            type="submit"
+                            disabled={isPending}
+                            className="min-w-[120px]"
+                        >
+                            {isPending ? (
                                 <>
-                                    <Loader2 size={20} className={'animate-spin'}/>&nbsp;
-                                    Loading...
+                                    <Loader2 className="w-4 h-4 mr-2 animate-spin"/>
+                                    {isUpdate ? 'Updating...' : 'Creating...'}
                                 </>
-                            ) :
-                            'Submit'}
-                    </Button>
+                            ) : (
+                                isUpdate ? 'Update User' : 'Create User'
+                            )}
+                        </Button>
+                    </div>
                 </form>
             </Form>
-
         </section>
     )
 }
+
 export default UserForm

@@ -5,6 +5,9 @@ const nameField = (name: string) => ({
     name: requiredString(`${name} name is required`)
 });
 
+
+
+
 const addressFields = {
     addressLine1: requiredString("Address line 1 is required"),
     addressLine2: z.string().optional(),
@@ -14,7 +17,7 @@ const addressFields = {
     country: requiredString('Country is required')
 };
 
-const emailField = z.string()
+const emailField = z.string().email()
     .min(1, "Email is required")
     .email("Invalid email");
 
@@ -199,4 +202,17 @@ export const supplierSchema = z.object({
     state: z.string().min(1, "State is required"),
     zip: z.string().min(1, "Postal code is required"),
     country: z.string().min(1, "Country is required"),
+});
+
+
+export const userSchema = z.object({
+
+    firstName: z.string().min(1, "First name is required"),
+    lastName: z.string().min(1, "Last name is required"),
+    email: emailField,
+    phoneNum: z.string().min(1, "Phone number is required"),
+    title: z.string().min(1, "Title is required"),
+    employeeId: z.string().min(1, "Employee ID is required"),
+    roleId: z.string().min(1, "Role is required"),
+    companyId: z.string().optional()
 });
