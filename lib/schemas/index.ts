@@ -33,22 +33,63 @@ const passwordSchema = z.string().refine(
 );
 
 // Merged and refined schemas
-export const AssetSchema = z.object({
+export const accessorySchema_ = z.object({
     title: requiredString("Accessory Title is required"),
-    totalQuantityCount: z.string({ required_error: "Quantity count is required" })
+    totalQuantityCount: z.number({ required_error: "Quantity count is required" })
         .transform((value) => Number(value))
         .refine((value) => value >= 1, { message: "Quantity count must be at least 1" }),
-    minQuantityAlert: z.string({ required_error: "Min. quantity is required" })
+    minQuantityAlert: z.number({ required_error: "Min. quantity is required" })
         .transform((value) => Number(value))
         .refine((value) => value >= 1, { message: "Min. quantity must be at least 1" }),
     alertEmail: emailField,
+    categoryId: z.string().optional(),
+    endOfLife: dateField('End of Life'),
+    companyId: z.string().optional(),
+    material: z.string().optional(),
+    poNumber: z.string().optional(),
+    price: z.number().optional(),
     vendor: requiredString("Vendor is required"),
+
     purchaseDate: dateField("Purchase date"),
     description: z.string().optional()
 }).refine((data) => data.minQuantityAlert <= data.totalQuantityCount, {
     message: "Min. quantity must be less than or equal to quantity count.",
     path: ["minQuantityAlert"],
 });
+
+
+export const accessorySchema = z.object({
+    name: z.string().min(1, "Name is required"),
+    serialNumber: z.string().min(1, "Serial number is required"),
+    categoryId: z.string().min(1, "Category is required"),
+    manufacturerId: z.string().min(1, "Manufacturer is required"),
+    supplierId: z.string().min(1, "Supplier is required"),
+    inventoryId: z.string().min(1, "Inventory is required"),
+    price: z.string().min(0, "Price must be positive").transform(value => Number(value)),
+    poNumber: z.string().optional(),
+    purchaseDate: z.date(),
+    endOfLife: z.date(),
+    vendor: z.string().optional(),
+    alertEmail: z.string().email("Invalid email"),
+    reorderPoint: z.string({ required_error: "Reorder point is required" })
+        .transform((value) => Number(value))
+        .refine((value) => value >= 1, { message: "Reorder point must be at least 1" }),
+    totalQuantityCount: z.string({ required_error: "Quantity count is required" })
+        .transform((value) => Number(value))
+        .refine((value) => value >= 1, { message: "Quantity count must be at least 1" }),
+    material: z.string().optional(),
+    weight: z.string().optional().transform((value) => Number(value)),
+    // dimensions: z.string().optional(),
+    type: z.string(),
+    statusLabelId: z.string(),
+    notes: z.string().optional(),
+}).refine((data) => data.reorderPoint <= data.totalQuantityCount, {
+    message: "Reorder point must be less than or equal to quantity count.",
+    path: ["minQuantityAlert"],
+});
+
+
+
 
 export const licenseSchema = z.object({
     licenseName: requiredString("License name is required"),

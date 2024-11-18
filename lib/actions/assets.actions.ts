@@ -6,6 +6,8 @@ import {auth} from "@/auth";
 import {z} from "zod";
 import {assetAssignSchema} from "@/lib/schemas";
 import {Prisma} from "@prisma/client";
+import {parse} from 'csv-parse/sync'
+import {revalidatePath} from "next/cache";
 
 // Common include object for consistent asset queries
 const assetIncludes = {
@@ -23,6 +25,11 @@ type ApiResponse<T> = {
 
 export async function create(data: Asset): Promise<ApiResponse<Asset>> {
     try {
+        // const session = await auth();
+        // if (!session?.user?.companyId) {
+        //     return {error: 'Unauthorized access'};
+        // }
+
         const newAsset = await prisma.asset.create({
             data: {
                 name: data.name,
@@ -33,15 +40,17 @@ export async function create(data: Asset): Promise<ApiResponse<Asset>> {
                 // licenseId: data.licenseId,
                 statusLabelId: data.statusLabelId,
                 supplierId: data.supplierId,
-
-                companyId: 'bf40528b-ae07-4531-a801-ede53fb31f04'
+                companyId: 'bf40528b-ae07-4531-a801-ede53fb31f04',
+                locationId: data.locationId,
+                departmentId: data.departmentId,
+                weight: data.weigh,
+                price: data.price,
+                poNumber: data.poNumber,
+                datePurchased: data.datePurchased,
+                inventoryId: data.inventoryId
             },
             include: assetIncludes,
         });
-
-        console.log(newAsset)
-
-
         return {data: parseStringify(newAsset)};
     } catch (error) {
         console.error('Error creating asset:', error);
@@ -189,5 +198,92 @@ export async function unassign(assetId: string): Promise<ApiResponse<Asset>> {
     } catch (error) {
         console.error('Error unassigning asset:', error);
         return {error: 'Failed to unassign asset'};
+    }
+}
+
+
+export async function processCSV(csvContent: string) {
+    try {
+        const rows = csvContent.split('\n')
+
+        // Get and clean headers
+        const headers = rows[0].split(',').map(header => header.trim())
+
+        // Process data rows
+        const data = rows.slice(1)
+            .filter(row => row.trim()) // Skip empty rows
+            .map(row => {
+                const values = row.split(',').map(value => value.trim())
+                const rowData: { [key: string]: string } = {}
+                headers.forEach((header, index) => {
+                    rowData[header] = values[index]
+                })
+                return rowData
+            })
+
+        // Save to database using transaction
+        await prisma.$transaction(async (tx) => {
+            const records = [];
+
+            for (const item of data) {
+                const model = await tx.model.findFirst({
+                    where: {
+                        name: item['model']
+                    }
+                })
+                const statusLabel = await tx.statusLabel.findFirst({
+                    where: {
+                        name: item['statusLabel']
+                    }
+                })
+                const supplier = await tx.supplier.findFirst({
+                    where: {
+                        name: item['supplier']
+                    }
+                })
+
+
+
+
+                if (!model || !statusLabel || !supplier) {
+                    continue;
+                }
+
+
+
+                const record = await tx.asset.create({
+                    data: {
+                        name: item['name'],
+                        serialNumber: item['serialNum'],
+                        material: item['material'],
+                        modelId: model?.id,
+                        endOfLife: new Date(item['EOL']),
+                        statusLabelId: statusLabel?.id,
+                        supplierId: supplier?.id,
+                        poNumber: item['poNumber'],
+                        price: parseFloat(item['price']),
+                        companyId: 'bf40528b-ae07-4531-a801-ede53fb31f04'
+                    }
+                });
+                records.push(record);
+            }
+
+            return records;
+        });
+
+
+        revalidatePath('/assets')
+
+        return {
+            success: true,
+            message: `Successfully processed ${data.length} records`,
+            data: data
+        }
+    } catch (error) {
+        console.error('Error processing CSV:', error)
+        return {
+            success: false,
+            message: error instanceof Error ? error.message : 'Failed to process CSV file'
+        }
     }
 }

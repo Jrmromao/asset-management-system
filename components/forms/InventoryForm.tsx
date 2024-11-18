@@ -52,12 +52,12 @@ const CategoryForm = () => {
             >
                 <CustomInput
                     name="name"
-                    label="Category Name"
+                    label="Name"
                     control={form.control}
                     type="text"
-                    placeholder="Enter category name"
+                    placeholder=""
                     disabled={isPending}
-                    tooltip="A unique name for this category"
+                    tooltip="A unique name for this Inventory"
                 />
 
                 <div className="flex justify-end gap-4 pt-4">

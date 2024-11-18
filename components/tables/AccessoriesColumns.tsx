@@ -34,35 +34,35 @@ export const accessoriesColumns = ({onDelete, onView}: AccessoriesColumnsProps):
         }
     },
     // createdAt, updatedAt
-    {
-        accessorKey: "createdAt",
-        header: "Created At",
-        cell: ({row}) => {
-            const accessory = row.original
-            return (
-                <div className={'cursor-pointer'}><LinkTableCell value={formatDateTime(accessory.createdAt).dateOnly}
-                                                                 navigateTo={`/accessories/view/?id=${accessory.id}`}/>
-                </div>)
-        }
-    },
-    {
-        accessorKey: "updatedAt",
-        header: "Updated At",
-        cell: ({row}) => {
-            const accessory = row.original
-            return (
-                <div className={'cursor-pointer'}><LinkTableCell value={formatDateTime(accessory.updatedAt).dateOnly}
-                                                                 navigateTo={`/accessories/view/?id=${accessory.id}`}/>
-                </div>)
-        }
-    },
+    // {
+    //     accessorKey: "createdAt",
+    //     header: "Created At",
+    //     cell: ({row}) => {
+    //         const accessory = row.original
+    //         return (
+    //             <div className={'cursor-pointer'}><LinkTableCell value={formatDateTime(accessory.createdAt).dateOnly}
+    //                                                              navigateTo={`/accessories/view/?id=${accessory.id}`}/>
+    //             </div>)
+    //     }
+    // },
+    // {
+    //     accessorKey: "updatedAt",
+    //     header: "Updated At",
+    //     cell: ({row}) => {
+    //         const accessory = row.original
+    //         return (
+    //             <div className={'cursor-pointer'}><LinkTableCell value={formatDateTime(accessory).dateOnly}
+    //                                                              navigateTo={`/accessories/view/?id=${accessory.id}`}/>
+    //             </div>)
+    //     }
+    // },
     {
         accessorKey: "datePurchased",
         header: "Date Purchased",
         cell: ({row}) => {
             const accessory = row.original
             return (
-                <div className={'cursor-pointer'}><LinkTableCell value={formatDateTime(accessory.updatedAt).dateOnly}
+                <div className={'cursor-pointer'}><LinkTableCell value={formatDateTime(accessory.purchaseDate).dateOnly}
                                                                  navigateTo={`/accessories/view/?id=${accessory.id}`}/>
                 </div>)
         }

@@ -20,13 +20,16 @@ const CustomTableCell = ({value, navigateTo, label}: {
     const navigate = useRouter()
 
     const InfoPopover = (description: string, colorCode: string) => {
+
+
+        console.log(colorCode)
         return (
             <div className="text-right align-top">
                 <Popover>
                     <PopoverTrigger asChild>
                         <InfoIcon className="h-4 w-4 "/>
                     </PopoverTrigger>
-                    <PopoverContent className={`w-80 bg-white p-4 text-[${colorCode}]`}>
+                    <PopoverContent className={`w-80 bg-white p-4 text-gray-500`}>
                         {description}
                     </PopoverContent>
                 </Popover>
@@ -37,14 +40,17 @@ const CustomTableCell = ({value, navigateTo, label}: {
 
     return (
         <>
-            <TableCell className={`min-w-32 pl-2 pr-10 ${label?.colorCode ? `italic text-[${label?.colorCode}]` : ''}`}
+            <TableCell className={`min-w-32 pl-2 pr-10 ${label?.colorCode ? `underline decoration-[${label?.colorCode}]` : ''}`}
                        onClick={() => navigate.push(navigateTo || '#')}>
                 <div className="flex">
                     <div className="w-9/12"> {value ? value : "n/a"}</div>
-                    <div
-                        className={`w-3/12 text-[${label?.colorCode}]`}> {label ? InfoPopover(label?.description, label?.colorCode) : null}</div>
+                    <div className={`w-3/12 ${label?.colorCode ? `underline decoration-[${label?.colorCode}]` : ''}`}>
+                        {label ? InfoPopover(label?.description, label?.colorCode) : null}
+                    </div>
                 </div>
             </TableCell>
+
+
         </>
     )
 }

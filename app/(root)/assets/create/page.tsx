@@ -15,7 +15,7 @@ import Link from "next/link";
 const Create = () => {
 
     return (
-        <div className="assets">
+        <div className="">
             <Breadcrumb className="hidden md:flex pb-5">
                 <BreadcrumbList>
                     <BreadcrumbItem>

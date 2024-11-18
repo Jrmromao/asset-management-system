@@ -1,179 +1,410 @@
 'use client'
-import React, {useState} from 'react'
-import {z} from "zod"
-import {zodResolver} from "@hookform/resolvers/zod"
-import {useForm} from "react-hook-form"
-import {Button} from "@/components/ui/button"
-import {Form,} from "@/components/ui/form"
-import {InfoIcon, Loader2} from "lucide-react";
-import {Card} from "@/components/ui/card";
-import CustomInput from "@/components/CustomInput";
-import {Alert, AlertDescription, AlertTitle} from "@/components/ui/alert"
-import {useAccessoryStore} from "@/lib/stores/accessoryStore";
-import CustomDatePicker from "@/components/CustomDatePicker";
-import {AssetSchema} from "@/lib/schemas";
-import {insert} from "@/lib/actions/category.actions";
 
-interface AccessoryFormProps {
-    accessory?: Accessory
-}
+import React, { useEffect, useTransition } from 'react'
+import { z } from "zod"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { useForm } from "react-hook-form"
+import { Button } from "@/components/ui/button"
+import { Form, FormLabel } from "@/components/ui/form"
+import { InfoIcon, Loader2, Plus } from "lucide-react"
+import { Card } from "@/components/ui/card"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 
-const AccessoryForm = ({accessory}: AccessoryFormProps) => {
+import CustomInput from "@/components/CustomInput"
+import CustomSelect from "@/components/CustomSelect"
+import CustomDatePicker from "@/components/CustomDatePicker"
+import CustomPriceInput from "@/components/CustomPriceInput"
+import { DialogContainer } from "@/components/dialogs/DialogContainer"
 
-    const INITIAL_VALUES = {
-        title: accessory?.title,
-        totalQuantityCount: accessory?.totalQuantityCount,
-        minQuantityAlert: accessory?.minQuantityAlert,
-        alertEmail: accessory?.alertEmail,
-        vendor: accessory?.vendor,
-        purchaseDate: accessory?.purchaseDate,
-        description: accessory?.description,
-    }
+import CategoryForm from "@/components/forms/CategoryForm"
+import SupplierForm from "@/components/forms/SupplierForm"
+import ManufacturerForm from "@/components/forms/ManufacturerForm"
+import InventoryForm from "@/components/forms/InventoryForm"
 
-    const [date, setDate] = useState<Date>()
-    const [isLoading, setIsLoading] = useState(false)
-    const [createAccessory] = useAccessoryStore((state) => [state.create]);
+import { useCategoryStore } from "@/lib/stores/categoryStore"
+import { useSupplierStore } from "@/lib/stores/SupplierStore"
+import { useManufacturerStore } from "@/lib/stores/manufacturerStore"
+import { useInventoryStore } from "@/lib/stores/inventoryStore"
+import { create } from "@/lib/actions/accessory.actions"
+import {useStatusLabelStore} from "@/lib/stores/statusLabelStore";
+import {accessorySchema} from "@/lib/schemas";
+import {SelectWithButton} from "@/components/SelectWithButton";
+import StatusLabelForm from "@/components/forms/StatusLabelForm";
+import {useModelStore} from "@/lib/stores/modelStore";
+import {useLocationStore} from "@/lib/stores/locationStore";
+import {useDepartmentStore} from "@/lib/stores/departmentStore";
 
 
-    const form = useForm<z.infer<typeof AssetSchema>>({
-        resolver: zodResolver(AssetSchema),
-        defaultValues: INITIAL_VALUES
+type AccessoryFormValues = z.infer<typeof accessorySchema>
+
+const AccessoryForm = () => {
+    const [isPending, startTransition] = useTransition()
+    const router = useRouter()
+
+    const { categories, isOpen: isCategoryOpen, onOpen: openCategory, onClose: closeCategory, getAll: fetchCategories } = useCategoryStore()
+    const { manufacturers, isOpen: isManufacturerOpen, onOpen: openManufacturer, onClose: closeManufacturer, getAll: fetchManufacturers } = useManufacturerStore()
+    const { inventories, isOpen: isInventoryOpen, onOpen: openInventory, onClose: closeInventory, getAll: fetchInventories } = useInventoryStore()
+    const { suppliers, isOpen: isSupplierOpen, onOpen: openSupplier, onClose: closeSupplier, getAll: fetchSuppliers } = useSupplierStore()
+    const {
+        statusLabels,
+        getAll: fetchStatusLabels,
+        isOpen: isStatusOpen,
+        onOpen: openStatus,
+        onClose: closeStatus
+    } = useStatusLabelStore()
+
+    const {
+        locations,
+        fetchLocations,
+        isOpen: isLocationOpen,
+        onOpen: openLocation,
+        onClose: closeLocation
+    } = useLocationStore()
+    const {
+        departments,
+        getAll: fetchDepartments,
+        isOpen: isDepartmentOpen,
+        onOpen: openDepartment,
+        onClose: closeDepartment
+    } = useDepartmentStore()
+
+    const {models, fetchModels, isOpen: isModelOpen, onOpen: openModel, onClose: closeModel} = useModelStore()
+
+    const form = useForm<AccessoryFormValues>({
+        resolver: zodResolver(accessorySchema),
+        defaultValues: {
+            name: '',
+            serialNumber: '',
+            categoryId: '',
+            manufacturerId: '',
+            supplierId: '',
+            inventoryId: '',
+            price: 0,
+            poNumber: '',
+            purchaseDate: new Date(),
+            endOfLife: new Date(),
+            vendor: '',
+            alertEmail: '',
+            totalQuantityCount: 0,
+            material: '',
+            weight: 0,
+            reorderPoint: 0,
+            type: '',
+            statusLabelId: '',
+            notes: '',
+        }
     })
 
-    const onSubmit = async (data: z.infer<typeof AssetSchema>) => {
-        setIsLoading(true)
+    useEffect(() => {
+        fetchCategories()
+        fetchManufacturers()
+        fetchSuppliers()
+        fetchInventories()
+    }, [fetchCategories, fetchManufacturers, fetchSuppliers, fetchInventories])
 
-        try {
-            // await insert()
+    const onSubmit = async (data: AccessoryFormValues) => {
+        startTransition(async () => {
+            try {
+                await create({
+                    ...data
+                })
 
-
-            form.reset({})
-
-        } catch (e) {
-            console.error(e)
-        } finally {
-            setIsLoading(false)
-        }
+                // await create({
+                //     ...data,
+                //     // purchaseDate: data.purchaseDate.toISOString(),
+                //     // endOfLife: data.endOfLife.toISOString()
+                // })
+                form.reset()
+                toast.success('Accessory created successfully')
+                router.push('/accessories')
+            } catch (error) {
+                toast.error('Something went wrong')
+                console.error(error)
+            }
+        })
     }
 
     return (
-        <section className="w-full bg-white z-50 max-h-[900px] overflow-y-auto p-4">
+        <section className="w-full mx-auto p-6">
+
+            <DialogContainer
+                description=""
+                open={isStatusOpen}
+                onOpenChange={closeStatus}
+                title="Add Category"
+                form={<StatusLabelForm/>}
+            />
+            <DialogContainer
+                description=""
+                open={isCategoryOpen}
+                onOpenChange={closeCategory}
+                title="Add Category"
+                form={<CategoryForm/>}
+            />
+            <DialogContainer
+                description=""
+                open={isSupplierOpen}
+                onOpenChange={closeSupplier}
+                title="Add Supplier"
+                form={<SupplierForm/>}
+            />
+            <DialogContainer
+                description=""
+                open={isManufacturerOpen}
+                onOpenChange={closeManufacturer}
+                title="Add Manufacturer"
+                form={<ManufacturerForm/>}
+            />
+            <DialogContainer
+                description=""
+                open={isInventoryOpen}
+                onOpenChange={closeInventory}
+                title="Add Inventory"
+                form={<InventoryForm/>}
+            />
+
             <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)}>
-                    <Card className={'p-3.5 mb-5'}>
-                        <div className={'mt-6 header-2'}>Accessory Title and Quantity count</div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="bg-white p-4">
-                                <div className="flex flex-col gap-4 pt-5">
-                                    <div className="flex-1">
-                                        <CustomInput
-                                            control={form.control}
-                                            {...form.register("title")}
-                                            label="Accessory Title"
-                                            placeholder="e.g. Office Keyboard"
-                                            type="text"
-                                        />
-                                    </div>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                    <Card className="p-6">
+                        <div className="space-y-6">
+                            <div className="space-y-6">
+                                <h3 className="text-lg font-semibold mb-4">Basic Information</h3>
+                                <div className="grid grid-cols-2 gap-6">
+                                    <CustomInput
+                                        required
+                                        name="name"
+                                        label="Asset Name"
+                                        control={form.control}
+                                        type="text"
+                                        placeholder="Enter asset name"
+                                    />
+                                    <CustomInput
+                                        required
+                                        name="serialNumber"
+                                        label="Serial Number"
+                                        control={form.control}
+                                        type="text"
+                                        placeholder="Enter serial number"
+                                    />
                                 </div>
+                                <SelectWithButton
+                                    name="modelId"
+                                    form={form}
+                                    isPending
+                                    label="Model"
+                                    data={models}
+                                    onNew={openModel}
+                                    placeholder="Select model"
+                                    required
+                                />
+                            </div>
 
-                                <div className="flex flex-col gap-4 pt-5">
-                                    <div className="flex-1">
-                                        <CustomInput
-                                            control={form.control}
-                                            {...form.register("totalQuantityCount", {valueAsNumber: true})}
-                                            label="Quantity Count"
-                                            placeholder="e.g. 50"
-                                            type="number"
-                                        />
-                                    </div>
-                                </div>
 
-                                <div className="flex flex-col gap-4 pt-5">
-                                    <div className="flex-1">
-                                        <CustomInput
-                                            control={form.control}
-                                            {...form.register("minQuantityAlert", {valueAsNumber: true, min: 1})}
-                                            label="Min. Quantity Alert"
-                                            placeholder="e.g. 15"
-                                            type="number"
-                                        />
-                                    </div>
-                                </div>
+                            <div className="border-t pt-6">
+                                <h3 className="text-lg font-semibold mb-4">Status & Location</h3>
+                                <div className="space-y-6">
 
-                                <div className="flex flex-col gap-4 pt-5">
-                                    <div className="flex-1">
-                                        <CustomInput control={form.control}   {...form.register("alertEmail")}
-                                                     label={'Licensed To Email'}
-                                                     placeholder={'e.g. joe@ecokeepr.com'}
-                                                     type={'text'}/>
-                                    </div>
-                                    <div className={'flex-1'}/>
+
+                                    <SelectWithButton
+                                        name="statusLabelId"
+                                        label="Status Label"
+                                        data={statusLabels}
+                                        onNew={openStatus}
+                                        placeholder="Select a category"
+                                        required
+                                        form={form}
+                                        isPending
+                                    />
+
+                                    <SelectWithButton
+                                        form={form}
+                                        isPending
+                                        name="departmentId"
+                                        label="Department"
+                                        data={departments}
+                                        onNew={openDepartment}
+                                        placeholder="Select department"
+                                        required
+                                    />
+                                    <SelectWithButton
+                                        isPending
+                                        form={form}
+                                        name="locationId"
+                                        label="Location"
+                                        data={locations}
+                                        onNew={openLocation}
+                                        placeholder="Select location"
+                                        required
+                                    />
                                 </div>
                             </div>
 
-                            <div className="bg-white p-4 md:mt-11 ">
-                                <Alert>
-                                    <InfoIcon className="h-4 w-4"/>
-                                    <AlertTitle>Note</AlertTitle>
-                                    <AlertDescription>
-                                        An automatic email will be sent when the number of available licenses reaches
-                                        the minimum required count.
-                                    </AlertDescription>
-                                </Alert>
-                            </div>
-                        </div>
-                    </Card>
 
-
-                    <Card className={'p-3.5 mb-5'}>
-                        <div className={'mt-6 header-2'}>Vendor & Purchase details</div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="bg-white p-4">
-                                <div className="flex flex-col gap-4 pt-5">
-                                    <div className="flex-1">
-                                        <CustomInput control={form.control}   {...form.register("vendor")}
-                                                     label={'Vendor'}
-                                                     placeholder={'eg. Microsoft'}
-                                                     type={'text'}/>
+                            <div className="border-t pt-6">
+                                <h3 className="text-lg font-semibold mb-4">Purchase Information</h3>
+                                <div className="space-y-6">
+                                    <div className="grid grid-cols-2 gap-6">
+                                        <CustomInput
+                                            name="poNumber"
+                                            label="PO Number"
+                                            control={form.control}
+                                            placeholder="Enter PO number"
+                                        />
+                                        <CustomPriceInput
+                                            name="price"
+                                            label="Unit Price"
+                                            control={form.control}
+                                            placeholder="0.00"
+                                            required
+                                        />
                                     </div>
+                                    <div className="grid grid-cols-2 gap-6">
+                                        <CustomDatePicker
+                                            name="purchaseDate"
+                                            form={form}
+                                            label="Purchase Date"
+                                            placeholder="Select date"
+                                        />
+                                        <CustomDatePicker
+                                            name="endOfLife"
+                                            form={form}
+                                            label="End of Life"
+                                            placeholder="Select date"
+                                        />
+                                    </div>
+                                    <SelectWithButton
+                                        name="supplierId"
+                                        label="Supplier"
+                                        data={suppliers}
+                                        onNew={openSupplier}
+                                        placeholder="Select supplier"
+                                        required
+                                        form={form}
+                                        isPending
+                                    />
                                 </div>
-                                <div className="flex flex-col gap-4 pt-5">
-                                    <div className="flex-1">
-                                        {/*<CustomDatePicker control={form.control}   {...form.register("purchaseDate")}*/}
-                                        {/*                  label={'Purchase Date'}*/}
-                                        {/*                  placeholder={'eg. 2023-12-31'}*/}
-                                        {/*                  // date={new Date()}*/}
-                                        {/*                  // setDate={setDate}*/}
+                            </div>
+                            <div className="border-t pt-6">
+                                <h3 className="text-lg font-semibold mb-4">Inventory Management</h3>
+                                <div className="grid grid-cols-2 gap-6">
+                                    <div className="space-y-4">
+                                        <SelectWithButton
+                                            name="inventoryId"
+                                            label="Inventory"
+                                            data={inventories}
+                                            onNew={openInventory}
+                                            placeholder="Select inventory"
+                                            required
+                                            form={form}
+                                            isPending
+                                        />
+                                        <CustomInput
+                                            name="totalQuantityCount"
+                                            label="Total Quantity"
+                                            control={form.control}
+                                            type="number"
+                                            placeholder="Enter total quantity"
+                                            required
+                                        />
+
+                                        {/*<CustomInput*/}
+                                        {/*    name="minQuantityAlert"*/}
+                                        {/*    label="Minimum Quantity Alert"*/}
+                                        {/*    control={form.control}*/}
+                                        {/*    type="number"*/}
+                                        {/*    placeholder="Enter minimum quantity"*/}
+                                        {/*    required*/}
                                         {/*/>*/}
+                                        <CustomInput
+                                            name="reorderPoint"
+                                            label="Reorder Point"
+                                            control={form.control}
+                                            type="number"
+                                            placeholder="Enter reorder point"
+                                            required
+                                        />
+                                        <CustomInput
+                                            name="alertEmail"
+                                            label="Alert Email"
+                                            control={form.control}
+                                            type="email"
+                                            placeholder="Enter alert email"
+                                            required
+                                        />
                                     </div>
+                                    <Alert>
+                                        <InfoIcon className="h-4 w-4"/>
+                                        <AlertTitle>Inventory Alert Settings</AlertTitle>
+                                        <AlertDescription>
+                                            System will notify when inventory reaches minimum quantity or reorder point.
+                                            Make sure to set appropriate values for your stock management.
+                                        </AlertDescription>
+                                    </Alert>
                                 </div>
-
-                                <div className="flex flex-col gap-4 pt-5">
-                                    <div className="flex-1">
-                                        <CustomInput control={form.control}   {...form.register("description")}
-                                                     label={'Description'}
-                                                     placeholder={'eg. This is a description'}
-                                                     type={'text'}/>
-                                    </div>
-                                    <div className={'flex-1'}/>
+                            </div>
+                            <div className="border-t pt-6">
+                                <h3 className="text-lg font-semibold mb-4">Physical Properties</h3>
+                                <div className="grid grid-cols-2 gap-6">
+                                    <CustomInput
+                                        name="material"
+                                        label="Material"
+                                        control={form.control}
+                                        placeholder="Enter material"
+                                    />
+                                    <CustomInput
+                                        name="weight"
+                                        label="Weight (kg)"
+                                        control={form.control}
+                                        type="number"
+                                        placeholder="Enter weight"
+                                    />
+                                </div>
+                            </div>
+                            <div className="border-t pt-6">
+                                <h3 className="text-lg font-semibold mb-4">Additional Information</h3>
+                                <div className="space-y-4">
+                                    <CustomInput
+                                        name="notes"
+                                        label="Notes"
+                                        control={form.control}
+                                        type="textarea"
+                                        placeholder="Enter notes"
+                                    />
                                 </div>
                             </div>
                         </div>
                     </Card>
-                    <Button type="submit" className={'form-btn mt-6 w-full  md:w-auto'} disabled={isLoading}>
-                        {isLoading ? (
+                    {/* Action Buttons */}
+                    <div className="flex justify-end gap-4 sticky bottom-0 bg-white p-4 border-t shadow-lg">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => router.back()}
+                            disabled={isPending}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            type="submit"
+                            disabled={isPending}
+                            className="min-w-[120px]"
+                        >
+                            {isPending ? (
                                 <>
-                                    <Loader2 size={20} className={'animate-spin'}/>&nbsp;
-                                    Loading...
+                                    <Loader2 className="w-4 h-4 mr-2 animate-spin"/>
+                                    Creating...
                                 </>
-                            ) :
-                            'Submit License'}
-                    </Button>
+                            ) : (
+                                'Create Accessory'
+                            )}
+                        </Button>
+                    </div>
                 </form>
             </Form>
-
         </section>
     )
 }
+
 export default AccessoryForm

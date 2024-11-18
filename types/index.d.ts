@@ -34,6 +34,17 @@ declare global {
         assetId: string;
     };
 
+    // type SelectWithButtonProps = {
+    //     name: string;
+    //     label: string;
+    //     form: useForm();
+    //     data: any[];
+    //     onNew: () => void;
+    //     placeholder: string;
+    //     required?: boolean;
+    //     isPending: boolean;
+    // }
+
     // ==================== Entity Types ====================
     type StatusLabel = {
         id?: string;
@@ -84,6 +95,8 @@ declare global {
         id?: string;
         title: string;
         purchaseDate: Date;
+        price: number;
+        poNumber: string;
         endOfLife: Date;
         vendor: string;
         alertEmail: string;
@@ -93,18 +106,16 @@ declare global {
         categoryId: string;
         companyId: string;
         material: string;
-        createdAt: Date;
-        updatedAt: Date;
     };
 
     type Asset = {
         id?: string;
         name: string;
+        poNumber: string;
         assignee?: User;
         assigneeId?: string;
-        categoryId: string;
         material?: string;
-        brand: string;
+        weigh?: number;
         modelId: string;
         datePurchased: Date;
         price: number;
@@ -119,8 +130,14 @@ declare global {
         updatedAt?: Date;
         category?: Category;
         licenseId?: string;
+        locationId?: string;
+        location?: Location;
+        departmentId?: string;
+        department?: Department
         statusLabelId?: string;
         statusLabel?: StatusLabel;
+        inventoryId?: string;
+        inventory?: Inventory;
     };
 
     type License = {
@@ -225,6 +242,11 @@ declare global {
         category?: Category;
         manufacturer?: Manufacturer;
     };
+
+
+    type CSVRow = {
+        [key: string]: string
+    }
 }
 
     // ==================== Props for Components ====================
