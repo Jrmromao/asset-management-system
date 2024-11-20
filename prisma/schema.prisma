@@ -16,6 +16,7 @@ model User {
   title         String?
   employeeId    String?
   images        String?
+  phoneNum      String?   @unique
   emailVerified DateTime?
   oauthId       String?
   roleId        String
@@ -32,6 +33,8 @@ model User {
   accounts  Account[]
   userKits  UserKit[]
 
+  @@unique([employeeId, companyId])
+  // @@unique([phoneNum, companyId])
   @@index([companyId])
   @@index([roleId])
   @@index([email])
@@ -92,6 +95,7 @@ model Company {
   auditLogs     AuditLog[]
   kits          Kit[]
   suppliers     Supplier[] // Add this relation
+  License       License[]
 }
 
 model Manufacturer {
@@ -125,6 +129,7 @@ model Model {
   manufacturer   Manufacturer @relation(fields: [manufacturerId], references: [id], onDelete: Restrict)
   company        Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
   assets         Asset[]
+  accessories    Accessory[]
 
   @@unique([modelNo, companyId])
   @@index([categoryId])
@@ -145,8 +150,10 @@ model DepartmentLocation {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  Asset   Asset[]
+  company   Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  Asset     Asset[]
+  Accessory Accessory[]
+  License   License[]
 
   @@unique([name, companyId])
   @@index([companyId])
@@ -159,8 +166,10 @@ model Inventory {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  Asset   Asset[]
+  company   Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  Asset     Asset[]
+  Accessory Accessory[]
+  License   License[]
 
   @@unique([name, companyId])
   @@index([companyId])
@@ -173,8 +182,10 @@ model Department {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  Asset   Asset[]
+  company   Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  Asset     Asset[]
+  Accessory Accessory[]
+  License   License[]
 
   @@unique([name, companyId])
   @@index([companyId])
@@ -198,35 +209,38 @@ model Supplier {
   updatedAt    DateTime @updatedAt
 
   // Relations
-  assets    Asset[]
-  company   Company @relation(fields: [companyId], references: [id])
-  companyId String
+  assets      Asset[]
+  accessories Accessory[]
+  company     Company     @relation(fields: [companyId], references: [id])
+  companyId   String
+  License     License[]
 
   @@unique([email, companyId]) // Updated to make email unique per company
 }
 
 model Asset {
-  id                 String              @id @default(cuid())
-  name               String
-  serialNumber       String              @unique
-  material           String
-  weight             Decimal?
-  endOfLife          DateTime
-  datePurchased      DateTime?
-  assigneeId         String?
-  statusLabelId      String?
-  locationId         String?
-  inventoryId        String?
-  companyId          String
-  supplierId         String?
-  departmentId       String?
-  modelId            String?
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @updatedAt
-  poNumber           String?             @unique
-  price              Decimal?
-  assignee           User?               @relation("assignedToUser", fields: [assigneeId], references: [id], onDelete: SetNull)
-  company            Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  id            String    @id @default(cuid())
+  name          String
+  serialNumber  String    @unique
+  material      String
+  weight        Decimal?
+  endOfLife     DateTime
+  datePurchased DateTime?
+  assigneeId    String?
+  statusLabelId String?
+  locationId    String?
+  inventoryId   String?
+  companyId     String
+  supplierId    String?
+  departmentId  String?
+  modelId       String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  poNumber      String?   @unique
+  price         Decimal?
+  assignee      User?     @relation("assignedToUser", fields: [assigneeId], references: [id], onDelete: SetNull)
+  company       Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
   model              Model?              @relation(fields: [modelId], references: [id], onDelete: SetNull)
   statusLabel        StatusLabel?        @relation(fields: [statusLabelId], references: [id], onDelete: SetNull)
   supplier           Supplier?           @relation(fields: [supplierId], references: [id], onDelete: SetNull)
@@ -249,9 +263,9 @@ model Asset {
 
 model Accessory {
   id                 String   @id @default(cuid())
-  title              String
+  name               String
   alertEmail         String
-  minQuantityAlert   Int
+  reorderPoint       Int
   totalQuantityCount Int
   purchaseDate       DateTime
   notes              String?
@@ -259,14 +273,26 @@ model Accessory {
   weight             Decimal
   endOfLife          DateTime
   companyId          String
+  modelId            String?
+  statusLabelId      String?
+  supplierId         String?
+  departmentId       String?
+  locationId         String?
+  inventoryId        String?
   categoryId         String?
   poNumber           String?  @unique
   price              Decimal?
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
-  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company            Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
   // co2eRecords Co2eRecord[]
+  model              Model?              @relation(fields: [modelId], references: [id], onDelete: SetNull)
+  statusLabel        StatusLabel?        @relation(fields: [statusLabelId], references: [id], onDelete: SetNull)
+  supplier           Supplier?           @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  department         Department?         @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  departmentLocation DepartmentLocation? @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  inventory          Inventory?          @relation(fields: [inventoryId], references: [id], onDelete: SetNull)
 
   @@index([companyId])
   @@index([categoryId])
@@ -291,12 +317,18 @@ model License {
   id                 String   @id @default(cuid())
   name               String
   licensedEmail      String
-  licenseKey         String
+  poNumber           String
+  licenseKey         String   @unique(map: "Unique_License_LicenseKey")
+  companyId          String
+  statusLabelId      String?
+  supplierId         String?
+  departmentId       String?
+  locationId         String?
+  inventoryId        String?
   renewalDate        DateTime
   purchaseDate       DateTime
-  vendor             String
-  purchaseNotes      String?
-  licenseUrl         String?
+  purchaseNotes      String? // Optional
+  licenseUrl         String? // Optional
   minCopiesAlert     Int
   alertRenewalDays   Int
   licenseCopiesCount Int
@@ -304,9 +336,16 @@ model License {
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
-  assets Asset[]
+  // Relations
+  company            Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  assets             Asset[]
+  statusLabel        StatusLabel?        @relation(fields: [statusLabelId], references: [id], onDelete: SetNull)
+  supplier           Supplier?           @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  department         Department?         @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  departmentLocation DepartmentLocation? @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  inventory          Inventory?          @relation(fields: [inventoryId], references: [id], onDelete: SetNull)
 
-  @@unique([licenseKey])
+  @@unique([licenseKey], map: "Unique_License_LicenseKey_Composite")
 }
 
 model StatusLabel {
@@ -320,8 +359,10 @@ model StatusLabel {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  assets  Asset[]
+  company     Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  assets      Asset[]
+  accessories Accessory[]
+  License     License[]
 
   @@unique([name, companyId])
   @@index([companyId])

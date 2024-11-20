@@ -10,6 +10,32 @@ export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
 }
 
+export function roundFloat (value: number, precision: number){
+    const multiplier = Math.pow(10, precision);
+    return Math.round(value * multiplier) / multiplier;
+};
+
+export  function processRecordContents(csvContent: string) {
+    const rows = csvContent.split('\n')
+
+    // Get and clean headers
+    const headers = rows[0].split(',').map(header => header.trim())
+
+    // Process data rows
+    const data = rows.slice(1)
+        .filter(row => row.trim()) // Skip empty rows
+        .map(row => {
+            const values = row.split(',').map(value => value.trim())
+            const rowData: { [key: string]: string } = {}
+            headers.forEach((header, index) => {
+                rowData[header] = values[index]
+            })
+            return rowData
+        })
+    return data
+}
+
+
 // FORMAT DATE TIME
 export const formatDateTime = (dateString: Date) => {
     const dateTimeOptions: Intl.DateTimeFormatOptions = {

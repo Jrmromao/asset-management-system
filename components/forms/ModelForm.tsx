@@ -30,6 +30,8 @@ const ModelForm = () => {
         categories,
         getAll: fetchCategories
     } = useCategoryStore()
+
+
     const {onClose: closeModelModal} = useModelStore()
 
     // Manufacturer store
@@ -65,6 +67,7 @@ const ModelForm = () => {
                 await insert(data).then(_ => {
                     toast.success('Model created successfully')
                     form.reset()
+                    fetchCategories()
                     closeModelModal()
                 })
             } catch (error) {

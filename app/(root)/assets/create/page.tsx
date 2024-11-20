@@ -20,7 +20,7 @@ const Create = () => {
                 <BreadcrumbList>
                     <BreadcrumbItem>
                         <BreadcrumbLink asChild>
-                            <Link href="/assets">Assets</Link>
+                            <Link href="/assetsx    ">Assets</Link>
                         </BreadcrumbLink>
                     </BreadcrumbItem>
                     <BreadcrumbSeparator/>

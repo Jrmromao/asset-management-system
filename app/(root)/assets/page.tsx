@@ -7,7 +7,7 @@ import {Button} from "@/components/ui/button";
 import {useAssetStore} from "@/lib/stores/assetStore";
 import {useRouter} from "next/navigation";
 import {DialogContainer} from "@/components/dialogs/DialogContainer";
-import UploadAssetsForm from "@/components/forms/UploadAssetsForm";
+import FileUploadForm from "@/components/forms/FileUploadForm";
 import {DataTable} from "@/components/tables/DataTable/data-table";
 import {assetColumns} from "@/components/tables/AssetColumns";
 import {toast} from "sonner";
@@ -68,7 +68,7 @@ const Assets = () => {
             </div>
             <DialogContainer open={isOpen} onOpenChange={closeDialog} title={'Import Assets'}
                              description={'Import assets from a CSV file'}
-                             form={<UploadAssetsForm/>}
+                             form={<FileUploadForm dataType={'assets'}/>}
             />
             <div className="space-y-6">
                 <section className="flex">

@@ -128,9 +128,9 @@ const View = () => {
 
             {asset && <>
               <div className="space-y-6">
-                <section className="flex w-full flex-col gap-6">
+                 <section className="flex w-full flex-col gap-6">
                   <Card className={'w-full'}>
-                    <CardHeader className="text-xl">{`${asset?.brand}, ${asset?.name}`}</CardHeader>
+                    <CardHeader className="text-xl"> ${asset?.name}</CardHeader>
                     <CardContent>
                       <div className="grid grid-cols-1 lg:grid-cols-6 gap-4 mt-6">
                         <div className="lg:col-span-5 p-4">

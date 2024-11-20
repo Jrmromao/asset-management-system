@@ -15,11 +15,15 @@ import {
     BreadcrumbSeparator
 } from "@/components/ui/breadcrumb";
 import Link from "next/link";
+import {DialogContainer} from "@/components/dialogs/DialogContainer";
+import FileUploadForm from "@/components/forms/FileUploadForm";
+import {useDialogStore} from "@/lib/stores/store";
 
 
 const Consumables = () => {
     const [licensesList, setLicenseList] = useState<[]>()
     const [accessories, getAll, deleteAccessory] = useAccessoryStore((state) => [state.accessories, state.getAll, state.delete])
+    const [openDialog, closeDialog, isOpen] = useDialogStore(state => [state.onOpen, state.onClose, state.isOpen])
 
     useEffect(()=>{
         getAll()
@@ -55,6 +59,12 @@ const Consumables = () => {
                     <BreadcrumbSeparator/>
                 </BreadcrumbList>
             </Breadcrumb>
+
+            <DialogContainer open={isOpen} onOpenChange={closeDialog} title={'Import Accessories'}
+                             description={'Import assets from a CSV file'}
+                             form={<FileUploadForm dataType={'accessories'}/>}
+            />
+
             <div className="transactions-header">
                 <HeaderBox
                     title="Accessories"
@@ -71,8 +81,7 @@ const Consumables = () => {
 
                         <Button
                             variant={"link"}
-                            className={'flex justify-end'}
-                            onClick={() => navigate.push('/accessories/export')}>
+                            onClick={() => openDialog()}>
                             Import
                         </Button>
                     </div>

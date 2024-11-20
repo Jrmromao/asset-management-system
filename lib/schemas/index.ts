@@ -1,4 +1,5 @@
 import { z } from "zod";
+import {findByEmail} from "@/helpers/data";
 
 const requiredString = (message: string) => z.string({ required_error: message });
 const nameField = (name: string) => ({
@@ -17,9 +18,30 @@ const addressFields = {
     country: requiredString('Country is required')
 };
 
-const emailField = z.string().email()
+const emailField = (entity: string) => z.string()
     .min(1, "Email is required")
-    .email("Invalid email");
+    .email("Valid email is required")
+    .refine(async (email: string) => {
+        const res = await fetch(`/api/validate/check-email?entity=${entity}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email })
+        });
+        const exists = await res.json();
+        return !exists;
+    }, "Email already exists");
+
+
+const phoneNumField =  z.string()
+    .min(1, "Phone number is required")
+    .refine(async (phoneNum) => {
+        const res = await fetch('/api/validate/check-phoneNum', {
+            method: 'POST',
+            body: JSON.stringify({ phoneNum })
+        });
+        const exists = await res.json();
+        return !exists;
+    }, "Phone number already exists")
 
 const dateField = (fieldName: string) => z.date({
     required_error: `${fieldName} is required`
@@ -41,7 +63,7 @@ export const accessorySchema_ = z.object({
     minQuantityAlert: z.number({ required_error: "Min. quantity is required" })
         .transform((value) => Number(value))
         .refine((value) => value >= 1, { message: "Min. quantity must be at least 1" }),
-    alertEmail: emailField,
+    alertEmail: emailField('accessory'),
     categoryId: z.string().optional(),
     endOfLife: dateField('End of Life'),
     companyId: z.string().optional(),
@@ -58,58 +80,65 @@ export const accessorySchema_ = z.object({
 });
 
 
-export const accessorySchema = z.object({
-    name: z.string().min(1, "Name is required"),
-    serialNumber: z.string().min(1, "Serial number is required"),
-    categoryId: z.string().min(1, "Category is required"),
-    manufacturerId: z.string().min(1, "Manufacturer is required"),
-    supplierId: z.string().min(1, "Supplier is required"),
-    inventoryId: z.string().min(1, "Inventory is required"),
-    price: z.string().min(0, "Price must be positive").transform(value => Number(value)),
-    poNumber: z.string().optional(),
-    purchaseDate: z.date(),
-    endOfLife: z.date(),
-    vendor: z.string().optional(),
-    alertEmail: z.string().email("Invalid email"),
-    reorderPoint: z.string({ required_error: "Reorder point is required" })
-        .transform((value) => Number(value))
-        .refine((value) => value >= 1, { message: "Reorder point must be at least 1" }),
-    totalQuantityCount: z.string({ required_error: "Quantity count is required" })
-        .transform((value) => Number(value))
-        .refine((value) => value >= 1, { message: "Quantity count must be at least 1" }),
-    material: z.string().optional(),
-    weight: z.string().optional().transform((value) => Number(value)),
-    // dimensions: z.string().optional(),
-    type: z.string(),
-    statusLabelId: z.string(),
-    notes: z.string().optional(),
-}).refine((data) => data.reorderPoint <= data.totalQuantityCount, {
-    message: "Reorder point must be less than or equal to quantity count.",
-    path: ["minQuantityAlert"],
-});
-
-
+// export const accessorySchema = z.object({
+//     name: z.string().min(1, "Name is required"),
+//     serialNumber: z.string().min(1, "Serial number is required"),
+//     // categoryId: z.string().min(1, "Category is required"),
+//     manufacturerId: z.string().min(1, "Manufacturer is required"),
+//     supplierId: z.string().min(1, "Supplier is required"),
+//     locationId: z.string().min(1, "Location is required"),
+//     modelId: z.string().min(1, "Model is required"),
+//     inventoryId: z.string().min(1, "Inventory is required"),
+//     price: z.string().min(0, "Price must be positive").transform(value => Number(value)),
+//     poNumber: z.string().optional(),
+//     purchaseDate: z.date(),
+//     endOfLife: z.date(),
+//     vendor: z.string().optional(),
+//     alertEmail: z.string().email("Invalid email"),
+//     reorderPoint: z.string({ required_error: "Reorder point is required" })
+//         .transform((value) => Number(value))
+//         .refine((value) => value >= 1, { message: "Reorder point must be at least 1" }),
+//     totalQuantityCount: z.string({ required_error: "Quantity count is required" }).optional()
+//         .transform((value) => Number(value))
+//         .refine((value) => value >= 1, { message: "Quantity count must be at least 1" }),
+//     material: z.string().optional(),
+//     weight: z.string().optional().transform((value) => Number(value)),
+//     type: z.string().optional(),
+//     statusLabelId: z.string().optional(),
+//     notes: z.string().optional(),
+// }).refine((data) => data.reorderPoint <= data.totalQuantityCount, {
+//     message: "Reorder point must be less than or equal to quantity count.",
+//     path: ["minQuantityAlert"],
+// });
 
 
 export const licenseSchema = z.object({
-    licenseName: requiredString("License name is required"),
+    licenseName: z.string().min(1, "License name is required"),
     licenseCopiesCount: z.string().refine((val) => !Number.isNaN(parseInt(val, 10)), {
         message: "License copies count is required"
     }),
     minCopiesAlert: z.string().refine((val) => !Number.isNaN(parseInt(val, 10)), {
         message: "Min. copies alert is required"
     }),
-    licensedEmail: emailField,
-    renewalDate: dateField("Renewal date"),
-    purchaseDate: dateField("Purchase date"),
-    alertRenewalDays: requiredString("Alert renewal days is required"),
+    licensedEmail: z.string().email("Valid email is required"),
+    purchaseDate: z.date(),
+    renewalDate: z.date(),
+    statusLabelId: z.string().min(1, "Status is required"),
+    alertRenewalDays: z.string().refine((val) => !Number.isNaN(parseInt(val, 10)), {
+        message: "Alert renewal days is required"
+    }),
     purchasePrice: z.string().refine((val) => !Number.isNaN(parseInt(val, 10)), {
         message: "Purchase price is required"
     }),
-    vendor: z.string().min(1, "Vendor is required"),
-    licenseKey: z.string().min(1, "Product key is required"),
-    notes: z.string().optional()
-}).refine((data) => data.licenseCopiesCount > data.minCopiesAlert, {
+    poNumber: z.string().min(1, "PO number is required"),
+    licenseKey: z.string().min(1, "License key is required"),
+    notes: z.string().optional(),
+    departmentId: z.string().min(1, "Department is required"),
+    inventoryId: z.string().min(1, "Inventory is required"),
+    locationId: z.string().min(1, "Location is required"),
+    supplierId: z.string().min(1, "Supplier is required"),
+    attachments: z.array(z.any()).optional()
+}).refine((data) => data.licenseCopiesCount < data.minCopiesAlert, {
     message: "Min. Copies must be greater than or equal to license copies count",
     path: ["minCopiesAlert"],
 }).refine((data) => data.purchaseDate <= data.renewalDate, {
@@ -117,12 +146,65 @@ export const licenseSchema = z.object({
     path: ["renewalDate"],
 });
 
+
+export const accessorySchema = z.object({
+    name: z.string().min(1, "Name is required"),
+    serialNumber: z.string().min(1, "Serial number is required"),
+    supplierId: z.string().min(1, "Supplier is required"),
+    locationId: z.string().min(1, "Location is required"),
+    modelId: z.string().min(1, "Model is required"),
+    inventoryId: z.string().min(1, "Inventory is required"),
+    departmentId: z.string().min(1, "Department is required"),
+    price: z.string().optional().transform(value => Number(value)),
+    totalQuantityCount: z.string().min(0, "Price must be positive").transform(value => Number(value)),
+    reorderPoint: z.string().min(0, "Price must be positive").transform(value => Number(value)),
+    poNumber: z.string().optional(),
+    purchaseDate: z.date(),
+    endOfLife: z.date(),
+    alertEmail: z.string().email("Invalid email"),
+    material: z.string().optional(),
+    weight: z.string().optional().transform((value) => Number(value)),
+    statusLabelId: z.string().optional(),
+    notes: z.string().optional(),
+})
+    .refine((data) => data.reorderPoint <= data.totalQuantityCount, {
+        message: "Reorder point must be less than or equal to quantity count.",
+        path: ["reorderPoint"],
+    });
+
+
+// export const licenseSchema = z.object({
+//     licenseName: requiredString("License name is required"),
+//     licenseCopiesCount: z.string().refine((val) => !Number.isNaN(parseInt(val, 10)), {
+//         message: "License copies count is required"
+//     }),
+//     minCopiesAlert: z.string().refine((val) => !Number.isNaN(parseInt(val, 10)), {
+//         message: "Min. copies alert is required"
+//     }),
+//     licensedEmail: emailField,
+//     renewalDate: dateField("Renewal date"),
+//     purchaseDate: dateField("Purchase date"),
+//     alertRenewalDays: requiredString("Alert renewal days is required"),
+//     purchasePrice: z.string().refine((val) => !Number.isNaN(parseInt(val, 10)), {
+//         message: "Purchase price is required"
+//     }),
+//     vendor: z.string().min(1, "Vendor is required"),
+//     licenseKey: z.string().min(1, "Product key is required"),
+//     notes: z.string().optional()
+// }).refine((data) => data.licenseCopiesCount > data.minCopiesAlert, {
+//     message: "Min. Copies must be greater than or equal to license copies count",
+//     path: ["minCopiesAlert"],
+// }).refine((data) => data.purchaseDate <= data.renewalDate, {
+//     message: "Renewal date must in the future",
+//     path: ["renewalDate"],
+// });
+
 export const categorySchema = z.object({
     ...nameField('Category')
 });
 
 export const loginSchema = z.object({
-    email: emailField,
+    email: z.string().min(1, "Email is required").email("Valid email is required"),
     password: z.string({ required_error: "Password is required" })
         .min(1, { message: "Password is required" })
         .min(8, { message: "Password must be at least 8 characters long" })
@@ -130,7 +212,7 @@ export const loginSchema = z.object({
 });
 
 export const accountVerificationSchema = z.object({
-    email: emailField,
+    email: z.string().min(1, "Email is required").email("Valid email is required"),
     code: requiredString("Verification Code is required")
 });
 
@@ -145,17 +227,24 @@ export const forgotPasswordConfirmSchema = z.object({
 });
 
 export const forgotPasswordSchema = z.object({
-    email: emailField
+    email: z.string().min(1, "Email is required").email("Valid email is required"),
 });
 
 export const registerSchema = z.object({
-    email: emailField,
+    email: emailField("user"),
     password: passwordSchema,
     repeatPassword: z.string().min(1, "Password is required"),
     firstName: z.string().min(1, "First name is required"),
     lastName: z.string().min(1, "Last name is required"),
-    phoneNumber: z.string().min(1, "Phone number is required"),
-    companyName: z.string().min(1, "Company name is required"),
+    phoneNumber: phoneNumField,
+    companyName: z.string().min(1, "Company name is required").refine(async (companyName) => {
+        const res = await fetch('/api/validate/check-company-name', {
+            method: 'POST',
+            body: JSON.stringify({ companyName })
+        });
+        const exists = await res.json();
+        return !exists;
+    }, "Company name already exists"),
 }).refine((data) => data.password === data.repeatPassword, {
     message: "Passwords do not match",
     path: ["repeatPassword"],
@@ -169,16 +258,6 @@ export const statusLabelSchema = z.object({
     allowLoan: z.boolean().optional(),
 });
 
-export const personSchema = z.object({
-    id: z.string().optional(),
-    firstName: z.string().min(1, "First name is required"),
-    lastName: z.string().min(1, "Last name is required"),
-    email: emailField,
-    roleId: z.string().min(1, "Role is required"),
-    companyId: z.string().optional(),
-    title: z.string().min(1, "Title is required"),
-    employeeId: z.string().min(1, "Employee Id is required"),
-});
 
 export const kitSchema = z.object({
     name: z.string().min(1, "Kit name is required"),
@@ -198,7 +277,6 @@ export const assetAssignSchema = z.object({
 
 export const manufacturerSchema = z.object({
     ...nameField('Manufacturer'),
-
     url: z.string().url({message: "Invalid URL"}),
     supportUrl: requiredString('Support URL is required'),
     supportPhone: z.string().optional(),
@@ -232,7 +310,7 @@ export const departmentSchema = z.object({
 export const supplierSchema = z.object({
     ...nameField('Supplier'),
     contactName: requiredString('Contact name is required'),
-    email: emailField,
+    email: emailField('supplier'),
     phoneNum: z.string().optional(),
     url: z.string().url().optional(),
     notes: z.string().optional(),
@@ -247,13 +325,21 @@ export const supplierSchema = z.object({
 
 
 export const userSchema = z.object({
-
     firstName: z.string().min(1, "First name is required"),
     lastName: z.string().min(1, "Last name is required"),
-    email: emailField,
+    // email: z.string().min(1, "Email is required").email("Valid email is required"),
+    email: emailField('user'),
     phoneNum: z.string().min(1, "Phone number is required"),
     title: z.string().min(1, "Title is required"),
-    employeeId: z.string().min(1, "Employee ID is required"),
+    employeeId: z.string()
+        .min(1, "Employee ID is required")
+        .refine(async (employeeId) => {
+            const res = await fetch('/api/validate/check-employeeId', {
+                method: 'POST',
+                body: JSON.stringify({ employeeId })
+            });
+            const exists = await res.json();
+            return !exists;
+        }, "Employee ID already exists"),
     roleId: z.string().min(1, "Role is required"),
-    companyId: z.string().optional()
 });

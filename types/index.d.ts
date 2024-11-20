@@ -85,27 +85,59 @@ declare global {
         email: string;
         password: string;
         roleId?: string;
+        title: string;
+        employeeId: string;
         companyId: string;
         firstName?: string;
         lastName?: string;
         phoneNumber?: string;
     };
 
-    type Accessory = {
-        id?: string;
+    // type Accessory = {
+    //     id?: string;
+    //     title: string;
+    //     purchaseDate: Date;
+    //     price: number;
+    //     poNumber: string;
+    //     endOfLife: Date;
+    //     vendor: string;
+    //     alertEmail: string;
+    //     minQuantityAlert: number;
+    //     totalQuantityCount: number;
+    //     description: string;
+    //     categoryId: string;
+    //     companyId: string;
+    //     material: string;
+    // };
+
+     type Accessory = {
+        id: string;
         title: string;
-        purchaseDate: Date;
-        price: number;
-        poNumber: string;
-        endOfLife: Date;
-        vendor: string;
         alertEmail: string;
-        minQuantityAlert: number;
+        reorderPoint: number;
         totalQuantityCount: number;
-        description: string;
-        categoryId: string;
-        companyId: string;
+        purchaseDate: Date;
+        notes?: string | null;
         material: string;
+        weight: number; // Assuming Decimal is represented as a number
+        endOfLife: Date;
+        companyId: string;
+        modelId?: string | null;
+        statusLabelId?: string | null;
+        supplierId?: string | null;
+        departmentId?: string | null;
+        locationId?: string | null;
+        inventoryId?: string | null;
+        categoryId?: string | null;
+        poNumber?: string | null;
+        price?: number | null;
+        company: Company;
+        model?: Model | null;
+        statusLabel?: StatusLabel | null;
+        supplier?: Supplier | null;
+        department?: Department | null;
+        departmentLocation?: DepartmentLocation | null;
+        inventory?: Inventory | null;
     };
 
     type Asset = {
@@ -140,23 +172,57 @@ declare global {
         inventory?: Inventory;
     };
 
-    type License = {
-        id?: string;
+
+    export type License = {
+        id: string;
         name: string;
-        licenseKey: string;
-        renewalDate: Date;
-        licenseUrl?: string;
         licensedEmail: string;
+        poNumber: string;
+        licenseKey: string;
+        companyId: string;
+        statusLabelId?: string | null;
+        supplierId?: string | null;
+        departmentId?: string | null;
+        locationId?: string | null;
+        inventoryId?: string | null;
+        renewalDate: Date;
         purchaseDate: Date;
-        vendor: string;
-        purchaseNotes: string;
+        purchaseNotes?: string | null;
+        licenseUrl?: string | null;
         minCopiesAlert: number;
         alertRenewalDays: number;
         licenseCopiesCount: number;
-        purchasePrice: number;
-        createdAt?: Date;
-        updatedAt?: Date;
+        purchasePrice: Number;
+        createdAt: Date;
+        updatedAt: Date;
+
+        // Relations
+        company?: Company | null;
+        assets?: Asset[] | null;
+        statusLabel?: StatusLabel | null;
+        supplier?: Supplier | null;
+        department?: Department | null;
+        departmentLocation?: DepartmentLocation | null;
+        inventory?: Inventory | null;
     };
+
+    // type License = {
+    //     id?: string;
+    //     name: string;
+    //     licenseKey: string;
+    //     renewalDate: Date;
+    //     licenseUrl?: string;
+    //     licensedEmail: string;
+    //     purchaseDate: Date;
+    //     vendor: string;
+    //     purchaseNotes: string;
+    //     minCopiesAlert: number;
+    //     alertRenewalDays: number;
+    //     licenseCopiesCount: number;
+    //     purchasePrice: number;
+    //     createdAt?: Date;
+    //     updatedAt?: Date;
+    // };
 
 
 

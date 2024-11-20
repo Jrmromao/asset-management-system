@@ -20,59 +20,37 @@ interface AccessoriesColumnsProps {
 // const navigate = useRouter() cannot use hook in a non hook component
 export const accessoriesColumns = ({onDelete, onView}: AccessoriesColumnsProps): ColumnDef<Accessory>[] => [
     {
-        accessorKey: "title",
+        accessorKey: "name",
         header: ({column}) => {
             return (
                 <Button
                     variant="ghost"
                     onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
                 >
-                    Title
+                    Name
                     <ArrowUpDown className="ml-2 h-4 w-4"/>
                 </Button>
             )
         }
     },
-    // createdAt, updatedAt
     // {
-    //     accessorKey: "createdAt",
-    //     header: "Created At",
+    //     accessorKey: "datePurchased",
+    //     header: "Date Purchased",
     //     cell: ({row}) => {
     //         const accessory = row.original
     //         return (
-    //             <div className={'cursor-pointer'}><LinkTableCell value={formatDateTime(accessory.createdAt).dateOnly}
-    //                                                              navigateTo={`/accessories/view/?id=${accessory.id}`}/>
-    //             </div>)
-    //     }
-    // },
-    // {
-    //     accessorKey: "updatedAt",
-    //     header: "Updated At",
-    //     cell: ({row}) => {
-    //         const accessory = row.original
-    //         return (
-    //             <div className={'cursor-pointer'}><LinkTableCell value={formatDateTime(accessory).dateOnly}
+    //             <div className={'cursor-pointer'}>
+    //                 <LinkTableCell value={formatDateTime(accessory.purchaseDate).dateOnly}
     //                                                              navigateTo={`/accessories/view/?id=${accessory.id}`}/>
     //             </div>)
     //     }
     // },
     {
-        accessorKey: "datePurchased",
-        header: "Date Purchased",
+        accessorKey: "supplier",
+        header: "Supplier",
         cell: ({row}) => {
             const accessory = row.original
-            return (
-                <div className={'cursor-pointer'}><LinkTableCell value={formatDateTime(accessory.purchaseDate).dateOnly}
-                                                                 navigateTo={`/accessories/view/?id=${accessory.id}`}/>
-                </div>)
-        }
-    },
-    {
-        accessorKey: "vendor",
-        header: "Vendor",
-        cell: ({row}) => {
-            const accessory = row.original
-            return <LinkTableCell value={accessory.vendor} navigateTo={`/accessories/view/?id=${accessory.id}`}/>
+            return <LinkTableCell value={accessory.supplier?.name} navigateTo={`/accessories/view/?id=${accessory.id}`}/>
         }
     },
     {
@@ -84,11 +62,11 @@ export const accessoriesColumns = ({onDelete, onView}: AccessoriesColumnsProps):
         }
     },
     {
-        accessorKey: "minQuantityAlert",
+        accessorKey: "reorderPoint",
         header: "Min Quantity Alert",
         cell: ({row}) => {
             const accessory = row.original
-            return <LinkTableCell value={accessory.minQuantityAlert}
+            return <LinkTableCell value={accessory.reorderPoint}
                                   navigateTo={`/accessories/view/?id=${accessory.id}`}/>
         }
     },
@@ -102,12 +80,11 @@ export const accessoriesColumns = ({onDelete, onView}: AccessoriesColumnsProps):
         }
     },
     {
-        accessorKey: "description",
-        header: "Note",
+        accessorKey: "inventory",
+        header: "Inventory",
         cell: ({row}) => {
-            const value = row.getValue('description')
             const accessory = row.original
-            return <LinkTableCell value={value as string} navigateTo={`/accessories/view/?id=${accessory.id}`}/>
+            return <LinkTableCell value={accessory.inventory?.name} navigateTo={`/accessories/view/?id=${accessory.id}`}/>
         }
     },
     {

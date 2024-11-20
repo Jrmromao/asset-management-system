@@ -1,0 +1,6 @@
+name,model,serialNum,statusLabel,material,supplier,poNumber,price,location,department,inventory,supplier,alertEmail,purchaseDate,endOfLife,weight,totalQuantityCount,reorderPoint,price
+Keyboard,Magic Mouse,1234567890,Available,Plastic,Apple,1234567891,150.90,H2,Logistics,Logistics,Jack,joel@me.com,2023-12-31T00:00:00Z,2026-12-31T00:00:00Z,0.200,12,2,123.2
+Keyboard,Magic Mouse,1234567891,Available,Plastic,Apple,1234567892,150.90,H2,Logistics,Logistics,Jack,joel@me.com,2023-12-31T00:00:00Z,2026-12-31T00:00:00Z,0.200,12,2,123.2
+Keyboard,Magic Mouse,1234567892,Available,Plastic,Apple,1234567893,150.90,H2,Logistics,Logistics,Jack,joel@me.com,2023-12-31T00:00:00Z,2026-12-31T00:00:00Z,0.200,12,2,123.2
+Keyboard,Magic Mouse,1234567893,Available,Plastic,Apple,1234567894,150.90,H2,Logistics,Logistics,Jack,joel@me.com,2023-12-31T00:00:00Z,2026-12-31T00:00:00Z,0.200,12,2,123.2
+Keyboard,Magic Mouse,1234567894,Available,Plastic,Apple,1234567895,150.90,H2,Logistics,Logistics,Jack,joel@me.com,2023-12-31T00:00:00Z,2026-12-31T00:00:00Z,0.200,12,2,123.2

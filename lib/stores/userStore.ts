@@ -34,19 +34,21 @@ export const useUserStore = create(persist<IUserStore>(
         },
         create: async (data: User) => {
             try {
-                // await registerUser({
-                //     email: data.email,
-                //     password: data.password,
-                //     firstName: data.firstName,
-                //     lastName: data.lastName,
-                //     companyId: data.companyId
-                // }).then(_ =>{
-                //     set(
-                //         produce((state) => {
-                //             state.users.push(data);
-                //         })
-                //     );
-                // })
+                await registerUser({
+                    email: data.email,
+                    password: '',
+                    firstName: data.firstName,
+                    lastName: data.lastName,
+                    companyId: data.companyId!,
+                    title: data.title,
+                    employeeId: data.employeeId
+                }).then(_ =>{
+                    set(
+                        produce((state) => {
+                            state.users.push(data);
+                        })
+                    );
+                })
             } catch (error) {
                 console.error("Error creating user:", error);
                 throw error;

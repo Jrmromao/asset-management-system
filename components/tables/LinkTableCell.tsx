@@ -20,9 +20,6 @@ const CustomTableCell = ({value, navigateTo, label}: {
     const navigate = useRouter()
 
     const InfoPopover = (description: string, colorCode: string) => {
-
-
-        console.log(colorCode)
         return (
             <div className="text-right align-top">
                 <Popover>

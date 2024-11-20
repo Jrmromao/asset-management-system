@@ -1,20 +1,53 @@
 'use server';
 import {parseStringify} from "@/lib/utils";
 import {PrismaClient} from "@prisma/client";
+import {z} from "zod";
+import {accessorySchema, licenseSchema} from "@/lib/schemas";
+import {auth} from "@/auth";
+
 const prisma = new PrismaClient()
 
-export const insert = async (data: License) => {
+// Type for the API response
+type ApiResponse<T> = {
+    data?: T;
+    error?: string;
+};
+
+export const create = async (values: z.infer<typeof licenseSchema>): Promise<ApiResponse<License>> => {
+
     try {
+        // const validation = accessorySchema.safeParse(values);
+        // if (!validation.success) {
+        //     return {error: 'Invalid assignment data'};
+        // }
+        //
+        const session = await auth()
 
-        data.purchasePrice = Math.round(data.purchasePrice * 100) / 100
+        await prisma.license.create({
+            data: {
+                name: values.licenseName,
+                licenseCopiesCount: Number(values.licenseCopiesCount),
+                minCopiesAlert: Number(values.minCopiesAlert),
+                licensedEmail: values.licensedEmail,
+                renewalDate: values.renewalDate,
+                purchaseDate: values.purchaseDate,
+                alertRenewalDays: Number(values.alertRenewalDays),
+                poNumber: values.poNumber,
+                licenseKey: values.licenseKey,
+                purchasePrice: Number(values.purchasePrice),
+                companyId: 'bf40528b-ae07-4531-a801-ede53fb31f04' //session.user.companyId
+            },
+        })
 
 
-        await prisma.license.create({data})
     } catch (error) {
         console.log(error)
     } finally {
         await prisma.$disconnect()
     }
+    return {
+        data: parseStringify(values)
+    };
 }
 export const getAll = async () => {
     try {
@@ -46,13 +79,13 @@ export const findById = async (id: string) => {
 }
 export const update = async (data: License, id: string) => {
     try {
-        const licenseTool = await prisma.license.update({
-            where: {
-                id: id
-            },
-            data
-        });
-        return parseStringify(licenseTool);
+        // const licenseTool = await prisma.license.update({
+        //     where: {
+        //         id: id
+        //     },
+        //     ...data
+        // });
+        return parseStringify('');
     } catch (error) {
         console.log(error)
     } finally {

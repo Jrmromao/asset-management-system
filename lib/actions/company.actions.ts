@@ -29,6 +29,8 @@ export const registerCompany = async (values: z.infer<typeof registerSchema>) =>
             password,
             firstName,
             lastName,
+            title: 'Admin',
+            employeeId: 'Admin',
             phoneNumber,
             companyId: company.id
         })

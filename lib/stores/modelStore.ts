@@ -48,6 +48,8 @@ export const useModelStore = create(
                 set({ isLoading: true, error: null });
                 try {
                     const result = await getAllSimple(params);
+                    console.log('MODELS: ', result)
+
                     if (result.error) {
                         set({ error: result.error });
                         return;

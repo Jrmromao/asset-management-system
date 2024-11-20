@@ -1,16 +1,16 @@
 'use client'
 
-import React, { useEffect, useTransition } from 'react'
-import { z } from "zod"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import { Button } from "@/components/ui/button"
-import { Form, FormLabel } from "@/components/ui/form"
-import { InfoIcon, Loader2 } from "lucide-react"
-import { Card } from "@/components/ui/card"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { useRouter } from "next/navigation"
-import { toast } from "sonner"
+import React, {useEffect, useState, useTransition} from 'react'
+import {z} from "zod"
+import {zodResolver} from "@hookform/resolvers/zod"
+import {useForm} from "react-hook-form"
+import {Button} from "@/components/ui/button"
+import {Form, FormLabel} from "@/components/ui/form"
+import {InfoIcon, Loader2} from "lucide-react"
+import {Card} from "@/components/ui/card"
+import {Alert, AlertDescription, AlertTitle} from "@/components/ui/alert"
+import {useRouter} from "next/navigation"
+import {toast} from "sonner"
 
 import CustomInput from "@/components/CustomInput"
 import CustomDatePicker from "@/components/CustomDatePicker"
@@ -25,22 +25,14 @@ import {useDepartmentStore} from "@/lib/stores/departmentStore";
 import {useInventoryStore} from "@/lib/stores/inventoryStore";
 import {useSupplierStore} from "@/lib/stores/SupplierStore";
 import {useCategoryStore} from "@/lib/stores/categoryStore";
-
-const licenseSchema = z.object({
-    licenseName: z.string().min(1, "License name is required"),
-    licenseCopiesCount: z.number().min(1, "Number of copies is required"),
-    minCopiesAlert: z.number().min(1, "Minimum copies alert is required"),
-    licensedEmail: z.string().email("Valid email is required"),
-    purchaseDate: z.date(),
-    renewalDate: z.date(),
-    alertRenewalDays: z.number().min(1, "Alert days is required"),
-    purchasePrice: z.number().min(0, "Price must be positive"),
-    vendor: z.string().min(1, "Vendor is required"),
-    licenseKey: z.string().min(1, "License key is required"),
-    notes: z.string().optional(),
-    attachments: z.array(z.any()).optional()
-});
-
+import {DialogContainer} from "@/components/dialogs/DialogContainer";
+import SupplierForm from "@/components/forms/SupplierForm";
+import InventoryForm from "@/components/forms/InventoryForm";
+import DepartmentForm from "@/components/forms/DepartmentForm";
+import StatusLabelForm from "@/components/forms/StatusLabelForm";
+import LocationForm from "@/components/forms/LocationForm";
+import {licenseSchema} from "@/lib/schemas";
+import {create} from "@/lib/actions/license.actions";
 
 
 type LicenseFormValues = z.infer<typeof licenseSchema>;
@@ -48,33 +40,8 @@ type LicenseFormValues = z.infer<typeof licenseSchema>;
 const LicenseForm = () => {
     const [isPending, startTransition] = useTransition()
     const router = useRouter()
+    const [file, setFile] = useState<File | null>(null)
 
-
-
-// Stores
-    const {create: createAsset, update: updateAsset, findById} = useAssetStore()
-    const {
-        statusLabels,
-        getAll: fetchStatusLabels,
-        isOpen: isStatusOpen,
-        onOpen: openStatus,
-        onClose: closeStatus
-    } = useStatusLabelStore()
-    const {models, fetchModels, isOpen: isModelOpen, onOpen: openModel, onClose: closeModel} = useModelStore()
-    const {
-        locations,
-        fetchLocations,
-        isOpen: isLocationOpen,
-        onOpen: openLocation,
-        onClose: closeLocation
-    } = useLocationStore()
-    const {
-        departments,
-        getAll: fetchDepartments,
-        isOpen: isDepartmentOpen,
-        onOpen: openDepartment,
-        onClose: closeDepartment
-    } = useDepartmentStore()
     const {
         inventories,
         getAll: fetchInventories,
@@ -91,25 +58,57 @@ const LicenseForm = () => {
     } = useSupplierStore()
 
     const {
-        categories,
-        getAll: fetchCategories,
-        isOpen: isCategoryOpen,
-        onOpen: openCategory,
-        onClose: closeCategory
-    } = useCategoryStore()
+        locations,
+        fetchLocations,
+        isOpen: isLocationOpen,
+        onOpen: openLocation,
+        onClose: closeLocation
+    } = useLocationStore()
+    const {
+        statusLabels,
+        getAll: fetchStatusLabels,
+        isOpen: isStatusOpen,
+        onOpen: openStatus,
+        onClose: closeStatus
+    } = useStatusLabelStore()
+
+    const {
+        departments,
+        getAll: fetchDepartments,
+        isOpen: isDepartmentOpen,
+        onOpen: openDepartment,
+        onClose: closeDepartment
+    } = useDepartmentStore()
+    useEffect(() => {
+        fetchInventories()
+        fetchSuppliers()
+        closeInventory()
+        closeSupplier()
+    }, []);
+
+    const handleDrop = (acceptedFiles: File[]) => {
+        const csvFile = acceptedFiles[0]
+        // if (!csvFile.name.endsWith('.csv')) {
+        //     toast.error('Please select a CSV file.')
+        //     return
+        // }
+        setFile(csvFile)
+    }
 
     const form = useForm<LicenseFormValues>({
         resolver: zodResolver(licenseSchema),
         defaultValues: {
             licenseName: '',
-            licenseCopiesCount: 1,
-            minCopiesAlert: 1,
             licensedEmail: '',
-            purchaseDate: new Date(),
-            renewalDate: new Date(),
-            alertRenewalDays: 30,
-            purchasePrice: 0,
-            vendor: '',
+            // alertRenewalDays: ,
+            statusLabelId: '',
+            locationId: '',
+            inventoryId: '',
+            minCopiesAlert: '',
+            licenseCopiesCount: '',
+            supplierId: '',
+            poNumber: '',
+            purchasePrice: '',
             licenseKey: '',
             notes: '',
         }
@@ -118,8 +117,11 @@ const LicenseForm = () => {
     const onSubmit = async (data: LicenseFormValues) => {
         startTransition(async () => {
             try {
-                // Submit logic here
-                toast.success('License created successfully')
+                await create(data).then(_ => {
+                        toast.success('License created successfully')
+                        router.push('/licenses')
+                    }
+                )
                 form.reset()
             } catch (error) {
                 toast.error('Something went wrong')
@@ -130,6 +132,59 @@ const LicenseForm = () => {
 
     return (
         <section className="w-full mx-auto p-6">
+            <DialogContainer
+                description=""
+                open={isSupplierOpen}
+                onOpenChange={closeSupplier}
+                title="Add Supplier"
+                form={<SupplierForm/>}
+            />
+
+            <DialogContainer
+                description=""
+                open={isInventoryOpen}
+                onOpenChange={closeInventory}
+                title="Add Inventory"
+                form={<InventoryForm/>}
+            />
+
+            <DialogContainer
+                description={''}
+                open={isDepartmentOpen}
+                onOpenChange={closeDepartment}
+                title="Add Department"
+                form={<DepartmentForm/>}
+            />
+            <DialogContainer
+                description={''}
+                open={isStatusOpen}
+                onOpenChange={closeStatus}
+                title="Add Status"
+                form={<StatusLabelForm/>}
+            />
+
+            <DialogContainer
+                description={''}
+                open={isLocationOpen}
+                onOpenChange={closeLocation}
+                title="Add Location"
+                form={<LocationForm/>}
+            />
+            <DialogContainer
+                description={''}
+                open={isSupplierOpen}
+                onOpenChange={closeSupplier}
+                title="Add Supplier"
+                form={<SupplierForm/>}
+            />
+            <DialogContainer
+                description={''}
+                open={isInventoryOpen}
+                onOpenChange={closeInventory}
+                title="Add Inventory"
+                form={<InventoryForm/>}
+            />
+
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                     <Card className="p-6">
@@ -138,7 +193,7 @@ const LicenseForm = () => {
                             <div>
                                 <h3 className="text-lg font-semibold mb-4">License Information</h3>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div>
+                                    <div className="space-y-6">
                                         <CustomInput
                                             name="licenseName"
                                             label="License Name"
@@ -164,7 +219,41 @@ const LicenseForm = () => {
                                     </Alert>
                                 </div>
                             </div>
-
+                            <div className="border-t pt-6">
+                                <h3 className="text-lg font-semibold mb-4">Status & Location</h3>
+                                <div className="space-y-6">
+                                    <SelectWithButton
+                                        name="statusLabelId"
+                                        form={form}
+                                        isPending
+                                        label="Status Label"
+                                        data={statusLabels}
+                                        onNew={openStatus}
+                                        placeholder="Select status"
+                                        required
+                                    />
+                                    <SelectWithButton
+                                        form={form}
+                                        isPending
+                                        name="departmentId"
+                                        label="Department"
+                                        data={departments}
+                                        onNew={openDepartment}
+                                        placeholder="Select department"
+                                        required
+                                    />
+                                    <SelectWithButton
+                                        isPending
+                                        form={form}
+                                        name="locationId"
+                                        label="Location"
+                                        data={locations}
+                                        onNew={openLocation}
+                                        placeholder="Select location"
+                                        required
+                                    />
+                                </div>
+                            </div>
                             {/* License Management */}
                             <div className="border-t pt-6">
                                 <h3 className="text-lg font-semibold mb-4">License Management</h3>
@@ -188,38 +277,51 @@ const LicenseForm = () => {
                                 </div>
                             </div>
 
-                            <div className="border-t pt-6 sm:flex-row">
+                            <div className="border-t pt-6">
                                 <h3 className="text-lg font-semibold mb-4">Purchase Information</h3>
                                 <div className="space-y-6">
-                                    <CustomInput
-                                        name="poNumber"
-                                        label="PO Number"
-                                        control={form.control}
-                                        placeholder="Enter PO number"
-                                        type="text"
-                                    />
-
-                                    <CustomPriceInput
-                                        name="price"
-                                        label="Price"
-                                        control={form.control}
-                                        placeholder="0.00"
-                                        required
-                                    />
-
+                                    <div className="grid grid-cols-2 gap-6">
+                                        <CustomInput
+                                            name="poNumber"
+                                            label="PO Number"
+                                            control={form.control}
+                                            placeholder="Enter PO number"
+                                        />
+                                        <CustomPriceInput
+                                            name="purchasePrice"
+                                            label="Unit Price"
+                                            control={form.control}
+                                            placeholder="0.00"
+                                            required
+                                        />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-6">
+                                        <CustomDatePicker
+                                            name="purchaseDate"
+                                            form={form}
+                                            label="Purchase Date"
+                                            placeholder="Select date"
+                                        />
+                                        <CustomDatePicker
+                                            name="renewalDate"
+                                            form={form}
+                                            label="Renewal Date"
+                                            placeholder="Select date"
+                                        />
+                                    </div>
                                     <SelectWithButton
-                                        isPending
-                                        form={form}
                                         name="supplierId"
                                         label="Supplier"
                                         data={suppliers}
                                         onNew={openSupplier}
                                         placeholder="Select supplier"
                                         required
+                                        form={form}
+                                        isPending
                                     />
                                     <SelectWithButton
-                                        isPending
                                         form={form}
+                                        isPending
                                         name="inventoryId"
                                         label="Inventory"
                                         data={inventories}
@@ -227,43 +329,6 @@ const LicenseForm = () => {
                                         placeholder="Select an inventory"
                                         required
                                     />
-                                </div>
-                            </div>
-
-                            {/* Purchase Details */}
-                            <div className="border-t pt-6">
-                                <h3 className="text-lg font-semibold mb-4">Purchase Details</h3>
-                                <div className="grid grid-cols-2 gap-6">
-                                    <CustomPriceInput
-                                        name="purchasePrice"
-                                        label="Purchase Price"
-                                        control={form.control}
-                                        placeholder="0.00"
-                                        required
-                                    />
-                                    <CustomInput
-                                        name="vendor"
-                                        label="Vendor"
-                                        control={form.control}
-                                        placeholder="Enter vendor name"
-                                        required
-                                    />
-                                    <div className="space-y-2">
-                                        <FormLabel>Purchase Date</FormLabel>
-                                        <CustomDatePicker
-                                            name="purchaseDate"
-                                            form={form}
-                                            placeholder="Select date"
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <FormLabel>Renewal Date</FormLabel>
-                                        <CustomDatePicker
-                                            name="renewalDate"
-                                            form={form}
-                                            placeholder="Select date"
-                                        />
-                                    </div>
                                 </div>
                             </div>
 
@@ -294,7 +359,10 @@ const LicenseForm = () => {
                             <div className="border-t pt-6">
                                 <h3 className="text-lg font-semibold mb-4">Attachments</h3>
                                 <div className="grid grid-cols-2 gap-6">
-                                    {/*<Dropzone/>*/}
+                                    <Dropzone onDrop={handleDrop}
+                                              accept={{
+                                                  'text/pdf': ['.pdf']
+                                              }}/>
                                     <Alert>
                                         <InfoIcon className="h-4 w-4"/>
                                         <AlertTitle>Note</AlertTitle>

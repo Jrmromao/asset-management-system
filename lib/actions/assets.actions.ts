@@ -1,7 +1,7 @@
 'use server';
 
 import {prisma} from "@/app/db";
-import {parseStringify} from "@/lib/utils";
+import {parseStringify, processRecordContents, roundFloat} from "@/lib/utils";
 import {auth} from "@/auth";
 import {z} from "zod";
 import {assetAssignSchema} from "@/lib/schemas";
@@ -76,7 +76,6 @@ export async function get(): Promise<ApiResponse<Asset[]>> {
             where: {companyId: 'bf40528b-ae07-4531-a801-ede53fb31f04'}
         });
 
-        console.log(assets)
 
         return {data: parseStringify(assets)};
     } catch (error) {
@@ -202,25 +201,10 @@ export async function unassign(assetId: string): Promise<ApiResponse<Asset>> {
 }
 
 
-export async function processCSV(csvContent: string) {
+export async function processAssetsCSV(csvContent: string) {
     try {
-        const rows = csvContent.split('\n')
-
-        // Get and clean headers
-        const headers = rows[0].split(',').map(header => header.trim())
-
-        // Process data rows
-        const data = rows.slice(1)
-            .filter(row => row.trim()) // Skip empty rows
-            .map(row => {
-                const values = row.split(',').map(value => value.trim())
-                const rowData: { [key: string]: string } = {}
-                headers.forEach((header, index) => {
-                    rowData[header] = values[index]
-                })
-                return rowData
-            })
-
+        const data = processRecordContents(csvContent)
+        const session = await auth()
         // Save to database using transaction
         await prisma.$transaction(async (tx) => {
             const records = [];
@@ -242,26 +226,22 @@ export async function processCSV(csvContent: string) {
                     }
                 })
 
-
-
-
                 if (!model || !statusLabel || !supplier) {
                     continue;
                 }
 
-
-
                 const record = await tx.asset.create({
                     data: {
                         name: item['name'],
+                        weight: roundFloat(Number(item['weight']), 2),
                         serialNumber: item['serialNum'],
                         material: item['material'],
                         modelId: model?.id,
-                        endOfLife: new Date(item['EOL']),
+                        endOfLife: new Date(item['endOfLife']),
                         statusLabelId: statusLabel?.id,
                         supplierId: supplier?.id,
                         poNumber: item['poNumber'],
-                        price: parseFloat(item['price']),
+                        price: roundFloat(Number(item['price']), 2),
                         companyId: 'bf40528b-ae07-4531-a801-ede53fb31f04'
                     }
                 });
@@ -287,3 +267,5 @@ export async function processCSV(csvContent: string) {
         }
     }
 }
+
+

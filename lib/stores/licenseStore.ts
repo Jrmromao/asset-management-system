@@ -1,7 +1,7 @@
     import {create} from "zustand"
 import {persist} from "zustand/middleware";
 import produce from 'immer';
-import {getAll, insert, update, remove} from '@/lib/actions/license.actions';
+import {getAll, update, remove} from '@/lib/actions/license.actions';
 
 interface ILicenseStore {
     licenses: License[];
@@ -33,7 +33,7 @@ export const useLicenseStore = create(persist<ILicenseStore>(
         create: async (license: License) => {
             try {
 
-                await insert(license);
+                // await insert(license);
                 set(
                     produce((state) => {
                         state.licenses.push(license);

@@ -74,7 +74,6 @@ interface AssetFormProps {
 const AssetForm = ({id, isUpdate = false}: AssetFormProps) => {
     const [isPending, startTransition] = useTransition()
     const router = useRouter()
-
     // Stores
     const {create: createAsset, update: updateAsset, findById} = useAssetStore()
     const {
@@ -187,9 +186,6 @@ const AssetForm = ({id, isUpdate = false}: AssetFormProps) => {
                 //         ...data,
                 //         endOfLife: data.endOfLife.toISOString()
                 //     })
-
-                console.log(data)
-
 
                 await create({
                     datePurchased: data.purchaseDate,
@@ -307,34 +303,12 @@ const AssetForm = ({id, isUpdate = false}: AssetFormProps) => {
                                     <CustomInput
                                         required
                                         name="serialNumber"
-                                        label="Serial Number"
+                                        label="Tag Number"
                                         control={form.control}
                                         type="text"
-                                        placeholder="Enter serial number"
+                                        placeholder="Enter tag number"
                                     />
                                 </div>
-
-                                {/*<SelectWithButton*/}
-                                {/*    name="categoryId"*/}
-                                {/*    form={form}*/}
-                                {/*    isPending*/}
-                                {/*    label="Category"*/}
-                                {/*    data={categories}*/}
-                                {/*    onNew={openCategory}*/}
-                                {/*    placeholder="Select an inventory"*/}
-                                {/*    required*/}
-                                {/*/>*/}
-                                {/*<SelectWithButton*/}
-                                {/*    name="manufacturerId"*/}
-                                {/*    label="Manufacturer"*/}
-                                {/*    data={manufacturers}*/}
-                                {/*    onNew={openManufacturer}*/}
-                                {/*    placeholder="Select manufacturer"*/}
-                                {/*    required*/}
-                                {/*    form={form}*/}
-                                {/*    isPending*/}
-                                {/*/>*/}
-
                                 <SelectWithButton
                                     name="modelId"
                                     form={form}
@@ -402,17 +376,43 @@ const AssetForm = ({id, isUpdate = false}: AssetFormProps) => {
                                         />
                                     </div>
                                     <div className="grid grid-cols-2 gap-6">
+                                        {/*<CustomDatePicker*/}
+                                        {/*    name="purchaseDate"*/}
+                                        {/*    form={form}*/}
+                                        {/*    label="Purchase Date"*/}
+                                        {/*    placeholder="Select date"*/}
+                                        {/*/>*/}
+                                        {/*<CustomDatePicker*/}
+                                        {/*    name="endOfLife"*/}
+                                        {/*    form={form}*/}
+                                        {/*    label="End of Life"*/}
+                                        {/*    placeholder="Select date"*/}
+                                        {/*/>*/}
+
                                         <CustomDatePicker
+                                            label="Purchase Date"
                                             name="purchaseDate"
                                             form={form}
-                                            label="Purchase Date"
-                                            placeholder="Select date"
+                                            placeholder="Select purchase date"
+                                            required
+                                            disablePastDates
+                                            tooltip="Select the date your asset was purchased"
+                                            minDate={new Date()}
+                                            maxDate={new Date(2025, 0, 1)}
+                                            formatString="dd/MM/yyyy"
                                         />
+
                                         <CustomDatePicker
+                                            label="End of Life"
                                             name="endOfLife"
                                             form={form}
-                                            label="End of Life"
-                                            placeholder="Select date"
+                                            placeholder="Select end of life"
+                                            required
+                                            disablePastDates
+                                            tooltip="Select the date your asset will no longer be used"
+                                            minDate={new Date()}
+                                            maxDate={new Date(2100, 0, 1)}
+                                            formatString="dd/MM/yyyy"
                                         />
                                     </div>
                                     <SelectWithButton

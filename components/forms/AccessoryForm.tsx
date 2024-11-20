@@ -1,41 +1,39 @@
 'use client'
 
-import React, { useEffect, useTransition } from 'react'
-import { z } from "zod"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import { Button } from "@/components/ui/button"
-import { Form, FormLabel } from "@/components/ui/form"
-import { InfoIcon, Loader2, Plus } from "lucide-react"
-import { Card } from "@/components/ui/card"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { useRouter } from "next/navigation"
-import { toast } from "sonner"
+import React, {useEffect, useTransition} from 'react'
+import {z} from "zod"
+import {zodResolver} from "@hookform/resolvers/zod"
+import {useForm} from "react-hook-form"
+import {Button} from "@/components/ui/button"
+import {Form} from "@/components/ui/form"
+import {InfoIcon, Loader2} from "lucide-react"
+import {Card} from "@/components/ui/card"
+import {Alert, AlertDescription, AlertTitle} from "@/components/ui/alert"
+import {useRouter} from "next/navigation"
+import {toast} from "sonner"
 
 import CustomInput from "@/components/CustomInput"
-import CustomSelect from "@/components/CustomSelect"
 import CustomDatePicker from "@/components/CustomDatePicker"
 import CustomPriceInput from "@/components/CustomPriceInput"
-import { DialogContainer } from "@/components/dialogs/DialogContainer"
+import {DialogContainer} from "@/components/dialogs/DialogContainer"
 
 import CategoryForm from "@/components/forms/CategoryForm"
 import SupplierForm from "@/components/forms/SupplierForm"
 import ManufacturerForm from "@/components/forms/ManufacturerForm"
 import InventoryForm from "@/components/forms/InventoryForm"
 
-import { useCategoryStore } from "@/lib/stores/categoryStore"
-import { useSupplierStore } from "@/lib/stores/SupplierStore"
-import { useManufacturerStore } from "@/lib/stores/manufacturerStore"
-import { useInventoryStore } from "@/lib/stores/inventoryStore"
-import { create } from "@/lib/actions/accessory.actions"
+import {useCategoryStore} from "@/lib/stores/categoryStore"
+import {useSupplierStore} from "@/lib/stores/SupplierStore"
+import {useManufacturerStore} from "@/lib/stores/manufacturerStore"
+import {useInventoryStore} from "@/lib/stores/inventoryStore"
+import {create} from "@/lib/actions/accessory.actions"
 import {useStatusLabelStore} from "@/lib/stores/statusLabelStore";
-import {accessorySchema} from "@/lib/schemas";
 import {SelectWithButton} from "@/components/SelectWithButton";
-import StatusLabelForm from "@/components/forms/StatusLabelForm";
 import {useModelStore} from "@/lib/stores/modelStore";
 import {useLocationStore} from "@/lib/stores/locationStore";
 import {useDepartmentStore} from "@/lib/stores/departmentStore";
-
+import ModelForm from "@/components/forms/ModelForm";
+import {accessorySchema} from "@/lib/schemas";
 
 type AccessoryFormValues = z.infer<typeof accessorySchema>
 
@@ -43,10 +41,34 @@ const AccessoryForm = () => {
     const [isPending, startTransition] = useTransition()
     const router = useRouter()
 
-    const { categories, isOpen: isCategoryOpen, onOpen: openCategory, onClose: closeCategory, getAll: fetchCategories } = useCategoryStore()
-    const { manufacturers, isOpen: isManufacturerOpen, onOpen: openManufacturer, onClose: closeManufacturer, getAll: fetchManufacturers } = useManufacturerStore()
-    const { inventories, isOpen: isInventoryOpen, onOpen: openInventory, onClose: closeInventory, getAll: fetchInventories } = useInventoryStore()
-    const { suppliers, isOpen: isSupplierOpen, onOpen: openSupplier, onClose: closeSupplier, getAll: fetchSuppliers } = useSupplierStore()
+    const {
+        categories,
+        isOpen: isCategoryOpen,
+        onOpen: openCategory,
+        onClose: closeCategory,
+            getAll: fetchCategories
+    } = useCategoryStore()
+    const {
+        manufacturers,
+        isOpen: isManufacturerOpen,
+        onOpen: openManufacturer,
+        onClose: closeManufacturer,
+        getAll: fetchManufacturers
+    } = useManufacturerStore()
+    const {
+        inventories,
+        isOpen: isInventoryOpen,
+        onOpen: openInventory,
+        onClose: closeInventory,
+        getAll: fetchInventories
+    } = useInventoryStore()
+    const {
+        suppliers,
+        isOpen: isSupplierOpen,
+        onOpen: openSupplier,
+        onClose: closeSupplier,
+        getAll: fetchSuppliers
+    } = useSupplierStore()
     const {
         statusLabels,
         getAll: fetchStatusLabels,
@@ -77,21 +99,13 @@ const AccessoryForm = () => {
         defaultValues: {
             name: '',
             serialNumber: '',
-            categoryId: '',
-            manufacturerId: '',
             supplierId: '',
+            modelId: '',
+            locationId: '',
             inventoryId: '',
-            price: 0,
             poNumber: '',
-            purchaseDate: new Date(),
-            endOfLife: new Date(),
-            vendor: '',
             alertEmail: '',
-            totalQuantityCount: 0,
             material: '',
-            weight: 0,
-            reorderPoint: 0,
-            type: '',
             statusLabelId: '',
             notes: '',
         }
@@ -99,6 +113,7 @@ const AccessoryForm = () => {
 
     useEffect(() => {
         fetchCategories()
+        fetchModels()
         fetchManufacturers()
         fetchSuppliers()
         fetchInventories()
@@ -107,18 +122,11 @@ const AccessoryForm = () => {
     const onSubmit = async (data: AccessoryFormValues) => {
         startTransition(async () => {
             try {
-                await create({
-                    ...data
+                await create(data).then(_ => {
+                    form.reset()
+                    toast.success('Accessory created successfully')
+                    router.push('/accessories')
                 })
-
-                // await create({
-                //     ...data,
-                //     // purchaseDate: data.purchaseDate.toISOString(),
-                //     // endOfLife: data.endOfLife.toISOString()
-                // })
-                form.reset()
-                toast.success('Accessory created successfully')
-                router.push('/accessories')
             } catch (error) {
                 toast.error('Something went wrong')
                 console.error(error)
@@ -131,10 +139,10 @@ const AccessoryForm = () => {
 
             <DialogContainer
                 description=""
-                open={isStatusOpen}
-                onOpenChange={closeStatus}
-                title="Add Category"
-                form={<StatusLabelForm/>}
+                open={isModelOpen}
+                onOpenChange={closeModel}
+                title="Add Model"
+                form={<ModelForm/>}
             />
             <DialogContainer
                 description=""
@@ -175,7 +183,7 @@ const AccessoryForm = () => {
                                     <CustomInput
                                         required
                                         name="name"
-                                        label="Asset Name"
+                                        label="Name"
                                         control={form.control}
                                         type="text"
                                         placeholder="Enter asset name"

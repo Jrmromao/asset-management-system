@@ -1,7 +1,7 @@
 'use server';
 
-import { PrismaClient, Prisma } from "@prisma/client";
-import { parseStringify, validateEmail } from "@/lib/utils";
+import {PrismaClient, Prisma} from "@prisma/client";
+import {parseStringify, validateEmail} from "@/lib/utils";
 import {
     signUp,
     verifyCognitoAccount,
@@ -12,13 +12,15 @@ import {
     loginSchema,
     accountVerificationSchema,
     forgotPasswordSchema,
-    forgotPasswordConfirmSchema
+    forgotPasswordConfirmSchema, userSchema, registerSchema
 } from "@/lib/schemas";
-import { DEFAULT_LOGIN_REDIRECT } from "@/routes";
-import { auth, signIn } from "@/auth";
-import { revalidatePath } from "next/cache";
-import { z } from "zod";
-import { AuthError } from "next-auth";
+import {DEFAULT_LOGIN_REDIRECT} from "@/routes";
+import {auth, signIn} from "@/auth";
+import {revalidatePath} from "next/cache";
+import {AuthError} from "next-auth";
+import locationForm from "@/components/forms/LocationForm";
+import {getRoleById} from "@/lib/actions/role.actions";
+import {z} from 'zod';
 
 const prisma = new PrismaClient();
 
@@ -34,10 +36,10 @@ export async function login(
 ): Promise<ActionResponse<void>> {
     const validation = loginSchema.safeParse(values);
     if (!validation.success) {
-        return { error: 'Invalid email or password' };
+        return {error: 'Invalid email or password'};
     }
 
-    const { email, password } = validation.data;
+    const {email, password} = values;
 
     try {
         await signIn('credentials', {
@@ -45,75 +47,123 @@ export async function login(
             password,
             redirectTo: DEFAULT_LOGIN_REDIRECT
         });
-        return { success: true };
+        return {success: true};
     } catch (error) {
         if (error instanceof AuthError) {
             switch (error.type) {
                 case "CredentialsSignin":
-                    return { error: 'Invalid email or password' };
+                    return {error: 'Invalid email or password'};
                 default:
-                    return { error: 'Something went wrong. Please try again later!' };
+                    return {error: 'Something went wrong. Please try again later!'};
             }
         }
         throw error;
     }
 }
 
+async function insertUser(data: RegUser, oauthId?: string) {
+    return prisma.user.create({
+        data: {
+            name: `${data.firstName} ${data.lastName}`,
+            email: data.email,
+            firstName: data.firstName!,
+            lastName: data.lastName!,
+            employeeId: data.employeeId,
+            title: data.title,
+            companyId: data.companyId,
+            roleId: data.roleId!,
+            oauthId: oauthId
+        }
+    });
+}
+
+async function findByEmployeeId(employeeId: string) {
+
+    // const session = await auth();
+
+    return prisma.user.findFirst({
+        where: {
+            employeeId,
+            companyId: 'bf40528b-ae07-4531-a801-ede53fb31f04' //session?.user.companyId
+        }
+    });
+}
+
+export async function createUser(values: z.infer<typeof userSchema>): Promise<ActionResponse<any>> {
+    try {
+        // const validation = userSchema.safeParse(values);
+        // if (!validation.success) {
+        //     return {error: validation.error.message};
+        // }
+
+        const role = await getRoleById(values.roleId);
+        const roleName = role?.data?.name;
+        const user = {
+            roleId: values.roleId,
+            email: values.email,
+            password: 'MyP@ssw0rd123!',
+            firstName: values.firstName,
+            lastName: values.lastName,
+            title: values.title,
+            employeeId: values.employeeId,
+            companyId: 'bf40528b-ae07-4531-a801-ede53fb31f04',
+        };
+
+        let returnUser = {}
+        if (roleName === 'Lonee') {
+            returnUser = await insertUser(user);
+        } else {
+            returnUser = await registerUser(user);
+        }
+        console.log(returnUser)
+
+        return {data: parseStringify(returnUser)};
+    } catch (error) {
+        console.error("Error creating user:", error);
+        return {error: 'User creation failed'};
+    }
+}
+
 export async function registerUser(data: RegUser): Promise<ActionResponse<any>> {
     try {
-        // Register in Cognito
+
         const cognitoRegisterResult = await signUp({
             email: data.email,
             password: data.password,
             companyId: data.companyId
         });
 
-        // Find admin role
         const role = await prisma.role.findUnique({
-            where: { name: 'Admin' }
+            where: {name: 'Admin'}
         });
 
         if (!role) {
-            return { error: 'Role not found' };
+            return {error: 'Role not found'};
         }
-
-        // Create user in database
-        await prisma.user.create({
-            data: {
-                name: `${data.firstName} ${data.lastName}`,
-                oauthId: cognitoRegisterResult.UserSub,
-                email: data.email,
-                firstName: data.firstName!,
-                lastName: data.lastName!,
-                companyId: data.companyId,
-                roleId: role.id
-            }
-        });
-
-        return { data: parseStringify(cognitoRegisterResult) };
+        await insertUser(data, cognitoRegisterResult.UserSub);
+        return {data: parseStringify(cognitoRegisterResult)};
     } catch (error) {
         console.error("Error registering user:", error);
-        return { error: 'Registration failed' };
+        return {error: 'Registration failed'};
     }
 }
 
-// Password Recovery Actions
 export async function resendCode(email: string): Promise<ActionResponse<any>> {
     try {
         if (!validateEmail(email)) {
-            return { error: 'Invalid email address' };
+            return {error: 'Invalid email address'};
         }
 
         const user = await findByEmail(email);
         if (!user) {
-            return { error: 'Your account does not exist' };
+            return {error: 'Your account does not exist'};
         }
 
         const result = await forgetPasswordRequestCode(email);
-        return { data: result };
+        return {data: result};
     } catch (error) {
         console.error('Resend code error:', error);
-        return { error: 'Failed to resend code' };
+        return {error: 'Failed to resend code'};
     }
 }
 
@@ -123,13 +173,13 @@ export async function forgotPassword(
     try {
         const validation = forgotPasswordSchema.safeParse(values);
         if (!validation.success) {
-            return { error: 'Invalid email address' };
+            return {error: 'Invalid email address'};
         }
 
         await forgetPasswordRequestCode(validation.data.email);
-        return { success: true };
+        return {success: true};
     } catch (error) {
-        return { error: 'Failed to process forgot password request' };
+        return {error: 'Failed to process forgot password request'};
     }
 }
 
@@ -139,45 +189,46 @@ export async function forgetPasswordConfirmDetails(
     try {
         const validation = forgotPasswordConfirmSchema.safeParse(values);
         if (!validation.success) {
-            return { error: 'Invalid email, password or confirmation code' };
+            return {error: 'Invalid email, password or confirmation code'};
         }
 
-        const { email, newPassword, code } = validation.data;
+        const {email, newPassword, code} = validation.data;
         const result = await forgetPasswordConfirm(
             String(email),
             newPassword,
             code
         );
 
-        return { data: parseStringify(result) };
+        return {data: parseStringify(result)};
     } catch (error) {
-        return { error: 'Failed to confirm password reset' };
+        return {error: 'Failed to confirm password reset'};
     }
 }
 
-// Account Verification
+
 export async function verifyAccount(values: z.infer<typeof accountVerificationSchema>): Promise<ActionResponse<void>> {
     try {
         const validation = accountVerificationSchema.safeParse(values);
         if (!validation.success) {
-            return { error: 'Invalid email or code' };
+            return {error: 'Invalid email or code'};
         }
 
-        const { email, code } = validation.data;
+        const {email, code} = validation.data;
 
         await Promise.all([
             prisma.user.update({
-                where: { email },
-                data: { emailVerified: new Date() }
+                where: {email},
+                data: {emailVerified: new Date()}
             }),
             verifyCognitoAccount(email, code)
         ]);
 
-        return { success: true };
+        return {success: true};
     } catch (error) {
-        return { error: 'Account could not be verified' };
+        return {error: 'Account could not be verified'};
     }
 }
+
 // TODO check if this is needed
 // // CRUD Operations
 // export async function insert(userData: User): Promise<ActionResponse<User>> {
@@ -216,7 +267,7 @@ export async function getAll(): Promise<ActionResponse<User[]>> {
     try {
         const session = await auth();
         if (!session) {
-            return { error: "Not authenticated" };
+            return {error: "Not authenticated"};
         }
 
         const users = await prisma.user.findMany({
@@ -232,9 +283,9 @@ export async function getAll(): Promise<ActionResponse<User[]>> {
             }
         });
 
-        return { data: parseStringify(users) };
+        return {data: parseStringify(users)};
     } catch (error) {
-        return { error: 'Failed to fetch users' };
+        return {error: 'Failed to fetch users'};
     }
 }
 
@@ -242,7 +293,7 @@ export async function findById(id: string): Promise<ActionResponse<User>> {
     try {
         const session = await auth();
         if (!session) {
-            return { error: "Not authenticated" };
+            return {error: "Not authenticated"};
         }
 
         const user = await prisma.user.findFirst({
@@ -253,40 +304,40 @@ export async function findById(id: string): Promise<ActionResponse<User>> {
         });
 
         if (!user) {
-            return { error: 'User not found' };
+            return {error: 'User not found'};
         }
 
-        return { data: parseStringify(user) };
+        return {data: parseStringify(user)};
     } catch (error) {
-        return { error: 'Failed to fetch user' };
+        return {error: 'Failed to fetch user'};
     }
 }
 
 export async function findByEmail(email: string): Promise<ActionResponse<User>> {
     try {
         const user = await prisma.user.findFirst({
-            where: { email }
+            where: {email}
         });
 
-        return { data: parseStringify(user) };
+        return {data: parseStringify(user)};
     } catch (error) {
-        return { error: 'Failed to fetch user' };
+        return {error: 'Failed to fetch user'};
     }
 }
 
-export async function findByAuthId(oauthId: string): Promise<ActionResponse<User>> {
+export async function findByOAuth(oauthId: string): Promise<ActionResponse<User>> {
     try {
         const user = await prisma.user.findFirst({
-            where: { oauthId },
+            where: {oauthId},
             include: {
                 role: true,
                 company: true
             }
         });
 
-        return { data: parseStringify(user) };
+        return {data: parseStringify(user)};
     } catch (error) {
-        return { error: 'Failed to fetch user' };
+        return {error: 'Failed to fetch user'};
     }
 }
 
@@ -297,7 +348,7 @@ export async function update(
     try {
         const session = await auth();
         if (!session) {
-            return { error: "Not authenticated" };
+            return {error: "Not authenticated"};
         }
 
         const user = await prisma.user.update({
@@ -315,14 +366,14 @@ export async function update(
 
         revalidatePath('/users');
         revalidatePath(`/users/${id}`);
-        return { data: parseStringify(user) };
+        return {data: parseStringify(user)};
     } catch (error) {
         if (error instanceof Prisma.PrismaClientKnownRequestError) {
             if (error.code === 'P2002') {
-                return { error: 'Email already exists' };
+                return {error: 'Email already exists'};
             }
         }
-        return { error: 'Failed to update user' };
+        return {error: 'Failed to update user'};
     }
 }
 
@@ -330,7 +381,7 @@ export async function remove(id: string): Promise<ActionResponse<User>> {
     try {
         const session = await auth();
         if (!session) {
-            return { error: "Not authenticated" };
+            return {error: "Not authenticated"};
         }
 
         const user = await prisma.user.delete({
@@ -341,9 +392,9 @@ export async function remove(id: string): Promise<ActionResponse<User>> {
         });
 
         revalidatePath('/users');
-        return { data: parseStringify(user) };
+        return {data: parseStringify(user)};
     } catch (error) {
-        return { error: 'Failed to delete user' };
+        return {error: 'Failed to delete user'};
     }
 }
 

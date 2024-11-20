@@ -100,6 +100,8 @@ export async function getAllSimple(params?: {
         //     return {error: "Not authenticated"};
         // }
 
+        console.log('COMPANY ID: ', 'bf40528b-ae07-4531-a801-ede53fb31f04')
+
         const where: Prisma.ModelWhereInput = {
             companyId: 'bf40528b-ae07-4531-a801-ede53fb31f04',
             ...(params?.categoryId && {categoryId: params.categoryId}),

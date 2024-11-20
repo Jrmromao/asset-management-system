@@ -81,15 +81,15 @@ export async function createRole(data: Pick<Role, 'name'>): Promise<ActionReturn
 
 export async function getRoleById(id: string): Promise<ActionReturn<Role>> {
     try {
-        const session = await auth();
-        if (!session) {
-            return { error: "Not authenticated" };
-        }
+        // const session = await auth();
+        // if (!session) {
+        //     return { error: "Not authenticated" };
+        // }
 
         const role = await prisma.role.findFirst({
             where: {
                 id,
-                companyId: session.user.companyId,
+                companyId: 'bf40528b-ae07-4531-a801-ede53fb31f04'// session.user.companyId,
             },
             include: {
                 users: {

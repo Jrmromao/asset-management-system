@@ -8,12 +8,17 @@ import {Form} from "@/components/ui/form"
 import {Loader2} from "lucide-react"
 import {useDialogStore} from "@/lib/stores/store"
 import Dropzone from "@/components/Dropzone"
-import {processCSV} from "@/lib/actions/assets.actions";
+import {processAssetsCSV} from "@/lib/actions/assets.actions";
 import {useAssetStore} from "@/lib/stores/assetStore";
 import {toast} from "sonner";
+import {processAccessoryCSV} from "@/lib/actions/accessory.actions";
 
 
-const UploadAssetsForm = () => {
+interface FileUploadFormProps {
+    dataType: string
+}
+
+const FileUploadForm = ({dataType}: FileUploadFormProps) => {
     const [isLoading, setIsLoading] = useState(false)
     const [closeDialog] = useDialogStore(state => [state.onClose])
     const [file, setFile] = useState<File | null>(null)
@@ -26,7 +31,6 @@ const UploadAssetsForm = () => {
     const readFileContent = (file: File): Promise<string> => {
         return new Promise((resolve, reject) => {
             const reader = new FileReader()
-
             reader.onload = (event) => {
                 const content = event.target?.result
                 if (typeof content === 'string') {
@@ -45,23 +49,40 @@ const UploadAssetsForm = () => {
     }
 
     const onSubmit = async () => {
+
         if (!file) {
             toast.error('Please select a CSV file.')
             return
         }
-
         setIsLoading(true)
         try {
-            const fileContent = await readFileContent(file)
-            const result = await processCSV(fileContent)
 
-            if (result.success) {
-                toast.success(result.message)
-                form.reset()
-                getAll()
-                closeDialog()
-            } else {
-                toast.error(result.message)
+            const fileContent = await readFileContent(file)
+
+            if (dataType === 'assets') {
+
+                console.log('ASSETS CONDITION')
+
+                const result = await processAssetsCSV(fileContent)
+                if (result.success) {
+                    toast.success(result.message)
+                    form.reset()
+                    getAll()
+                    closeDialog()
+                } else {
+                    toast.error(result.message)
+                }
+            }
+            if (dataType === 'accessories') {
+                const result = await processAccessoryCSV(fileContent)
+                if (result.success) {
+                    toast.success(result.message)
+                    form.reset()
+                    getAll()
+                    closeDialog()
+                } else {
+                    toast.error(result.message)
+                }
             }
         } catch (e) {
             console.error(e)
@@ -117,4 +138,4 @@ const UploadAssetsForm = () => {
     )
 }
 
-export default UploadAssetsForm
+export default FileUploadForm

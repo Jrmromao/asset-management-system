@@ -44,7 +44,6 @@ const ManufacturerForm = () => {
                     toast.error(result.error)
                     return
                 }
-
                 await getAll()
                 toast.success('Manufacturer created successfully')
                 onClose()

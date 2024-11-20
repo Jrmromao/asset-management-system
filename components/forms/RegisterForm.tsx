@@ -36,6 +36,9 @@ const RegisterForm = () => {
 
     const onSubmit = async (data: z.infer<typeof registerSchema>) => {
         setIsLoading(true)
+
+        console.log(data)
+
         try {
             if (data) {
                 await registerCompany(data).then(() => {
@@ -88,6 +91,7 @@ const RegisterForm = () => {
                                     <CustomInput
                                         label="Company Name"
                                         placeholder={'ex: Qlientel'}
+                                        required
                                         control={form.control}
                                         {...form.register("companyName")}
                                         type={'text'}
@@ -104,39 +108,51 @@ const RegisterForm = () => {
                                     <CustomInput
                                         label="First Name"
                                         placeholder={'ex: Joe'}
+                                        required
                                         control={form.control}
                                         {...form.register("firstName")}
                                         type={'text'}
                                     />
                                     <CustomInput control={form.control}
                                                  label={'Last Name'}
+                                                 required
                                                  {...form.register("lastName")}
                                                  placeholder={'ex: Doe'}
                                                  type={'text'}/>
                                 </div>
-                                <CustomInput control={form.control} {...form.register("password")}
-                                             label={'Password'} placeholder={'eg: **********'}
+                                <CustomInput control={form.control}
+                                             {...form.register("password")}
+                                             label={'Password'}
+                                             placeholder={'eg: **********'}
+                                             required
                                              type={'password'}/>
 
-                                <CustomInput control={form.control}  {...form.register("repeatPassword")}
-                                             label={'Repeat Password'} placeholder={'eg: **********'}
-                                             type={'password'}/>
+                                <CustomInput control={form.control}
+                                             required
+                                             {...form.register("repeatPassword")}
+                                             label={'Repeat Password'}
+                                             placeholder={'eg: **********'}
+                                             type={'password'}
+                                />
 
                                 <div className={'gap-4'}>
                                     <CustomInput control={form.control}  {...form.register("email")}
                                                  label={'Email address'}
+                                                 required
                                                  placeholder={'Enter your email'} type={'text'}/>
                                 </div>
                                 <div className={'gap-4'}>
                                     <CustomInput control={form.control}  {...form.register("phoneNumber")}
                                                  label={'Phone Number'}
+                                                 required
                                                  placeholder={'Enter your phone number'} type={'text'}/>
                                 </div>
                             </>
 
                             <div className={'flex flex-col gap-4'}>
                                 <Button type="submit" className={'form-btn'} disabled={isLoading}>
-                                    {isLoading ? (<><Loader2 size={20} className={'animate-spin'}/>&nbsp; Loading... </>) : 'Sign Up'}
+                                    {isLoading ? (<><Loader2 size={20}
+                                                             className={'animate-spin'}/>&nbsp; Loading... </>) : 'Sign Up'}
                                 </Button>
                             </div>
                         </form>
