@@ -29,15 +29,13 @@ const RegisterForm = () => {
             companyName: '',
             repeatPassword: ''
         },
+        mode: 'onChange'
     });
 
     const router = useRouter()
 
     const onSubmit = async (data: z.infer<typeof registerSchema>) => {
         setIsLoading(true)
-
-        console.log(data)
-
         try {
             if (data) {
                 await registerCompany(data).then(() => {

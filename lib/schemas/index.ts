@@ -43,6 +43,7 @@ export const validateUnique = async (
     try {
         const url = entity ? `api/validate/${endpoint}?entity=${entity}` : `api/validate/${endpoint}`;
 
+        console.log(url)
         const res = await fetchApi(url, {
             method: 'POST',
             body: JSON.stringify({ [field]: value })
@@ -73,24 +74,89 @@ const passwordSchema = z.string().refine(
     }
 );
 
+// export const registerSchema = z.object({
+//     email: emailField('user'),
+//     password: passwordSchema,
+//     repeatPassword: z.string().min(1, "Password is required"),
+//     firstName: z.string().min(1, "First name is required"),
+//     lastName: z.string().min(1, "Last name is required"),
+//     phoneNumber: phoneNumField,
+//     companyName: z.string().min(1, "Company name is required")
+//         .refine(
+//             async (company) =>console.log('company', company),
+//             "Company name already exists"
+//         )
+// }).refine((data) => data.password === data.repeatPassword, {
+//     message: "Passwords do not match",
+//     path: ["repeatPassword"],
+// });
+
 export const registerSchema = z.object({
-    email: emailField('user'),
+    email: z.string()
+        .min(1, "Email is required")
+        .email("Invalid email format")
+        .refine(
+            async (email) => {
+                try {
+                    const response = await fetch('http://localhost:3000/api/validate/email', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ email }),
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Validation request failed');
+                    }
+
+                    const data = await response.json();
+                    // Return true if email doesn't exist (available for registration)
+                    return !data.exists;
+                } catch (error) {
+                    console.error('Email validation error:', error);
+                    throw new Error('Email validation failed');
+                }
+            },
+            "Email already exists"
+        ),
     password: passwordSchema,
     repeatPassword: z.string().min(1, "Password is required"),
     firstName: z.string().min(1, "First name is required"),
     lastName: z.string().min(1, "Last name is required"),
     phoneNumber: phoneNumField,
-    companyName: z.string().optional()
+    companyName: z.string()
+        .min(1, "Company name is required")
+        .refine(
+            async (company) => {
+                try {
+                    const response = await fetch('http://localhost:3000/api/validate/company', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ company }),
+                    });
 
-        // .min(1, "Company name is required")
-        // .refine(
-        //     async (company) => validateUnique('companyName', company, 'company', 'user'),
-        //     "Company name already exists"
-        // )
+                    if (!response.ok) {
+                        throw new Error('Validation request failed');
+                    }
+
+                    const data = await response.json();
+                    // Return true if company doesn't exist (available for registration)
+                    return !data.exists;
+                } catch (error) {
+                    console.error('Company validation error:', error);
+                    throw new Error('Company validation failed');
+                }
+            },
+            "Company name already exists"
+        )
 }).refine((data) => data.password === data.repeatPassword, {
     message: "Passwords do not match",
     path: ["repeatPassword"],
 });
+
 // Merged and refined schemas
 export const accessorySchema_ = z.object({
     title: requiredString("Accessory Title is required"),

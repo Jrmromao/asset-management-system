@@ -52,11 +52,11 @@ export async function update(data: Inventory): Promise<ActionResponse<Inventory>
         }
 
         const session = await auth()
+
         const updated = await prisma.inventory.update({
             where: {
                 id: data.id,
-                // companyId: session?.user?.companyId
-                companyId: 'bf40528b-ae07-4531-a801-ede53fb31f04'
+                companyId: session?.user?.companyId
             }
             ,
             data: {
@@ -75,15 +75,14 @@ export async function update(data: Inventory): Promise<ActionResponse<Inventory>
 
 export async function getAll(params?: PaginationParams) {
     try {
-        // const session = await auth();
-        // if (!session?.user?.companyId) {
-        //     return { error: "Not authenticated" };
-        // }
+        const session = await auth();
+        if (!session?.user?.companyId) {
+            return { error: "Not authenticated" };
+        }
 
         const inventories = await prisma.inventory.findMany({
             where: {
-                // companyId: session.user.companyId
-                companyId: 'bf40528b-ae07-4531-a801-ede53fb31f04'
+                companyId: session.user.companyId
             },
             orderBy: {
                 createdAt: 'desc'

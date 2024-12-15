@@ -1,8 +1,7 @@
 import authConfig from "./auth.config"
 import NextAuth from "next-auth"
 import {apiAuthPrefix, authRoutes, DEFAULT_LOGIN_REDIRECT, publicRoutes} from '@/routes'
-import {NextRequest, NextResponse} from 'next/server'
-import {validateCompany} from "@/lib/actions/company.actions"
+
 
 const {auth} = NextAuth(authConfig)
 
@@ -21,7 +20,11 @@ export default auth(async (req) => {
     const isAPIAuthRoute = nextUrl.pathname.startsWith(apiAuthPrefix)
     const isPublicRoute = publicRoutes.includes(nextUrl.pathname)
     const isAuthRoute = authRoutes.includes(nextUrl.pathname)
+    const isValidationRoute = nextUrl.pathname.startsWith('/api/validate')
 
+    if (isValidationRoute) {
+        return
+    }
     if (isAPIAuthRoute) {
         return
     }

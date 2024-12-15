@@ -11,13 +11,14 @@ import {revalidatePath} from "next/cache";
 export const create = async (values: z.infer<typeof accessorySchema>) => {
     try {
 
-        // const validation = accessorySchema.safeParse(values);
-        // if (!validation.success) {
-        //     return {error: 'Invalid assignment data'};
-        // }
-        //
-        // const session = await auth()
-
+        const validation = accessorySchema.safeParse(values);
+        if (!validation.success) {
+            return {error: 'Invalid assignment data'};
+        }
+        const session = await auth()
+        if (!session) {
+            return {error: "Not authenticated"};
+        }
         await prisma.accessory.create({
                 data: {
                     name: values.name,
@@ -29,7 +30,7 @@ export const create = async (values: z.infer<typeof accessorySchema>) => {
                     departmentId: values.departmentId,
                     locationId: values.locationId,
                     price: values.price,
-                    companyId: 'bf40528b-ae07-4531-a801-ede53fb31f04',
+                    companyId: session?.user.companyId,
                     reorderPoint: values.reorderPoint,
                     totalQuantityCount: values.totalQuantityCount,
                     material: values.material || '',
@@ -206,7 +207,6 @@ export const update = async (asset: Accessory, id: string) => {
 // }
 
 
-
 export async function processAccessoryCSV(csvContent: string) {
     try {
         const data = processRecordContents(csvContent);
@@ -223,12 +223,12 @@ export async function processAccessoryCSV(csvContent: string) {
             const recordPromises = data.map(async (item) => {
                 // Fetch associations
                 const [model, statusLabel, supplier, location, department, inventory] = await Promise.all([
-                    tx.model.findFirst({ where: { name: item['model'] } }),
-                    tx.statusLabel.findFirst({ where: { name: item['statusLabel'] } }),
-                    tx.supplier.findFirst({ where: { name: item['supplier'] } }),
-                    tx.departmentLocation.findFirst({ where: { name: item['location'] } }),
-                    tx.department.findFirst({ where: { name: item['department'] } }),
-                    tx.inventory.findFirst({ where: { name: item['inventory'] } }),
+                    tx.model.findFirst({where: {name: item['model']}}),
+                    tx.statusLabel.findFirst({where: {name: item['statusLabel']}}),
+                    tx.supplier.findFirst({where: {name: item['supplier']}}),
+                    tx.departmentLocation.findFirst({where: {name: item['location']}}),
+                    tx.department.findFirst({where: {name: item['department']}}),
+                    tx.inventory.findFirst({where: {name: item['inventory']}}),
                 ]);
 
                 // // Validate required associations

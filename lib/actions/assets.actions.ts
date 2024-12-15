@@ -25,10 +25,10 @@ type ApiResponse<T> = {
 
 export async function create(data: Asset): Promise<ApiResponse<Asset>> {
     try {
-        // const session = await auth();
-        // if (!session?.user?.companyId) {
-        //     return {error: 'Unauthorized access'};
-        // }
+        const session = await auth();
+        if (!session?.user?.companyId) {
+            return {error: 'Unauthorized access'};
+        }
 
         const newAsset = await prisma.asset.create({
             data: {
@@ -40,7 +40,7 @@ export async function create(data: Asset): Promise<ApiResponse<Asset>> {
                 // licenseId: data.licenseId,
                 statusLabelId: data.statusLabelId,
                 supplierId: data.supplierId,
-                companyId: 'bf40528b-ae07-4531-a801-ede53fb31f04',
+                companyId: session.user.companyId,
                 locationId: data.locationId,
                 departmentId: data.departmentId,
                 weight: data.weigh,
@@ -229,6 +229,9 @@ export async function processAssetsCSV(csvContent: string) {
                 if (!model || !statusLabel || !supplier) {
                     continue;
                 }
+                if (!session){
+                    throw new Error('User not authenticated.');
+                }
 
                 const record = await tx.asset.create({
                     data: {
@@ -242,7 +245,7 @@ export async function processAssetsCSV(csvContent: string) {
                         supplierId: supplier?.id,
                         poNumber: item['poNumber'],
                         price: roundFloat(Number(item['price']), 2),
-                        companyId: 'bf40528b-ae07-4531-a801-ede53fb31f04'
+                        companyId: session?.user?.companyId,
                     }
                 });
                 records.push(record);

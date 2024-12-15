@@ -30,12 +30,18 @@ const AuthForm = () => {
             password: '',
         },
     });
+
+    const router = useRouter();
     const onSubmit = async (data: z.infer<typeof loginSchema>) => {
         startTransition(async () => {
             try {
-                const response = await login(data);
+                const response = await login(data)
+
                 if (response?.error) {
                     setError(response.error)
+                }
+                else{
+                    router.push(DEFAULT_LOGIN_REDIRECT)
                 }
             } catch (e) {
                 console.error(e)

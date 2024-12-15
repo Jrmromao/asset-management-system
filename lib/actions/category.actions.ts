@@ -86,16 +86,16 @@ export async function findAll(options?: {
     try {
         // Validate session
         const session = await auth();
-        // if (!session?.user?.companyId) {
-        //     return {
-        //         success: false,
-        //         error: 'Unauthorized: No valid session found'
-        //     };
-        // }
+        if (!session?.user?.companyId) {
+            return {
+                success: false,
+                error: 'Unauthorized: No valid session found'
+            };
+        }
 
         // Build the where clause with proper Prisma types
         const where: Prisma.CategoryWhereInput = {
-            companyId: 'bf40528b-ae07-4531-a801-ede53fb31f04', //session.user.companyId,
+            companyId: session.user.companyId,
             ...(options?.search ? {
                 OR: [
                     {

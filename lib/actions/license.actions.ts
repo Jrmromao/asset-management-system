@@ -16,12 +16,15 @@ type ApiResponse<T> = {
 export const create = async (values: z.infer<typeof licenseSchema>): Promise<ApiResponse<License>> => {
 
     try {
-        // const validation = accessorySchema.safeParse(values);
-        // if (!validation.success) {
-        //     return {error: 'Invalid assignment data'};
-        // }
-        //
+        const validation = accessorySchema.safeParse(values);
+        if (!validation.success) {
+            return {error: 'Invalid assignment data'};
+        }
+
         const session = await auth()
+        if (!session) {
+            return {error: "Not authenticated"};
+        }
 
         await prisma.license.create({
             data: {
@@ -35,7 +38,7 @@ export const create = async (values: z.infer<typeof licenseSchema>): Promise<Api
                 poNumber: values.poNumber,
                 licenseKey: values.licenseKey,
                 purchasePrice: Number(values.purchasePrice),
-                companyId: 'bf40528b-ae07-4531-a801-ede53fb31f04' //session.user.companyId
+                companyId: session.user.companyId
             },
         })
 

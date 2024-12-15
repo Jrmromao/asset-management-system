@@ -5,7 +5,7 @@ import {auth} from "@/auth";
 
 export const insert = async (data: StatusLabel) => {
     try {
-        // const session = await auth()
+        const session = await auth()
         await prisma.statusLabel.create({
             data: {
                 name: data.name,
@@ -13,8 +13,7 @@ export const insert = async (data: StatusLabel) => {
                 isArchived: data.isArchived,
                 allowLoan: data.allowLoan,
                 description: data.description,
-                // companyId: session?.user?.companyId!
-                companyId: 'bf40528b-ae07-4531-a801-ede53fb31f04'
+                companyId: session?.user?.companyId!,
             },
         })
     } catch (error) {
@@ -25,14 +24,13 @@ export const insert = async (data: StatusLabel) => {
 }
 export const getAll = async () => {
     try {
-        // const session = await auth()
+        const session = await auth()
         const labels = await prisma.statusLabel.findMany({
             orderBy: {
                 createdAt: 'desc'
             },
             where: {
-                // companyId: session?.user?.companyId
-                companyId: 'bf40528b-ae07-4531-a801-ede53fb31f04'
+                companyId: session?.user?.companyId
             }
         });
         return parseStringify(labels);

@@ -144,15 +144,14 @@ export async function insert(values: z.infer<typeof supplierSchema>): Promise<Ac
 // Simple version without pagination
 export async function getAllSimple(): Promise<ActionResponse<Supplier[]>> {
     try {
-        // const session = await auth();
-        // if (!session?.user?.companyId) {
-        //     return { error: "Not authenticated" };
-        // }
+        const session = await auth();
+        if (!session?.user?.companyId) {
+            return { error: "Not authenticated" };
+        }
 
         const suppliers = await prisma.supplier.findMany({
             where: {
-                // companyId: session.user.companyId
-                companyId: 'bf40528b-ae07-4531-a801-ede53fb31f04'
+                companyId: session.user.companyId
             },
             orderBy: {
                 createdAt: 'desc'

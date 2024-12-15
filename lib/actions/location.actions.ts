@@ -18,10 +18,10 @@ export async function insert(values: z.infer<typeof locationSchema>):
     Promise<ActionResponse<Location>> {
     try {
 
-        // const session = await auth();
-        // if (!session) {
-        //     return { error: "Not authenticated" };
-        // }
+        const session = await auth();
+        if (!session) {
+            return { error: "Not authenticated" };
+        }
 
         const validation = locationSchema.safeParse(values);
         if (!validation.success) {
@@ -31,7 +31,7 @@ export async function insert(values: z.infer<typeof locationSchema>):
         const location = await prisma.departmentLocation.create({
             data: {
                 ...validation.data,
-                companyId: 'bf40528b-ae07-4531-a801-ede53fb31f04'//session.user.companyId!
+                companyId: session.user.companyId!
             },
         });
 
@@ -50,13 +50,13 @@ export async function getAll(params?: {
     search?: string;
 }): Promise<ActionReturn<Location[]>> {
     try {
-        // const session = await auth();
-        // if (!session) {
-        //     return { error: "Not authenticated" };
-        // }
+        const session = await auth();
+        if (!session) {
+            return { error: "Not authenticated" };
+        }
 
         const where: Prisma.DepartmentLocationWhereInput = {
-            companyId: 'bf40528b-ae07-4531-a801-ede53fb31f04',//session.user.companyId!
+            companyId: session.user.companyId!,
             ...(params?.search && {
                 OR: [
                     {

@@ -1,11 +1,16 @@
 /* eslint-disable no-unused-vars */
 
+
+
+
 declare global {
     // ==================== Basic Types ====================
     type SearchParamProps = {
         params: { [key: string]: string };
         searchParams: { [key: string]: string | string[] | undefined };
     };
+
+
 
     type APICallResponse = {
         success: boolean;

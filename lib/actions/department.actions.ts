@@ -9,16 +9,15 @@ import {prisma} from "@/app/db";
 
 export async function insert(data: Pick<Department, 'name'>): Promise<ActionResponse<Department>> {
     try {
-        // const session = await auth();
-        // if (!session) {
-        //     return { error: "Not authenticated" };
-        // }
+        const session = await auth();
+        if (!session) {
+            return { error: "Not authenticated" };
+        }
 
         const department = await prisma.department.create({
             data: {
                ...data,
-                companyId: 'bf40528b-ae07-4531-a801-ede53fb31f04',
-                //companyId: session.user.companyId,
+                companyId: session.user.companyId,
             },
         });
 
