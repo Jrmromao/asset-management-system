@@ -40,6 +40,8 @@ import CustomPriceInput from '../CustomPriceInput'
 import {SelectWithButton} from "@/components/SelectWithButton";
 import ManufacturerForm from "@/components/forms/ManufacturerForm";
 import {useManufacturerStore} from "@/lib/stores/manufacturerStore";
+import {auth} from "@/auth";
+import {getAll} from "@/lib/actions/model.actions";
 
 const assetSchema = z.object({
     name: z.string().min(1, "Asset name is required"),
@@ -152,11 +154,13 @@ const AssetForm = ({id, isUpdate = false}: AssetFormProps) => {
 
     useEffect(() => {
         fetchStatusLabels()
-        fetchModels()
         fetchLocations()
         fetchDepartments()
         fetchInventories()
         fetchSuppliers()
+        fetchModels()
+
+
 
         if (isUpdate && id) {
             startTransition(async () => {
@@ -187,6 +191,13 @@ const AssetForm = ({id, isUpdate = false}: AssetFormProps) => {
                 //         endOfLife: data.endOfLife.toISOString()
                 //     })
 
+                const session = await auth()
+
+                if (!session?.user?.companyId) {
+                    toast.error('Unauthorized access')
+                    return
+                }
+
                 await create({
                     datePurchased: data.purchaseDate,
                     price: data.price,
@@ -198,7 +209,7 @@ const AssetForm = ({id, isUpdate = false}: AssetFormProps) => {
                     licenseId: '33333333-ae07-4531-a801-ede53fb31f04',
                     statusLabelId: data.statusLabelId,
                     supplierId: data.supplierId,
-                    companyId: 'bf40528b-ae07-4531-a801-ede53fb31f04',
+                    companyId: session?.user.companyId,
                     inventoryId: data.inventoryId,
                     departmentId: data.departmentId,
                     locationId: data.locationId,
@@ -438,7 +449,7 @@ const AssetForm = ({id, isUpdate = false}: AssetFormProps) => {
                                 </div>
                             </div>
                             <div className="border-t pt-6">
-                                <h3 className="text-lg font-semibold mb-4">Physical Properties</h3>
+                                <h3 className="text-lg font-semibold mb-4">Basic Information</h3>
                                 <div className="grid grid-cols-2 gap-6">
                                     <CustomInput
                                         name="material"
@@ -453,6 +464,32 @@ const AssetForm = ({id, isUpdate = false}: AssetFormProps) => {
                                         type="number"
                                         placeholder="Enter weight"
                                     />
+                                </div>
+                            </div>
+
+                            <div className="border-t pt-6">
+                                <h3 className="text-lg font-semibold mb-4">Energy Consumption</h3>
+                                <div className="grid grid-cols-2 gap-6">
+                                    <CustomInput
+                                        name="material"
+                                        label="Power Rating (kW)"
+                                        control={form.control}
+                                        placeholder="Enter power rating"
+                                    />
+                                    <CustomInput
+                                        name="weight"
+                                        label="Operating Hours (per day)"
+                                        control={form.control}
+                                        type="number"
+                                        placeholder="Enter operating hours"
+                                    />
+                                    {/*<CustomSelect*/}
+                                    {/*    data={[]}*/}
+                                    {/*    name="weight"*/}
+                                    {/*    label="Energy Source"*/}
+                                    {/*    control={form.control}*/}
+                                    {/*    placeholder="Enter energy source"*/}
+                                    {/*/>*/}
                                 </div>
                             </div>
                         </div>

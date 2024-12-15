@@ -4,7 +4,6 @@ import {ArrowUpDown} from "lucide-react";
 import LinkTableCell from "@/components/tables/LinkTableCell";
 import React from "react";
 import DataTableRowActions from "@/components/tables/DataTable/DataTableRowActions";
-import {formatAmount} from "@/lib/utils";
 
 
 // const navigate = useRouter() cannot use hook in a non hook component

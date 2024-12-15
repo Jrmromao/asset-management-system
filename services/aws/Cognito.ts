@@ -45,30 +45,39 @@ export const signIn = async (email: string, password: string) => {
 }
 
 export const forgetPasswordRequestCode = async (email: string): Promise<APICallResponse> => {
-    await getClient().send(new ForgotPasswordCommand({
+
+    const result = await getClient().send(new ForgotPasswordCommand({
         ClientId: process.env.NEXT_PUBLIC_USER_POOL_CLIENT_ID,
-        Username: 'rjrmromao@gmail.com'
+        Username: email
     }))
+
+    if (result.$metadata.httpStatusCode !== 200) {
+        return {success: false, message: 'Failed to send code'}
+    }
+
     return {success: true, message: 'Code successfully sent'}
 }
 
 export const forgetPasswordConfirm = async (email: string, newPassword: string, confirmationCode: string): Promise<APICallResponse> => {
-    await getClient().send(new ConfirmForgotPasswordCommand({
+  const result =  await getClient().send(new ConfirmForgotPasswordCommand({
         ClientId: String(process.env.NEXT_PUBLIC_USER_POOL_CLIENT_ID),
         Username: email,
         Password: newPassword,
         ConfirmationCode: confirmationCode
     }))
+
+    console.log(result)
     return {success: true, message: 'Password successfully changed'}
 }
 
 export const verifyCognitoAccount = async (email: string, confirmationCode: string): Promise<APICallResponse> => {
 
-        await getClient().send(new ConfirmSignUpCommand({
+       const result = await getClient().send(new ConfirmSignUpCommand({
             ClientId: String(process.env.NEXT_PUBLIC_USER_POOL_CLIENT_ID),
             Username: email,
             ConfirmationCode: confirmationCode
         }))
+    console.log(result)
 
     return {success: true, message: 'Account successfully verified'}
 }

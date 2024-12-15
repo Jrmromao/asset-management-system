@@ -11,13 +11,12 @@ import {z} from "zod";
 import {Loader2} from "lucide-react";
 import {registerCompany} from "@/lib/actions/company.actions";
 import CustomInput from "@/components/CustomInput";
-import {registerSchema} from "@/lib/schemas";
 import {APP_NAME} from "@/constants";
+import {registerSchema} from "@/lib/schemas";
 
 const RegisterForm = () => {
     const [isLoading, setIsLoading] = useState(false)
     const [user, setUser] = useState(null)
-
 
     const form = useForm<z.infer<typeof registerSchema>>({
         resolver: zodResolver(registerSchema),

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import {findByEmail} from "@/helpers/data";
+import { fetchApi } from "@/utils/api";
 
 const requiredString = (message: string) => z.string({ required_error: message });
 const nameField = (name: string) => ({
@@ -18,30 +18,49 @@ const addressFields = {
     country: requiredString('Country is required')
 };
 
-const emailField = (entity: string) => z.string()
+const   emailField = (entity: string) => z.string()
     .min(1, "Email is required")
-    .email("Valid email is required")
-    .refine(async (email: string) => {
-        const res = await fetch(`/api/validate/check-email?entity=${entity}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email })
-        });
-        const exists = await res.json();
-        return !exists;
-    }, "Email already exists");
-
+    .email("Valid email is required").optional()
+        // .refine(
+        //     async (email) => validateUnique('email', email, 'email', entity),
+        //     "Email already exists"
+        // )
 
 const phoneNumField =  z.string()
-    .min(1, "Phone number is required")
-    .refine(async (phoneNum) => {
-        const res = await fetch('/api/validate/check-phoneNum', {
+        .min(1, "Phone number is required").optional()
+    // .refine(
+    //     async (phoneNum) => validateUnique('phoneNum', phoneNum, 'phoneNum'),
+    //     "Phone number already exists"
+    // )
+
+
+export const validateUnique = async (
+    field: string,
+    value: string,
+    endpoint: string,
+    entity?: string
+): Promise<boolean> => {
+    try {
+        const url = entity ? `api/validate/${endpoint}?entity=${entity}` : `api/validate/${endpoint}`;
+
+        const res = await fetchApi(url, {
             method: 'POST',
-            body: JSON.stringify({ phoneNum })
+            body: JSON.stringify({ [field]: value })
         });
+
+        if (!res.ok) {
+            throw new Error(`Failed to validate ${field}`);
+        }
+
         const exists = await res.json();
         return !exists;
-    }, "Phone number already exists")
+    } catch (error) {
+        console.error(`${field} validation error:`, error);
+        throw error;
+    }
+};
+
+
 
 const dateField = (fieldName: string) => z.date({
     required_error: `${fieldName} is required`
@@ -54,6 +73,24 @@ const passwordSchema = z.string().refine(
     }
 );
 
+export const registerSchema = z.object({
+    email: emailField('user'),
+    password: passwordSchema,
+    repeatPassword: z.string().min(1, "Password is required"),
+    firstName: z.string().min(1, "First name is required"),
+    lastName: z.string().min(1, "Last name is required"),
+    phoneNumber: phoneNumField,
+    companyName: z.string().optional()
+
+        // .min(1, "Company name is required")
+        // .refine(
+        //     async (company) => validateUnique('companyName', company, 'company', 'user'),
+        //     "Company name already exists"
+        // )
+}).refine((data) => data.password === data.repeatPassword, {
+    message: "Passwords do not match",
+    path: ["repeatPassword"],
+});
 // Merged and refined schemas
 export const accessorySchema_ = z.object({
     title: requiredString("Accessory Title is required"),
@@ -206,9 +243,7 @@ export const categorySchema = z.object({
 export const loginSchema = z.object({
     email: z.string().min(1, "Email is required").email("Valid email is required"),
     password: z.string({ required_error: "Password is required" })
-        .min(1, { message: "Password is required" })
-        .min(8, { message: "Password must be at least 8 characters long" })
-        .max(20, { message: "Password must not exceed 20 characters" }),
+            .min(1, { message: "Password is required" })
 });
 
 export const accountVerificationSchema = z.object({
@@ -230,25 +265,84 @@ export const forgotPasswordSchema = z.object({
     email: z.string().min(1, "Email is required").email("Valid email is required"),
 });
 
-export const registerSchema = z.object({
-    email: emailField("user"),
-    password: passwordSchema,
-    repeatPassword: z.string().min(1, "Password is required"),
-    firstName: z.string().min(1, "First name is required"),
-    lastName: z.string().min(1, "Last name is required"),
-    phoneNumber: phoneNumField,
-    companyName: z.string().min(1, "Company name is required").refine(async (companyName) => {
-        const res = await fetch('/api/validate/check-company-name', {
+
+// const checkCompanyName = async (companyName: string): Promise<boolean> => {
+//     try {
+//         const res = await fetch('/api/validate/company', { // Updated URL
+//             method: 'POST',
+//             headers: {
+//                 'Content-Type': 'application/json'
+//             },
+//             body: JSON.stringify({ companyName })
+//         });
+//
+//         if (!res.ok) {
+//             const error = await res.json();
+//             throw new Error(error.message || 'Failed to validate company name');
+//         }
+//
+//         const data = await res.json();
+//         return data.exists; // Assuming your API returns { exists: boolean }
+//     } catch (error) {
+//         console.error('Company validation error:', error);
+//         // Re-throw with user-friendly message
+//         throw new Error('Unable to check company name availability. Please try again.');
+//     }
+// };
+//
+// export const registerSchema = z.object({
+//     email: emailField('user'),
+//     password: passwordSchema,
+//     repeatPassword: z.string().min(1, "Password is required"),
+//     firstName: z.string().min(1, "First name is required"),
+//     lastName: z.string().min(1, "Last name is required"),
+//     phoneNumber: z.string().min(1, "Phone number is required"),
+//     companyName:  z.string().min(2, "Company name must be at least 2 characters")
+//         .max(100, "Company name must be less than 100 characters")
+//         .transform(name => name.trim())
+//         .refine(
+//             async (companyName) => {
+//                 try {
+//                     const exists = await checkCompanyName(companyName);
+//                     return !exists;
+//                 } catch (error) {
+//                     throw new Error('Company name validation failed');
+//                 }
+//             },
+//             "Company name already exists"
+//         ),
+// }).refine((data) => data.password === data.repeatPassword, {
+//     message: "Passwords do not match",
+//     path: ["repeatPassword"],
+// });
+
+
+
+// Helper function for company name validation
+const checkCompanyName = async (companyName: string): Promise<boolean> => {
+    try {
+        // Use the correct URL - absolute path from the root
+        const res = await fetch('/api/validate/company', {  // Changed URL
             method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
             body: JSON.stringify({ companyName })
         });
-        const exists = await res.json();
-        return !exists;
-    }, "Company name already exists"),
-}).refine((data) => data.password === data.repeatPassword, {
-    message: "Passwords do not match",
-    path: ["repeatPassword"],
-});
+
+        if (!res.ok) {
+            throw new Error('Failed to validate company name');
+        }
+
+        const data = await res.json();
+        return data.exists;
+    } catch (error) {
+        console.error('Company validation error:', error);
+        throw new Error('Unable to validate company name');
+    }
+};
+
+
 
 export const statusLabelSchema = z.object({
     ...nameField('Status Label'),
@@ -309,6 +403,7 @@ export const departmentSchema = z.object({
 
 export const supplierSchema = z.object({
     ...nameField('Supplier'),
+
     contactName: requiredString('Contact name is required'),
     email: emailField('supplier'),
     phoneNum: z.string().optional(),
@@ -334,7 +429,7 @@ export const userSchema = z.object({
     employeeId: z.string()
         .min(1, "Employee ID is required")
         .refine(async (employeeId) => {
-            const res = await fetch('/api/validate/check-employeeId', {
+            const res = await fetch('/api/validate/employeeId', {
                 method: 'POST',
                 body: JSON.stringify({ employeeId })
             });

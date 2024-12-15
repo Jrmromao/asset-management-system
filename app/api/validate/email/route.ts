@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 const entityCheckers = {
     user: (email: string) => prisma.user.findUnique({ where: { email } }),
     supplier: (email: string) => prisma.supplier.findUnique({ where: { email } }),
-    accessory: () => null
+    accessory: () => false
 };
 
 export async function POST(req: Request) {

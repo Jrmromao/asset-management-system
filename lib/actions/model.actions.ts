@@ -15,21 +15,20 @@ export async function insert
 (values: z.infer<typeof modelSchema>):
     Promise<ActionResponse<Manufacturer>> {
     try {
-        // const session = await auth();
-        // if (!session) {
-        //     return { error: "Not authenticated" };
-        // }
+        const session = await auth();
+        if (!session) {
+            return { error: "Not authenticated" };
+        }
 
         const validation = modelSchema.safeParse(values);
         if (!validation.success) {
             return {error: validation.error.errors[0].message};
         }
 
-        console.log(validation.error)
         const model = await prisma.model.create({
             data: {
                 ...validation.data,
-                companyId: 'bf40528b-ae07-4531-a801-ede53fb31f04'//session.user.companyId!
+                companyId: session.user.companyId!
             }
         }).then( model => {
             console.log('SUCCESS: ', model)
@@ -52,12 +51,12 @@ export async function getAll(params?: {
     categoryId?: string;
 }): Promise<ActionResponse<Model[]>> {
     try {
-        // const session = await auth();
-        // if (!session) {
-        //     return {error: "Not authenticated"};
-        // }
+        const session = await auth();
+        if (!session) {
+            return {error: "Not authenticated"};
+        }
         const where: Prisma.ModelWhereInput = {
-            companyId: 'bf40528b-ae07-4531-a801-ede53fb31f04',
+            companyId: session.user.companyId,
             ...(params?.categoryId && {categoryId: params.categoryId}),
             ...(params?.search && {
                 OR: [
@@ -80,6 +79,8 @@ export async function getAll(params?: {
             orderBy: {createdAt: 'desc'}
         });
 
+        console.log('MODELS:', JSON.stringify(models, null, 2));
+
         return {data: parseStringify(models)};
     } catch (error) {
         console.error('Get all models error:', error);
@@ -95,15 +96,12 @@ export async function getAllSimple(params?: {
     categoryId?: string;
 }): Promise<ActionResponse<Model[]>> {
     try {
-        // const session = await auth();
-        // if (!session) {
-        //     return {error: "Not authenticated"};
-        // }
-
-        console.log('COMPANY ID: ', 'bf40528b-ae07-4531-a801-ede53fb31f04')
-
+        const session = await auth();
+        if (!session) {
+            return {error: "Not authenticated"};
+        }
         const where: Prisma.ModelWhereInput = {
-            companyId: 'bf40528b-ae07-4531-a801-ede53fb31f04',
+            companyId: session.user.companyId,
             ...(params?.categoryId && {categoryId: params.categoryId}),
             ...(params?.search && {
                 OR: [

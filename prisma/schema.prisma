@@ -64,14 +64,10 @@ model Account {
 model Role {
   id        String   @id @default(cuid())
   name      String   @unique
-  companyId String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  company Company? @relation(fields: [companyId], references: [id], onDelete: SetNull)
-  users   User[]
-
-  @@index([companyId])
+  users User[]
 }
 
 model Company {
@@ -82,7 +78,6 @@ model Company {
 
   // Relations
   users         User[]
-  roles         Role[]
   assets        Asset[]
   accessories   Accessory[]
   categories    Category[]

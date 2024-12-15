@@ -9,7 +9,8 @@ declare global {
 
     type APICallResponse = {
         success: boolean;
-        message: string;
+        message?: string;
+        error?: string;
     };
 
     type KitItem = {
@@ -93,6 +94,8 @@ declare global {
         phoneNumber?: string;
     };
 
+
+    
     // type Accessory = {
     //     id?: string;
     //     title: string;

@@ -19,21 +19,21 @@ export async function insert(
     values: z.infer<typeof manufacturerSchema>
 ): Promise<ActionResponse<Manufacturer>> {
     try {
-        //TODO: remove the comments
-        // const session = await auth();
-        // if (!session) {
-        //     return { error: "Not authenticated" };
-        // }
 
         const validation = manufacturerSchema.safeParse(values);
         if (!validation.success) {
             return { error: validation.error.errors[0].message };
         }
 
+        const session = await auth();
+        if (!session) {
+            return { error: "Not authenticated" };
+        }
+
         const manufacturer = await prisma.manufacturer.create({
             data: {
                 ...validation.data,
-                companyId: 'bf40528b-ae07-4531-a801-ede53fb31f04',
+                companyId: session.user.companyId,
                 supportPhone: values.supportPhone || null,
                 supportEmail: values.supportEmail || null,
             },
@@ -58,13 +58,13 @@ export async function getAll(params?: {
     search?: string;
 }): Promise<ActionResponse<Manufacturer[]>> {
     try {
-        // const session = await auth();
-        // if (!session) {
-        //     return { error: "Not authenticated" };
-        // }
+        const session = await auth();
+        if (!session) {
+            return { error: "Not authenticated" };
+        }
 
         const where: Prisma.ManufacturerWhereInput = {
-            companyId:  'bf40528b-ae07-4531-a801-ede53fb31f04',
+            companyId: session.user.companyId,
             ...(params?.search && {
                 OR: [
                     { name: { contains: params.search, mode: 'insensitive' } },
