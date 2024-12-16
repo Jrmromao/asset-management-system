@@ -17,7 +17,7 @@ import {useCategoryStore} from "@/lib/stores/categoryStore"
 import {useManufacturerStore} from "@/lib/stores/manufacturerStore"
 import {modelSchema} from "@/lib/schemas"
 import {useModelStore} from "@/lib/stores/modelStore";
-import {insert} from "@/lib/actions/model.actions";
+import {insert, getAll} from "@/lib/actions/model.actions";
 
 const ModelForm = () => {
     const [isPending, startTransition] = useTransition()
@@ -69,6 +69,7 @@ const ModelForm = () => {
                     form.reset()
                     fetchCategories()
                     closeModelModal()
+                    getAll()
                 })
             } catch (error) {
                 console.error(error)

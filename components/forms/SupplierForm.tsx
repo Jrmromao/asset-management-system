@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, {useState} from 'react'
 import {z} from "zod"
 import {zodResolver} from "@hookform/resolvers/zod"
 import {useForm} from "react-hook-form"
@@ -15,9 +15,10 @@ import {getAllSimple, insert} from "@/lib/actions/supplier.actions"
 import {useSupplierStore} from "@/lib/stores/SupplierStore";
 
 
+
 const SupplierForm = () => {
     const [isPending, startTransition] = useTransition()
-    const {onClose, getAll} = useSupplierStore()
+    const {onClose} = useSupplierStore()
 
     const form = useForm<z.infer<typeof supplierSchema>>({
         resolver: zodResolver(supplierSchema),
@@ -45,9 +46,12 @@ const SupplierForm = () => {
                     toast.error(result.error)
                     return
                 }
-                await getAll().then(re => {
-                    console.log(re)
-                })
+
+                // const suppliersResult = await getAllSimple()
+                // if (suppliersResult.data) {
+                //     setSuppliers(suppliersResult.data)
+                // }
+
                 toast.success('Supplier created successfully')
                 onClose()
                 form.reset()

@@ -19,11 +19,12 @@ export async function insert(
     values: z.infer<typeof manufacturerSchema>
 ): Promise<ActionResponse<Manufacturer>> {
     try {
-
         const validation = manufacturerSchema.safeParse(values);
         if (!validation.success) {
             return { error: validation.error.errors[0].message };
         }
+
+        console.log(values)
 
         const session = await auth();
         if (!session) {

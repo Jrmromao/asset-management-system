@@ -4,10 +4,11 @@ import {prisma} from "@/app/db";
 import {parseStringify, processRecordContents, roundFloat} from "@/lib/utils";
 import {auth} from "@/auth";
 import {z} from "zod";
-import {assetAssignSchema} from "@/lib/schemas";
+import {assetAssignSchema, assetSchema} from "@/lib/schemas";
 import {Prisma} from "@prisma/client";
 import {parse} from 'csv-parse/sync'
 import {revalidatePath} from "next/cache";
+import {loggers} from "winston";
 
 // Common include object for consistent asset queries
 const assetIncludes = {
@@ -23,34 +24,49 @@ type ApiResponse<T> = {
     error?: string;
 };
 
-export async function create(data: Asset): Promise<ApiResponse<Asset>> {
+export async function create(values: z.infer<typeof assetSchema>): Promise<ApiResponse<Asset>> {
     try {
         const session = await auth();
         if (!session?.user?.companyId) {
             return {error: 'Unauthorized access'};
         }
 
+        const validation = assetSchema.safeParse(values);
+        if (!validation.success) {
+            console.log('Validation errors:', validation.error.errors);
+            return {error: validation.error.errors[0].message};
+        }
+
         const newAsset = await prisma.asset.create({
             data: {
-                name: data.name,
-                serialNumber: data.serialNumber,
-                material: data.material || '',
-                modelId: data.modelId,
-                endOfLife: data.endOfLife,
-                // licenseId: data.licenseId,
-                statusLabelId: data.statusLabelId,
-                supplierId: data.supplierId,
+                name: values.name,
+                serialNumber: values.serialNumber,
+                material: values.material || '',
+                modelId: values.modelId,
+                endOfLife: values.endOfLife!,
+                licenseId: values.licenseId || 'bbbrjq3i7000pur8zx45joao',
+                statusLabelId: values.statusLabelId,
+                supplierId: values.supplierId,
                 companyId: session.user.companyId,
-                locationId: data.locationId,
-                departmentId: data.departmentId,
-                weight: data.weigh,
-                price: data.price,
-                poNumber: data.poNumber,
-                datePurchased: data.datePurchased,
-                inventoryId: data.inventoryId
+                locationId: values.locationId,
+                departmentId: values.departmentId,
+                weight: values.weight || 90,
+                price: values.price,
+                poNumber: values.poNumber,
+                datePurchased: values.purchaseDate || new Date(),
+                inventoryId: values.inventoryId,
+                energyRating: values.energyRating || '',
+                dailyOperatingHours: Number(values.dailyOperatingHours),
             },
             include: assetIncludes,
         });
+
+        console.log('\n\n\n\n ==========>>>>>> ',newAsset)
+
+        if (!newAsset) {
+            return {error: 'Failed to create asset'};
+        }
+
         return {data: parseStringify(newAsset)};
     } catch (error) {
         console.error('Error creating asset:', error);
@@ -62,18 +78,17 @@ export async function create(data: Asset): Promise<ApiResponse<Asset>> {
         return {error: 'Failed to create asset'};
     }
 }
-
 export async function get(): Promise<ApiResponse<Asset[]>> {
     try {
-        // const session = await auth();
-        // if (!session?.user?.companyId) {
-        //     return {error: 'Unauthorized access'};
-        // }
+        const session = await auth();
+        if (!session?.user?.companyId) {
+            return {error: 'Unauthorized access'};
+        }
 
         const assets = await prisma.asset.findMany({
             include: assetIncludes,
             orderBy: {createdAt: 'desc'},
-            where: {companyId: 'bf40528b-ae07-4531-a801-ede53fb31f04'}
+            where: {companyId: session.user.companyId}
         });
 
 
@@ -200,7 +215,6 @@ export async function unassign(assetId: string): Promise<ApiResponse<Asset>> {
     }
 }
 
-
 export async function processAssetsCSV(csvContent: string) {
     try {
         const data = processRecordContents(csvContent)
@@ -229,7 +243,7 @@ export async function processAssetsCSV(csvContent: string) {
                 if (!model || !statusLabel || !supplier) {
                     continue;
                 }
-                if (!session){
+                if (!session) {
                     throw new Error('User not authenticated.');
                 }
 
@@ -246,6 +260,8 @@ export async function processAssetsCSV(csvContent: string) {
                         poNumber: item['poNumber'],
                         price: roundFloat(Number(item['price']), 2),
                         companyId: session?.user?.companyId,
+                        energyRating: item['energyRatting'],
+                        dailyOperatingHours: Number(item['dailyOperatingHours']),
                     }
                 });
                 records.push(record);

@@ -1,13 +1,13 @@
 export const sidebarLinks = [
-    // {
-    //     imgURL: "/icons/monitor.svg",
-    //     route: "/admin",
-    //     label: "Admin",
-    //     visibleTo: ["admin"],
-    // },
+    {
+        imgURL: "/icons/monitor.svg",
+        route: "/admin",
+        label: "Admin",
+        visibleTo: ["admin"],
+    },
     {
         imgURL: "/icons/home.svg",
-        route: "/",
+        route: "/people",
         label: "Home",
         visibleTo: ["admin", "user"],
     },

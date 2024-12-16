@@ -149,6 +149,8 @@ export async function getAllSimple(): Promise<ActionResponse<Supplier[]>> {
             return { error: "Not authenticated" };
         }
 
+
+        console.log('Fetching suppliers...');
         const suppliers = await prisma.supplier.findMany({
             where: {
                 companyId: session.user.companyId
@@ -162,8 +164,7 @@ export async function getAllSimple(): Promise<ActionResponse<Supplier[]>> {
             return { error: "No suppliers found" };
         }
 
-        console.log(suppliers)
-        return { data: parseStringify(suppliers) };
+        return { data: suppliers };
     } catch (error) {
         console.error('Failed to fetch suppliers:', error);
         return { error: 'Failed to fetch suppliers' };

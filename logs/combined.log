@@ -164,3 +164,39 @@
 {"email":"jrmromao@gmail.com","level":"info","message":"User logged in successfully","service":"company-service","timestamp":"2024-12-15T19:03:36.264Z"}
 {"companyId":"cm4pyme4f0029rugsac97xhkp","count":1,"level":"debug","message":"Users fetched successfully","service":"company-service","timestamp":"2024-12-16T20:01:24.121Z"}
 {"companyId":"cm4pyme4f0029rugsac97xhkp","count":1,"level":"debug","message":"Users fetched successfully","service":"company-service","timestamp":"2024-12-16T20:01:24.240Z"}
+{"level":"info","message":"Step 1: Verifying admin role exists","service":"company-service","timestamp":"2024-12-16T20:11:47.481Z"}
+{"companyName":"Google","level":"info","message":"Step 2: Checking if company exists","service":"company-service","timestamp":"2024-12-16T20:11:47.486Z"}
+{"companyName":"Google","level":"info","message":"Step 3: Creating company","service":"company-service","timestamp":"2024-12-16T20:11:47.487Z"}
+{"companyId":"cm4rh0lgg0000ur8zrxhhb0gj","companyName":"Google","level":"info","message":"Company created successfully","service":"company-service","timestamp":"2024-12-16T20:11:47.491Z"}
+{"companyId":"cm4rh0lgg0000ur8zrxhhb0gj","email":"jrmromao@gmail.com","level":"info","message":"Step 5: Starting user registration","service":"company-service","timestamp":"2024-12-16T20:11:47.492Z"}
+{"companyId":"cm4rh0lgg0000ur8zrxhhb0gj","email":"jrmromao@gmail.com","level":"info","message":"Starting Cognito user registration","service":"company-service","timestamp":"2024-12-16T20:11:47.493Z"}
+{"level":"debug","message":"Verifying admin role exists","service":"company-service","timestamp":"2024-12-16T20:11:48.348Z"}
+{"cognitoId":"949884e8-60b1-7074-384a-8d9ceadba054","email":"jrmromao@gmail.com","level":"debug","message":"Creating user in database","service":"company-service","timestamp":"2024-12-16T20:11:48.352Z"}
+{"email":"jrmromao@gmail.com","level":"info","message":"User inserted successfully","service":"company-service","timestamp":"2024-12-16T20:11:48.360Z","userId":"cm4rh0m4k0002ur8z63dj849q"}
+{"cognitoId":"949884e8-60b1-7074-384a-8d9ceadba054","email":"jrmromao@gmail.com","level":"info","message":"User registered successfully","service":"company-service","timestamp":"2024-12-16T20:11:48.361Z","userId":"cm4rh0m4k0002ur8z63dj849q"}
+{"companyId":"cm4rh0lgg0000ur8zrxhhb0gj","companyName":"Google","level":"info","message":"Registration process completed successfully","service":"company-service","timestamp":"2024-12-16T20:11:48.362Z","userResult":{"data":{"$metadata":{"attempts":1,"httpStatusCode":200,"requestId":"26cb3b2e-1ab9-4512-8b1a-27c0553eba77","totalRetryDelay":0},"CodeDeliveryDetails":{"AttributeName":"email","DeliveryMedium":"EMAIL","Destination":"j***@g***"},"UserConfirmed":false,"UserSub":"949884e8-60b1-7074-384a-8d9ceadba054"},"success":true}}
+{"email":"jrmromao@gmail.com","level":"info","message":"Account verified successfully","service":"company-service","timestamp":"2024-12-16T20:12:06.219Z"}
+{"email":"jrmromao@gmail.com","level":"info","message":"User logged in successfully","service":"company-service","timestamp":"2024-12-16T20:12:16.415Z"}
+{"companyId":"cm4rh0lgg0000ur8zrxhhb0gj","count":1,"level":"debug","message":"Users fetched successfully","service":"company-service","timestamp":"2024-12-17T20:33:48.545Z"}
+{"companyId":"cm4rh0lgg0000ur8zrxhhb0gj","count":1,"level":"debug","message":"Users fetched successfully","service":"company-service","timestamp":"2024-12-17T20:33:48.699Z"}
+{"companyId":"cm4rh0lgg0000ur8zrxhhb0gj","count":1,"level":"debug","message":"Users fetched successfully","service":"company-service","timestamp":"2024-12-17T20:33:53.548Z"}
+{"companyId":"cm4rh0lgg0000ur8zrxhhb0gj","count":1,"level":"debug","message":"Users fetched successfully","service":"company-service","timestamp":"2024-12-17T20:33:53.671Z"}
+{"companyId":"cm4rh0lgg0000ur8zrxhhb0gj","count":1,"level":"debug","message":"Users fetched successfully","service":"company-service","timestamp":"2024-12-17T20:38:26.507Z"}
+{"companyId":"cm4rh0lgg0000ur8zrxhhb0gj","count":1,"level":"debug","message":"Users fetched successfully","service":"company-service","timestamp":"2024-12-17T20:38:26.643Z"}
+{"companyId":"cm4rh0lgg0000ur8zrxhhb0gj","count":1,"level":"debug","message":"Users fetched successfully","service":"company-service","timestamp":"2024-12-17T20:38:30.098Z"}
+{"companyId":"cm4rh0lgg0000ur8zrxhhb0gj","count":1,"level":"debug","message":"Users fetched successfully","service":"company-service","timestamp":"2024-12-17T20:38:30.375Z"}
+{"companyId":"cm4rh0lgg0000ur8zrxhhb0gj","count":1,"level":"debug","message":"Users fetched successfully","service":"company-service","timestamp":"2024-12-17T20:38:45.255Z"}
+{"companyId":"cm4rh0lgg0000ur8zrxhhb0gj","count":1,"level":"debug","message":"Users fetched successfully","service":"company-service","timestamp":"2024-12-17T20:38:45.360Z"}
+{"companyId":"cm4rh0lgg0000ur8zrxhhb0gj","count":1,"level":"debug","message":"Users fetched successfully","service":"company-service","timestamp":"2024-12-17T20:39:03.271Z"}
+{"companyId":"cm4rh0lgg0000ur8zrxhhb0gj","count":1,"level":"debug","message":"Users fetched successfully","service":"company-service","timestamp":"2024-12-17T20:39:03.379Z"}
+{"companyId":"cm4rh0lgg0000ur8zrxhhb0gj","count":1,"level":"debug","message":"Users fetched successfully","service":"company-service","timestamp":"2024-12-17T20:39:13.932Z"}
+{"companyId":"cm4rh0lgg0000ur8zrxhhb0gj","count":1,"level":"debug","message":"Users fetched successfully","service":"company-service","timestamp":"2024-12-17T20:39:14.056Z"}
+{"companyId":"cm4rh0lgg0000ur8zrxhhb0gj","count":1,"level":"debug","message":"Users fetched successfully","service":"company-service","timestamp":"2024-12-17T20:39:52.705Z"}
+{"companyId":"cm4rh0lgg0000ur8zrxhhb0gj","count":1,"level":"debug","message":"Users fetched successfully","service":"company-service","timestamp":"2024-12-17T20:39:52.814Z"}
+{"email":"jrmromao@gmail.com","level":"info","message":"User logged in successfully","service":"company-service","timestamp":"2024-12-17T20:50:11.640Z"}
+{"error":"\nInvalid `prisma.model.findMany()` invocation:\n\n\nCan't reach database server at `localhost:5432`\n\nPlease make sure your database server is running at `localhost:5432`.","level":"error","message":"Get all models error:","service":"company-service","timestamp":"2024-12-17T20:50:51.652Z"}
+{"error":"\nInvalid `prisma.model.findMany()` invocation:\n\n\nCan't reach database server at `localhost:5432`\n\nPlease make sure your database server is running at `localhost:5432`.","level":"error","message":"Get all models error:","service":"company-service","timestamp":"2024-12-17T20:50:51.934Z"}
+{"companyId":"cm4rh0lgg0000ur8zrxhhb0gj","count":1,"level":"debug","message":"Users fetched successfully","service":"company-service","timestamp":"2024-12-19T22:37:14.103Z"}
+{"companyId":"cm4rh0lgg0000ur8zrxhhb0gj","count":1,"level":"debug","message":"Users fetched successfully","service":"company-service","timestamp":"2024-12-19T22:37:14.181Z"}
+{"companyId":"cm4rh0lgg0000ur8zrxhhb0gj","count":1,"level":"debug","message":"Users fetched successfully","service":"company-service","timestamp":"2024-12-19T22:37:30.017Z"}
+{"companyId":"cm4rh0lgg0000ur8zrxhhb0gj","count":1,"level":"debug","message":"Users fetched successfully","service":"company-service","timestamp":"2024-12-19T22:37:30.060Z"}

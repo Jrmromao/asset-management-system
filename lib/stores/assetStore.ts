@@ -37,12 +37,12 @@ export const useAssetStore = create(persist<IAssetStore>(
         },
         create: async (asset: Asset) => {
             try {
-                await insert(asset);
-                set(
-                    produce((state) => {
-                        state.assets.push(asset);
-                    })
-                );
+                // await insert(asset);
+                // set(
+                //     produce((state) => {
+                //         state.assets.push(asset);
+                //     })
+                // );
                 return asset;
             } catch (error) {
                 console.error("Error creating asset:", error);

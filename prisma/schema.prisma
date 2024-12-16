@@ -214,27 +214,29 @@ model Supplier {
 }
 
 model Asset {
-  id            String    @id @default(cuid())
-  name          String
-  serialNumber  String    @unique
-  material      String
-  weight        Decimal?
-  endOfLife     DateTime
-  datePurchased DateTime?
-  assigneeId    String?
-  statusLabelId String?
-  locationId    String?
-  inventoryId   String?
-  companyId     String
-  supplierId    String?
-  departmentId  String?
-  modelId       String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  poNumber      String?   @unique
-  price         Decimal?
-  assignee      User?     @relation("assignedToUser", fields: [assigneeId], references: [id], onDelete: SetNull)
-  company       Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  id                  String    @id @default(cuid())
+  name                String
+  serialNumber        String    @unique
+  material            String
+  endOfLife           DateTime
+  datePurchased       DateTime?
+  assigneeId          String?
+  statusLabelId       String?
+  locationId          String?
+  inventoryId         String?
+  companyId           String
+  supplierId          String?
+  departmentId        String?
+  modelId             String?
+  energyRating        String
+  dailyOperatingHours Int?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  poNumber            String?   @unique
+  weight              Decimal?
+  price               Decimal?
+  assignee            User?     @relation("assignedToUser", fields: [assigneeId], references: [id], onDelete: SetNull)
+  company             Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   model              Model?              @relation(fields: [modelId], references: [id], onDelete: SetNull)
   statusLabel        StatusLabel?        @relation(fields: [statusLabelId], references: [id], onDelete: SetNull)

@@ -1,6 +1,6 @@
 'use client'
 
-import React, {useEffect, useTransition} from 'react'
+import React, {useEffect, useState, useTransition} from 'react'
 import {z} from "zod"
 import {zodResolver} from "@hookform/resolvers/zod"
 import {useForm} from "react-hook-form"
@@ -34,6 +34,14 @@ import {useLocationStore} from "@/lib/stores/locationStore";
 import {useDepartmentStore} from "@/lib/stores/departmentStore";
 import ModelForm from "@/components/forms/ModelForm";
 import {accessorySchema} from "@/lib/schemas";
+import {getAllSimple} from "@/lib/actions/supplier.actions";
+import StatusLabelForm from "@/components/forms/StatusLabelForm";
+import DepartmentForm from "@/components/forms/DepartmentForm";
+import LocationForm from "@/components/forms/LocationForm";
+import {findAll} from "@/lib/actions/category.actions";
+import {getAll as getAllModels} from "@/lib/actions/model.actions";
+import {getAll as getAllInventories} from "@/lib/actions/inventory.actions";
+import {getAll as getAllManufacturers} from "@/lib/actions/manufacturer.actions";
 
 type AccessoryFormValues = z.infer<typeof accessorySchema>
 
@@ -42,36 +50,28 @@ const AccessoryForm = () => {
     const router = useRouter()
 
     const {
-        categories,
         isOpen: isCategoryOpen,
         onOpen: openCategory,
         onClose: closeCategory,
-            getAll: fetchCategories
     } = useCategoryStore()
     const {
-        manufacturers,
         isOpen: isManufacturerOpen,
         onOpen: openManufacturer,
         onClose: closeManufacturer,
-        getAll: fetchManufacturers
     } = useManufacturerStore()
     const {
-        inventories,
         isOpen: isInventoryOpen,
         onOpen: openInventory,
         onClose: closeInventory,
-        getAll: fetchInventories
     } = useInventoryStore()
     const {
-        suppliers,
+        // suppliers,
         isOpen: isSupplierOpen,
         onOpen: openSupplier,
         onClose: closeSupplier,
-        getAll: fetchSuppliers
     } = useSupplierStore()
     const {
         statusLabels,
-        getAll: fetchStatusLabels,
         isOpen: isStatusOpen,
         onOpen: openStatus,
         onClose: closeStatus
@@ -79,20 +79,23 @@ const AccessoryForm = () => {
 
     const {
         locations,
-        fetchLocations,
         isOpen: isLocationOpen,
         onOpen: openLocation,
         onClose: closeLocation
     } = useLocationStore()
     const {
         departments,
-        getAll: fetchDepartments,
         isOpen: isDepartmentOpen,
         onOpen: openDepartment,
         onClose: closeDepartment
     } = useDepartmentStore()
 
-    const {models, fetchModels, isOpen: isModelOpen, onOpen: openModel, onClose: closeModel} = useModelStore()
+    const {isOpen: isModelOpen, onOpen: openModel, onClose: closeModel} = useModelStore()
+    const [suppliers, setSuppliers] = useState<Supplier[]>([])
+    const [manufacturers, setManufacturers] = useState<Manufacturer[]>([])
+    const [categories, setCategories] = useState<Category[]>([])
+    const [models, setModels] = useState<Model[]>([])
+    const [inventories, setInventories] = useState<Inventory[]>([])
 
     const form = useForm<AccessoryFormValues>({
         resolver: zodResolver(accessorySchema),
@@ -112,12 +115,37 @@ const AccessoryForm = () => {
     })
 
     useEffect(() => {
-        fetchCategories()
-        fetchModels()
-        fetchManufacturers()
-        fetchSuppliers()
-        fetchInventories()
-    }, [fetchCategories, fetchManufacturers, fetchSuppliers, fetchInventories])
+
+        const fetchData = async () => {
+            const suppliersResult = await getAllSimple()
+            if (suppliersResult.data) {
+                setSuppliers(suppliersResult.data)
+            }
+
+          const categoryResult =  await findAll();
+            if(categoryResult.data){
+                setCategories(categoryResult.data)
+            }
+
+            const modelsResult =  await getAllModels();
+            if(modelsResult.data){
+                setModels(modelsResult.data)
+            }
+
+            const inventoryResult =  await getAllInventories();
+            if(inventoryResult.data){
+                setInventories(inventoryResult.data)
+            }
+            const manufacturersResult =  await getAllManufacturers();
+            if(manufacturersResult.data){
+                setManufacturers(manufacturersResult.data)
+            }
+
+        }
+
+        fetchData()
+
+    }, [])
 
     const onSubmit = async (data: AccessoryFormValues) => {
         startTransition(async () => {
@@ -173,6 +201,31 @@ const AccessoryForm = () => {
                 form={<InventoryForm/>}
             />
 
+
+            <DialogContainer
+                description=""
+                open={isStatusOpen}
+                onOpenChange={closeStatus}
+                title="Add Status Label"
+                form={<StatusLabelForm/>}
+            />
+
+            <DialogContainer
+                description=""
+                open={isDepartmentOpen}
+                onOpenChange={closeDepartment}
+                title="Add Department"
+                form={<DepartmentForm/>}
+            />
+
+            <DialogContainer
+                description=""
+                open={isLocationOpen}
+                onOpenChange={closeLocation}
+                title="Add Department"
+                form={<LocationForm/>}
+            />
+
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                     <Card className="p-6">
@@ -220,7 +273,7 @@ const AccessoryForm = () => {
                                         label="Status Label"
                                         data={statusLabels}
                                         onNew={openStatus}
-                                        placeholder="Select a category"
+                                        placeholder="Select a status label"
                                         required
                                         form={form}
                                         isPending

@@ -56,3 +56,5 @@
 {"email":"jrmromao@gmail.com","level":"error","message":"Authentication error","service":"company-service","timestamp":"2024-12-15T19:02:40.561Z","type":"CallbackRouteError"}
 {"email":"jrmromao@gmail.com","level":"error","message":"Authentication error","service":"company-service","timestamp":"2024-12-15T19:02:46.323Z","type":"CallbackRouteError"}
 {"email":"jrmromao@gmail.com","level":"error","message":"Authentication failed","service":"company-service","timestamp":"2024-12-15T19:02:56.004Z"}
+{"error":"\nInvalid `prisma.model.findMany()` invocation:\n\n\nCan't reach database server at `localhost:5432`\n\nPlease make sure your database server is running at `localhost:5432`.","level":"error","message":"Get all models error:","service":"company-service","timestamp":"2024-12-17T20:50:51.652Z"}
+{"error":"\nInvalid `prisma.model.findMany()` invocation:\n\n\nCan't reach database server at `localhost:5432`\n\nPlease make sure your database server is running at `localhost:5432`.","level":"error","message":"Get all models error:","service":"company-service","timestamp":"2024-12-17T20:50:51.934Z"}

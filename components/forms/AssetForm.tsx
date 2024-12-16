@@ -1,7 +1,7 @@
 'use client'
 
 import React, {useEffect, useTransition} from 'react'
-import {z} from "zod"
+import {undefined, z} from "zod"
 import {zodResolver} from "@hookform/resolvers/zod"
 import {useForm} from "react-hook-form"
 import {Button} from "@/components/ui/button"
@@ -41,30 +41,27 @@ import {SelectWithButton} from "@/components/SelectWithButton";
 import ManufacturerForm from "@/components/forms/ManufacturerForm";
 import {useManufacturerStore} from "@/lib/stores/manufacturerStore";
 import {auth} from "@/auth";
-import {getAll} from "@/lib/actions/model.actions";
+import {assetSchema} from "@/lib/schemas";
 
-const assetSchema = z.object({
-    name: z.string().min(1, "Asset name is required"),
-    purchaseDate: z.date({
-        message: "Purchase Date is required."
-    }),
-    serialNumber: z.string().min(1, "Serial number is required"),
-    modelId: z.string().min(1, "Model is required"),
-    statusLabelId: z.string().min(1, "Status is required"),
-    departmentId: z.string().min(1, "Department is required"),
-    inventoryId: z.string().min(1, "Inventory is required"),
-    locationId: z.string().min(1, "Location is required"),
-    supplierId: z.string().min(1, "Supplier is required"),
-    price: z.string({ required_error: "Price is required" })
-        .transform((value) => Number(value)),
-    poNumber: z.string().min(1, 'PO Number is required'),
-    endOfLife: z.date({
-        required_error: "End of life date is required",
-    }),
-    material: z.string().optional(),
-    weight: z.string().optional()
-        .transform((value) => Number(value)),
-});
+type AssetFormValuesType = {
+    name: string;
+    purchaseDate: Date;
+    serialNumber: string;
+    modelId: string;
+    statusLabelId: string;
+    departmentId: string;
+    inventoryId: string;
+    locationId: string;
+    supplierId: string;
+    price: string;
+    poNumber?: string;
+    material?: string;
+    weight?: string;
+    energyRating?: string;
+    licenseId?: string;
+    dailyOperatingHours?: string;
+    endOfLife: Date;
+};
 
 type AssetFormValues = z.infer<typeof assetSchema>;
 
@@ -131,10 +128,11 @@ const AssetForm = ({id, isUpdate = false}: AssetFormProps) => {
         getAll: fetchManufacturers
     } = useManufacturerStore()
 
-    // Form
+
     const form = useForm<AssetFormValues>({
         resolver: zodResolver(assetSchema),
         defaultValues: {
+            purchaseDate: new Date(),
             name: '',
             serialNumber: '',
             modelId: '',
@@ -146,11 +144,13 @@ const AssetForm = ({id, isUpdate = false}: AssetFormProps) => {
             supplierId: '',
             poNumber: '',
             weight: 0,
-            // endOfLife: new Date(),
+            endOfLife: new Date(),
             material: '',
+            energyRating: '',
+            licenseId: '',
+            dailyOperatingHours: '',
         },
-    })
-
+    });
 
     useEffect(() => {
         fetchStatusLabels()
@@ -159,8 +159,6 @@ const AssetForm = ({id, isUpdate = false}: AssetFormProps) => {
         fetchInventories()
         fetchSuppliers()
         fetchModels()
-
-
 
         if (isUpdate && id) {
             startTransition(async () => {
@@ -191,34 +189,17 @@ const AssetForm = ({id, isUpdate = false}: AssetFormProps) => {
                 //         endOfLife: data.endOfLife.toISOString()
                 //     })
 
-                const session = await auth()
-
-                if (!session?.user?.companyId) {
-                    toast.error('Unauthorized access')
-                    return
-                }
-
-                await create({
-                    datePurchased: data.purchaseDate,
-                    price: data.price,
-                    name: data.name,
-                    serialNumber: data.serialNumber,
-                    material: data.material,
-                    modelId: data.modelId,
+                const formattedData = {
+                    ...data,
+                    purchaseDate: data.purchaseDate,
                     endOfLife: data.endOfLife,
-                    licenseId: '33333333-ae07-4531-a801-ede53fb31f04',
-                    statusLabelId: data.statusLabelId,
-                    supplierId: data.supplierId,
-                    companyId: session?.user.companyId,
-                    inventoryId: data.inventoryId,
-                    departmentId: data.departmentId,
-                    locationId: data.locationId,
-                    weigh: data.weight,
-                    poNumber: data.poNumber,
-
-                }).then(r => {
+                    weight: data.weight,
+                };
+                await create(formattedData).then(r => {
                     form.reset()
                     toast.success('Asset created successfully')
+                }).catch( error =>{
+                    toast.error('Something went wrong: ', error)
                 })
 
             } catch (error) {
@@ -402,7 +383,7 @@ const AssetForm = ({id, isUpdate = false}: AssetFormProps) => {
 
                                         <CustomDatePicker
                                             label="Purchase Date"
-                                            name="purchaseDate"
+                                            name="purchaseDate"  // Changed from datePurchased
                                             form={form}
                                             placeholder="Select purchase date"
                                             required
@@ -461,7 +442,7 @@ const AssetForm = ({id, isUpdate = false}: AssetFormProps) => {
                                         name="weight"
                                         label="Weight (kg)"
                                         control={form.control}
-                                        type="number"
+                                        type="text"
                                         placeholder="Enter weight"
                                     />
                                 </div>
@@ -471,13 +452,13 @@ const AssetForm = ({id, isUpdate = false}: AssetFormProps) => {
                                 <h3 className="text-lg font-semibold mb-4">Energy Consumption</h3>
                                 <div className="grid grid-cols-2 gap-6">
                                     <CustomInput
-                                        name="material"
-                                        label="Power Rating (kW)"
+                                        name="energyRating"
+                                        label="Energy Rating (kW)"
                                         control={form.control}
-                                        placeholder="Enter power rating"
+                                        placeholder="Enter energy rating"
                                     />
                                     <CustomInput
-                                        name="weight"
+                                        name="dailyOperatingHours"
                                         label="Operating Hours (per day)"
                                         control={form.control}
                                         type="number"

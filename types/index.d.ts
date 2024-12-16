@@ -40,16 +40,6 @@ declare global {
         assetId: string;
     };
 
-    // type SelectWithButtonProps = {
-    //     name: string;
-    //     label: string;
-    //     form: useForm();
-    //     data: any[];
-    //     onNew: () => void;
-    //     placeholder: string;
-    //     required?: boolean;
-    //     isPending: boolean;
-    // }
 
     // ==================== Entity Types ====================
     type StatusLabel = {
@@ -100,23 +90,6 @@ declare global {
     };
 
 
-    
-    // type Accessory = {
-    //     id?: string;
-    //     title: string;
-    //     purchaseDate: Date;
-    //     price: number;
-    //     poNumber: string;
-    //     endOfLife: Date;
-    //     vendor: string;
-    //     alertEmail: string;
-    //     minQuantityAlert: number;
-    //     totalQuantityCount: number;
-    //     description: string;
-    //     categoryId: string;
-    //     companyId: string;
-    //     material: string;
-    // };
 
      type Accessory = {
         id: string;
@@ -155,10 +128,8 @@ declare global {
         assignee?: User;
         assigneeId?: string;
         material?: string;
-        weigh?: number;
         modelId: string;
         datePurchased: Date;
-        price: number;
         endOfLife: Date;
         certificateUrl?: string;
         licenceUrl?: string;
@@ -178,6 +149,11 @@ declare global {
         statusLabel?: StatusLabel;
         inventoryId?: string;
         inventory?: Inventory;
+        weight?: number;
+        price: number;
+        energyRating?: string;
+        dailyOperationHours?: number;
+
     };
 
 
@@ -214,25 +190,6 @@ declare global {
         inventory?: Inventory | null;
     };
 
-    // type License = {
-    //     id?: string;
-    //     name: string;
-    //     licenseKey: string;
-    //     renewalDate: Date;
-    //     licenseUrl?: string;
-    //     licensedEmail: string;
-    //     purchaseDate: Date;
-    //     vendor: string;
-    //     purchaseNotes: string;
-    //     minCopiesAlert: number;
-    //     alertRenewalDays: number;
-    //     licenseCopiesCount: number;
-    //     purchasePrice: number;
-    //     createdAt?: Date;
-    //     updatedAt?: Date;
-    // };
-
-
 
     // ==================== Reusable Interfaces ====================
     interface BaseEntity {
@@ -243,7 +200,7 @@ declare global {
 
     interface AddressFields {
         addressLine1: string;
-        addressLine2: string;
+        addressLine2: string | null;
         city: string;
         state: string;
         zip: string;
@@ -271,13 +228,13 @@ declare global {
 
     type Supplier = BaseEntity & AddressFields & {
         name: string;
-        phone: string;
         contactName: string;
         email: string;
-        phoneNum: string;
-        url: string;
-        notes: string;
+        phoneNum: string | null;  // Using phoneNum instead of phone
+        url: string | null;
+        notes: string | null;
         asset?: Asset[];
+        companyId: string;  // Add this if it's required by Prisma
     };
 
     type Location = BaseEntity & {

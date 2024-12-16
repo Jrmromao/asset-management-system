@@ -65,7 +65,7 @@ export const validateUnique = async (
 
 const dateField = (fieldName: string) => z.date({
     required_error: `${fieldName} is required`
-});
+}).optional();
 
 const passwordSchema = z.string().refine(
     (value) => /^(?=.*\d)(?=.*[!@#$%^&*])(?=.*[A-Z])(?=.*[a-z]).{8,}$/.test(value),
@@ -503,4 +503,48 @@ export const userSchema = z.object({
             return !exists;
         }, "Employee ID already exists"),
     roleId: z.string().min(1, "Role is required"),
+});
+
+
+export const assetSchema = z.object({
+    name: z.string().min(1, "Asset name is required"),
+    purchaseDate: z.date({
+        message: "Purchase Date is required."
+    }),
+    serialNumber: z.string().min(1, "Serial number is required"),
+    modelId: z.string().min(1, "Model is required").optional(),
+    statusLabelId: z.string().min(1, "Status is required").optional(),
+    departmentId: z.string().min(1, "Department is required").optional(),
+    inventoryId: z.string().min(1, "Inventory is required").optional(),
+    locationId: z.string().min(1, "Location is required").optional(),
+    supplierId: z.string().min(1, "Supplier is required").optional(),
+    price: z.union([
+        z.string()
+            .min(1, "Price is required")
+            .transform((val) => {
+                const parsed = parseFloat(val);
+                if (isNaN(parsed)) throw new Error("Invalid price");
+                return parsed;
+            }),
+        z.number()
+    ]),
+    weight: z.union([
+        z.string()
+            .transform((val) => {
+                if (!val) return undefined;
+                const parsed = parseFloat(val);
+                if (isNaN(parsed)) throw new Error("Invalid weight");
+                return parsed;
+            }),
+        z.number().optional()
+    ]),
+    poNumber: z.string().min(1, 'PO Number is required').optional(),
+    material: z.string().optional(),
+    energyRating: z.string().optional(),
+    licenseId: z.string().optional(),
+    dailyOperatingHours: z.string().refine((val) => !Number.isNaN(parseInt(val, 10)), {
+    // message: "Daily operating hours must be a number",
+}).optional(),
+
+    endOfLife: dateField('End of Life')
 });

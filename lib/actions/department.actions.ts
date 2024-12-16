@@ -21,6 +21,7 @@ export async function insert(data: Pick<Department, 'name'>): Promise<ActionResp
             },
         });
 
+        console.log(department)
         revalidatePath('/assets/create');
         return { data: parseStringify(department) };
     } catch (error) {
@@ -41,13 +42,13 @@ export async function getAll(params?: {
     search?: string;
 }): Promise<ActionResponse<Department[]>> {
     try {
-        // const session = await auth();
-        // if (!session) {
-        //     return { error: "Not authenticated" };
-        // }
+        const session = await auth();
+        if (!session) {
+            return { error: "Not authenticated" };
+        }
 
         const where: Prisma.DepartmentWhereInput = {
-            companyId:  'bf40528b-ae07-4531-a801-ede53fb31f04', //session.user.companyId,
+            companyId:  session.user.companyId,
             ...(params?.search && {
                 name: {
                     contains: params.search,
@@ -62,6 +63,8 @@ export async function getAll(params?: {
                 createdAt: 'desc'
             },
         });
+
+        console.log(departments)
 
 
         return {

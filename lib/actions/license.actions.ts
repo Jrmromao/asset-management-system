@@ -16,10 +16,15 @@ type ApiResponse<T> = {
 export const create = async (values: z.infer<typeof licenseSchema>): Promise<ApiResponse<License>> => {
 
     try {
-        const validation = accessorySchema.safeParse(values);
+
+        console.log(values)
+
+        const validation = licenseSchema.safeParse(values);
         if (!validation.success) {
-            return {error: 'Invalid assignment data'};
+            console.log('Validation errors:', validation.error.errors);
+            throw new Error(validation.error.errors[0].message);
         }
+
 
         const session = await auth()
         if (!session) {
@@ -35,9 +40,15 @@ export const create = async (values: z.infer<typeof licenseSchema>): Promise<Api
                 renewalDate: values.renewalDate,
                 purchaseDate: values.purchaseDate,
                 alertRenewalDays: Number(values.alertRenewalDays),
+                supplierId: values.supplierId,
                 poNumber: values.poNumber,
+                locationId: values.locationId,
+                departmentId: values.departmentId,
+                inventoryId: values.inventoryId,
+                statusLabelId: values.statusLabelId,
+                purchaseNotes: values.notes,
                 licenseKey: values.licenseKey,
-                purchasePrice: Number(values.purchasePrice),
+                purchasePrice: values.purchasePrice,
                 companyId: session.user.companyId
             },
         })
