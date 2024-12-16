@@ -23,14 +23,13 @@ export async function insert(values: z.infer<typeof categorySchema>): Promise<Ac
             };
         }
 
-        // Validate session
-        // const session = await auth();
-        // if (!session?.user?.companyId) {
-        //     return {
-        //         success: false,
-        //         error: 'Unauthorized: No valid session found'
-        //     };
-        // }
+        const session = await auth();
+        if (!session?.user?.companyId) {
+            return {
+                success: false,
+                error: 'Unauthorized: No valid session found'
+            };
+        }
 
         const {name} = validation.data;
 
@@ -40,7 +39,7 @@ export async function insert(values: z.infer<typeof categorySchema>): Promise<Ac
                 type: '',
                 company: {
                     connect: {
-                        id: 'bf40528b-ae07-4531-a801-ede53fb31f04'
+                        id: session.user.companyId
                     },
                 },
             },

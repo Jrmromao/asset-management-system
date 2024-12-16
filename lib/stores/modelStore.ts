@@ -47,7 +47,7 @@ export const useModelStore = create(
             fetchModels: async (params) => {
                 set({ isLoading: true, error: null });
                 try {
-                    const result = await getAllSimple(params);
+                    const result = await getAll(params);
                     console.log('MODELS: ', result)
 
                     if (result.error) {

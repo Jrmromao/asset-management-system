@@ -1,6 +1,6 @@
 'use client'
 
-import React, {useEffect, useTransition} from 'react'
+import React, {useEffect, useState, useTransition} from 'react'
 import {z} from "zod"
 import {zodResolver} from "@hookform/resolvers/zod"
 import {useForm} from "react-hook-form"
@@ -34,6 +34,10 @@ import {useLocationStore} from "@/lib/stores/locationStore";
 import {useDepartmentStore} from "@/lib/stores/departmentStore";
 import ModelForm from "@/components/forms/ModelForm";
 import {accessorySchema} from "@/lib/schemas";
+import {getAllSimple} from "@/lib/actions/supplier.actions";
+import StatusLabelForm from "@/components/forms/StatusLabelForm";
+import DepartmentForm from "@/components/forms/DepartmentForm";
+import LocationForm from "@/components/forms/LocationForm";
 
 type AccessoryFormValues = z.infer<typeof accessorySchema>
 
@@ -63,7 +67,7 @@ const AccessoryForm = () => {
         getAll: fetchInventories
     } = useInventoryStore()
     const {
-        suppliers,
+        // suppliers,
         isOpen: isSupplierOpen,
         onOpen: openSupplier,
         onClose: closeSupplier,
@@ -93,6 +97,7 @@ const AccessoryForm = () => {
     } = useDepartmentStore()
 
     const {models, fetchModels, isOpen: isModelOpen, onOpen: openModel, onClose: closeModel} = useModelStore()
+    const [suppliers, setSuppliers] = useState<Supplier[]>([])
 
     const form = useForm<AccessoryFormValues>({
         resolver: zodResolver(accessorySchema),
@@ -112,12 +117,21 @@ const AccessoryForm = () => {
     })
 
     useEffect(() => {
+
+        const fetchData = async () => {
+            const suppliersResult = await getAllSimple()
+            if (suppliersResult.data) {
+                setSuppliers(suppliersResult.data)
+            }
+        }
+
+        fetchData()
         fetchCategories()
         fetchModels()
         fetchManufacturers()
-        fetchSuppliers()
         fetchInventories()
-    }, [fetchCategories, fetchManufacturers, fetchSuppliers, fetchInventories])
+
+    }, [fetchCategories, fetchManufacturers, fetchInventories])
 
     const onSubmit = async (data: AccessoryFormValues) => {
         startTransition(async () => {
@@ -173,6 +187,31 @@ const AccessoryForm = () => {
                 form={<InventoryForm/>}
             />
 
+
+            <DialogContainer
+                description=""
+                open={isStatusOpen}
+                onOpenChange={closeStatus}
+                title="Add Status Label"
+                form={<StatusLabelForm/>}
+            />
+
+            <DialogContainer
+                description=""
+                open={isDepartmentOpen}
+                onOpenChange={closeDepartment}
+                title="Add Department"
+                form={<DepartmentForm/>}
+            />
+
+            <DialogContainer
+                description=""
+                open={isLocationOpen}
+                onOpenChange={closeLocation}
+                title="Add Department"
+                form={<LocationForm/>}
+            />
+
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                     <Card className="p-6">
@@ -220,7 +259,7 @@ const AccessoryForm = () => {
                                         label="Status Label"
                                         data={statusLabels}
                                         onNew={openStatus}
-                                        placeholder="Select a category"
+                                        placeholder="Select a status label"
                                         required
                                         form={form}
                                         isPending

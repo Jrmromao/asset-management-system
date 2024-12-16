@@ -32,7 +32,7 @@ const ModelForm = () => {
     } = useCategoryStore()
 
 
-    const {onClose: closeModelModal} = useModelStore()
+    const {onClose: closeModelModal, models} = useModelStore()
 
     // Manufacturer store
     const {

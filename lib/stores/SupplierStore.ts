@@ -34,6 +34,9 @@ export const useSupplierStore = create(
             // Data Actions
             getAll: async () => {
                 set({ isLoading: true, error: null });
+
+                console.log('Fetching suppliers...');
+
                 try {
                     const result = await getAllSimple();
 
@@ -41,6 +44,7 @@ export const useSupplierStore = create(
                         set({ error: result.error });
                         return;
                     }
+                    console.log(result.data)
 
                     set({ suppliers: result.data || [] });
                 } catch (error) {

@@ -22,14 +22,13 @@ export async function insert(values: z.infer<typeof inventorySchema>):
             return {error: validation.error.errors[0].message};
         }
 
-        // const session = await auth()
+        const session = await auth()
         const inventory = await prisma.inventory.create({
             data: {
                 ...validation.data,
                 company: {
                     connect: {
-                        // id: session?.user?.companyId
-                        id: 'bf40528b-ae07-4531-a801-ede53fb31f04'
+                        id: session?.user?.companyId
                     }
                 }
             },
