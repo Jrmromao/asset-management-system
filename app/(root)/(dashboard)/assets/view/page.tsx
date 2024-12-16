@@ -114,7 +114,7 @@ const View = () => {
                     <BreadcrumbSeparator/>
                     <BreadcrumbItem>
                         <BreadcrumbLink asChild>
-                            <Link href={`/assets/view/?id=${id}`}>View</Link>
+                            <Link href={`/app/(root)/(dashboard)/assets/view/?id=${id}`}>View</Link>
                         </BreadcrumbLink>
                     </BreadcrumbItem>
                     <BreadcrumbSeparator/>

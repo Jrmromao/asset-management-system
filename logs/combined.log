@@ -162,3 +162,5 @@
 {"email":"jrmromao@gmail.com","level":"error","message":"Authentication error","service":"company-service","timestamp":"2024-12-15T19:02:46.323Z","type":"CallbackRouteError"}
 {"email":"jrmromao@gmail.com","level":"error","message":"Authentication failed","service":"company-service","timestamp":"2024-12-15T19:02:56.004Z"}
 {"email":"jrmromao@gmail.com","level":"info","message":"User logged in successfully","service":"company-service","timestamp":"2024-12-15T19:03:36.264Z"}
+{"companyId":"cm4pyme4f0029rugsac97xhkp","count":1,"level":"debug","message":"Users fetched successfully","service":"company-service","timestamp":"2024-12-16T20:01:24.121Z"}
+{"companyId":"cm4pyme4f0029rugsac97xhkp","count":1,"level":"debug","message":"Users fetched successfully","service":"company-service","timestamp":"2024-12-16T20:01:24.240Z"}

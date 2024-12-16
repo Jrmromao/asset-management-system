@@ -141,7 +141,7 @@ export default function LandingPage() {
     return (
         <div className="flex min-h-screen flex-col">
             {/* Top Bar */}
-            <div className="hidden border-b bg-muted/40 px-4 py-2 md:block">
+            <div className="hidden border-b bg-muted/40 px-4 py-2 md:block bg-white">
                 <div className="mx-auto flex max-w-7xl items-center justify-between">
                     <div className="flex items-center space-x-2">
                         {/*<Phone className="h-4 w-4" />*/}
@@ -162,7 +162,7 @@ export default function LandingPage() {
             </div>
 
             {/* Main Navigation */}
-            <header className="sticky top-0 z-50 border-b bg-background">
+            <header className="sticky top-0 z-50 border-b bg-background bg-white">
                 <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4">
                     <div className="flex items-center space-x-8">
                         <Link href="/" className="flex items-center space-x-2">
@@ -283,19 +283,19 @@ export default function LandingPage() {
                     <h2 className="mb-12 text-center text-sm font-semibold uppercase tracking-wider text-muted-foreground">
                         Trusted by sustainable organizations worldwide
                     </h2>
-                    {/*<div className="grid grid-cols-2 gap-8 md:grid-cols-3 lg:grid-cols-6">*/}
-                    {/*    {[...Array(6)].map((_, i) => (*/}
-                    {/*        <div key={i} className="flex items-center justify-center">*/}
-                    {/*            <Image*/}
-                    {/*                src="/placeholder-logo.svg"*/}
-                    {/*                alt={`Customer logo ${i + 1}`}*/}
-                    {/*                width={120}*/}
-                    {/*                height={60}*/}
-                    {/*                className="grayscale transition-all hover:grayscale-0"*/}
-                    {/*            />*/}
-                    {/*        </div>*/}
-                    {/*    ))}*/}
-                    {/*</div>*/}
+                    <div className="grid grid-cols-2 gap-8 md:grid-cols-3 lg:grid-cols-6">
+                        {[...Array(6)].map((_, i) => (
+                            <div key={i} className="flex items-center justify-center">
+                                <Image
+                                    src="/landscape-placeholder.svg"
+                                    alt={`Customer logo ${i + 1}`}
+                                    width={120}
+                                    height={60}
+                                    className="grayscale transition-all hover:grayscale-0"
+                                />
+                            </div>
+                        ))}
+                    </div>
 
                     <ul className="list-disc pl-6">
                         <li>Make it look like a dashboard</li>
@@ -307,7 +307,6 @@ export default function LandingPage() {
                         <li>Make the cards have a button</li>
                         <li>Make the cards have a progress bar</li>
                         <li>Make the cards have a tooltip</li>
-
                     </ul>
                 </div>
             </section>

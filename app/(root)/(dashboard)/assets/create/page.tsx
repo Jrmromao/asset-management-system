@@ -26,7 +26,7 @@ const Create = () => {
                     <BreadcrumbSeparator/>
                     <BreadcrumbItem>
                         <BreadcrumbLink asChild>
-                            <Link href={`/assets/create`}>Create</Link>
+                            <Link href={`/app/(root)/(dashboard)/assets/create`}>Create</Link>
                         </BreadcrumbLink>
                     </BreadcrumbItem>
                     <BreadcrumbSeparator/>
