@@ -96,10 +96,10 @@
   dependencies:
     tslib "^2.5.0"
 
-"@aws-amplify/auth@^6.3.8":
-  version "6.3.8"
-  resolved "https://registry.npmjs.org/@aws-amplify/auth/-/auth-6.3.8.tgz"
-  integrity sha512-yHcsFxHCqFl7fELMB1zpol/5t16AHBnse3JbGK/0rwt/KHNTQMku/rv/ieYsOcTLIS1zbaMTZtN46vAvxC4AqA==
+"@aws-amplify/auth@^6.6.2":
+  version "6.8.2"
+  resolved "https://registry.yarnpkg.com/@aws-amplify/auth/-/auth-6.8.2.tgz#5a25a337ac0874157c8ce3a068ccc859b394dbfb"
+  integrity sha512-sxeNLSQqhR7QIgydldEB/t/CZ73R1ASkH9C1h1lmcdkJPckziIQsnV6ZQOMiK0Abbpldbm30CmqkjBcJ5IdQOg==
   dependencies:
     tslib "^2.5.0"
 
