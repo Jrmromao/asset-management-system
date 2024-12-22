@@ -10,6 +10,10 @@ export async function POST(
         const body = await req.json();
         const [field, value] = Object.entries(body)[0];
 
+
+        console.log("----email--->>", field, value)
+
+
         if (!value) {
             return NextResponse.json(
                 { error: `${field} is required` },

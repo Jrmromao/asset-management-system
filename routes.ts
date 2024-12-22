@@ -3,8 +3,7 @@
  * An array of all the public routes accessible without authentication
  * @type {string[]}
  */
-export const publicRoutes: string[] = [
-];
+export const publicRoutes: string[] = ['/'];
 
 /**
  * An array of routes that are used for authentication

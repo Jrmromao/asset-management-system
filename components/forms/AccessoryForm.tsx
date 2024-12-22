@@ -150,6 +150,10 @@ const AccessoryForm = () => {
     const onSubmit = async (data: AccessoryFormValues) => {
         startTransition(async () => {
             try {
+
+
+                console.log(data)
+
                 await create(data).then(_ => {
                     form.reset()
                     toast.success('Accessory created successfully')
@@ -419,6 +423,7 @@ const AccessoryForm = () => {
                                         label="Weight (kg)"
                                         control={form.control}
                                         type="number"
+                                        required
                                         placeholder="Enter weight"
                                     />
                                 </div>

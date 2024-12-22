@@ -130,41 +130,97 @@ async function findByEmployeeId(employeeId: string) {
     }
 }
 
+// export async function createUser(values: z.infer<typeof userSchema>): Promise<ActionResponse<any>> {
+//     try {
+//         const validation = userSchema.safeParse(values);
+//         if (!validation.success) {
+//             logger.warn('User creation validation failed', {
+//                 issues: validation.error.issues
+//             });
+//             return {error: validation.error.message};
+//         }
+//
+//         const session = await auth();
+//         if (!session) {
+//             logger.warn('Unauthorized attempt to create user');
+//             return {error: 'Not authenticated'};
+//         }
+//
+//         const role = await getRoleById(values.roleId);
+//         if (!role?.data) {
+//             logger.error('Role not found during user creation', {
+//                 roleId: values.roleId
+//             });
+//             return {error: 'Role not found'};
+//         }
+//
+//         const roleName = role.data.name;
+//
+//
+//         const user = {
+//             roleId: values.roleId,
+//             email: values.email!,
+//             password: process.env.DEFAULT_PASSWORD!,
+//             firstName: values.firstName,
+//             lastName: values.lastName,
+//             title: values.title,
+//             employeeId: values.employeeId,
+//             companyId: session.user.companyId,
+//         };
+//
+//         let returnUser;
+//         if (roleName === 'Lonee') {
+//             returnUser = await insertUser(user);
+//         } else {
+//             returnUser = await registerUser(user);
+//         }
+//
+//         logger.info('User created successfully', {
+//             email: values.email,
+//             role: roleName
+//         });
+//
+//         return {data: parseStringify(returnUser)};
+//     } catch (error) {
+//         logger.error('Error creating user', {
+//             error: error instanceof Error ? error.stack : String(error),
+//             email: values.email
+//         });
+//         return {error: 'User creation failed'};
+//     }
+// }
+
+
 export async function createUser(values: z.infer<typeof userSchema>): Promise<ActionResponse<any>> {
     try {
-        const validation = userSchema.safeParse(values);
-        if (!validation.success) {
-            logger.warn('User creation validation failed', {
-                issues: validation.error.issues
-            });
-            return {error: validation.error.message};
-        }
+        const validation = await userSchema.parseAsync(values);
+
+        console.log("------------------>>>>",values)
 
         const session = await auth();
         if (!session) {
             logger.warn('Unauthorized attempt to create user');
-            return {error: 'Not authenticated'};
+            return { error: 'Not authenticated' };
         }
 
-        const role = await getRoleById(values.roleId);
+        const role = await getRoleById(validation.roleId);
         if (!role?.data) {
             logger.error('Role not found during user creation', {
-                roleId: values.roleId
+                roleId: validation.roleId
             });
-            return {error: 'Role not found'};
+            return { error: 'Role not found' };
         }
 
         const roleName = role.data.name;
 
-
         const user = {
-            roleId: values.roleId,
-            email: values.email!,
+            roleId: validation.roleId,
+            email: validation.email!,
             password: process.env.DEFAULT_PASSWORD!,
-            firstName: values.firstName,
-            lastName: values.lastName,
-            title: values.title,
-            employeeId: values.employeeId,
+            firstName: validation.firstName,
+            lastName: validation.lastName,
+            title: validation.title,
+            employeeId: validation.employeeId,
             companyId: session.user.companyId,
         };
 
@@ -176,17 +232,25 @@ export async function createUser(values: z.infer<typeof userSchema>): Promise<Ac
         }
 
         logger.info('User created successfully', {
-            email: values.email,
+            email: validation.email,
             role: roleName
         });
 
-        return {data: parseStringify(returnUser)};
+        return { data: parseStringify(returnUser) };
     } catch (error) {
+        // Enhanced error handling
+        if (error instanceof z.ZodError) {
+            logger.warn('User creation validation failed', {
+                issues: error.issues
+            });
+            return { error: error.message };
+        }
+
         logger.error('Error creating user', {
             error: error instanceof Error ? error.stack : String(error),
             email: values.email
         });
-        return {error: 'User creation failed'};
+        return { error: 'User creation failed' };
     }
 }
 

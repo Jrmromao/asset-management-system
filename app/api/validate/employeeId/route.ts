@@ -8,6 +8,9 @@ export async function POST(req: Request) {
     try {
         const {employeeId} = await req.json();
 
+
+        console.log("\n\n------------------------>>>",employeeId)
+
         const session = await auth();
         const existingUser = await prisma.user.findFirst({
                 where: {

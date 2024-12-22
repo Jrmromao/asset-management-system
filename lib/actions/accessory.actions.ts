@@ -13,7 +13,8 @@ export const create = async (values: z.infer<typeof accessorySchema>) => {
 
         const validation = accessorySchema.safeParse(values);
         if (!validation.success) {
-            return {error: 'Invalid assignment data'};
+            console.log('Validation errors:', validation.error.errors);
+            return {error: validation.error.errors[0].message};
         }
         const session = await auth()
         if (!session) {
@@ -34,7 +35,7 @@ export const create = async (values: z.infer<typeof accessorySchema>) => {
                     reorderPoint: values.reorderPoint,
                     totalQuantityCount: values.totalQuantityCount,
                     material: values.material || '',
-                    weight: values.weight,
+                    weight: values.weight!,
                     supplierId: values.supplierId,
                     inventoryId: values.inventoryId,
                     poNumber: values.poNumber,

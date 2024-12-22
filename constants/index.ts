@@ -6,12 +6,6 @@ export const sidebarLinks = [
         visibleTo: ["admin"],
     },
     {
-        imgURL: "/icons/home.svg",
-        route: "/people",
-        label: "Home",
-        visibleTo: ["admin", "user"],
-    },
-    {
         imgURL: "/icons/dollar-circle.svg",
         route: "/assets",
         label: "Assets",
@@ -48,8 +42,8 @@ export const sidebarLinks = [
     //     visibleTo: ["admin"],
     // },
 ].sort((a, b) => {
-    if (a.label === "Home") return -1;
-    if (b.label === "Home") return 1;  
+    if (a.label === "Admin") return -1;
+    if (b.label === "Admin") return 1;
     return a.label.localeCompare(b.label);
 });
 

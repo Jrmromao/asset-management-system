@@ -1,5 +1,6 @@
 import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,} from "@/components/ui/dialog"
  import {Progress} from "@/components/ui/progress";
+import React from "react";
 
 interface IProps {
     open: boolean
@@ -19,13 +20,13 @@ export function DialogContainer({open, onOpenChange, title, description, form}: 
                 <Progress value={4} />
                 <DialogHeader>
                     <DialogTitle>{title}</DialogTitle>
-                    <DialogDescription>
+                    <DialogDescription className="text-gray-500 text-sm">
                         {description}
                     </DialogDescription>
                 </DialogHeader>
                 {form}
-             </DialogContent>
-        </Dialog>
+            </DialogContent>
+            </Dialog>
         </div>
 
     )

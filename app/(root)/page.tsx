@@ -124,7 +124,7 @@
 //
 // export default Home
 
-
+'use client'
 import {ArrowRight, BarChart2, Box, Leaf, Phone, Shield} from 'lucide-react'
 import Image from "next/image"
 import Link from "next/link"
@@ -136,8 +136,11 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {useRouter} from "next/navigation";
 
 export default function LandingPage() {
+
+    const navigate = useRouter()
     return (
         <div className="flex min-h-screen flex-col">
             {/* Top Bar */}
@@ -188,7 +191,7 @@ export default function LandingPage() {
                         </nav>
                     </div>
                     <div className="flex items-center space-x-4">
-                        <Button variant="ghost">Login</Button>
+                        <Button variant="ghost"  onClick={() => navigate.push('/sign-in')}>Login</Button>
                         <Button>Free trial</Button>
                     </div>
                 </div>

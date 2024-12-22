@@ -33,7 +33,7 @@ export async function create(values: z.infer<typeof assetSchema>): Promise<ApiRe
 
         const validation = assetSchema.safeParse(values);
         if (!validation.success) {
-            console.log('Validation errors:', validation.error.errors);
+            console.error('Validation errors:', validation.error.errors);
             return {error: validation.error.errors[0].message};
         }
 
