@@ -5,6 +5,7 @@ import {twMerge} from "tailwind-merge";
 import {z} from "zod";
 import {SignJWT} from "jose";
 import {useRouter} from "next/navigation";
+import {Battery, BatteryFull, BatteryLow, BatteryMedium} from "lucide-react";
 
 export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -280,3 +281,37 @@ export async function encrypt(payload: any) {
         .setExpirationTime("10 sec from now")
         .sign(key);
 }
+
+
+export const getCO2ScoreInfo = (score: number) => {
+    if (score <= 30) {
+        return {
+            color: 'bg-emerald-100 text-emerald-800',
+            icon: BatteryFull,
+            label: 'Excellent',
+            description: 'Very low carbon footprint',
+        };
+    }
+    if (score <= 60) {
+        return {
+            color: 'bg-green-100 text-green-800',
+            icon: BatteryMedium,
+            label: 'Good',
+            description: 'Low carbon footprint',
+        };
+    }
+    if (score <= 90) {
+        return {
+            color: 'bg-yellow-100 text-yellow-800',
+            icon: BatteryLow,
+            label: 'Fair',
+            description: 'Moderate carbon footprint',
+        };
+    }
+    return {
+        color: 'bg-red-100 text-red-800',
+        icon: Battery,
+        label: 'High',
+        description: 'High carbon footprint',
+    };
+};

@@ -30,7 +30,9 @@ export interface DetailField {
 export interface DetailViewProps {
     title: string | ReactNode,
     fields: DetailField[],
+    isAssigned?: boolean
     isLoading?: boolean,
+    co2Score?: number,
     qrCode?: string | ReactNode,
     breadcrumbs?: ReactNode,
     error?: string | null,

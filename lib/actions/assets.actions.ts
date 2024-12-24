@@ -13,9 +13,15 @@ import {loggers} from "winston";
 // Common include object for consistent asset queries
 const assetIncludes = {
     // license: true,
-    model: true,
+    model: {
+        include: {
+            manufacturer: true,
+            category: true
+        }
+    },
     company: true,
     statusLabel: true,
+
 } as const;
 
 // Type for the API response
@@ -178,18 +184,18 @@ export async function update(asset: Asset, id: string): Promise<ApiResponse<Asse
 export async function assign(values: z.infer<typeof assetAssignSchema>): Promise<ApiResponse<Asset>> {
     try {
         const validation = assetAssignSchema.safeParse(values);
+
         if (!validation.success) {
-            return {error: 'Invalid assignment data'};
+            return {error: validation.error.errors[0].message};
         }
 
-        const {assetId, userId} = values;
         const updatedAsset = await prisma.asset.update({
-            where: {id: assetId},
-            data: {assigneeId: userId},
+            where: {id: values.assetId},
+            data: {assigneeId: values.userId},
             include: assetIncludes
         });
-
         return {data: parseStringify(updatedAsset)};
+
     } catch (error) {
         console.error('Error assigning asset:', error);
         return {error: 'Failed to assign asset'};

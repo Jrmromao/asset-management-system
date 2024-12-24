@@ -153,7 +153,8 @@ declare global {
         price: number;
         energyRating?: string;
         dailyOperationHours?: number;
-
+        model?: Model;
+        co2Score?: number;
     };
 
 

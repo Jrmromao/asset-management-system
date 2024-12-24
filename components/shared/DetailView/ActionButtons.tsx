@@ -16,7 +16,9 @@ import {Skeleton} from "@/components/ui/skeleton";
 export const ActionButtons: React.FC<{
     actions: NonNullable<DetailViewProps['actions']>;
     isLoading?: boolean;
-}> = ({ actions, isLoading }) => {
+    isAssigned?: boolean
+}> = ({ actions, isLoading, isAssigned }) => {
+
     if (isLoading) {
         return (
             <div className="w-full flex flex-col sm:flex-row lg:justify-end gap-2 md:flex-row md:justify-center mt-4 md:mt-0">
@@ -28,8 +30,6 @@ export const ActionButtons: React.FC<{
     }
 
     return (
-
-
             <div
                 className=" px-4 py-3 sm:px-6 flex-wrap w-full flex flex-col sm:flex-row lg:justify-end gap-2 md:flex-row md:justify-center mt-4 md:mt-0">
                 {actions.onArchive && (
@@ -42,7 +42,7 @@ export const ActionButtons: React.FC<{
                         Icon={FaArchive}
                     />
                 )}
-                {actions.onUnassign ? (
+                {isAssigned ? (
                     <CustomButton
                         size="sm"
                         className="w-full sm:w-auto"

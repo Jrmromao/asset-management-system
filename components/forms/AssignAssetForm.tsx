@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState, useTransition } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Button } from "@/components/ui/button"
 import { useForm } from "react-hook-form"
 import { Form } from "@/components/ui/form"
@@ -11,18 +11,28 @@ import { assign } from "@/lib/actions/assets.actions"
 import CustomSelect from "@/components/CustomSelect"
 import { useUserStore } from "@/lib/stores/userStore"
 import { assetAssignSchema } from "@/lib/schemas"
+import { z } from "zod"
 
 interface Props {
     assetId: string;
-    onBeforeSubmit?: (data: { userId: string; userName: string }) => void;
-    onError?: () => void;
+    onOptimisticUpdate: (data: { userId: string; userName: string }) => void;
+    onSuccess?: () => void;
+    onError?: (previousData?: { userId: string; userName: string }) => void;
+    isAssigned?: boolean
 }
 
-const AssignAssetForm = ({ assetId, onBeforeSubmit, onError }: Props) => {
+const AssignAssetForm = ({
+                             assetId,
+                             onOptimisticUpdate,
+                             onSuccess,
+                             onError
+                         }: Props) => {
     const [error, setError] = useState<string>('')
-    const [isPending, startTransition] = useTransition()
+    const [isSubmitting, setIsSubmitting] = useState(false)
 
-    const form = useForm({
+    type AssignFormValues = z.infer<typeof assetAssignSchema>;
+
+    const form = useForm<AssignFormValues>({
         resolver: zodResolver(assetAssignSchema),
         defaultValues: {
             userId: '',
@@ -36,30 +46,42 @@ const AssignAssetForm = ({ assetId, onBeforeSubmit, onError }: Props) => {
         getAllUsers()
     }, [getAllUsers])
 
-    const onSubmit = async (data: any) => {
+    const onSubmit = async (data: AssignFormValues) => {
         const selectedUser = users.find(user => user.id === data.userId)
 
-        // Update UI first
-        onBeforeSubmit?.({
+        if (!selectedUser || !selectedUser.name) {
+            setError('Selected user not found or user name is missing')
+            return
+        }
+
+        setIsSubmitting(true)
+        setError('')
+
+        const optimisticData = {
             userId: data.userId,
-            userName: selectedUser?.name || 'Unknown User'
-        })
+            userName: selectedUser.name // Now TypeScript knows userName is defined
+        }
 
-        startTransition(async () => {
-            try {
-                setError('')
-                const response = await assign(data)
+        try {
+            // Perform optimistic update
+            onOptimisticUpdate(optimisticData)
 
-                if (response?.error) {
-                    setError(response.error)
-                    onError?.()
-                }
-            } catch (e) {
-                console.error(e)
-                setError('Failed to assign asset')
-                onError?.()
+            // Perform actual server update
+            const response = await assign(data)
+
+            if (response?.error) {
+                throw new Error(response.error)
             }
-        })
+
+            onSuccess?.()
+        } catch (e) {
+            console.error('Assignment error:', e)
+            setError(typeof e === 'string' ? e : 'Failed to assign asset')
+            // Rollback optimistic update
+            onError?.(optimisticData)
+        } finally {
+            setIsSubmitting(false)
+        }
     }
 
     return (
@@ -71,17 +93,22 @@ const AssignAssetForm = ({ assetId, onBeforeSubmit, onError }: Props) => {
                         {...form.register("userId")}
                         label="Name"
                         placeholder="Select User"
-                        disabled={isPending}
+                        disabled={isSubmitting}
                         name="userId"
                         data={users || []}
                         value={form.watch('userId')}
+                        required
                     />
 
                     <FormError message={error} />
 
                     <div className="flex flex-col gap-4">
-                        <Button type="submit" className="form-btn" disabled={isPending}>
-                            {isPending ? (
+                        <Button
+                            type="submit"
+                            className="form-btn"
+                            disabled={isSubmitting || !form.watch('userId')}
+                        >
+                            {isSubmitting ? (
                                 <>
                                     <Loader2 size={20} className="animate-spin" />
                                     &nbsp; Assigning...
