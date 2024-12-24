@@ -37,7 +37,7 @@ const Assets = () => {
     }
 
     const handleView = async (id: string) => {
-        navigate.push(`/assets/view/?id=${id}`)
+        navigate.push(`/assets/view/${id}`)
     }
     const onDelete = useCallback((asset: Asset) => handleDelete(asset?.id!), [])
     const onView = useCallback((asset: Asset) => handleView(asset?.id!), [])

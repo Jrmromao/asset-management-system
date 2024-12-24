@@ -1,0 +1,46 @@
+import {ReactNode} from 'react';
+
+
+export type AssetType = {
+    id: string;
+    name: string;
+    price: number;
+    serialNumber: string;
+    category?: {
+        name: string;
+    };
+    statusLabel?: {
+        name: string;
+        colorCode: string;
+    };
+    assignee?: {
+        name: string;
+    };
+    assigneeId?: string;
+    createdAt: string | Date;
+    updatedAt: string | Date;
+}
+
+export interface DetailField {
+    label: string;
+    value: string | number | undefined;
+    type?: 'text' | 'date' | 'currency' | 'status';
+}
+
+export interface DetailViewProps {
+    title: string | ReactNode,
+    fields: DetailField[],
+    isLoading?: boolean,
+    qrCode?: string | ReactNode,
+    breadcrumbs?: ReactNode,
+    error?: string | null,
+    actions?: {
+        onArchive?: () => void;
+        onAssign?: () => void;
+        onUnassign?: () => void;
+        onDuplicate?: () => void;
+        onEdit?: () => void;
+        onPrintLabel?: () => void;
+    },
+    asset?: AssetType
+}

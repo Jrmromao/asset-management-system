@@ -2,21 +2,28 @@
 
 import React, {useEffect, useState} from 'react'
 import {useRouter, useSearchParams} from "next/navigation"
-import {findById} from "@/lib/actions/assets.actions";
+import {findById} from "@/lib/actions/user.actions";
 import {Card, CardContent, CardFooter, CardHeader} from "@/components/ui/card";
 import {Table, TableBody, TableCell, TableRow} from "@/components/ui/table";
 import Image from "next/image";
 import CustomButton from "@/components/CustomButton";
 import {FaArchive, FaChevronRight, FaCopy, FaPen, FaPrint} from 'react-icons/fa';
 import {findAllByOrganization} from "@/lib/actions/auditLog.actions";
-import {AuditLog} from "@prisma/client"; // Example icon from react-icons
+import {AuditLog} from "@prisma/client";
+
+
+
 
 const View = () => {
-    const [asset, setAsset] = useState<Asset>()
+    const [user, setUser] = useState<User>()
     const [auditLogs, setAuditLogs] = useState<AuditLog[]>()
     const searchParams = useSearchParams()
     const navigate = useRouter()
     const id = String(searchParams.get('id'))
+
+
+
+
 
 
     useEffect(() => {
@@ -24,10 +31,10 @@ const View = () => {
             navigate.back()
             return
         }
-        findById(id).then(asset => setAsset(asset.data))
         findAllByOrganization(id).then(auditLog => setAuditLogs(auditLog))
+        findById(id).then(user => setUser(user.data))
 
-    }, [setAsset, findById]);
+    }, [findById]);
 
 
     return (
@@ -42,7 +49,7 @@ const View = () => {
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                                         <div className="p-4 ">
                                             <h2 className="text-gray-500 mb-2">Name</h2>
-                                            <p className="font-semibold text-gray-600">{asset?.name}</p>
+                                            <p className="font-semibold text-gray-600">{user?.name}</p>
                                         </div>
                                         <div className="p-4">
                                             <h2 className="text-gray-500 mb-2">Price</h2>

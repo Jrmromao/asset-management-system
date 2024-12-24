@@ -15,7 +15,7 @@ interface CustomSelectProps {
     value: any;
     disabled?: boolean;
     required?: boolean;
-    data: BaseOption[];
+    data: BaseOption[] | User[];
     tooltip?: string;
 }
 

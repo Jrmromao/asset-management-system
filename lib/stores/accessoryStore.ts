@@ -28,8 +28,6 @@ export const useAccessoryStore = create(persist<IAccessoryStore>(
                 set({loading: false});
             });
         },
-
-
         create: async (accessory: Accessory) => {
             try {
                 // await insert(accessory);

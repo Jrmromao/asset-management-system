@@ -37,7 +37,7 @@ const Consumables = () => {
     }
 
     const handleView = async (id: string) => {
-        navigate.push(`/assets/view/?id=${id}`)
+        navigate.push(`/accessories/view/?id=${id}`)
     }
     const onDelete = useCallback((accessory: any) => handleDelete(accessory?.id!), [])
     const onView = useCallback((accessory: any) => handleView(accessory?.id!), [])

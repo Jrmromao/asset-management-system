@@ -32,54 +32,6 @@ import {
 } from "@/components/ui/select"
 import { ArrowUpDown } from "lucide-react"
 
-// Add your data type
-interface Asset {
-    name: string
-    assigned: string
-    model: string
-    co2Footprint: string
-    serialNumber: string
-    plannedEndOfLife: string
-    // Add other fields as needed
-}
-
-// Define your columns
-export const columns: ColumnDef<Asset>[] = [
-    {
-        accessorKey: "name",
-        header: ({ column }) => {
-            return (
-                <Button
-                    variant="ghost"
-                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                >
-                    Name
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-            )
-        },
-    },
-    {
-        accessorKey: "assigned",
-        header: "Assigned",
-    },
-    {
-        accessorKey: "model",
-        header: "Model",
-    },
-    {
-        accessorKey: "co2Footprint",
-        header: "CO2 Footprint",
-    },
-    {
-        accessorKey: "serialNumber",
-        header: "Serial Number",
-    },
-    {
-        accessorKey: "plannedEndOfLife",
-        header: "Planned End of Life",
-    },
-]
 
 interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[]
@@ -168,7 +120,7 @@ export function DataTable<TData, TValue>({
                 if (!headerText) return null
 
                 return (
-                    <div key={cell.id} className="flex flex-col px-6 py-4 border-b border-gray-200 bg-white last:border-b-0">
+                    <div key={cell.id} className="flex flex-col py-4 border-b border-gray-200 bg-white last:border-b-0">
                         <span className="text-[15px] text-gray-500 font-normal">
                             {headerText}
                         </span>

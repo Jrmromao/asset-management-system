@@ -10,7 +10,7 @@ import {IconType} from 'react-icons';
 interface CustomButtonProps {
     size?: "sm" | "lg" | "default" | "icon" | null | undefined
     variant?: "link" | "default" | "outline" | "ghost" | "destructive" | "secondary" | null | undefined
-    action?: () => void
+    action?: (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void
     value: string
     Icon: IconType;
     className?: string

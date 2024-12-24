@@ -17,6 +17,8 @@ interface IAssetStore {
     onAssignClose: () => void;
     unassign: (assetId: string) => Promise<void>;
     assign: (assetId: string, userId: string) => void;
+
+
 }
 
 
@@ -25,6 +27,7 @@ export const useAssetStore = create(persist<IAssetStore>(
         assets: [],
         loading: false,
         isAssignOpen: false,
+
         getAll: async () => {
             set({loading: true});
             fetch().then(assets => {

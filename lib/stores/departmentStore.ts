@@ -2,12 +2,6 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { getAll } from "@/lib/actions/department.actions";
 
-// Response type from your action
-interface ActionResponse<T> {
-    success: boolean;
-    data?: T;
-    error?: string;
-}
 
 interface IDepartmentStore {
     isOpen: boolean;
@@ -27,14 +21,12 @@ interface IDepartmentStore {
 export const useDepartmentStore = create(
     persist<IDepartmentStore>(
         (set) => ({
-            // Initial state
             isOpen: false,
             departments: [],
             loading: false,
             isAssignOpen: false,
             error: null,
 
-            // Actions
             getAll: async (options) => {
                 set({ loading: true, error: null });
                 try {
