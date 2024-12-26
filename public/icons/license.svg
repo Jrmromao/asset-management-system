@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+  <!-- Main document shape -->
+  <path d="M13.3332 2.5H6.6665C5.42008 2.5 4.79686 2.5 4.33153 2.73023C3.92398 2.93417 3.59748 3.26067 3.39354 3.66822C3.16331 4.13355 3.16331 4.75677 3.16331 6.00319V14C3.16331 15.2464 3.16331 15.8696 3.39354 16.335C3.59748 16.7425 3.92398 17.069 4.33153 17.2729C4.79686 17.5032 5.42008 17.5032 6.6665 17.5032H13.3332C14.5796 17.5032 15.2028 17.5032 15.6681 17.2729C16.0757 17.069 16.4022 16.7425 16.6061 16.335C16.8363 15.8696 16.8363 15.2464 16.8363 14V6.00319C16.8363 4.75677 16.8363 4.13355 16.6061 3.66822C16.4022 3.26067 16.0757 2.93417 15.6681 2.73023C15.2028 2.5 14.5796 2.5 13.3332 2.5Z"
+        stroke="#667085"
+        stroke-width="1.66667"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        fill="none"/>
+
+  <!-- Header line -->
+  <path d="M6.6665 6.66667H13.3332"
+        stroke="#667085"
+        stroke-width="1.66667"
+        stroke-linecap="round"
+        stroke-linejoin="round"/>
+
+  <!-- Content lines -->
+  <path d="M6.6665 10H13.3332"
+        stroke="#667085"
+        stroke-width="1.66667"
+        stroke-linecap="round"
+        stroke-linejoin="round"/>
+
+  <path d="M6.6665 13.3333H10.8332"
+        stroke="#667085"
+        stroke-width="1.66667"
+        stroke-linecap="round"
+        stroke-linejoin="round"/>
+
+  <!-- Official mark / stamp suggestion -->
+  <circle cx="13.3332" cy="13.3333" r="1.66667"
+          stroke="#667085"
+          stroke-width="0.66667"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          fill="none"/>
+</svg>

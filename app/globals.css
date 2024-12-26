@@ -194,9 +194,7 @@
     @apply flex h-screen max-h-screen w-full flex-col gap-8 bg-gray-25 p-8 xl:py-12;
   }
 
-  .assets {
-    @apply flex max-h-screen  w-full flex-col gap-8 overflow-y-scroll  p-4 xl:py-5;
-  }
+
 
   .admin {
     @apply flex max-h-screen w-full flex-col overflow-y-scroll p-4 xl:py-5;

@@ -6,7 +6,7 @@ import QRCode from "react-qr-code";
 import Link from "next/link";
 import { toast } from "sonner";
 import Swal from "sweetalert2";
-import { Scan } from "lucide-react";
+import {BoxIcon, Scan} from "lucide-react";
 import {
     Breadcrumb,
     BreadcrumbItem,
@@ -15,12 +15,16 @@ import {
     BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { DialogContainer } from "@/components/dialogs/DialogContainer";
-import AssignAssetForm from "@/components/forms/AssignAssetForm";
+import AssignmentForm from "@/components/forms/AssignmentForm";
 import { useAssetStore } from "@/lib/stores/assetStore";
 import { AssetType, DetailViewProps } from "@/components/shared/DetailView/types";
 import { useRouter } from "next/navigation";
 import {formatAmount} from "@/lib/utils";
-import {findById} from "@/lib/actions/assets.actions";
+import {findById, unassign, assign} from "@/lib/actions/assets.actions";
+import ActivityLog from "@/components/shared/ActivityLog/ActivityLog";
+import ItemDetailsTabs from "@/components/shared/DetailsTabs/ItemDetailsTabs";
+import {useItemDetails} from "@/components/shared/DetailsTabs/useItemDetails";
+
 
 interface AssetPageProps {
     params: {
@@ -28,17 +32,6 @@ interface AssetPageProps {
     };
 }
 
-// // Define proper types for actions
-// interface AssetActions {
-//     onArchive: () => void;
-//     onAssign?: () => void;
-//     onUnassign?: () => void;
-//     onDuplicate: () => void;
-//     onEdit: () => void;
-//     onPrintLabel: () => void;
-// }
-
-// Enhanced AssetType with optional fields
 interface EnhancedAssetType {
     id: string;
     name: string;
@@ -58,6 +51,12 @@ interface EnhancedAssetType {
     model: {
         name: string
     }
+    location: {
+        name: string
+    }
+    department: {
+        name: string
+    },
     assigneeId?: string;
     createdAt: Date;
     updatedAt: Date;
@@ -78,16 +77,19 @@ const UnassignModal = async () => {
 export default function AssetPage({ params }: AssetPageProps) {
     const [error, setError] = useState<string | null>(null);
     const { id } = params;
-    const router = useRouter();
     const {
         isAssignOpen,
         onAssignOpen,
         onAssignClose,
         unassign,
-        assets
     } = useAssetStore();
 
     const [asset, setAsset] = useState<EnhancedAssetType | undefined>();
+
+    const { relationships, attachments, isLoading } = useItemDetails({
+        itemId: id,
+        itemType: 'asset'
+    });
 
     useEffect(() => {
         const fetchAsset = async () => {
@@ -99,6 +101,8 @@ export default function AssetPage({ params }: AssetPageProps) {
                 if (!foundAssetResponse.error) {
 
                     const foundAsset = foundAssetResponse.data;
+
+                    console.log(foundAsset?.department?.name)
 
                     setAsset({
                         id: foundAsset?.id!,
@@ -119,6 +123,12 @@ export default function AssetPage({ params }: AssetPageProps) {
                         assignee: foundAsset?.assignee?.name ? {
                             name: foundAsset?.assignee.name
                         } : undefined,
+                        location: {
+                            name: foundAsset?.departmentLocation?.name ?? ''
+                        },
+                        department: {
+                            name: foundAsset?.department?.name ?? ''
+                        },
                         assigneeId: foundAsset?.assigneeId,
                         createdAt: foundAsset?.createdAt!,
                         updatedAt: foundAsset?.updatedAt!
@@ -216,9 +226,7 @@ export default function AssetPage({ params }: AssetPageProps) {
                 </body>
             </html>
         `);
-
             printWindow.document.close();
-
         } catch (error) {
             console.error('Print error:', error);
             alert('Failed to print image. Please allow popups for this feature.');
@@ -241,7 +249,8 @@ export default function AssetPage({ params }: AssetPageProps) {
             { label: 'Category', value: asset.category.name, type: 'text' },
             { label: 'Model', value: asset.model.name, type: 'text' },
             { label: 'Status', value: asset.statusLabel.name, type: 'text' },
-            { label: 'Location', value: '[Some Location ID]', type: 'text' },
+            { label: 'Location', value: asset.location?.name, type: 'text' },
+            { label: 'Department', value: asset.department?.name, type: 'text' },
             {
                 label: asset.assigneeId ? 'Assigned To' : 'Not Assigned',
                 value: asset.assigneeId ? (asset.assignee?.name ?? '') : '',
@@ -305,14 +314,15 @@ export default function AssetPage({ params }: AssetPageProps) {
                 onOpenChange={onAssignClose}
                 title="Assign Asset"
                 form={
-                    <AssignAssetForm
-                        assetId={id}
+                    <AssignmentForm
+                        itemId={asset?.id}
+                        type="asset"
+                        assignAction={assign}
                         onOptimisticUpdate={(userData) => {
-                            // Immediately update the UI
                             setAsset(prev => prev ? {
                                 ...prev,
                                 assigneeId: userData.userId,
-                                assignee: { name: userData.userName }
+                                assignee: {name: userData.userName}
                             } : undefined);
                         }}
                         onSuccess={() => {
@@ -320,7 +330,6 @@ export default function AssetPage({ params }: AssetPageProps) {
                             onAssignClose();
                         }}
                         onError={(previousData) => {
-                            // Rollback the optimistic update if we have previous data
                             if (previousData) {
                                 setAsset(prev => prev ? {
                                     ...prev,
@@ -333,6 +342,27 @@ export default function AssetPage({ params }: AssetPageProps) {
                     />
                 }
             />
+
+            <div className="mt-5 ">
+                <ItemDetailsTabs
+                    itemId={id}
+                    itemType="license"
+                    relationships={relationships}
+                    attachments={attachments}
+                    customTabs={{
+                        inventory: {
+                            label: "Inventory",
+                            icon: <BoxIcon className="h-4 w-4"/>,
+                            content: (
+                                <div>
+                                    {/* Custom inventory content */}
+                                </div>
+                            )
+                        }
+                    }}
+                />
+            </div>
+
         </>
     );
 }

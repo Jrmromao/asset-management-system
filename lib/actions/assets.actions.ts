@@ -4,7 +4,7 @@ import {prisma} from "@/app/db";
 import {parseStringify, processRecordContents, roundFloat} from "@/lib/utils";
 import {auth} from "@/auth";
 import {z} from "zod";
-import {assetAssignSchema, assetSchema} from "@/lib/schemas";
+import {assignmentSchema, assetSchema} from "@/lib/schemas";
 import {Prisma} from "@prisma/client";
 import {parse} from 'csv-parse/sync'
 import {revalidatePath} from "next/cache";
@@ -19,8 +19,14 @@ const assetIncludes = {
             category: true
         }
     },
+    department: true,
+    departmentLocation: true,
     company: true,
     statusLabel: true,
+    assignee: true,
+    formTemplateValues: true,
+    formTemplate: true
+
 
 } as const;
 
@@ -37,6 +43,7 @@ export async function create(values: z.infer<typeof assetSchema>): Promise<ApiRe
             return {error: 'Unauthorized access'};
         }
 
+
         const validation = assetSchema.safeParse(values);
         if (!validation.success) {
             console.error('Validation errors:', validation.error.errors);
@@ -50,7 +57,7 @@ export async function create(values: z.infer<typeof assetSchema>): Promise<ApiRe
                 material: values.material || '',
                 modelId: values.modelId,
                 endOfLife: values.endOfLife!,
-                licenseId: values.licenseId || 'bbbrjq3i7000pur8zx45joao',
+                licenseId: 'cm559xnyw0001r7l4yhxbyncx',
                 statusLabelId: values.statusLabelId,
                 supplierId: values.supplierId,
                 companyId: session.user.companyId,
@@ -63,14 +70,23 @@ export async function create(values: z.infer<typeof assetSchema>): Promise<ApiRe
                 inventoryId: values.inventoryId,
                 energyRating: values.energyRating || '',
                 dailyOperatingHours: Number(values.dailyOperatingHours),
+                formTemplateId: values.formTemplateId
             },
             include: assetIncludes,
         });
 
-        console.log('\n\n\n\n ==========>>>>>> ',newAsset)
-
         if (!newAsset) {
             return {error: 'Failed to create asset'};
+        }
+
+        if(values.formTemplateId && values.templateValues) {
+            await prisma.formTemplateValue.createMany({
+                data: {
+                    assetId: newAsset.id,
+                    templateId: values.formTemplateId!,
+                    values: values.templateValues
+                }
+            });
         }
 
         return {data: parseStringify(newAsset)};
@@ -104,7 +120,6 @@ export async function get(): Promise<ApiResponse<Asset[]>> {
         return {error: 'Failed to fetch assets'};
     }
 }
-
 export async function findById(id: string): Promise<ApiResponse<Asset>> {
     try {
         if (!id) {
@@ -116,6 +131,9 @@ export async function findById(id: string): Promise<ApiResponse<Asset>> {
             where: {id}
         });
 
+
+        console.log(asset)
+
         if (!asset) {
             return {error: 'Asset not found'};
         }
@@ -126,7 +144,6 @@ export async function findById(id: string): Promise<ApiResponse<Asset>> {
         return {error: 'Failed to find asset'};
     }
 }
-
 export async function remove(id: string): Promise<ApiResponse<Asset>> {
     try {
         if (!id) {
@@ -148,7 +165,6 @@ export async function remove(id: string): Promise<ApiResponse<Asset>> {
         return {error: 'Failed to delete asset'};
     }
 }
-
 export async function update(asset: Asset, id: string): Promise<ApiResponse<Asset>> {
     try {
         if (!id || !asset) {
@@ -180,17 +196,16 @@ export async function update(asset: Asset, id: string): Promise<ApiResponse<Asse
         return {error: 'Failed to update asset'};
     }
 }
-
-export async function assign(values: z.infer<typeof assetAssignSchema>): Promise<ApiResponse<Asset>> {
+export async function assign(values: z.infer<typeof assignmentSchema>): Promise<ApiResponse<Asset>> {
     try {
-        const validation = assetAssignSchema.safeParse(values);
+        const validation = assignmentSchema.safeParse(values);
 
         if (!validation.success) {
             return {error: validation.error.errors[0].message};
         }
 
         const updatedAsset = await prisma.asset.update({
-            where: {id: values.assetId},
+            where: {id: values.itemId},
             data: {assigneeId: values.userId},
             include: assetIncludes
         });
@@ -201,7 +216,6 @@ export async function assign(values: z.infer<typeof assetAssignSchema>): Promise
         return {error: 'Failed to assign asset'};
     }
 }
-
 export async function unassign(assetId: string): Promise<ApiResponse<Asset>> {
     try {
         if (!assetId) {
@@ -220,7 +234,6 @@ export async function unassign(assetId: string): Promise<ApiResponse<Asset>> {
         return {error: 'Failed to unassign asset'};
     }
 }
-
 export async function processAssetsCSV(csvContent: string) {
     try {
         const data = processRecordContents(csvContent)

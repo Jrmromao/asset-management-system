@@ -202,7 +202,7 @@ export const licenseSchema = z.object({
         message: "Purchase price is required"
     }),
     poNumber: z.string().min(1, "PO number is required"),
-    licenseKey: z.string().min(1, "License key is required"),
+    licenseKey: z.string().optional(),
     notes: z.string().optional(),
     departmentId: z.string().min(1, "Department is required"),
     inventoryId: z.string().min(1, "Inventory is required"),
@@ -379,10 +379,13 @@ export const kitItemSchema = z.object({
     itemID: z.string().optional()
 });
 
-export const assetAssignSchema = z.object({
-    assetId: z.string().optional(),
+
+export const assignmentSchema = z.object({
     userId: z.string().min(1, "User is required"),
+    itemId: z.string().min(1, "Item ID is required"),
+    type: z.enum(['asset', 'license', 'accessory', 'consumable'])
 });
+
 
 export const manufacturerSchema = z.object({
     ...nameField('Manufacturer'),
@@ -529,6 +532,19 @@ export const userSchema = z.object({
 //     password: z.string().optional(),
 // });
 
+
+const customFieldSchema = z.object({
+    id: z.string(),
+    name: z.string(),
+    type: z.enum(['text', 'number', 'date', 'select', 'checkbox']),
+    value: z.union([
+        z.string(),
+        z.number(),
+        z.date(),
+        z.boolean()
+    ]).optional(),
+    options: z.array(z.string()).optional()
+});
 export const assetSchema = z.object({
     name: z.string().min(1, "Asset name is required"),
     purchaseDate: z.date({
@@ -563,11 +579,13 @@ export const assetSchema = z.object({
     ]),
     poNumber: z.string().min(1, 'PO Number is required').optional(),
     material: z.string().optional(),
+    formTemplateId: z.string().optional(),
+    templateValues: z.record(z.any()).optional(),
     energyRating: z.string().optional(),
     licenseId: z.string().optional(),
     dailyOperatingHours: z.string().refine((val) => !Number.isNaN(parseInt(val, 10)), {
     // message: "Daily operating hours must be a number",
 }).optional(),
-
+    customFields: z.array(customFieldSchema).optional(),
     endOfLife: dateField('End of Life')
 });

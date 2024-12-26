@@ -16,6 +16,7 @@ import CategoryTable from "@/components/tables/CategoryTable";
 import React, {useEffect, useMemo, useState} from "react";
 import {licenseStore} from "@/lib/stores/store";
 import {useCategoryStore} from "@/lib/stores/categoryStore";
+import {useRouter} from "next/navigation";
 
 // import {
 //     Tooltip,
@@ -27,11 +28,9 @@ const Admin = () => {
 
     const [refresh, setRefresh] = useState(false)
 
+    const router = useRouter()
     const [shouldRefresh, licenses] = licenseStore((state) => [state.shouldRefresh, state.licenses])
 
-    // const [categories, deleteCategory, getAll] = useCategoryStore(state => [state.categories, state.delete, state.getAll])
-
-    // const categoriesMemo = useMemo(() => categories, [categories, getAll])
 
 
     useEffect(() => {
@@ -43,14 +42,15 @@ const Admin = () => {
 
         if (refresh) {
             // getAll()
-                setRefresh(false)
+            setRefresh(false)
         }
     }, [refresh]);
 
     return (
         <div className="flex min-h-screen w-full flex-col bg-muted/40 admin">
             <div className="">
-                <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
+                <header
+                    className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
 
                     <Breadcrumb className="hidden md:flex pb-5">
                         <BreadcrumbList>
@@ -74,21 +74,18 @@ const Admin = () => {
 
 
                 </header>
-                <main  className="grid flex-1 items-start gap-4 p-4 sm:px-1 sm:py-0 md:gap-2 lg:grid-cols-1 xl:grid-cols-1">
+                <main
+                    className="grid flex-1 items-start gap-4 p-4 sm:px-1 sm:py-0 md:gap-2 lg:grid-cols-1 xl:grid-cols-1">
                     <div className="grid auto-rows-max items-start gap-4 md:gap-8 lg:col-span-2">
                         <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
-                            <Card className="sm:col-span-2" x-chunk="dashboard-05-chunk-0">
+                            <Card className="sm:col-span-2 cursor-pointer" x-chunk="dashboard-05-chunk-0"
+                                  onClick={() => router.push('/accessories')}>
                                 <CardHeader className="pb-3">
-                                    <CardTitle>Need to decide</CardTitle>
-                                    <CardDescription className="max-w-lg text-balance leading-relaxed">
-                                        Some description
-                                    </CardDescription>
+                                    <CardTitle>Accessories</CardTitle>
                                 </CardHeader>
-                                <CardFooter>
-                                    <Button>Create New Order</Button>
-                                </CardFooter>
                             </Card>
-                            <Card x-chunk="dashboard-05-chunk-1">
+                            <Card x-chunk="dashboard-05-chunk-1" onClick={() => router.push('/assets')}
+                                  className={'cursor-pointer '}>
                                 <CardHeader className="pb-2">
                                     <CardDescription>Total Assets</CardDescription>
                                     <CardTitle className="text-4xl">999/2000</CardTitle>
@@ -102,10 +99,11 @@ const Admin = () => {
                                     <Progress value={25} aria-label="25% increase"/>
                                 </CardFooter>
                             </Card>
-                            <Card x-chunk="dashboard-05-chunk-2">
+                            <Card x-chunk="dashboard-05-chunk-2" onClick={() => router.push('/licenses')}
+                                  className={'cursor-pointer '}>
                                 <CardHeader className="pb-2">
                                     <CardDescription>Total Licenses</CardDescription>
-                                    <CardTitle className="text-4xl">133/300</CardTitle>
+                                    <CardTitle className="text-4xl">{licenses.length}/300</CardTitle>
                                 </CardHeader>
                                 <CardContent>
                                     <div className="text-xs text-muted-foreground">
@@ -180,7 +178,7 @@ const Admin = () => {
                                                 </CardDescription>
                                             </CardHeader>
                                             <CardContent>
-                                                <CategoryForm />
+                                                <CategoryForm/>
                                             </CardContent>
                                             <CardFooter>
                                             </CardFooter>
@@ -219,7 +217,7 @@ const Admin = () => {
                                                 </CardDescription>
                                             </CardHeader>
                                             <CardContent>
-                                             test
+                                                test
                                             </CardContent>
                                             <CardFooter>
                                             </CardFooter>
@@ -284,7 +282,7 @@ const Admin = () => {
                 </main>
             </div>
         </div>
-    )
+)
 }
 
 export default Admin

@@ -4,6 +4,7 @@ import {ArrowUpDown} from "lucide-react";
 import LinkTableCell from "@/components/tables/LinkTableCell";
 import React from "react";
 import DataTableRowActions from "@/components/tables/DataTable/DataTableRowActions";
+import {FormTemplate} from "@/types/form";
 
 
 // const navigate = useRouter() cannot use hook in a non hook component
@@ -47,7 +48,7 @@ export const assetColumns = ({onDelete, onView}: AssetColumnsProps): ColumnDef<A
     {
         header: "CO2 Footprint",
         cell: ({row}) => {
-            return <div>{'n/a'}</div>
+            return <div>{'-'}</div>
         }
     },
     {
@@ -70,6 +71,14 @@ export const assetColumns = ({onDelete, onView}: AssetColumnsProps): ColumnDef<A
             const formattedDate = value.toLocaleDateString()
             return <div>{formattedDate}</div>
         }
+    },
+    {
+        accessorKey: "customForm",
+        header: "Custom Form",
+        cell: ({row}) => {
+            const value = row.original.formTemplate;
+            return <LinkTableCell className={'hover:underline hover:text-red-500 hover:decoration-wavy'} value={value?.name} navigateTo={`/assets/view/${row.original.id}`}/>
+        },
     },
     {
         id: "actions",

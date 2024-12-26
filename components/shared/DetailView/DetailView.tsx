@@ -13,6 +13,8 @@ import {
     RefreshCcw,
     Tag,
     User,
+    Laptop2,
+    Building2,  Hash, Bell, Mail, Store
 } from 'lucide-react';
 import {
     Tooltip,
@@ -31,7 +33,12 @@ const fieldIcons = {
     'Assigned To': User,
     'Created At': Calendar,
     Price: Coins,
-    Model: Coins,
+    Model: Laptop2,
+    Department: Building2,
+    'Reorder Point': Bell,
+    'Alert Email': Mail,
+    'Quantity': Hash,
+    'Supplier': Store
 } as const;
 
 export const DetailView: React.FC<DetailViewProps> = ({
@@ -42,6 +49,7 @@ export const DetailView: React.FC<DetailViewProps> = ({
                                                           actions,
                                                           qrCode,
                                                           breadcrumbs,
+                                                          sourceData = ''
                                                       }) => {
     const getField = (label: string) => fields.find((f) => f.label === label);
     const scoreInfo = getCO2ScoreInfo(co2Score ?? 0);
@@ -49,13 +57,12 @@ export const DetailView: React.FC<DetailViewProps> = ({
 
 
     return (
+
+
         <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-            {/* Header Section */}
             <div className="flex items-center justify-between px-4 py-5 sm:px-6">
                 {breadcrumbs}
             </div>
-
-            {/* Title and Status Section */}
             <div className="px-4 py-1 sm:px-6">
                 <div>
                     <h3 className="text-xl font-semibold text-gray-900">{title}</h3>
@@ -67,19 +74,12 @@ export const DetailView: React.FC<DetailViewProps> = ({
                 </div>
 
                 <div className="flex items-center gap-3 mt-4 flex-wrap mb-3">
-                    {getField('Status') && (
-                        <span className="px-3 py-1 text-sm rounded-full bg-green-100 text-green-800">
-              {getField('Status')?.value}
-            </span>
-                    )}
+                    {getField('Status') && (<span className="px-3 py-1 text-sm rounded-full bg-green-100 text-green-800">{getField('Status')?.value}</span>)}
 
-                    {/* CO2 Tooltip */}
                     <TooltipProvider>
                         <Tooltip>
                             <TooltipTrigger asChild>
-                <span
-                    className={`px-3 py-1 text-sm rounded-full ${scoreInfo.color} flex items-center gap-2 cursor-help bg-white`}
-                >
+                <span className={`px-3 py-1 text-sm rounded-full text-emerald-700 bg-emerald-100 flex items-center gap-2 cursor-help`}>
                   <IconComponent className="w-4 h-4"/>
                   <span className="flex items-center gap-1">
                     <Leaf className="w-3 h-3"/>
@@ -116,8 +116,9 @@ export const DetailView: React.FC<DetailViewProps> = ({
                         <div className="lg:col-span-5 p-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                                 {fields
-                                    .filter((field) =>
-                                        [
+                                    .filter((field) => {
+                                        // Define allowed fields
+                                        const allowedFields = [
                                             'Name',
                                             'Location',
                                             'Tag Number',
@@ -127,11 +128,20 @@ export const DetailView: React.FC<DetailViewProps> = ({
                                             'Created At',
                                             'Price',
                                             'Model',
-                                        ].includes(field.label)
-                                    )
+                                            'Department',
+                                            'Reorder Point',
+                                            'Alert Email',
+                                            'Quantity',
+                                            'Supplier',
+                                        ];
+
+                                        // Check if the field is allowed and skip "Price" for accessories
+                                        return allowedFields.includes(field.label) &&
+                                            !(sourceData === 'accessory' && field.label === 'Price');
+                                    })
                                     .map((field, index) => {
-                                        const IconComponent =
-                                            fieldIcons[field.label as keyof typeof fieldIcons];
+                                        // Dynamically get the corresponding icon component
+                                        const IconComponent = fieldIcons[field.label as keyof typeof fieldIcons];
                                         return (
                                             <DetailField
                                                 key={index}
@@ -139,12 +149,13 @@ export const DetailView: React.FC<DetailViewProps> = ({
                                                 field={field}
                                                 icon={
                                                     IconComponent && (
-                                                        <IconComponent className="w-4 h-4 text-gray-400"/>
+                                                        <IconComponent className="w-4 h-4 text-gray-400" />
                                                     )
                                                 }
                                             />
                                         );
                                     })}
+
                             </div>
                         </div>
 

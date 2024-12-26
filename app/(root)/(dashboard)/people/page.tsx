@@ -28,7 +28,7 @@ const People = () => {
 
     const navigate = useRouter()
     const handleView = async (id: string) => {
-        navigate.push(`/assets/view/?id=${id}`)
+        navigate.push(`/people/view/${id}`)
     }
 
     const handleDelete = async (id: string) => {

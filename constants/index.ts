@@ -1,30 +1,30 @@
 export const sidebarLinks = [
     {
-        imgURL: "/icons/monitor.svg",
+        imgURL: "/icons/admin-icon.svg",
         route: "/admin",
         label: "Admin",
         visibleTo: ["admin"],
     },
     {
-        imgURL: "/icons/dollar-circle.svg",
+        imgURL: "/icons/laptop.svg",
         route: "/assets",
         label: "Assets",
         visibleTo: ["admin", "user"],
     },
     {
-        imgURL: "/icons/transaction.svg",
+        imgURL: "/icons/license.svg",
         route: "/licenses",
         label: "Licenses",
         visibleTo: ["admin", "user"],
     },
     {
-        imgURL: "/icons/money-send.svg",
+        imgURL: "/icons/monitor.svg",
         route: "/accessories",
         label: "Accessories",
         visibleTo: ["admin", "user"],
     },
     {
-        imgURL: "/icons/plus.svg",
+        imgURL: "/icons/people.svg",
         route: "/people",
         label: "People",
         visibleTo: ["admin", "user"],

@@ -2,15 +2,15 @@
 import {parseStringify} from "@/lib/utils";
 import {PrismaClient} from "@prisma/client";
 import {z} from "zod";
-import {accessorySchema, licenseSchema} from "@/lib/schemas";
+import {licenseSchema} from "@/lib/schemas";
 import {auth} from "@/auth";
 
 const prisma = new PrismaClient()
 
-// Type for the API response
 type ApiResponse<T> = {
     data?: T;
-    error?: string;
+    error?: boolean;
+    message?: string;
 };
 
 export const create = async (values: z.infer<typeof licenseSchema>): Promise<ApiResponse<License>> => {
@@ -28,7 +28,7 @@ export const create = async (values: z.infer<typeof licenseSchema>): Promise<Api
 
         const session = await auth()
         if (!session) {
-            return {error: "Not authenticated"};
+            return {message: "Not authenticated"};
         }
 
         await prisma.license.create({
@@ -47,7 +47,7 @@ export const create = async (values: z.infer<typeof licenseSchema>): Promise<Api
                 inventoryId: values.inventoryId,
                 statusLabelId: values.statusLabelId,
                 purchaseNotes: values.notes,
-                licenseKey: values.licenseKey,
+                licenseKey: '', // this needs to be removed
                 purchasePrice: values.purchasePrice,
                 companyId: session.user.companyId
             },
@@ -65,11 +65,7 @@ export const create = async (values: z.infer<typeof licenseSchema>): Promise<Api
 }
 export const getAll = async () => {
     try {
-
-
         const licenses = await prisma.license.findMany();
-
-
         return parseStringify(licenses);
     } catch (error) {
         console.log(error)
@@ -77,18 +73,80 @@ export const getAll = async () => {
         await prisma.$disconnect()
     }
 }
-export const findById = async (id: string) => {
+export const findById = async (id: string): Promise<ApiResponse<License>> => {
     try {
-        const licenseTool = await prisma.license.findFirst({
-            where: {
-                id: id
+        const license = await prisma.license.findFirst({
+            where: { id },
+            include: {
+                company: true,
+                assets: true,
+                statusLabel: true,
+                supplier: true,
+                department: true,
+                departmentLocation: true,
+                inventory: true,
             }
         });
-        return parseStringify(licenseTool);
+
+        if (!license) {
+            return {
+                error: true,
+                data: undefined
+            };
+        }
+
+        // Transform the Prisma result to match the License type
+        const transformedLicense: License = {
+            id: license.id,
+            name: license.name,
+            licensedEmail: license.licensedEmail,
+            poNumber: license.poNumber,
+            // licenseKey: license.licenseKey,
+            companyId: license.companyId,
+            statusLabelId: license.statusLabelId ?? undefined,  // Convert null to undefined
+            supplierId: license.supplierId ?? undefined,
+            departmentId: license.departmentId ?? undefined,
+            locationId: license.locationId ?? undefined,
+            inventoryId: license.inventoryId ?? undefined,
+            renewalDate: license.renewalDate,
+            purchaseDate: license.purchaseDate,
+            purchaseNotes: license.purchaseNotes ?? undefined,
+            licenseUrl: license.licenseUrl ?? undefined,
+            minCopiesAlert: license.minCopiesAlert,
+            alertRenewalDays: license.alertRenewalDays,
+            licenseCopiesCount: license.licenseCopiesCount,
+            purchasePrice: Number(license.purchasePrice),
+            createdAt: license.createdAt,
+            updatedAt: license.updatedAt,
+
+            // Relations - convert nulls to undefined and ensure proper type conversion
+            company: license.company ?? undefined,
+            statusLabel: license.statusLabel ?? undefined,
+            supplier: license.supplier,
+            department: license.department ?? undefined,
+            departmentLocation: license.departmentLocation ? {
+                ...license.departmentLocation,
+                addressLine2: license.departmentLocation.addressLine2 ?? undefined,
+                companyId: license.departmentLocation.companyId ?? undefined
+            } : undefined,
+            inventory: license.inventory ?? undefined,
+        };
+
+        console.log(transformedLicense)
+
+        return {
+            error: false,
+            data: transformedLicense
+        };
+
     } catch (error) {
-        console.log(error)
+        console.error('Error finding license:', error);
+        return {
+            error: true,
+            data: undefined
+        };
     } finally {
-        await prisma.$disconnect()
+        await prisma.$disconnect();
     }
 }
 export const update = async (data: License, id: string) => {

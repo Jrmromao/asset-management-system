@@ -1,14 +1,13 @@
 /* eslint-disable no-unused-vars */
 
 
-
-
 declare global {
     // ==================== Basic Types ====================
     type SearchParamProps = {
         params: { [key: string]: string };
         searchParams: { [key: string]: string | string[] | undefined };
     };
+
 
 
 
@@ -90,39 +89,60 @@ declare global {
     };
 
 
-
-     type Accessory = {
+    type Accessory = {
         id: string;
-        title: string;
+        name: string;
+        companyId: string;
         alertEmail: string;
         reorderPoint: number;
         totalQuantityCount: number;
         purchaseDate: Date;
-        notes?: string | null;
         material: string;
-        weight: number; // Assuming Decimal is represented as a number
+        weight: number;
+        price?: number;
         endOfLife: Date;
-        companyId: string;
-        modelId?: string | null;
-        statusLabelId?: string | null;
-        supplierId?: string | null;
-        departmentId?: string | null;
-        locationId?: string | null;
-        inventoryId?: string | null;
-        categoryId?: string | null;
-        poNumber?: string | null;
-        price?: number | null;
-        company: Company;
+        notes: string | null;  // Changed from string | undefined to string | null
+        modelId: string | null;
+        statusLabelId: string | null;
+        supplierId: string | null;
+        departmentId: string | null;
+        locationId: string | null;
+        inventoryId: string | null;
+        categoryId: string | null;
+        poNumber: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        assigneeId?: string | null;
+        licenseId?: string | null;
+        serialNumber?: string | null;
+
+        energyRating?: string | null;
+        dailyOperationHours?: number | null;
+        co2Score?: number | null;
+
+        // Optional relations
         model?: Model | null;
         statusLabel?: StatusLabel | null;
         supplier?: Supplier | null;
         department?: Department | null;
         departmentLocation?: DepartmentLocation | null;
         inventory?: Inventory | null;
+        company?: Company;
+        assignee?: User | null;
+        category?: Category | null;
+        license?: License | null;
     };
 
     type Asset = {
         id?: string;
+        formTemplate: {
+            id: string;
+            name: string;
+            fields: any[];
+            companyId: string;
+            createdAt: Date;
+            updatedAt: Date;
+        }
         name: string;
         poNumber: string;
         assignee?: User;
@@ -142,7 +162,7 @@ declare global {
         category?: Category;
         licenseId?: string;
         locationId?: string;
-        location?: Location;
+        departmentLocation?: DepartmentLocation;
         departmentId?: string;
         department?: Department
         statusLabelId?: string;
@@ -163,7 +183,7 @@ declare global {
         name: string;
         licensedEmail: string;
         poNumber: string;
-        licenseKey: string;
+        licenseKey?: string;
         companyId: string;
         statusLabelId?: string | null;
         supplierId?: string | null;
@@ -189,6 +209,8 @@ declare global {
         department?: Department | null;
         departmentLocation?: DepartmentLocation | null;
         inventory?: Inventory | null;
+        category?: Category | null;
+        model?: Model | null;
     };
 
 
@@ -238,7 +260,7 @@ declare global {
         companyId: string;  // Add this if it's required by Prisma
     };
 
-    type Location = BaseEntity & {
+    type DepartmentLocation = BaseEntity & {
         name: string;
         addressLine1: string;
         addressLine2?: string;
@@ -281,52 +303,52 @@ declare global {
     }
 }
 
-    // ==================== Props for Components ====================
-    export interface CategoryBadgeProps {
-        category: string;
-    }
+// ==================== Props for Components ====================
+export interface CategoryBadgeProps {
+    category: string;
+}
 
-    export interface AssetTableProps {
-        assets: Asset[];
-        deleteAsset: (id: string) => void;
-        findById: (id: string) => void;
-    }
+export interface AssetTableProps {
+    assets: Asset[];
+    deleteAsset: (id: string) => void;
+    findById: (id: string) => void;
+}
 
-    export interface UserTableProps {
-        users: User[];
-        deleteUser: (id: string) => void;
-        findById: (id: string) => void;
-    }
+export interface UserTableProps {
+    users: User[];
+    deleteUser: (id: string) => void;
+    findById: (id: string) => void;
+}
 
-    export interface CategoryTableProps {
-        licenses: Category[];
-        deleteCategory: (id: string) => void;
-        setRefresh: (flag: boolean) => void;
-    }
+export interface CategoryTableProps {
+    licenses: Category[];
+    deleteCategory: (id: string) => void;
+    setRefresh: (flag: boolean) => void;
+}
 
-    export interface LicenseTableProps {
-        licenses: License[];
-    }
+export interface LicenseTableProps {
+    licenses: License[];
+}
 
-    export interface CategoryProps {
-        category: CategoryCount;
-    }
+export interface CategoryProps {
+    category: CategoryCount;
+}
 
-    export interface DoughnutChartProps {
-        accounts: Account[];
-    }
+export interface DoughnutChartProps {
+    accounts: Account[];
+}
 
-    export interface PaymentTransferFormProps {
-        accounts: Account[];
-    }
+export interface PaymentTransferFormProps {
+    accounts: Account[];
+}
 
-    export interface CompanyRegistrationProps {
-        companyName: string;
-        email: string;
-        password: string;
-        phoneNumber: string;
-        firstName: string;
-        lastName: string;
-    }
+export interface CompanyRegistrationProps {
+    companyName: string;
+    email: string;
+    password: string;
+    phoneNumber: string;
+    firstName: string;
+    lastName: string;
+}
 
 export {}; // Ensure this file is treated as a module

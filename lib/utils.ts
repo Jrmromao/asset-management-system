@@ -286,7 +286,8 @@ export async function encrypt(payload: any) {
 export const getCO2ScoreInfo = (score: number) => {
     if (score <= 30) {
         return {
-            color: 'bg-emerald-100 text-emerald-800',
+            color: 'text-emerald-700', // Light mint green background with darker green text
+            bgColor: 'bg-emerald-50',
             icon: BatteryFull,
             label: 'Excellent',
             description: 'Very low carbon footprint',
@@ -294,7 +295,8 @@ export const getCO2ScoreInfo = (score: number) => {
     }
     if (score <= 60) {
         return {
-            color: 'bg-green-100 text-green-800',
+            color: 'text-green-700', // Soft green background
+           bgColor: 'bg-green-500',
             icon: BatteryMedium,
             label: 'Good',
             description: 'Low carbon footprint',
@@ -302,14 +304,16 @@ export const getCO2ScoreInfo = (score: number) => {
     }
     if (score <= 90) {
         return {
-            color: 'bg-yellow-100 text-yellow-800',
+            color: 'text-yellow-700', // Soft yellow background
+          bgColor: 'bg-yellow-500',
             icon: BatteryLow,
             label: 'Fair',
             description: 'Moderate carbon footprint',
         };
     }
     return {
-        color: 'bg-red-100 text-red-800',
+        color: 'text-red-700', // Soft red background
+        bgColor: 'bg-red-500',
         icon: Battery,
         label: 'High',
         description: 'High carbon footprint',

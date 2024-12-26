@@ -8,9 +8,6 @@ import {categorySchema} from "@/lib/schemas";
 import {Prisma} from "@prisma/client";
 
 
-/**
- * Creates a new category for the authenticated user's company
- */
 export async function insert(values: z.infer<typeof categorySchema>): Promise<ActionResponse<void>> {
     try {
         // Validate input against schema
@@ -73,10 +70,6 @@ export async function insert(values: z.infer<typeof categorySchema>): Promise<Ac
 }
 
 
-
-/**
- * Fetches all categories for a given company with optional filtering and sorting
- */
 export async function findAll(options?: {
     orderBy?: 'name' | 'createdAt';
     order?: 'asc' | 'desc';
@@ -146,23 +139,50 @@ export async function findAll(options?: {
     }
 }
 
-/**
- * Example usage with form:
- *
- * const form = useForm<z.infer<typeof categorySchema>>({
- *   resolver: zodResolver(categorySchema),
- *   defaultValues: {
- *     name: '',
- *     type: ''
- *   }
- * });
- *
- * async function onSubmit(values: z.infer<typeof categorySchema>) {
- *   const result = await insert(values);
- *   if (result.success) {
- *     // Handle success
- *   } else {
- *     // Handle error
- *   }
- * }
- */
+export async function findById(id: string): Promise<ActionResponse<Category>> {
+    try {
+        // Validate session
+        const session = await auth();
+        if (!session?.user?.companyId) {
+            return {
+                success: false,
+                error: 'Unauthorized: No valid session found'
+            };
+        }
+
+        // Get the category
+        const category = await prisma.category.findFirst({
+            where: {
+                id: id,
+                companyId: session.user.companyId // Ensure the category belongs to the user's company
+            },
+            select: {
+                id: true,
+                name: true,
+                type: true,
+                companyId: true,
+                createdAt: true,
+                updatedAt: true,
+            }
+        });
+
+        if (!category) {
+            return {
+                success: false,
+                error: 'Category not found'
+            };
+        }
+
+        return {
+            success: true,
+            data: category
+        };
+
+    } catch (error) {
+        console.error('Error fetching category:', error);
+        return {
+            success: false,
+            error: 'Failed to fetch category'
+        };
+    }
+}

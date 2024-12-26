@@ -25,7 +25,7 @@ const Licenses = () => {
         })
     }
     const handleView = async (id: string) => {
-        navigate.push(`/assets/view/?id=${id}`)
+        navigate.push(`/licenses/view/${id}`)
     }
     const onDelete = useCallback((accessory: any) => handleDelete(accessory?.id!), [])
     const onView = useCallback((accessory: any) => handleView(accessory?.id!), [])

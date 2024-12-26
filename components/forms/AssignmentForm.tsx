@@ -7,36 +7,42 @@ import { Form } from "@/components/ui/form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Loader2 } from "lucide-react"
 import { FormError } from "@/components/forms/form-error"
-import { assign } from "@/lib/actions/assets.actions"
 import CustomSelect from "@/components/CustomSelect"
 import { useUserStore } from "@/lib/stores/userStore"
-import { assetAssignSchema } from "@/lib/schemas"
-import { z } from "zod"
+import * as z from "zod"
+import {assignmentSchema} from "@/lib/schemas";
+
+// Define supported asset types
+export type AssetType = 'asset' | 'license' | 'accessory' | 'consumable';
+
+type AssignmentFormValues = z.infer<typeof assignmentSchema>;
 
 interface Props {
-    assetId: string;
+    itemId: string;
+    type: AssetType;
     onOptimisticUpdate: (data: { userId: string; userName: string }) => void;
     onSuccess?: () => void;
     onError?: (previousData?: { userId: string; userName: string }) => void;
-    isAssigned?: boolean
+    assignAction: (data: AssignmentFormValues) => Promise<{ error?: string }>;
 }
 
-const AssignAssetForm = ({
-                             assetId,
-                             onOptimisticUpdate,
-                             onSuccess,
-                             onError
-                         }: Props) => {
+const AssignmentForm = ({
+                            itemId,
+                            type,
+                            onOptimisticUpdate,
+                            onSuccess,
+                            onError,
+                            assignAction
+                        }: Props) => {
     const [error, setError] = useState<string>('')
     const [isSubmitting, setIsSubmitting] = useState(false)
 
-    type AssignFormValues = z.infer<typeof assetAssignSchema>;
-
-    const form = useForm<AssignFormValues>({
-        resolver: zodResolver(assetAssignSchema),
+    const form = useForm<AssignmentFormValues>({
+        resolver: zodResolver(assignmentSchema),
         defaultValues: {
             userId: '',
-            assetId: assetId,
+            itemId: itemId,
+            type: type
         },
     })
 
@@ -46,7 +52,7 @@ const AssignAssetForm = ({
         getAllUsers()
     }, [getAllUsers])
 
-    const onSubmit = async (data: AssignFormValues) => {
+    const onSubmit = async (data: AssignmentFormValues) => {
         const selectedUser = users.find(user => user.id === data.userId)
 
         if (!selectedUser || !selectedUser.name) {
@@ -59,15 +65,13 @@ const AssignAssetForm = ({
 
         const optimisticData = {
             userId: data.userId,
-            userName: selectedUser.name // Now TypeScript knows userName is defined
+            userName: selectedUser.name
         }
 
         try {
-            // Perform optimistic update
             onOptimisticUpdate(optimisticData)
 
-            // Perform actual server update
-            const response = await assign(data)
+            const response = await assignAction(data)
 
             if (response?.error) {
                 throw new Error(response.error)
@@ -75,17 +79,21 @@ const AssignAssetForm = ({
 
             onSuccess?.()
         } catch (e) {
-            console.error('Assignment error:', e)
-            setError(typeof e === 'string' ? e : 'Failed to assign asset')
-            // Rollback optimistic update
+            console.error(`${type} assignment error:`, e)
+            setError(typeof e === 'string' ? e : `Failed to assign ${type}`)
             onError?.(optimisticData)
         } finally {
             setIsSubmitting(false)
         }
     }
 
+    const getSubmitButtonText = () => {
+        if (isSubmitting) return `Assigning ${type}...`
+        return `Assign ${type}`
+    }
+
     return (
-        <section className="w-full bg-white z-50 max-h-[700px] overflow-y-auto p-4">
+        <section className="w-full bg-white z-50 max-h-700 overflow-y-auto p-4">
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
                     <CustomSelect
@@ -111,10 +119,10 @@ const AssignAssetForm = ({
                             {isSubmitting ? (
                                 <>
                                     <Loader2 size={20} className="animate-spin" />
-                                    &nbsp; Assigning...
+                                    &nbsp; {getSubmitButtonText()}
                                 </>
                             ) : (
-                                'Assign'
+                                getSubmitButtonText()
                             )}
                         </Button>
                     </div>
@@ -124,4 +132,4 @@ const AssignAssetForm = ({
     )
 }
 
-export default AssignAssetForm
+export default AssignmentForm

@@ -1,13 +1,13 @@
 'use client'
 
-import React, {useEffect, useTransition} from 'react'
+import React, {useEffect, useState, useTransition} from 'react'
 import {undefined, z} from "zod"
 import {zodResolver} from "@hookform/resolvers/zod"
 import {useForm} from "react-hook-form"
 import {Button} from "@/components/ui/button"
 import {Form, FormLabel} from "@/components/ui/form"
 import {Loader2, Plus} from "lucide-react"
-import {Card} from "@/components/ui/card"
+import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card"
 import {useRouter} from "next/navigation"
 import {toast} from "sonner"
 
@@ -42,26 +42,19 @@ import ManufacturerForm from "@/components/forms/ManufacturerForm";
 import {useManufacturerStore} from "@/lib/stores/manufacturerStore";
 import {auth} from "@/auth";
 import {assetSchema} from "@/lib/schemas";
+import CustomFieldsManager from "@/components/forms/CustomFieldsManager";
+import FormTemplateCreator from "@/components/forms/FormTemplateCreator";
+import {useFormTemplateStore} from "@/lib/stores/formTemplateStore";
+import {CustomField, CustomFieldOption} from '@/types/form';
+import {getFormTemplateById} from "@/lib/actions/formTemplate.actions";
 
-type AssetFormValuesType = {
+
+type FormTemplate = {
+    id: string;
     name: string;
-    purchaseDate: Date;
-    serialNumber: string;
-    modelId: string;
-    statusLabelId: string;
-    departmentId: string;
-    inventoryId: string;
-    locationId: string;
-    supplierId: string;
-    price: string;
-    poNumber?: string;
-    material?: string;
-    weight?: string;
-    energyRating?: string;
-    licenseId?: string;
-    dailyOperatingHours?: string;
-    endOfLife: Date;
+    fields: CustomField[];
 };
+
 
 type AssetFormValues = z.infer<typeof assetSchema>;
 
@@ -73,6 +66,8 @@ interface AssetFormProps {
 const AssetForm = ({id, isUpdate = false}: AssetFormProps) => {
     const [isPending, startTransition] = useTransition()
     const router = useRouter()
+    const [selectedTemplate, setSelectedTemplate] = useState<FormTemplate | null>(null);
+    const [customFieldValues, setCustomFieldValues] = useState<Record<string, any>>({});
     // Stores
     const {create: createAsset, update: updateAsset, findById} = useAssetStore()
     const {
@@ -129,6 +124,15 @@ const AssetForm = ({id, isUpdate = false}: AssetFormProps) => {
     } = useManufacturerStore()
 
 
+    const {
+        isOpen: isTemplateOpen,
+        templates,
+        fetchTemplates,
+        onOpen: openTemplate,
+        onClose: closeTemplate,
+    } = useFormTemplateStore()
+
+
     const form = useForm<AssetFormValues>({
         resolver: zodResolver(assetSchema),
         defaultValues: {
@@ -149,6 +153,9 @@ const AssetForm = ({id, isUpdate = false}: AssetFormProps) => {
             energyRating: '',
             licenseId: '',
             dailyOperatingHours: '',
+            formTemplateId: '',
+            templateValues: {},
+
         },
     });
 
@@ -159,6 +166,7 @@ const AssetForm = ({id, isUpdate = false}: AssetFormProps) => {
         fetchInventories()
         fetchSuppliers()
         fetchModels()
+        fetchTemplates()
 
         if (isUpdate && id) {
             startTransition(async () => {
@@ -171,45 +179,140 @@ const AssetForm = ({id, isUpdate = false}: AssetFormProps) => {
                 }
             })
         }
-    }, [isUpdate, id, fetchStatusLabels, fetchModels, fetchLocations, fetchDepartments, fetchInventories, fetchSuppliers])
+    }, [isUpdate, id, fetchStatusLabels, fetchModels, fetchLocations, fetchDepartments, fetchInventories, fetchSuppliers, fetchTemplates])
 
+
+    const renderCustomFields = () => {
+        if (!selectedTemplate) return null;
+
+        return (
+            <div className="space-y-6">
+                {selectedTemplate.fields.map((field: CustomField) => {
+                    const fieldName = `templateValues.${field.name}`;  // Changed from customFields to templateValues
+
+                    switch (field.type) {
+                        case 'text':
+                            return (
+                                <CustomInput
+                                    key={field.name}
+                                    name={fieldName}
+                                    label={field.label}
+                                    control={form.control}
+                                    required={field.required}
+                                    placeholder={field.placeholder || `Enter ${field.label.toLowerCase()}`}
+                                />
+                            );
+                        case 'number':
+                            return (
+                                <CustomInput
+                                    key={field.name}
+                                    name={fieldName}
+                                    label={field.label}
+                                    control={form.control}
+                                    required={field.required}
+                                    type="number"
+                                    placeholder={field.placeholder || `Enter ${field.label.toLowerCase()}`}
+                                />
+                            );
+                        case 'select':
+                            const formattedOptions: CustomFieldOption[] = field.options?.map((option: string) => ({
+                                id: option,
+                                name: option
+                            })) || [];
+                            return (
+                                <CustomSelect
+                                    key={field.name}
+                                    name={fieldName}
+                                    label={field.label}
+                                    control={form.control}
+                                    required={field.required}
+                                    data={formattedOptions}
+                                    placeholder={`Select ${field.label.toLowerCase()}`}
+                                />
+                            );
+                        default:
+                            return null;
+                    }
+                })}
+            </div>
+        );
+    };
+
+    const handleTemplateChange = async (formTemplateId: string) => {
+        try {
+            if (!formTemplateId) {
+                // Reset if no template is selected
+                form.setValue('formTemplateId', '');
+                form.setValue('templateValues', {});
+                setSelectedTemplate(null);
+                return;
+            }
+
+            // Update form with the new template ID
+            form.setValue('formTemplateId', formTemplateId);
+
+            // Fetch template details
+            const response = await getFormTemplateById(formTemplateId);
+
+            if (response.error) {
+                toast.error(response.error);
+                return;
+            }
+
+            if (response.data) {
+                setSelectedTemplate(response.data);
+
+                // Type the initial accumulator object
+                const initialValues: Record<string, string> = {};
+
+                // Use typed accumulator and field parameter
+                const emptyValues = response.data.fields.reduce((acc: Record<string, string>, field: CustomField) => {
+                    acc[field.name] = '';
+                    return acc;
+                }, initialValues);
+
+                // Update form with empty values for the new template
+                form.setValue('templateValues', emptyValues);
+            }
+        } catch (error) {
+            toast.error('Failed to load template details');
+            console.error('Error loading template:', error);
+        }
+    };
     async function onSubmit(data: AssetFormValues) {
         startTransition(async () => {
             try {
-                // if (isUpdate) {
-                //     const result = await updateAsset(id!, data)
-                //     if (result.error) {
-                //         toast.error(result.error)
-                //         return
-                //     }
-                //     toast.success('Asset updated successfully')
-                // } else {
-                //     const result = await createAsset({
-                //         ...data,
-                //         endOfLife: data.endOfLife.toISOString()
-                //     })
 
+                console.log(data)
                 const formattedData = {
                     ...data,
                     purchaseDate: data.purchaseDate,
                     endOfLife: data.endOfLife,
                     weight: data.weight,
+                    ...(data.formTemplateId ? {
+                        formTemplateId: data.formTemplateId,
+                        templateValues: data.templateValues
+                    } : {})
                 };
-                await create(formattedData).then(r => {
-                    form.reset()
-                    toast.success('Asset created successfully')
-                }).catch( error =>{
-                    toast.error('Something went wrong: ', error)
-                })
+
+
+
+                await create(formattedData)
+                    .then(() => {
+                        form.reset();
+                        toast.success('Asset created successfully');
+                        router.push('/assets');  // Add navigation after success
+                    })
+                    .catch(error => {
+                        toast.error('Something went wrong: ' + error);
+                    });
 
             } catch (error) {
-                toast.error('Something went wrong')
-                form.reset()
-                console.error(error)
+                toast.error('Something went wrong');
+                console.error(error);
             }
-        })
+        });
     }
-
 
     return (
         <section className="w-full mx-auto p-6">
@@ -274,6 +377,15 @@ const AssetForm = ({id, isUpdate = false}: AssetFormProps) => {
                 title="Add Manufacturer"
                 form={<ManufacturerForm/>}
             />
+
+            <DialogContainer
+                description=""
+                open={isTemplateOpen}
+                onOpenChange={closeTemplate}
+                title="Add Custom Form fields"
+                form={<FormTemplateCreator/>}
+            />
+
 
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -346,6 +458,8 @@ const AssetForm = ({id, isUpdate = false}: AssetFormProps) => {
                                         placeholder="Select location"
                                         required
                                     />
+
+
                                 </div>
                             </div>
 
@@ -407,6 +521,8 @@ const AssetForm = ({id, isUpdate = false}: AssetFormProps) => {
                                             formatString="dd/MM/yyyy"
                                         />
                                     </div>
+
+
                                     <SelectWithButton
                                         name="supplierId"
                                         label="Supplier"
@@ -464,22 +580,42 @@ const AssetForm = ({id, isUpdate = false}: AssetFormProps) => {
                                         type="number"
                                         placeholder="Enter operating hours"
                                     />
-                                    {/*<CustomSelect*/}
-                                    {/*    data={[]}*/}
-                                    {/*    name="weight"*/}
-                                    {/*    label="Energy Source"*/}
-                                    {/*    control={form.control}*/}
-                                    {/*    placeholder="Enter energy source"*/}
-                                    {/*/>*/}
                                 </div>
                             </div>
                         </div>
+
+
                     </Card>
+
+                    <Card>
+                        <CardHeader className="pb-2">
+                            <CardTitle>Custom Form Fields</CardTitle>
+                            <CardDescription>
+                                Please select a form template if you want to add custom fields to this asset
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="space-y-6">
+                                <SelectWithButton
+                                    name="formTemplateId"
+                                    label="Form Template"
+                                    data={templates}
+                                    onNew={openTemplate}
+                                    placeholder="Select a form template"
+                                    form={form}
+                                    isPending={isPending}
+                                    onChange={handleTemplateChange}
+                                />
+
+                                {selectedTemplate && renderCustomFields()}
+                            </div>
+                        </CardContent>
+                    </Card>
+
 
                     {/* Action Buttons */}
                     <div className="flex justify-end gap-4 sticky bottom-0 bg-white p-4 border-t shadow-lg">
                         <Button
-
                             type="button"
                             variant="outline"
                             onClick={() => router.back()}

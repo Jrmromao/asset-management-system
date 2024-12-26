@@ -25,19 +25,101 @@ model User {
   updatedAt     DateTime  @updatedAt
 
   // Relations
-  company   Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  role      Role       @relation(fields: [roleId], references: [id], onDelete: Restrict)
-  assets    Asset[]    @relation("assignedToUser")
-  auditLogs AuditLog[]
-  // co2eRecords Co2eRecord[]
-  accounts  Account[]
-  userKits  UserKit[]
+  company     Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  role        Role          @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  assets      Asset[]       @relation("assignedToUser")
+  accessories Accessory[]   @relation("assignedToUser")
+  auditLogs   AuditLog[]
+  accounts    Account[]
+  userKits    UserKit[]
+  licenses    UserLicense[] // New relation
 
   @@unique([employeeId, companyId])
-  // @@unique([phoneNum, companyId])
   @@index([companyId])
   @@index([roleId])
   @@index([email])
+}
+
+model License {
+  id                 String   @id @default(cuid())
+  name               String
+  licensedEmail      String
+  poNumber           String
+  licenseKey         String // @unique(map: "Unique_License_LicenseKey")
+  companyId          String
+  statusLabelId      String?
+  supplierId         String?
+  departmentId       String?
+  locationId         String?
+  inventoryId        String?
+  renewalDate        DateTime
+  purchaseDate       DateTime
+  purchaseNotes      String?
+  licenseUrl         String?
+  minCopiesAlert     Int
+  alertRenewalDays   Int
+  licenseCopiesCount Int
+  purchasePrice      Decimal
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  // Relations
+  company            Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  assets             Asset[]
+  statusLabel        StatusLabel?        @relation(fields: [statusLabelId], references: [id], onDelete: SetNull)
+  supplier           Supplier?           @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  department         Department?         @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  departmentLocation DepartmentLocation? @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  inventory          Inventory?          @relation(fields: [inventoryId], references: [id], onDelete: SetNull)
+  users              UserLicense[] // New relation
+
+  // @@unique([licenseKey], map: "Unique_License_LicenseKey_Composite")
+}
+
+// Form Template table to store the template structure
+model FormTemplate {
+  id        String              @id @default(cuid())
+  name      String
+  fields    Json
+  companyId String
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+  company   Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  assets    Asset[]
+  values    FormTemplateValue[]
+
+  @@unique([name, companyId])
+  @@index([companyId])
+}
+
+model FormTemplateValue {
+  id           String       @id @default(cuid())
+  values       Json
+  assetId      String
+  templateId   String
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  asset        Asset        @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  formTemplate FormTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@index([assetId])
+  @@index([templateId])
+}
+
+model UserLicense {
+  id         String    @id @default(cuid())
+  userId     String
+  licenseId  String
+  assignedAt DateTime  @default(now())
+  expiresAt  DateTime?
+
+  // Relations
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  license License @relation(fields: [licenseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, licenseId]) // Prevents duplicate assignments
+  @@index([userId])
+  @@index([licenseId])
 }
 
 model Account {
@@ -91,6 +173,7 @@ model Company {
   kits          Kit[]
   suppliers     Supplier[] // Add this relation
   License       License[]
+  FormTemplate  FormTemplate[]
 }
 
 model Manufacturer {
@@ -244,8 +327,11 @@ model Asset {
   department         Department?         @relation(fields: [departmentId], references: [id], onDelete: SetNull)
   departmentLocation DepartmentLocation? @relation(fields: [locationId], references: [id], onDelete: SetNull)
   inventory          Inventory?          @relation(fields: [inventoryId], references: [id], onDelete: SetNull)
-
   // co2eRecords  Co2eRecord[]
+  formTemplateId     String?
+  formTemplate       FormTemplate?       @relation(fields: [formTemplateId], references: [id], onDelete: SetNull)
+  formTemplateValues FormTemplateValue[] // Changed from FormTemplateValue to formTemplateValues
+
   transactions Transaction[]
   License      License?      @relation(fields: [licenseId], references: [id])
   licenseId    String?
@@ -256,6 +342,7 @@ model Asset {
   @@index([statusLabelId])
   @@index([supplierId])
   @@index([modelId])
+  @@index([formTemplateId])
 }
 
 model Accessory {
@@ -267,7 +354,6 @@ model Accessory {
   purchaseDate       DateTime
   notes              String?
   material           String
-  weight             Decimal
   endOfLife          DateTime
   companyId          String
   modelId            String?
@@ -278,9 +364,12 @@ model Accessory {
   inventoryId        String?
   categoryId         String?
   poNumber           String?  @unique
+  weight             Decimal?
   price              Decimal?
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
+  assigneeId         String?
+  assignee           User?    @relation("assignedToUser", fields: [assigneeId], references: [id], onDelete: SetNull)
 
   company            Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
   // co2eRecords Co2eRecord[]
@@ -308,41 +397,6 @@ model Category {
 
   @@unique([name, companyId])
   @@index([companyId])
-}
-
-model License {
-  id                 String   @id @default(cuid())
-  name               String
-  licensedEmail      String
-  poNumber           String
-  licenseKey         String   @unique(map: "Unique_License_LicenseKey")
-  companyId          String
-  statusLabelId      String?
-  supplierId         String?
-  departmentId       String?
-  locationId         String?
-  inventoryId        String?
-  renewalDate        DateTime
-  purchaseDate       DateTime
-  purchaseNotes      String? // Optional
-  licenseUrl         String? // Optional
-  minCopiesAlert     Int
-  alertRenewalDays   Int
-  licenseCopiesCount Int
-  purchasePrice      Decimal
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
-
-  // Relations
-  company            Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  assets             Asset[]
-  statusLabel        StatusLabel?        @relation(fields: [statusLabelId], references: [id], onDelete: SetNull)
-  supplier           Supplier?           @relation(fields: [supplierId], references: [id], onDelete: SetNull)
-  department         Department?         @relation(fields: [departmentId], references: [id], onDelete: SetNull)
-  departmentLocation DepartmentLocation? @relation(fields: [locationId], references: [id], onDelete: SetNull)
-  inventory          Inventory?          @relation(fields: [inventoryId], references: [id], onDelete: SetNull)
-
-  @@unique([licenseKey], map: "Unique_License_LicenseKey_Composite")
 }
 
 model StatusLabel {

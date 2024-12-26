@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+  <!-- Laptop screen -->
+  <path d="M5 5.5C5 4.67157 5.67157 4 6.5 4H13.5C14.3284 4 15 4.67157 15 5.5V12H5V5.5Z"
+        stroke="#667085"
+        stroke-width="1.66667"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        fill="none"/>
+
+  <!-- Laptop base/keyboard -->
+  <path d="M3.5 15.5L4.5 12H15.5L16.5 15.5C16.5 15.7761 16.2761 16 16 16H4C3.72386 16 3.5 15.7761 3.5 15.5Z"
+        stroke="#667085"
+        stroke-width="1.66667"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        fill="none"/>
+</svg>

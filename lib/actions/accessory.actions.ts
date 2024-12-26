@@ -4,16 +4,19 @@ import {prisma} from "@/app/db";
 import {parseStringify, processRecordContents} from "@/lib/utils";
 import {auth} from "@/auth";
 import {z} from "zod";
-import {accessorySchema, assetAssignSchema} from "@/lib/schemas";
+import {accessorySchema, assignmentSchema} from "@/lib/schemas";
 import {revalidatePath} from "next/cache";
 
+type ApiResponse<T> = {
+    data?: T;
+    error?: string;
+};
 
 export const create = async (values: z.infer<typeof accessorySchema>) => {
     try {
 
         const validation = accessorySchema.safeParse(values);
         if (!validation.success) {
-            console.log('Validation errors:', validation.error.errors);
             return {error: validation.error.errors[0].message};
         }
         const session = await auth()
@@ -49,34 +52,73 @@ export const create = async (values: z.infer<typeof accessorySchema>) => {
     }
 }
 
-export const get = async () => {
+
+export const getAll = async (): Promise<ApiResponse<Accessory[]>> =>{
     try {
-        const assets = await prisma.accessory.findMany({
+
+        const session = await auth();
+        if (!session?.user?.companyId) {
+            return {error: 'Unauthorized access'};
+        }
+        const accessories = await prisma.accessory.findMany({
             include: {
                 company: true,
                 supplier: true,
                 inventory: true
             },
+            where: {
+                companyId: session.user.companyId
+            },
             orderBy: {
                 createdAt: 'desc'
             }
         });
-        return parseStringify(assets);
+
+        return {data: parseStringify(accessories)};
     } catch (error) {
-        console.log(error)
+        console.error('Error fetching accessories:', error);
+        return {error: 'Failed to fetch assets'};
     }
 }
 
-export const findById = async (id: string) => {
+export const findById = async (id: string): Promise<ApiResponse<Accessory>> => {
     try {
-        const asset = await prisma.accessory.findFirst({
+        const accessory = await prisma.accessory.findUnique({
             where: {
                 id: id
+            },
+            include: {
+                company: true,
+                supplier: true,
+                inventory: true,
+                statusLabel: true,
+                model: {
+                    include: {
+                        category: true,
+                        manufacturer: true
+                    }
+                },
+                department: true,
+                departmentLocation: true,
+                assignee: true,
+
             }
         });
-        return parseStringify(asset);
+
+        if (!accessory) {
+            return {
+                error: 'Accessory not found',
+            };
+        }
+
+        return {
+            data: parseStringify(accessory),
+        };
     } catch (error) {
-        console.log(error)
+        console.error('Error finding accessory:', error);
+        return {
+            error: 'Failed to find accessory',
+        };
     }
 }
 
@@ -108,105 +150,6 @@ export const update = async (asset: Accessory, id: string) => {
         console.log(error)
     }
 }
-
-// export async function processAccessoryCSV(csvContent: string) {
-//     try {
-//         const data = processRecordContents(csvContent)
-//         const session = await auth()
-//
-//         await prisma.$transaction(async (tx) => {
-//             const records = [];
-//
-//             for (const item of data) {
-//
-//                 const model = await tx.model.findFirst({
-//                     where: {
-//                         name: item['model']
-//                     }
-//                 })
-//                 const statusLabel = await tx.statusLabel.findFirst({
-//                     where: {
-//                         name: item['statusLabel']
-//                     }
-//                 })
-//                 const supplier = await tx.supplier.findFirst({
-//                     where: {
-//                         name: item['supplier']
-//                     }
-//                 })
-//
-//                 const location = await tx.departmentLocation.findFirst({
-//                     where: {
-//                         name: item['location']
-//                     }
-//                 })
-//
-//                 const department = await tx.department.findFirst({
-//                     where: {
-//                         name: item['department']
-//                     }
-//                 })
-//
-//                 const inventory = await tx.inventory.findFirst({
-//                     where: {
-//                         name: item['inventory']
-//                     }
-//                 })
-//
-//                 // if (!model || !statusLabel || !supplier) {
-//                 //     continue;
-//                 // }
-//
-//                 const record = await tx.accessory.create({
-//                     data: {
-//                         name: item['name'],
-//                         purchaseDate: item['purchaseDate'],
-//                         endOfLife: item['endOfLife'],
-//                         alertEmail: item['alertEmail'],
-//                         modelId: model?.id,
-//                         statusLabelId: statusLabel?.id,
-//                         departmentId: department?.id,
-//                         locationId: location?.id,
-//                         price: parseFloat(item['price']),
-//                         companyId: 'bf40528b-ae07-4531-a801-ede53fb31f04',  // session.user?.companyId
-//                         reorderPoint: Number(item['reorderPoint']),
-//                         totalQuantityCount: Number(item['totalQuantityCount']),
-//                         material: item['material'],
-//                         weight: item['weight'],
-//                         supplierId: supplier?.id,
-//                         inventoryId: inventory?.id,
-//                         poNumber: item['poNumber'],
-//                         notes: item['notes'],
-//                         company: {
-//                             connect: {
-//                                 id: 'bf40528b-ae07-4531-a801-ede53fb31f04'
-//                             }
-//                         }
-//                     },
-//                 });
-//                 records.push(record);
-//             }
-//
-//             return records;
-//         });
-//
-//
-//         revalidatePath('/assets')
-//
-//         return {
-//             success: true,
-//             message: `Successfully processed ${data.length} records`,
-//             data: data
-//         }
-//     } catch (error) {
-//         console.error('Error processing CSV:', error)
-//         return {
-//             success: false,
-//             message: error instanceof Error ? error.message : 'Failed to process CSV file'
-//         }
-//     }
-// }
-
 
 export async function processAccessoryCSV(csvContent: string) {
     try {
@@ -286,5 +229,27 @@ export async function processAccessoryCSV(csvContent: string) {
             success: false,
             message: error instanceof Error ? error.message : 'Failed to process CSV file',
         };
+    }
+}
+
+export async function assign(values: z.infer<typeof assignmentSchema>): Promise<ApiResponse<Asset>> {
+    try {
+        const validation = assignmentSchema.safeParse(values);
+
+        if (!validation.success) {
+            return {error: validation.error.errors[0].message};
+        }
+
+        const updateResult = await prisma.accessory.update({
+            where: {id: values.itemId},
+            data: {assigneeId: values.userId},
+        });
+        console.log(updateResult)
+
+        return {data: parseStringify(updateResult)};
+
+    } catch (error) {
+        console.error('Error assigning Accessory:', error);
+        return {error: 'Failed to assign Accessory'};
     }
 }

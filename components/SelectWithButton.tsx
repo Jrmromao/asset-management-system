@@ -10,6 +10,7 @@ interface SelectWithButtonProps {
     form: UseFormReturn<any>
     data: any[]
     onNew: () => void
+    onChange?: (value: string) => Promise<void> | void
     placeholder: string
     required?: boolean
     isPending?: boolean
@@ -22,6 +23,7 @@ export const SelectWithButton = ({
                                      onNew,
                                      placeholder,
                                      form,
+                                     onChange,
                                      isPending = false,
                                      required = false
                                  }: SelectWithButtonProps) => (
@@ -35,6 +37,8 @@ export const SelectWithButton = ({
                 control={form.control}
                 data={data}
                 placeholder={placeholder}
+                onChange={onChange}
+
             />
         </div>
         <div className="flex items-end">

@@ -25,7 +25,7 @@ const Footer = ({type = 'desktop'}: { type?: 'desktop' | 'mobile' }) => {
             </div>
 
             <div className="footer_image" onClick={() => signOut({callbackUrl: '/sign-in'})}>
-                <Image src="icons/logout.svg" fill alt="jsm"/>
+                <Image src="/icons/logout.svg" fill alt="jsm"/>
             </div>
         </footer>
     );

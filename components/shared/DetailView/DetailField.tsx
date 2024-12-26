@@ -14,12 +14,11 @@ export const DetailField: React.FC<DetailFieldProps> = ({
                                                         }) => {
     const formatValue = (field: DetailFieldType) => {
         if (field.value === undefined) return 'N/A';
-
         switch (field.type) {
             case 'currency':
-                return typeof field.value === 'number'
-                    ? `€${field.value.toFixed(2)}`
-                    : field.value;
+
+                return   `€${Number(field.value).toFixed(2)}`
+
             case 'date':
                 return field.value ? new Date(field.value).toLocaleDateString() : 'N/A';
             default:

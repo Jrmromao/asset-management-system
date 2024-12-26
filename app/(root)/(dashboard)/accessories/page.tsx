@@ -21,7 +21,7 @@ import {useDialogStore} from "@/lib/stores/store";
 
 
 const Consumables = () => {
-    const [licensesList, setLicenseList] = useState<[]>()
+
     const [accessories, getAll, deleteAccessory] = useAccessoryStore((state) => [state.accessories, state.getAll, state.delete])
     const [openDialog, closeDialog, isOpen] = useDialogStore(state => [state.onOpen, state.onClose, state.isOpen])
 
@@ -37,7 +37,7 @@ const Consumables = () => {
     }
 
     const handleView = async (id: string) => {
-        navigate.push(`/accessories/view/?id=${id}`)
+        navigate.push(`/accessories/view/${id}`)
     }
     const onDelete = useCallback((accessory: any) => handleDelete(accessory?.id!), [])
     const onView = useCallback((accessory: any) => handleView(accessory?.id!), [])
@@ -87,7 +87,7 @@ const Consumables = () => {
                     </div>
                 </section>
                 <section className="flex w-full flex-col gap-6">
-                    <DataTable columns={columns} data={accessories}/>
+                     <DataTable columns={columns} data={accessories}/>
                 </section>
             </div>
         </div>)

@@ -36,6 +36,7 @@ export interface DetailViewProps {
     qrCode?: string | ReactNode,
     breadcrumbs?: ReactNode,
     error?: string | null,
+    sourceData?: string,
     actions?: {
         onArchive?: () => void;
         onAssign?: () => void;
