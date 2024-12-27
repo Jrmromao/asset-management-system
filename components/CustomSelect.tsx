@@ -55,10 +55,10 @@ const CustomSelect = <T extends BaseOption>({
             control={control}
             name={name}
             render={({field}) => (
-                <div className="space-y-2">
+                <div className="space-y-1">
                     {renderLabel()}
 
-                    <div className="flex w-full flex-col">
+                    <div className="flex w-full flex-col gap-1">
                         <FormControl>
                             <Select
                                 onValueChange={(newValue) => {
@@ -92,7 +92,7 @@ const CustomSelect = <T extends BaseOption>({
                                 </SelectContent>
                             </Select>
                         </FormControl>
-                        <FormMessage className="mt-2"/>
+                        <FormMessage className="text-sm text-red-700"/>
                     </div>
                 </div>
             )}

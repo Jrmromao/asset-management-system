@@ -38,8 +38,7 @@ const CustomTableCell = ({value, navigateTo, label, className}: {
 
     return (
         <>
-            <TableCell className={`min-w-32 pl-2 pr-10 ${label?.colorCode ? `underline decoration-[${label?.colorCode}]` : ''}`}
-                       onClick={() => navigate.push(navigateTo || '#')}>
+            <TableCell className={`min-w-32 pl-2 pr-10 ${label?.colorCode ? `underline decoration-[${label?.colorCode}]` : ''}`} onClick={() => navigate.push(navigateTo || '#')}>
                 <div className="flex">
                     <div className={`w-9/12 ${value ? className : ''}`}> {value ? value : "-"}</div>
                     <div className={`w-3/12 ${label?.colorCode ? `underline decoration-[${label?.colorCode}]` : ``}`}>

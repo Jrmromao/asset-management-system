@@ -1,10 +1,11 @@
 import {ColumnDef} from "@tanstack/react-table"
 import {Button} from "@/components/ui/button";
-import {ArrowUpDown} from "lucide-react";
+import {ArrowUpDown, InfoIcon} from "lucide-react";
 import LinkTableCell from "@/components/tables/LinkTableCell";
 import React from "react";
 import DataTableRowActions from "@/components/tables/DataTable/DataTableRowActions";
 import {FormTemplate} from "@/types/form";
+import {Popover, PopoverContent, PopoverTrigger} from "@/components/ui/popover";
 
 
 // const navigate = useRouter() cannot use hook in a non hook component
@@ -74,10 +75,31 @@ export const assetColumns = ({onDelete, onView}: AssetColumnsProps): ColumnDef<A
     },
     {
         accessorKey: "customForm",
-        header: "Custom Form",
+        // header: "Custom Form",
+        header: ({column}) => {
+            return (
+                <div className="flex gap-1">
+                    <div className={``}>Custom form</div>
+                    <div className={`w-3/12 `}>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <InfoIcon className="h-4 w-4 "/>
+                            </PopoverTrigger>
+                            <PopoverContent className={`bg-white p-4 text-2sm`}>
+                                This asset has a custom form
+                            </PopoverContent>
+                        </Popover>
+                    </div>
+                </div>
+
+            )
+        },
+
+
         cell: ({row}) => {
             const value = row.original.formTemplate;
-            return <LinkTableCell className={'hover:underline hover:text-red-500 hover:decoration-wavy'} value={value?.name} navigateTo={`/assets/view/${row.original.id}`}/>
+            return <LinkTableCell className={'hover:underline hover:text-red-500 hover:decoration-wavy'}
+                                  value={value?.name} navigateTo={`/assets/view/${row.original.id}`}/>
         },
     },
     {

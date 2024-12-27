@@ -27,7 +27,7 @@ export const SelectWithButton = ({
                                      isPending = false,
                                      required = false
                                  }: SelectWithButtonProps) => (
-    <div className="flex gap-2 relative">
+    <div className="flex gap-2 items-start">
         <div className="flex-1">
             <CustomSelect
                 value={form.watch(name)}
@@ -41,7 +41,7 @@ export const SelectWithButton = ({
 
             />
         </div>
-        <div className="flex items-end">
+        <div className="flex pt-5">
             <Button
                 type="button"
                 variant="outline"
