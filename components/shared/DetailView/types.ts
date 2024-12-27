@@ -37,6 +37,7 @@ export interface DetailViewProps {
     breadcrumbs?: ReactNode,
     error?: string | null,
     sourceData?: string,
+    customFormFields?: ReactNode,
     actions?: {
         onArchive?: () => void;
         onAssign?: () => void;

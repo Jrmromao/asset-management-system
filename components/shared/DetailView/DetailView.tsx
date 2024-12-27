@@ -23,6 +23,7 @@ import {
     TooltipTrigger,
 } from '@/components/ui/tooltip';
 import {getCO2ScoreInfo} from '@/lib/utils';
+import CustomFormGrid, {FormValue} from "@/components/shared/DetailView/CustomFormGrid";
 
 const fieldIcons = {
     Name: Monitor,
@@ -49,7 +50,8 @@ export const DetailView: React.FC<DetailViewProps> = ({
                                                           actions,
                                                           qrCode,
                                                           breadcrumbs,
-                                                          sourceData = ''
+                                                          sourceData = '',
+                                                          customFormFields,
                                                       }) => {
     const getField = (label: string) => fields.find((f) => f.label === label);
     const scoreInfo = getCO2ScoreInfo(co2Score ?? 0);
@@ -149,7 +151,7 @@ export const DetailView: React.FC<DetailViewProps> = ({
                                                 field={field}
                                                 icon={
                                                     IconComponent && (
-                                                        <IconComponent className="w-4 h-4 text-gray-400" />
+                                                        <IconComponent className="w-4 h-4 text-gray-400"/>
                                                     )
                                                 }
                                             />
@@ -162,8 +164,9 @@ export const DetailView: React.FC<DetailViewProps> = ({
                         {/* QR Code */}
                         <div className="p-4 flex items-center justify-center">{qrCode}</div>
                     </div>
-                </CardContent>
+                   <CustomFormGrid formValues={customFormFields as FormValue[]} />
 
+                </CardContent>
                 {/* Action Buttons */}
                 <CardFooter className="bg-white">
                     <div

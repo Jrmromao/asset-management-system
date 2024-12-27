@@ -133,6 +133,13 @@ declare global {
         license?: License | null;
     };
 
+    type formTemplateValues = {
+        id: string;
+        templateId: string;
+        assetId: string;
+        values: any[];
+    }
+
     type Asset = {
         id?: string;
         formTemplate: {
@@ -143,6 +150,7 @@ declare global {
             createdAt: Date;
             updatedAt: Date;
         }
+        formTemplateValues: formTemplateValues[]
         name: string;
         poNumber: string;
         assignee?: User;

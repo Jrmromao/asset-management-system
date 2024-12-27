@@ -1,10 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react';
-import { DetailView } from '@/components/shared/DetailView/DetailView';
+import {useEffect, useState} from 'react';
+import {DetailView} from '@/components/shared/DetailView/DetailView';
 import QRCode from "react-qr-code";
 import Link from "next/link";
-import { toast } from "sonner";
+import {toast} from "sonner";
 import Swal from "sweetalert2";
 import {BoxIcon, Scan} from "lucide-react";
 import {
@@ -14,11 +14,11 @@ import {
     BreadcrumbList,
     BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { DialogContainer } from "@/components/dialogs/DialogContainer";
+import {DialogContainer} from "@/components/dialogs/DialogContainer";
 import AssignmentForm from "@/components/forms/AssignmentForm";
-import { useAssetStore } from "@/lib/stores/assetStore";
-import { AssetType, DetailViewProps } from "@/components/shared/DetailView/types";
-import { useRouter } from "next/navigation";
+import {useAssetStore} from "@/lib/stores/assetStore";
+import {AssetType, DetailViewProps} from "@/components/shared/DetailView/types";
+import {useRouter} from "next/navigation";
 import {formatAmount} from "@/lib/utils";
 import {findById, unassign, assign} from "@/lib/actions/assets.actions";
 import ActivityLog from "@/components/shared/ActivityLog/ActivityLog";
@@ -57,13 +57,18 @@ interface EnhancedAssetType {
     department: {
         name: string
     },
+    formTemplate: {
+        id: string;
+        name: string;
+        values: any[]
+    },
     assigneeId?: string;
     createdAt: Date;
     updatedAt: Date;
 }
 
 const UnassignModal = async () => {
-   return  await Swal.fire({
+    return await Swal.fire({
         title: "Are you sure?",
         text: "You won't be able to revert this operation!",
         icon: "warning",
@@ -74,9 +79,9 @@ const UnassignModal = async () => {
     });
 };
 
-export default function AssetPage({ params }: AssetPageProps) {
+export default function AssetPage({params}: AssetPageProps) {
     const [error, setError] = useState<string | null>(null);
-    const { id } = params;
+    const {id} = params;
     const {
         isAssignOpen,
         onAssignOpen,
@@ -86,7 +91,7 @@ export default function AssetPage({ params }: AssetPageProps) {
 
     const [asset, setAsset] = useState<EnhancedAssetType | undefined>();
 
-    const { relationships, attachments, isLoading } = useItemDetails({
+    const {relationships, attachments, isLoading} = useItemDetails({
         itemId: id,
         itemType: 'asset'
     });
@@ -99,11 +104,8 @@ export default function AssetPage({ params }: AssetPageProps) {
                 const foundAssetResponse = await findById(id);
 
                 if (!foundAssetResponse.error) {
-
                     const foundAsset = foundAssetResponse.data;
-
-                    console.log(foundAsset?.department?.name)
-
+                    const allValues = foundAsset?.formTemplateValues?.map(item => item?.values) ?? []
                     setAsset({
                         id: foundAsset?.id!,
                         name: foundAsset?.name ?? '',
@@ -129,6 +131,11 @@ export default function AssetPage({ params }: AssetPageProps) {
                         department: {
                             name: foundAsset?.department?.name ?? ''
                         },
+                        formTemplate: {
+                            id: foundAsset?.formTemplate?.id ?? '',
+                            name: foundAsset?.formTemplate?.name ?? '',
+                            values: allValues ?? [],
+                        },
                         assigneeId: foundAsset?.assigneeId,
                         createdAt: foundAsset?.createdAt!,
                         updatedAt: foundAsset?.updatedAt!
@@ -139,7 +146,6 @@ export default function AssetPage({ params }: AssetPageProps) {
 
             } catch (error) {
                 console.error('Error fetching asset:', error);
-                // Handle error appropriately - maybe set an error state
             }
         };
 
@@ -153,10 +159,10 @@ export default function AssetPage({ params }: AssetPageProps) {
         e?.preventDefault();
         if (!asset?.id) return;
 
-        const result =  await UnassignModal();
+        const result = await UnassignModal();
 
         if (result.isConfirmed) {
-            const previousState = { ...asset };
+            const previousState = {...asset};
             try {
                 setAsset(prev => prev ? {
                     ...prev,
@@ -244,22 +250,23 @@ export default function AssetPage({ params }: AssetPageProps) {
         isAssigned: !!asset.assigneeId,
         error,
         fields: [
-            { label: 'Name', value: asset.name, type: 'text' },
-            { label: 'Price', value: asset.price, type: 'currency' },
-            { label: 'Category', value: asset.category.name, type: 'text' },
-            { label: 'Model', value: asset.model.name, type: 'text' },
-            { label: 'Status', value: asset.statusLabel.name, type: 'text' },
-            { label: 'Location', value: asset.location?.name, type: 'text' },
-            { label: 'Department', value: asset.department?.name, type: 'text' },
+            {label: 'Name', value: asset.name, type: 'text'},
+            {label: 'Price', value: asset.price, type: 'currency'},
+            {label: 'Category', value: asset.category.name, type: 'text'},
+            {label: 'Model', value: asset.model.name, type: 'text'},
+            {label: 'Status', value: asset.statusLabel.name, type: 'text'},
+            {label: 'Location', value: asset.location?.name, type: 'text'},
+            {label: 'Department', value: asset.department?.name, type: 'text'},
             {
                 label: asset.assigneeId ? 'Assigned To' : 'Not Assigned',
                 value: asset.assigneeId ? (asset.assignee?.name ?? '') : '',
                 type: 'text'
             },
-            { label: 'Tag Number', value: asset.serialNumber, type: 'text' },
-            { label: 'Created At', value: asset.createdAt.toString(), type: 'date' },
-            { label: 'Last Updated', value: asset.updatedAt.toString(), type: 'date' }
+            {label: 'Tag Number', value: asset.serialNumber, type: 'text'},
+            {label: 'Created At', value: asset.createdAt.toString(), type: 'date'},
+            {label: 'Last Updated', value: asset.updatedAt.toString(), type: 'date'},
         ],
+        customFormFields: asset.formTemplate.values,
         breadcrumbs: (
             <Breadcrumb className="hidden md:flex">
                 <BreadcrumbList>
@@ -268,20 +275,20 @@ export default function AssetPage({ params }: AssetPageProps) {
                             <Link href="/assets">Assets</Link>
                         </BreadcrumbLink>
                     </BreadcrumbItem>
-                    <BreadcrumbSeparator />
+                    <BreadcrumbSeparator/>
                     <BreadcrumbItem>
                         <BreadcrumbLink asChild>
                             <Link href={`/assets/view/${id}`}>View</Link>
                         </BreadcrumbLink>
                     </BreadcrumbItem>
-                    <BreadcrumbSeparator />
+                    <BreadcrumbSeparator/>
                 </BreadcrumbList>
             </Breadcrumb>
         ),
         qrCode: (
             <div className="flex items-center gap-2">
-                <QRCode value={`/qr-code/sample.png`} size={140} />
-                <Scan className="w-6 h-6 text-gray-500" />
+                <QRCode value={`/qr-code/sample.png`} size={140}/>
+                <Scan className="w-6 h-6 text-gray-500"/>
             </div>
         ),
         actions: {
@@ -298,7 +305,7 @@ export default function AssetPage({ params }: AssetPageProps) {
         const actions: Record<typeof action, () => void> = {
             archive: () => toast.info('Archive action not implemented'),
             duplicate: () => toast.info('Duplicate action not implemented'),
-            edit: () => toast.info('Edit action not implemented', { id: 'edit' }),
+            edit: () => toast.info('Edit action not implemented', {id: 'edit'}),
             print: () => toast.info('Print label action not implemented')
         };
 
