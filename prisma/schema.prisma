@@ -8,31 +8,40 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
-  firstName     String
-  lastName      String
-  name          String
-  title         String?
-  employeeId    String?
-  images        String?
-  phoneNum      String?   @unique
-  emailVerified DateTime?
-  oauthId       String?
-  roleId        String
-  companyId     String
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id                    String        @id @default(cuid())
+  email                 String        @unique
+  firstName             String
+  lastName              String
+  name                  String
+  title                 String?
+  employeeId            String?
+  images                String?
+  phoneNum              String?       @unique
+  emailVerified         DateTime?
+  oauthId               String?
+  roleId                String
+  companyId             String
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+  active                Boolean       @default(true)
+  accountType           String        @default("Internal User")
+  departmentId          String?
+  dataRetentionDate     DateTime?
+  consentHistory        UserConsent[]
+  dataProcessingConsent Boolean       @default(false)
+  marketingConsent      Boolean       @default(false)
+  lastConsentUpdate     DateTime?
 
   // Relations
-  company     Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  role        Role          @relation(fields: [roleId], references: [id], onDelete: Restrict)
-  assets      Asset[]       @relation("assignedToUser")
-  accessories Accessory[]   @relation("assignedToUser")
-  auditLogs   AuditLog[]
-  accounts    Account[]
-  userKits    UserKit[]
-  licenses    UserLicense[] // New relation
+  company       Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  role          Role            @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  department    Department?     @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  assets        Asset[]         @relation("assignedToUser")
+  auditLogs     AuditLog[]
+  accounts      Account[]
+  userKits      UserKit[]
+  licenses      UserLicense[]
+  UserAccessory UserAccessory[]
 
   @@unique([employeeId, companyId])
   @@index([companyId])
@@ -41,27 +50,26 @@ model User {
 }
 
 model License {
-  id                 String   @id @default(cuid())
-  name               String
-  licensedEmail      String
-  poNumber           String
-  licenseKey         String // @unique(map: "Unique_License_LicenseKey")
-  companyId          String
-  statusLabelId      String?
-  supplierId         String?
-  departmentId       String?
-  locationId         String?
-  inventoryId        String?
-  renewalDate        DateTime
-  purchaseDate       DateTime
-  purchaseNotes      String?
-  licenseUrl         String?
-  minCopiesAlert     Int
-  alertRenewalDays   Int
-  licenseCopiesCount Int
-  purchasePrice      Decimal
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  id               String   @id @default(cuid())
+  name             String
+  licensedEmail    String
+  poNumber         String
+  companyId        String
+  statusLabelId    String?
+  supplierId       String?
+  departmentId     String?
+  locationId       String?
+  inventoryId      String?
+  renewalDate      DateTime
+  purchaseDate     DateTime
+  purchaseNotes    String?
+  licenseUrl       String?
+  minSeatsAlert    Int      @default(0)
+  alertRenewalDays Int
+  seats            Int      @default(0)
+  purchasePrice    Decimal
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   // Relations
   company            Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
@@ -74,6 +82,46 @@ model License {
   users              UserLicense[] // New relation
 
   // @@unique([licenseKey], map: "Unique_License_LicenseKey_Composite")
+  LicenseSeat LicenseSeat[]
+}
+
+model Accessory {
+  id                 String   @id @default(cuid())
+  name               String
+  alertEmail         String
+  reorderPoint       Int
+  totalQuantityCount Int
+  purchaseDate       DateTime
+  notes              String?
+  material           String
+  endOfLife          DateTime
+  companyId          String
+  modelId            String?
+  statusLabelId      String?
+  supplierId         String?
+  departmentId       String?
+  locationId         String?
+  inventoryId        String?
+  categoryId         String?
+  poNumber           String?  @unique
+  weight             Decimal?
+  price              Decimal?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  company            Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  // co2eRecords Co2eRecord[]
+  model              Model?              @relation(fields: [modelId], references: [id], onDelete: SetNull)
+  statusLabel        StatusLabel?        @relation(fields: [statusLabelId], references: [id], onDelete: SetNull)
+  supplier           Supplier?           @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  department         Department?         @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  departmentLocation DepartmentLocation? @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  inventory          Inventory?          @relation(fields: [inventoryId], references: [id], onDelete: SetNull)
+  UserAccessory      UserAccessory[]
+  AccessoryStock     AccessoryStock[]
+
+  @@index([companyId])
+  @@index([categoryId])
 }
 
 // Form Template table to store the template structure
@@ -92,6 +140,16 @@ model FormTemplate {
   @@index([companyId])
 }
 
+model UserConsent {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String // 'data_processing', 'marketing', etc.
+  granted   Boolean
+  timestamp DateTime @default(now())
+  ipAddress String?
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
 model FormTemplateValue {
   id           String       @id @default(cuid())
   values       Json
@@ -107,11 +165,12 @@ model FormTemplateValue {
 }
 
 model UserLicense {
-  id         String    @id @default(cuid())
-  userId     String
-  licenseId  String
-  assignedAt DateTime  @default(now())
-  expiresAt  DateTime?
+  id            String    @id @default(cuid())
+  userId        String
+  licenseId     String
+  assignedAt    DateTime  @default(now())
+  expiresAt     DateTime?
+  seatsAssigned Int
 
   // Relations
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -120,6 +179,27 @@ model UserLicense {
   @@unique([userId, licenseId]) // Prevents duplicate assignments
   @@index([userId])
   @@index([licenseId])
+}
+
+model UserAccessory {
+  id          String    @id @default(cuid())
+  userId      String
+  accessoryId String
+  quantity    Int       @default(1)
+  assignedAt  DateTime  @default(now())
+  returnedAt  DateTime?
+  notes       String?
+  companyId   String
+
+  // Relations
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessory Accessory @relation(fields: [accessoryId], references: [id], onDelete: Cascade)
+  company   Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, accessoryId]) // Prevent duplicate assignments
+  @@index([userId])
+  @@index([accessoryId])
+  @@index([companyId])
 }
 
 model Account {
@@ -159,21 +239,25 @@ model Company {
   updatedAt DateTime @updatedAt
 
   // Relations
-  users         User[]
-  assets        Asset[]
-  accessories   Accessory[]
-  categories    Category[]
-  departments   Department[]
-  locations     DepartmentLocation[]
-  manufacturers Manufacturer[]
-  models        Model[]
-  inventories   Inventory[]
-  statusLabels  StatusLabel[]
-  auditLogs     AuditLog[]
-  kits          Kit[]
-  suppliers     Supplier[] // Add this relation
-  License       License[]
-  FormTemplate  FormTemplate[]
+  users          User[]
+  assets         Asset[]
+  accessories    Accessory[]
+  categories     Category[]
+  departments    Department[]
+  locations      DepartmentLocation[]
+  manufacturers  Manufacturer[]
+  models         Model[]
+  inventories    Inventory[]
+  statusLabels   StatusLabel[]
+  auditLogs      AuditLog[]
+  kits           Kit[]
+  suppliers      Supplier[] // Add this relation
+  License        License[]
+  FormTemplate   FormTemplate[]
+  UserAccessory  UserAccessory[]
+  AccessoryStock AccessoryStock[]
+  LicenseSeat    LicenseSeat[]
+  AssetHistory   AssetHistory[]
 }
 
 model Manufacturer {
@@ -264,6 +348,7 @@ model Department {
   Asset     Asset[]
   Accessory Accessory[]
   License   License[]
+  User      User[]
 
   @@unique([name, companyId])
   @@index([companyId])
@@ -333,8 +418,9 @@ model Asset {
   formTemplateValues FormTemplateValue[] // Changed from FormTemplateValue to formTemplateValues
 
   transactions Transaction[]
-  License      License?      @relation(fields: [licenseId], references: [id])
+  License      License?       @relation(fields: [licenseId], references: [id])
   licenseId    String?
+  AssetHistory AssetHistory[]
 
   @@index([assigneeId])
   @@index([companyId])
@@ -343,45 +429,6 @@ model Asset {
   @@index([supplierId])
   @@index([modelId])
   @@index([formTemplateId])
-}
-
-model Accessory {
-  id                 String   @id @default(cuid())
-  name               String
-  alertEmail         String
-  reorderPoint       Int
-  totalQuantityCount Int
-  purchaseDate       DateTime
-  notes              String?
-  material           String
-  endOfLife          DateTime
-  companyId          String
-  modelId            String?
-  statusLabelId      String?
-  supplierId         String?
-  departmentId       String?
-  locationId         String?
-  inventoryId        String?
-  categoryId         String?
-  poNumber           String?  @unique
-  weight             Decimal?
-  price              Decimal?
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
-  assigneeId         String?
-  assignee           User?    @relation("assignedToUser", fields: [assigneeId], references: [id], onDelete: SetNull)
-
-  company            Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  // co2eRecords Co2eRecord[]
-  model              Model?              @relation(fields: [modelId], references: [id], onDelete: SetNull)
-  statusLabel        StatusLabel?        @relation(fields: [statusLabelId], references: [id], onDelete: SetNull)
-  supplier           Supplier?           @relation(fields: [supplierId], references: [id], onDelete: SetNull)
-  department         Department?         @relation(fields: [departmentId], references: [id], onDelete: SetNull)
-  departmentLocation DepartmentLocation? @relation(fields: [locationId], references: [id], onDelete: SetNull)
-  inventory          Inventory?          @relation(fields: [inventoryId], references: [id], onDelete: SetNull)
-
-  @@index([companyId])
-  @@index([categoryId])
 }
 
 model Category {
@@ -433,14 +480,16 @@ model Transaction {
 }
 
 model AuditLog {
-  id        String   @id @default(cuid())
-  action    String
-  entity    String
-  entityId  String?
-  details   String?
-  userId    String
-  companyId String
-  createdAt DateTime @default(now())
+  id           String   @id @default(cuid())
+  action       String
+  entity       String
+  entityId     String?
+  details      String?
+  userId       String
+  companyId    String
+  createdAt    DateTime @default(now())
+  ipAddress    String? // Track IP for data access
+  dataAccessed Json? // Track what data was accessed
 
   company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -468,6 +517,56 @@ model AuditLog {
 //   @@index([accessoryId])
 //   @@index([userId])
 // }
+
+// Track accessory stock movements
+model AccessoryStock {
+  id          String   @id @default(cuid())
+  accessoryId String
+  quantity    Int
+  type        String // purchase, assignment, return, disposal
+  date        DateTime @default(now())
+  notes       String?
+  companyId   String
+
+  accessory Accessory @relation(fields: [accessoryId], references: [id], onDelete: Cascade)
+  company   Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([accessoryId])
+  @@index([companyId])
+}
+
+// Track license seat allocations
+model LicenseSeat {
+  id        String   @id @default(cuid())
+  licenseId String
+  quantity  Int // Number of seats in this allocation
+  type      String // purchase, allocation, release
+  date      DateTime @default(now())
+  notes     String?
+  companyId String
+
+  license License @relation(fields: [licenseId], references: [id], onDelete: Cascade)
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([licenseId])
+  @@index([companyId])
+}
+
+// Track asset movements/status changes
+model AssetHistory {
+  id        String   @id @default(cuid())
+  assetId   String
+  type      String // purchase, assignment, return, disposal, status_change
+  date      DateTime @default(now())
+  notes     String?
+  companyId String
+
+  asset   Asset   @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([assetId])
+  @@index([companyId])
+}
 
 model Kit {
   id        String   @id @default(cuid())

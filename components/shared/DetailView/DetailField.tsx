@@ -5,6 +5,7 @@ interface DetailFieldProps {
     label: string;
     field: DetailFieldType;
     icon?: ReactNode;
+    // text: string
 }
 
 export const DetailField: React.FC<DetailFieldProps> = ({
@@ -16,11 +17,9 @@ export const DetailField: React.FC<DetailFieldProps> = ({
         if (field.value === undefined) return 'N/A';
         switch (field.type) {
             case 'currency':
-
-                return   `€${Number(field.value).toFixed(2)}`
-
+                return `€${Number(field.value).toFixed(2)}`
             case 'date':
-                return field.value ? new Date(field.value).toLocaleDateString() : 'N/A';
+                return field.value ? new Date(field.value).toLocaleDateString() : '-';
             default:
                 return field.value;
         }

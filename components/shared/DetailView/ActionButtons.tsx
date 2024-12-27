@@ -48,7 +48,7 @@ export const ActionButtons: React.FC<{
                         className="w-full sm:w-auto"
                         variant="outline"
                         action={actions.onUnassign}
-                        value="Unassign"
+                        value="Checkin"
                         Icon={FaChevronLeft}
                     />
                 ) : actions.onAssign && (
@@ -57,7 +57,7 @@ export const ActionButtons: React.FC<{
                         className="w-full sm:w-auto"
                         variant="outline"
                         action={actions.onAssign}
-                        value="Assign"
+                        value="Checkout"
                         Icon={FaChevronRight}
                     />
                 )}

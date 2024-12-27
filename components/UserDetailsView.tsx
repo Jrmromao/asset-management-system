@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import {
     Mail,
     Building2,
-    User,
+    User as UserIcon,
     Calendar,
     Download,
     ArrowLeft,
@@ -17,7 +17,8 @@ import {
     Key,
     Package,
     History,
-    CalendarDays, ShieldCheck, BadgeCheck, Fingerprint
+    CalendarDays, ShieldCheck, BadgeCheck, Fingerprint,  CircleCheck, CircleDot
+
 } from 'lucide-react';
 import Link from "next/link";
 import { DetailField } from '@/components/shared/DetailView/DetailField';
@@ -30,18 +31,6 @@ import {
 } from "@/components/ui/breadcrumb";
 import ActivityLog from "@/components/shared/ActivityLog/ActivityLog";
 
-interface UserDetailsProps {
-    user: {
-        id: string;
-        name: string;
-        email: string;
-        accountType: string;
-        department?: string;
-        appRole?: string;
-        title?: string;
-        employeeId?: string;
-    };
-}
 
 const fieldIcons = {
     'Email Address': Mail,
@@ -49,16 +38,22 @@ const fieldIcons = {
     'Department': Building2,
     'Role': ShieldCheck,      // Shield icon for role/permissions
     'Title': BadgeCheck,      // Badge icon for job title
-    'Employee ID': Fingerprint // Fingerprint icon for unique ID
-} as const;
+    'Employee ID': Fingerprint,// Fingerprint icon for unique ID
+    'Account Status': CircleCheck,
 
-export default function UserDetailsView({ user }: UserDetailsProps) {
-    const fields = [
+} as const;
+interface UserDetailsViewProps {
+    user: User;
+}
+export default function UserDetailsView({ user }: UserDetailsViewProps) {
+
+    const fields: DetailFieldType[] = [
         { label: 'Email Address', value: user.email, type: 'text' },
-        { label: 'Account Type', value: user.accountType, type: 'text' },
-        { label: 'Department', value: user.department || '-', type: 'text' },
-        { label: 'Role', value: user.appRole || '-', type: 'text' },
+        { label: 'Account Type', value: user.accountType || '-', type: 'text' },
+        { label: 'Department', value: user.department?.name ||  '-', type: 'text' },
+        { label: 'Role', value: user.role?.name || '-', type: 'text' },
         { label: 'Title', value: user.title || '-', type: 'text' },
+        // { label: 'Account Status', value: user.active ? 'Active' : 'Inactive', type: 'text' },
         { label: 'Employee ID', value: user.employeeId || '-', type: 'text' },];
 
     return (
@@ -92,6 +87,10 @@ export default function UserDetailsView({ user }: UserDetailsProps) {
                 <div className="flex items-center gap-3 mt-4 flex-wrap mb-3">
                     <span className="px-3 py-1 text-sm rounded-full bg-blue-100 text-blue-800">
                         {user.accountType}
+                    </span>
+
+                    <span className={`px-3 py-1 text-sm rounded-full bg-${user.active ? 'green' : 'red'}-200  bg-red-600 text-${user.active ? 'green' : 'red'}-800`}>
+                        {user.active ? 'Active' : 'Inactive'}
                     </span>
                 </div>
             </div>
@@ -144,15 +143,24 @@ export default function UserDetailsView({ user }: UserDetailsProps) {
                         value="assets"
                         className="flex items-center gap-2 px-6 py-3 data-[state=active]:bg-white rounded-none border-b-2 border-transparent data-[state=active]:border-primary"
                     >
-                        <Laptop className="h-4 w-4" />
+                        <Laptop className="h-4 w-4"/>
                         Assets
+                        <span
+                            className="ml-1 bg-primary text-primary-foreground rounded-full h-5 w-5 flex items-center justify-center text-xs">
+                            {user?.assets?.length || ''}
+                        </span>
                     </TabsTrigger>
                     <TabsTrigger
                         value="accessories"
                         className="flex items-center gap-2 px-6 py-3 data-[state=active]:bg-white rounded-none border-b-2 border-transparent data-[state=active]:border-primary"
                     >
-                        <Monitor className="h-4 w-4" />
+                        <Monitor className="h-4 w-4"/>
                         Accessories
+                        <span
+                            className="ml-1 bg-primary text-primary-foreground rounded-full h-5 w-5 flex items-center justify-center text-xs">
+                            {user?.accessories?.length || ''}
+                        </span>
+
                     </TabsTrigger>
                     <TabsTrigger
                         value="licenses"
@@ -161,16 +169,20 @@ export default function UserDetailsView({ user }: UserDetailsProps) {
                         <Key className="h-4 w-4" />
                         Licenses
                         <span className="ml-1 bg-primary text-primary-foreground rounded-full h-5 w-5 flex items-center justify-center text-xs">
-                            1
+                            {user?.licenses?.length || ''}
                         </span>
                     </TabsTrigger>
-                    <TabsTrigger
-                        value="consumables"
-                        className="flex items-center gap-2 px-6 py-3 data-[state=active]:bg-white rounded-none border-b-2 border-transparent data-[state=active]:border-primary"
-                    >
-                        <Package className="h-4 w-4" />
-                        Consumables
-                    </TabsTrigger>
+                    {/*<TabsTrigger*/}
+                    {/*    value="consumables"*/}
+                    {/*    className="flex items-center gap-2 px-6 py-3 data-[state=active]:bg-white rounded-none border-b-2 border-transparent data-[state=active]:border-primary"*/}
+                    {/*>*/}
+                    {/*    <Package className="h-4 w-4"/>*/}
+                    {/*    Consumables*/}
+                    {/*    <span*/}
+                    {/*        className="ml-1 bg-primary text-primary-foreground rounded-full h-5 w-5 flex items-center justify-center text-xs">*/}
+                    {/*        {user?.licenses?.length || ''}*/}
+                    {/*    </span>*/}
+                    {/*</TabsTrigger>*/}
                     <TabsTrigger
                         value="history"
                         className="flex items-center gap-2 px-6 py-3 data-[state=active]:bg-white rounded-none border-b-2 border-transparent data-[state=active]:border-primary"
@@ -189,43 +201,37 @@ export default function UserDetailsView({ user }: UserDetailsProps) {
 
                 <TabsContent value="assets" className="mt-6">
                     <div className="space-y-4">
-                        <div className="text-muted-foreground">No assets assigned</div>
+                        <div className="text-muted-foreground">
+
+                            {JSON.stringify(user?.assets, null, 2)}
+
+                        </div>
                     </div>
                 </TabsContent>
 
                 <TabsContent value="accessories" className="mt-6">
                     <div className="space-y-4">
-                        <div className="text-muted-foreground">No accessories assigned</div>
+                        <div className="text-muted-foreground">
+                            {JSON.stringify(user?.accessories, null, 2)}
+                        </div>
                     </div>
                 </TabsContent>
 
                 <TabsContent value="licenses" className="mt-6">
                     <div className="space-y-4">
-                        <div className="divide-y">
-                            <div className="py-4 flex justify-between items-center">
-                                <div className="flex items-center gap-3">
-                                    <Key className="h-4 w-4 text-muted-foreground" />
-                                    <div>
-                                        <p className="font-medium">Windows 11 Pro</p>
-                                        <p className="text-sm text-muted-foreground">
-                                            Assigned on {new Date().toLocaleDateString()}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        <div className="text-muted-foreground">No licenses assigned</div>
                     </div>
                 </TabsContent>
 
-                <TabsContent value="consumables" className="mt-6">
-                    <div className="space-y-4">
-                        <div className="text-muted-foreground">No consumables assigned</div>
-                    </div>
-                </TabsContent>
+                {/*<TabsContent value="consumables" className="mt-6">*/}
+                {/*    <div className="space-y-4">*/}
+                {/*        <div className="text-muted-foreground">No consumables assigned</div>*/}
+                {/*    </div>*/}
+                {/*</TabsContent>*/}
 
                 <TabsContent value="history" className="mt-6">
                     <div className="space-y-4">
-                        <ActivityLog sourceType="user" sourceId={user.id} />
+                        <ActivityLog sourceType="user" sourceId={user?.id!} />
                     </div>
                 </TabsContent>
 

@@ -14,7 +14,7 @@ import {
     Tag,
     User,
     Laptop2,
-    Building2,  Hash, Bell, Mail, Store
+    Building2, Hash, Bell, Mail, Store
 } from 'lucide-react';
 import {
     Tooltip,
@@ -76,12 +76,21 @@ export const DetailView: React.FC<DetailViewProps> = ({
                 </div>
 
                 <div className="flex items-center gap-3 mt-4 flex-wrap mb-3">
-                    {getField('Status') && (<span className="px-3 py-1 text-sm rounded-full bg-green-100 text-green-800">{getField('Status')?.value}</span>)}
+                    {getField('Status') && (<span
+                        className="px-3 py-1 text-sm rounded-full bg-green-100 text-green-800">{getField('Status')?.value}</span>)}
+                    {getField('Seats')?.value && (
+                        <span
+                            className="inline-flex items-center rounded-full bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-600/20">
+    {String(getField('Seats Allocated')?.value || 0)} / {String(getField('Seats')?.value)} Seats Available
+  </span>
+                    )}
+
 
                     <TooltipProvider>
                         <Tooltip>
                             <TooltipTrigger asChild>
-                <span className={`px-3 py-1 text-sm rounded-full text-emerald-700 bg-emerald-100 flex items-center gap-2 cursor-help`}>
+                <span
+                    className={`px-3 py-1 text-sm rounded-full text-emerald-700 bg-emerald-100 flex items-center gap-2 cursor-help`}>
                   <IconComponent className="w-4 h-4"/>
                   <span className="flex items-center gap-1">
                     <Leaf className="w-3 h-3"/>
@@ -164,7 +173,7 @@ export const DetailView: React.FC<DetailViewProps> = ({
                         {/* QR Code */}
                         <div className="p-4 flex items-center justify-center">{qrCode}</div>
                     </div>
-                   <CustomFormGrid formValues={customFormFields as FormValue[]} />
+                    <CustomFormGrid formValues={customFormFields as FormValue[]}/>
 
                 </CardContent>
                 {/* Action Buttons */}

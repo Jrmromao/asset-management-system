@@ -185,10 +185,10 @@ export const registerSchema = z.object({
 
 export const licenseSchema = z.object({
     licenseName: z.string().min(1, "License name is required"),
-    licenseCopiesCount: z.string().refine((val) => !Number.isNaN(parseInt(val, 10)), {
+    seats: z.string().refine((val) => !Number.isNaN(parseInt(val, 10)), {
         message: "License copies count is required"
     }),
-    minCopiesAlert: z.string().refine((val) => !Number.isNaN(parseInt(val, 10)), {
+    minSeatsAlert: z.string().refine((val) => !Number.isNaN(parseInt(val, 10)), {
         message: "Min. copies alert is required"
     }),
     licensedEmail: z.string().email("Valid email is required"),
@@ -202,14 +202,13 @@ export const licenseSchema = z.object({
         message: "Purchase price is required"
     }),
     poNumber: z.string().min(1, "PO number is required"),
-    licenseKey: z.string().optional(),
     notes: z.string().optional(),
     departmentId: z.string().min(1, "Department is required"),
     inventoryId: z.string().min(1, "Inventory is required"),
     locationId: z.string().min(1, "Location is required"),
     supplierId: z.string().min(1, "Supplier is required"),
     attachments: z.array(z.any()).optional()
-}).refine((data) => data.licenseCopiesCount < data.minCopiesAlert, {
+}).refine((data) => data.seats < data.minSeatsAlert, {
     message: "Min. Copies must be greater than or equal to license copies count",
     path: ["minCopiesAlert"],
 }).refine((data) => data.purchaseDate <= data.renewalDate, {
@@ -383,7 +382,9 @@ export const kitItemSchema = z.object({
 export const assignmentSchema = z.object({
     userId: z.string().min(1, "User is required"),
     itemId: z.string().min(1, "Item ID is required"),
-    type: z.enum(['asset', 'license', 'accessory', 'consumable'])
+    type: z.enum(['asset', 'license', 'accessory', 'consumable']),
+    seatsRequested: z.number().optional().default(1)
+
 });
 
 
@@ -589,3 +590,4 @@ export const assetSchema = z.object({
     customFields: z.array(customFieldSchema).optional(),
     endOfLife: dateField('End of Life')
 });
+

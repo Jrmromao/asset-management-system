@@ -136,6 +136,9 @@ const ItemDetailsTabs = ({
 
                 <TabsContent value="used-by" className="mt-6">
                     <div className="space-y-4">
+
+                        {JSON.stringify(relationships)}
+
                         {relationships.length > 0 ? (
                             <div className="divide-y">
                                 {relationships.map((relation) => (

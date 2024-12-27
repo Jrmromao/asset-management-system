@@ -534,9 +534,16 @@ export async function findById(id: string): Promise<ActionResponse<User>> {
             where: {
                 id,
                 companyId: session.user.companyId
+            },include: {
+                role: true,
+                company: true,
+                assets: true,
+                licenses: true,
+                accessories: true,
+                department: true
+
             }
         });
-
         if (!user) {
             logger.warn('User not found', {id});
             return {error: 'User not found'};

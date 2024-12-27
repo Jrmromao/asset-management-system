@@ -319,3 +319,7 @@ export const getCO2ScoreInfo = (score: number) => {
         description: 'High carbon footprint',
     };
 };
+
+export function sumSeatsAssigned(assignments: LicenseAssignment[]): number {
+    return assignments.reduce((sum, assignment) => sum + assignment.seatsAssigned, 0);
+}

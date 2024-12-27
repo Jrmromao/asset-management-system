@@ -1,14 +1,15 @@
 /* eslint-disable no-unused-vars */
 
 
+import {string} from "yup";
+import {Company} from "@prisma/client";
+
 declare global {
     // ==================== Basic Types ====================
     type SearchParamProps = {
         params: { [key: string]: string };
         searchParams: { [key: string]: string | string[] | undefined };
     };
-
-
 
 
     type APICallResponse = {
@@ -60,20 +61,26 @@ declare global {
     };
 
     type User = {
-        id?: string;
-        oauthId?: string;
-        email: string;
-        name?: string;
-        firstName: string;
-        lastName: string;
-        title: string;
-        employeeId: string;
-        createdAt?: Date;
-        updatedAt?: Date;
-        roleId?: string;
-        companyId?: string;
-        role?: Role;
-        company?: Company;
+        id?: string,
+        oauthId?: string,
+        email: string,
+        name?: string,
+        firstName: string,
+        lastName: string,
+        title: string,
+        employeeId: string,
+        createdAt?: Date,
+        updatedAt?: Date,
+        roleId?: string,
+        companyId?: string,
+        role?: Role,
+        company?: Company,
+        accountType?: string
+        active?: boolean
+        department?: Department
+        assets?: Asset[]
+        licenses?: License[]
+        accessories?: Accessory[]
     };
 
     type RegUser = {
@@ -131,6 +138,12 @@ declare global {
         assignee?: User | null;
         category?: Category | null;
         license?: License | null;
+    };
+
+     type DetailFieldType = {
+       label: string;
+        value: string;
+        type: 'status' | 'date' | 'text' | 'currency';
     };
 
     type formTemplateValues = {
@@ -202,9 +215,9 @@ declare global {
         purchaseDate: Date;
         purchaseNotes?: string | null;
         licenseUrl?: string | null;
-        minCopiesAlert: number;
+        minSeatsAlert: number;
         alertRenewalDays: number;
-        licenseCopiesCount: number;
+        seats: number;
         purchasePrice: Number;
         createdAt: Date;
         updatedAt: Date;
@@ -219,8 +232,23 @@ declare global {
         inventory?: Inventory | null;
         category?: Category | null;
         model?: Model | null;
+        users?: LicenseAssignment[] | null;
     };
 
+
+
+    type LicenseAssignment = {
+        id: string;
+        userId: string;
+        licenseId: string;
+        assignedAt: Date;
+        expiresAt?: Date | null;
+        seatsAssigned: number;
+
+        // Relations
+        user?: User; // Assuming 'User' is already defined
+        license?: License; // Assuming 'License' is already defined
+    };
 
     // ==================== Reusable Interfaces ====================
     interface BaseEntity {

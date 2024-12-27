@@ -104,8 +104,8 @@ const LicenseForm = () => {
             statusLabelId: '',
             locationId: '',
             inventoryId: '',
-            minCopiesAlert: '',
-            licenseCopiesCount: '',
+            minSeatsAlert: '',
+            seats: '',
             supplierId: '',
             poNumber: '',
             purchasePrice: '',
@@ -269,15 +269,15 @@ const LicenseForm = () => {
                                 <h3 className="text-lg font-semibold mb-4">License Management</h3>
                                 <div className="grid grid-cols-2 gap-6">
                                     <CustomInput
-                                        name="licenseCopiesCount"
-                                        label="Total Licenses"
+                                        name="seats"
+                                        label="Total Seats"
                                         control={form.control}
                                         type="number"
                                         placeholder="Enter total licenses"
                                         required
                                     />
                                     <CustomInput
-                                        name="minCopiesAlert"
+                                        name="minSeatsAlert"
                                         label="Minimum License Alert"
                                         control={form.control}
                                         type="number"

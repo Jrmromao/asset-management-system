@@ -19,6 +19,7 @@ type AssignmentFormValues = z.infer<typeof assignmentSchema>;
 
 interface Props {
     itemId: string;
+    seatsRequested?: number;
     type: AssetType;
     onOptimisticUpdate: (data: { userId: string; userName: string }) => void;
     onSuccess?: () => void;
@@ -29,6 +30,7 @@ interface Props {
 const AssignmentForm = ({
                             itemId,
                             type,
+                            seatsRequested,
                             onOptimisticUpdate,
                             onSuccess,
                             onError,

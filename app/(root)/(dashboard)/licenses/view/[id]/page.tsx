@@ -15,12 +15,14 @@ import {
 import {DialogContainer} from "@/components/dialogs/DialogContainer";
 import AssignmentForm from "@/components/forms/AssignmentForm";
 import {DetailViewProps} from "@/components/shared/DetailView/types";
-import {findById} from "@/lib/actions/license.actions";
+import {assignLicense, findById} from "@/lib/actions/license.actions";
 import ActivityLog from "@/components/shared/ActivityLog/ActivityLog";
 import {useAccessoryStore} from "@/lib/stores/accessoryStore";
 import ItemDetailsTabs from "@/components/shared/DetailsTabs/ItemDetailsTabs";
 import {useItemDetails} from "@/components/shared/DetailsTabs/useItemDetails";
 import {BoxIcon} from "lucide-react";
+import { assign } from '@/lib/actions/assets.actions';
+import {sumSeatsAssigned} from "@/lib/utils";
 
 interface AssetPageProps {
     params: {
@@ -51,9 +53,10 @@ interface EnhancedLicenseType {
     inventory: {
         name: string
     },
-    totalQuantity: number
+    seats: number
+    seatsAllocated: number
     reorderPoint: number
-    alertEmail: string
+    seatsAlert: string
     supplier: {
         name: string
     }
@@ -77,11 +80,13 @@ export default function View({ params }: AssetPageProps) {
     const { id } = params;
     const {isAssignOpen, onAssignOpen, onAssignClose} = useAccessoryStore();
 
-    const [accessory, setAccessory] = useState<EnhancedLicenseType | undefined>();
+    const [license, setLicense] = useState<EnhancedLicenseType | undefined>();
     const { relationships, attachments, isLoading } = useItemDetails({
         itemId: id,
         itemType: 'license'
     });
+
+
 
     useEffect(() => {
         const fetchAsset = async () => {
@@ -92,10 +97,7 @@ export default function View({ params }: AssetPageProps) {
                 if (!foundLicenseResponse.error) {
                     const foundLicense = foundLicenseResponse.data;
 
-
-                    console.log('foundLicense: ',foundLicense)
-
-                    setAccessory({
+                    setLicense({
                         id: foundLicense?.id!,
                         name: foundLicense?.name ?? '',
                         co2Score: 23,
@@ -118,9 +120,10 @@ export default function View({ params }: AssetPageProps) {
                         inventory: {
                             name: foundLicense?.inventory?.name ?? ''
                         },
-                        totalQuantity: foundLicense?.licenseCopiesCount ?? 0,
-                        reorderPoint: foundLicense?.minCopiesAlert ?? 0,
-                        alertEmail: foundLicense?.licensedEmail ?? '',
+                        seats: foundLicense?.seats ?? 0,
+                        seatsAllocated: sumSeatsAssigned(foundLicense?.users ?? []),
+                        reorderPoint: foundLicense?.minSeatsAlert ?? 0,
+                        seatsAlert: foundLicense?.licensedEmail ?? '',
                         supplier: {
                             name: foundLicense?.supplier?.name ?? ''
                         },
@@ -138,14 +141,14 @@ export default function View({ params }: AssetPageProps) {
 
     const handleUnassign = async (e?: React.MouseEvent) => {
         e?.preventDefault();
-        if (!accessory?.id) return;
+        if (!license?.id) return;
 
         const result = await UnassignModal();
 
         if (result.isConfirmed) {
-            const previousState = { ...accessory };
+            const previousState = { ...license };
             try {
-                setAccessory(prev => prev ? {
+                setLicense(prev => prev ? {
                     ...prev,
                     assigneeId: undefined,
                     useBy: { name: '' }
@@ -153,42 +156,40 @@ export default function View({ params }: AssetPageProps) {
 
                 toast.success('Asset unassigned successfully');
             } catch (error) {
-                setAccessory(previousState);
+                setLicense(previousState);
                 toast.error('Failed to unassign asset');
             }
         }
     };
 
-    if (!accessory) {
+    if (!license) {
         return <div>Loading...</div>;
     }
 
     const detailViewProps: DetailViewProps = {
-        title: accessory.name,
+        title: license.name,
         isLoading: false,
-        co2Score: accessory.co2Score,
-        isAssigned: !!accessory.assigneeId,
+        co2Score: license.co2Score,
+        isAssigned: !!license.assigneeId,
         error,
         fields: [
-            { label: 'Name', value: accessory.name, type: 'text' },
-            // { label: 'Category', value: accessory.category.name, type: 'text' },
-            // { label: 'Model', value: accessory.model.name, type: 'text' },
-            { label: 'Status', value: accessory.statusLabel.name, type: 'text' },
-            { label: 'Location', value: accessory.location.name, type: 'text' },
-            { label: 'Department', value: accessory.department.name, type: 'text' },
-            { label: 'Purchase Date', value: new Date(accessory.purchaseDate).toLocaleDateString(), type: 'text' },
-            { label: 'Renewal Date', value: new Date(accessory.renewalDate).toLocaleDateString(), type: 'text' },
-            {
-                label: accessory.assigneeId ? 'Assigned To' : 'Not Assigned',
-                value: accessory.useBy.name || '',
-                type: 'text'
-            },
-            { label: 'Inventory', value: accessory.inventory.name, type: 'text' },
-            { label: 'Total Quantity', value: accessory.totalQuantity, type: 'text' },
-            { label: 'Reorder Point', value: accessory.reorderPoint, type: 'text' },
-            { label: 'Alert Email', value: accessory.alertEmail, type: 'text' },
-            { label: 'Supplier', value: accessory.supplier.name, type: 'text' },
-            { label: 'PO Number', value: accessory.poNumber, type: 'text' }
+            { label: 'Name', value: license.name, type: 'text' },
+            // { label: 'Category', value: license.category.name, type: 'text' },
+            // { label: 'Model', value: license.model.name, type: 'text' },
+            { label: 'Status', value: license.statusLabel.name, type: 'text' },
+            { label: 'Location', value: license.location.name, type: 'text' },
+            { label: 'Department', value: license.department.name, type: 'text' },
+            { label: 'Purchase Date', value: new Date(license.purchaseDate).toLocaleDateString(), type: 'text' },
+            { label: 'Renewal Date', value: new Date(license.renewalDate).toLocaleDateString(), type: 'text' },
+            { label: 'Inventory', value: license.inventory.name, type: 'text' },
+            { label: 'Reorder Point', value: license.reorderPoint, type: 'text' },
+            { label: 'Alert Email', value: license.seatsAlert, type: 'text' },
+            { label: 'Supplier', value: license.supplier.name, type: 'text' },
+            { label: 'PO Number', value: license.poNumber, type: 'text' },
+            { label: 'Seats', value: license.seats, type: 'text' },
+            { label: 'Seats Allocated', value: license.seatsAllocated, type: 'text' }
+
+
         ],
         breadcrumbs: (
             <Breadcrumb className="hidden md:flex">
@@ -211,13 +212,13 @@ export default function View({ params }: AssetPageProps) {
         qrCode: null,
         actions: {
             onArchive: () => handleAction('archive'),
-            onAssign: accessory.assigneeId ? undefined : () => onAssignOpen(),
-            onUnassign: accessory.assigneeId ? handleUnassign : undefined,
+            onAssign: license.assigneeId ? undefined : () => onAssignOpen(),
+            onUnassign: license.assigneeId ? handleUnassign : undefined,
             onDuplicate: () => handleAction('duplicate'),
             onEdit: () => handleAction('edit'),
             onPrintLabel: () => handleAction('print')
         },
-        sourceData: 'accessory'
+        sourceData: 'license'
     };
 
     const handleAction = (action: 'archive' | 'duplicate' | 'edit' | 'print') => {
@@ -236,21 +237,20 @@ export default function View({ params }: AssetPageProps) {
             <DetailView {...detailViewProps} />
 
             <DialogContainer
-                description="Assign this License to a user or Asset"
+                description="Checkout this License to a user or Asset"
                 open={isAssignOpen}
                 onOpenChange={onAssignClose}
-                title="Assign Asset"
+                title="Checkout License"
                 form={
                     <AssignmentForm
-                        itemId={id}
+                        itemId={license.id}
                         type="license"
-                        assignAction={() => {
-                        }}
+                        seatsRequested={1}
+                        assignAction={assignLicense}
                         onOptimisticUpdate={(userData) => {
-                            setAccessory(prev => prev ? {
+                            setLicense(prev => prev ? {
                                 ...prev,
-                                assigneeId: userData.userId,
-                                useBy: {name: userData.userName}
+                                seatsAllocated: prev.seatsAllocated + 1
                             } : undefined);
                         }}
                         onSuccess={() => {
@@ -259,13 +259,12 @@ export default function View({ params }: AssetPageProps) {
                         }}
                         onError={(previousData) => {
                             if (previousData) {
-                                setAccessory(prev => prev ? {
+                                setLicense(prev => prev ? {
                                     ...prev,
-                                    assigneeId: undefined,
-                                    useBy: {name: ''}
+                                    seatsAllocated: prev.seatsAllocated - 1
                                 } : undefined);
                             }
-                            toast.error('Failed to assign asset');
+                            toast.error('Failed to checkout license seat');
                         }}
                     />
                 }
