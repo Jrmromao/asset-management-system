@@ -154,7 +154,7 @@ const ItemDetailsTabs = ({
 
                 <TabsContent value="history" className="pt-4">
                     {auditLogs?.length > 0 ? (
-                        <div className="rounded-lg border bg-white">
+                        <div className="rounded-lg border bg-white mr-3 ml-3 mb-6">
                             <DataTable columns={columns} data={auditLogs} />
                         </div>
                     ) : (
