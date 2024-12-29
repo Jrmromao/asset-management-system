@@ -323,3 +323,11 @@ export const getCO2ScoreInfo = (score: number) => {
 export function sumSeatsAssigned(assignments: LicenseAssignment[]): number {
     return assignments.reduce((sum, assignment) => sum + assignment.seatsAssigned, 0);
 }
+
+export function sumUnitsAssigned(assignments: UserAccessory[]): number {
+    return assignments.reduce((sum, item) => sum + item.quantity, 0);
+}
+
+function sumQuantities(assignments: UserAccessory[]): number {
+    return assignments.reduce((sum, item) => sum + item.quantity, 0);
+}

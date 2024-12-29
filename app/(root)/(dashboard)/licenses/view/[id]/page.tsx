@@ -188,8 +188,6 @@ export default function View({ params }: AssetPageProps) {
             { label: 'PO Number', value: license.poNumber, type: 'text' },
             { label: 'Seats', value: license.seats, type: 'text' },
             { label: 'Seats Allocated', value: license.seatsAllocated, type: 'text' }
-
-
         ],
         breadcrumbs: (
             <Breadcrumb className="hidden md:flex">
@@ -216,7 +214,7 @@ export default function View({ params }: AssetPageProps) {
             onUnassign: license.assigneeId ? handleUnassign : undefined,
             onDuplicate: () => handleAction('duplicate'),
             onEdit: () => handleAction('edit'),
-            onPrintLabel: () => handleAction('print')
+            // onPrintLabel: () => handleAction('print')
         },
         sourceData: 'license'
     };
@@ -237,7 +235,7 @@ export default function View({ params }: AssetPageProps) {
             <DetailView {...detailViewProps} />
 
             <DialogContainer
-                description="Checkout this License to a user or Asset"
+                description="Checkout this License to a user"
                 open={isAssignOpen}
                 onOpenChange={onAssignClose}
                 title="Checkout License"

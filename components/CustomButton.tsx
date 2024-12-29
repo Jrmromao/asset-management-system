@@ -23,7 +23,7 @@ const CustomButton = ({size = 'sm', variant, action, value, Icon, className, dis
         <div>
             <Button variant={variant} size={size} onClick={action}
                     disabled={disabled}
-                    className={cn("flex items-center space-x-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 ", className)}>
+                    className={cn("flex items-center space-x-2 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 ", className)}>
                 <Icon className="w-4 h-4 mr-2"/>
                 <span>{value}</span>
             </Button>

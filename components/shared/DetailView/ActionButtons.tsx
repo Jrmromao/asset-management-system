@@ -16,8 +16,9 @@ import {Skeleton} from "@/components/ui/skeleton";
 export const ActionButtons: React.FC<{
     actions: NonNullable<DetailViewProps['actions']>;
     isLoading?: boolean;
-    isAssigned?: boolean
-}> = ({ actions, isLoading, isAssigned }) => {
+    isAssigned?: boolean,
+    isActive?: boolean
+}> = ({ actions, isLoading, isAssigned, isActive }) => {
 
     if (isLoading) {
         return (
@@ -53,6 +54,7 @@ export const ActionButtons: React.FC<{
                     />
                 ) : actions.onAssign && (
                     <CustomButton
+                        disabled={isActive}
                         size="sm"
                         className="w-full sm:w-auto"
                         variant="outline"

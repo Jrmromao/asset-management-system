@@ -47,4 +47,5 @@ export interface DetailViewProps {
         onPrintLabel?: () => void;
     },
     asset?: AssetType
+    checkoutDisabled?: boolean
 }

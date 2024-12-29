@@ -8,8 +8,6 @@ import { revalidatePath } from "next/cache"
 import { z } from "zod"
 import {Prisma} from "@prisma/client";
 
-
-
 export async function insert(values: z.infer<typeof supplierSchema>): Promise<ActionResponse<Supplier>> {
     try {
         // Validate input
@@ -66,80 +64,6 @@ export async function insert(values: z.infer<typeof supplierSchema>): Promise<Ac
         return { error: "Failed to create supplier" };
     }
 }
-
-// export async function getAll(params?: PaginationParams): Promise<ActionResponse<GetAllResponse<Supplier>>> {
-//     try {
-//         // const session = await auth();
-//         // if (!session?.user?.companyId) {
-//         //     return { error: "Not authenticated" };
-//         // }
-//
-//         // Default values
-//         const page = Math.max(1, params?.page ?? 1);
-//         const limit = Math.max(1, params?.limit ?? 10);
-//         const search = params?.search?.trim() ?? '';
-//         const sortBy = params?.sortBy ?? 'createdAt';
-//         const sortOrder = params?.sortOrder ?? 'desc';
-//
-//         // Calculate skip for pagination
-//         const skip = (page - 1) * limit;
-//
-//         // Base query filter
-//         const baseFilter = {
-//             companyId: session.user.companyId,
-//             ...(search ? {
-//                 OR: [
-//                     { name: { contains: search, mode: 'insensitive' } },
-//                     { email: { contains: search, mode: 'insensitive' } },
-//                     { contactName: { contains: search, mode: 'insensitive' } },
-//                     { city: { contains: search, mode: 'insensitive' } },
-//                     { country: { contains: search, mode: 'insensitive' } },
-//                 ]
-//             } : {})
-//         };
-//
-//         // Get total count
-//         const total = await prisma.supplier.count({
-//             where: baseFilter
-//         });
-//
-//         // Get paginated data
-//         const items = await prisma.supplier.findMany({
-//             where: baseFilter,
-//             orderBy: {
-//                 [sortBy]: sortOrder
-//             },
-//             include: {
-//                 _count: {
-//                     select: { assets: true }
-//                 }
-//             },
-//             skip,
-//             take: limit,
-//         });
-//
-//         const totalPages = Math.ceil(total / limit);
-//
-//         return {
-//             data: {
-//                 items: parseStringify(items),
-//                 metadata: {
-//                     total,
-//                     page,
-//                     limit,
-//                     totalPages,
-//                     hasMore: page < totalPages
-//                 }
-//             }
-//         };
-//
-//     } catch (error) {
-//         console.error('Failed to fetch suppliers:', error);
-//         return { error: 'Failed to fetch suppliers' };
-//     } finally {
-//         await prisma.$disconnect();
-//     }
-// }
 
 // Simple version without pagination
 export async function getAllSimple(): Promise<ActionResponse<Supplier[]>> {

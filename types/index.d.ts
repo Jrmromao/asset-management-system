@@ -40,6 +40,26 @@ declare global {
         assetId: string;
     };
 
+    type AuditLog = {
+        id: string;
+        action: string;
+        entity: string;
+        entityId?: string | null;
+        details?: string | null;
+        userId: string;
+        companyId: string;
+        createdAt: Date;
+        ipAddress?: string | null;
+        dataAccessed?: Record<string, any> | null;
+
+        company: {
+            id: string;
+            name?: string;
+        };
+        user: true
+    };
+
+
 
     // ==================== Entity Types ====================
     type StatusLabel = {
@@ -138,6 +158,9 @@ declare global {
         assignee?: User | null;
         category?: Category | null;
         license?: License | null;
+        userAccessories?: UserAccessory[] | null;
+        auditLogs?: AuditLog[] | null;
+
     };
 
      type DetailFieldType = {
@@ -233,6 +256,22 @@ declare global {
         category?: Category | null;
         model?: Model | null;
         users?: LicenseAssignment[] | null;
+    };
+
+    type UserAccessory = {
+        id: string;
+        userId: string;
+        accessoryId: string;
+        quantity: number;
+        assignedAt: Date;
+        returnedAt?: Date | null;
+        notes?: string | null;
+        companyId: string;
+
+        // Relations
+        user: User; // Assuming 'User' type is defined
+        accessory: Accessory; // Assuming 'Accessory' type is defined
+        company: Company; // Assuming 'Company' type is defined
     };
 
 

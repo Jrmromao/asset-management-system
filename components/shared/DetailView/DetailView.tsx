@@ -52,6 +52,7 @@ export const DetailView: React.FC<DetailViewProps> = ({
                                                           breadcrumbs,
                                                           sourceData = '',
                                                           customFormFields,
+                                                          checkoutDisabled = false
                                                       }) => {
     const getField = (label: string) => fields.find((f) => f.label === label);
     const scoreInfo = getCO2ScoreInfo(co2Score ?? 0);
@@ -75,15 +76,25 @@ export const DetailView: React.FC<DetailViewProps> = ({
                     )}
                 </div>
 
-                <div className="flex items-center gap-3 mt-4 flex-wrap mb-3">
-                    {getField('Status') && (<span
-                        className="px-3 py-1 text-sm rounded-full bg-green-100 text-green-800">{getField('Status')?.value}</span>)}
-                    {getField('Seats')?.value && (
-                        <span
-                            className="inline-flex items-center rounded-full bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-600/20">
-    {String(getField('Seats Allocated')?.value || 0)} / {String(getField('Seats')?.value)} Seats Available
-  </span>
-                    )}
+
+                    <div className="flex items-center gap-3 mt-4 flex-wrap mb-3">
+                        {getField('Status') && (
+                            <span className="px-3 py-1 text-sm rounded-full bg-green-100 text-green-800">
+      {getField('Status')?.value}
+    </span>
+                        )}
+
+                        {['Seats', 'Units'].map((field) =>
+                                getField(field)?.value && (
+                                    <span
+                                        key={field}
+                                        className="inline-flex items-center rounded-full bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-600/20"
+                                    >
+        {String(getField(`${field} Allocated`)?.value || 0)} / {String(getField(field)?.value)} {field} Available
+      </span>
+                                )
+                        )}
+
 
 
                     <TooltipProvider>
@@ -171,6 +182,8 @@ export const DetailView: React.FC<DetailViewProps> = ({
                         </div>
 
                         {/* QR Code */}
+
+
                         <div className="p-4 flex items-center justify-center">{qrCode}</div>
                     </div>
                     <CustomFormGrid formValues={customFormFields as FormValue[]}/>
@@ -180,7 +193,7 @@ export const DetailView: React.FC<DetailViewProps> = ({
                 <CardFooter className="bg-white">
                     <div
                         className="w-full flex flex-col sm:flex-row lg:justify-end gap-2 md:flex-row md:justify-center mt-4 md:mt-0">
-                        {actions && <ActionButtons actions={actions} isAssigned={isAssigned}/>}
+                        {actions && <ActionButtons actions={actions} isAssigned={isAssigned} isActive={checkoutDisabled}/>}
                     </div>
                 </CardFooter>
             </Card>

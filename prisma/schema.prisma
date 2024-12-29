@@ -86,7 +86,7 @@ model License {
 }
 
 model Accessory {
-  id                 String   @id @default(cuid())
+  id                 String              @id @default(cuid())
   name               String
   alertEmail         String
   reorderPoint       Int
@@ -103,12 +103,11 @@ model Accessory {
   locationId         String?
   inventoryId        String?
   categoryId         String?
-  poNumber           String?  @unique
+  poNumber           String?             @unique
   weight             Decimal?
   price              Decimal?
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
-
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
   company            Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
   // co2eRecords Co2eRecord[]
   model              Model?              @relation(fields: [modelId], references: [id], onDelete: SetNull)

@@ -539,7 +539,7 @@ export async function findById(id: string): Promise<ActionResponse<User>> {
                 company: true,
                 assets: true,
                 licenses: true,
-                accessories: true,
+                // accessories: true,
                 department: true
 
             }

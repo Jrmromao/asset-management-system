@@ -3,12 +3,7 @@ import { Control } from 'react-hook-form'
 import { FormControl, FormField, FormLabel, FormMessage } from "@/components/ui/form"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
-interface BaseOption {
-    id?: string;
-    name: string;
-}
-
-interface CustomSelectProps<T extends BaseOption = BaseOption> {
+interface CustomSelectProps<T> {
     control: Control<any>;
     name: string;
     label: string;
@@ -18,7 +13,6 @@ interface CustomSelectProps<T extends BaseOption = BaseOption> {
     required?: boolean;
     data: T[];
     tooltip?: string;
-    onChange?: (value: string) => void;
     isLoading?: boolean;
 }
 
@@ -26,19 +20,18 @@ const RequiredIndicator = () => (
     <span className="text-red-500 ml-1">*</span>
 );
 
-const CustomSelect = <T extends BaseOption>({
-                                                control,
-                                                name,
-                                                label,
-                                                placeholder,
-                                                data,
-                                                value,
-                                                disabled,
-                                                required,
-                                                tooltip,
-                                                onChange,
-                                                isLoading
-                                            }: CustomSelectProps<T>) => {
+const CustomSelect = <T extends { id?: string; name?: string }>({
+                                                                    control,
+                                                                    name,
+                                                                    label,
+                                                                    placeholder,
+                                                                    data,
+                                                                    value,
+                                                                    disabled,
+                                                                    required,
+                                                                    tooltip,
+                                                                    isLoading
+                                                                }: CustomSelectProps<T>) => {
     const renderLabel = () => {
         if (!label) return null;
 
@@ -57,17 +50,10 @@ const CustomSelect = <T extends BaseOption>({
             render={({field}) => (
                 <div className="space-y-1">
                     {renderLabel()}
-
                     <div className="flex w-full flex-col gap-1">
                         <FormControl>
                             <Select
-                                onValueChange={(newValue) => {
-                                    field.onChange(newValue);
-                                    // Call the external onChange if provided
-                                    if (onChange) {
-                                        onChange(newValue);
-                                    }
-                                }}
+                                onValueChange={field.onChange}
                                 value={value || field.value}
                                 disabled={disabled || isLoading}
                             >
@@ -83,9 +69,9 @@ const CustomSelect = <T extends BaseOption>({
                                         {data?.map((option) => (
                                             <SelectItem
                                                 key={option.id}
-                                                value={option.id!}
+                                                value={option.id || ''}
                                             >
-                                                {option.name}
+                                                {option.name || `${(option as any).firstName} ${(option as any).lastName}`}
                                             </SelectItem>
                                         ))}
                                     </SelectGroup>

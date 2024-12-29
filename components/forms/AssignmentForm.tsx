@@ -46,6 +46,7 @@ const AssignmentForm = ({
             itemId: itemId,
             type: type
         },
+        mode: 'onChange'
     })
 
     const [getAllUsers, users] = useUserStore((state) => [state.getAll, state.users])
@@ -100,11 +101,10 @@ const AssignmentForm = ({
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
                     <CustomSelect
                         control={form.control}
-                        {...form.register("userId")}
+                        name="userId"
                         label="Name"
                         placeholder="Select User"
                         disabled={isSubmitting}
-                        name="userId"
                         data={users || []}
                         value={form.watch('userId')}
                         required

@@ -6,7 +6,6 @@ import QRCode from "react-qr-code";
 import Link from "next/link";
 import {toast} from "sonner";
 import Swal from "sweetalert2";
-import {BoxIcon, Scan} from "lucide-react";
 import {
     Breadcrumb,
     BreadcrumbItem,
@@ -17,11 +16,11 @@ import {
 import {DialogContainer} from "@/components/dialogs/DialogContainer";
 import AssignmentForm from "@/components/forms/AssignmentForm";
 import {DetailViewProps} from "@/components/shared/DetailView/types";
-import {findById, assign} from "@/lib/actions/accessory.actions";
-import ActivityLog from "@/components/shared/ActivityLog/ActivityLog";
+import {assign, findById} from "@/lib/actions/accessory.actions";
 import {useAccessoryStore} from "@/lib/stores/accessoryStore";
 import {useItemDetails} from "@/components/shared/DetailsTabs/useItemDetails";
 import ItemDetailsTabs from "@/components/shared/DetailsTabs/ItemDetailsTabs";
+import {sumUnitsAssigned} from "@/lib/utils";
 
 
 interface AssetPageProps {
@@ -61,11 +60,14 @@ interface EnhancedAccessoryType {
     },
     totalQuantity: number
     reorderPoint: number
+    unitsAllocated: number
     alertEmail: string
     supplier: {
         name: string
     }
     poNumber: string
+    auditLogs?: AuditLog[]
+
 }
 
 const UnassignModal = async () => {
@@ -89,7 +91,7 @@ export default function AssetPage({ params }: AssetPageProps) {
     const [accessory, setAccessory] = useState<EnhancedAccessoryType | undefined>();
     const { relationships, attachments, isLoading } = useItemDetails({
         itemId: id,
-        itemType: 'accessory' // or 'asset', 'license', 'component'
+        itemType: 'accessory'
     });
     useEffect(() => {
         const fetchAsset = async () => {
@@ -97,12 +99,13 @@ export default function AssetPage({ params }: AssetPageProps) {
 
             try {
                 const foundAccessoryResponse = await findById(id);
+
+                console.log(foundAccessoryResponse.data)
+
                 if (!foundAccessoryResponse.error) {
 
                     const foundAccessory = foundAccessoryResponse.data;
                     console.log('foundAccessory: ',foundAccessoryResponse)
-
-
 
                     setAccessory({
                         id: foundAccessory?.id!,
@@ -127,6 +130,7 @@ export default function AssetPage({ params }: AssetPageProps) {
                         department: {
                             name: foundAccessory?.department?.name ?? ''
                         },
+                        unitsAllocated: sumUnitsAssigned(foundAccessory?.userAccessories ?? []),
                         assigneeId: foundAccessory?.assigneeId ?? '',
                         createdAt: foundAccessory?.createdAt!,
                         updatedAt: foundAccessory?.updatedAt!,
@@ -137,7 +141,8 @@ export default function AssetPage({ params }: AssetPageProps) {
                         poNumber: foundAccessory?.poNumber!,
                         reorderPoint: foundAccessory?.reorderPoint!,
                         supplier: {name: foundAccessory?.supplier?.name!},
-                        totalQuantity: foundAccessory?.totalQuantityCount!
+                        totalQuantity: foundAccessory?.totalQuantityCount!,
+                        auditLogs: foundAccessory?.auditLogs ?? []
 
                     });
                 }
@@ -268,13 +273,15 @@ export default function AssetPage({ params }: AssetPageProps) {
             { label: 'Reorder Point', value: accessory.reorderPoint, type: 'text' },
             { label: 'Alert Email', value: accessory.alertEmail, type: 'text' },
             { label: 'Supplier', value: accessory.supplier.name, type: 'text' },
+            { label: 'Units', value: accessory.totalQuantity, type: 'text' },
+            { label: 'Units Allocated', value: accessory.unitsAllocated, type: 'text' }
          ],
         breadcrumbs: (
             <Breadcrumb className="hidden md:flex">
                 <BreadcrumbList>
                     <BreadcrumbItem>
                         <BreadcrumbLink asChild>
-                            <Link href="/assets">Assets</Link>
+                            <Link href="/assets">Accessories</Link>
                         </BreadcrumbLink>
                     </BreadcrumbItem>
                     <BreadcrumbSeparator />
@@ -301,7 +308,8 @@ export default function AssetPage({ params }: AssetPageProps) {
             onEdit: () => handleAction('edit'),
             onPrintLabel: () => printQRCode('/qr-code/sample.png')
         },
-        sourceData: 'accessory'
+        sourceData: 'accessory',
+        checkoutDisabled: accessory.unitsAllocated === accessory.totalQuantity
     };
 
     const handleAction = (action: 'archive' | 'duplicate' | 'edit' | 'print') => {
@@ -332,8 +340,7 @@ export default function AssetPage({ params }: AssetPageProps) {
                             // Immediately update the UI
                             setAccessory(prev => prev ? {
                                 ...prev,
-                                assigneeId: userData.userId,
-                                assignee: {name: userData.userName}
+                                unitsAllocated: prev.unitsAllocated + 1
                             } : undefined);
                         }}
                         onSuccess={() => {
@@ -344,8 +351,7 @@ export default function AssetPage({ params }: AssetPageProps) {
                             if (previousData) {
                                 setAccessory(prev => prev ? {
                                     ...prev,
-                                    assigneeId: undefined,
-                                    assignee: undefined
+                                    unitsAllocated: prev.unitsAllocated - 1
                                 } : undefined);
                             }
                             toast.error('Failed to assign asset');
@@ -356,21 +362,11 @@ export default function AssetPage({ params }: AssetPageProps) {
 
             <div className="mt-5 ">
                 <ItemDetailsTabs
+                    auditLogs={accessory?.auditLogs}
                     itemId={id}
                     itemType="license"
                     relationships={relationships}
                     attachments={attachments}
-                    customTabs={{
-                        inventory: {
-                            label: "Inventory",
-                            icon: <BoxIcon className="h-4 w-4"/>,
-                            content: (
-                                <div>
-                                    {/* Custom inventory content */}
-                                </div>
-                            )
-                        }
-                    }}
                 />
             </div>
         </>
