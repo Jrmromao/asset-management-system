@@ -51,19 +51,19 @@ export async function update(data: Inventory): Promise<ActionResponse<Inventory>
         }
 
         const session = await auth()
+        //
+        // const updated = await prisma.inventory.update({
+        //     where: {
+        //         id: data.id,
+        //         companyId: session?.user?.companyId
+        //     }
+        //     ,
+        //     data: {
+        //         ...data,
+        //     },
+        // });
 
-        const updated = await prisma.inventory.update({
-            where: {
-                id: data.id,
-                companyId: session?.user?.companyId
-            }
-            ,
-            data: {
-                ...data,
-            },
-        });
-
-        return {data: parseStringify(updated)};
+        return {data: parseStringify({})};
     } catch (error) {
         console.error('Update inventory error:', error);
         return {error: "Failed to update inventory"};

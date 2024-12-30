@@ -2,13 +2,18 @@
 
 import {ColumnDef} from "@tanstack/react-table"
 import {Button} from "@/components/ui/button"
-import {Activity, ArrowUpDown, Clock, User} from "lucide-react"
+import {
+    BadgeIcon,
+    Mail,
+    User as UserIcon,
+    ArrowUpDown,
+    CircleUserRound, HashIcon, CheckCircle2
+} from "lucide-react"
 import {formatDateTime} from "@/lib/utils"
 
-export const auditLogColumns = ({  }): ColumnDef<AuditLog>[] => [
+export const itemUseByColumns = ({  }): ColumnDef<UserAccessory>[] => [
     {
-        id: "createdAt",
-        accessorFn: (row) => new Date(row.createdAt).getTime(),
+        accessorKey: "user.employeeId",
         enableSorting: true,
         header: ({ column }) => {
             return (
@@ -17,24 +22,23 @@ export const auditLogColumns = ({  }): ColumnDef<AuditLog>[] => [
                     onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
                     className="flex items-center gap-2 text-xs font-medium text-gray-500 uppercase"
                 >
-                    <Clock className="w-4 h-4" />
-                    Date & Time
+                    <HashIcon className="w-4 h-4" />
+                    Employee ID
                     <ArrowUpDown className="ml-2 h-4 w-4" />
                 </Button>
             )
         },
         cell: ({ row }) => {
-            const auditLog = row.original
+            const user = row.original.user
             return (
                 <div className="text-sm text-gray-600">
-                    {formatDateTime(new Date(auditLog.createdAt)).dateTime}
+                    {user.employeeId}
                 </div>
             )
         }
     },
     {
-        id: "action",
-        accessorFn: (row) => row.action.toLowerCase(),
+        accessorKey: "user.name",
         enableSorting: true,
         header: ({ column }) => {
             return (
@@ -43,23 +47,23 @@ export const auditLogColumns = ({  }): ColumnDef<AuditLog>[] => [
                     onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
                     className="flex items-center gap-2 text-xs font-medium text-gray-500 uppercase"
                 >
-                    <Activity className="w-4 h-4" />
-                    Event Type
+                    <CircleUserRound className="w-4 h-4" />
+                    Name
                     <ArrowUpDown className="ml-2 h-4 w-4" />
                 </Button>
             )
         },
         cell: ({ row }) => {
+            const user = row.original.user
             return (
                 <div className="text-sm text-gray-900">
-                    {row.original.action.split('_').join(' ')}
+                    {user.name}
                 </div>
             )
         }
     },
     {
-        id: "targetUser",
-        accessorFn: (row) => row.userId || row.userId,
+        accessorKey: "user.email",
         enableSorting: true,
         header: ({ column }) => {
             return (
@@ -68,32 +72,24 @@ export const auditLogColumns = ({  }): ColumnDef<AuditLog>[] => [
                     onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
                     className="flex items-center gap-2 text-xs font-medium text-gray-500 uppercase"
                 >
-                    <User className="w-4 h-4" />
-                    Recipient
+                    <Mail className="w-4 h-4" />
+                    Email
                     <ArrowUpDown className="ml-2 h-4 w-4" />
                 </Button>
             )
         },
         cell: ({ row }) => {
-            const targetUserId = row.original.userId || row.original.userId
+            const user = row.original.user
             return (
-                <div className="flex items-center">
-                    <div className="h-8 w-8 bg-gray-100 rounded-full flex items-center justify-center">
-                        <User className="h-4 w-4 text-gray-500" />
-                    </div>
-                    <div className="ml-3">
-                        <div className="text-sm font-medium text-gray-900">
-                            {targetUserId}
-                        </div>
-                        <div className="text-xs text-gray-500">User ID</div>
-                    </div>
+                <div className="text-sm text-gray-900">
+                    {user.email}
                 </div>
             )
         }
     },
     {
-        id: "performedBy",
-        accessorFn: (row) => row.userId,
+        accessorFn: (row) => row.user.active,
+        id: "status",
         enableSorting: true,
         header: ({ column }) => {
             return (
@@ -102,24 +98,56 @@ export const auditLogColumns = ({  }): ColumnDef<AuditLog>[] => [
                     onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
                     className="flex items-center gap-2 text-xs font-medium text-gray-500 uppercase"
                 >
-                    <User className="w-4 h-4" />
-                    Performed By
+                    <UserIcon className="w-4 h-4" />
+                    Account Status
                     <ArrowUpDown className="ml-2 h-4 w-4" />
                 </Button>
             )
         },
         cell: ({ row }) => {
+            const user = row.original.user
             return (
                 <div className="flex items-center">
                     <div className="h-8 w-8 bg-gray-100 rounded-full flex items-center justify-center">
-                        <User className="h-4 w-4 text-gray-500" />
+                        <UserIcon className="h-4 w-4 text-gray-500" />
                     </div>
                     <div className="ml-3">
                         <div className="text-sm font-medium text-gray-900">
-                            {row.original.userId}
+                            {user.active ? "Active" : "Inactive"}
                         </div>
                         <div className="text-xs text-gray-500">Administrator</div>
                     </div>
+                </div>
+            )
+        }
+    },
+    {
+        id: "actions",
+        enableSorting: false,
+        header: () => (
+            <div className="text-xs font-medium text-gray-500 uppercase text-center">
+                Actions
+            </div>
+        ),
+        cell: ({ row }) => {
+            const user = row.original.user
+            return (
+                <div className="flex items-center justify-center">
+                    <Button
+                        variant={ user.active ? "link": "ghost"}
+                        size="sm"
+                        className={`flex items-center gap-2 text-sm ${
+                            user.active
+                                ? "text-green-600 hover:text-green-700"
+                                : "text-gray-600 hover:text-gray-700"
+                        }`}
+                        onClick={() => {
+                            console.log('Check in clicked for:', user.employeeId)
+                        }}
+                    >
+                        <CheckCircle2 className="h-4 w-4" />
+                        Check In
+                    </Button>
                 </div>
             )
         }

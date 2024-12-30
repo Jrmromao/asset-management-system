@@ -1,12 +1,12 @@
 'use client'
 
 import React, {useEffect, useState, useTransition} from 'react'
-import {undefined, z} from "zod"
+import {z} from "zod"
 import {zodResolver} from "@hookform/resolvers/zod"
 import {useForm} from "react-hook-form"
 import {Button} from "@/components/ui/button"
-import {Form, FormLabel} from "@/components/ui/form"
-import {Loader2, Plus} from "lucide-react"
+import {Form} from "@/components/ui/form"
+import {Loader2} from "lucide-react"
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card"
 import {useRouter} from "next/navigation"
 import {toast} from "sonner"
@@ -40,9 +40,7 @@ import CustomPriceInput from '../CustomPriceInput'
 import {SelectWithButton} from "@/components/SelectWithButton";
 import ManufacturerForm from "@/components/forms/ManufacturerForm";
 import {useManufacturerStore} from "@/lib/stores/manufacturerStore";
-import {auth} from "@/auth";
 import {assetSchema} from "@/lib/schemas";
-import CustomFieldsManager from "@/components/forms/CustomFieldsManager";
 import FormTemplateCreator from "@/components/forms/FormTemplateCreator";
 import {useFormTemplateStore} from "@/lib/stores/formTemplateStore";
 import {CustomField, CustomFieldOption} from '@/types/form';

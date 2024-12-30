@@ -109,7 +109,7 @@ const LicenseForm = () => {
             supplierId: '',
             poNumber: '',
             purchasePrice: '',
-            licenseKey: '',
+            // licenseKey: '',
             notes: '',
         }
     })
@@ -117,16 +117,9 @@ const LicenseForm = () => {
     const onSubmit = async (data: LicenseFormValues) => {
         startTransition(async () => {
             try {
-
-
-
-
                 const formData = {
                     ...data
                 }
-
-                console.log('formData: ',formData)
-
                 await create(data).then(_ => {
                         toast.success('License created successfully')
                         // router.push('/licenses')

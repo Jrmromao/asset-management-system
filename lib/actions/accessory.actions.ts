@@ -216,6 +216,9 @@ export const findById = async (id: string): Promise<ApiResponse<Accessory>> => {
                                 id: true,
                                 name: true,
                                 email: true,
+                                title: true,
+                                employeeId: true,
+                                active: true,
                             }
                         }
                     }

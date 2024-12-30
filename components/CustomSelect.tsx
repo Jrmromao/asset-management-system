@@ -14,6 +14,7 @@ interface CustomSelectProps<T> {
     data: T[];
     tooltip?: string;
     isLoading?: boolean;
+    onChange?: (value: string) => void | Promise<void>;
 }
 
 const RequiredIndicator = () => (
@@ -30,7 +31,8 @@ const CustomSelect = <T extends { id?: string; name?: string }>({
                                                                     disabled,
                                                                     required,
                                                                     tooltip,
-                                                                    isLoading
+                                                                    isLoading,
+                                                                    onChange
                                                                 }: CustomSelectProps<T>) => {
     const renderLabel = () => {
         if (!label) return null;
@@ -47,41 +49,48 @@ const CustomSelect = <T extends { id?: string; name?: string }>({
         <FormField
             control={control}
             name={name}
-            render={({field}) => (
-                <div className="space-y-1">
-                    {renderLabel()}
-                    <div className="flex w-full flex-col gap-1">
-                        <FormControl>
-                            <Select
-                                onValueChange={field.onChange}
-                                value={value || field.value}
-                                disabled={disabled || isLoading}
-                            >
-                                <SelectTrigger
-                                    className={`w-full input-class ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+            render={({field}) => {
+                const handleValueChange = (newValue: string) => {
+                    field.onChange(newValue);
+                    onChange?.(newValue);
+                };
+
+                return (
+                    <div className="space-y-1">
+                        {renderLabel()}
+                        <div className="flex w-full flex-col gap-1">
+                            <FormControl>
+                                <Select
+                                    onValueChange={handleValueChange}
+                                    value={value || field.value}
+                                    disabled={disabled || isLoading}
                                 >
-                                    <div className={`${field.value ? '' : 'text-gray-600'}`}>
-                                        <SelectValue placeholder={placeholder}/>
-                                    </div>
-                                </SelectTrigger>
-                                <SelectContent className="w-full bg-white">
-                                    <SelectGroup>
-                                        {data?.map((option) => (
-                                            <SelectItem
-                                                key={option.id}
-                                                value={option.id || ''}
-                                            >
-                                                {option.name || `${(option as any).firstName} ${(option as any).lastName}`}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectGroup>
-                                </SelectContent>
-                            </Select>
-                        </FormControl>
-                        <FormMessage className="text-sm text-red-700"/>
+                                    <SelectTrigger
+                                        className={`w-full input-class ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                    >
+                                        <div className={`${field.value ? '' : 'text-gray-600'}`}>
+                                            <SelectValue placeholder={placeholder}/>
+                                        </div>
+                                    </SelectTrigger>
+                                    <SelectContent className="w-full bg-white">
+                                        <SelectGroup>
+                                            {data?.map((option) => (
+                                                <SelectItem
+                                                    key={option.id}
+                                                    value={option.id || ''}
+                                                >
+                                                    {option.name || `${(option as any).firstName} ${(option as any).lastName}`}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectGroup>
+                                    </SelectContent>
+                                </Select>
+                            </FormControl>
+                            <FormMessage className="text-sm text-red-700"/>
+                        </div>
                     </div>
-                </div>
-            )}
+                );
+            }}
         />
     )
 }

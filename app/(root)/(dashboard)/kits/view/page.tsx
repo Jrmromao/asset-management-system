@@ -8,7 +8,6 @@ import {Table, TableBody, TableCell, TableRow} from "@/components/ui/table";
 import Image from "next/image";
 import CustomButton from "@/components/CustomButton";
 import {FaArchive, FaChevronRight, FaCopy, FaPen, FaPrint} from 'react-icons/fa';
-import {findAllByOrganization} from "@/lib/actions/auditLog.actions";
 import {AuditLog} from "@prisma/client"; // Example icon from react-icons
 
 const View = () => {
@@ -25,7 +24,6 @@ const View = () => {
             return
         }
         findById(id).then(asset => setAsset(asset.data))
-        findAllByOrganization(id).then(auditLog => setAuditLogs(auditLog))
 
     }, [setAsset, findById]);
 

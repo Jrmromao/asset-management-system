@@ -1,5 +1,4 @@
 import React from "react";
-
 export const dynamic = 'force-dynamic'
 import type {Metadata} from "next";
 import {Inter, IBM_Plex_Serif} from "next/font/google";
@@ -9,6 +8,7 @@ import {ThemeProvider} from "@/components/providers/theme-provider";
 import {Toaster} from "sonner";
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { Analytics } from "@vercel/analytics/react"
+import GoogleAnalytics from '@/components/GoogleAnalytics';
 
 const inter = Inter({subsets: ["latin"], variable: '--font-inter'});
 const ibmPlexSerif = IBM_Plex_Serif({
@@ -28,23 +28,25 @@ export const metadata: Metadata = {
 export default async function RootLayout({children}: Readonly<{
     children: React.ReactNode;
 }>) {
-
     return (
         <html lang="en">
         <body className={`${inter.variable} ${ibmPlexSerif.variable}`}>
-        <Toaster richColors  />
+        <Toaster richColors />
         <SpeedInsights/>
         <Analytics/>
+        {process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID && (
+            <GoogleAnalytics GA_MEASUREMENT_ID={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID} />
+        )}
         <ThemeProvider
             attribute="class"
             defaultTheme="newyork"
             enableSystem
             disableTransitionOnChange
-        ><ClientProviders>
-
+        >
+            <ClientProviders>
                 {children}
-
-        </ClientProviders> </ThemeProvider>
+            </ClientProviders>
+        </ThemeProvider>
         </body>
         </html>
     );

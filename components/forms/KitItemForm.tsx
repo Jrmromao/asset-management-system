@@ -57,13 +57,13 @@ const KitItemForm = ({data, name, placeholder, value, label, onClose}: KitItemFo
         <section className={''}>
             <form {...form1} onSubmit={form1.handleSubmit(onSubmit)}>
                     <div className={'flex flex-col md:flex-col gap-4 pt-5'}>
-                        <CustomSelect control={form1.control}
-                                      {...form1.register("itemID")}
-                                      label={label}
-                                      data={data}
-                                      placeholder={placeholder}
-                                      value={form1.watch('itemID')}
-                        />
+                        {/*<CustomSelect control={form1.control}*/}
+                        {/*              {...form1.register("itemID")}*/}
+                        {/*              label={label}*/}
+                        {/*              data={data}*/}
+                        {/*              placeholder={placeholder}*/}
+                        {/*              value={form1.watch('itemID')}*/}
+                        {/*/>*/}
                     </div>
 
 

@@ -67,6 +67,7 @@ interface EnhancedAccessoryType {
     }
     poNumber: string
     auditLogs?: AuditLog[]
+    usedBy?: UserAccessory[]
 
 }
 
@@ -142,7 +143,8 @@ export default function AssetPage({ params }: AssetPageProps) {
                         reorderPoint: foundAccessory?.reorderPoint!,
                         supplier: {name: foundAccessory?.supplier?.name!},
                         totalQuantity: foundAccessory?.totalQuantityCount!,
-                        auditLogs: foundAccessory?.auditLogs ?? []
+                        auditLogs: foundAccessory?.auditLogs ?? [],
+                        usedBy: foundAccessory?.userAccessories ?? []
 
                     });
                 }
@@ -364,6 +366,7 @@ export default function AssetPage({ params }: AssetPageProps) {
                 <ItemDetailsTabs
                     auditLogs={accessory?.auditLogs}
                     itemId={id}
+                    usedBy={accessory?.usedBy}
                     itemType="license"
                     relationships={relationships}
                     attachments={attachments}
