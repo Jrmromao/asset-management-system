@@ -100,11 +100,23 @@ const LandingPage = () => {
               impact all in one place.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
-              <Button size="lg" className="bg-green-600 hover:bg-green-700">
+              <Button
+                size="lg"
+                className="bg-green-600 hover:bg-green-700"
+                onClick={() => router.push("/sign-up")}
+              >
                 Start free trial
                 <ArrowRight className="ml-2 w-4 h-4" />
               </Button>
-              <Button size="lg" variant="outline">
+              <Button
+                size="lg"
+                variant="outline"
+                className="rounded-lg"
+                onClick={() => {
+                  window.location.href =
+                    "mailto:ecokeepr@gmail.com?subject=Book%20a%20Demo&body=I%20would%20like%20to%20schedule%20a%20demo.";
+                }}
+              >
                 Book a demo
               </Button>
             </div>
