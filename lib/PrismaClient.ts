@@ -2,21 +2,21 @@ import { PrismaClient } from "@prisma/client";
 
 // Extend the global namespace to include the PrismaClient instance
 declare global {
-    var prisma: PrismaClient | undefined;
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  var prisma: PrismaClient | undefined;
 }
 
-// Create a PrismaClient instance
-let prisma: PrismaClient;
+// Create a PrismaClient instance if needed
+const prismaGlobal = global as { prisma: PrismaClient | undefined };
 
-if (process.env.NODE_ENV === "production") {
+if (!prismaGlobal.prisma) {
+  if (process.env.NODE_ENV === "production") {
     // In production, create a new PrismaClient instance
-    prisma = new PrismaClient();
-} else {
+    prismaGlobal.prisma = new PrismaClient();
+  } else {
     // In development, use a global PrismaClient instance to avoid multiple instances
-    if (!globalThis.prisma) {
-        globalThis.prisma = new PrismaClient();
-    }
-    prisma = globalThis.prisma;
+    prismaGlobal.prisma = new PrismaClient();
+  }
 }
 
-export default prisma;
+export default prismaGlobal.prisma as PrismaClient;

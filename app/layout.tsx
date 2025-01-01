@@ -1,53 +1,55 @@
 import React from "react";
-export const dynamic = 'force-dynamic'
-import type {Metadata} from "next";
-import {Inter, IBM_Plex_Serif} from "next/font/google";
+export const dynamic = "force-dynamic";
+import type { Metadata } from "next";
+import { Inter, IBM_Plex_Serif } from "next/font/google";
 import "./globals.css";
-import {ClientProviders} from "@/lib/SessionProvider";
-import {ThemeProvider} from "@/components/providers/theme-provider";
-import {Toaster} from "sonner";
-import { SpeedInsights } from "@vercel/speed-insights/next"
-import { Analytics } from "@vercel/analytics/react"
-import GoogleAnalytics from '@/components/GoogleAnalytics';
+import { ClientProviders } from "@/lib/SessionProvider";
+import { ThemeProvider } from "@/components/providers/theme-provider";
+import { Toaster } from "sonner";
+import { SpeedInsights } from "@vercel/speed-insights/next";
+import { Analytics } from "@vercel/analytics/react";
+import GoogleAnalytics from "@/components/GoogleAnalytics";
 
-const inter = Inter({subsets: ["latin"], variable: '--font-inter'});
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const ibmPlexSerif = IBM_Plex_Serif({
-    subsets: ['latin'],
-    weight: ['400', '700'],
-    variable: '--font-ibm-plex-serif'
-})
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  variable: "--font-ibm-plex-serif",
+});
 
 export const metadata: Metadata = {
-    title: "Asset Management System",
-    description: "This is my asset management system",
-    icons: {
-        icon: '/icons/logo.svg'
-    }
+  title: "Asset Management System",
+  description: "This is my asset management system",
+  icons: {
+    icon: "/icons/logo.svg",
+  },
 };
 
-export default async function RootLayout({children}: Readonly<{
-    children: React.ReactNode;
+export default async function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
 }>) {
-    return (
-        <html lang="en">
-        <body className={`${inter.variable} ${ibmPlexSerif.variable}`}>
+  return (
+    <html lang="en">
+      <body className={`${inter.variable} ${ibmPlexSerif.variable}`}>
         <Toaster richColors />
-        <SpeedInsights/>
-        <Analytics/>
+        <SpeedInsights />
+        <Analytics />
         {process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID && (
-            <GoogleAnalytics GA_MEASUREMENT_ID={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID} />
+          <GoogleAnalytics
+            GA_MEASUREMENT_ID={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}
+          />
         )}
         <ThemeProvider
-            attribute="class"
-            defaultTheme="newyork"
-            enableSystem
-            disableTransitionOnChange
+          attribute="class"
+          defaultTheme="newyork"
+          enableSystem
+          disableTransitionOnChange
         >
-            <ClientProviders>
-                {children}
-            </ClientProviders>
+          <ClientProviders>{children}</ClientProviders>
         </ThemeProvider>
-        </body>
-        </html>
-    );
+      </body>
+    </html>
+  );
 }

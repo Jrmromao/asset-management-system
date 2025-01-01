@@ -1,49 +1,38 @@
-import Image from 'next/image'
-import Link from 'next/link'
-import React from 'react'
+import Image from "next/image";
+import Link from "next/link";
+import React from "react";
 
+const RightSidebar = ({ user, transactions, banks }: any) => {
+  // const categories: CategoryCount[] = countTransactionCategories(transactions)
 
-const RightSidebar = ({user, transactions, banks}: any) => {
-    // const categories: CategoryCount[] = countTransactionCategories(transactions)
+  return (
+    <aside className="right-sidebar">
+      <section className="flex flex-col pb-8">
+        <div className="profile-banner" />
+        <div className="profile">
+          <div className="profile-img">
+            <span className="text-5xl font-bold text-blue-500"></span>
+          </div>
 
-    return (
-        <aside className="right-sidebar">
-            <section className="flex flex-col pb-8">
-                <div className="profile-banner"/>
-                <div className="profile">
-                    <div className="profile-img">
-                        <span className="text-5xl font-bold text-blue-500"></span>
-                    </div>
+          <div className="profile-details">
+            <h1 className="profile-name">
+              {/* {`${user?.firstName} ${user?.lastName}`} */} Joao Romao
+            </h1>
+            <p className="profile-email">{/* {user.email} */}Joao@mail.com</p>
+          </div>
+        </div>
+      </section>
 
-                    <div className="profile-details">
-                        <h1 className='profile-name'>
-                            {/* {`${user?.firstName} ${user?.lastName}`} */} Joao Romao
-                        </h1>
-                        <p className="profile-email">
-                            {/* {user.email} */}Joao@mail.com
-                        </p>
-                    </div>
-                </div>
-            </section>
+      <section className="banks">
+        <div className="flex w-full justify-between">
+          <h2 className="header-2">My Banks</h2>
+          <Link href="/" className="flex gap-2">
+            <Image src="/icons/plus.svg" width={20} height={20} alt="plus" />
+            <h2 className="text-14 font-semibold text-gray-600">Add Bank</h2>
+          </Link>
+        </div>
 
-            <section className="banks">
-                <div className="flex w-full justify-between">
-                    <h2 className="header-2">My Banks</h2>
-                    <Link href="/" className="flex gap-2">
-                        <Image
-                            src="/icons/plus.svg"
-                            width={20}
-                            height={20}
-                            alt="plus"
-                        />
-                        <h2 className="text-14 font-semibold text-gray-600">
-                            Add Bank
-                        </h2>
-                    </Link>
-                </div>
-
-
-                {/* {banks?.length > 0 && (
+        {/* {banks?.length > 0 && (
                     <div className="relative flex flex-1 flex-col items-center justify-center gap-5">
                         <div className='relative z-10'>
                             <BankCard
@@ -73,9 +62,9 @@ const RightSidebar = ({user, transactions, banks}: any) => {
                         ))}
                     </div>
                 </div> */}
-            </section>
-        </aside>
-    )
-}
+      </section>
+    </aside>
+  );
+};
 
-export default RightSidebar
+export default RightSidebar;

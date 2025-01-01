@@ -1,8 +1,6 @@
-import React from 'react'
+import React from "react";
 
 const LogItem = () => {
-    return (
-        <div>LogItem</div>
-    )
-}
-export default LogItem
+  return <div>LogItem</div>;
+};
+export default LogItem;

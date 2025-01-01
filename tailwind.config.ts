@@ -15,10 +15,10 @@ const config = {
       center: true,
       padding: "2rem",
       screens: {
-        'sm': "540px",
-        'md': "720px",
-        'lg': "960px",
-        'xl': "1140px",
+        sm: "540px",
+        md: "720px",
+        lg: "960px",
+        xl: "1140px",
         "2xl": "1320px",
       },
     },
@@ -107,6 +107,7 @@ const config = {
       },
     },
   },
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   plugins: [require("tailwindcss-animate")],
 } satisfies Config;
 

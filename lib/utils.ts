@@ -1,148 +1,147 @@
-/* eslint-disable no-prototype-builtins */
-import {type ClassValue, clsx} from "clsx";
+import { type ClassValue, clsx } from "clsx";
 import qs from "query-string";
-import {twMerge} from "tailwind-merge";
-import {z} from "zod";
-import {SignJWT} from "jose";
-import {useRouter} from "next/navigation";
-import {Battery, BatteryFull, BatteryLow, BatteryMedium} from "lucide-react";
+import { twMerge } from "tailwind-merge";
+import { z } from "zod";
+import { SignJWT } from "jose";
+import { Battery, BatteryFull, BatteryLow, BatteryMedium } from "lucide-react";
 
 export function cn(...inputs: ClassValue[]) {
-    return twMerge(clsx(inputs));
+  return twMerge(clsx(inputs));
 }
 
-export function roundFloat (value: number, precision: number){
-    const multiplier = Math.pow(10, precision);
-    return Math.round(value * multiplier) / multiplier;
-};
-
-export  function processRecordContents(csvContent: string) {
-    const rows = csvContent.split('\n')
-
-    // Get and clean headers
-    const headers = rows[0].split(',').map(header => header.trim())
-
-    // Process data rows
-    const data = rows.slice(1)
-        .filter(row => row.trim()) // Skip empty rows
-        .map(row => {
-            const values = row.split(',').map(value => value.trim())
-            const rowData: { [key: string]: string } = {}
-            headers.forEach((header, index) => {
-                rowData[header] = values[index]
-            })
-            return rowData
-        })
-    return data
+export function roundFloat(value: number, precision: number) {
+  const multiplier = Math.pow(10, precision);
+  return Math.round(value * multiplier) / multiplier;
 }
 
+export function processRecordContents(csvContent: string) {
+  const rows = csvContent.split("\n");
+
+  // Get and clean headers
+  const headers = rows[0].split(",").map((header) => header.trim());
+
+  // Process data rows
+  const data = rows
+    .slice(1)
+    .filter((row) => row.trim()) // Skip empty rows
+    .map((row) => {
+      const values = row.split(",").map((value) => value.trim());
+      const rowData: { [key: string]: string } = {};
+      headers.forEach((header, index) => {
+        rowData[header] = values[index];
+      });
+      return rowData;
+    });
+  return data;
+}
 
 // FORMAT DATE TIME
 export const formatDateTime = (dateString: Date) => {
-    const dateTimeOptions: Intl.DateTimeFormatOptions = {
-        weekday: "short", // abbreviated weekday name (e.g., 'Mon')
-        month: "short", // abbreviated month name (e.g., 'Oct')
-        day: "numeric", // numeric day of the month (e.g., '25')
-        hour: "numeric", // numeric hour (e.g., '8')
-        minute: "numeric", // numeric minute (e.g., '30')
-        hour12: true, // use 12-hour clock (true) or 24-hour clock (false)
-    };
+  const dateTimeOptions: Intl.DateTimeFormatOptions = {
+    weekday: "short", // abbreviated weekday name (e.g., 'Mon')
+    month: "short", // abbreviated month name (e.g., 'Oct')
+    day: "numeric", // numeric day of the month (e.g., '25')
+    hour: "numeric", // numeric hour (e.g., '8')
+    minute: "numeric", // numeric minute (e.g., '30')
+    hour12: true, // use 12-hour clock (true) or 24-hour clock (false)
+  };
 
-    const dateDayOptions: Intl.DateTimeFormatOptions = {
-        weekday: "short", // abbreviated weekday name (e.g., 'Mon')
-        year: "numeric", // numeric year (e.g., '2023')
-        month: "2-digit", // abbreviated month name (e.g., 'Oct')
-        day: "2-digit", // numeric day of the month (e.g., '25')
-    };
+  const dateDayOptions: Intl.DateTimeFormatOptions = {
+    weekday: "short", // abbreviated weekday name (e.g., 'Mon')
+    year: "numeric", // numeric year (e.g., '2023')
+    month: "2-digit", // abbreviated month name (e.g., 'Oct')
+    day: "2-digit", // numeric day of the month (e.g., '25')
+  };
 
-    const dateOptions: Intl.DateTimeFormatOptions = {
-        month: "short", // abbreviated month name (e.g., 'Oct')
-        year: "numeric", // numeric year (e.g., '2023')
-        day: "numeric", // numeric day of the month (e.g., '25')
-    };
+  const dateOptions: Intl.DateTimeFormatOptions = {
+    month: "short", // abbreviated month name (e.g., 'Oct')
+    year: "numeric", // numeric year (e.g., '2023')
+    day: "numeric", // numeric day of the month (e.g., '25')
+  };
 
-    const timeOptions: Intl.DateTimeFormatOptions = {
-        hour: "numeric", // numeric hour (e.g., '8')
-        minute: "numeric", // numeric minute (e.g., '30')
-        hour12: true, // use 12-hour clock (true) or 24-hour clock (false)
-    };
+  const timeOptions: Intl.DateTimeFormatOptions = {
+    hour: "numeric", // numeric hour (e.g., '8')
+    minute: "numeric", // numeric minute (e.g., '30')
+    hour12: true, // use 12-hour clock (true) or 24-hour clock (false)
+  };
 
-    const formattedDateTime: string = new Date(dateString).toLocaleString(
-        "en-US",
-        dateTimeOptions
-    );
+  const formattedDateTime: string = new Date(dateString).toLocaleString(
+    "en-US",
+    dateTimeOptions,
+  );
 
-    const formattedDateDay: string = new Date(dateString).toLocaleString(
-        "en-US",
-        dateDayOptions
-    );
+  const formattedDateDay: string = new Date(dateString).toLocaleString(
+    "en-US",
+    dateDayOptions,
+  );
 
-    const formattedDate: string = new Date(dateString).toLocaleString(
-        "en-US",
-        dateOptions
-    );
+  const formattedDate: string = new Date(dateString).toLocaleString(
+    "en-US",
+    dateOptions,
+  );
 
-    const formattedTime: string = new Date(dateString).toLocaleString(
-        "en-US",
-        timeOptions
-    );
+  const formattedTime: string = new Date(dateString).toLocaleString(
+    "en-US",
+    timeOptions,
+  );
 
-    return {
-        dateTime: formattedDateTime,
-        dateDay: formattedDateDay,
-        dateOnly: formattedDate,
-        timeOnly: formattedTime,
-    };
+  return {
+    dateTime: formattedDateTime,
+    dateDay: formattedDateDay,
+    dateOnly: formattedDate,
+    timeOnly: formattedTime,
+  };
 };
 
 export function formatAmount(amount: number): string {
-    const formatter = new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "EUR",
-        minimumFractionDigits: 2,
-    });
+  const formatter = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "EUR",
+    minimumFractionDigits: 2,
+  });
 
-    return formatter.format(amount);
+  return formatter.format(amount);
 }
 
 export const parseStringify = (value: any) => JSON.parse(JSON.stringify(value));
 
 export const removeSpecialCharacters = (value: string) => {
-    return value.replace(/[^\w\s]/gi, "");
+  return value.replace(/[^\w\s]/gi, "");
 };
 
 interface UrlQueryParams {
-    params: string;
-    key: string;
-    value: string;
+  params: string;
+  key: string;
+  value: string;
 }
-export const sleep = (ms = 1000) => new Promise(resolve => setTimeout(resolve, ms));
+export const sleep = (ms = 1000) =>
+  new Promise((resolve) => setTimeout(resolve, ms));
 
-export function formUrlQuery({params, key, value}: UrlQueryParams) {
-    const currentUrl = qs.parse(params);
+export function formUrlQuery({ params, key, value }: UrlQueryParams) {
+  const currentUrl = qs.parse(params);
 
-    currentUrl[key] = value;
+  currentUrl[key] = value;
 
-    return qs.stringifyUrl(
-        {
-            url: window.location.pathname,
-            query: currentUrl,
-        },
-        {skipNull: true}
-    );
+  return qs.stringifyUrl(
+    {
+      url: window.location.pathname,
+      query: currentUrl,
+    },
+    { skipNull: true },
+  );
 }
-
 
 export function hideEmailAddress(email: string): string | null {
-    if (!email || email.split("@").length !== 2) {
-        return null; // Or return an error message if needed
-    }
+  if (!email || email.split("@").length !== 2) {
+    return null; // Or return an error message if needed
+  }
 
-    const [username, domain] = email.split("@");
-    const lettersToHide = Math.floor(username.length * 0.8);
-    const hiddenUsername = username.slice(0, -lettersToHide) + "*".repeat(lettersToHide);
+  const [username, domain] = email.split("@");
+  const lettersToHide = Math.floor(username.length * 0.8);
+  const hiddenUsername =
+    username.slice(0, -lettersToHide) + "*".repeat(lettersToHide);
 
-    return hiddenUsername + "@" + domain;
+  return hiddenUsername + "@" + domain;
 }
 
 //
@@ -223,111 +222,159 @@ export function hideEmailAddress(email: string): string | null {
 //     return customerId;
 // }
 
+export const validateEmail = (email: string) => {
+  const re =
+    /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+  return re.test(String(email).toLowerCase());
+};
 
-
-export const  validateEmail = (email: string) => {
-    const re = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-    return re.test(String(email).toLowerCase());
-
-}
-
-export const formSchema = () => z.object({
+export const formSchema = () =>
+  z.object({
     id: z.string().optional(),
     assetName: z.string().min(1, "Asset name is required"),
     brand: z.string().min(1, "Brand is required"),
     model: z.string().min(1, "Model is required"),
     serialNumber: z.string().min(1, "Serial number is required"),
     category: z.string().min(1, "Category is required"),
-    purchasePrice: z.string()
-        .regex(/^\d+(\.\d{1,2})?$/, "Amount must be a number")
-        .min(1, "Amount is too short"),
+    purchasePrice: z
+      .string()
+      .regex(/^\d+(\.\d{1,2})?$/, "Amount must be a number")
+      .min(1, "Amount is too short"),
     newLicenseName: z.string().optional(),
     existingLicenseName: z.string().optional(),
     key: z.string().min(1, "Key is required"),
     issuedDate: z.string().min(1, "Issued date is required"),
     expirationDate: z.string().min(1, "Expiration date is required"),
-})
+  });
 
-export function filterColumns<T>(data: T[], columnsToExclude: (keyof T)[]): Partial<T>[] {
-    return data?.map(item => {
-        const filteredItem: Partial<T> = {};
-        for (const key in item) {
-            if (!columnsToExclude.includes(key as keyof T)) {
-                filteredItem[key] = item[key];
-            }
-        }
-        return filteredItem;
-    });
+export function filterColumns<T>(
+  data: T[],
+  columnsToExclude: (keyof T)[],
+): Partial<T>[] {
+  return data?.map((item) => {
+    const filteredItem: Partial<T> = {};
+    for (const key in item) {
+      if (!columnsToExclude.includes(key as keyof T)) {
+        filteredItem[key] = item[key];
+      }
+    }
+    return filteredItem;
+  });
 }
 
-export function renameColumns<T>(data: T[], columnMappings: Record<keyof T, string>): any[] {
-    return data?.map(item => {
-        const renamedItem: any = {};
-        for (const key in item) {
-            const newKey = columnMappings[key] || key; // Rename if mapping exists
-            renamedItem[newKey] = item[key];
-        }
-        return renamedItem;
-    });
+export function renameColumns<T>(
+  data: T[],
+  columnMappings: Record<keyof T, string>,
+): any[] {
+  return data?.map((item) => {
+    const renamedItem: any = {};
+    for (const key in item) {
+      const newKey = columnMappings[key] || key; // Rename if mapping exists
+      renamedItem[newKey] = item[key];
+    }
+    return renamedItem;
+  });
 }
 
 const secretKey = "secret";
 const key = new TextEncoder().encode(secretKey);
 
 export async function encrypt(payload: any) {
-    return await new SignJWT(payload)
-        .setProtectedHeader({alg: "HS256"})
-        .setIssuedAt()
-        .setExpirationTime("10 sec from now")
-        .sign(key);
+  return await new SignJWT(payload)
+    .setProtectedHeader({ alg: "HS256" })
+    .setIssuedAt()
+    .setExpirationTime("10 sec from now")
+    .sign(key);
 }
 
-
 export const getCO2ScoreInfo = (score: number) => {
-    if (score <= 30) {
-        return {
-            color: 'text-emerald-700', // Light mint green background with darker green text
-            bgColor: 'bg-emerald-50',
-            icon: BatteryFull,
-            label: 'Excellent',
-            description: 'Very low carbon footprint',
-        };
-    }
-    if (score <= 60) {
-        return {
-            color: 'text-green-700', // Soft green background
-           bgColor: 'bg-green-500',
-            icon: BatteryMedium,
-            label: 'Good',
-            description: 'Low carbon footprint',
-        };
-    }
-    if (score <= 90) {
-        return {
-            color: 'text-yellow-700', // Soft yellow background
-          bgColor: 'bg-yellow-500',
-            icon: BatteryLow,
-            label: 'Fair',
-            description: 'Moderate carbon footprint',
-        };
-    }
+  if (score <= 30) {
     return {
-        color: 'text-red-700', // Soft red background
-        bgColor: 'bg-red-500',
-        icon: Battery,
-        label: 'High',
-        description: 'High carbon footprint',
+      color: "text-emerald-700", // Light mint green background with darker green text
+      bgColor: "bg-emerald-50",
+      icon: BatteryFull,
+      label: "Excellent",
+      description: "Very low carbon footprint",
     };
+  }
+  if (score <= 60) {
+    return {
+      color: "text-green-700", // Soft green background
+      bgColor: "bg-green-500",
+      icon: BatteryMedium,
+      label: "Good",
+      description: "Low carbon footprint",
+    };
+  }
+  if (score <= 90) {
+    return {
+      color: "text-yellow-700",
+      bgColor: "bg-yellow-100",
+      icon: BatteryLow,
+      label: "Fair",
+      description: "Moderate carbon footprint",
+    };
+  }
+  return {
+    color: "text-red-700", // Soft red background
+    bgColor: "bg-red-500",
+    icon: Battery,
+    label: "High",
+    description: "High carbon footprint",
+  };
+};
+
+/**
+ * Returns color and label configuration for asset availability status
+ * @param value - The availability status string
+ * @returns Object containing color scheme and label for the status
+ */
+export const getAvailability = (value: string = "") => {
+  // Add debug logging to see exact input
+
+  if (!value)
+    return {
+      color: "text-gray-700",
+      bgColor: "bg-gray-100",
+      label: "Unknown",
+    };
+
+  // Explicitly handle "On Loan" status
+  if (value === "On Loan") {
+    return {
+      color: "text-yellow-700",
+      bgColor: "bg-yellow-100",
+      label: "On Loan",
+    };
+  }
+
+  if (value === "Available") {
+    return {
+      color: "text-emerald-700",
+      bgColor: "bg-emerald-100",
+      label: "Available",
+    };
+  }
+
+  // Default case
+  return {
+    color: "text-gray-700",
+    bgColor: "bg-gray-100",
+    label: value,
+  };
 };
 
 export function sumSeatsAssigned(assignments: LicenseAssignment[]): number {
-    return assignments.reduce((sum, assignment) => sum + assignment.seatsAssigned, 0);
+  return assignments.reduce(
+    (sum, assignment) => sum + assignment.seatsAssigned,
+    0,
+  );
 }
 
 export function sumUnitsAssigned(assignments: UserAccessory[]): number {
-    return assignments.reduce((sum, item) => sum + item.quantity, 0);
+  return assignments.reduce((sum, item) => sum + item.quantity, 0);
 }
 
-function sumQuantities(assignments: UserAccessory[]): number {
-    return assignments.reduce((sum, item) => sum + item.quantity, 0);
-}
+// function sumQuantities(assignments: UserAccessory[]): number {
+//   return assignments.reduce((sum, item) => sum + item.quantity, 0);
+// }

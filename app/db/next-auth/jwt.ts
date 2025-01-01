@@ -1,6 +1,6 @@
-import crypto from 'crypto';
-import * as jose from 'jose';
-import dotenv from 'dotenv';
+import crypto from "crypto";
+import * as jose from "jose";
+import dotenv from "dotenv";
 //
 // // Define types for function parameters and options
 // interface EncodeOptions {

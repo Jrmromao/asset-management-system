@@ -1,3 +1,59 @@
 {
-  "extends": "next/core-web-vitals"
+  "env": {
+    "es2021": true,
+    "jest": true
+  },
+  "globals": {
+    "_": "readonly"
+  },
+  "extends": [
+    "next/core-web-vitals",
+    "plugin:prettier/recommended",
+    "plugin:@typescript-eslint/recommended"
+  ],
+  "plugins": [
+    "@typescript-eslint"
+  ],
+  "rules": {
+    "no-var": "off",
+    "@typescript-eslint/no-unused-expressions": "off",
+    "@typescript-eslint/no-non-null-asserted-optional-chain": "off",
+    "@typescript-eslint/no-unused-vars": "off",
+    "no-shadow": "off",
+    "import/extensions": "off",
+    "import/no-extraneous-dependencies": "off",
+    "no-void": "off",
+    "import/prefer-default-export": "off",
+    "import/no-unresolved": "off",
+    "consistent-return": "off",
+    "react/no-is-mounted": "off",
+    "no-use-before-define": "off",
+    "no-underscore-dangle": "off",
+    "class-methods-use-this": "off",
+    "no-restricted-syntax": "off",
+    "@typescript-eslint/no-explicit-any": "off"
+  },
+  "overrides": [
+    {
+      "files": [
+        "**/*.spec.[jt]s"
+      ],
+      "plugins": [
+        "jest",
+        "testing-library"
+      ],
+      "rules": {
+        "@typescript-eslint/no-require-imports": "off",
+        "global-require": "off"
+      }
+    },
+    {
+      "files": [
+        "**/*.cy.[jt]s"
+      ],
+      "plugins": [],
+      "rules": {}
+    }
+  ],
+  "parser": "@typescript-eslint/parser"
 }

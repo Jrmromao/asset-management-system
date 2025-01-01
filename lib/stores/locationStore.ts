@@ -1,11 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { getAll, insert, update, remove, findById } from "@/lib/actions/location.actions";
-import { toast } from "sonner";
-
-
-type CreateLocationDTO = Omit<Location, "id" | "createdAt" | "updatedAt" | "companyId">;
-type UpdateLocationDTO = Partial<CreateLocationDTO>;
+import { getAll } from "@/lib/actions/location.actions";
 
 interface LocationStore {
   // State
@@ -14,19 +9,19 @@ interface LocationStore {
   isOpen: boolean;
   isLoading: boolean;
   error: string | null;
-  
+
   // UI Actions
   onOpen: () => void;
   onClose: () => void;
   clearError: () => void;
-  
+
   // Data Actions
   fetchLocations: () => Promise<void>;
 }
 
 export const useLocationStore = create(
   persist<LocationStore>(
-    (set, get) => ({
+    (set) => ({
       // Initial State
       locations: [],
       selectedLocation: null,
@@ -46,22 +41,21 @@ export const useLocationStore = create(
         set({ isLoading: true, error: null });
         try {
           const result = await getAll();
-          
-          if (result.error) {
-            set({ error: result.error });
-            return;
-          }
-
           set({ locations: result.data || [] });
         } catch (error) {
-          set({ error: 'Failed to fetch locations' });
+          set({
+            error:
+              error instanceof Error
+                ? error.message
+                : "Failed to fetch locations",
+          });
         } finally {
           set({ isLoading: false });
         }
       },
     }),
     {
-      name: 'location-store',
-    }
-  )
+      name: "location-store",
+    },
+  ),
 );

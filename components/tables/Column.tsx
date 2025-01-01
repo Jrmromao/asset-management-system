@@ -1,16 +1,16 @@
-import {FC, useRef} from "react"
-import {TableCell} from "@/components/ui/table";
-import {log} from "node:util";
+import { FC, useRef } from "react";
+import { TableCell } from "@/components/ui/table";
+import { log } from "node:util";
 
 interface IProps {
-    rowIndex: number
-    column: any
-    row: any
+  rowIndex: number;
+  column: any;
+  row: any;
 }
 
 const Column: FC<IProps> = ({ rowIndex, column, row }) => {
-  const tdRef = useRef()
-  const { key, tdProps = {}, w, textAlign, isMenu, sticky, render } = column
+  const tdRef = useRef();
+  const { key, tdProps = {}, w, textAlign, isMenu, sticky, render } = column;
 
   return (
     <TableCell
@@ -22,9 +22,9 @@ const Column: FC<IProps> = ({ rowIndex, column, row }) => {
       textAlign={textAlign ?? (isMenu ? "center" : undefined)}
     >
       {/*{render ? render(row, tdRef) : row[key]}*/}
-        {Object.values(row)}
+      {Object.values(row)}
     </TableCell>
-  )
-}
+  );
+};
 
-export default Column
+export default Column;

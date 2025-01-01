@@ -1,14 +1,12 @@
-import React from 'react'
+import React from "react";
 import RegisterForm from "@/components/forms/RegisterForm";
 
-
 const SignUp = async () => {
+  return (
+    <div className={"flex-center size-full max-sm:px-6"}>
+      <RegisterForm />
+    </div>
+  );
+};
 
-    return (
-        <div className={'flex-center size-full max-sm:px-6'}>
-            <RegisterForm/>
-        </div>
-    )
-}
-
-export default SignUp
+export default SignUp;
