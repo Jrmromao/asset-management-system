@@ -157,7 +157,9 @@ const RegisterForm = () => {
               <div className={"flex flex-col gap-4"}>
                 <Button
                   type="submit"
-                  className={"form-btn"}
+                  className={
+                    "text-16 rounded-lg border bg-emerald-600 hover:bg-emerald-700 font-semibold text-white shadow-for"
+                  }
                   disabled={isLoading}
                 >
                   {isLoading ? (

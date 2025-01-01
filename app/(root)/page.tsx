@@ -1,9 +1,22 @@
 "use client";
 
-import { ArrowRight, BarChart2, Box, Leaf, Phone } from "lucide-react";
+import {
+  ArrowRight,
+  BarChart2,
+  Box,
+  Building2,
+  CheckCircle,
+  Factory,
+  Globe,
+  Leaf,
+  Phone,
+  TreePine,
+  Zap,
+} from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
+import PricingTable from "@/components/Pricing";
 
 const LandingPage = () => {
   const router = useRouter();
@@ -41,18 +54,18 @@ const LandingPage = () => {
             </Link>
             <nav className="hidden md:flex gap-8">
               {[
-                "Features",
-                "Industries",
-                "Integrations",
-                "Blog",
-                "Pricing",
+                { name: "Features", href: "#features" },
+                { name: "Industries", href: "#industries" },
+                // { name: "Integrations", href: "#integrations" },
+                // { name: "Blog", href: "#" },
+                { name: "Pricing", href: "#pricing" },
               ].map((item) => (
                 <Link
-                  key={item}
-                  href="#"
+                  key={item.name}
+                  href={item.href}
                   className="text-sm font-medium hover:text-green-600 transition-colors"
                 >
-                  {item}
+                  {item.name}
                 </Link>
               ))}
             </nav>
@@ -61,7 +74,10 @@ const LandingPage = () => {
             <Button variant="ghost" onClick={() => router.push("/sign-in")}>
               Login
             </Button>
-            <Button className="bg-green-600 hover:bg-green-700">
+            <Button
+              className="bg-green-600 hover:bg-green-700"
+              onClick={() => router.push("/sign-up")}
+            >
               Free trial
             </Button>
           </div>
@@ -98,23 +114,26 @@ const LandingPage = () => {
             {[
               {
                 title: "Carbon Reduction",
-                value: "50%",
-                description: "Average reduction in carbon footprint",
+                value: "Up to 50%",
+                description:
+                  "Projected reduction in carbon footprint based on industry models",
               },
               {
                 title: "Cost Savings",
-                value: "$1M+",
-                description: "Annual savings for enterprise clients",
+                value: "Up to $1M+",
+                description:
+                  "Estimated annual savings potential for enterprise deployments",
               },
               {
                 title: "Asset Efficiency",
-                value: "95%",
-                description: "Improved asset utilization rate",
+                value: "Target 95%",
+                description: "Projected improvement in asset utilization rates",
               },
               {
                 title: "Compliance",
                 value: "100%",
-                description: "Meet sustainability reporting standards",
+                description:
+                  "Built to meet current sustainability reporting standards",
               },
             ].map((stat, index) => (
               <div
@@ -133,8 +152,11 @@ const LandingPage = () => {
       </section>
 
       {/* Features Section */}
-      <section className="py-20">
+      <section id="features" className="py-20">
         <div className="max-w-7xl mx-auto px-4">
+          <h2 className="text-3xl font-bold text-center mb-12">
+            Powerful Features for Sustainable Asset Management
+          </h2>
           <div className="grid md:grid-cols-3 gap-12">
             {[
               {
@@ -155,6 +177,24 @@ const LandingPage = () => {
                 description:
                   "Generate detailed sustainability reports and get actionable insights to reduce your environmental impact.",
               },
+              {
+                icon: CheckCircle,
+                title: "Compliance Management",
+                description:
+                  "Stay compliant with environmental regulations and standards with built-in compliance tracking and reporting.",
+              },
+              {
+                icon: Globe,
+                title: "Global Asset Visibility",
+                description:
+                  "Get a bird's-eye view of your assets across multiple locations and jurisdictions.",
+              },
+              {
+                icon: Zap,
+                title: "Energy Efficiency Optimization",
+                description:
+                  "Identify energy-hungry assets and optimize their usage for improved efficiency and reduced costs.",
+              },
             ].map((feature, index) => (
               <div key={index} className="space-y-4">
                 <div className="inline-flex h-12 w-12 items-center justify-center rounded-lg bg-green-100">
@@ -168,6 +208,124 @@ const LandingPage = () => {
         </div>
       </section>
 
+      {/* Industries Section */}
+      <section id="industries" className="py-20 bg-green-50">
+        <div className="max-w-7xl mx-auto px-4">
+          <h2 className="text-3xl font-bold text-center mb-12">
+            Tailored Solutions for Various Industries
+          </h2>
+          <div className="grid md:grid-cols-3 gap-8">
+            {[
+              {
+                icon: Building2,
+                title: "Commercial Real Estate",
+                description:
+                  "Optimize building management and reduce environmental impact across your property portfolio.",
+              },
+              {
+                icon: Factory,
+                title: "Manufacturing",
+                description:
+                  "Track and improve the sustainability of your production lines and supply chain.",
+              },
+              {
+                icon: TreePine,
+                title: "Agriculture",
+                description:
+                  "Manage farm equipment and natural resources with a focus on sustainable practices.",
+              },
+              {
+                icon: Zap,
+                title: "Energy",
+                description:
+                  "Monitor and optimize energy production and distribution assets for maximum efficiency.",
+              },
+              {
+                icon: Box,
+                title: "Logistics",
+                description:
+                  "Streamline your fleet and warehouse operations while minimizing carbon footprint.",
+              },
+              {
+                icon: Globe,
+                title: "Government",
+                description:
+                  "Manage public assets and infrastructure with transparency and environmental responsibility.",
+              },
+            ].map((industry, index) => (
+              <div
+                key={index}
+                className="bg-white rounded-lg shadow-md p-6 transition-all hover:shadow-lg hover:scale-105"
+              >
+                <industry.icon className="w-12 h-12 text-green-600 mb-4" />
+                <h3 className="text-xl font-semibold mb-2">{industry.title}</h3>
+                <p className="text-muted-foreground">{industry.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing Section */}
+      <section id="pricing" className="py-20 bg-green-100">
+        <div className="max-w-7xl mx-auto px-4">
+          <PricingTable />
+        </div>
+      </section>
+
+      {/* Integrations Section */}
+      {/*<section id="integrations" className="py-20">*/}
+      {/*  <div className="max-w-7xl mx-auto px-4">*/}
+      {/*    <h2 className="text-3xl font-bold text-center mb-12">*/}
+      {/*      Seamless Integrations*/}
+      {/*    </h2>*/}
+      {/*    <div className="grid md:grid-cols-2 gap-12">*/}
+      {/*      <div className="space-y-6">*/}
+      {/*        <p className="text-lg text-muted-foreground">*/}
+      {/*          EcoKeepr integrates with your existing tools and systems to*/}
+      {/*          provide a comprehensive asset management and sustainability*/}
+      {/*          solution.*/}
+      {/*        </p>*/}
+      {/*        <ul className="space-y-4">*/}
+      {/*          {[*/}
+      {/*            {*/}
+      {/*              icon: Cog,*/}
+      {/*              text: "Enterprise Resource Planning (ERP) Systems",*/}
+      {/*            },*/}
+      {/*            { icon: Puzzle, text: "Internet of Things (IoT) Platforms" },*/}
+      {/*            { icon: BarChart2, text: "Business Intelligence Tools" },*/}
+      {/*            { icon: Wifi, text: "Building Management Systems" },*/}
+      {/*          ].map((item, index) => (*/}
+      {/*            <li key={index} className="flex items-center gap-3">*/}
+      {/*              <item.icon className="w-6 h-6 text-green-600" />*/}
+      {/*              <span>{item.text}</span>*/}
+      {/*            </li>*/}
+      {/*          ))}*/}
+      {/*        </ul>*/}
+      {/*        <Button className="bg-green-600 hover:bg-green-700">*/}
+      {/*          Explore all integrations*/}
+      {/*        </Button>*/}
+      {/*      </div>*/}
+      {/*      <div className="grid grid-cols-3 gap-6">*/}
+      {/*        /!*{[...Array(9)].map((_, i) => (*!/*/}
+      {/*        /!*  <div*!/*/}
+      {/*        /!*    key={i}*!/*/}
+      {/*        /!*    className="flex items-center justify-center bg-white rounded-lg shadow-md p-4 transition-all hover:shadow-lg hover:scale-105"*!/*/}
+      {/*        /!*  >*!/*/}
+      {/*        /!*    <Image*!/*/}
+      {/*        /!*      src={`/placeholder.svg?height=80&width=80&text=${i + 1}`}*!/*/}
+      {/*        /!*      alt={`Integration partner ${i + 1}`}*!/*/}
+      {/*        /!*      width={80}*!/*/}
+      {/*        /!*      height={80}*!/*/}
+      {/*        /!*      className="grayscale hover:grayscale-0 transition-all"*!/*/}
+      {/*        /!*    />*!/*/}
+      {/*        /!*  </div>*!/*/}
+      {/*        /!*))}*!/*/}
+      {/*      </div>*/}
+      {/*    </div>*/}
+      {/*  </div>*/}
+      {/*</section>*/}
+
       {/* Trust Section */}
       {/*<section className="bg-muted/40 border-t py-20">*/}
       {/*  <div className="max-w-7xl mx-auto px-4">*/}
@@ -178,7 +336,7 @@ const LandingPage = () => {
       {/*      {[...Array(6)].map((_, i) => (*/}
       {/*        <div key={i} className="flex items-center justify-center">*/}
       {/*          <Image*/}
-      {/*            src="/placeholder.svg?height=60&width=120"*/}
+      {/*            src={`/placeholder.svg?height=60&width=120&text=Logo ${i + 1}`}*/}
       {/*            alt={`Customer logo ${i + 1}`}*/}
       {/*            width={120}*/}
       {/*            height={60}*/}
