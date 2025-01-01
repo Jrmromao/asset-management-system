@@ -17,10 +17,12 @@ import { login } from "@/lib/actions/user.actions";
 import { signIn } from "next-auth/react";
 import { DEFAULT_LOGIN_REDIRECT } from "@/routes";
 import HeaderIcon from "@/components/page/HeaderIcon";
+import ReCAPTCHA from "@/components/ReCAPTCHA";
 
 const AuthForm = () => {
   const [error, setError] = useState<string>("");
   const [user, setUser] = useState(null);
+  const [recaptchaToken, setRecaptchaToken] = useState<string>("");
   const [isPending, startTransition] = useTransition();
   const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
@@ -32,6 +34,11 @@ const AuthForm = () => {
 
   const router = useRouter();
   const onSubmit = async (data: z.infer<typeof loginSchema>) => {
+    if (!recaptchaToken) {
+      setError("Please complete the captcha");
+      return;
+    }
+
     startTransition(async () => {
       try {
         const response = await login(data);
@@ -45,6 +52,11 @@ const AuthForm = () => {
         console.error(e);
       }
     });
+  };
+
+  const handleVerify = (token: string) => {
+    setRecaptchaToken(token);
+    setError(""); // Clear any existing errors
   };
 
   const handleSocialLogin = async (provider: "github" | "google") => {
@@ -95,6 +107,13 @@ const AuthForm = () => {
                   Forgot Password
                 </Link>
               </>
+              <ReCAPTCHA
+                siteKey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY!}
+                onVerify={(token) => {
+                  setRecaptchaToken(token);
+                  setError("");
+                }}
+              />
               <FormError message={error} />
               <div className={"flex flex-col gap-4"}>
                 <Button
