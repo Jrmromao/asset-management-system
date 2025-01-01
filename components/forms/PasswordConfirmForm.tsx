@@ -1,7 +1,5 @@
 "use client";
 import React, { useEffect, useState, useTransition } from "react";
-import Link from "next/link";
-import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { useForm } from "react-hook-form";
 import { Form } from "@/components/ui/form";
@@ -15,13 +13,13 @@ import {
   forgetPasswordConfirmDetails,
   resendCode,
 } from "@/lib/actions/user.actions";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { hideEmailAddress } from "@/lib/utils";
 import { toast } from "sonner";
-import { APP_NAME } from "@/constants";
 import useEmailStore from "@/lib/stores/emailStore";
 import { revalidatePath } from "next/cache";
+import HeaderIcon from "@/components/page/HeaderIcon";
 
 const PasswordConfirmForm = () => {
   const [error, setError] = useState<string>("");
@@ -81,16 +79,7 @@ const PasswordConfirmForm = () => {
   return (
     <section className={"auth-form"}>
       <header className={"flex flex-col gap-5 md:gap-8"}>
-        <Link href="/" className="mb-12 cursor-pointer flex items-center gap-1">
-          <Image
-            src="/icons/logo.svg"
-            width={34}
-            height={34}
-            alt="Logo"
-            className="size-[24px] max-xl:size-14"
-          />
-          <h1 className="sidebar-logo">{APP_NAME}</h1>
-        </Link>
+        <HeaderIcon />
         <div className={"flex flex-col gap-1 md:gap-3"}>
           <Alert className={"w-full bg-teal-50"}>
             <AlertTitle className={"mb-3"}>We send you an email</AlertTitle>

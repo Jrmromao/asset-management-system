@@ -17,6 +17,8 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import PricingTable from "@/components/Pricing";
+import HeaderIcon from "@/components/page/HeaderIcon";
+import React from "react";
 
 const LandingPage = () => {
   const router = useRouter();
@@ -28,7 +30,7 @@ const LandingPage = () => {
         <div className="max-w-7xl mx-auto px-4 flex justify-between items-center">
           <div className="flex items-center gap-2">
             <Phone className="w-4 h-4" />
-            <span className="text-sm">1-888-ECO-KEEP</span>
+            <span className="text-sm">1-888-888-8888</span>
           </div>
           <nav className="flex gap-6">
             {["About EcoKeepr", "Careers", "Contact"].map((item) => (
@@ -48,10 +50,7 @@ const LandingPage = () => {
       <header className="sticky top-0 z-50 bg-white border-b">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center gap-8">
-            <Link href="/" className="flex items-center gap-2">
-              <Leaf className="w-8 h-8 text-green-600" />
-              <span className="text-xl font-bold">EcoKeepr</span>
-            </Link>
+            <HeaderIcon />
             <nav className="hidden md:flex gap-8">
               {[
                 { name: "Features", href: "#features" },

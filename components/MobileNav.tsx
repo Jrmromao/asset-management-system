@@ -5,12 +5,14 @@ import {
   SheetContent,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { APP_NAME, sidebarLinks } from "@/constants";
+import { sidebarLinks } from "@/constants";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Footer from "@/components/Footer";
+import HeaderIcon from "@/components/page/HeaderIcon";
+import React from "react";
 
 const MobileNav = () => {
   const pathName = usePathname();
@@ -31,10 +33,11 @@ const MobileNav = () => {
             href="/"
             className="cursor-pointer flex items-center gap-1 px-4"
           >
-            <Image src="/icons/logo.svg" width={34} height={34} alt="Logo" />
-            <h1 className="text-26  font-ibm-plex-serif font-bold text-black-1">
-              {APP_NAME}
-            </h1>
+            {/*<Image src="/icons/logo.svg" width={34} height={34} alt="Logo" />*/}
+            {/*<h1 className="text-26  font-ibm-plex-serif font-bold text-black-1">*/}
+            {/* */}
+            {/*</h1>*/}
+            <HeaderIcon />
           </Link>
           <SheetClose asChild>
             <nav className="flex h-full flex-col gap-6 pt-16 text-white">

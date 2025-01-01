@@ -1,7 +1,6 @@
 "use client";
 import React, { useState, useTransition } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -10,14 +9,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Loader2 } from "lucide-react";
 import CustomButton from "@/components/CustomButton";
-import { FaGithub, FaGoogle } from "react-icons/fa";
+import { FaGoogle } from "react-icons/fa";
 import CustomInput from "@/components/CustomInput";
 import { loginSchema } from "@/lib/schemas";
 import { FormError } from "@/components/forms/form-error";
 import { login } from "@/lib/actions/user.actions";
 import { signIn } from "next-auth/react";
 import { DEFAULT_LOGIN_REDIRECT } from "@/routes";
-import { APP_NAME } from "@/constants";
+import HeaderIcon from "@/components/page/HeaderIcon";
 
 const AuthForm = () => {
   const [error, setError] = useState<string>("");
@@ -54,16 +53,8 @@ const AuthForm = () => {
   return (
     <section className={"auth-form"}>
       <header className={"flex flex-col gap-5 md:gap-8"}>
-        <Link href="/" className="mb-12 cursor-pointer flex items-center gap-1">
-          <Image
-            src="/icons/logo.svg"
-            width={34}
-            height={34}
-            alt="Logo"
-            className="size-[24px] max-xl:size-14"
-          />
-          <h1 className="sidebar-logo">{APP_NAME}</h1>
-        </Link>
+        <HeaderIcon />
+
         <div className={"flex flex-col gap-1 md:gap-3"}>
           <h1 className={"text-24 lg:text-36 font-semibold text-gray-900"}>
             {/*{user ? 'Link Account' : type === 'sign-in' ? 'Sign In' : 'Sign Up'}*/}
