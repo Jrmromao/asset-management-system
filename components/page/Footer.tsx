@@ -1,7 +1,57 @@
-import React from "react";
+import React, { useState } from "react";
 import { BookOpen, Building2, Globe2, Leaf, Phone } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import ReCAPTCHA from "@/components/ReCAPTCHA";
 
 const Footer = () => {
+  const [email, setEmail] = useState("");
+  const [status, setStatus] = useState({ type: "", message: "" });
+  const [showModal, setShowModal] = useState(false);
+  const [agreed, setAgreed] = useState(false);
+
+  const handleEmailSubmit = (e: any) => {
+    e.preventDefault();
+    if (!email) {
+      setStatus({ type: "error", message: "Please enter your email" });
+      return;
+    }
+    setShowModal(true);
+  };
+
+  const handleSubscribe = async () => {
+    if (!agreed) {
+      setStatus({ type: "error", message: "Please agree to the terms" });
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+
+      if (response.ok) {
+        setStatus({ type: "success", message: "Successfully subscribed!" });
+        setEmail("");
+        setShowModal(false);
+        setAgreed(false);
+      } else {
+        setStatus({ type: "error", message: "Subscription failed" });
+      }
+    } catch (error) {
+      setStatus({ type: "error", message: "Something went wrong" });
+    }
+  };
+
   const columns = [
     {
       title: "Solutions",
@@ -10,8 +60,8 @@ const Footer = () => {
         "Asset Tracking",
         "Carbon Footprint",
         "Sustainability Reports",
-        "Energy Optimization",
-        "Compliance Tools",
+        // "Energy Optimization",
+        // "Compliance Tools",
       ],
     },
     {
@@ -19,7 +69,7 @@ const Footer = () => {
       icon: <Globe2 className="w-5 h-5 text-green-500" />,
       links: [
         "Manufacturing",
-        "Commercial Real Estate",
+        "Logistics",
         "Agriculture",
         "Energy",
         "Government",
@@ -33,7 +83,7 @@ const Footer = () => {
         "API Reference",
         "Success Stories",
         "Sustainability Blog",
-        "Green Practices Guide",
+        // "Green Practices Guide",
       ],
     },
     {
@@ -42,8 +92,8 @@ const Footer = () => {
       links: [
         "About Us",
         "Careers",
-        "Press Room",
-        "Partner Network",
+        // "Press Room",
+        // "Partner Network",
         "Contact",
       ],
     },
@@ -62,21 +112,96 @@ const Footer = () => {
               Get monthly insights on sustainable asset management and
               environmental impact tracking.
             </p>
-            <div className="flex space-x-2">
-              <input
-                type="email"
-                placeholder="Enter your email"
-                className="flex-1 min-w-0 rounded-lg border-gray-200 focus:border-green-500 focus:ring-green-500 px-4 py-3"
-              />
-              <button className="bg-green-500 text-white px-6 py-3 rounded-lg font-medium hover:bg-green-600 transition-colors">
-                Subscribe
-              </button>
-            </div>
+            <form
+              onSubmit={handleEmailSubmit}
+              className="flex flex-col space-y-4"
+            >
+              <div className="flex space-x-2">
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Enter your email"
+                  className="flex-1 min-w-0 rounded-lg border-gray-200 focus:border-green-500 focus:ring-green-500 px-4 py-3"
+                />
+                <button
+                  type="submit"
+                  className="bg-green-500 text-white px-6 py-3 rounded-lg font-medium hover:bg-green-600 transition-colors"
+                >
+                  Subscribe
+                </button>
+              </div>
+              {status.message && (
+                <p
+                  className={`text-sm ${status.type === "error" ? "text-red-600" : "text-green-600"}`}
+                >
+                  {status.message}
+                </p>
+              )}
+            </form>
           </div>
         </div>
+        <AlertDialog open={showModal} onOpenChange={setShowModal}>
+          <AlertDialogContent className="bg-white p-6 rounded-lg max-w-md">
+            <AlertDialogHeader className="space-y-3">
+              <AlertDialogTitle className="text-xl font-semibold text-center">
+                Complete Your Subscription
+              </AlertDialogTitle>
+              <AlertDialogDescription className="space-y-4">
+                <div className="border border-gray-200 rounded p-4 text-center">
+                  <ReCAPTCHA
+                    siteKey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY!}
+                    onVerify={(token) => {
+                      // setRecaptchaToken(token);
+                      // setError("");
+                    }}
+                  />
+                </div>
+                {status.type === "error" && (
+                  <p className="text-red-500 text-sm text-center">
+                    {status.message}
+                  </p>
+                )}
+                <div className="flex items-start gap-2">
+                  <input
+                    type="checkbox"
+                    id="terms"
+                    checked={agreed}
+                    onChange={(e) => setAgreed(e.target.checked)}
+                    className="mt-1"
+                  />
+                  <label htmlFor="terms" className="text-sm text-gray-600">
+                    I agree to receive marketing communications and agree to the{" "}
+                    <a href="#" className="text-green-600 hover:underline">
+                      Terms of Service
+                    </a>{" "}
+                    and{" "}
+                    <a href="#" className="text-green-600 hover:underline">
+                      Privacy Policy
+                    </a>
+                  </label>
+                </div>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="flex gap-3 mt-6">
+              <AlertDialogAction
+                onClick={() => setShowModal(false)}
+                className="flex-1 py-2 px-4 bg-gray-100 text-gray-900 hover:bg-gray-200 rounded-lg"
+              >
+                Cancel
+              </AlertDialogAction>
+              <AlertDialogAction
+                onClick={handleSubscribe}
+                className="flex-1 py-2 px-4 bg-green-500 text-white hover:bg-green-600 rounded-lg"
+              >
+                Complete Subscription
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         {/* Main Footer Content */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-12">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-12 justify-items-center">
           {columns.map((column) => (
             <div key={column.title}>
               <div className="flex items-center space-x-2 mb-6">
@@ -107,7 +232,6 @@ const Footer = () => {
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
                 <Leaf className="w-8 h-8 text-emerald-600" />
-
                 <span className="text-lg font-semibold text-emerald-600">
                   EcoKeepr
                 </span>

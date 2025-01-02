@@ -20,6 +20,7 @@ import PricingTable from "@/components/Pricing";
 import HeaderIcon from "@/components/page/HeaderIcon";
 import React from "react";
 import Footer from "@/components/page/Footer";
+import DevelopmentBanner from "@/components/DevelopmentBanner";
 
 const LandingPage = () => {
   const router = useRouter();
@@ -27,6 +28,7 @@ const LandingPage = () => {
   return (
     <div className="min-h-screen flex flex-col bg-white">
       {/* Top Banner */}
+      <DevelopmentBanner />
       <div className="hidden md:block bg-muted/40 border-b py-2">
         <div className="max-w-7xl mx-auto px-4 flex justify-between items-center">
           <div className="flex items-center gap-2">
