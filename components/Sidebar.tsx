@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import Footer from "@/components/Footer";
 
 import React from "react";
+import HeaderIcon from "@/components/page/HeaderIcon";
 
 const Sidebar = () => {
   const pathName = usePathname();
@@ -18,20 +19,9 @@ const Sidebar = () => {
   return (
     <section className={cn("sidebar", { "2xl:hidden": false })}>
       <nav className="flex flex-col gap-4">
-        <Link
-          href="/admin"
-          className="mb-12 cursor-pointer flex items-center gap-2"
-        >
-          <Image
-            src="/icons/logo.svg"
-            width={34}
-            height={34}
-            alt="Logo"
-            className="size-[24px] max-xl:size-14"
-          />
-          <h1 className="text-bankGradient">Eco</h1>
-          <h1 className="sidebar-logo">Keepr</h1>
-        </Link>
+        <div className="mb-4">
+          <HeaderIcon />
+        </div>
 
         {sidebarLinks.map((item) => {
           const isActive =

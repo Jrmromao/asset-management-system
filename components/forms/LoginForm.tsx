@@ -16,8 +16,8 @@ import { FormError } from "@/components/forms/form-error";
 import { login } from "@/lib/actions/user.actions";
 import { signIn } from "next-auth/react";
 import { DEFAULT_LOGIN_REDIRECT } from "@/routes";
-import HeaderIcon from "@/components/page/HeaderIcon";
 import ReCAPTCHA from "@/components/ReCAPTCHA";
+import HeaderIcon from "@/components/page/HeaderIcon";
 
 const AuthForm = () => {
   const [error, setError] = useState<string>("");

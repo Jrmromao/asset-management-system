@@ -103,6 +103,10 @@ export const registerSchema = z
     firstName: z.string().min(1, "First name is required"),
     lastName: z.string().min(1, "Last name is required"),
     phoneNumber: phoneNumField,
+    recaptchaToken: z
+      .string()
+      .min(1, "Please complete the captcha verification"),
+
     companyName: z
       .string()
       .min(1, "Company name is required")

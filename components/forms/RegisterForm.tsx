@@ -12,10 +12,13 @@ import { registerCompany } from "@/lib/actions/company.actions";
 import CustomInput from "@/components/CustomInput";
 import { registerSchema } from "@/lib/schemas";
 import HeaderIcon from "@/components/page/HeaderIcon";
+import ReCAPTCHA from "@/components/ReCAPTCHA";
 
 const RegisterForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [user, setUser] = useState(null);
+  const [recaptchaToken, setRecaptchaToken] = useState("");
+  const [error, setError] = useState("");
 
   const form = useForm<z.infer<typeof registerSchema>>({
     resolver: zodResolver(registerSchema),
@@ -34,10 +37,18 @@ const RegisterForm = () => {
   const router = useRouter();
 
   const onSubmit = async (data: z.infer<typeof registerSchema>) => {
+    if (!recaptchaToken) {
+      setError("Please complete the captcha verification");
+      return;
+    }
+
     setIsLoading(true);
     try {
       if (data) {
-        await registerCompany(data).then(() => {
+        await registerCompany({
+          ...data,
+          recaptchaToken,
+        }).then(() => {
           form.reset();
           router.push("/account-verification?email=" + data.email);
         });
@@ -55,8 +66,6 @@ const RegisterForm = () => {
         <HeaderIcon />
         <div className={"flex flex-col gap-1 md:gap-3"}>
           <h1 className={"text-24 lg:text-36 font-semibold text-gray-900"}>
-            {/*{user ? 'Link Account' : type === 'sign-in' ? 'Sign In' : 'Sign Up'}*/}
-
             <p className={"text-16 font-normal text-gray-600"}>
               {user ? "Link your account" : "Please enter your details"}
             </p>
@@ -64,7 +73,7 @@ const RegisterForm = () => {
         </div>
       </header>
       {user ? (
-        <div className={"flex flex-col gap-4"}>Joao Filipe Romão</div>
+        <div className={"flex flex-col gap-4"}>Joao Filipe Romão</div>
       ) : (
         <>
           <Form {...form}>
@@ -79,7 +88,6 @@ const RegisterForm = () => {
                     {...form.register("companyName")}
                     type={"text"}
                   />
-
                   <div className={"text-12 text-gray-500 mt-4"}>
                     The company name will be used as a domain for your account.
                     For example, your account might be qlientel.pdfintel.com
@@ -111,7 +119,6 @@ const RegisterForm = () => {
                   required
                   type={"password"}
                 />
-
                 <CustomInput
                   control={form.control}
                   required
@@ -120,7 +127,6 @@ const RegisterForm = () => {
                   placeholder={"eg: **********"}
                   type={"password"}
                 />
-
                 <div className={"gap-4"}>
                   <CustomInput
                     control={form.control}
@@ -141,6 +147,22 @@ const RegisterForm = () => {
                     type={"text"}
                   />
                 </div>
+
+                {/* ReCAPTCHA */}
+                <div className="flex justify-center">
+                  <ReCAPTCHA
+                    siteKey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY!}
+                    onVerify={(token) => {
+                      setRecaptchaToken(token);
+                      setError("");
+                    }}
+                  />
+                </div>
+                {error && (
+                  <div className="text-red-500 text-sm text-center">
+                    {error}
+                  </div>
+                )}
               </>
 
               <div className={"flex flex-col gap-4"}>
@@ -183,4 +205,5 @@ const RegisterForm = () => {
     </section>
   );
 };
+
 export default RegisterForm;

@@ -19,6 +19,7 @@ import { useRouter } from "next/navigation";
 import PricingTable from "@/components/Pricing";
 import HeaderIcon from "@/components/page/HeaderIcon";
 import React from "react";
+import Footer from "@/components/page/Footer";
 
 const LandingPage = () => {
   const router = useRouter();
@@ -88,9 +89,6 @@ const LandingPage = () => {
         <div className="max-w-7xl mx-auto px-4 grid lg:grid-cols-2 gap-12">
           <div className="flex flex-col justify-center gap-8">
             <div>
-              <span className="inline-block bg-green-100 text-green-800 rounded-full px-4 py-1.5 text-sm font-medium">
-                SUSTAINABLE ASSET MANAGEMENT SOFTWARE
-              </span>
               <h1 className="mt-6 text-4xl lg:text-6xl font-bold tracking-tight">
                 Smart asset management with environmental impact tracking
               </h1>
@@ -358,6 +356,8 @@ const LandingPage = () => {
       {/*    </div>*/}
       {/*  </div>*/}
       {/*</section>*/}
+
+      <Footer />
     </div>
   );
 };

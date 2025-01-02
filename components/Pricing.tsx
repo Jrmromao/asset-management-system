@@ -86,14 +86,27 @@ export default function PricingTable() {
 
   return (
     <div className="w-full max-w-7xl mx-auto bg-white rounded-lg shadow">
-      <div className="p-6 border-b">
-        <h2 className="text-2xl font-bold text-emerald-800">EcoKeepr Pro</h2>
-        <p className="mt-2 text-base text-gray-600">
-          Streamline your asset management and sustainability tracking
-        </p>
+      <div className="flex items-center justify-between p-6 border-b">
+        <div>
+          <h2 className="text-2xl font-bold text-emerald-800">EcoKeepr Pro</h2>
+          <p className="mt-2 text-base text-gray-600">
+            Streamline your asset management and sustainability tracking
+          </p>
+        </div>
+        <a
+          onClick={() => {
+            window.location.href =
+              "mailto:ecokeepr@gmail.com?subject=Contact%20Sales&body=Hello,%0A%0AI'm%20interested%20in%20learning%20more%20about%20EcoKeepr's%20enterprise%20solutions.%0A%0A-%20Number%20of%20assets%20to%20manage:%0A-%20Company%20name:%0A-%20Current%20challenges:%0A%0ALooking%20forward%20to%20discussing%20how%20EcoKeepr%20can%20help%20our%20organization.";
+          }}
+          className="flex items-center gap-2 text-emerald-600 hover:text-emerald-700 transition-colors cursor-pointer"
+        >
+          <span className="text-sm font-medium">Enterprise Solutions →</span>
+          <span className="text-xs text-gray-500">100,000+ assets</span>
+        </a>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6 p-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 p-6">
+        {/* Features Section */}
         <div>
           <h3 className="text-lg font-semibold mb-4">Features Included</h3>
           <div className="grid gap-4">
@@ -119,18 +132,19 @@ export default function PricingTable() {
           </div>
         </div>
 
-        <div className="space-y-6">
-          <div className="flex justify-between items-center mb-8">
+        {/* Pricing Section */}
+        <div className="flex flex-col gap-6">
+          <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4">
             <select
               value={currency}
               onChange={(e) => setCurrency(e.target.value)}
-              className="px-4 py-2 border rounded-lg bg-white hover:border-emerald-500 transition-colors"
+              className="h-10 px-4 border rounded-lg bg-white hover:border-emerald-500 transition-colors"
             >
               <option value="EUR">EUR (€)</option>
               <option value="USD">USD ($)</option>
             </select>
 
-            <div className="flex items-center gap-4 bg-gray-50 p-2 rounded-lg">
+            <div className="flex items-center justify-center gap-4 bg-gray-50 px-4 py-2 rounded-lg">
               <span className={!isAnnual ? "font-medium" : "text-gray-500"}>
                 Monthly
               </span>
@@ -177,7 +191,7 @@ export default function PricingTable() {
           </div>
 
           {assetCount < 10000 ? (
-            <div className="bg-emerald-50 rounded-xl p-6 shadow-sm">
+            <div className="bg-emerald-50 rounded-xl p-6 mt-auto">
               <div className="text-center mb-4">
                 <div className="text-4xl font-bold text-emerald-800 mb-1">
                   {currency === "EUR" ? "€" : "$"}
@@ -207,17 +221,72 @@ export default function PricingTable() {
                   <span className="font-medium">{assetCount}</span>
                 </div>
               </div>
+              <Button className="w-full mt-6 bg-emerald-600 hover:bg-emerald-700 transition-colors">
+                Get Started Now
+              </Button>
             </div>
           ) : (
-            <div className="bg-emerald-50  rounded-xl p-6 text-center">
+            <div className="bg-emerald-50 rounded-xl p-6 mt-auto text-center">
               <h3 className="text-xl font-bold text-emerald-800 mb-3">
                 Enterprise Solution
               </h3>
-              <p className="text-gray-600 mb-4">
-                Custom pricing and features for organizations tracking 10,000+
-                assets
+              <p className="text-gray-600 mb-6">
+                Custom pricing and advanced features for organizations tracking
+                10,000+ assets
               </p>
-              <Button className="w-full bg-emerald-600 hover:bg-emerald-700 transition-colors">
+              <div className="grid grid-cols-2 gap-4 text-left mb-6">
+                <div className="flex items-start gap-2">
+                  <CheckCircle2 className="h-5 w-5 text-emerald-500 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-gray-800">
+                      Priority Support
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      Dedicated account manager & 24/7 priority support
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle2 className="h-5 w-5 text-emerald-500 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-gray-800">
+                      Custom Integration
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      API access & custom system integrations
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle2 className="h-5 w-5 text-emerald-500 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-gray-800">
+                      Advanced Analytics
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      Custom reports & predictive insights
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle2 className="h-5 w-5 text-emerald-500 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-gray-800">
+                      Enhanced Security
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      SSO, audit logs & compliance features
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <Button
+                className="w-full bg-emerald-600 hover:bg-emerald-700 transition-colors"
+                onClick={() => {
+                  window.location.href =
+                    "mailto:ecokeepr@gmail.com?subject=Contact%20Sales&body=Hello,%0A%0AI'm%20interested%20in%20learning%20more%20about%20EcoKeepr's%20enterprise%20solutions.%0A%0A-%20Number%20of%20assets%20to%20manage:%0A-%20Company%20name:%0A-%20Current%20challenges:%0A%0ALooking%20forward%20to%20discussing%20how%20EcoKeepr%20can%20help%20our%20organization.";
+                }}
+              >
                 Contact Sales Team
               </Button>
             </div>

@@ -15,13 +15,9 @@ declare global {
 
 const ReCAPTCHA: React.FC<ReCAPTCHAProps> = ({ siteKey, onVerify }) => {
   React.useEffect(() => {
-    // Add the callback to window object
     window.onRecaptchaVerify = onVerify;
-
     return () => {
-      if (window.onRecaptchaVerify) {
-        delete window.onRecaptchaVerify;
-      }
+      if (window.onRecaptchaVerify) delete window.onRecaptchaVerify;
     };
   }, [onVerify]);
 
