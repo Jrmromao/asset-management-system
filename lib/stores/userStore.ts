@@ -26,12 +26,11 @@ export const useUserStore = create(
         set({ loading: true });
         getAll()
           .then((users) => {
-            set({ users: users.data });
+            set({ users: users.data, loading: false });
           })
           .catch((error) => {
             set({ users: [], loading: false });
             console.error("Error fetching users:", error);
-            set({ loading: false });
           });
       },
       create: async (data: User) => {

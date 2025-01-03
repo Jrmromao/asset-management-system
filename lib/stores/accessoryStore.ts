@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import produce from "immer";
-import { remove, getAll as fetch } from "@/lib/actions/accessory.actions";
+import { getAll as fetch, remove } from "@/lib/actions/accessory.actions";
 
 interface AccessoryState {
   accessories: Accessory[];
@@ -34,12 +34,11 @@ export const useAccessoryStore = create(
         set({ loading: true });
         fetch()
           .then((response) => {
-            set({ accessories: response.data });
+            set({ accessories: response.data, loading: false });
           })
           .catch((error) => {
             set({ accessories: [], loading: false });
             console.error("Error fetching accessories:", error);
-            set({ loading: false });
           });
 
         console.log("AccessoryStore getAll", get().accessories);

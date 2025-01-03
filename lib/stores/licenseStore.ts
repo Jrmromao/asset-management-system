@@ -23,12 +23,11 @@ export const useLicenseStore = create(
         set({ loading: true });
         getAll()
           .then((licenses) => {
-            set({ licenses });
+            set({ licenses, loading: false });
           })
           .catch((error) => {
             set({ licenses: [], loading: false });
             console.error("Error fetching assets:", error);
-            set({ loading: false });
           });
       },
 

@@ -18,13 +18,12 @@ import { DialogContainer } from "@/components/dialogs/DialogContainer";
 import FileUploadForm from "@/components/forms/FileUploadForm";
 import { useDialogStore } from "@/lib/stores/store";
 import HeaderBox from "@/components/HeaderBox";
+import TableHeaderSkeleton from "@/components/tables/TableHeaderSkeleton";
 
 const Accessories = () => {
-  const [accessories, getAll, deleteAccessory] = useAccessoryStore((state) => [
-    state.accessories,
-    state.getAll,
-    state.delete,
-  ]);
+  const [accessories, getAll, deleteAccessory, loading] = useAccessoryStore(
+    (state) => [state.accessories, state.getAll, state.delete, state.loading],
+  );
 
   const [filteredData, setFilteredData] = useState(accessories);
   const [filterDialogOpen, setFilterDialogOpen] = useState(false);
@@ -122,14 +121,18 @@ const Accessories = () => {
         <HeaderBox title="Accessories" subtext="Manage your accessories." />
       </div>
 
-      <TableHeader
-        onSearch={handleSearch}
-        onFilter={handleFilter}
-        onImport={() => openDialog()}
-        onCreateNew={() => navigate.push("/accessories/create")}
-      />
+      {loading ? (
+        <TableHeaderSkeleton />
+      ) : (
+        <TableHeader
+          onSearch={handleSearch}
+          onFilter={handleFilter}
+          onImport={() => openDialog()}
+          onCreateNew={() => navigate.push("/accessories/create")}
+        />
+      )}
 
-      <DataTable columns={columns} data={filteredData} />
+      <DataTable columns={columns} data={filteredData} isLoading={loading} />
 
       <Dialog open={filterDialogOpen} onOpenChange={setFilterDialogOpen}>
         <DialogContent>

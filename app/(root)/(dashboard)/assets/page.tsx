@@ -20,6 +20,7 @@ import {
 import Link from "next/link";
 import { TableHeader } from "@/components/tables/TableHeader";
 import FilterDialog from "@/components/dialogs/FilterDialog";
+import TableHeaderSkeleton from "@/components/tables/TableHeaderSkeleton";
 
 const Assets = () => {
   const [openDialog, closeDialog, isOpen] = useDialogStore((state) => [
@@ -154,13 +155,21 @@ const Assets = () => {
       />
       <div className="space-y-6">
         <section className="flex w-full flex-col gap-6">
-          <TableHeader
-            onSearch={handleSearch}
-            onFilter={handleFilter}
-            onImport={() => openDialog()}
-            onCreateNew={() => navigate.push("/assets/create")}
+          {loading ? (
+            <TableHeaderSkeleton />
+          ) : (
+            <TableHeader
+              onSearch={handleSearch}
+              onFilter={handleFilter}
+              onImport={() => openDialog()}
+              onCreateNew={() => navigate.push("/assets/create")}
+            />
+          )}
+          <DataTable
+            columns={columns}
+            data={filteredData}
+            isLoading={loading}
           />
-          <DataTable columns={columns} data={filteredData} />
         </section>
       </div>
     </div>

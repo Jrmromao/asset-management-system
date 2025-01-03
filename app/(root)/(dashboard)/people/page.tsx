@@ -18,6 +18,7 @@ import { useRouter } from "next/navigation";
 import { DataTable } from "@/components/tables/DataTable/data-table";
 import { peopleColumns } from "@/components/tables/PeopleColumns";
 import { TableHeader } from "@/components/tables/TableHeader";
+import TableHeaderSkeleton from "@/components/tables/TableHeaderSkeleton";
 
 const People = () => {
   const [openDialog, closeDialog, isOpen] = useDialogStore((state) => [
@@ -25,7 +26,11 @@ const People = () => {
     state.onClose,
     state.isOpen,
   ]);
-  const [users] = useUserStore((state) => [state.users, state.findById]);
+  const [users, loading] = useUserStore((state) => [
+    state.users,
+    state.loading,
+  ]);
+
   const [fetchRoles] = useRoleStore((state) => [state.getAll]);
 
   const navigate = useRouter();
@@ -95,13 +100,21 @@ const People = () => {
       />
       <div className="space-y-6">
         <section className="flex w-full flex-col gap-6">
-          <TableHeader
-            onSearch={handleSearch}
-            onFilter={handleFilter}
-            onImport={() => {}}
-            onCreateNew={openDialog}
+          {loading ? (
+            <TableHeaderSkeleton />
+          ) : (
+            <TableHeader
+              onSearch={handleSearch}
+              onFilter={handleFilter}
+              onImport={() => {}}
+              onCreateNew={openDialog}
+            />
+          )}
+          <DataTable
+            columns={columns}
+            data={filteredData}
+            isLoading={loading}
           />
-          <DataTable columns={columns} data={filteredData} />
         </section>
       </div>
     </div>

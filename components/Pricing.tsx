@@ -13,13 +13,6 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 
 export default function PricingTable() {
-  // const [assetCount, setAssetCount] = useState(100);
-  // const [inputValue, setInputValue] = useState("100");
-  // const [isAnnual, setIsAnnual] = useState(true);
-  // const [currency, setCurrency] = useState("EUR");
-
-  // const pricePerAsset = currency === "EUR" ? "0.37" : "0.40";
-  // const annualDiscount = 0.1;
   const [assetCount, setAssetCount] = useState(100);
   const [inputValue, setInputValue] = useState("100");
   const [isAnnual, setIsAnnual] = useState(true);
@@ -181,7 +174,9 @@ export default function PricingTable() {
     >
       {/* Header Section */}
       <motion.div variants={featureVariants} className="p-6 border-b">
-        <h2 className="text-2xl font-bold text-emerald-800">EcoKeepr Pro</h2>
+        <h2 className="text-2xl font-bold text-emerald-800">
+          Build Your Package
+        </h2>
         <p className="mt-2 text-gray-600">Complete asset management solution</p>
       </motion.div>
 

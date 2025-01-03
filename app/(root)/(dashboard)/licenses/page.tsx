@@ -14,14 +14,13 @@ import {
 } from "@/components/ui/breadcrumb";
 import Link from "next/link";
 import { TableHeader } from "@/components/tables/TableHeader";
+import TableHeaderSkeleton from "@/components/tables/TableHeaderSkeleton";
 
 const Licenses = () => {
   const navigate = useRouter();
-  const [licenses, getAll, deleteLicense] = useLicenseStore((state) => [
-    state.licenses,
-    state.getAll,
-    state.delete,
-  ]);
+  const [licenses, getAll, deleteLicense, loading] = useLicenseStore(
+    (state) => [state.licenses, state.getAll, state.delete, state.loading],
+  );
   const [filteredData, setFilteredData] = useState(licenses);
   const [filterDialogOpen, setFilterDialogOpen] = useState(false);
   const [filters, setFilters] = useState({
@@ -93,13 +92,21 @@ const Licenses = () => {
       </div>
       <div className="space-y-6">
         <section className="flex w-full flex-col gap-6">
-          <TableHeader
-            onSearch={handleSearch}
-            onFilter={handleFilter}
-            onImport={() => {}}
-            onCreateNew={() => navigate.push("/licenses/create")}
+          {loading ? (
+            <TableHeaderSkeleton />
+          ) : (
+            <TableHeader
+              onSearch={handleSearch}
+              onFilter={handleFilter}
+              onImport={() => {}}
+              onCreateNew={() => navigate.push("/licenses/create")}
+            />
+          )}
+          <DataTable
+            columns={columns}
+            data={filteredData}
+            isLoading={loading}
           />
-          <DataTable columns={columns} data={filteredData} />
         </section>
       </div>
     </div>

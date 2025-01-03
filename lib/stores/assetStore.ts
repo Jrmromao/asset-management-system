@@ -34,7 +34,7 @@ export const useAssetStore = create(
         set({ loading: true });
         fetch()
           .then((assets) => {
-            set({ assets: assets.data });
+            set({ assets: assets.data, loading: false });
           })
           .catch((error) => {
             set({ assets: [], loading: false });

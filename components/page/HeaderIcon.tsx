@@ -2,11 +2,14 @@ import React from "react";
 import Link from "next/link";
 import { Leaf } from "lucide-react";
 import { APP_NAME } from "@/constants";
+import { useSession } from "next-auth/react";
 
 const HeaderIcon = () => {
+  const { data: session } = useSession();
+
   return (
     <Link
-      href="/"
+      href={session ? "/admin" : "/"}
       className="flex items-center gap-2.5 hover:opacity-90 transition-opacity"
     >
       <Leaf className="w-7 h-7 text-emerald-600" />

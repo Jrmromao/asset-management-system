@@ -27,15 +27,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import TableSkeleton from "@/components/tables/TableSkeleton";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
+  isLoading?: boolean;
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
+  isLoading,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
@@ -73,6 +76,10 @@ export function DataTable<TData, TValue>({
 
   const rows = table.getRowModel().rows;
   const hasRows = rows.length > 0;
+
+  if (isLoading) {
+    return <TableSkeleton columns={columns.length} rows={5} />;
+  }
 
   return (
     <div>
