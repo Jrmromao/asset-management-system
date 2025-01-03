@@ -1,8 +1,7 @@
 "use client";
-import React, { useCallback, useEffect, useMemo } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import HeaderBox from "@/components/HeaderBox";
 import { useDialogStore } from "@/lib/stores/store";
-import { Button } from "@/components/ui/button";
 import { useUserStore } from "@/lib/stores/userStore";
 import { DialogContainer } from "@/components/dialogs/DialogContainer";
 import UserForm from "@/components/forms/UserForm";
@@ -15,11 +14,10 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import Link from "next/link";
-import { assetColumns } from "@/components/tables/AssetColumns";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
 import { DataTable } from "@/components/tables/DataTable/data-table";
 import { peopleColumns } from "@/components/tables/PeopleColumns";
+import { TableHeader } from "@/components/tables/TableHeader";
 
 const People = () => {
   const [openDialog, closeDialog, isOpen] = useDialogStore((state) => [
@@ -34,16 +32,45 @@ const People = () => {
   const handleView = async (id: string) => {
     navigate.push(`/people/view/${id}`);
   };
+  const handleFilter = () => {
+    setFilterDialogOpen(true);
+  };
+
+  const handleSearch = (value: string) => {
+    if (!value.trim()) {
+      setFilteredData(users);
+      return;
+    }
+
+    const searchResults = users.filter((item: any) =>
+      Object.entries(item).some(([key, val]) => {
+        if (typeof val === "string" || typeof val === "number") {
+          return val.toString().toLowerCase().includes(value.toLowerCase());
+        }
+        return false;
+      }),
+    );
+    setFilteredData(searchResults);
+  };
 
   const handleDelete = async (id: string) => {};
   const onDelete = useCallback((user: User) => handleDelete(user?.id!), []);
   const onView = useCallback((user: User) => handleView(user?.id!), []);
   const columns = useMemo(() => peopleColumns({ onDelete, onView }), []);
-
+  const [filteredData, setFilteredData] = useState(users);
+  const [filterDialogOpen, setFilterDialogOpen] = useState(false);
+  const [filters, setFilters] = useState({
+    supplier: "",
+    inventory: "",
+  });
   useEffect(() => {
     useUserStore.getState().getAll();
     fetchRoles();
   }, []);
+
+  useEffect(() => {
+    setFilteredData(users);
+  }, [users]);
   return (
     <div className="assets">
       <Breadcrumb className="hidden md:flex">
@@ -67,15 +94,14 @@ const People = () => {
         form={<UserForm />}
       />
       <div className="space-y-6">
-        <section className="flex">
-          <div className="flex justify-end">
-            <Button variant={"link"} onClick={openDialog}>
-              Add People
-            </Button>
-          </div>
-        </section>
         <section className="flex w-full flex-col gap-6">
-          <DataTable columns={columns} data={users} />
+          <TableHeader
+            onSearch={handleSearch}
+            onFilter={handleFilter}
+            onImport={() => {}}
+            onCreateNew={openDialog}
+          />
+          <DataTable columns={columns} data={filteredData} />
         </section>
       </div>
     </div>

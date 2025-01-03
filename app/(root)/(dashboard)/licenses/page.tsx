@@ -1,7 +1,6 @@
 "use client";
-import React, { useCallback, useEffect, useMemo } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import HeaderBox from "@/components/HeaderBox";
-import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { useLicenseStore } from "@/lib/stores/licenseStore";
 import { DataTable } from "@/components/tables/DataTable/data-table";
@@ -14,6 +13,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import Link from "next/link";
+import { TableHeader } from "@/components/tables/TableHeader";
 
 const Licenses = () => {
   const navigate = useRouter();
@@ -22,6 +22,34 @@ const Licenses = () => {
     state.getAll,
     state.delete,
   ]);
+  const [filteredData, setFilteredData] = useState(licenses);
+  const [filterDialogOpen, setFilterDialogOpen] = useState(false);
+  const [filters, setFilters] = useState({
+    supplier: "",
+    inventory: "",
+  });
+
+  const handleFilter = () => {
+    setFilterDialogOpen(true);
+  };
+
+  const handleSearch = (value: string) => {
+    if (!value.trim()) {
+      setFilteredData(licenses);
+      return;
+    }
+
+    const searchResults = licenses.filter((item: any) =>
+      Object.entries(item).some(([key, val]) => {
+        if (typeof val === "string" || typeof val === "number") {
+          return val.toString().toLowerCase().includes(value.toLowerCase());
+        }
+        return false;
+      }),
+    );
+    setFilteredData(searchResults);
+  };
+
   const handleDelete = async (id: string) => {
     await deleteLicense(id).then((_) => {
       getAll();
@@ -44,6 +72,10 @@ const Licenses = () => {
     getAll();
   }, []);
 
+  useEffect(() => {
+    setFilteredData(licenses);
+  }, [licenses]);
+
   return (
     <div className="assets">
       <Breadcrumb className="hidden md:flex">
@@ -60,31 +92,14 @@ const Licenses = () => {
         <HeaderBox title="Licenses" subtext="Manage your licenses." />
       </div>
       <div className="space-y-6">
-        <section className="flex">
-          <div className="flex justify-end">
-            <Button
-              variant={"link"}
-              onClick={() => navigate.push("/licenses/create")}
-            >
-              Add License
-            </Button>
-            <Button
-              variant={"link"}
-              onClick={() => navigate.push("/licenses/export")}
-            >
-              Export
-            </Button>
-            <Button
-              variant={"link"}
-              className={"flex justify-end"}
-              onClick={() => navigate.push("/licenses/export")}
-            >
-              Import
-            </Button>
-          </div>
-        </section>
         <section className="flex w-full flex-col gap-6">
-          <DataTable columns={columns} data={licenses} />
+          <TableHeader
+            onSearch={handleSearch}
+            onFilter={handleFilter}
+            onImport={() => {}}
+            onCreateNew={() => navigate.push("/licenses/create")}
+          />
+          <DataTable columns={columns} data={filteredData} />
         </section>
       </div>
     </div>

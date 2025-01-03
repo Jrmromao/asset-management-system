@@ -1,9 +1,8 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import HeaderBox from "@/components/HeaderBox";
 import { useDialogStore } from "@/lib/stores/store";
-import { Button } from "@/components/ui/button";
 import { useAssetStore } from "@/lib/stores/assetStore";
 import { useRouter } from "next/navigation";
 import { DialogContainer } from "@/components/dialogs/DialogContainer";
@@ -19,6 +18,8 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import Link from "next/link";
+import { TableHeader } from "@/components/tables/TableHeader";
+import FilterDialog from "@/components/dialogs/FilterDialog";
 
 const Assets = () => {
   const [openDialog, closeDialog, isOpen] = useDialogStore((state) => [
@@ -26,6 +27,7 @@ const Assets = () => {
     state.onClose,
     state.isOpen,
   ]);
+
   const [assets, loading, fetchAssets, getAssetById, deleteAsset] =
     useAssetStore((state) => [
       state.assets,
@@ -34,6 +36,7 @@ const Assets = () => {
       state.findById,
       state.delete,
     ]);
+
   const navigate = useRouter();
 
   const handleDelete = async (id: string) => {
@@ -47,9 +50,34 @@ const Assets = () => {
       });
   };
 
+  useEffect(() => {
+    setFilteredData(assets);
+  }, [assets]);
+
+  const handleFilter = () => {
+    setFilterDialogOpen(true);
+  };
+
+  const handleSearch = (value: string) => {
+    if (!value.trim()) {
+      setFilteredData(assets);
+      return;
+    }
+
+    const searchResults = assets.filter((item: any) =>
+      Object.entries(item).some(([key, val]) => {
+        if (typeof val === "string" || typeof val === "number") {
+          return val.toString().toLowerCase().includes(value.toLowerCase());
+        }
+        return false;
+      }),
+    );
+    setFilteredData(searchResults);
+  };
   const handleView = async (id: string) => {
     navigate.push(`/assets/view/${id}`);
   };
+
   const onDelete = useCallback(
     (asset: Asset) => asset?.id && handleDelete(asset.id),
     [],
@@ -59,6 +87,35 @@ const Assets = () => {
     (asset: Asset) => asset?.id && handleView(asset.id),
     [],
   );
+  const [filteredData, setFilteredData] = useState(assets);
+  const [filterDialogOpen, setFilterDialogOpen] = useState(false);
+  const [filters, setFilters] = useState({
+    supplier: "",
+    inventory: "",
+  });
+  const applyFilters = () => {
+    const results = [...assets];
+
+    // if (filters.manufacturer) {
+    //   results = results.filter((item) =>
+    //     item?.model?.manufacturer?.name
+    //       .toLowerCase()
+    //       .includes(filters.supplier.toLowerCase()),
+    //   );
+    // }
+    //
+    // if (filters.inventory) {
+    //   results = results.filter((item) =>
+    //     item.inventory?.name
+    //       .toLowerCase()
+    //       .includes(filters.inventory.toLowerCase()),
+    //   );
+    // }
+
+    setFilteredData(results);
+    setFilterDialogOpen(false);
+  };
+
   const columns = useMemo(() => assetColumns({ onDelete, onView }), []);
 
   useEffect(() => {
@@ -77,36 +134,37 @@ const Assets = () => {
           <BreadcrumbSeparator />
         </BreadcrumbList>
       </Breadcrumb>
-
+      <FilterDialog
+        open={filterDialogOpen}
+        onOpenChange={setFilterDialogOpen}
+        filters={filters}
+        setFilters={setFilters}
+        onApplyFilters={applyFilters}
+        title="Filter Assets"
+      />
       <div className="transactions-header">
         <HeaderBox title="Assets" subtext="Manage your assets." />
       </div>
       <DialogContainer
         open={isOpen}
         onOpenChange={closeDialog}
-        title={"Import Assets"}
-        description={"Import assets from a CSV file"}
-        form={<FileUploadForm dataType={"assets"} />}
+        title="Import Assets"
+        description="Import assets from a CSV file"
+        form={<FileUploadForm dataType="assets" />}
       />
       <div className="space-y-6">
-        <section className="flex">
-          <div className="flex justify-end">
-            <Button
-              variant={"link"}
-              onClick={() => navigate.push("/assets/create")}
-            >
-              Add Asset
-            </Button>
-            <Button variant={"link"} onClick={() => openDialog()}>
-              Import
-            </Button>
-          </div>
-        </section>
         <section className="flex w-full flex-col gap-6">
-          <DataTable columns={columns} data={assets} />
+          <TableHeader
+            onSearch={handleSearch}
+            onFilter={handleFilter}
+            onImport={() => openDialog()}
+            onCreateNew={() => navigate.push("/assets/create")}
+          />
+          <DataTable columns={columns} data={filteredData} />
         </section>
       </div>
     </div>
   );
 };
+
 export default Assets;

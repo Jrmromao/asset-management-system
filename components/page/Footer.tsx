@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { BookOpen, Building2, Globe2, Leaf, Phone } from "lucide-react";
+import { BookOpen, Building2, Globe2, Leaf } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -236,10 +236,10 @@ const Footer = () => {
                   EcoKeepr
                 </span>
               </div>
-              <div className="flex items-center space-x-1 text-emerald-600">
-                <Phone size={16} />
-                <span className="text-sm">1-888-888-8888</span>
-              </div>
+              {/*<div className="flex items-center space-x-1 text-emerald-600">*/}
+              {/*  <Phone size={16} />*/}
+              {/*  <span className="text-sm">1-888-888-8888</span>*/}
+              {/*</div>*/}
             </div>
             <div className="flex flex-wrap justify-center gap-x-8 text-sm text-gray-600">
               <a href="#" className="hover:text-green-600 transition-colors">

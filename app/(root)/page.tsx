@@ -9,7 +9,6 @@ import {
   Factory,
   Globe,
   Leaf,
-  Phone,
   TreePine,
   Zap,
 } from "lucide-react";
@@ -30,11 +29,7 @@ const LandingPage = () => {
       {/* Top Banner */}
       <DevelopmentBanner />
       <div className="hidden md:block bg-muted/40 border-b py-2">
-        <div className="max-w-7xl mx-auto px-4 flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <Phone className="w-4 h-4" />
-            <span className="text-sm">1-888-888-8888</span>
-          </div>
+        <div className="max-w-7xl mx-auto px-4 flex justify-end">
           <nav className="flex gap-6">
             {["About EcoKeepr", "Careers", "Contact"].map((item) => (
               <Link
