@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useMemo } from "react";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -29,6 +29,9 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import ActivityLog from "@/components/shared/ActivityLog/ActivityLog";
+import { userAssetColumns } from "@/components/tables/UserAssetColumns";
+import EmptyState from "@/components/EmptyState";
+import UserProfileSkeleton from "@/components/UserProfileSkeleton";
 
 const fieldIcons = {
   "Email Address": Mail,
@@ -42,9 +45,13 @@ const fieldIcons = {
 
 interface UserDetailsViewProps {
   user: User;
+  isLoading: boolean;
 }
 
-export default function UserDetailsView({ user }: UserDetailsViewProps) {
+export default function UserDetailsView({
+  user,
+  isLoading,
+}: UserDetailsViewProps) {
   const fields: DetailFieldType[] = [
     { label: "Email Address", value: user.email, type: "text" },
     { label: "Account Type", value: user.accountType || "-", type: "text" },
@@ -54,6 +61,19 @@ export default function UserDetailsView({ user }: UserDetailsViewProps) {
     // { label: 'Account Status', value: user.active ? 'Active' : 'Inactive', type: 'text' },
     { label: "Employee ID", value: user.employeeId || "-", type: "text" },
   ];
+
+  const columns = useMemo(
+    () =>
+      userAssetColumns({
+        onDelete: () => {},
+        onView: () => {},
+      }),
+    [],
+  );
+
+  if (isLoading) {
+    return <UserProfileSkeleton />;
+  }
 
   return (
     <div className="bg-white shadow overflow-hidden sm:rounded-lg">
@@ -203,7 +223,12 @@ export default function UserDetailsView({ user }: UserDetailsViewProps) {
         <TabsContent value="assets" className="mt-6">
           <div className="space-y-4">
             <div className="text-muted-foreground">
-              {JSON.stringify(user?.assets, null, 2)}
+              <EmptyState type={"assets"} />
+              {/*<DataTable*/}
+              {/*  columns={columns}*/}
+              {/*  data={user?.assets || []}*/}
+              {/*  isLoading={isLoading}*/}
+              {/*/>*/}
             </div>
           </div>
         </TabsContent>
@@ -212,6 +237,8 @@ export default function UserDetailsView({ user }: UserDetailsViewProps) {
           <div className="space-y-4">
             <div className="text-muted-foreground">
               {JSON.stringify(user?.accessories, null, 2)}
+
+              {/*<DataTable columns={} data={user?.accessories || []} />*/}
             </div>
           </div>
         </TabsContent>
@@ -220,6 +247,8 @@ export default function UserDetailsView({ user }: UserDetailsViewProps) {
           <div className="space-y-4">
             <div className="text-muted-foreground">No licenses assigned</div>
           </div>
+
+          <EmptyState type={"licenses"} />
         </TabsContent>
 
         {/*<TabsContent value="consumables" className="mt-6">*/}
@@ -229,14 +258,18 @@ export default function UserDetailsView({ user }: UserDetailsViewProps) {
         {/*</TabsContent>*/}
 
         <TabsContent value="history" className="mt-6">
-          <div className="space-y-4">
+          {false ? (
             <ActivityLog sourceType="user" sourceId={user?.id!} />
-          </div>
+          ) : (
+            <EmptyState type={"history"} />
+          )}
         </TabsContent>
 
         <TabsContent value="booking-history" className="mt-6">
           <div className="space-y-4">
-            <div className="text-muted-foreground">No booking history</div>
+            <div className="text-muted-foreground">
+              <EmptyState type={"history"} />
+            </div>
           </div>
         </TabsContent>
       </Tabs>

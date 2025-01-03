@@ -5,7 +5,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
-import { Form, FormLabel } from "@/components/ui/form";
+import { Form } from "@/components/ui/form";
 import { InfoIcon, Loader2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -17,14 +17,11 @@ import CustomDatePicker from "@/components/CustomDatePicker";
 import CustomPriceInput from "@/components/CustomPriceInput";
 import Dropzone from "@/components/Dropzone";
 import { SelectWithButton } from "@/components/SelectWithButton";
-import { useAssetStore } from "@/lib/stores/assetStore";
 import { useStatusLabelStore } from "@/lib/stores/statusLabelStore";
-import { useModelStore } from "@/lib/stores/modelStore";
 import { useLocationStore } from "@/lib/stores/locationStore";
 import { useDepartmentStore } from "@/lib/stores/departmentStore";
 import { useInventoryStore } from "@/lib/stores/inventoryStore";
 import { useSupplierStore } from "@/lib/stores/SupplierStore";
-import { useCategoryStore } from "@/lib/stores/categoryStore";
 import { DialogContainer } from "@/components/dialogs/DialogContainer";
 import SupplierForm from "@/components/forms/SupplierForm";
 import InventoryForm from "@/components/forms/InventoryForm";
@@ -388,8 +385,6 @@ const LicenseForm = () => {
               </div>
             </div>
           </Card>
-
-          {/* Action Buttons */}
           <div className="flex justify-end gap-4 sticky bottom-0 bg-white p-4 border-t shadow-lg">
             <Button
               type="button"

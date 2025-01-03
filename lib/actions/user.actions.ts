@@ -536,12 +536,24 @@ export async function findById(id: string): Promise<ActionResponse<User>> {
       include: {
         role: true,
         company: true,
-        assets: true,
+        assets: {
+          include: {
+            model: {
+              include: {
+                category: true,
+              },
+            },
+            statusLabel: true,
+          },
+        },
         licenses: true,
         // accessories: true,
         department: true,
       },
     });
+
+    console.log(user);
+
     if (!user) {
       logger.warn("User not found", { id });
       return { error: "User not found" };

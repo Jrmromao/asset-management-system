@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import UserDetailsView from "@/components/UserDetailsView";
 import { findById } from "@/lib/actions/user.actions";
+import UserProfileSkeleton from "@/components/UserProfileSkeleton";
 
 interface UserPageState {
   user?: User;
@@ -37,9 +38,10 @@ export default function UserPage({ params }: { params: { id: string } }) {
     fetchUser();
   }, [params.id]);
 
-  if (state.isLoading) return <div>Loading...</div>;
   if (state.error) return <div>Error: {state.error}</div>;
   if (!state.user) return <div>User not found</div>;
-
-  return <UserDetailsView user={state.user} />;
+  if (state.isLoading) {
+    return <UserProfileSkeleton />;
+  }
+  return <UserDetailsView user={state?.user} isLoading={state.isLoading} />;
 }
