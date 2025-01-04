@@ -11,14 +11,21 @@ import {
 } from "@/components/ui/tooltip";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function PricingTable() {
   const [assetCount, setAssetCount] = useState(100);
   const [inputValue, setInputValue] = useState("100");
-  const [isAnnual, setIsAnnual] = useState(true);
+  const [isAnnual, setIsAnnual] = useState(false);
   const [currency, setCurrency] = useState("EUR");
 
-  const pricePerAsset = currency === "EUR" ? "0.37" : "0.40";
+  const pricePerAsset = currency === "EUR" ? "0.35" : "0.36";
   const annualDiscount = 0.1;
 
   const calculatePrice = () => ({
@@ -230,17 +237,18 @@ export default function PricingTable() {
         {/* Price Calculator */}
         <div className="space-y-6">
           <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <select
-                value={currency}
-                onChange={(e) => setCurrency(e.target.value)}
-                className="h-10 px-4 border rounded-lg bg-white hover:border-emerald-500 transition-colors"
-              >
-                <option value="EUR">EUR (€)</option>
-                <option value="USD">USD ($)</option>
-              </select>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <Select value={currency} onValueChange={setCurrency}>
+                <SelectTrigger className="w-full sm:w-[180px]">
+                  <SelectValue placeholder="Select currency" />
+                </SelectTrigger>
+                <SelectContent className={"bg-white"}>
+                  <SelectItem value="EUR">EUR (€)</SelectItem>
+                  <SelectItem value="USD">USD ($)</SelectItem>
+                </SelectContent>
+              </Select>
 
-              <div className="flex items-center gap-4 bg-gray-50 px-4 py-2 rounded-lg">
+              <div className="flex items-center gap-4 bg-gray-50 px-4 py-2 rounded-lg w-full sm:w-auto justify-center">
                 <span className={!isAnnual ? "font-medium" : "text-gray-500"}>
                   Monthly
                 </span>
@@ -270,7 +278,10 @@ export default function PricingTable() {
 
               <Slider
                 value={[assetCount]}
-                onValueChange={(value) => setAssetCount(value[0])}
+                onValueChange={(value) => {
+                  setAssetCount(value[0]);
+                  setInputValue(value[0].toString());
+                }}
                 min={100}
                 max={10000}
                 step={100}
@@ -297,7 +308,7 @@ export default function PricingTable() {
                   variants={priceAnimation}
                   className="text-center mb-4"
                 >
-                  <div className="text-4xl font-bold text-emerald-800 mb-2">
+                  <div className="text-3xl sm:text-4xl font-bold text-emerald-800 mb-2">
                     {currency === "EUR" ? "€" : "$"}
                     {isAnnual
                       ? calculatePrice().annual
@@ -361,7 +372,7 @@ export default function PricingTable() {
                   Custom pricing and advanced features for organizations
                   tracking 10,000+ assets
                 </p>
-                <div className="grid grid-cols-2 gap-4 text-left mb-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left mb-6">
                   <div className="flex items-start gap-2">
                     <CheckCircle2 className="h-5 w-5 text-emerald-500 flex-shrink-0 mt-0.5" />
                     <div>
