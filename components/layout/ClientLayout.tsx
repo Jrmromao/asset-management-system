@@ -7,7 +7,8 @@ import { Toaster } from "sonner";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/react";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
-import CookieBanner from "@/components/CookieBanner";
+import CookieBanner from "@/components/cookies/CookieBanner";
+import { CookiePreferences } from "@/components/cookies/CookieManager";
 
 interface ClientLayoutProps {
   children: React.ReactNode;
@@ -16,12 +17,8 @@ interface ClientLayoutProps {
 export default function ClientLayout({ children }: ClientLayoutProps) {
   const [showGA, setShowGA] = useState<boolean>(false);
 
-  const handleAcceptCookies = (): void => {
-    setShowGA(true);
-  };
-
-  const handleDeclineCookies = (): void => {
-    setShowGA(false);
+  const handlePreferencesChange = (preferences: CookiePreferences) => {
+    setShowGA(preferences.analytics);
   };
 
   return (
@@ -46,14 +43,8 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
       >
         <ClientProviders>
           {children}
-          {/*<CookieConsent*/}
-          {/*  onAccept={handleAcceptCookies}*/}
-          {/*  onDecline={handleDeclineCookies}*/}
-          {/*/>*/}
-          <CookieBanner // Changed from CookieConsent
-            onAccept={handleAcceptCookies}
-            onDecline={handleDeclineCookies}
-          />
+
+          <CookieBanner onPreferencesChange={handlePreferencesChange} />
         </ClientProviders>
       </ThemeProvider>
     </>
