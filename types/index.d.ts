@@ -1,177 +1,133 @@
 /* eslint-disable no-unused-vars */
-
 import { Company } from "@prisma/client";
 
 declare global {
-  // ==================== Basic Types ====================
-  type SearchParamProps = {
-    params: { [key: string]: string };
-    searchParams: { [key: string]: string | string[] | undefined };
-  };
-
-  type APICallResponse = {
-    success: boolean;
-    message?: string;
-    error?: string;
-  };
-
-  type KitItem = {
-    id: string;
-    itemId: string;
-    quantity: number;
-    remaining: number;
-  };
-
-  type Kit = {
-    id: string;
-    name: string;
-    description: string;
-    assets: KitItem[];
-    licenses: KitItem[];
-    accessories: KitItem[];
-  };
-
-  type KitAsset = {
-    id: string;
-    kitId: string;
-    assetId: string;
-  };
-
-  type AuditLog = {
-    id: string;
-    action: string;
-    entity: string;
-    entityId?: string | null;
-    details?: string | null;
-    userId: string;
-    companyId: string;
-    createdAt: Date;
-    ipAddress?: string | null;
-    dataAccessed?: Record<string, any> | null;
-
-    company: {
-      id: string;
-      name?: string;
-    };
-    user: true;
-  };
-
-  // ==================== Entity Types ====================
-  type StatusLabel = {
+  // ==================== Base Interfaces ====================
+  interface BaseEntity {
     id?: string;
-    name: string;
-    colorCode: string;
-    description: string;
-    isArchived: boolean;
-    allowLoan: boolean;
-  };
-
-  type Role = {
-    id?: string;
-    name: string;
-    note: string;
-    roleCode: number;
-    createdAt: Date;
-    updatedAt: Date;
-  };
-
-  type User = {
-    id?: string;
-    oauthId?: string;
-    email: string;
-    name?: string;
-    firstName: string;
-    lastName: string;
-    title: string;
-    employeeId: string;
     createdAt?: Date;
     updatedAt?: Date;
-    roleId?: string;
-    companyId?: string;
-    role?: Role;
-    company?: Company;
-    accountType?: string;
-    active?: boolean;
-    department?: Department;
-    assets?: Asset[];
-    licenses?: License[];
-    accessories?: Accessory[];
-  };
+  }
 
-  type RegUser = {
-    email: string;
-    password: string;
-    roleId?: string;
-    title: string;
-    employeeId: string;
-    companyId: string;
-    firstName?: string;
-    lastName?: string;
-    phoneNumber?: string;
-  };
+  type StoredCategory = Required<Pick<Category, "id">> & Category;
 
-  type Accessory = {
-    id: string;
-    name: string;
-    companyId: string;
-    alertEmail: string;
-    reorderPoint: number;
-    totalQuantityCount: number;
-    purchaseDate: Date;
-    material: string;
-    weight: number;
-    price?: number;
-    endOfLife: Date;
-    notes: string | null; // Changed from string | undefined to string | null
-    modelId: string | null;
-    statusLabelId: string | null;
-    supplierId: string | null;
-    departmentId: string | null;
-    locationId: string | null;
-    inventoryId: string | null;
-    categoryId: string | null;
-    poNumber: string | null;
-    createdAt: Date;
-    updatedAt: Date;
-    assigneeId?: string | null;
-    licenseId?: string | null;
-    serialNumber?: string | null;
+  interface AddressFields {
+    addressLine1: string;
+    addressLine2?: string | null;
+    city: string;
+    state: string;
+    zip: string;
+    country: string;
+  }
 
-    energyRating?: string | null;
-    dailyOperationHours?: number | null;
-    co2Score?: number | null;
-
-    // Optional relations
-    model?: Model | null;
-    statusLabel?: StatusLabel | null;
-    supplier?: Supplier | null;
-    department?: Department | null;
-    departmentLocation?: DepartmentLocation | null;
-    inventory?: Inventory | null;
-    company?: Company;
-    assignee?: User | null;
-    category?: Category | null;
-    license?: License | null;
-    userAccessories?: UserAccessory[] | null;
-    auditLogs?: AuditLog[] | null;
-  };
-
+  // ==================== Common Types ====================
   type DetailFieldType = {
     label: string;
     value: string;
     type: "status" | "date" | "text" | "currency";
   };
 
-  type formTemplateValues = {
+  type ActionResponse<T> = {
+    data?: T;
+    error?: string;
+    success?: boolean;
+  };
+
+  type CSVRow = Record<string, string>;
+
+  // ==================== Core Entity Types ====================
+  interface StatusLabel extends BaseEntity {
+    name: string;
+    colorCode: string;
+    description: string;
+    isArchived: boolean;
+    allowLoan: boolean;
+  }
+
+  interface Role extends BaseEntity {
+    name: string;
+    note: string;
+    roleCode: number;
+  }
+
+  interface User extends BaseEntity {
+    oauthId?: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    name?: string;
+    title: string;
+    employeeId: string;
+    roleId?: string;
+    companyId?: string;
+    accountType?: string;
+    active?: boolean;
+    role?: Role;
+    company?: Company;
+    department?: Department;
+    assets?: Asset[];
+    licenses?: License[];
+    accessories?: Accessory[];
+  }
+
+  // ==================== Asset Management Types ====================
+  interface KitItem {
+    id: string;
+    itemId: string;
+    quantity: number;
+    remaining: number;
+  }
+
+  interface Kit {
+    id: string;
+    name: string;
+    description: string;
+    assets: KitItem[];
+    licenses: KitItem[];
+    accessories: KitItem[];
+  }
+
+  interface KitAsset {
+    id: string;
+    kitId: string;
+    assetId: string;
+  }
+
+  interface FormTemplateValues {
     id: string;
     templateId: string;
     assetId: string;
     values: any[];
-  };
+  }
 
-  type Asset = {
-    id?: string;
-    formTemplate: {
+  interface Asset extends BaseEntity {
+    name: string;
+    poNumber: string;
+    material?: string;
+    modelId: string;
+    datePurchased: Date;
+    endOfLife: Date;
+    serialNumber: string;
+    companyId: string;
+    supplierId: string;
+    weight?: number;
+    price: number;
+    energyRating?: string;
+    dailyOperationHours?: number;
+    co2Score?: number;
+
+    // Optional fields
+    certificateUrl?: string;
+    licenceUrl?: string;
+    assigneeId?: string;
+    licenseId?: string;
+    locationId?: string;
+    departmentId?: string;
+    statusLabelId?: string;
+    inventoryId?: string;
+
+    // Relations
+    formTemplate?: {
       id: string;
       name: string;
       fields: any[];
@@ -179,63 +135,40 @@ declare global {
       createdAt: Date;
       updatedAt: Date;
     };
-    formTemplateValues: formTemplateValues[];
-    name: string;
-    poNumber: string;
+    formTemplateValues?: FormTemplateValues[];
     assignee?: User;
-    assigneeId?: string;
-    material?: string;
-    modelId: string;
-    datePurchased: Date;
-    endOfLife: Date;
-    certificateUrl?: string;
-    licenceUrl?: string;
     license?: License;
-    serialNumber: string;
-    companyId: string;
-    supplierId: string;
-    createdAt?: Date;
-    updatedAt?: Date;
     category?: Category;
-    licenseId?: string;
-    locationId?: string;
     departmentLocation?: DepartmentLocation;
-    departmentId?: string;
     department?: Department;
-    statusLabelId?: string;
     statusLabel?: StatusLabel;
-    inventoryId?: string;
     inventory?: Inventory;
-    weight?: number;
-    price: number;
-    energyRating?: string;
-    dailyOperationHours?: number;
     model?: Model;
-    co2Score?: number;
-  };
+    auditLogs?: AuditLog[];
+    assetHistory?: AssetHistory[];
+  }
 
-  export type License = {
-    id: string;
+  interface License extends BaseEntity {
     name: string;
     licensedEmail: string;
     poNumber: string;
     licenseKey?: string;
     companyId: string;
+    renewalDate: Date;
+    purchaseDate: Date;
+    seats: number;
+    purchasePrice: number;
+    minSeatsAlert: number;
+    alertRenewalDays: number;
+
+    // Optional fields
     statusLabelId?: string | null;
     supplierId?: string | null;
     departmentId?: string | null;
     locationId?: string | null;
     inventoryId?: string | null;
-    renewalDate: Date;
-    purchaseDate: Date;
     purchaseNotes?: string | null;
     licenseUrl?: string | null;
-    minSeatsAlert: number;
-    alertRenewalDays: number;
-    seats: number;
-    purchasePrice: number;
-    createdAt: Date;
-    updatedAt: Date;
 
     // Relations
     company?: Company | null;
@@ -248,9 +181,121 @@ declare global {
     category?: Category | null;
     model?: Model | null;
     users?: LicenseAssignment[] | null;
-  };
+  }
 
-  type UserAccessory = {
+  interface Accessory extends BaseEntity {
+    name: string;
+    companyId: string;
+    alertEmail: string;
+    reorderPoint: number;
+    totalQuantityCount: number;
+    purchaseDate: Date;
+    material: string;
+    weight: number;
+    endOfLife: Date;
+    modelId: string | null;
+
+    // Optional fields
+    price?: number;
+    notes?: string | null;
+    statusLabelId?: string | null;
+    supplierId?: string | null;
+    departmentId?: string | null;
+    locationId?: string | null;
+    inventoryId?: string | null;
+    categoryId?: string | null;
+    poNumber?: string | null;
+    assigneeId?: string | null;
+    licenseId?: string | null;
+    serialNumber?: string | null;
+    energyRating?: string | null;
+    dailyOperationHours?: number | null;
+    co2Score?: number | null;
+
+    // Relations
+    model?: Model | null;
+    statusLabel?: StatusLabel | null;
+    supplier?: Supplier | null;
+    department?: Department | null;
+    departmentLocation?: DepartmentLocation | null;
+    inventory?: Inventory | null;
+    company?: Company;
+    assignee?: User | null;
+    category?: Category | null;
+    license?: License | null;
+    userAccessories?: UserAccessory[] | null;
+    auditLogs?: AuditLog[] | null;
+  }
+
+  // ==================== History Types ====================
+  interface AssetHistory extends BaseEntity {
+    assetId: string;
+    type: "purchase" | "assignment" | "return" | "disposal" | "status_change";
+    date: Date;
+    notes?: string | null;
+    companyId: string;
+
+    // Relations
+    asset: Asset;
+    company: Company;
+  }
+
+  // ==================== Organizational Types ====================
+  interface Category extends BaseEntity {
+    name: string;
+    note?: string;
+  }
+
+  interface Department extends BaseEntity {
+    name: string;
+    note?: string;
+    companyId?: string;
+    company?: Company;
+  }
+
+  interface Inventory extends BaseEntity {
+    name: string;
+    companyId?: string;
+    company?: Company;
+  }
+
+  interface Supplier extends BaseEntity, AddressFields {
+    name: string;
+    contactName: string;
+    email: string;
+    phoneNum: string | null;
+    url: string | null;
+    notes: string | null;
+    companyId: string;
+    asset?: Asset[];
+  }
+
+  interface DepartmentLocation extends BaseEntity, AddressFields {
+    name: string;
+    companyId?: string;
+  }
+
+  interface Manufacturer extends BaseEntity {
+    name: string;
+    url: string;
+    supportUrl: string;
+    supportPhone: string;
+    supportEmail: string;
+    models?: Model[];
+  }
+
+  interface Model extends BaseEntity {
+    name: string;
+    modelNo: string;
+    categoryId: string;
+    manufacturerId: string;
+    assets?: Asset[];
+    category?: Category;
+    manufacturer?: Manufacturer;
+  }
+
+  // ==================== Association Types ====================
+  interface UserAccessory {
     id: string;
     userId: string;
     accessoryId: string;
@@ -259,160 +304,81 @@ declare global {
     returnedAt?: Date | null;
     notes?: string | null;
     companyId: string;
+    user: User;
+    accessory: Accessory;
+    company: Company;
+  }
 
-    // Relations
-    user: User; // Assuming 'User' type is defined
-    accessory: Accessory; // Assuming 'Accessory' type is defined
-    company: Company; // Assuming 'Company' type is defined
-  };
-
-  type LicenseAssignment = {
+  interface LicenseAssignment {
     id: string;
     userId: string;
     licenseId: string;
     assignedAt: Date;
     expiresAt?: Date | null;
     seatsAssigned: number;
+    user?: User;
+    license?: License;
+  }
 
-    // Relations
-    user?: User; // Assuming 'User' is already defined
-    license?: License; // Assuming 'License' is already defined
-  };
-
-  // ==================== Reusable Interfaces ====================
-  interface BaseEntity {
+  interface AuditLog {
     id: string;
+    action: string;
+    entity: string;
+    entityId?: string | null;
+    details?: string | null;
+    userId: string;
+    companyId: string;
     createdAt: Date;
-    updatedAt: Date;
-  }
-
-  interface AddressFields {
-    addressLine1: string;
-    addressLine2: string | null;
-    city: string;
-    state: string;
-    zip: string;
-    country: string;
-  }
-
-  // ==================== Extended Types with Base Interfaces ====================
-  type Category = BaseEntity & {
-    name: string;
-    note?: string;
-  };
-
-  type Department = BaseEntity & {
-    name: string;
-    note?: string;
-    companyId?: string;
-    company?: Company;
-  };
-
-  type Inventory = BaseEntity & {
-    name: string;
-    companyId?: string;
-    company?: Company;
-  };
-
-  type Supplier = BaseEntity &
-    AddressFields & {
-      name: string;
-      contactName: string;
-      email: string;
-      phoneNum: string | null; // Using phoneNum instead of phone
-      url: string | null;
-      notes: string | null;
-      asset?: Asset[];
-      companyId: string; // Add this if it's required by Prisma
+    ipAddress?: string | null;
+    dataAccessed?: Record<string, any> | null;
+    company: {
+      id: string;
+      name?: string;
     };
+    user: true;
+  }
 
-  type DepartmentLocation = BaseEntity & {
-    name: string;
-    addressLine1: string;
-    addressLine2?: string;
-    city: string;
-    state: string;
-    zip: string;
-    country: string;
-    companyId?: string;
-  };
+  // ==================== Component Props ====================
+  interface CategoryTableProps {
+    licenses: Category[];
+    deleteCategory: (id: string) => void;
+    setRefresh: (flag: boolean) => void;
+  }
 
-  type Manufacturer = BaseEntity & {
-    name: string;
-    url: string;
-    supportUrl: string;
-    supportPhone: string;
-    supportEmail: string;
-    models?: Model[];
-  };
+  interface CategoryProps {
+    category: CategoryCount;
+  }
 
-  type ActionResponse<T> = {
-    data?: T;
-    error?: string;
-    success?: boolean;
-  };
+  interface DoughnutChartProps {
+    accounts: Account[];
+  }
 
-  type Model = BaseEntity & {
-    name: string;
-    modelNo: string;
-    categoryId: string;
-    manufacturerId: string;
-    assets?: Asset[];
-    category?: Category;
-    manufacturer?: Manufacturer;
-  };
+  interface CompanyRegistrationProps {
+    companyName: string;
+    email: string;
+    password: string;
+    phoneNumber: string;
+    firstName: string;
+    lastName: string;
+  }
 
-  type CSVRow = {
-    [key: string]: string;
-  };
+  // ==================== Registration Types ====================
+  interface RegUser {
+    email: string;
+    password: string;
+    roleId?: string;
+    title: string;
+    employeeId: string;
+    companyId: string;
+    firstName?: string;
+    lastName?: string;
+    phoneNumber?: string;
+  }
+
+  // Note: These types need to be defined elsewhere
+  type CategoryCount = any;
+  type Account = any;
 }
 
-// ==================== Props for Components ====================
-export interface CategoryBadgeProps {
-  category: string;
-}
-
-export interface AssetTableProps {
-  assets: Asset[];
-  deleteAsset: (id: string) => void;
-  findById: (id: string) => void;
-}
-
-export interface UserTableProps {
-  users: User[];
-  deleteUser: (id: string) => void;
-  findById: (id: string) => void;
-}
-
-export interface CategoryTableProps {
-  licenses: Category[];
-  deleteCategory: (id: string) => void;
-  setRefresh: (flag: boolean) => void;
-}
-
-export interface LicenseTableProps {
-  licenses: License[];
-}
-
-export interface CategoryProps {
-  category: CategoryCount;
-}
-
-export interface DoughnutChartProps {
-  accounts: Account[];
-}
-
-export interface PaymentTransferFormProps {
-  accounts: Account[];
-}
-
-export interface CompanyRegistrationProps {
-  companyName: string;
-  email: string;
-  password: string;
-  phoneNumber: string;
-  firstName: string;
-  lastName: string;
-}
-
-export {}; // Ensure this file is treated as a module
+// Empty export to ensure this is treated as a module
+export {};

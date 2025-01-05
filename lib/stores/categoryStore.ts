@@ -18,7 +18,7 @@ export interface CategoryFilterOptions {
 
 interface CategoryState {
   isOpen: boolean;
-  categories: Category[];
+  categories: StoredCategory[];
   loading: boolean;
   isAssignOpen: boolean;
   error: string | null;
@@ -62,7 +62,8 @@ export const useCategoryStore = create<CategoryStore>()(
       getAll: async (options?: CategoryFilterOptions) => {
         set({ loading: true, error: null });
         try {
-          const response: ActionResponse<Category[]> = await findAll(options);
+          const response: ActionResponse<StoredCategory[]> =
+            await findAll(options);
 
           if (response.success && response.data) {
             set({

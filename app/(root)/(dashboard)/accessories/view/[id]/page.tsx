@@ -178,6 +178,23 @@ export default function AssetPage({ params }: AssetPageProps) {
         );
 
         // await unassign(asset.id);
+        const freshData = await findById(accessory.id);
+        if (!freshData.error && freshData.data) {
+          setAccessory((prev) => {
+            if (!prev) return undefined;
+
+            return {
+              ...prev,
+              auditLogs: freshData.data?.auditLogs ?? [],
+              usedBy: freshData.data?.userAccessories ?? [],
+              unitsAllocated: sumUnitsAssigned(
+                freshData.data?.userAccessories ?? [],
+              ),
+              assigneeId: undefined,
+              assignee: undefined,
+            };
+          });
+        }
         toast.success("Asset unassigned successfully");
       } catch (error) {
         setAccessory(previousState);
@@ -351,7 +368,7 @@ export default function AssetPage({ params }: AssetPageProps) {
             type="accessory"
             assignAction={assign}
             onOptimisticUpdate={(userData) => {
-              // Immediately update the UI
+              // Immediately update the UI for units allocated
               setAccessory((prev) =>
                 prev
                   ? {
@@ -361,9 +378,30 @@ export default function AssetPage({ params }: AssetPageProps) {
                   : undefined,
               );
             }}
-            onSuccess={() => {
+            onSuccess={async () => {
               toast.success("Asset assigned successfully");
               onAssignClose();
+
+              // Fetch fresh data to update audit logs
+              try {
+                const freshData = await findById(id);
+                if (!freshData.error && freshData.data) {
+                  setAccessory((prev) => {
+                    if (!prev) return undefined;
+
+                    return {
+                      ...prev,
+                      auditLogs: freshData.data?.auditLogs ?? [],
+                      usedBy: freshData.data?.userAccessories ?? [],
+                      unitsAllocated: sumUnitsAssigned(
+                        freshData.data?.userAccessories ?? [],
+                      ),
+                    };
+                  });
+                }
+              } catch (error) {
+                console.error("Error refreshing accessory data:", error);
+              }
             }}
             onError={(previousData) => {
               if (previousData) {

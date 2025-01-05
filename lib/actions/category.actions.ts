@@ -71,7 +71,7 @@ export async function findAll(options?: {
   orderBy?: "name" | "createdAt";
   order?: "asc" | "desc";
   search?: string;
-}): Promise<ActionResponse<Category[]>> {
+}): Promise<ActionResponse<StoredCategory[]>> {
   try {
     // Validate session
     const session = await auth();

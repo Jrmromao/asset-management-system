@@ -7,10 +7,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { filterColumns, formatDateTime, renameColumns } from "@/lib/utils";
-import LEGACY_CustomTableCell from "@/components/tables/LEGACY_CustomTableCell";
 import React from "react";
 import { useRouter } from "next/navigation";
-import { CategoryTableProps } from "@/types";
 
 const CustomAssetTable = ({
   licenses,
