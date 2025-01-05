@@ -346,7 +346,7 @@ export async function deleteCognitoUser(
 
       return {
         success: true,
-        message: "User deleted successfully",
+        message: "User deleted successfully.",
       };
     },
     { email },
