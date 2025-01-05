@@ -9,16 +9,9 @@ import {
 
 const { auth } = NextAuth(authConfig);
 
-export default auth(async (req) => {
+export default auth((req) => {
   const { nextUrl } = req;
   const hostname = req.headers.get("host") || "";
-
-  // Subdomain validation (uncomment when ready to implement)
-  // const currentHost = process.env.NODE_ENV === "production" ? "ecokeepr.com" : "localhost:3000"
-  // const subdomain = hostname.replace(`.${currentHost}`, '')
-  // if (!validateCompany(subdomain)) {
-  //     return new NextResponse(null, { status: 404 })
-  // }
 
   const isLoggedIn = !!req.auth;
   const isAPIAuthRoute = nextUrl.pathname.startsWith(apiAuthPrefix);
@@ -26,27 +19,34 @@ export default auth(async (req) => {
   const isAuthRoute = authRoutes.includes(nextUrl.pathname);
   const isValidationRoute = nextUrl.pathname.startsWith("/api/validate");
 
+  // Handle validation routes
   if (isValidationRoute) {
-    return;
-  }
-  if (isAPIAuthRoute) {
-    return;
+    return; // void instead of null
   }
 
+  // Handle API auth routes
+  if (isAPIAuthRoute) {
+    return; // void instead of null
+  }
+
+  // Handle auth routes (like sign-in, sign-up)
   if (isAuthRoute) {
     if (isLoggedIn) {
       return Response.redirect(new URL(DEFAULT_LOGIN_REDIRECT, nextUrl));
     }
-    return;
+    return; // void instead of null
   }
 
+  // Handle protected routes
   if (!isLoggedIn && !isPublicRoute) {
     const signInUrl = new URL("/sign-in", nextUrl);
-    // Optionally preserve the current URL as a redirect parameter
     signInUrl.searchParams.set("callbackUrl", nextUrl.pathname);
     return Response.redirect(signInUrl);
   }
-});
+
+  // Allow request to continue
+  return;
+}) as any; // Temporary type assertion if needed
 
 export const config = {
   matcher: [

@@ -6,4 +6,5 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  serverComponentsExternalPackages: ["winston"],
 };

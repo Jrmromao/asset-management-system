@@ -349,7 +349,6 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { modelSchema } from "@/lib/schemas";
 import { prisma } from "@/app/db";
-import logger from "@/lib/logger";
 
 type ModelSearchParams = {
   search?: string;
@@ -393,9 +392,6 @@ export async function insert(
         return { error: "A model with this number already exists" };
       }
     }
-    logger.error("Insert model error:", {
-      error: error instanceof Error ? error.message : String(error),
-    });
     return { error: "Failed to create model" };
   } finally {
     await prisma.$disconnect();
@@ -436,9 +432,6 @@ export async function getAll(
       data: parseStringify(models),
     };
   } catch (error) {
-    logger.error("Get all models error:", {
-      error: error instanceof Error ? error.message : String(error),
-    });
     return { error: "Failed to fetch models" };
   } finally {
     await prisma.$disconnect();
@@ -484,9 +477,6 @@ export async function getAllSimple(
       data: parseStringify(models),
     };
   } catch (error) {
-    logger.error("Get all simple models error:", {
-      error: error instanceof Error ? error.message : String(error),
-    });
     return { error: "Failed to fetch models" };
   } finally {
     await prisma.$disconnect();
@@ -537,10 +527,6 @@ export async function findById(id: string): Promise<ActionResponse<Model>> {
       data: parseStringify(model),
     };
   } catch (error) {
-    logger.error("Find model by id error:", {
-      error: error instanceof Error ? error.message : String(error),
-      modelId: id,
-    });
     return { error: "Failed to fetch model" };
   } finally {
     await prisma.$disconnect();

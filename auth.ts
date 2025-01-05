@@ -1,43 +1,39 @@
-import NextAuth from "next-auth"
-import authConfig from "./auth.config"
-import {findById} from "@/helpers/data";
+import NextAuth from "next-auth";
+import authConfig from "./auth.config";
+import { findById } from "@/helpers/data";
 
-export const {auth, handlers, signIn} = NextAuth({
-    session: {strategy: "jwt"},
-    callbacks: {
-        async signIn({user}) {
-            if (!user) return false
-            return await findById(user?.id!);
-        },
-
-        async jwt({token}) {
-
-            if (!token.sub)
-                return token
-
-            const existingUser = await findById(token.sub)
-            if (!existingUser)
-                return token
-
-            token.role = existingUser.role.name
-            token.companyId = existingUser.company.id
-
-            return token
-        },
-
-        async session({session, token}) {
-            if (token.sub && session.user) {
-                session.user.id = token.sub
-            }
-
-            if (token.role && session.user) {
-                session.user.companyId = token.companyId as string
-                session.user.role = token.role as string
-            }
-
-            return session
-        }
+export const { auth, handlers, signIn } = NextAuth({
+  session: { strategy: "jwt" },
+  providers: authConfig.providers, // Take just the providers from authConfig
+  callbacks: {
+    async signIn({ user }) {
+      if (!user) return false;
+      return await findById(user?.id!);
     },
-    ...authConfig
-})
 
+    async jwt({ token }) {
+      if (!token.sub) return token;
+
+      const existingUser = await findById(token.sub);
+      if (!existingUser) return token;
+
+      token.role = existingUser.role.name;
+      token.companyId = existingUser.company.id;
+
+      return token;
+    },
+
+    async session({ session, token }) {
+      if (token.sub && session.user) {
+        session.user.id = token.sub;
+      }
+
+      if (token.role && session.user) {
+        session.user.companyId = token.companyId as string;
+        session.user.role = token.role as string;
+      }
+
+      return session;
+    },
+  },
+});

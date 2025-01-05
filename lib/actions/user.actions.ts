@@ -5,7 +5,7 @@ import { parseStringify, validateEmail } from "@/lib/utils";
 import {
   forgetPasswordConfirm,
   forgetPasswordRequestCode,
-  signUp,
+  signUpUser,
   verifyCognitoAccount,
 } from "@/services/aws/Cognito";
 import {
@@ -21,16 +21,12 @@ import { AuthError } from "next-auth";
 import { getRoleById } from "@/lib/actions/role.actions";
 import { z } from "zod";
 import { prisma } from "@/app/db";
-import logger from "@/lib/logger";
 
 export async function login(
   values: z.infer<typeof loginSchema>,
 ): Promise<ActionResponse<void>> {
   const validation = loginSchema.safeParse(values);
   if (!validation.success) {
-    logger.warn("Login validation failed", {
-      issues: validation.error.issues,
-    });
     return { error: "Invalid email or password" };
   }
 
@@ -42,14 +38,9 @@ export async function login(
       password,
       redirect: false,
     });
-    logger.info("User logged in successfully", { email });
     return { success: true };
   } catch (error) {
     if (error instanceof AuthError) {
-      logger.error("Authentication error", {
-        type: error.type,
-        email,
-      });
       switch (error.type) {
         case "CredentialsSignin":
           return { error: "Invalid email or password" };
@@ -57,17 +48,12 @@ export async function login(
           return { error: "Something went wrong. Please try again later!" };
       }
     }
-    logger.error("Unexpected login error", {
-      error: error instanceof Error ? error.stack : String(error),
-      email,
-    });
     throw error;
   }
 }
 
 async function insertUser(data: RegUser, oauthId?: string) {
   if (!data.roleId) {
-    logger.error("Role ID missing in user creation");
     throw new Error("Role ID is required");
   }
 
@@ -85,16 +71,8 @@ async function insertUser(data: RegUser, oauthId?: string) {
         companyId: data.companyId,
       },
     });
-    logger.info("User inserted successfully", {
-      userId: user.id,
-      email: data.email,
-    });
     return user;
   } catch (error) {
-    logger.error("Error inserting user", {
-      error: error instanceof Error ? error.stack : String(error),
-      email: data.email,
-    });
     throw error;
   }
 }
@@ -105,19 +83,13 @@ export async function createUser(
   try {
     const validation = await userSchema.parseAsync(values);
 
-    console.log("------------------>>>>", values);
-
     const session = await auth();
     if (!session) {
-      logger.warn("Unauthorized attempt to create user");
       return { error: "Not authenticated" };
     }
 
     const role = await getRoleById(validation.roleId);
     if (!role?.data) {
-      logger.error("Role not found during user creation", {
-        roleId: validation.roleId,
-      });
       return { error: "Role not found" };
     }
 
@@ -141,25 +113,11 @@ export async function createUser(
       returnUser = await registerUser(user);
     }
 
-    logger.info("User created successfully", {
-      email: validation.email,
-      role: roleName,
-    });
-
     return { data: parseStringify(returnUser) };
   } catch (error) {
-    // Enhanced error handling
     if (error instanceof z.ZodError) {
-      logger.warn("User creation validation failed", {
-        issues: error.issues,
-      });
       return { error: error.message };
     }
-
-    logger.error("Error creating user", {
-      error: error instanceof Error ? error.stack : String(error),
-      email: values.email,
-    });
     return { error: "User creation failed" };
   }
 }
@@ -168,75 +126,35 @@ export async function registerUser(
   data: RegUser,
 ): Promise<ActionResponse<any>> {
   try {
-    // First try the Cognito signup
-    logger.info("Starting Cognito user registration", {
-      email: data.email,
-      companyId: data.companyId,
-    });
-
-    const cognitoRegisterResult = await signUp({
+    const cognitoRegisterResult = await signUpUser({
       email: data.email,
       password: data.password,
       companyId: data.companyId,
     });
 
     if (!cognitoRegisterResult || !cognitoRegisterResult.data.UserSub) {
-      logger.error("Cognito registration failed - no UserSub returned", {
-        email: data.email,
-      });
       return { error: "Cognito registration failed" };
     }
 
-    // Then verify role exists
-    logger.debug("Verifying admin role exists");
     const role = await prisma.role.findUnique({
       where: { name: "Admin" },
     });
 
     if (!role) {
-      logger.error("Admin role not found during user registration");
-      // TODO: Should clean up Cognito user here
       return { error: "Role not found" };
     }
-
-    // Finally create the user in the database
-    logger.debug("Creating user in database", {
-      email: data.email,
-      cognitoId: cognitoRegisterResult.data.UserSub,
-    });
 
     const user = await insertUser(data, cognitoRegisterResult.data.UserSub);
 
     if (!user) {
-      logger.error("Failed to insert user in database", {
-        email: data.email,
-        cognitoId: cognitoRegisterResult.data.UserSub,
-      });
-      // TODO: Should clean up Cognito user here
       return { error: "Failed to create user in database" };
     }
-
-    logger.info("User registered successfully", {
-      email: data.email,
-      userId: user.id,
-      cognitoId: cognitoRegisterResult.data.UserSub,
-    });
 
     return {
       success: true,
       data: parseStringify(cognitoRegisterResult),
     };
   } catch (error) {
-    logger.error("Error registering user", {
-      error: error instanceof Error ? error.stack : String(error),
-      email: data.email,
-      errorCode:
-        error instanceof Prisma.PrismaClientKnownRequestError
-          ? error.code
-          : undefined,
-    });
-
-    // Handle specific error cases
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       switch (error.code) {
         case "P2002":
@@ -257,24 +175,17 @@ export async function registerUser(
 export async function resendCode(email: string): Promise<ActionResponse<any>> {
   try {
     if (!validateEmail(email)) {
-      logger.warn("Invalid email format for code resend", { email });
       return { error: "Invalid email address" };
     }
 
     const user = await findByEmail(email);
     if (!user) {
-      logger.warn("Account not found for code resend", { email });
       return { error: "Your account does not exist" };
     }
 
     const result = await forgetPasswordRequestCode(email);
-    logger.info("Verification code resent successfully", { email });
     return { data: result };
   } catch (error) {
-    logger.error("Error resending code", {
-      error: error instanceof Error ? error.stack : String(error),
-      email,
-    });
     return { success: false, error: "Failed to resend code" };
   }
 }
@@ -285,21 +196,12 @@ export async function forgotPassword(
   try {
     const validation = forgotPasswordSchema.safeParse(values);
     if (!validation.success) {
-      logger.warn("Forgot password validation failed", {
-        issues: validation.error.issues,
-      });
       return { error: "Invalid email address" };
     }
 
     await forgetPasswordRequestCode(validation.data.email);
-    logger.info("Password reset code sent successfully", {
-      email: validation.data.email,
-    });
     return { success: true };
   } catch (error) {
-    logger.error("Error in forgot password process", {
-      error: error instanceof Error ? error.stack : String(error),
-    });
     return { error: "Failed to process forgot password request" };
   }
 }
@@ -310,9 +212,6 @@ export async function forgetPasswordConfirmDetails(
   try {
     const validation = forgotPasswordConfirmSchema.safeParse(values);
     if (!validation.success) {
-      logger.warn("Password reset confirmation validation failed", {
-        issues: validation.error.issues,
-      });
       return { error: "Invalid email, password or confirmation code" };
     }
 
@@ -323,12 +222,8 @@ export async function forgetPasswordConfirmDetails(
       code,
     );
 
-    logger.info("Password reset confirmed successfully", { email });
     return { data: parseStringify(result) };
   } catch (error) {
-    logger.error("Error confirming password reset", {
-      error: error instanceof Error ? error.stack : String(error),
-    });
     return { error: "Failed to confirm password reset" };
   }
 }
@@ -339,9 +234,6 @@ export async function verifyAccount(
   try {
     const validation = accountVerificationSchema.safeParse(values);
     if (!validation.success) {
-      logger.warn("Account verification validation failed", {
-        issues: validation.error.issues,
-      });
       return { error: "Invalid email or code" };
     }
 
@@ -355,12 +247,8 @@ export async function verifyAccount(
       verifyCognitoAccount(email, code),
     ]);
 
-    logger.info("Account verified successfully", { email });
     return { success: true };
   } catch (error) {
-    logger.error("Error verifying account", {
-      error: error instanceof Error ? error.stack : String(error),
-    });
     return { error: "Account could not be verified" };
   }
 }
@@ -369,7 +257,6 @@ export async function getAll(): Promise<ActionResponse<User[]>> {
   try {
     const session = await auth();
     if (!session) {
-      logger.warn("Unauthorized attempt to fetch all users");
       return { error: "Not authenticated" };
     }
 
@@ -386,15 +273,8 @@ export async function getAll(): Promise<ActionResponse<User[]>> {
       },
     });
 
-    logger.debug("Users fetched successfully", {
-      count: users.length,
-      companyId: session.user.companyId,
-    });
     return { data: parseStringify(users) };
   } catch (error) {
-    logger.error("Error fetching users", {
-      error: error instanceof Error ? error.stack : String(error),
-    });
     return { error: "Failed to fetch users" };
   }
 }
@@ -403,7 +283,6 @@ export async function findById(id: string): Promise<ActionResponse<User>> {
   try {
     const session = await auth();
     if (!session) {
-      logger.warn("Unauthorized attempt to find user by ID", { id });
       return { error: "Not authenticated" };
     }
 
@@ -426,25 +305,16 @@ export async function findById(id: string): Promise<ActionResponse<User>> {
           },
         },
         licenses: true,
-        // accessories: true,
         department: true,
       },
     });
 
-    console.log(user);
-
     if (!user) {
-      logger.warn("User not found", { id });
       return { error: "User not found" };
     }
 
-    logger.debug("User found successfully", { id });
     return { data: parseStringify(user) };
   } catch (error) {
-    logger.error("Error finding user by ID", {
-      error: error instanceof Error ? error.stack : String(error),
-      id,
-    });
     return { error: "Failed to fetch user" };
   }
 }
@@ -457,16 +327,8 @@ export async function findByEmail(
       where: { email },
     });
 
-    logger.debug("User search by email completed", {
-      found: !!user,
-      email,
-    });
     return { data: parseStringify(user) };
   } catch (error) {
-    logger.error("Error finding user by email", {
-      error: error instanceof Error ? error.stack : String(error),
-      email,
-    });
     return { error: "Failed to fetch user" };
   }
 }
@@ -478,7 +340,6 @@ export async function update(
   try {
     const session = await auth();
     if (!session) {
-      logger.warn("Unauthorized attempt to update user", { id });
       return { error: "Not authenticated" };
     }
 
@@ -495,28 +356,15 @@ export async function update(
       },
     });
 
-    logger.info("User updated successfully", {
-      id,
-      email: data.email,
-    });
-
     revalidatePath("/users");
     revalidatePath(`/users/${id}`);
     return { data: parseStringify(user) };
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       if (error.code === "P2002") {
-        logger.warn("Duplicate email during user update", {
-          id,
-          email: data.email,
-        });
         return { error: "Email already exists" };
       }
     }
-    logger.error("Error updating user", {
-      error: error instanceof Error ? error.stack : String(error),
-      id,
-    });
     return { error: "Failed to update user" };
   }
 }
@@ -525,7 +373,6 @@ export async function remove(id: string): Promise<ActionResponse<User>> {
   try {
     const session = await auth();
     if (!session) {
-      logger.warn("Unauthorized attempt to delete user", { id });
       return { error: "Not authenticated" };
     }
 
@@ -536,14 +383,9 @@ export async function remove(id: string): Promise<ActionResponse<User>> {
       },
     });
 
-    logger.info("User deleted successfully", { id });
     revalidatePath("/users");
     return { data: parseStringify(user) };
   } catch (error) {
-    logger.error("Error deleting user", {
-      error: error instanceof Error ? error.stack : String(error),
-      id,
-    });
     return { error: "Failed to delete user" };
   }
 }
