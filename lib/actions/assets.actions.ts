@@ -7,7 +7,7 @@ import { z } from "zod";
 import { assetSchema, assignmentSchema } from "@/lib/schemas";
 import { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
-import CO2Calculator, { CO2CalculationInput } from "@/services/ChatGPT";
+import CO2Calculator from "@/services/ChatGPT";
 
 // Common include object for consistent asset queries
 const assetIncludes = {
@@ -28,7 +28,6 @@ const assetIncludes = {
   AssetHistory: true,
 } as const;
 
-// Type for the API response
 type ApiResponse<T> = {
   data?: T;
   error?: string;
@@ -303,6 +302,8 @@ export async function processAssetsCSV(csvContent: string) {
           throw new Error("User not authenticated.");
         }
 
+        // TODO need to complete thi
+        console.log(item);
         const record = await tx.asset.create({
           data: {
             name: item["name"],
@@ -318,6 +319,7 @@ export async function processAssetsCSV(csvContent: string) {
             companyId: session?.user?.companyId,
             energyRating: item["energyRatting"],
             dailyOperatingHours: Number(item["dailyOperatingHours"]),
+            formTemplateId: item["formTemplateId"] || null,
           },
         });
         records.push(record);
@@ -381,6 +383,7 @@ export async function create(
 
   try {
     const validation = assetSchema.safeParse(values);
+
     if (!validation.success) {
       console.error("Validation errors:", validation.error.errors);
       return { error: validation.error.errors[0].message };
@@ -394,97 +397,114 @@ export async function create(
     });
 
     // TODO: please fix this
-    const co2Input: CO2CalculationInput = {
-      name: values.name,
-      // Add model information if available
-      // ...(values.model?.name && {
-      //   name: `${values.name} ${values.model.name}`,
-      // }),
-      // ...(values.category?.name && { category: values.category.name }),
-      // // Energy and operation details
-      // ...(values.energyRating && { energyRating: values.energyRating }),
-      // ...(values.dailyOperatingHours && {
-      //   dailyOperationHours: Number(values.dailyOperatingHours),
-      // }),
-      // // Physical properties
-      // ...(values.weight && { weight: Number(values.weight) }),
-      // ...(values.material && { material: values.material }),
-      // // Location and department
-      // ...(values.departmentLocation?.name && {
-      //   location: values.departmentLocation.name,
-      // }),
-      // ...(values.department?.name && {
-      //   department: values.department.name,
-      // }),
-      // // Financial information
-      // price: values.price,
-      // // Lifecycle information
-      // ...(values.endOfLife &&
-      //   values.purchaseDate && {
-      //     expectedLifespan: Math.ceil(
-      //       (values.endOfLife.getTime() - values.purchaseDate.getTime()) /
-      //         (1000 * 60 * 60 * 24 * 365),
-      //     ),
-      //   }),
-    };
+    // const co2Input: CO2CalculationInput = {
+    //   name: values.name,
+    //   // Add model information if available
+    //   ...(values.model?.name && {
+    //     name: `${values.name} ${values.model.name}`,
+    //   }),
+    //   ...(values.category?.name && { category: values.category.name }),
+    //   // Energy and operation details
+    //   ...(values.energyRating && { energyRating: values.energyRating }),
+    //   ...(values.dailyOperatingHours && {
+    //     dailyOperationHours: Number(values.dailyOperatingHours),
+    //   }),
+    //   // Physical properties
+    //   ...(values.weight && { weight: Number(values.weight) }),
+    //   ...(values.material && { material: values.material }),
+    //   // Location and department
+    //   ...(values.departmentLocation?.name && {
+    //     location: values.departmentLocation.name,
+    //   }),
+    //   ...(values.department?.name && {
+    //     department: values.department.name,
+    //   }),
+    //   // Financial information
+    //   price: values.price,
+    //   // Lifecycle information
+    //   ...(values.endOfLife &&
+    //     values.purchaseDate && {
+    //       expectedLifespan: Math.ceil(
+    //         (values.endOfLife.getTime() - values.purchaseDate.getTime()) /
+    //           (1000 * 60 * 60 * 24 * 365),
+    //       ),
+    //     }),
+    // };
 
     let co2Score: number | undefined;
     try {
-      const co2Result = await retryWithExponentialBackoff(
-        async () => await calculator.calculateCO2e(co2Input),
-        3, // 3 retry attempts
-        1000, // Start with 1 second delay
-        10000, // Max delay of 10 seconds
-      );
+      // const co2Result = await retryWithExponentialBackoff(
+      //   async () => await calculator.calculateCO2e(co2Input),
+      //   3, // 3 retry attempts
+      //   1000, // Start with 1-second delay
+      //   10000, // Max delay of 10 seconds
+      // );
 
-      co2Score = parseFloat(co2Result.CO2e);
+      // co2Score = parseFloat(co2Result.CO2e);
       console.log(`Successfully calculated CO2 score: ${co2Score}`);
     } catch (error) {
       console.error("Failed to calculate CO2 score after retries:", error);
       // Continue with asset creation even if CO2 calculation fails
     }
 
-    const newAsset = await prisma.asset.create({
-      data: {
-        name: values.name,
-        serialNumber: values.serialNumber,
-        material: values.material || "",
-        modelId: values.modelId,
-        endOfLife: values.endOfLife!,
-        licenseId: "cm559xnyw0001r7l4yhxbyncx",
-        statusLabelId: values.statusLabelId,
-        supplierId: values.supplierId,
-        companyId: session.user.companyId,
-        locationId: values.locationId,
-        departmentId: values.departmentId,
-        weight: values.weight || 90,
-        price: values.price,
-        poNumber: values.poNumber,
-        datePurchased: values.purchaseDate || new Date(),
-        inventoryId: values.inventoryId,
-        energyRating: values.energyRating || "",
-        dailyOperatingHours: Number(values.dailyOperatingHours),
-        formTemplateId: values.formTemplateId,
-        // co2Score, // Include the calculated CO2 score
-      },
-      include: assetIncludes,
+    // Use a transaction to ensure both asset creation and audit log are atomic
+    const result = await prisma.$transaction(async (tx) => {
+      const newAsset = await tx.asset.create({
+        data: {
+          name: values.name,
+          serialNumber: values.serialNumber,
+          material: values.material || "",
+          modelId: values.modelId,
+          endOfLife: values.endOfLife!,
+          licenseId: "cm559xnyw0001r7l4yhxbyncx",
+          statusLabelId: values.statusLabelId,
+          supplierId: values.supplierId,
+          companyId: session.user.companyId,
+          locationId: values.locationId,
+          departmentId: values.departmentId,
+          weight: values.weight || 90,
+          price: values.price,
+          poNumber: values.poNumber,
+          datePurchased: values.purchaseDate || new Date(),
+          inventoryId: values.inventoryId,
+          energyRating: values.energyRating || "",
+          dailyOperatingHours: Number(values.dailyOperatingHours),
+          formTemplateId: values.formTemplateId || null,
+          // co2Score, // Include the calculated CO2 score
+        },
+        include: assetIncludes,
+      });
+
+      // Create audit log entry
+      await tx.auditLog.create({
+        data: {
+          action: "ASSET_CREATED",
+          entity: "ASSET",
+          entityId: newAsset.id,
+          userId: session.user.id || "",
+          companyId: session.user.companyId,
+          details: `Created asset ${values.name} with serial number ${values.serialNumber}`,
+        },
+      });
+
+      if (values.formTemplateId && values.templateValues) {
+        await tx.formTemplateValue.createMany({
+          data: {
+            assetId: newAsset.id,
+            templateId: values.formTemplateId!,
+            values: values.templateValues,
+          },
+        });
+      }
+
+      return newAsset;
     });
 
-    if (!newAsset) {
+    if (!result) {
       return { error: "Failed to create asset" };
     }
 
-    if (values.formTemplateId && values.templateValues) {
-      await prisma.formTemplateValue.createMany({
-        data: {
-          assetId: newAsset.id,
-          templateId: values.formTemplateId!,
-          values: values.templateValues,
-        },
-      });
-    }
-
-    return { data: parseStringify(newAsset) };
+    return { data: parseStringify(result) };
   } catch (error) {
     console.error("Error creating asset:", error);
     if (error instanceof Prisma.PrismaClientKnownRequestError) {

@@ -42,6 +42,7 @@ model User {
   userKits      UserKit[]
   licenses      UserLicense[]
   UserAccessory UserAccessory[]
+  Co2eRecord    Co2eRecord[]
 
   @@unique([employeeId, companyId])
   @@index([companyId])
@@ -118,6 +119,7 @@ model Accessory {
   inventory          Inventory?          @relation(fields: [inventoryId], references: [id], onDelete: SetNull)
   UserAccessory      UserAccessory[]
   AccessoryStock     AccessoryStock[]
+  Co2eRecord         Co2eRecord[]
 
   @@index([companyId])
   @@index([categoryId])
@@ -420,6 +422,7 @@ model Asset {
   License      License?       @relation(fields: [licenseId], references: [id])
   licenseId    String?
   AssetHistory AssetHistory[]
+  Co2eRecord   Co2eRecord[]
 
   @@index([assigneeId])
   @@index([companyId])
@@ -497,25 +500,25 @@ model AuditLog {
   @@index([companyId])
 }
 
-// model Co2eRecord {
-//   id               String   @id @default(cuid())
-//   assetId          String?
-//   accessoryId      String
-//   userId           String?
-//   co2e             Float
-//   co2eType         String
-//   sourceOrActivity String
-//   createdAt        DateTime @default(now())
-//   updatedAt        DateTime @updatedAt
-//
-//   accessory Accessory @relation(fields: [accessoryId], references: [id], onDelete: Cascade)
-//   asset     Asset?    @relation(fields: [assetId], references: [id], onDelete: Cascade)
-//   user      User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
-//
-//   @@index([assetId])
-//   @@index([accessoryId])
-//   @@index([userId])
-// }
+model Co2eRecord {
+  id               String   @id @default(cuid())
+  itemId           String
+  itemType         String
+  userId           String?
+  co2e             Float
+  co2eType         String
+  sourceOrActivity String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  asset     Asset?     @relation(fields: [itemId], references: [id], onDelete: Cascade, map: "Co2eRecord_assetId_fkey")
+  accessory Accessory? @relation(fields: [itemId], references: [id], onDelete: Cascade, map: "Co2eRecord_accessoryId_fkey")
+  user      User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([itemId])
+  @@index([userId])
+  @@index([itemType])
+}
 
 // Track accessory stock movements
 model AccessoryStock {

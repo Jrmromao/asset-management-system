@@ -29,6 +29,13 @@ export const sidebarLinks = [
     label: "People",
     visibleTo: ["admin", "user"],
   },
+
+  {
+    imgURL: "/icons/reports.svg",
+    route: "/reports",
+    label: "Reports",
+    visibleTo: ["admin"],
+  },
   // {
   //     imgURL: "/icons/money-send.svg",
   //     route: "/kits",

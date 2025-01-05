@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+    <!-- Report page outline -->
+    <path d="M4.1665 2.5H15.8332C16.7172 2.5 17.4998 3.2826 17.4998 4.16667V15.8333C17.4998 16.7173 16.7172 17.4999 15.8332 17.4999H4.1665C3.28244 17.4999 2.49984 16.7173 2.49984 15.8333V4.16667C2.49984 3.2826 3.28244 2.5 4.1665 2.5Z"
+          stroke="#667085"
+          stroke-width="1.2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          fill="none"/>
+
+    <!-- Graph area (where the chart is plotted) -->
+    <path d="M5.83317 4.5H14.1665V14.1667H5.83317V4.5Z"
+          stroke="#667085"
+          stroke-width="1.2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          fill="none"/>
+
+    <!-- Graph lines (representing the data points of the graph) -->
+    <path d="M6.6665 12.5L7.49984 9.16667L8.33317 10.0001L9.1665 6.66667L10.0002 9.16667L10.8335 7.5L11.6668 10.8333L12.5 6.25"
+          stroke="#667085"
+          stroke-width="1.2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          fill="none"/>
+
+    <!-- X-axis and Y-axis lines -->
+    <path d="M5.83317 14.1667H14.1665"
+          stroke="#667085"
+          stroke-width="1.2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          fill="none"/>
+
+    <path d="M5.83317 4.5V14.1667"
+          stroke="#667085"
+          stroke-width="1.2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          fill="none"/>
+
+    <!-- X-axis Labels -->
+    <text x="6" y="15" font-size="1.2" fill="#667085" font-family="Arial, sans-serif" text-anchor="middle">Q1</text>
+    <text x="7.5" y="15" font-size="1.2" fill="#667085" font-family="Arial, sans-serif" text-anchor="middle">Q2</text>
+    <text x="9" y="15" font-size="1.2" fill="#667085" font-family="Arial, sans-serif" text-anchor="middle">Q3</text>
+    <text x="10.5" y="15" font-size="1.2" fill="#667085" font-family="Arial, sans-serif" text-anchor="middle">Q4</text>
+
+    <!-- Y-axis Labels (representing values) -->
+    <text x="5" y="4.9" font-size="1.2" fill="#667085" font-family="Arial, sans-serif" text-anchor="end">40</text>
+    <text x="5" y="7.2" font-size="1.2" fill="#667085" font-family="Arial, sans-serif" text-anchor="end">30</text>
+    <text x="5" y="9.5" font-size="1.2" fill="#667085" font-family="Arial, sans-serif" text-anchor="end">20</text>
+    <text x="5" y="11.8" font-size="1.2" fill="#667085" font-family="Arial, sans-serif" text-anchor="end">10</text>
+
+    <!-- Report Title -->
+    <text x="10" y="3" font-size="1.8" fill="#667085" font-family="Arial, sans-serif" text-anchor="middle">Report</text>
+</svg>
