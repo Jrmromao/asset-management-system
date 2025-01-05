@@ -99,94 +99,6 @@ async function insertUser(data: RegUser, oauthId?: string) {
   }
 }
 
-// async function findByEmployeeId(employeeId: string) {
-//   const session = await auth();
-//   if (!session) {
-//     logger.warn("Unauthorized attempt to find user by employee ID");
-//     return null;
-//   }
-//
-//   try {
-//     const user = await prisma.user.findFirst({
-//       where: {
-//         employeeId,
-//         companyId: session?.user.companyId,
-//       },
-//     });
-//     logger.debug("User search by employee ID completed", {
-//       found: !!user,
-//       employeeId,
-//     });
-//     return user;
-//   } catch (error) {
-//     logger.error("Error finding user by employee ID", {
-//       error: error instanceof Error ? error.stack : String(error),
-//       employeeId,
-//     });
-//     return null;
-//   }
-// }
-
-// export async function createUser(values: z.infer<typeof userSchema>): Promise<ActionResponse<any>> {
-//     try {
-//         const validation = userSchema.safeParse(values);
-//         if (!validation.success) {
-//             logger.warn('User creation validation failed', {
-//                 issues: validation.error.issues
-//             });
-//             return {error: validation.error.message};
-//         }
-//
-//         const session = await auth();
-//         if (!session) {
-//             logger.warn('Unauthorized attempt to create user');
-//             return {error: 'Not authenticated'};
-//         }
-//
-//         const role = await getRoleById(values.roleId);
-//         if (!role?.data) {
-//             logger.error('Role not found during user creation', {
-//                 roleId: values.roleId
-//             });
-//             return {error: 'Role not found'};
-//         }
-//
-//         const roleName = role.data.name;
-//
-//
-//         const user = {
-//             roleId: values.roleId,
-//             email: values.email!,
-//             password: process.env.DEFAULT_PASSWORD!,
-//             firstName: values.firstName,
-//             lastName: values.lastName,
-//             title: values.title,
-//             employeeId: values.employeeId,
-//             companyId: session.user.companyId,
-//         };
-//
-//         let returnUser;
-//         if (roleName === 'Lonee') {
-//             returnUser = await insertUser(user);
-//         } else {
-//             returnUser = await registerUser(user);
-//         }
-//
-//         logger.info('User created successfully', {
-//             email: values.email,
-//             role: roleName
-//         });
-//
-//         return {data: parseStringify(returnUser)};
-//     } catch (error) {
-//         logger.error('Error creating user', {
-//             error: error instanceof Error ? error.stack : String(error),
-//             email: values.email
-//         });
-//         return {error: 'User creation failed'};
-//     }
-// }
-
 export async function createUser(
   values: z.infer<typeof userSchema>,
 ): Promise<ActionResponse<any>> {
@@ -268,7 +180,7 @@ export async function registerUser(
       companyId: data.companyId,
     });
 
-    if (!cognitoRegisterResult || !cognitoRegisterResult.UserSub) {
+    if (!cognitoRegisterResult || !cognitoRegisterResult.data.UserSub) {
       logger.error("Cognito registration failed - no UserSub returned", {
         email: data.email,
       });
@@ -290,15 +202,15 @@ export async function registerUser(
     // Finally create the user in the database
     logger.debug("Creating user in database", {
       email: data.email,
-      cognitoId: cognitoRegisterResult.UserSub,
+      cognitoId: cognitoRegisterResult.data.UserSub,
     });
 
-    const user = await insertUser(data, cognitoRegisterResult.UserSub);
+    const user = await insertUser(data, cognitoRegisterResult.data.UserSub);
 
     if (!user) {
       logger.error("Failed to insert user in database", {
         email: data.email,
-        cognitoId: cognitoRegisterResult.UserSub,
+        cognitoId: cognitoRegisterResult.data.UserSub,
       });
       // TODO: Should clean up Cognito user here
       return { error: "Failed to create user in database" };
@@ -307,7 +219,7 @@ export async function registerUser(
     logger.info("User registered successfully", {
       email: data.email,
       userId: user.id,
-      cognitoId: cognitoRegisterResult.UserSub,
+      cognitoId: cognitoRegisterResult.data.UserSub,
     });
 
     return {
@@ -341,39 +253,6 @@ export async function registerUser(
     };
   }
 }
-
-// export async function registerUser(data: RegUser): Promise<ActionResponse<any>> {
-//     try {
-//         const cognitoRegisterResult = await signUp({
-//             email: data.email,
-//             password: data.password,
-//             companyId: data.companyId
-//         });
-//
-//         const role = await prisma.role.findUnique({
-//             where: {name: 'Admin'}
-//         });
-//
-//         if (!role) {
-//             logger.error('Admin role not found during user registration');
-//             return {error: 'Role not found'};
-//         }
-//
-//         const user = await insertUser(data, cognitoRegisterResult.UserSub);
-//         logger.info('User registered successfully', {
-//             email: data.email,
-//             userId: user.id
-//         });
-//
-//         return {data: parseStringify(cognitoRegisterResult)};
-//     } catch (error) {
-//         logger.error('Error registering user', {
-//             error: error instanceof Error ? error.stack : String(error),
-//             email: data.email
-//         });
-//         return {error: 'Registration failed'};
-//     }
-// }
 
 export async function resendCode(email: string): Promise<ActionResponse<any>> {
   try {
@@ -592,32 +471,6 @@ export async function findByEmail(
   }
 }
 
-export async function findByOAuth(
-  oauthId: string,
-): Promise<ActionResponse<User>> {
-  try {
-    const user = await prisma.user.findFirst({
-      where: { oauthId },
-      include: {
-        role: true,
-        company: true,
-      },
-    });
-
-    logger.debug("User search by OAuth ID completed", {
-      found: !!user,
-      oauthId,
-    });
-    return { data: parseStringify(user) };
-  } catch (error) {
-    logger.error("Error finding user by OAuth ID", {
-      error: error instanceof Error ? error.stack : String(error),
-      oauthId,
-    });
-    return { error: "Failed to fetch user" };
-  }
-}
-
 export async function update(
   id: string,
   data: User,
@@ -694,33 +547,3 @@ export async function remove(id: string): Promise<ActionResponse<User>> {
     return { error: "Failed to delete user" };
   }
 }
-
-// Helper function to handle transaction errors
-// async function handleTransaction<T>(
-//   operation: () => Promise<T>,
-//   errorMessage: string,
-//   context: Record<string, any> = {},
-// ): Promise<ActionResponse<T>> {
-//   try {
-//     const result = await operation();
-//     return { data: parseStringify(result) };
-//   } catch (error) {
-//     logger.error(errorMessage, {
-//       error: error instanceof Error ? error.stack : String(error),
-//       ...context,
-//     });
-//     return { error: errorMessage };
-//   }
-// }
-
-// Helper function to validate session
-// async function validateSession(
-//   operation: string,
-// ): Promise<{ session: any; error?: string }> {
-//   const session = await auth();
-//   if (!session) {
-//     logger.warn(`Unauthorized attempt: ${operation}`);
-//     return { session: null, error: "Not authenticated" };
-//   }
-//   return { session };
-// }
