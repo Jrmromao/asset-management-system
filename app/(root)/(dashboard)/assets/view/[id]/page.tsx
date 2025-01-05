@@ -20,7 +20,6 @@ import { useAssetStore } from "@/lib/stores/assetStore";
 import { DetailViewProps } from "@/components/shared/DetailView/types";
 import { checkin, checkout, findById } from "@/lib/actions/assets.actions";
 import ItemDetailsTabs from "@/components/shared/DetailsTabs/ItemDetailsTabs";
-import { useItemDetails } from "@/components/shared/DetailsTabs/useItemDetails";
 
 interface AssetPageProps {
   params: {
@@ -58,9 +57,11 @@ interface EnhancedAssetType {
     name: string;
     values: any[];
   };
+  auditLogs: AuditLog[];
   assigneeId?: string;
   createdAt: Date;
   updatedAt: Date;
+  assetHistory: AssetHistory[];
 }
 
 const UnassignModal = async () => {
@@ -83,18 +84,12 @@ export default function AssetPage({ params }: AssetPageProps) {
 
   const [asset, setAsset] = useState<EnhancedAssetType | undefined>();
 
-  const { relationships, attachments, isLoading } = useItemDetails({
-    itemId: id,
-    itemType: "asset",
-  });
-
   useEffect(() => {
     const fetchAsset = async () => {
       if (!id) return;
 
       try {
         const foundAssetResponse = await findById(id);
-
         if (!foundAssetResponse.error) {
           const foundAsset = foundAssetResponse.data;
           const allValues =
@@ -131,6 +126,8 @@ export default function AssetPage({ params }: AssetPageProps) {
               name: foundAsset?.formTemplate?.name ?? "",
               values: allValues ?? [],
             },
+            assetHistory: foundAsset?.assetHistory ?? [],
+            auditLogs: foundAsset?.auditLogs ?? [],
             assigneeId: foundAsset?.assigneeId ?? "",
             createdAt: foundAsset?.createdAt ?? new Date(),
             updatedAt: foundAsset?.updatedAt ?? new Date(),
@@ -166,6 +163,20 @@ export default function AssetPage({ params }: AssetPageProps) {
         );
 
         await checkin(asset.id);
+        const freshData = await findById(asset.id);
+        if (!freshData.error && freshData.data) {
+          // Add check for data existence
+          setAsset((prev) => {
+            if (!prev) return undefined;
+
+            return {
+              ...prev,
+              auditLogs: freshData?.data?.auditLogs ?? [],
+              assigneeId: undefined,
+              assignee: undefined,
+            };
+          });
+        }
         toast.success("Asset unassigned successfully");
       } catch (error) {
         setAsset(previousState);
@@ -339,9 +350,29 @@ export default function AssetPage({ params }: AssetPageProps) {
                   : undefined,
               );
             }}
-            onSuccess={() => {
+            onSuccess={async () => {
               toast.success("Asset assigned successfully");
               onAssignClose();
+
+              try {
+                const freshData = await findById(asset.id);
+                if (!freshData.error && freshData.data) {
+                  // Add check for data existence
+                  setAsset((prev) => {
+                    if (!prev) return undefined;
+
+                    return {
+                      ...prev,
+                      auditLogs: freshData?.data?.auditLogs ?? [],
+                      // Keep other optimistically updated fields
+                      assigneeId: prev.assigneeId,
+                      assignee: prev.assignee,
+                    };
+                  });
+                }
+              } catch (error) {
+                console.error("Error refreshing audit logs:", error);
+              }
             }}
             onError={(previousData) => {
               if (previousData) {
@@ -365,20 +396,8 @@ export default function AssetPage({ params }: AssetPageProps) {
       <div className="mt-5 ">
         <ItemDetailsTabs
           itemId={id}
-          itemType="license"
-          relationships={relationships}
-          attachments={attachments}
-          // customTabs={{
-          //     inventory: {
-          //         label: "Inventory",
-          //         icon: <BoxIcon className="h-4 w-4"/>,
-          //         content: (
-          //             <div>
-          //                 {/* Custom inventory content */}
-          //             </div>
-          //         )
-          //     }
-          // }}
+          itemType="asset"
+          auditLogs={asset?.auditLogs}
         />
       </div>
     </>

@@ -8,6 +8,7 @@ import { assetSchema, assignmentSchema } from "@/lib/schemas";
 import { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import CO2Calculator from "@/services/ChatGPT";
+import { getIpAddress } from "@/utils/getIpAddress";
 
 // Common include object for consistent asset queries
 const assetIncludes = {
@@ -59,18 +60,34 @@ export async function findById(id: string): Promise<ApiResponse<Asset>> {
       return { error: "Asset ID is required" };
     }
 
-    const asset = await prisma.asset.findFirst({
-      include: assetIncludes,
-      where: { id },
-    });
+    const [asset, auditLogs] = await Promise.all([
+      prisma.asset.findFirst({
+        include: assetIncludes,
+        where: { id },
+      }),
+      prisma.auditLog.findMany({
+        where: {
+          entityId: id,
+          entity: "ASSET",
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      }),
+    ]);
 
-    console.log(asset);
+    console.log(auditLogs);
 
     if (!asset) {
       return { error: "Asset not found" };
     }
 
-    return { data: parseStringify(asset) };
+    return {
+      data: parseStringify({
+        ...asset,
+        auditLogs: auditLogs ? auditLogs : [],
+      }),
+    };
   } catch (error) {
     console.error("Error finding asset:", error);
     return { error: "Failed to find asset" };
@@ -83,11 +100,36 @@ export async function remove(id: string): Promise<ApiResponse<Asset>> {
       return { error: "Asset ID is required" };
     }
 
-    const asset = await prisma.asset.delete({
-      where: { id },
-    });
+    const [asset, auditLogs] = await Promise.all([
+      prisma.asset.findFirst({
+        include: assetIncludes,
+        where: { id },
+      }),
+      prisma.auditLog.findMany({
+        where: {
+          entityId: id,
+          entity: "ASSET",
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      }),
+    ]);
 
-    return { data: parseStringify(asset) };
+    if (!asset) {
+      return { error: "Asset not found" };
+    }
+
+    const computedAsset = {
+      ...asset,
+      auditLogs,
+    };
+    return {
+      data: parseStringify({
+        ...asset,
+        auditLogs: auditLogs ? auditLogs : [],
+      }),
+    };
   } catch (error) {
     console.error("Error deleting asset:", error);
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
@@ -173,9 +215,9 @@ export async function checkout(
       await tx.auditLog.create({
         data: {
           action: "ASSET_CHECKOUT",
-          entity: "Asset",
+          entity: "ASSET",
           entityId: values.itemId,
-          details: `Asset ${values.itemId} checked out to user ${values.userId}`,
+          details: `Asset checkout completed`,
           userId: values.userId,
           companyId: updatedAsset.companyId,
           dataAccessed: {
@@ -245,7 +287,7 @@ export async function checkin(assetId: string): Promise<ApiResponse<Asset>> {
       await tx.auditLog.create({
         data: {
           action: "ASSET_CHECKIN",
-          entity: "Asset",
+          entity: "ASSET",
           entityId: assetId,
           details: currentAsset.assigneeId
             ? `Asset ${assetId} checked in from user ${currentAsset.assigneeId}`
@@ -484,6 +526,7 @@ export async function create(
           userId: session.user.id || "",
           companyId: session.user.companyId,
           details: `Created asset ${values.name} with serial number ${values.serialNumber}`,
+          ipAddress: getIpAddress(),
         },
       });
 

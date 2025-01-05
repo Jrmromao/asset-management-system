@@ -27,6 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Card } from "@/components/ui/card";
 import TableSkeleton from "@/components/tables/TableSkeleton";
 
 interface DataTableProps<TData, TValue> {
@@ -82,8 +83,9 @@ export function DataTable<TData, TValue>({
   }
 
   return (
-    <div>
-      <div className="rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+    <div className="w-full">
+      {/* Desktop View */}
+      <div className="hidden md:block rounded-lg border border-slate-200 shadow-sm overflow-hidden">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -137,8 +139,43 @@ export function DataTable<TData, TValue>({
         </Table>
       </div>
 
-      <div className="flex items-center justify-between py-4 px-2">
-        <div className="flex items-center gap-4 text-sm text-slate-600">
+      {/* Mobile Card View */}
+      <div className="md:hidden space-y-4">
+        {hasRows ? (
+          rows.map((row) => (
+            <Card key={row.id} className="p-4 bg-white shadow-sm">
+              <div className="space-y-3">
+                {row.getVisibleCells().map((cell) => {
+                  const header = cell.column.columnDef.header as string;
+                  return (
+                    <div
+                      key={cell.id}
+                      className="flex justify-between items-center gap-2"
+                    >
+                      <span className="text-xs font-medium text-slate-600">
+                        {header}
+                      </span>
+                      <span className="text-sm text-slate-700 text-right">
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext(),
+                        )}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </Card>
+          ))
+        ) : (
+          <div className="text-center text-sm text-slate-600 py-8">
+            No results.
+          </div>
+        )}
+      </div>
+
+      <div className="flex flex-col md:flex-row md:items-center justify-between py-4 px-2 gap-4">
+        <div className="flex flex-col md:flex-row md:items-center gap-4 text-sm text-slate-600">
           <div className="flex items-center gap-2">
             <span>Rows per page</span>
             <Select

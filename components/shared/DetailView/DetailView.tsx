@@ -144,7 +144,6 @@ export const DetailView: React.FC<DetailViewProps> = ({
             </div>
 
             {/* QR Code */}
-
             <div className="p-4 flex items-center justify-center">{qrCode}</div>
           </div>
           <CustomFormGrid formValues={customFormFields as FormValue[]} />

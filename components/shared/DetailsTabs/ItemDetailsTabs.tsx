@@ -126,22 +126,24 @@ const ItemDetailsTabs = ({
               <ClockIcon className="h-4 w-4" />
               History
             </TabsTrigger>
-            <TabsTrigger
-              value="used-by"
-              className={cn(
-                "flex items-center gap-2 px-6 py-3 rounded-none border-b-2 border-transparent",
-                "data-[state=active]:border-blue-600 data-[state=active]:text-blue-600",
-                "hover:text-blue-600 transition-colors",
-              )}
-            >
-              <UserIcon className="h-4 w-4" />
-              <span>Used By</span>
-              {relationships.length > 0 && (
-                <span className="ml-1.5 px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded-full">
-                  {relationships.length}
-                </span>
-              )}
-            </TabsTrigger>
+            {itemType != "asset" && (
+              <TabsTrigger
+                value="used-by"
+                className={cn(
+                  "flex items-center gap-2 px-6 py-3 rounded-none border-b-2 border-transparent",
+                  "data-[state=active]:border-blue-600 data-[state=active]:text-blue-600",
+                  "hover:text-blue-600 transition-colors",
+                )}
+              >
+                <UserIcon className="h-4 w-4" />
+                <span>Used By</span>
+                {relationships.length > 0 && (
+                  <span className="ml-1.5 px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded-full">
+                    {relationships.length}
+                  </span>
+                )}
+              </TabsTrigger>
+            )}
             {Object.entries(customTabs).map(([key, tab]) => (
               <TabsTrigger
                 key={key}
@@ -158,7 +160,6 @@ const ItemDetailsTabs = ({
             ))}
           </TabsList>
         </div>
-
         <TabsContent value="history" className="pt-4">
           {auditLogs?.length > 0 ? (
             <div className="rounded-lg border bg-white mr-3 ml-3 mb-6">
