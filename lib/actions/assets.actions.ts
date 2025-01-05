@@ -7,6 +7,7 @@ import { z } from "zod";
 import { assetSchema, assignmentSchema } from "@/lib/schemas";
 import { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
+import CO2Calculator, { CO2CalculationInput } from "@/services/ChatGPT";
 
 // Common include object for consistent asset queries
 const assetIncludes = {
@@ -32,72 +33,6 @@ type ApiResponse<T> = {
   data?: T;
   error?: string;
 };
-
-export async function create(
-  values: z.infer<typeof assetSchema>,
-): Promise<ApiResponse<Asset>> {
-  try {
-    const session = await auth();
-    if (!session?.user?.companyId) {
-      return { error: "Unauthorized access" };
-    }
-
-    const validation = assetSchema.safeParse(values);
-    if (!validation.success) {
-      console.error("Validation errors:", validation.error.errors);
-      return { error: validation.error.errors[0].message };
-    }
-
-    const newAsset = await prisma.asset.create({
-      data: {
-        name: values.name,
-        serialNumber: values.serialNumber,
-        material: values.material || "",
-        modelId: values.modelId,
-        endOfLife: values.endOfLife!,
-        licenseId: "cm559xnyw0001r7l4yhxbyncx",
-        statusLabelId: values.statusLabelId,
-        supplierId: values.supplierId,
-        companyId: session.user.companyId,
-        locationId: values.locationId,
-        departmentId: values.departmentId,
-        weight: values.weight || 90,
-        price: values.price,
-        poNumber: values.poNumber,
-        datePurchased: values.purchaseDate || new Date(),
-        inventoryId: values.inventoryId,
-        energyRating: values.energyRating || "",
-        dailyOperatingHours: Number(values.dailyOperatingHours),
-        formTemplateId: values.formTemplateId,
-      },
-      include: assetIncludes,
-    });
-
-    if (!newAsset) {
-      return { error: "Failed to create asset" };
-    }
-
-    if (values.formTemplateId && values.templateValues) {
-      await prisma.formTemplateValue.createMany({
-        data: {
-          assetId: newAsset.id,
-          templateId: values.formTemplateId!,
-          values: values.templateValues,
-        },
-      });
-    }
-
-    return { data: parseStringify(newAsset) };
-  } catch (error) {
-    console.error("Error creating asset:", error);
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === "P2002") {
-        return { error: "Serial number already exists" };
-      }
-    }
-    return { error: "Failed to create asset" };
-  }
-}
 
 export async function get(): Promise<ApiResponse<Asset[]>> {
   try {
@@ -405,5 +340,158 @@ export async function processAssetsCSV(csvContent: string) {
       message:
         error instanceof Error ? error.message : "Failed to process CSV file",
     };
+  }
+}
+
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+async function retryWithExponentialBackoff<T>(
+  operation: () => Promise<T>,
+  retryCount = 1,
+  initialDelay = 1000,
+  maxDelay = 10000,
+): Promise<T> {
+  let currentTry = 0;
+  let delay = initialDelay;
+
+  while (true) {
+    try {
+      return await operation();
+    } catch (error) {
+      currentTry++;
+      if (currentTry >= retryCount) {
+        throw error;
+      }
+      delay = Math.min(delay * 2, maxDelay);
+      console.log(
+        `Retry attempt ${currentTry} for CO2 calculation. Waiting ${delay}ms...`,
+      );
+      await wait(delay);
+    }
+  }
+}
+
+export async function create(
+  values: z.infer<typeof assetSchema>,
+): Promise<ApiResponse<Asset>> {
+  const session = await auth();
+  if (!session?.user) {
+    return { error: "Unauthorized access" };
+  }
+
+  try {
+    const validation = assetSchema.safeParse(values);
+    if (!validation.success) {
+      console.error("Validation errors:", validation.error.errors);
+      return { error: validation.error.errors[0].message };
+    }
+
+    const calculator = new CO2Calculator({
+      openai: {
+        apiKey: process.env.OPENAI_API_KEY!,
+        model: "gpt-4",
+      },
+    });
+
+    // TODO: please fix this
+    const co2Input: CO2CalculationInput = {
+      name: values.name,
+      // Add model information if available
+      // ...(values.model?.name && {
+      //   name: `${values.name} ${values.model.name}`,
+      // }),
+      // ...(values.category?.name && { category: values.category.name }),
+      // // Energy and operation details
+      // ...(values.energyRating && { energyRating: values.energyRating }),
+      // ...(values.dailyOperatingHours && {
+      //   dailyOperationHours: Number(values.dailyOperatingHours),
+      // }),
+      // // Physical properties
+      // ...(values.weight && { weight: Number(values.weight) }),
+      // ...(values.material && { material: values.material }),
+      // // Location and department
+      // ...(values.departmentLocation?.name && {
+      //   location: values.departmentLocation.name,
+      // }),
+      // ...(values.department?.name && {
+      //   department: values.department.name,
+      // }),
+      // // Financial information
+      // price: values.price,
+      // // Lifecycle information
+      // ...(values.endOfLife &&
+      //   values.purchaseDate && {
+      //     expectedLifespan: Math.ceil(
+      //       (values.endOfLife.getTime() - values.purchaseDate.getTime()) /
+      //         (1000 * 60 * 60 * 24 * 365),
+      //     ),
+      //   }),
+    };
+
+    let co2Score: number | undefined;
+    try {
+      const co2Result = await retryWithExponentialBackoff(
+        async () => await calculator.calculateCO2e(co2Input),
+        3, // 3 retry attempts
+        1000, // Start with 1 second delay
+        10000, // Max delay of 10 seconds
+      );
+
+      co2Score = parseFloat(co2Result.CO2e);
+      console.log(`Successfully calculated CO2 score: ${co2Score}`);
+    } catch (error) {
+      console.error("Failed to calculate CO2 score after retries:", error);
+      // Continue with asset creation even if CO2 calculation fails
+    }
+
+    const newAsset = await prisma.asset.create({
+      data: {
+        name: values.name,
+        serialNumber: values.serialNumber,
+        material: values.material || "",
+        modelId: values.modelId,
+        endOfLife: values.endOfLife!,
+        licenseId: "cm559xnyw0001r7l4yhxbyncx",
+        statusLabelId: values.statusLabelId,
+        supplierId: values.supplierId,
+        companyId: session.user.companyId,
+        locationId: values.locationId,
+        departmentId: values.departmentId,
+        weight: values.weight || 90,
+        price: values.price,
+        poNumber: values.poNumber,
+        datePurchased: values.purchaseDate || new Date(),
+        inventoryId: values.inventoryId,
+        energyRating: values.energyRating || "",
+        dailyOperatingHours: Number(values.dailyOperatingHours),
+        formTemplateId: values.formTemplateId,
+        // co2Score, // Include the calculated CO2 score
+      },
+      include: assetIncludes,
+    });
+
+    if (!newAsset) {
+      return { error: "Failed to create asset" };
+    }
+
+    if (values.formTemplateId && values.templateValues) {
+      await prisma.formTemplateValue.createMany({
+        data: {
+          assetId: newAsset.id,
+          templateId: values.formTemplateId!,
+          values: values.templateValues,
+        },
+      });
+    }
+
+    return { data: parseStringify(newAsset) };
+  } catch (error) {
+    console.error("Error creating asset:", error);
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === "P2002") {
+        return { error: "Serial number already exists" };
+      }
+    }
+    return { error: "Failed to create asset" };
   }
 }

@@ -1,6 +1,7 @@
 import MobileNav from "@/components/MobileNav";
 import Sidebar from "@/components/Sidebar";
-import Image from "next/image";
+import React from "react";
+import HeaderIcon from "@/components/page/HeaderIcon";
 
 export default async function RootLayout({
   children,
@@ -12,7 +13,7 @@ export default async function RootLayout({
       <Sidebar key={"jhvbjhvjhvbj"} />
       <div className="flex size-full flex-col">
         <div className="root-layout">
-          <Image src={"/icons/logo2.png"} width={30} height={30} alt="Logo" />
+          <HeaderIcon />
           <div>
             <MobileNav />
           </div>

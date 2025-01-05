@@ -16,9 +16,9 @@ const ibmPlexSerif = IBM_Plex_Serif({
 export const metadata: Metadata = {
   title: "Asset Management System",
   description: "Manage your assets with our asset management system",
-  icons: {
-    icon: "/icons/logo.svg",
-  },
+  // icons: {
+  //   icon: "/icons/logo.svg",
+  // },
 };
 
 export default async function RootLayout({
