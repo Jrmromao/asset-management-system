@@ -113,6 +113,10 @@ const AuthForm = () => {
                   setRecaptchaToken(token);
                   setError("");
                 }}
+                onExpire={() => {
+                  setRecaptchaToken(""); // Clear the token when expired
+                  setError("ReCAPTCHA has expired. Please verify again.");
+                }}
               />
               <FormError message={error} />
               <div className={"flex flex-col gap-4"}>

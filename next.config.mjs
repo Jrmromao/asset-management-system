@@ -6,5 +6,6 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  domains: ["www.google.com", "www.gstatic.com"],
   serverComponentsExternalPackages: ["winston"],
 };

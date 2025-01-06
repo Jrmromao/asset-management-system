@@ -151,7 +151,7 @@ const RegisterForm = () => {
                       form.clearErrors("recaptchaToken");
                     }}
                     onExpire={() => {
-                      form.setValue("recaptchaToken", "");
+                      form.setValue("recaptchaToken", ""); // Clear the token when expired
                       form.setError("recaptchaToken", {
                         type: "manual",
                         message: "reCAPTCHA has expired, please verify again",

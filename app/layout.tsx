@@ -16,9 +16,6 @@ const ibmPlexSerif = IBM_Plex_Serif({
 export const metadata: Metadata = {
   title: "Asset Management System",
   description: "Manage your assets with our asset management system",
-  // icons: {
-  //   icon: "/icons/logo.svg",
-  // },
 };
 
 export default async function RootLayout({
@@ -28,6 +25,18 @@ export default async function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <link
+          rel="preconnect"
+          href="https://www.google.com"
+          crossOrigin="anonymous"
+        />
+        <link
+          rel="preconnect"
+          href="https://www.gstatic.com"
+          crossOrigin="anonymous"
+        />
+      </head>
       <body className={`${inter.variable} ${ibmPlexSerif.variable}`}>
         <ClientLayout>{children}</ClientLayout>
       </body>
