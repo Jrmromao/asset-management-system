@@ -168,7 +168,7 @@ export const registerSchema = z
           return !data.exists;
         } catch (error) {
           console.error("Email validation error:", error);
-          throw new Error("Email validation failed");
+          // throw new Error("Email validation failed");
         }
       }, "Email already exists"),
     password: passwordSchema,

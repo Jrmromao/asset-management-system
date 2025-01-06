@@ -194,7 +194,8 @@ export async function assignLicense(
   values: z.infer<typeof assignmentSchema>,
 ): Promise<ApiResponse<UserLicense>> {
   try {
-    const validation = assignmentSchema.safeParse(values);
+    const validation = await assignmentSchema.safeParseAsync(values);
+
     if (!validation.success) {
       return { error: validation.error.errors[0].message };
     }

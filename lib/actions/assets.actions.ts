@@ -76,8 +76,6 @@ export async function findById(id: string): Promise<ApiResponse<Asset>> {
       }),
     ]);
 
-    console.log(auditLogs);
-
     if (!asset) {
       return { error: "Asset not found" };
     }
@@ -344,8 +342,6 @@ export async function processAssetsCSV(csvContent: string) {
           throw new Error("User not authenticated.");
         }
 
-        // TODO need to complete thi
-        console.log(item);
         const record = await tx.asset.create({
           data: {
             name: item["name"],
@@ -498,7 +494,6 @@ export async function create(
           material: values.material || "",
           modelId: values.modelId,
           endOfLife: values.endOfLife!,
-          licenseId: "cm559xnyw0001r7l4yhxbyncx",
           statusLabelId: values.statusLabelId,
           supplierId: values.supplierId,
           companyId: session.user.companyId,

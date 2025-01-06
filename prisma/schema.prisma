@@ -74,16 +74,15 @@ model License {
 
   // Relations
   company            Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  assets             Asset[]
   statusLabel        StatusLabel?        @relation(fields: [statusLabelId], references: [id], onDelete: SetNull)
   supplier           Supplier?           @relation(fields: [supplierId], references: [id], onDelete: SetNull)
   department         Department?         @relation(fields: [departmentId], references: [id], onDelete: SetNull)
   departmentLocation DepartmentLocation? @relation(fields: [locationId], references: [id], onDelete: SetNull)
   inventory          Inventory?          @relation(fields: [inventoryId], references: [id], onDelete: SetNull)
-  users              UserLicense[] // New relation
+  users              UserLicense[]
 
-  // @@unique([licenseKey], map: "Unique_License_LicenseKey_Composite")
   LicenseSeat LicenseSeat[]
+  Asset       Asset[]
 }
 
 model Accessory {
@@ -413,14 +412,13 @@ model Asset {
   department         Department?         @relation(fields: [departmentId], references: [id], onDelete: SetNull)
   departmentLocation DepartmentLocation? @relation(fields: [locationId], references: [id], onDelete: SetNull)
   inventory          Inventory?          @relation(fields: [inventoryId], references: [id], onDelete: SetNull)
-  // co2eRecords  Co2eRecord[]
   formTemplateId     String?
   formTemplate       FormTemplate?       @relation(fields: [formTemplateId], references: [id], onDelete: SetNull)
   formTemplateValues FormTemplateValue[] // Changed from FormTemplateValue to formTemplateValues
 
   transactions Transaction[]
-  License      License?       @relation(fields: [licenseId], references: [id])
   licenseId    String?
+  License      License?       @relation(fields: [licenseId], references: [id])
   AssetHistory AssetHistory[]
   Co2eRecord   Co2eRecord[]
 
