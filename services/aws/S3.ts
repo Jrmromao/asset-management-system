@@ -1,114 +1,199 @@
-import AWS from "aws-sdk";
+import {
+  type _Object,
+  type BucketLocationConstraint,
+  type CompleteMultipartUploadCommandOutput,
+  CreateBucketCommand,
+  type CreateBucketCommandInput,
+  DeleteObjectCommand,
+  DeleteObjectsCommand,
+  GetObjectCommand,
+  type GetObjectCommandOutput,
+  HeadBucketCommand,
+  ListObjectsV2Command,
+  PutBucketEncryptionCommand,
+  PutPublicAccessBlockCommand,
+  S3Client,
+  type S3ClientConfig,
+} from "@aws-sdk/client-s3";
+import { Upload } from "@aws-sdk/lib-storage";
 import https from "https";
 
-export default class S3 {
-  private static instance: S3;
-  private s3: AWS.S3;
-  private readonly bucketPrefix: string = "company-";
+class S3Service {
+  private static instance: S3Service;
+  private s3Client: S3Client;
+  private readonly mainBucketName: string;
+  private readonly env: string;
 
   private constructor() {
-    this.s3 = new AWS.S3({
-      // Force SSL/TLS for all operations
-      sslEnabled: true,
-      // Enforce minimum TLS version
-      httpOptions: {
-        agent: new https.Agent({
-          secureProtocol: "TLSv1_2_method",
-          minVersion: "TLSv1.2",
-        }),
+    this.env = process.env.NODE_ENV || "development";
+    this.mainBucketName = `${this.env}-ecokeepr`;
+
+    const clientConfig: S3ClientConfig = {
+      credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID as string,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY as string,
       },
-    });
+      region: process.env.AWS_REGION as string,
+      requestHandler: {
+        httpOptions: {
+          agent: new https.Agent({
+            secureProtocol: "TLSv1_2_method",
+            minVersion: "TLSv1.2",
+          }),
+        },
+      },
+    };
+
+    this.s3Client = new S3Client(clientConfig);
   }
 
-  public static getInstance(): S3 {
-    if (!S3.instance) {
-      S3.instance = new S3();
+  public static getInstance(): S3Service {
+    if (!S3Service.instance) {
+      S3Service.instance = new S3Service();
     }
-    return S3.instance;
+    return S3Service.instance;
   }
 
-  /**
-   * Creates a new S3 bucket for a company with proper encryption settings
-   * @param companyId - Unique identifier for the company
-   * @returns Promise<string> - Returns the bucket name if successful
-   */
-  public async createCompanyBucket(companyId: string): Promise<string> {
-    const bucketName = this.generateBucketName(companyId);
+  private async ensureMainBucketExists(): Promise<void> {
+    console.log(`Checking if bucket exists: ${this.mainBucketName}`);
 
     try {
-      await this.s3
-        .createBucket({
-          Bucket: bucketName,
-          // Optionally specify a region
-          // CreateBucketConfiguration: { LocationConstraint: 'eu-west-1' }
-        })
-        .promise();
+      // Check if bucket exists
+      await this.s3Client.send(
+        new HeadBucketCommand({
+          Bucket: this.mainBucketName,
+        }),
+      );
+      console.log(`Bucket ${this.mainBucketName} exists`);
+    } catch (error: any) {
+      if (
+        error.$metadata?.httpStatusCode === 404 ||
+        error.name === "NotFound" ||
+        error.name === "NoSuchBucket"
+      ) {
+        console.log(`Bucket ${this.mainBucketName} not found, creating...`);
+        try {
+          // Create bucket configuration
+          const createBucketCommand: CreateBucketCommandInput = {
+            Bucket: this.mainBucketName,
+          };
 
-      // Enable server-side encryption by default for all objects in the bucket
-      await this.s3
-        .putBucketEncryption({
-          Bucket: bucketName,
-          ServerSideEncryptionConfiguration: {
-            Rules: [
-              {
-                ApplyServerSideEncryptionByDefault: {
-                  SSEAlgorithm: "AES256",
-                },
+          // Only add LocationConstraint if not in us-east-1
+          if (process.env.AWS_REGION !== "us-east-1") {
+            createBucketCommand.CreateBucketConfiguration = {
+              LocationConstraint: process.env
+                .AWS_REGION as BucketLocationConstraint,
+            };
+          }
+
+          // Create the bucket
+          const createResult = await this.s3Client.send(
+            new CreateBucketCommand(createBucketCommand),
+          );
+          console.log("Bucket created:", createResult);
+
+          // Configure encryption
+          await this.s3Client.send(
+            new PutBucketEncryptionCommand({
+              Bucket: this.mainBucketName,
+              ServerSideEncryptionConfiguration: {
+                Rules: [
+                  {
+                    ApplyServerSideEncryptionByDefault: {
+                      SSEAlgorithm: "AES256",
+                    },
+                  },
+                ],
               },
-            ],
-          },
-        })
-        .promise();
+            }),
+          );
+          console.log("Bucket encryption configured");
 
-      // Block public access to the bucket
-      await this.s3
-        .putPublicAccessBlock({
-          Bucket: bucketName,
-          PublicAccessBlockConfiguration: {
-            BlockPublicAcls: true,
-            BlockPublicPolicy: true,
-            IgnorePublicAcls: true,
-            RestrictPublicBuckets: true,
-          },
-        })
-        .promise();
+          // Configure public access block
+          await this.s3Client.send(
+            new PutPublicAccessBlockCommand({
+              Bucket: this.mainBucketName,
+              PublicAccessBlockConfiguration: {
+                BlockPublicAcls: true,
+                BlockPublicPolicy: true,
+                IgnorePublicAcls: true,
+                RestrictPublicBuckets: true,
+              },
+            }),
+          );
+          console.log("Public access block configured");
+        } catch (createError: any) {
+          console.error("Failed to create bucket:", {
+            name: createError.name,
+            message: createError.message,
+            code: createError.$metadata?.httpStatusCode,
+          });
+          throw createError;
+        }
+      } else {
+        console.error("Unexpected error checking bucket:", {
+          name: error.name,
+          message: error.message,
+          code: error.$metadata?.httpStatusCode,
+        });
+        throw error;
+      }
+    }
+  }
 
-      return bucketName;
+  private getCompanyPrefix(companyId: string): string {
+    return `companies/${companyId}/`;
+  }
+
+  public async initializeCompanyStorage(companyId: string): Promise<void> {
+    console.log(`Initializing storage for company: ${companyId}`);
+    try {
+      await this.ensureMainBucketExists();
+      const prefix = this.getCompanyPrefix(companyId);
+
+      // Create a dummy file to establish the prefix
+      await this.uploadFile(
+        companyId,
+        ".init",
+        Buffer.from(""),
+        "application/json",
+      );
+      console.log("Company storage initialized");
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";
       throw new Error(
-        `Failed to create bucket for company ${companyId}: ${errorMessage}`,
+        `Failed to initialize storage for company ${companyId}: ${errorMessage}`,
       );
     }
   }
 
-  /**
-   * Uploads a file to a company's bucket with encryption
-   * @param companyId - Company identifier
-   * @param key - File key/path in the bucket
-   * @param data - File data to upload
-   * @param contentType - MIME type of the file
-   */
   public async uploadFile(
     companyId: string,
     key: string,
     data: Buffer | Uint8Array | string,
     contentType: string,
-  ): Promise<AWS.S3.ManagedUpload.SendData> {
-    const bucketName = this.generateBucketName(companyId);
-
+  ): Promise<CompleteMultipartUploadCommandOutput> {
+    console.log(`Uploading file for company ${companyId}, key: ${key}`);
     try {
-      return await this.s3
-        .upload({
-          Bucket: bucketName,
-          Key: key,
+      await this.ensureMainBucketExists();
+      const prefix = this.getCompanyPrefix(companyId);
+      const fullKey = `${prefix}${key}`;
+
+      const upload = new Upload({
+        client: this.s3Client,
+        params: {
+          Bucket: this.mainBucketName,
+          Key: fullKey,
           Body: data,
           ContentType: contentType,
-          // Ensure encryption in transit
           ServerSideEncryption: "AES256",
-        })
-        .promise();
+        },
+      });
+
+      const result = await upload.done();
+      console.log("File uploaded successfully");
+      return result;
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";
@@ -118,24 +203,20 @@ export default class S3 {
     }
   }
 
-  /**
-   * Downloads a file from a company's bucket
-   * @param companyId - Company identifier
-   * @param key - File key/path in the bucket
-   */
   public async downloadFile(
     companyId: string,
     key: string,
-  ): Promise<AWS.S3.GetObjectOutput> {
-    const bucketName = this.generateBucketName(companyId);
-
+  ): Promise<GetObjectCommandOutput> {
     try {
-      return await this.s3
-        .getObject({
-          Bucket: bucketName,
-          Key: key,
-        })
-        .promise();
+      const prefix = this.getCompanyPrefix(companyId);
+      const fullKey = `${prefix}${key}`;
+
+      return await this.s3Client.send(
+        new GetObjectCommand({
+          Bucket: this.mainBucketName,
+          Key: fullKey,
+        }),
+      );
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";
@@ -145,24 +226,20 @@ export default class S3 {
     }
   }
 
-  /**
-   * Lists all files in a company's bucket
-   * @param companyId - Company identifier
-   * @param prefix - Optional prefix to filter files
-   */
   public async listFiles(
     companyId: string,
     prefix?: string,
-  ): Promise<AWS.S3.ObjectList> {
-    const bucketName = this.generateBucketName(companyId);
-
+  ): Promise<_Object[]> {
     try {
-      const response = await this.s3
-        .listObjects({
-          Bucket: bucketName,
-          Prefix: prefix,
-        })
-        .promise();
+      const companyPrefix = this.getCompanyPrefix(companyId);
+      const fullPrefix = prefix ? `${companyPrefix}${prefix}` : companyPrefix;
+
+      const response = await this.s3Client.send(
+        new ListObjectsV2Command({
+          Bucket: this.mainBucketName,
+          Prefix: fullPrefix,
+        }),
+      );
 
       return response.Contents || [];
     } catch (error: unknown) {
@@ -174,21 +251,17 @@ export default class S3 {
     }
   }
 
-  /**
-   * Deletes a file from a company's bucket
-   * @param companyId - Company identifier
-   * @param key - File key/path in the bucket
-   */
   public async deleteFile(companyId: string, key: string): Promise<void> {
-    const bucketName = this.generateBucketName(companyId);
-
     try {
-      await this.s3
-        .deleteObject({
-          Bucket: bucketName,
-          Key: key,
-        })
-        .promise();
+      const prefix = this.getCompanyPrefix(companyId);
+      const fullKey = `${prefix}${key}`;
+
+      await this.s3Client.send(
+        new DeleteObjectCommand({
+          Bucket: this.mainBucketName,
+          Key: fullKey,
+        }),
+      );
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";
@@ -198,44 +271,49 @@ export default class S3 {
     }
   }
 
-  /**
-   * Generates a consistent bucket name for a company
-   * @param companyId - Company identifier
-   * @returns string - Bucket name
-   */
-  private generateBucketName(companyId: string): string {
-    return `${this.bucketPrefix}${companyId}`.toLowerCase();
-  }
-
-  public async deleteBucket(companyId: string): Promise<void> {
-    const bucketName = this.generateBucketName(companyId);
-
+  public async deleteCompanyStorage(companyId: string): Promise<void> {
     try {
-      // First, delete all objects in the bucket
-      const objects = await this.s3
-        .listObjects({ Bucket: bucketName })
-        .promise();
-      if (objects.Contents && objects.Contents.length > 0) {
-        await this.s3
-          .deleteObjects({
-            Bucket: bucketName,
+      const prefix = this.getCompanyPrefix(companyId);
+
+      // List all objects with company prefix
+      const listResponse = await this.s3Client.send(
+        new ListObjectsV2Command({
+          Bucket: this.mainBucketName,
+          Prefix: prefix,
+        }),
+      );
+
+      if (listResponse.Contents && listResponse.Contents.length > 0) {
+        // Delete all objects with company prefix
+        await this.s3Client.send(
+          new DeleteObjectsCommand({
+            Bucket: this.mainBucketName,
             Delete: {
-              Objects: objects.Contents.map(({ Key }) => ({
+              Objects: listResponse.Contents.map(({ Key }) => ({
                 Key: Key as string,
               })),
             },
-          })
-          .promise();
+          }),
+        );
       }
-
-      // Then delete the bucket itself
-      await this.s3.deleteBucket({ Bucket: bucketName }).promise();
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";
       throw new Error(
-        `Failed to delete bucket for company ${companyId}: ${errorMessage}`,
+        `Failed to delete storage for company ${companyId}: ${errorMessage}`,
       );
     }
   }
+
+  public async testConnection(): Promise<boolean> {
+    try {
+      await this.ensureMainBucketExists();
+      return true;
+    } catch (error) {
+      console.error("AWS S3Service connection test failed:", error);
+      return false;
+    }
+  }
 }
+
+export default S3Service;

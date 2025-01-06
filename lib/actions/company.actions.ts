@@ -5,6 +5,7 @@ import { Prisma } from "@prisma/client";
 import { registerSchema } from "@/lib/schemas";
 import { z } from "zod";
 import { prisma } from "@/app/db";
+import S3Service from "@/services/aws/S3";
 
 export const registerCompany = async (
   values: z.infer<typeof registerSchema>,
@@ -52,38 +53,45 @@ export const registerCompany = async (
       },
     });
 
-    console.log(company);
-
     // Step 4: Create S3 bucket for the company
-    // const s3Service = S3.getInstance();
-    // try {
-    //   await s3Service.createCompanyBucket(company.id);
-    // } catch (s3Error: unknown) {
-    //   // Cleanup: Delete company if bucket creation fails
-    //   await prisma.company.delete({
-    //     where: { id: company.id },
-    //   });
-    //
-    //   return {
-    //     success: false,
-    //     error: "Failed to initialize company storage",
-    //   };
-    // }
+    const s3Service = S3Service.getInstance();
+    let bucketCreated = false;
+
+    try {
+      await s3Service.initializeCompanyStorage(company.id);
+      bucketCreated = true;
+    } catch (s3Error: unknown) {
+      // Cleanup: Delete company if bucket creation fails
+      await prisma.company.delete({
+        where: { id: company.id },
+      });
+
+      const errorMessage =
+        s3Error instanceof Error
+          ? s3Error.message
+          : "Failed to initialize company storage";
+      return {
+        success: false,
+        error: errorMessage,
+      };
+    }
 
     // Step 5: Verify company exists after creation
     const verifyCompany = await prisma.company.findUnique({
       where: { id: company.id },
     });
 
-    // if (!verifyCompany) {
-    //   // Attempt to cleanup S3 bucket if company verification fails
-    //   try {
-    //     await s3Service.deleteBucket(company.id);
-    //   } catch (cleanupError: unknown) {
-    //     // Silent cleanup error - already in error state
-    //   }
-    //   throw new Error("Company creation failed verification");
-    // }
+    if (!verifyCompany) {
+      // Attempt to cleanup S3 bucket if company verification fails
+      if (bucketCreated) {
+        try {
+          await s3Service.deleteCompanyStorage(company.id);
+        } catch (cleanupError: unknown) {
+          console.error("Failed to cleanup S3 bucket:", cleanupError);
+        }
+      }
+      throw new Error("Company creation failed verification");
+    }
 
     // Step 6: Register user
     const userObject: RegUser = {
@@ -98,31 +106,50 @@ export const registerCompany = async (
       phoneNumber,
     };
 
-    const userResult = await registerUser(userObject);
+    try {
+      const userResult = await registerUser(userObject);
 
-    // if ("error" in userResult) {
-    //   // Cleanup: Delete company and S3 bucket if user registration fails
-    //   try {
-    //     await s3Service.deleteBucket(company.id);
-    //   } catch (cleanupError: unknown) {
-    //     // Silent cleanup error - already in error state
-    //   }
-    //
-    //   await prisma.company.delete({
-    //     where: { id: company.id },
-    //   });
-    //
-    //   return {
-    //     success: false,
-    //     error: userResult.error,
-    //   };
-    // }
+      if ("error" in userResult) {
+        // Cleanup: Delete company and S3 bucket if user registration fails
+        if (bucketCreated) {
+          try {
+            await s3Service.deleteCompanyStorage(company.id);
+          } catch (cleanupError: unknown) {
+            console.error("Failed to cleanup S3 bucket:", cleanupError);
+          }
+        }
 
-    // Step 7: Final verification
-    return {
-      success: true,
-      data: "Company registered successfully",
-    };
+        await prisma.company.delete({
+          where: { id: company.id },
+        });
+
+        return {
+          success: false,
+          error: userResult.error,
+        };
+      }
+
+      // Step 7: Final verification
+      return {
+        success: true,
+        data: "Company registered successfully",
+      };
+    } catch (userError) {
+      // Cleanup on unexpected user registration error
+      if (bucketCreated) {
+        try {
+          await s3Service.deleteCompanyStorage(company.id);
+        } catch (cleanupError: unknown) {
+          console.error("Failed to cleanup S3 bucket:", cleanupError);
+        }
+      }
+
+      await prisma.company.delete({
+        where: { id: company.id },
+      });
+
+      throw userError;
+    }
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       switch (error.code) {

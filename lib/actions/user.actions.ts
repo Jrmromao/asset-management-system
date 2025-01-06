@@ -132,7 +132,7 @@ export async function registerUser(
       companyId: data.companyId,
     });
 
-    if (!cognitoRegisterResult || !cognitoRegisterResult.data.UserSub) {
+    if (!cognitoRegisterResult || !cognitoRegisterResult.data.userId) {
       return { error: "Cognito registration failed" };
     }
 
@@ -144,7 +144,7 @@ export async function registerUser(
       return { error: "Role not found" };
     }
 
-    const user = await insertUser(data, cognitoRegisterResult.data.UserSub);
+    const user = await insertUser(data, cognitoRegisterResult.data.userId);
 
     if (!user) {
       return { error: "Failed to create user in database" };
