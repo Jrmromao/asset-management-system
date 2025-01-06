@@ -98,7 +98,6 @@ export const findById = async (id: string): Promise<ApiResponse<License>> => {
       where: { id },
       include: {
         company: true,
-        assets: true,
         statusLabel: true,
         supplier: true,
         department: true,
@@ -139,7 +138,7 @@ export const findById = async (id: string): Promise<ApiResponse<License>> => {
       updatedAt: license.updatedAt,
 
       // Relations - convert nulls to undefined and ensure proper type conversion
-      company: license.company ?? undefined,
+      company: license?.company ?? undefined,
       statusLabel: license.statusLabel ?? undefined,
       supplier: license.supplier,
       department: license.department ?? undefined,

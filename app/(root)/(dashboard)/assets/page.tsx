@@ -114,7 +114,9 @@ const Assets = () => {
     fetchAssets();
   }, [fetchAssets]);
 
-  const availableAssets = 23;
+  const availableAssets = 9; //assets.filter((asset) => {
+  //   return asset.status === "AVAILABLE";
+  // });
   const maintenanceDue = assets.filter((asset) => {
     const dueDate = new Date();
     const thirtyDaysFromNow = new Date();

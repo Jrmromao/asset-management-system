@@ -258,6 +258,9 @@ model Company {
   AccessoryStock AccessoryStock[]
   LicenseSeat    LicenseSeat[]
   AssetHistory   AssetHistory[]
+
+  ReportConfiguration ReportConfiguration[]
+  GeneratedReport     GeneratedReport[]
 }
 
 model Manufacturer {
@@ -403,6 +406,7 @@ model Asset {
   poNumber            String?   @unique
   weight              Decimal?
   price               Decimal?
+  status              String    @default("Available")
   assignee            User?     @relation("assignedToUser", fields: [assigneeId], references: [id], onDelete: SetNull)
   company             Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
@@ -601,4 +605,62 @@ model Waitlist {
   email     String   @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// Report configuration/template model
+model ReportConfiguration {
+  id                String   @id @default(cuid())
+  name              String
+  format            String // PDF, XLSX, etc.
+  timePeriod        String // last30days, etc.
+  isScheduled       Boolean  @default(false)
+  scheduleFrequency String?
+  companyId         String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  company          Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  metrics          ReportMetric[]
+  generatedReports GeneratedReport[]
+
+  @@unique([name, companyId])
+  @@index([companyId])
+}
+
+// Selected metrics for each report configuration
+model ReportMetric {
+  id                    String  @id @default(cuid())
+  reportConfigurationId String
+  category              String // Environmental, Operations, Financial, etc.
+  metricName            String // Energy Consumption, Carbon Emissions, etc.
+  enabled               Boolean @default(true)
+
+  // Relations
+  reportConfiguration ReportConfiguration @relation(fields: [reportConfigurationId], references: [id], onDelete: Cascade)
+
+  @@unique([reportConfigurationId, metricName])
+  @@index([reportConfigurationId])
+}
+
+// Generated reports
+model GeneratedReport {
+  id              String   @id @default(cuid())
+  configurationId String
+  title           String
+  format          String // PDF, XLSX, etc.
+  filePath        String
+  fileSize        Float // in MB
+  status          String   @default("completed") // completed, processing, failed
+  generatedAt     DateTime @default(now())
+  companyId       String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  configuration ReportConfiguration @relation(fields: [configurationId], references: [id], onDelete: Cascade)
+  company       Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([configurationId])
+  @@index([companyId])
 }
