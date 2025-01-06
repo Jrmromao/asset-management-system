@@ -17,7 +17,6 @@ import ReCAPTCHA from "@/components/ReCAPTCHA";
 const RegisterForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [user, setUser] = useState(null);
-  const [recaptchaToken, setRecaptchaToken] = useState("");
   const [error, setError] = useState("");
 
   const form = useForm<z.infer<typeof registerSchema>>({
@@ -30,6 +29,7 @@ const RegisterForm = () => {
       phoneNumber: "",
       companyName: "",
       repeatPassword: "",
+      recaptchaToken: "",
     },
     mode: "onChange",
   });
@@ -37,24 +37,17 @@ const RegisterForm = () => {
   const router = useRouter();
 
   const onSubmit = async (data: z.infer<typeof registerSchema>) => {
-    if (!recaptchaToken) {
-      setError("Please complete the captcha verification");
-      return;
-    }
-
     setIsLoading(true);
     try {
       if (data) {
-        await registerCompany({
-          ...data,
-          recaptchaToken,
-        }).then(() => {
+        await registerCompany(data).then(() => {
           form.reset();
           router.push("/account-verification?email=" + data.email);
         });
       }
     } catch (e) {
       console.error(e);
+      setError("Registration failed. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -72,6 +65,7 @@ const RegisterForm = () => {
           </h1>
         </div>
       </header>
+
       {user ? (
         <div className={"flex flex-col gap-4"}>Joao Filipe Romão</div>
       ) : (
@@ -149,15 +143,28 @@ const RegisterForm = () => {
                 </div>
 
                 {/* ReCAPTCHA */}
-                <div className="flex justify-center">
+                <div className="flex flex-col items-center gap-2">
                   <ReCAPTCHA
                     siteKey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY!}
                     onVerify={(token) => {
-                      setRecaptchaToken(token);
-                      setError("");
+                      form.setValue("recaptchaToken", token);
+                      form.clearErrors("recaptchaToken");
+                    }}
+                    onExpire={() => {
+                      form.setValue("recaptchaToken", "");
+                      form.setError("recaptchaToken", {
+                        type: "manual",
+                        message: "reCAPTCHA has expired, please verify again",
+                      });
                     }}
                   />
+                  {form.formState.errors.recaptchaToken && (
+                    <p className="text-red-500 text-sm">
+                      {form.formState.errors.recaptchaToken.message}
+                    </p>
+                  )}
                 </div>
+
                 {error && (
                   <div className="text-red-500 text-sm text-center">
                     {error}
@@ -185,6 +192,7 @@ const RegisterForm = () => {
               </div>
             </form>
           </Form>
+
           <div className="relative">
             <div
               className="absolute inset-0 flex items-center"
