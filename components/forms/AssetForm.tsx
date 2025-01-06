@@ -20,37 +20,36 @@ import { toast } from "sonner";
 // Components
 import CustomInput from "@/components/CustomInput";
 import CustomSelect from "@/components/CustomSelect";
-import { DialogContainer } from "@/components/dialogs/DialogContainer";
 import CustomDatePicker from "@/components/CustomDatePicker";
 
 // Forms
-import ModelForm from "@/components/forms/ModelForm";
-import StatusLabelForm from "@/components/forms/StatusLabelForm";
-
 // Stores
 import { useAssetStore } from "@/lib/stores/assetStore";
 import { useStatusLabelStore } from "@/lib/stores/statusLabelStore";
 import { useModelStore } from "@/lib/stores/modelStore";
 import { useLocationStore } from "@/lib/stores/locationStore";
-import DepartmentForm from "@/components/forms/DepartmentForm";
 import { useDepartmentStore } from "@/lib/stores/departmentStore";
-import LocationForm from "@/components/forms/LocationForm";
 import { useSupplierStore } from "@/lib/stores/SupplierStore";
-import SupplierForm from "@/components/forms/SupplierForm";
 import { useInventoryStore } from "@/lib/stores/inventoryStore";
-import InventoryForm from "@/components/forms/InventoryForm";
 import { create } from "@/lib/actions/assets.actions";
-import CategoryForm from "@/components/forms/CategoryForm";
 import { useCategoryStore } from "@/lib/stores/categoryStore";
 import CustomPriceInput from "../CustomPriceInput";
 import { SelectWithButton } from "@/components/SelectWithButton";
-import ManufacturerForm from "@/components/forms/ManufacturerForm";
 import { useManufacturerStore } from "@/lib/stores/manufacturerStore";
 import { assetSchema } from "@/lib/schemas";
-import FormTemplateCreator from "@/components/forms/FormTemplateCreator";
 import { useFormTemplateStore } from "@/lib/stores/formTemplateStore";
 import { CustomField, CustomFieldOption } from "@/types/form";
 import { getFormTemplateById } from "@/lib/actions/formTemplate.actions";
+import { DialogContainer } from "@/components/dialogs/DialogContainer";
+import ModelForm from "@/components/forms/ModelForm";
+import StatusLabelForm from "@/components/forms/StatusLabelForm";
+import LocationForm from "@/components/forms/LocationForm";
+import DepartmentForm from "@/components/forms/DepartmentForm";
+import SupplierForm from "@/components/forms/SupplierForm";
+import InventoryForm from "@/components/forms/InventoryForm";
+import CategoryForm from "@/components/forms/CategoryForm";
+import ManufacturerForm from "@/components/forms/ManufacturerForm";
+import FormTemplateCreator from "@/components/forms/FormTemplateCreator";
 
 type FormTemplate = {
   id: string;
@@ -309,6 +308,7 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
       console.error("Error loading template:", error);
     }
   };
+
   async function onSubmit(data: AssetFormValues) {
     startTransition(async () => {
       try {
@@ -676,6 +676,275 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
         </form>
       </Form>
     </section>
+
+    // <div className="container mx-auto p-6 max-w-4xl space-y-6">
+    //   {/* Header Section */}
+    //   <div className="flex items-center gap-3 mb-6">
+    //     <div className="p-2 bg-blue-50 rounded-lg">
+    //       <Package className="h-6 w-6 text-blue-500" />
+    //     </div>
+    //     <div>
+    //       <h1 className="text-2xl font-semibold">Create New Asset</h1>
+    //       <p className="text-gray-500">Add a new asset to your inventory</p>
+    //     </div>
+    //   </div>
+    //
+    //   <Form {...form}>
+    //     <form
+    //       onSubmit={form.handleSubmit(onSubmit)}
+    //       className="space-y-6 pb-24"
+    //     >
+    //       {/* Basic Information Card */}
+    //       <Card>
+    //         <CardHeader>
+    //           <CardTitle>Basic Information</CardTitle>
+    //           <CardDescription>
+    //             Enter the core details about your asset
+    //           </CardDescription>
+    //         </CardHeader>
+    //         <CardContent className="space-y-6">
+    //           <div className="grid md:grid-cols-2 gap-6">
+    //             <CustomInput
+    //               required
+    //               name="name"
+    //               label="Asset Name"
+    //               control={form.control}
+    //               type="text"
+    //               placeholder="Enter asset name"
+    //             />
+    //             <CustomInput
+    //               required
+    //               name="serialNumber"
+    //               label="Tag Number"
+    //               control={form.control}
+    //               type="text"
+    //               placeholder="Enter tag number"
+    //             />
+    //           </div>
+    //           <SelectWithButton
+    //             name="modelId"
+    //             form={form}
+    //             isPending={isPending}
+    //             label="Model"
+    //             data={models}
+    //             onNew={openModel}
+    //             placeholder="Select model"
+    //             required
+    //           />
+    //           <div className="grid md:grid-cols-2 gap-6">
+    //             <SelectWithButton
+    //               name="statusLabelId"
+    //               form={form}
+    //               isPending={isPending}
+    //               label="Status"
+    //               data={statusLabels}
+    //               onNew={openStatus}
+    //               placeholder="Select status"
+    //               required
+    //             />
+    //             <SelectWithButton
+    //               name="departmentId"
+    //               form={form}
+    //               isPending={isPending}
+    //               label="Department"
+    //               data={departments}
+    //               onNew={openDepartment}
+    //               placeholder="Select department"
+    //               required
+    //             />
+    //           </div>
+    //         </CardContent>
+    //       </Card>
+    //
+    //       {/* Purchase Information Card */}
+    //       <Card>
+    //         <CardHeader>
+    //           <CardTitle>Purchase Information</CardTitle>
+    //           <CardDescription>
+    //             Enter purchase details and supplier information
+    //           </CardDescription>
+    //         </CardHeader>
+    //         <CardContent className="space-y-6">
+    //           <div className="grid md:grid-cols-2 gap-6">
+    //             <CustomPriceInput
+    //               name="price"
+    //               label="Unit Price"
+    //               control={form.control}
+    //               placeholder="0.00"
+    //               required
+    //             />
+    //             <CustomInput
+    //               name="poNumber"
+    //               label="PO Number"
+    //               control={form.control}
+    //               placeholder="Enter PO number"
+    //             />
+    //           </div>
+    //           <div className="grid md:grid-cols-2 gap-6">
+    //             <CustomDatePicker
+    //               label="Purchase Date"
+    //               name="purchaseDate"
+    //               form={form}
+    //               placeholder="Select purchase date"
+    //               required
+    //               disablePastDates
+    //               tooltip="Select the date your asset was purchased"
+    //             />
+    //             <CustomDatePicker
+    //               label="End of Life"
+    //               name="endOfLife"
+    //               form={form}
+    //               placeholder="Select end of life"
+    //               required
+    //               disablePastDates
+    //               tooltip="Select the date your asset will no longer be used"
+    //             />
+    //           </div>
+    //           <SelectWithButton
+    //             name="supplierId"
+    //             label="Supplier"
+    //             data={suppliers}
+    //             onNew={openSupplier}
+    //             placeholder="Select supplier"
+    //             required
+    //             form={form}
+    //             isPending={isPending}
+    //           />
+    //           <SelectWithButton
+    //             form={form}
+    //             isPending={isPending}
+    //             name="inventoryId"
+    //             label="Inventory"
+    //             data={inventories}
+    //             onNew={openInventory}
+    //             placeholder="Select an inventory"
+    //             required
+    //           />
+    //         </CardContent>
+    //       </Card>
+    //
+    //       {/* Location & Usage Card */}
+    //       <Card>
+    //         <CardHeader>
+    //           <CardTitle>Location & Usage</CardTitle>
+    //           <CardDescription>
+    //             Specify where the asset is located and how it's used
+    //           </CardDescription>
+    //         </CardHeader>
+    //         <CardContent className="space-y-6">
+    //           <SelectWithButton
+    //             form={form}
+    //             isPending={isPending}
+    //             name="locationId"
+    //             label="Location"
+    //             data={locations}
+    //             onNew={openLocation}
+    //             placeholder="Select location"
+    //             required
+    //           />
+    //           <div className="grid md:grid-cols-2 gap-6">
+    //             <CustomInput
+    //               name="dailyOperatingHours"
+    //               label="Operating Hours (per day)"
+    //               control={form.control}
+    //               type="number"
+    //               placeholder="Enter operating hours"
+    //             />
+    //             <CustomInput
+    //               name="energyRating"
+    //               label="Energy Rating (kW)"
+    //               control={form.control}
+    //               placeholder="Enter energy rating"
+    //             />
+    //           </div>
+    //         </CardContent>
+    //       </Card>
+    //
+    //       {/* Physical Specifications Card */}
+    //       <Card>
+    //         <CardHeader>
+    //           <CardTitle>Physical Specifications</CardTitle>
+    //           <CardDescription>
+    //             Enter the physical characteristics of the asset
+    //           </CardDescription>
+    //         </CardHeader>
+    //         <CardContent className="space-y-6">
+    //           <div className="grid md:grid-cols-2 gap-6">
+    //             <CustomInput
+    //               name="material"
+    //               label="Material"
+    //               control={form.control}
+    //               placeholder="Enter material"
+    //             />
+    //             <CustomInput
+    //               name="weight"
+    //               label="Weight (kg)"
+    //               control={form.control}
+    //               type="text"
+    //               placeholder="Enter weight"
+    //             />
+    //           </div>
+    //         </CardContent>
+    //       </Card>
+    //
+    //       {/* Custom Fields Card */}
+    //       <Card>
+    //         <CardHeader>
+    //           <CardTitle>Custom Fields</CardTitle>
+    //           <CardDescription>
+    //             Add additional custom fields using a template
+    //           </CardDescription>
+    //         </CardHeader>
+    //         <CardContent className="space-y-6">
+    //           <SelectWithButton
+    //             name="formTemplateId"
+    //             label="Form Template"
+    //             data={templates}
+    //             onNew={openTemplate}
+    //             placeholder="Select a form template"
+    //             form={form}
+    //             isPending={isPending}
+    //             onChange={handleTemplateChange}
+    //           />
+    //           {selectedTemplate && renderCustomFields()}
+    //         </CardContent>
+    //       </Card>
+    //     </form>
+    //   </Form>
+    //
+    //   {/* Sticky Action Bar */}
+    //   <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg">
+    //     <div className="container mx-auto px-6 py-4 max-w-4xl flex justify-between items-center">
+    //       <div className="text-sm text-gray-500">
+    //         All required fields must be filled
+    //       </div>
+    //       <div className="flex gap-4">
+    //         <Button
+    //           type="button"
+    //           variant="outline"
+    //           onClick={() => router.back()}
+    //           disabled={isPending}
+    //         >
+    //           Cancel
+    //         </Button>
+    //         <Button
+    //           type="submit"
+    //           disabled={isPending}
+    //           className="min-w-[120px]"
+    //         >
+    //           {isPending ? (
+    //             <>
+    //               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+    //               Creating...
+    //             </>
+    //           ) : (
+    //             "Create Asset"
+    //           )}
+    //         </Button>
+    //       </div>
+    //     </div>
+    //   </div>
+    // </div>
   );
 };
 

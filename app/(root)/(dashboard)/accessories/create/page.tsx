@@ -5,7 +5,7 @@ import AccessoryForm from "@/components/forms/AccessoryForm";
 
 const Create = () => {
   return (
-    <div className="">
+    <div className="p-6 space-y-6">
       <div>
         <HeaderBox
           title="Create an Accessory"

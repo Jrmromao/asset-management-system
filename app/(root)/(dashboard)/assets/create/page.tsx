@@ -10,10 +10,11 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import Link from "next/link";
+import { Laptop } from "lucide-react";
 
 const Create = () => {
   return (
-    <div className="">
+    <div className="p-6 space-y-6">
       <Breadcrumb className="hidden md:flex pb-5">
         <BreadcrumbList>
           <BreadcrumbItem>
@@ -35,6 +36,7 @@ const Create = () => {
         <HeaderBox
           title="Create new asset"
           subtext="Fill the form to create new asset."
+          icon={<Laptop className="h-6 w-6 text-blue-500" />}
         />
       </div>
       <AssetForm />

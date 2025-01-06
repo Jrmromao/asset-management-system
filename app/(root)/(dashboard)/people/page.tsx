@@ -19,6 +19,9 @@ import { DataTable } from "@/components/tables/DataTable/data-table";
 import { peopleColumns } from "@/components/tables/PeopleColumns";
 import { TableHeader } from "@/components/tables/TableHeader";
 import TableHeaderSkeleton from "@/components/tables/TableHeaderSkeleton";
+import { BsDisplay } from "react-icons/bs";
+import { Card, CardContent } from "@/components/ui/card";
+import { Building2, Laptop, UserPlus } from "lucide-react";
 
 const People = () => {
   const [openDialog, closeDialog, isOpen] = useDialogStore((state) => [
@@ -77,7 +80,7 @@ const People = () => {
     setFilteredData(users);
   }, [users]);
   return (
-    <div className="assets">
+    <div className="p-6 space-y-6">
       <Breadcrumb className="hidden md:flex">
         <BreadcrumbList>
           <BreadcrumbItem>
@@ -88,9 +91,55 @@ const People = () => {
           <BreadcrumbSeparator />
         </BreadcrumbList>
       </Breadcrumb>
-      <div className="transactions-header">
-        <HeaderBox title="People" subtext="Manage asset assignees." />
+      {/* Header Section */}
+      <HeaderBox
+        title="People"
+        subtext="Manage and track people"
+        icon={<BsDisplay className="w-4 h-4" />}
+      />
+
+      {/* Stats Section */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="space-y-2">
+              <p className="text-sm text-gray-500">Total Employees</p>
+              <p className="text-3xl font-bold">24</p>
+              <div className="flex items-center text-sm text-gray-500">
+                <UserPlus className="h-4 w-4 mr-1" />
+                <span>3 new this month</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="space-y-2">
+              <p className="text-sm text-gray-500">Departments</p>
+              <p className="text-3xl font-bold">5</p>
+              <div className="flex items-center text-sm text-gray-500">
+                <Building2 className="h-4 w-4 mr-1" />
+                <span>Active departments</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="space-y-2">
+              <p className="text-sm text-gray-500">Assigned Assets</p>
+              <p className="text-3xl font-bold">18</p>
+              <div className="flex items-center text-sm text-gray-500">
+                <Laptop className="h-4 w-4 mr-1" />
+                <span>75% of total assets</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
+
       <DialogContainer
         open={isOpen}
         onOpenChange={closeDialog}

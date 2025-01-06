@@ -17,8 +17,18 @@ import { Button } from "@/components/ui/button";
 import { DialogContainer } from "@/components/dialogs/DialogContainer";
 import FileUploadForm from "@/components/forms/FileUploadForm";
 import { useDialogStore } from "@/lib/stores/store";
-import HeaderBox from "@/components/HeaderBox";
 import TableHeaderSkeleton from "@/components/tables/TableHeaderSkeleton";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
+import Link from "next/link";
+import { BsDisplay } from "react-icons/bs";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import HeaderBox from "@/components/HeaderBox";
 
 const Accessories = () => {
   const [accessories, getAll, deleteAccessory, loading] = useAccessoryStore(
@@ -117,10 +127,63 @@ const Accessories = () => {
 
   return (
     <div className="min-h-screen p-6 space-y-6 mt-5">
-      <div className="transactions-header">
-        <HeaderBox title="Accessories" subtext="Manage your accessories." />
-      </div>
+      {/* Breadcrumb */}
+      <Breadcrumb className="hidden md:flex">
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink asChild>
+              <Link href="/accessories">Accessories</Link>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+        </BreadcrumbList>
+      </Breadcrumb>
 
+      {/* Header Section */}
+      <HeaderBox
+        title="Accessories"
+        subtext="Manage and track your accessories"
+        icon={<BsDisplay className="w-4 h-4" />}
+      />
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Total Accessories
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{accessories.length}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Available Accessories
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{3}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {((23 / accessories.length) * 100).toFixed(1)}% of total
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Maintenance Due
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-yellow-600">{4}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Due within 30 days
+            </p>
+          </CardContent>
+        </Card>
+      </div>
       {loading ? (
         <TableHeaderSkeleton />
       ) : (
