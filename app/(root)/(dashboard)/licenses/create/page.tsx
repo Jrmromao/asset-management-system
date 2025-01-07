@@ -5,13 +5,12 @@ import LicenseForm from "@/components/forms/LicenseForm";
 
 const Create = () => {
   return (
-    <div className="">
-      <div>
-        <HeaderBox
-          title="Create new License"
-          subtext="Fill the form to create new License."
-        />
-      </div>
+    <div className="p-6 space-y-6">
+      <HeaderBox
+        title="Create new License"
+        subtext="Fill the form to create new License."
+      />
+
       <LicenseForm />
     </div>
   );

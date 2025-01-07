@@ -1,8 +1,11 @@
 import { FileText, PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useRouter } from "next/navigation";
 
 export const DashboardHeader = () => {
+  const navigate = useRouter();
+
   return (
     <div className="flex items-center justify-between mb-6">
       <div className="flex items-center gap-3">
@@ -21,7 +24,11 @@ export const DashboardHeader = () => {
           <FileText className="h-4 w-4 mr-2" />
           Export
         </Button>
-        <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700">
+        <Button
+          size="sm"
+          className="bg-emerald-600 hover:bg-emerald-700"
+          onClick={() => navigate.push("/assets/create")}
+        >
           <PlusCircle className="h-4 w-4 mr-2" />
           Add Asset
         </Button>

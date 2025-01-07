@@ -1,11 +1,10 @@
 import HeaderBox from "@/components/HeaderBox";
-import AssetForm from "@/components/forms/AssetForm";
 import React from "react";
 import UserForm from "@/components/forms/UserForm";
 
 const Create = () => {
   return (
-    <div className="assets">
+    <div className="p-6 space-y-6">
       <div>
         <HeaderBox
           title="Register a new employee"
