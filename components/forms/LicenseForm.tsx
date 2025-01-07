@@ -105,6 +105,7 @@ const LicenseForm = () => {
       supplierId: "",
       poNumber: "",
       purchasePrice: "",
+      alertRenewalDays: "",
       // licenseKey: '',
       notes: "",
     },
@@ -192,8 +193,6 @@ const LicenseForm = () => {
                 <h3 className="text-lg font-semibold mb-4">
                   License Information
                 </h3>
-                {/*<div className="grid grid-cols-1 md:grid-cols-2 gap-6">*/}
-                {/*<div className="space-y-6">*/}
                 <CustomInput
                   name="licenseName"
                   label="License Name"
@@ -201,24 +200,9 @@ const LicenseForm = () => {
                   placeholder="e.g. Adobe Creative Cloud"
                   required
                 />
-                {/*<CustomInput*/}
-                {/*    name="licenseKey"*/}
-                {/*    label="License Key"*/}
-                {/*    control={form.control}*/}
-                {/*    placeholder="Enter license key"*/}
-                {/*    required*/}
-                {/*    className="mt-4"*/}
-                {/*/>*/}
-                {/*</div>*/}
-                {/*<Alert>*/}
-                {/*    <InfoIcon className="h-4 w-4"/>*/}
-                {/*    <AlertTitle>About License Key</AlertTitle>*/}
-                {/*    <AlertDescription>*/}
-                {/*        Store your license key securely. This will be encrypted in our database.*/}
-                {/*    </AlertDescription>*/}
-                {/*</Alert>*/}
-                {/*</div>*/}
               </div>
+
+              {/* Status & Location */}
               <div className="border-t pt-6">
                 <h3 className="text-lg font-semibold mb-4">
                   Status & Location
@@ -256,6 +240,7 @@ const LicenseForm = () => {
                   />
                 </div>
               </div>
+
               {/* License Management */}
               <div className="border-t pt-6">
                 <h3 className="text-lg font-semibold mb-4">
@@ -281,6 +266,7 @@ const LicenseForm = () => {
                 </div>
               </div>
 
+              {/* Purchase Information */}
               <div className="border-t pt-6">
                 <h3 className="text-lg font-semibold mb-4">
                   Purchase Information
@@ -385,6 +371,7 @@ const LicenseForm = () => {
               </div>
             </div>
           </Card>
+
           <div className="flex justify-end gap-4 sticky bottom-0 bg-white p-4 border-t shadow-lg">
             <Button
               type="button"

@@ -421,7 +421,6 @@ export async function getAll(
     const models = await prisma.model.findMany({
       where,
       include: {
-        category: { select: { name: true } },
         manufacturer: { select: { name: true } },
       },
       orderBy: { createdAt: "desc" },
@@ -465,7 +464,6 @@ export async function getAllSimple(
     const models = await prisma.model.findMany({
       where,
       include: {
-        category: { select: { name: true } },
         manufacturer: { select: { name: true } },
       },
       orderBy: { createdAt: "desc" },
@@ -498,7 +496,6 @@ export async function findById(id: string): Promise<ActionResponse<Model>> {
         companyId: session.user.companyId,
       },
       include: {
-        category: true,
         manufacturer: true,
         assets: {
           select: {

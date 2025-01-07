@@ -15,7 +15,7 @@ export const DetailField: React.FC<DetailFieldProps> = ({
   icon,
 }) => {
   const formatValue = (field: DetailFieldType) => {
-    if (field.value === undefined) return "N/A";
+    if (field.value === undefined) return "-";
     switch (field.type) {
       case "currency":
         return <AnimatedCounter value={Number(field.value)} />;

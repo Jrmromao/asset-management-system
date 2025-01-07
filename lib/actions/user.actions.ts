@@ -296,11 +296,7 @@ export async function findById(id: string): Promise<ActionResponse<User>> {
         company: true,
         assets: {
           include: {
-            model: {
-              include: {
-                category: true,
-              },
-            },
+            model: true,
             statusLabel: true,
           },
         },

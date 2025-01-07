@@ -95,6 +95,16 @@ const AccessoryForm = () => {
     onOpen: openModel,
     onClose: closeModel,
   } = useModelStore();
+
+  // Category store
+  const {
+    isOpen: categoryIsOpen,
+    onClose: closeCategoryModal,
+    onOpen: openCategoryModal,
+    categories: categoryList,
+    getAll: fetchCategories,
+  } = useCategoryStore();
+
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [manufacturers, setManufacturers] = useState<Manufacturer[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -107,7 +117,7 @@ const AccessoryForm = () => {
       name: "",
       serialNumber: "",
       supplierId: "",
-      modelId: "",
+      modelNumber: "",
       locationId: "",
       inventoryId: "",
       poNumber: "",
@@ -115,6 +125,7 @@ const AccessoryForm = () => {
       material: "",
       statusLabelId: "",
       notes: "",
+      categoryId: "",
     },
   });
 
@@ -151,8 +162,6 @@ const AccessoryForm = () => {
   const onSubmit = async (data: AccessoryFormValues) => {
     startTransition(async () => {
       try {
-        console.log(data);
-
         await create(data).then((_) => {
           form.reset();
           toast.success("Accessory created successfully");
@@ -227,227 +236,220 @@ const AccessoryForm = () => {
         form={<LocationForm />}
       />
 
+      <DialogContainer
+        open={categoryIsOpen}
+        onOpenChange={closeCategoryModal}
+        title="Add Category"
+        description="Add a new category for your accessories."
+        form={<CategoryForm />}
+      />
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          <Card className="p-6">
-            <div className="space-y-6">
-              <div className="space-y-6">
-                <h3 className="text-lg font-semibold mb-4">
-                  Basic Information
-                </h3>
-                <div className="grid grid-cols-2 gap-6">
-                  <CustomInput
-                    required
-                    name="name"
-                    label="Name"
-                    control={form.control}
-                    type="text"
-                    placeholder="Enter asset name"
-                  />
-                  <CustomInput
-                    required
-                    name="serialNumber"
-                    label="Serial Number"
-                    control={form.control}
-                    type="text"
-                    placeholder="Enter serial number"
-                  />
-                </div>
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="space-y-4 md:space-y-6"
+        >
+          {/* Category Selection Card */}
+          <Card className="p-4 md:p-6">
+            <SelectWithButton
+              name="categoryId"
+              label="Category"
+              form={form}
+              required
+              onNew={openCategory}
+              data={categoryList}
+              placeholder="Select category"
+              isPending={isPending}
+            />
+          </Card>
+
+          {/* Basic Information */}
+          <Card className="p-4 md:p-6">
+            <h3 className="text-lg font-semibold mb-4">Basic Information</h3>
+            <div className="grid gap-4 md:grid-cols-2">
+              <CustomInput
+                required
+                name="name"
+                label="Name"
+                control={form.control}
+                type="text"
+              />
+              <CustomInput
+                required
+                name="serialNumber"
+                label="Serial Number"
+                control={form.control}
+                type="text"
+              />
+              <CustomInput
+                name="modelNumber"
+                label="Model Number"
+                control={form.control}
+                type="text"
+                className="md:col-span-2"
+                required
+              />
+            </div>
+          </Card>
+
+          {/* Status & Location */}
+          <div className="grid gap-4 md:grid-cols-2">
+            <Card className="p-4 md:p-6">
+              <h3 className="text-lg font-semibold mb-4">Status & Location</h3>
+              <div className="space-y-4">
                 <SelectWithButton
-                  name="modelId"
+                  name="statusLabelId"
+                  label="Status"
                   form={form}
-                  isPending
-                  label="Model"
-                  data={models}
-                  onNew={openModel}
-                  placeholder="Select model"
+                  required
+                  onNew={openStatus}
+                  data={statusLabels}
+                  placeholder="Select status"
+                  isPending={isPending}
+                />
+                <SelectWithButton
+                  name="departmentId"
+                  label="Department"
+                  form={form}
+                  required
+                  onNew={openDepartment}
+                  data={departments}
+                  placeholder="Select department"
+                  isPending={isPending}
+                />
+                <SelectWithButton
+                  name="locationId"
+                  label="Location"
+                  form={form}
+                  required
+                  onNew={openLocation}
+                  data={locations}
+                  placeholder="Select location"
+                  isPending={isPending}
+                />
+              </div>
+            </Card>
+
+            <Card className="p-4 md:p-6">
+              <h3 className="text-lg font-semibold mb-4">
+                Physical Properties
+              </h3>
+              <div className="space-y-4">
+                <CustomInput
+                  name="material"
+                  label="Material"
+                  control={form.control}
+                />
+                <CustomInput
+                  name="weight"
+                  label="Weight (kg)"
+                  control={form.control}
+                  type="number"
                   required
                 />
               </div>
+            </Card>
+          </div>
 
-              <div className="border-t pt-6">
-                <h3 className="text-lg font-semibold mb-4">
-                  Status & Location
-                </h3>
-                <div className="space-y-6">
-                  <SelectWithButton
-                    name="statusLabelId"
-                    label="Status Label"
-                    data={statusLabels}
-                    onNew={openStatus}
-                    placeholder="Select a status label"
-                    required
-                    form={form}
-                    isPending
-                  />
-
-                  <SelectWithButton
-                    form={form}
-                    isPending
-                    name="departmentId"
-                    label="Department"
-                    data={departments}
-                    onNew={openDepartment}
-                    placeholder="Select department"
-                    required
-                  />
-                  <SelectWithButton
-                    isPending
-                    form={form}
-                    name="locationId"
-                    label="Location"
-                    data={locations}
-                    onNew={openLocation}
-                    placeholder="Select location"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="border-t pt-6">
-                <h3 className="text-lg font-semibold mb-4">
-                  Purchase Information
-                </h3>
-                <div className="space-y-6">
-                  <div className="grid grid-cols-2 gap-6">
-                    <CustomInput
-                      name="poNumber"
-                      label="PO Number"
-                      control={form.control}
-                      placeholder="Enter PO number"
-                    />
-                    <CustomPriceInput
-                      name="price"
-                      label="Unit Price"
-                      control={form.control}
-                      placeholder="0.00"
-                      required
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-6">
-                    <CustomDatePicker
-                      name="purchaseDate"
-                      form={form}
-                      label="Purchase Date"
-                      placeholder="Select date"
-                    />
-                    <CustomDatePicker
-                      name="endOfLife"
-                      form={form}
-                      label="End of Life"
-                      placeholder="Select date"
-                    />
-                  </div>
-                  <SelectWithButton
-                    name="supplierId"
-                    label="Supplier"
-                    data={suppliers}
-                    onNew={openSupplier}
-                    placeholder="Select supplier"
-                    required
-                    form={form}
-                    isPending
-                  />
-                </div>
-              </div>
-              <div className="border-t pt-6">
-                <h3 className="text-lg font-semibold mb-4">
-                  Inventory Management
-                </h3>
-                <div className="grid grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <SelectWithButton
-                      name="inventoryId"
-                      label="Inventory"
-                      data={inventories}
-                      onNew={openInventory}
-                      placeholder="Select inventory"
-                      required
-                      form={form}
-                      isPending
-                    />
-                    <CustomInput
-                      name="totalQuantityCount"
-                      label="Total Quantity"
-                      control={form.control}
-                      type="number"
-                      placeholder="Enter total quantity"
-                      required
-                    />
-
-                    {/*<CustomInput*/}
-                    {/*    name="minQuantityAlert"*/}
-                    {/*    label="Minimum Quantity Alert"*/}
-                    {/*    control={form.control}*/}
-                    {/*    type="number"*/}
-                    {/*    placeholder="Enter minimum quantity"*/}
-                    {/*    required*/}
-                    {/*/>*/}
-                    <CustomInput
-                      name="reorderPoint"
-                      label="Reorder Point"
-                      control={form.control}
-                      type="number"
-                      placeholder="Enter reorder point"
-                      required
-                    />
-                    <CustomInput
-                      name="alertEmail"
-                      label="Alert Email"
-                      control={form.control}
-                      type="email"
-                      placeholder="Enter alert email"
-                      required
-                    />
-                  </div>
-                  <Alert>
-                    <InfoIcon className="h-4 w-4" />
-                    <AlertTitle>Inventory Alert Settings</AlertTitle>
-                    <AlertDescription>
-                      System will notify when inventory reaches minimum quantity
-                      or reorder point. Make sure to set appropriate values for
-                      your stock management.
-                    </AlertDescription>
-                  </Alert>
-                </div>
-              </div>
-              <div className="border-t pt-6">
-                <h3 className="text-lg font-semibold mb-4">
-                  Physical Properties
-                </h3>
-                <div className="grid grid-cols-2 gap-6">
-                  <CustomInput
-                    name="material"
-                    label="Material"
-                    control={form.control}
-                    placeholder="Enter material"
-                  />
-                  <CustomInput
-                    name="weight"
-                    label="Weight (kg)"
-                    control={form.control}
-                    type="number"
-                    required
-                    placeholder="Enter weight"
-                  />
-                </div>
-              </div>
-              <div className="border-t pt-6">
-                <h3 className="text-lg font-semibold mb-4">
-                  Additional Information
-                </h3>
-                <div className="space-y-4">
-                  <CustomInput
-                    name="notes"
-                    label="Notes"
-                    control={form.control}
-                    type="textarea"
-                    placeholder="Enter notes"
-                  />
-                </div>
+          {/* Purchase Information */}
+          <Card className="p-4 md:p-6">
+            <h3 className="text-lg font-semibold mb-4">Purchase Information</h3>
+            <div className="grid gap-4 md:grid-cols-2">
+              <CustomInput
+                name="poNumber"
+                label="PO Number"
+                control={form.control}
+              />
+              <CustomPriceInput
+                name="price"
+                label="Unit Price"
+                control={form.control}
+                required
+              />
+              <CustomDatePicker
+                name="purchaseDate"
+                form={form}
+                label="Purchase Date"
+              />
+              <CustomDatePicker
+                name="endOfLife"
+                form={form}
+                label="End of Life"
+              />
+              <div className="md:col-span-2">
+                <SelectWithButton
+                  name="supplierId"
+                  label="Supplier"
+                  form={form}
+                  onNew={openSupplier}
+                  data={suppliers}
+                  placeholder="Select supplier"
+                  isPending={isPending}
+                />
               </div>
             </div>
           </Card>
+
+          {/* Inventory Management */}
+          <Card className="p-4 md:p-6">
+            <h3 className="text-lg font-semibold mb-4">Inventory Management</h3>
+            <div className="grid gap-6 md:grid-cols-2">
+              <div className="space-y-4">
+                <SelectWithButton
+                  name="inventoryId"
+                  label="Inventory"
+                  form={form}
+                  required
+                  onNew={openInventory}
+                  data={inventories}
+                  placeholder="Select inventory"
+                  isPending={isPending}
+                />
+                <CustomInput
+                  name="totalQuantityCount"
+                  label="Total Quantity"
+                  control={form.control}
+                  type="number"
+                  required
+                />
+                <CustomInput
+                  name="reorderPoint"
+                  label="Reorder Point"
+                  control={form.control}
+                  type="number"
+                  required
+                />
+                <CustomInput
+                  name="alertEmail"
+                  label="Alert Email"
+                  control={form.control}
+                  type="email"
+                  required
+                />
+              </div>
+              <Alert className="h-fit">
+                <InfoIcon className="h-4 w-4" />
+                <AlertTitle>Inventory Alert Settings</AlertTitle>
+                <AlertDescription>
+                  System will notify when inventory reaches minimum quantity or
+                  reorder point.
+                </AlertDescription>
+              </Alert>
+            </div>
+          </Card>
+
+          {/* Notes */}
+          <Card className="p-4 md:p-6">
+            <h3 className="text-lg font-semibold mb-4">
+              Additional Information
+            </h3>
+            <CustomInput
+              name="notes"
+              control={form.control}
+              type="textarea"
+              placeholder="Add any additional notes..."
+            />
+          </Card>
+
           {/* Action Buttons */}
           <div className="flex justify-end gap-4 sticky bottom-0 bg-white p-4 border-t shadow-lg">
             <Button
@@ -465,7 +467,7 @@ const AccessoryForm = () => {
             >
               {isPending ? (
                 <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   Creating...
                 </>
               ) : (

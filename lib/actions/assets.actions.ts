@@ -16,7 +16,6 @@ const assetIncludes = {
   model: {
     include: {
       manufacturer: true,
-      category: true,
     },
   },
   department: true,

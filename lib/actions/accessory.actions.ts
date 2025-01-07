@@ -38,16 +38,16 @@ export const create = async (
           totalQuantityCount: Number(values.totalQuantityCount),
           purchaseDate: values.purchaseDate,
           notes: values.notes,
+          modelNumber: values.modelNumber,
           material: values.material || "",
           endOfLife: values.endOfLife,
           companyId: session.user.companyId,
-          modelId: values.modelId,
           statusLabelId: values.statusLabelId,
           supplierId: values.supplierId,
           departmentId: values.departmentId,
           locationId: values.locationId,
           inventoryId: values.inventoryId,
-          // categoryId: values.mode,
+          categoryId: values.categoryId,
           poNumber: values.poNumber,
           weight: values.weight,
           price: values.price,
@@ -126,13 +126,8 @@ export const findById = async (id: string): Promise<ApiResponse<Accessory>> => {
         supplier: true,
         inventory: true,
         statusLabel: true,
-        model: {
-          include: {
-            category: true,
-            manufacturer: true,
-          },
-        },
         department: true,
+        category: true,
         departmentLocation: true,
         UserAccessory: {
           include: {
@@ -255,9 +250,8 @@ export async function processAccessoryCSV(csvContent: string) {
     const records = await prisma.$transaction(async (tx) => {
       const recordPromises = data.map(async (item) => {
         // Fetch associations
-        const [model, statusLabel, supplier, location, department, inventory] =
+        const [statusLabel, supplier, location, department, inventory] =
           await Promise.all([
-            tx.model.findFirst({ where: { name: item["model"] } }),
             tx.statusLabel.findFirst({ where: { name: item["statusLabel"] } }),
             tx.supplier.findFirst({ where: { name: item["supplier"] } }),
             tx.departmentLocation.findFirst({
@@ -268,7 +262,7 @@ export async function processAccessoryCSV(csvContent: string) {
           ]);
 
         // // Validate required associations
-        if (!model || !statusLabel || !supplier) {
+        if (!statusLabel || !supplier) {
           console.warn(
             `Skipping record: Missing required associations for model="${item["model"]}", statusLabel="${item["statusLabel"]}", supplier="${item["supplier"]}"`,
           );
@@ -282,7 +276,7 @@ export async function processAccessoryCSV(csvContent: string) {
             purchaseDate: item["purchaseDate"],
             endOfLife: item["endOfLife"],
             alertEmail: item["alertEmail"],
-            modelId: model?.id,
+            modelNumber: item["modelNumber"],
             statusLabelId: statusLabel?.id,
             departmentId: department?.id || null,
             locationId: location?.id || null,

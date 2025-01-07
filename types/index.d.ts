@@ -211,9 +211,9 @@ declare global {
     energyRating?: string | null;
     dailyOperationHours?: number | null;
     co2Score?: number | null;
-
+    modelNumber?: string | null;
     // Relations
-    model?: Model | null;
+
     statusLabel?: StatusLabel | null;
     supplier?: Supplier | null;
     department?: Department | null;

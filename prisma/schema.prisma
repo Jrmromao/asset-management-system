@@ -96,7 +96,7 @@ model Accessory {
   material           String
   endOfLife          DateTime
   companyId          String
-  modelId            String?
+  modelNumber        String?
   statusLabelId      String?
   supplierId         String?
   departmentId       String?
@@ -110,7 +110,6 @@ model Accessory {
   updatedAt          DateTime            @updatedAt
   company            Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
   // co2eRecords Co2eRecord[]
-  model              Model?              @relation(fields: [modelId], references: [id], onDelete: SetNull)
   statusLabel        StatusLabel?        @relation(fields: [statusLabelId], references: [id], onDelete: SetNull)
   supplier           Supplier?           @relation(fields: [supplierId], references: [id], onDelete: SetNull)
   department         Department?         @relation(fields: [departmentId], references: [id], onDelete: SetNull)
@@ -119,6 +118,7 @@ model Accessory {
   UserAccessory      UserAccessory[]
   AccessoryStock     AccessoryStock[]
   Co2eRecord         Co2eRecord[]
+  category           Category?           @relation(fields: [categoryId], references: [id])
 
   @@index([companyId])
   @@index([categoryId])
@@ -284,20 +284,19 @@ model Model {
   id             String       @id @default(cuid())
   name           String
   modelNo        String
-  categoryId     String
+  // categoryId     String
   manufacturerId String
   companyId      String
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
   notes          String?
-  category       Category     @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  // category       Category     @relation(fields: [categoryId], references: [id], onDelete: Restrict)
   manufacturer   Manufacturer @relation(fields: [manufacturerId], references: [id], onDelete: Restrict)
   company        Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
   assets         Asset[]
-  accessories    Accessory[]
 
   @@unique([modelNo, companyId])
-  @@index([categoryId])
+  // @@index([categoryId])
   @@index([manufacturerId])
   @@index([companyId])
 }
@@ -443,8 +442,9 @@ model Category {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  models  Model[]
+  company   Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  // models    Model[]
+  Accessory Accessory[]
 
   @@unique([name, companyId])
   @@index([companyId])

@@ -12,24 +12,13 @@ import CustomInput from "@/components/CustomInput";
 import CustomSelect from "@/components/CustomSelect";
 import { DialogContainer } from "@/components/dialogs/DialogContainer";
 import ManufacturerForm from "@/components/forms/ManufacturerForm";
-import CategoryForm from "@/components/forms/CategoryForm";
-import { useCategoryStore } from "@/lib/stores/categoryStore";
 import { useManufacturerStore } from "@/lib/stores/manufacturerStore";
 import { modelSchema } from "@/lib/schemas";
 import { useModelStore } from "@/lib/stores/modelStore";
-import { insert, getAll } from "@/lib/actions/model.actions";
+import { getAll, insert } from "@/lib/actions/model.actions";
 
 const ModelForm = () => {
   const [isPending, startTransition] = useTransition();
-
-  // Category store
-  const {
-    isOpen: categoryIsOpen,
-    onClose: closeCategoryModal,
-    onOpen: openCategoryModal,
-    categories,
-    getAll: fetchCategories,
-  } = useCategoryStore();
 
   const { onClose: closeModelModal } = useModelStore();
 
@@ -48,7 +37,6 @@ const ModelForm = () => {
       name: "",
       modelNo: "",
       manufacturerId: "",
-      categoryId: "",
       endOfLife: undefined,
       notes: "",
     },
@@ -56,9 +44,8 @@ const ModelForm = () => {
 
   // Fetch initial data
   React.useEffect(() => {
-    fetchCategories();
     fetchManufacturers();
-  }, [fetchCategories, fetchManufacturers]);
+  }, [fetchManufacturers]);
 
   const onSubmit = async (data: z.infer<typeof modelSchema>) => {
     startTransition(async () => {
@@ -66,7 +53,6 @@ const ModelForm = () => {
         await insert(data).then((_) => {
           toast.success("Model created successfully");
           form.reset();
-          fetchCategories();
           closeModelModal();
           getAll();
         });
@@ -92,14 +78,6 @@ const ModelForm = () => {
         title="Add Manufacturer"
         description="Add a new manufacturer to your inventory"
         form={<ManufacturerForm />}
-      />
-
-      <DialogContainer
-        open={categoryIsOpen}
-        onOpenChange={closeCategoryModal}
-        title="Add Category"
-        description="Add a new category for your models"
-        form={<CategoryForm />}
       />
 
       {/* Main Form */}
@@ -149,40 +127,8 @@ const ModelForm = () => {
             </div>
           </div>
 
-          {/* Category Selection */}
-          <div className="space-y-2">
-            <div className="flex gap-2">
-              <div className="flex-1">
-                <CustomSelect
-                  control={form.control}
-                  name="categoryId"
-                  label="Category"
-                  placeholder="Select category"
-                  data={categories}
-                  value={form.watch("categoryId")}
-                />
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                className="self-end h-10"
-                onClick={() => openCategoryModal()}
-              >
-                <Plus className="h-4 w-4 mr-1" />
-                New
-              </Button>
-            </div>
-          </div>
-
           {/* Dates and Additional Info */}
           <div className="space-y-4">
-            {/*<CustomDatePicker*/}
-            {/*    name="endOfLife"*/}
-            {/*    label="End of Life"*/}
-            {/*    placeholder="Select date"*/}
-            {/*    form={form.control}*/}
-            {/*/>*/}
-
             <CustomInput
               name="notes"
               label="Notes"

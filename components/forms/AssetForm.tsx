@@ -416,6 +416,28 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle>Category</CardTitle>
+              <CardDescription>Select a category for the asset</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <SelectWithButton
+                  name="formTemplateId"
+                  label="Form Template"
+                  data={templates}
+                  onNew={openTemplate}
+                  placeholder="Select a form template"
+                  form={form}
+                  isPending={isPending}
+                  onChange={handleTemplateChange}
+                />
+
+                {selectedTemplate && renderCustomFields()}
+              </div>
+            </CardContent>
+          </Card>
           {/* Base Info Card */}
           <Card className="p-6">
             <div className="space-y-6">
@@ -617,32 +639,6 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
                 </div>
               </div>
             </div>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle>Custom Form Fields</CardTitle>
-              <CardDescription>
-                Please select a form template if you want to add custom fields
-                to this asset
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                <SelectWithButton
-                  name="formTemplateId"
-                  label="Form Template"
-                  data={templates}
-                  onNew={openTemplate}
-                  placeholder="Select a form template"
-                  form={form}
-                  isPending={isPending}
-                  onChange={handleTemplateChange}
-                />
-
-                {selectedTemplate && renderCustomFields()}
-              </div>
-            </CardContent>
           </Card>
 
           {/* Action Buttons */}

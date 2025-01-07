@@ -42,16 +42,13 @@ interface EnhancedAccessoryType {
     name: string;
   };
   co2Score?: number;
-  model: {
-    name: string;
-  };
+  modelNumber: string;
   location: {
     name: string;
   };
   department: {
     name: string;
   };
-  assigneeId?: string;
   createdAt: Date;
   updatedAt: Date;
   inventory: {
@@ -99,51 +96,40 @@ export default function AssetPage({ params }: AssetPageProps) {
 
       try {
         const foundAccessoryResponse = await findById(id);
-
-        console.log(foundAccessoryResponse.data);
-
         if (!foundAccessoryResponse.error) {
           const foundAccessory = foundAccessoryResponse.data;
           console.log("foundAccessory: ", foundAccessoryResponse);
 
           setAccessory({
-            id: foundAccessory?.id ?? "",
-            name: foundAccessory?.name ?? "",
+            id: foundAccessory?.id ?? "-",
+            name: foundAccessory?.name ?? "-",
             co2Score: 0,
             category: {
-              name: foundAccessory?.model?.category?.name ?? "",
+              name: foundAccessory?.category?.name ?? "-",
             },
-            model: {
-              name: foundAccessory?.model?.name ?? "",
-            },
+            modelNumber: foundAccessory?.modelNumber ?? "-",
             statusLabel: {
-              name: foundAccessory?.statusLabel?.name ?? "",
+              name: foundAccessory?.statusLabel?.name ?? "-",
               colorCode: foundAccessory?.statusLabel?.colorCode ?? "#000000",
             },
-            assignee: foundAccessory?.assignee?.name
-              ? {
-                  name: foundAccessory.assignee.name,
-                }
-              : undefined,
             location: {
-              name: foundAccessory?.departmentLocation?.name ?? "",
+              name: foundAccessory?.departmentLocation?.name ?? "-",
             },
             department: {
-              name: foundAccessory?.department?.name ?? "",
+              name: foundAccessory?.department?.name ?? "-",
             },
             unitsAllocated: sumUnitsAssigned(
               foundAccessory?.userAccessories ?? [],
             ),
-            assigneeId: foundAccessory?.assigneeId ?? "",
             createdAt: foundAccessory?.createdAt ?? new Date(),
             updatedAt: foundAccessory?.updatedAt ?? new Date(),
-            alertEmail: foundAccessory?.alertEmail ?? "",
+            alertEmail: foundAccessory?.alertEmail ?? "-",
             inventory: {
-              name: foundAccessory?.inventory?.name ?? "",
+              name: foundAccessory?.inventory?.name ?? "-",
             },
-            poNumber: foundAccessory?.poNumber ?? "",
+            poNumber: foundAccessory?.poNumber ?? "-",
             reorderPoint: foundAccessory?.reorderPoint ?? 0,
-            supplier: { name: foundAccessory?.supplier?.name ?? "" },
+            supplier: { name: foundAccessory?.supplier?.name ?? "-" },
             totalQuantity: foundAccessory?.totalQuantityCount ?? 0,
             auditLogs: foundAccessory?.auditLogs ?? [],
             usedBy: foundAccessory?.userAccessories ?? [],
@@ -157,7 +143,9 @@ export default function AssetPage({ params }: AssetPageProps) {
 
     fetchAsset();
   }, [id]);
-
+  useEffect(() => {
+    console.log("ACCESSORY", accessory);
+  }, []);
   const handleUnassign = async (e?: React.MouseEvent) => {
     e?.preventDefault();
     if (!accessory?.id) return;
@@ -272,20 +260,14 @@ export default function AssetPage({ params }: AssetPageProps) {
     title: accessory.name,
     isLoading: false,
     co2Score: accessory.co2Score,
-    isAssigned: !!accessory.assigneeId,
     error,
     fields: [
       { label: "Name", value: accessory.name, type: "text" },
       { label: "Category", value: accessory.category.name, type: "text" },
-      { label: "Model", value: accessory.model.name, type: "text" },
+      { label: "Model Number", value: accessory.modelNumber, type: "text" },
       { label: "Status", value: accessory.statusLabel.name, type: "text" },
       { label: "Location", value: accessory.location?.name, type: "text" },
       { label: "Department", value: accessory.department?.name, type: "text" },
-      {
-        label: accessory.assigneeId ? "Assigned To" : "Not Assigned",
-        value: accessory.assigneeId ? (accessory.assignee?.name ?? "") : "",
-        type: "text",
-      },
       {
         label: "Created At",
         value: accessory?.createdAt?.toString(),
@@ -333,8 +315,8 @@ export default function AssetPage({ params }: AssetPageProps) {
     ),
     actions: {
       onArchive: () => handleAction("archive"),
-      onAssign: accessory.assigneeId ? undefined : () => onAssignOpen(),
-      onUnassign: accessory.assigneeId ? handleUnassign : undefined,
+      onAssign: () => onAssignOpen(),
+      onUnassign: handleUnassign,
       onDuplicate: () => handleAction("duplicate"),
       onEdit: () => handleAction("edit"),
       onPrintLabel: () => printQRCode("/qr-code/sample.png"),

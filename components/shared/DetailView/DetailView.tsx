@@ -34,7 +34,7 @@ const fieldIcons = {
   "Assigned To": User,
   "Created At": Calendar,
   Price: Coins,
-  Model: Laptop2,
+  "Model Number": Laptop2,
   Department: Building2,
   "Reorder Point": Bell,
   "Alert Email": Mail,
@@ -87,7 +87,7 @@ export const DetailView: React.FC<DetailViewProps> = ({
                 </span>
               ),
           )}
-          <CarbonScoreTooltip co2Score={89} />
+          <CarbonScoreTooltip co2Score={1} />
         </div>
       </div>
 
@@ -109,7 +109,7 @@ export const DetailView: React.FC<DetailViewProps> = ({
                       "Assigned To",
                       "Created At",
                       "Price",
-                      "Model",
+                      "Model Number",
                       "Department",
                       "Reorder Point",
                       "Alert Email",

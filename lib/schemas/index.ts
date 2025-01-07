@@ -211,6 +211,49 @@ export const registerSchema = z
     message: "Passwords do not match",
     path: ["repeatPassword"],
   });
+// export const licenseSchema = z
+//   .object({
+//     licenseName: z.string().min(1, "License name is required"),
+//     seats: z.string().refine((val) => !Number.isNaN(parseInt(val, 10)), {
+//       message: "License copies count is required",
+//     }),
+//     minSeatsAlert: z
+//       .string()
+//       .refine((val) => !Number.isNaN(parseInt(val, 10)), {
+//         message: "Min. copies alert is required",
+//       }),
+//     licensedEmail: z.string().email("Valid email is required"),
+//     purchaseDate: z.date(),
+//     renewalDate: z.date(),
+//     statusLabelId: z.string().min(1, "Status is required"),
+//     alertRenewalDays: z
+//       .string()
+//       .refine((val) => !Number.isNaN(parseInt(val, 10)), {
+//         message: "Alert renewal days is required",
+//       }),
+//     purchasePrice: z
+//       .string()
+//       .refine((val) => !Number.isNaN(parseInt(val, 10)), {
+//         message: "Purchase price is required",
+//       }),
+//     poNumber: z.string().min(1, "PO number is required"),
+//     notes: z.string().optional(),
+//     departmentId: z.string().min(1, "Department is required"),
+//     inventoryId: z.string().min(1, "Inventory is required"),
+//     locationId: z.string().min(1, "Location is required"),
+//     supplierId: z.string().min(1, "Supplier is required"),
+//     attachments: z.array(z.any()).optional(),
+//   })
+//   .refine((data) => data.seats < data.minSeatsAlert, {
+//     message:
+//       "Min. Copies must be greater than or equal to license copies count",
+//     path: ["minCopiesAlert"],
+//   })
+//   .refine((data) => data.purchaseDate <= data.renewalDate, {
+//     message: "Renewal date must in the future",
+//     path: ["renewalDate"],
+//   });
+
 export const licenseSchema = z
   .object({
     licenseName: z.string().min(1, "License name is required"),
@@ -244,13 +287,15 @@ export const licenseSchema = z
     supplierId: z.string().min(1, "Supplier is required"),
     attachments: z.array(z.any()).optional(),
   })
-  .refine((data) => data.seats < data.minSeatsAlert, {
-    message:
-      "Min. Copies must be greater than or equal to license copies count",
-    path: ["minCopiesAlert"],
-  })
+  .refine(
+    (data) => parseInt(data.seats, 10) > parseInt(data.minSeatsAlert, 10),
+    {
+      message: "License copies count must be greater than min. copies alert",
+      path: ["seats"],
+    },
+  )
   .refine((data) => data.purchaseDate <= data.renewalDate, {
-    message: "Renewal date must in the future",
+    message: "Renewal date must be in the future",
     path: ["renewalDate"],
   });
 
@@ -260,9 +305,10 @@ export const accessorySchema = z
     serialNumber: z.string().min(1, "Serial number is required"),
     supplierId: z.string().min(1, "Supplier is required"),
     locationId: z.string().min(1, "Location is required"),
-    modelId: z.string().min(1, "Model is required"),
+    modelNumber: z.string().min(1, "Model number is required"),
     inventoryId: z.string().min(1, "Inventory is required"),
     departmentId: z.string().min(1, "Department is required"),
+    categoryId: z.string().min(1, "Category is required"),
     price: z
       .union([z.string(), z.number()])
       .transform((value) => (typeof value === "string" ? Number(value) : value))
@@ -406,7 +452,6 @@ export const manufacturerSchema = z.object({
 export const modelSchema = z.object({
   name: requiredString("Location name is required"),
   manufacturerId: z.string().min(1, "Manufacturer is required"),
-  categoryId: z.string().min(1, "Category is required"),
   modelNo: z.string().min(1, "Model number is required"),
   endOfLife: z.string().optional(),
   notes: z.string().optional(),

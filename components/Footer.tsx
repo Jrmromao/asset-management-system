@@ -6,11 +6,12 @@ import { signOut, useSession } from "next-auth/react";
 const Footer = ({ type = "desktop" }: { type?: "desktop" | "mobile" }) => {
   const [username, setUsername] = useState("Guest");
   const { data: session } = useSession();
+
   useEffect(() => {
     if (session?.user?.name) {
       setUsername(session.user.name);
     }
-  }, []);
+  }, [session]);
 
   return (
     <footer className="footer">
