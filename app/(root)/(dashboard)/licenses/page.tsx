@@ -15,8 +15,8 @@ import {
 import Link from "next/link";
 import { TableHeader } from "@/components/tables/TableHeader";
 import TableHeaderSkeleton from "@/components/tables/TableHeaderSkeleton";
-import { Card, CardContent } from "@/components/ui/card";
 import { FileCheck } from "lucide-react";
+import StatusCards from "@/components/StatusCards";
 
 const Licenses = () => {
   const navigate = useRouter();
@@ -77,6 +77,33 @@ const Licenses = () => {
     setFilteredData(licenses);
   }, [licenses]);
 
+  const availableLicenses = licenses.filter(
+    (license) => license.statusLabel?.name.toUpperCase() === "AVAILABLE",
+  );
+
+  const TopCards = () => {
+    const cardData = [
+      {
+        title: "Total Licenses",
+        value: licenses.length,
+      },
+      {
+        title: "Available Licenses",
+        value: availableLicenses.length,
+        percentage: availableLicenses.length,
+        total: availableLicenses.length,
+      },
+      {
+        title: "Maintenance Due",
+        value: 3,
+        subtitle: "Due within 30 days",
+        color: "yellow",
+      },
+    ];
+
+    return <StatusCards cards={cardData} />;
+  };
+
   return (
     <div className="p-6 space-y-6">
       <Breadcrumb className="hidden md:flex">
@@ -94,38 +121,7 @@ const Licenses = () => {
         subtext="Manage your licenses."
         icon={<FileCheck className="w-4 h-4" />}
       />
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="space-y-2">
-              <p className="text-sm text-gray-500">Total Licenses</p>
-              <p className="text-3xl font-bold">12</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-6">
-            <div className="space-y-2">
-              <p className="text-sm text-gray-500">Active Licenses</p>
-              <p className="text-3xl font-bold">10</p>
-              <p className="text-sm text-gray-500">83.3% of total</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-6">
-            <div className="space-y-2">
-              <p className="text-sm text-gray-500">Renewals Due</p>
-              <p className="text-3xl font-bold text-amber-500">2</p>
-              <p className="text-sm text-gray-500">Due within 30 days</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
+      <TopCards />
       <div className="space-y-6">
         <section className="flex w-full flex-col gap-6">
           {loading ? (

@@ -18,11 +18,12 @@ import {
 } from "@/components/ui/breadcrumb";
 import Link from "next/link";
 import FilterDialog from "@/components/dialogs/FilterDialog";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Calendar, Filter, Import, Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import HeaderBox from "@/components/HeaderBox";
+import StatusCards from "@/components/StatusCards";
 
 const Assets = () => {
   const [openDialog, closeDialog, isOpen] = useDialogStore((state) => [
@@ -114,15 +115,38 @@ const Assets = () => {
     fetchAssets();
   }, [fetchAssets]);
 
-  const availableAssets = 9; //assets.filter((asset) => {
-  //   return asset.status === "AVAILABLE";
-  // });
+  const availableAssets = assets.filter((asset) => {
+    return asset.statusLabel?.name.toUpperCase() === "AVAILABLE";
+  });
   const maintenanceDue = assets.filter((asset) => {
     const dueDate = new Date();
     const thirtyDaysFromNow = new Date();
     thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
     return dueDate <= thirtyDaysFromNow;
   }).length;
+
+  const TopCards = () => {
+    const cardData = [
+      {
+        title: "Total Assets",
+        value: assets.length,
+      },
+      {
+        title: "Available Assets",
+        value: availableAssets.length,
+        percentage: availableAssets.length,
+        total: assets.length,
+      },
+      {
+        title: "Maintenance Due",
+        value: maintenanceDue,
+        subtitle: "Due within 30 days",
+        color: "yellow",
+      },
+    ];
+
+    return <StatusCards cards={cardData} />;
+  };
 
   return (
     <div className="p-6 space-y-6">
@@ -146,47 +170,7 @@ const Assets = () => {
       />
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Total Assets
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{assets.length}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Available Assets
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{availableAssets}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {((availableAssets / assets.length) * 100).toFixed(1)}% of total
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Maintenance Due
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">
-              {maintenanceDue}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Due within 30 days
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
+      <TopCards />
       {/* Action Bar */}
       <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
         <div className="relative w-full sm:w-96">

@@ -5,12 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowUpDown } from "lucide-react";
 import LinkTableCell from "@/components/tables/LinkTableCell";
 import React from "react";
-import LEGACY_CustomTableCell from "@/components/tables/LEGACY_CustomTableCell";
-import { TableCell } from "@/components/ui/table";
-
-import { useAssetStore } from "@/lib/stores/assetStore";
 import DataTableRowActions from "@/components/tables/DataTable/DataTableRowActions";
-import { formatDateTime } from "@/lib/utils";
 
 interface AccessoriesColumnsProps {
   onDelete: (value: Accessory) => void;

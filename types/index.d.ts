@@ -115,7 +115,7 @@ declare global {
     energyRating?: string;
     dailyOperationHours?: number;
     co2Score?: number;
-
+    status: string;
     // Optional fields
     certificateUrl?: string;
     licenceUrl?: string;

@@ -27,8 +27,8 @@ import {
 } from "@/components/ui/breadcrumb";
 import Link from "next/link";
 import { BsDisplay } from "react-icons/bs";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import HeaderBox from "@/components/HeaderBox";
+import StatusCards from "@/components/StatusCards";
 
 const Accessories = () => {
   const [accessories, getAll, deleteAccessory, loading] = useAccessoryStore(
@@ -124,6 +124,32 @@ const Accessories = () => {
     () => accessoriesColumns({ onDelete, onView }),
     [onDelete, onView],
   );
+  const availableAccessories = accessories.filter((acc) => {
+    return acc.statusLabel?.name.toUpperCase() === "AVAILABLE";
+  });
+
+  const TopCards = () => {
+    const cardData = [
+      {
+        title: "Total Accessories",
+        value: accessories.length,
+      },
+      {
+        title: "Available Accessories",
+        value: availableAccessories.length,
+        percentage: availableAccessories.length,
+        total: accessories.length,
+      },
+      {
+        title: "Maintenance Due",
+        value: 3,
+        subtitle: "Due within 30 days",
+        color: "yellow",
+      },
+    ];
+
+    return <StatusCards cards={cardData} />;
+  };
 
   return (
     <div className="min-h-screen p-6 space-y-6 mt-5">
@@ -146,44 +172,7 @@ const Accessories = () => {
         icon={<BsDisplay className="w-4 h-4" />}
       />
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Total Accessories
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{accessories.length}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Available Accessories
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{3}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {((23 / accessories.length) * 100).toFixed(1)}% of total
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Maintenance Due
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">{4}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Due within 30 days
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      <TopCards />
       {loading ? (
         <TableHeaderSkeleton />
       ) : (

@@ -84,7 +84,25 @@ export const create = async (
 
 export const getAll = async () => {
   try {
-    const licenses = await prisma.license.findMany();
+    const session = await auth();
+    if (!session) {
+      return { error: "Not authenticated" };
+    }
+
+    const licenses = await prisma.license.findMany({
+      where: {
+        companyId: session.user.companyId,
+      },
+      include: {
+        company: true,
+        statusLabel: true,
+        supplier: true,
+        department: true,
+        departmentLocation: true,
+        inventory: true,
+        users: true,
+      },
+    });
     return parseStringify(licenses);
   } catch (error) {
     console.log(error);
