@@ -107,8 +107,6 @@ export const getAll = async (): Promise<ApiResponse<Accessory[]>> => {
         createdAt: "desc",
       },
     });
-
-    console.log(accessories);
     return { data: parseStringify(accessories) };
   } catch (error) {
     console.error("Error fetching accessories:", error);
@@ -156,9 +154,6 @@ export const findById = async (id: string): Promise<ApiResponse<Accessory>> => {
       prisma.accessory.findUnique(accessoryQuery),
       id ? getAuditLog(id) : Promise.resolve({ success: false, data: [] }),
     ]);
-
-    console.log(accessory);
-
     if (!accessory) {
       return { error: "Accessory not found" };
     }

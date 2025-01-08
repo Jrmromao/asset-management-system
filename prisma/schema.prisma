@@ -124,6 +124,16 @@ model Accessory {
   @@index([categoryId])
 }
 
+model UserConsent {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String // 'data_processing', 'marketing', etc.
+  granted   Boolean
+  timestamp DateTime @default(now())
+  ipAddress String?
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
 // Form Template table to store the template structure
 model FormTemplate {
   id        String              @id @default(cuid())
@@ -138,16 +148,6 @@ model FormTemplate {
 
   @@unique([name, companyId])
   @@index([companyId])
-}
-
-model UserConsent {
-  id        String   @id @default(cuid())
-  userId    String
-  type      String // 'data_processing', 'marketing', etc.
-  granted   Boolean
-  timestamp DateTime @default(now())
-  ipAddress String?
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model FormTemplateValue {
@@ -228,8 +228,8 @@ model Role {
   name      String   @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  users User[]
+  isAdctive Boolean  @default(true)
+  users     User[]
 }
 
 model Company {

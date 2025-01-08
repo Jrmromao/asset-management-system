@@ -9,32 +9,39 @@ export const sidebarLinks = [
     imgURL: "/icons/laptop.svg",
     route: "/assets",
     label: "Assets",
-    visibleTo: ["admin", "user"],
+    visibleTo: ["admin", "user", "SuperAdmin"],
   },
   {
     imgURL: "/icons/license.svg",
     route: "/licenses",
     label: "Licenses",
-    visibleTo: ["admin", "user"],
+    visibleTo: ["admin", "user", "SuperAdmin"],
   },
   {
     imgURL: "/icons/monitor.svg",
     route: "/accessories",
     label: "Accessories",
-    visibleTo: ["admin", "user"],
+    visibleTo: ["admin", "user", "SuperAdmin"],
   },
   {
     imgURL: "/icons/people.svg",
     route: "/people",
     label: "People",
-    visibleTo: ["admin", "user"],
+    visibleTo: ["admin", "user", "SuperAdmin"],
   },
 
   {
     imgURL: "/icons/reports.svg",
     route: "/reports",
     label: "Reports",
-    visibleTo: ["admin"],
+    visibleTo: ["admin", "SuperAdmin"],
+  },
+
+  {
+    imgURL: "/icons/admin-icon.svg",
+    route: "/superAdmin",
+    label: "Admin",
+    visibleTo: ["SuperAdmin"],
   },
   // {
   //     imgURL: "/icons/money-send.svg",

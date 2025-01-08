@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { DetailView } from "@/components/shared/DetailView/DetailView";
-import QRCode from "react-qr-code";
 import Link from "next/link";
 import { toast } from "sonner";
 import Swal from "sweetalert2";
@@ -21,6 +20,8 @@ import { useAccessoryStore } from "@/lib/stores/accessoryStore";
 import { useItemDetails } from "@/components/shared/DetailsTabs/useItemDetails";
 import ItemDetailsTabs from "@/components/shared/DetailsTabs/ItemDetailsTabs";
 import { sumUnitsAssigned } from "@/lib/utils";
+import printQRCode from "@/utils/QRCodePrinter";
+import QRCode from "react-qr-code";
 
 interface AssetPageProps {
   params: {
@@ -191,67 +192,6 @@ export default function AssetPage({ params }: AssetPageProps) {
     }
   };
 
-  const printQRCode = (imageUrl: string) => {
-    try {
-      // Create print window
-      const printWindow = window.open("", "_blank", "width=800,height=600");
-      if (!printWindow) {
-        throw new Error("Popup blocked");
-      }
-
-      // Write HTML content
-      printWindow.document.write(`
-            <!DOCTYPE html>
-            <html>
-                <head>
-                    <title>Print Image</title>
-                    <style>
-                        @media print {
-                            @page {
-                                margin: 0;
-                                size: auto;
-                            }
-                            body {
-                                margin: 0;
-                                padding: 0;
-                            }
-                            img {
-                                width: 100%;
-                                height: auto;
-                                page-break-inside: avoid;
-                            }
-                        }
-                        body {
-                            margin: 0;
-                            display: flex;
-                            justify-content: center;
-                            align-items: center;
-                            min-height: 100vh;
-                        }
-                        img {
-                            max-width: 100%;
-                            height: auto;
-                        }
-                    </style>
-                </head>
-                <body>
-                    <img 
-                        src="${imageUrl}" 
-                        alt="Print preview"
-                        onload="setTimeout(() => { window.print(); window.close(); }, 200);"
-                        onerror="window.close(); alert('Failed to load image');"
-                    />
-                </body>
-            </html>
-        `);
-
-      printWindow.document.close();
-    } catch (error) {
-      console.error("Print error:", error);
-      alert("Failed to print image. Please allow popups for this feature.");
-    }
-  };
-
   if (!accessory) {
     return <div>Loading...</div>;
   }
@@ -313,13 +253,14 @@ export default function AssetPage({ params }: AssetPageProps) {
         {/*<Scan className="w-6 h-6 text-gray-500" />*/}
       </div>
     ),
+    // qrCode: <QRCodePrinter imageUrl="/qr-code/sample.png"/>,
     actions: {
       onArchive: () => handleAction("archive"),
       onAssign: () => onAssignOpen(),
       onUnassign: handleUnassign,
       onDuplicate: () => handleAction("duplicate"),
       onEdit: () => handleAction("edit"),
-      onPrintLabel: () => printQRCode("/qr-code/sample.png"),
+      onPrintLabel: () => handleAction("print"),
     },
     sourceData: "accessory",
     checkoutDisabled: accessory.unitsAllocated === accessory.totalQuantity,
@@ -330,7 +271,7 @@ export default function AssetPage({ params }: AssetPageProps) {
       archive: () => toast.info("Archive action not implemented"),
       duplicate: () => toast.info("Duplicate action not implemented"),
       edit: () => toast.info("Edit action not implemented", { id: "edit" }),
-      print: () => toast.info("Print label action not implemented"),
+      print: () => printQRCode("/qr-code/sample.png"),
     };
 
     actions[action]();
