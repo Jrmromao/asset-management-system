@@ -21,6 +21,7 @@ import ItemDetailsTabs from "@/components/shared/DetailsTabs/ItemDetailsTabs";
 import { useItemDetails } from "@/components/shared/DetailsTabs/useItemDetails";
 import { BoxIcon } from "lucide-react";
 import { sumSeatsAssigned } from "@/lib/utils";
+import DetailViewSkeleton from "@/components/shared/DetailView/DetailViewSkeleton";
 
 interface AssetPageProps {
   params: {
@@ -161,41 +162,58 @@ export default function View({ params }: AssetPageProps) {
       }
     }
   };
-
-  if (!license) {
-    return <div>Loading...</div>;
-  }
-
   const detailViewProps: DetailViewProps = {
-    title: license.name,
+    title: license?.name ?? "Untitled License",
     isLoading: false,
-    co2Score: license.co2Score,
-    isAssigned: !!license.assigneeId,
+    co2Score: license?.co2Score ?? 0,
+    isAssigned: Boolean(license?.assigneeId),
     error,
     fields: [
-      { label: "Name", value: license.name, type: "text" },
-      // { label: 'Category', value: license.category.name, type: 'text' },
-      // { label: 'Model', value: license.model.name, type: 'text' },
-      { label: "Status", value: license.statusLabel.name, type: "text" },
-      { label: "Location", value: license.location.name, type: "text" },
-      { label: "Department", value: license.department.name, type: "text" },
+      { label: "Name", value: license?.name ?? "", type: "text" },
+      {
+        label: "Status",
+        value: license?.statusLabel?.name ?? "",
+        type: "text",
+      },
+      { label: "Location", value: license?.location?.name ?? "", type: "text" },
+      {
+        label: "Department",
+        value: license?.department?.name ?? "",
+        type: "text",
+      },
       {
         label: "Purchase Date",
-        value: new Date(license.purchaseDate).toLocaleDateString(),
+        value: license?.purchaseDate
+          ? new Date(license.purchaseDate).toLocaleDateString()
+          : "",
         type: "text",
       },
       {
         label: "Renewal Date",
-        value: new Date(license.renewalDate).toLocaleDateString(),
+        value: license?.renewalDate
+          ? new Date(license.renewalDate).toLocaleDateString()
+          : "",
         type: "text",
       },
-      { label: "Inventory", value: license.inventory.name, type: "text" },
-      { label: "Reorder Point", value: license.reorderPoint, type: "text" },
-      { label: "Alert Email", value: license.seatsAlert, type: "text" },
-      { label: "Supplier", value: license.supplier.name, type: "text" },
-      { label: "PO Number", value: license.poNumber, type: "text" },
-      { label: "Seats", value: license.seats, type: "text" },
-      { label: "Seats Allocated", value: license.seatsAllocated, type: "text" },
+      {
+        label: "Inventory",
+        value: license?.inventory?.name ?? "",
+        type: "text",
+      },
+      {
+        label: "Reorder Point",
+        value: license?.reorderPoint ?? 0,
+        type: "text",
+      },
+      { label: "Alert Email", value: license?.seatsAlert ?? "", type: "text" },
+      { label: "Supplier", value: license?.supplier?.name ?? "", type: "text" },
+      { label: "PO Number", value: license?.poNumber ?? "", type: "text" },
+      { label: "Seats", value: license?.seats ?? 0, type: "text" },
+      {
+        label: "Seats Allocated",
+        value: license?.seatsAllocated ?? 0,
+        type: "text",
+      },
     ],
     breadcrumbs: (
       <Breadcrumb className="hidden md:flex">
@@ -218,11 +236,10 @@ export default function View({ params }: AssetPageProps) {
     qrCode: null,
     actions: {
       onArchive: () => handleAction("archive"),
-      onAssign: license.assigneeId ? undefined : () => onAssignOpen(),
-      onUnassign: license.assigneeId ? handleUnassign : undefined,
+      onAssign: license?.assigneeId ? undefined : () => onAssignOpen(),
+      onUnassign: license?.assigneeId ? handleUnassign : undefined,
       onDuplicate: () => handleAction("duplicate"),
       onEdit: () => handleAction("edit"),
-      // onPrintLabel: () => handleAction('print')
     },
     sourceData: "license",
   };
@@ -240,7 +257,7 @@ export default function View({ params }: AssetPageProps) {
 
   return (
     <>
-      <DetailView {...detailViewProps} />
+      {license ? <DetailView {...detailViewProps} /> : <DetailViewSkeleton />}
 
       <DialogContainer
         description="Checkout this License to a user"
@@ -249,7 +266,7 @@ export default function View({ params }: AssetPageProps) {
         title="Checkout License"
         form={
           <AssignmentForm
-            itemId={license.id}
+            itemId={license?.id!}
             type="license"
             seatsRequested={1}
             assignAction={assignLicense}

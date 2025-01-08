@@ -5,7 +5,7 @@ import AnimatedCounter from "@/components/AnimatedCounter";
 interface StatusCardData {
   title: string;
   value: number | string;
-  icon: React.ReactNode;
+  icon?: React.ReactNode;
   subtitle?: string;
 }
 

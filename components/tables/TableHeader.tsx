@@ -16,9 +16,9 @@ export function TableHeader({
   onCreateNew,
 }: TableHeaderProps) {
   return (
-    <div className="space-y-6 mb-6">
-      <div className="flex items-center justify-between">
-        <div className="relative w-[300px]">
+    <div className="space-y-4 mb-6">
+      <div className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
+        <div className="relative w-full sm:w-[300px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <input
             placeholder="Search..."
@@ -27,11 +27,11 @@ export function TableHeader({
           />
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col space-y-2 sm:flex-row sm:items-center sm:space-y-0 sm:space-x-3">
           <Button
             variant="outline"
             onClick={onFilter}
-            className="h-10 px-4 shadow-sm border-gray-200 hover:bg-gray-50"
+            className="h-10 w-full sm:w-auto px-4 shadow-sm border-gray-200 hover:bg-gray-50"
           >
             <Filter className="h-4 w-4 mr-2" />
             Filter
@@ -39,16 +39,15 @@ export function TableHeader({
           <Button
             variant="outline"
             onClick={onImport}
-            className="h-10 px-4 shadow-sm border-gray-200 hover:bg-gray-50"
+            className="h-10 w-full sm:w-auto px-4 shadow-sm border-gray-200 hover:bg-gray-50"
           >
             <Import className="w-4 h-4 mr-2" />
             Import
           </Button>
           <Button
             onClick={onCreateNew}
-            className="h-10 px-4 shadow-sm bg-emerald-600 hover:bg-emerald-700 text-white"
+            className="h-10 w-full sm:w-auto px-4 shadow-sm bg-emerald-600 hover:bg-emerald-700 text-white"
           >
-            {" "}
             <Plus className="w-4 h-4 mr-2" />
             Create New
           </Button>
