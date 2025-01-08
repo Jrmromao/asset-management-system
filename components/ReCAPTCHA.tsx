@@ -12,6 +12,7 @@ declare global {
     grecaptcha: any;
     onRecaptchaVerify?: (token: string) => void;
     onRecaptchaExpire?: () => void;
+    onRecaptchaLoad?: () => void;
   }
 }
 
@@ -26,6 +27,10 @@ const ReCAPTCHA: React.FC<ReCAPTCHAProps> = ({
 
   React.useEffect(() => {
     // Set up callbacks
+    window.onRecaptchaLoad = () => {
+      setIsScriptLoaded(true);
+    };
+
     window.onRecaptchaVerify = (token: string) => {
       onVerify(token);
     };
@@ -40,6 +45,7 @@ const ReCAPTCHA: React.FC<ReCAPTCHAProps> = ({
     return () => {
       delete window.onRecaptchaVerify;
       delete window.onRecaptchaExpire;
+      delete window.onRecaptchaLoad;
     };
   }, [onVerify, onExpire]);
 
@@ -53,49 +59,29 @@ const ReCAPTCHA: React.FC<ReCAPTCHAProps> = ({
     }
 
     const renderRecaptcha = () => {
-      if (window.grecaptcha?.render) {
-        try {
-          widgetIdRef.current = window.grecaptcha.render(
-            containerRef.current!,
-            {
-              sitekey: siteKey,
-              callback: "onRecaptchaVerify",
-              "expired-callback": "onRecaptchaExpire",
-            },
-          );
-        } catch (error) {
-          console.error("Failed to render reCAPTCHA:", error);
-        }
+      if (!window.grecaptcha?.render) return;
+
+      try {
+        widgetIdRef.current = window.grecaptcha.render(containerRef.current!, {
+          sitekey: siteKey,
+          callback: "onRecaptchaVerify",
+          "expired-callback": "onRecaptchaExpire",
+          size: "normal", // Add explicit size
+        });
+      } catch (error) {
+        console.error("Failed to render reCAPTCHA:", error);
       }
     };
 
-    // Try to render immediately if grecaptcha is available
-    if (window.grecaptcha?.render) {
-      renderRecaptcha();
-    } else {
-      // Poll for grecaptcha availability
-      const interval = setInterval(() => {
-        if (window.grecaptcha?.render) {
-          clearInterval(interval);
-          renderRecaptcha();
-        }
-      }, 100);
-
-      // Clear interval after 5 seconds if not loaded
-      setTimeout(() => clearInterval(interval), 5000);
-    }
+    // Add a delay before attempting to render
+    setTimeout(renderRecaptcha, 100);
   }, [isScriptLoaded, siteKey]);
 
   return (
     <>
       <Script
-        src="https://www.google.com/recaptcha/api.js"
-        onLoad={() => {
-          setIsScriptLoaded(true);
-        }}
-        onError={(e) => {
-          console.error("Error loading reCAPTCHA:", e);
-        }}
+        src={`https://www.google.com/recaptcha/api.js?onload=onRecaptchaLoad&render=explicit`}
+        strategy="afterInteractive"
       />
       <div
         ref={containerRef}
