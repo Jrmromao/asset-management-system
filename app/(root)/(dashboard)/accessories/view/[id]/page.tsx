@@ -22,6 +22,7 @@ import ItemDetailsTabs from "@/components/shared/DetailsTabs/ItemDetailsTabs";
 import { sumUnitsAssigned } from "@/lib/utils";
 import printQRCode from "@/utils/QRCodePrinter";
 import QRCode from "react-qr-code";
+import DetailViewSkeleton from "@/components/shared/DetailView/DetailViewSkeleton";
 
 interface AssetPageProps {
   params: {
@@ -92,7 +93,7 @@ export default function AssetPage({ params }: AssetPageProps) {
     itemType: "accessory",
   });
   useEffect(() => {
-    const fetchAsset = async () => {
+    const fetchAccessory = async () => {
       if (!id) return;
 
       try {
@@ -142,11 +143,9 @@ export default function AssetPage({ params }: AssetPageProps) {
       }
     };
 
-    fetchAsset();
+    fetchAccessory();
   }, [id]);
-  useEffect(() => {
-    console.log("ACCESSORY", accessory);
-  }, []);
+
   const handleUnassign = async (e?: React.MouseEvent) => {
     e?.preventDefault();
     if (!accessory?.id) return;
@@ -192,40 +191,68 @@ export default function AssetPage({ params }: AssetPageProps) {
     }
   };
 
-  if (!accessory) {
-    return <div>Loading...</div>;
-  }
-
   const detailViewProps: DetailViewProps = {
-    title: accessory.name,
+    title: accessory?.name ?? "Untitled Accessory",
     isLoading: false,
-    co2Score: accessory.co2Score,
+    co2Score: accessory?.co2Score ?? 0,
     error,
     fields: [
-      { label: "Name", value: accessory.name, type: "text" },
-      { label: "Category", value: accessory.category.name, type: "text" },
-      { label: "Model Number", value: accessory.modelNumber, type: "text" },
-      { label: "Status", value: accessory.statusLabel.name, type: "text" },
-      { label: "Location", value: accessory.location?.name, type: "text" },
-      { label: "Department", value: accessory.department?.name, type: "text" },
+      { label: "Name", value: accessory?.name ?? "", type: "text" },
+      {
+        label: "Category",
+        value: accessory?.category?.name ?? "",
+        type: "text",
+      },
+      {
+        label: "Model Number",
+        value: accessory?.modelNumber ?? "",
+        type: "text",
+      },
+      {
+        label: "Status",
+        value: accessory?.statusLabel?.name ?? "",
+        type: "text",
+      },
+      {
+        label: "Location",
+        value: accessory?.location?.name ?? "",
+        type: "text",
+      },
+      {
+        label: "Department",
+        value: accessory?.department?.name ?? "",
+        type: "text",
+      },
       {
         label: "Created At",
-        value: accessory?.createdAt?.toString(),
+        value: accessory?.createdAt?.toString() ?? "",
         type: "date",
       },
       {
         label: "Last Updated",
-        value: accessory.updatedAt?.toString(),
+        value: accessory?.updatedAt?.toString() ?? "",
         type: "date",
       },
-      { label: "Quantity", value: accessory.totalQuantity, type: "text" },
-      { label: "Reorder Point", value: accessory.reorderPoint, type: "text" },
-      { label: "Alert Email", value: accessory.alertEmail, type: "text" },
-      { label: "Supplier", value: accessory.supplier.name, type: "text" },
-      { label: "Units", value: accessory.totalQuantity, type: "text" },
+      { label: "Quantity", value: accessory?.totalQuantity ?? 0, type: "text" },
+      {
+        label: "Reorder Point",
+        value: accessory?.reorderPoint ?? 0,
+        type: "text",
+      },
+      {
+        label: "Alert Email",
+        value: accessory?.alertEmail ?? "",
+        type: "text",
+      },
+      {
+        label: "Supplier",
+        value: accessory?.supplier?.name ?? "",
+        type: "text",
+      },
+      { label: "Units", value: accessory?.totalQuantity ?? 0, type: "text" },
       {
         label: "Units Allocated",
-        value: accessory.unitsAllocated,
+        value: accessory?.unitsAllocated ?? 0,
         type: "text",
       },
     ],
@@ -250,10 +277,8 @@ export default function AssetPage({ params }: AssetPageProps) {
     qrCode: (
       <div className="flex flex-col items-center justify-center gap-2">
         <QRCode value={`/qr-code/sample.png`} size={140} />
-        {/*<Scan className="w-6 h-6 text-gray-500" />*/}
       </div>
     ),
-    // qrCode: <QRCodePrinter imageUrl="/qr-code/sample.png"/>,
     actions: {
       onArchive: () => handleAction("archive"),
       onAssign: () => onAssignOpen(),
@@ -263,9 +288,9 @@ export default function AssetPage({ params }: AssetPageProps) {
       onPrintLabel: () => handleAction("print"),
     },
     sourceData: "accessory",
-    checkoutDisabled: accessory.unitsAllocated === accessory.totalQuantity,
+    checkoutDisabled:
+      (accessory?.unitsAllocated ?? 0) === (accessory?.totalQuantity ?? 0),
   };
-
   const handleAction = (action: "archive" | "duplicate" | "edit" | "print") => {
     const actions: Record<typeof action, () => void> = {
       archive: () => toast.info("Archive action not implemented"),
@@ -279,7 +304,7 @@ export default function AssetPage({ params }: AssetPageProps) {
 
   return (
     <>
-      <DetailView {...detailViewProps} />
+      {accessory ? <DetailView {...detailViewProps} /> : <DetailViewSkeleton />}
       <DialogContainer
         description="Assign this asset to a user"
         open={isAssignOpen}

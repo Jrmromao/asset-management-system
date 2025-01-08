@@ -17,6 +17,7 @@ import { TableHeader } from "@/components/tables/TableHeader";
 import TableHeaderSkeleton from "@/components/tables/TableHeaderSkeleton";
 import { FileCheck } from "lucide-react";
 import StatusCards from "@/components/StatusCards";
+import StatusCardPlaceholder from "@/components/StatusCardPlaceholder";
 
 const Licenses = () => {
   const navigate = useRouter();
@@ -121,18 +122,23 @@ const Licenses = () => {
         subtext="Manage your licenses."
         icon={<FileCheck className="w-4 h-4" />}
       />
-      <TopCards />
       <div className="space-y-6">
         <section className="flex w-full flex-col gap-6">
           {loading ? (
-            <TableHeaderSkeleton />
+            <>
+              <StatusCardPlaceholder />
+              <TableHeaderSkeleton />
+            </>
           ) : (
-            <TableHeader
-              onSearch={handleSearch}
-              onFilter={handleFilter}
-              onImport={() => {}}
-              onCreateNew={() => navigate.push("/licenses/create")}
-            />
+            <>
+              <TopCards />
+              <TableHeader
+                onSearch={handleSearch}
+                onFilter={handleFilter}
+                onImport={() => {}}
+                onCreateNew={() => navigate.push("/licenses/create")}
+              />
+            </>
           )}
           <DataTable
             columns={columns}

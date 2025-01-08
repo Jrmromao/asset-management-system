@@ -38,9 +38,9 @@ export default function UserPage({ params }: { params: { id: string } }) {
     fetchUser();
   }, [params.id]);
 
-  if (state.error) return <div>Error: {state.error}</div>;
-  if (!state.user) return <div>User not found</div>;
-  if (state.isLoading) {
+  // if (state.error) return <div>Error: {state.error}</div>;
+  // if (!state.user) return <div>User not found</div>;
+  if (!state.user) {
     return <UserProfileSkeleton />;
   }
   return <UserDetailsView user={state?.user} isLoading={state.isLoading} />;

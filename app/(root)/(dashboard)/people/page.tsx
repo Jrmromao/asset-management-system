@@ -19,9 +19,10 @@ import { DataTable } from "@/components/tables/DataTable/data-table";
 import { peopleColumns } from "@/components/tables/PeopleColumns";
 import { TableHeader } from "@/components/tables/TableHeader";
 import TableHeaderSkeleton from "@/components/tables/TableHeaderSkeleton";
-import { BsDisplay } from "react-icons/bs";
 import { Card, CardContent } from "@/components/ui/card";
-import { Building2, Laptop, UserPlus } from "lucide-react";
+import { Building2, Laptop, UserPlus, Users } from "lucide-react";
+import StatusCards from "@/components/StatusCards";
+import StatusCardPlaceholder from "@/components/StatusCardPlaceholder";
 
 const People = () => {
   const [openDialog, closeDialog, isOpen] = useDialogStore((state) => [
@@ -79,6 +80,32 @@ const People = () => {
   useEffect(() => {
     setFilteredData(users);
   }, [users]);
+
+  const TopCards = () => {
+    const cardData = [
+      {
+        title: "Total Employees",
+        value: 24,
+        icon: <UserPlus className="h-4 w-4" />,
+        subtitle: "3 new this month",
+      },
+      {
+        title: "Departments",
+        value: 5,
+        icon: <Building2 className="h-4 w-4" />,
+        subtitle: "Active departments",
+      },
+      {
+        title: "Assigned Assets",
+        value: 18,
+        icon: <Laptop className="h-4 w-4" />,
+        subtitle: "75% of total assets",
+      },
+    ];
+
+    return <StatusCards cards={cardData} />;
+  };
+
   return (
     <div className="p-6 space-y-6">
       <Breadcrumb className="hidden md:flex">
@@ -95,50 +122,54 @@ const People = () => {
       <HeaderBox
         title="People"
         subtext="Manage and track people"
-        icon={<BsDisplay className="w-4 h-4" />}
+        icon={<Users className="w-4 h-4" />}
       />
 
       {/* Stats Section */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="space-y-2">
-              <p className="text-sm text-gray-500">Total Employees</p>
-              <p className="text-3xl font-bold">24</p>
-              <div className="flex items-center text-sm text-gray-500">
-                <UserPlus className="h-4 w-4 mr-1" />
-                <span>3 new this month</span>
+      {loading ? (
+        <StatusCardPlaceholder />
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="space-y-2">
+                <p className="text-sm text-gray-500">Total Employees</p>
+                <p className="text-3xl font-bold">24</p>
+                <div className="flex items-center text-sm text-gray-500">
+                  <UserPlus className="h-4 w-4 mr-1" />
+                  <span>3 new this month</span>
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardContent className="pt-6">
-            <div className="space-y-2">
-              <p className="text-sm text-gray-500">Departments</p>
-              <p className="text-3xl font-bold">5</p>
-              <div className="flex items-center text-sm text-gray-500">
-                <Building2 className="h-4 w-4 mr-1" />
-                <span>Active departments</span>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="space-y-2">
+                <p className="text-sm text-gray-500">Departments</p>
+                <p className="text-3xl font-bold">5</p>
+                <div className="flex items-center text-sm text-gray-500">
+                  <Building2 className="h-4 w-4 mr-1" />
+                  <span>Active departments</span>
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardContent className="pt-6">
-            <div className="space-y-2">
-              <p className="text-sm text-gray-500">Assigned Assets</p>
-              <p className="text-3xl font-bold">18</p>
-              <div className="flex items-center text-sm text-gray-500">
-                <Laptop className="h-4 w-4 mr-1" />
-                <span>75% of total assets</span>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="space-y-2">
+                <p className="text-sm text-gray-500">Assigned Assets</p>
+                <p className="text-3xl font-bold">18</p>
+                <div className="flex items-center text-sm text-gray-500">
+                  <Laptop className="h-4 w-4 mr-1" />
+                  <span>75% of total assets</span>
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       <DialogContainer
         open={isOpen}
@@ -150,7 +181,9 @@ const People = () => {
       <div className="space-y-6">
         <section className="flex w-full flex-col gap-6">
           {loading ? (
-            <TableHeaderSkeleton />
+            <>
+              <TableHeaderSkeleton />
+            </>
           ) : (
             <TableHeader
               onSearch={handleSearch}

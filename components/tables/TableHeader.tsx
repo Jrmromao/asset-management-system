@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
-import { Filter, Search } from "lucide-react";
+import { Filter, Import, Plus, Search } from "lucide-react";
+import React from "react";
 
 interface TableHeaderProps {
   onSearch: (value: string) => void;
@@ -40,12 +41,15 @@ export function TableHeader({
             onClick={onImport}
             className="h-10 px-4 shadow-sm border-gray-200 hover:bg-gray-50"
           >
+            <Import className="w-4 h-4 mr-2" />
             Import
           </Button>
           <Button
             onClick={onCreateNew}
             className="h-10 px-4 shadow-sm bg-emerald-600 hover:bg-emerald-700 text-white"
           >
+            {" "}
+            <Plus className="w-4 h-4 mr-2" />
             Create New
           </Button>
         </div>

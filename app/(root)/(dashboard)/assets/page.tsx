@@ -19,11 +19,12 @@ import {
 import Link from "next/link";
 import FilterDialog from "@/components/dialogs/FilterDialog";
 import { Card, CardContent } from "@/components/ui/card";
-import { Calendar, Filter, Import, Plus, Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Calendar } from "lucide-react";
 import HeaderBox from "@/components/HeaderBox";
 import StatusCards from "@/components/StatusCards";
+import StatusCardPlaceholder from "@/components/StatusCardPlaceholder";
+import TableHeaderSkeleton from "@/components/tables/TableHeaderSkeleton";
+import { TableHeader } from "@/components/tables/TableHeader";
 
 const Assets = () => {
   const [openDialog, closeDialog, isOpen] = useDialogStore((state) => [
@@ -169,44 +170,23 @@ const Assets = () => {
         icon={<Calendar className="w-4 h-4" />}
       />
 
-      {/* Stats Cards */}
-      <TopCards />
-      {/* Action Bar */}
-      <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-        <div className="relative w-full sm:w-96">
-          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search assets..."
-            className="pl-8"
-            onChange={(e) => handleSearch(e.target.value)}
+      {/*/!* Stats Cards *!/*/}
+      {loading ? (
+        <>
+          <StatusCardPlaceholder />
+          <TableHeaderSkeleton />
+        </>
+      ) : (
+        <>
+          <TopCards />
+          <TableHeader
+            onSearch={handleSearch}
+            onFilter={handleFilter}
+            onImport={() => openDialog()}
+            onCreateNew={() => navigate.push("/assets/create")}
           />
-        </div>
-        <div className="flex gap-2 w-full sm:w-auto">
-          <Button
-            variant="outline"
-            className="w-full sm:w-auto"
-            onClick={handleFilter}
-          >
-            <Filter className="w-4 h-4 mr-2" />
-            Filter
-          </Button>
-          <Button
-            variant="outline"
-            className="w-full sm:w-auto"
-            onClick={() => openDialog()}
-          >
-            <Import className="w-4 h-4 mr-2" />
-            Import
-          </Button>
-          <Button
-            className="w-full sm:w-auto"
-            onClick={() => navigate.push("/assets/create")}
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Add Asset
-          </Button>
-        </div>
-      </div>
+        </>
+      )}
 
       {/* Table */}
       <Card>

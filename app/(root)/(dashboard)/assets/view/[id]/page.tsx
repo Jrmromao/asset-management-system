@@ -20,6 +20,7 @@ import { useAssetStore } from "@/lib/stores/assetStore";
 import { DetailViewProps } from "@/components/shared/DetailView/types";
 import { checkin, checkout, findById } from "@/lib/actions/assets.actions";
 import ItemDetailsTabs from "@/components/shared/DetailsTabs/ItemDetailsTabs";
+import DetailViewSkeleton from "@/components/shared/DetailView/DetailViewSkeleton";
 
 interface AssetPageProps {
   params: {
@@ -245,43 +246,47 @@ export default function AssetPage({ params }: AssetPageProps) {
     }
   };
 
-  if (!asset) {
-    return <div>Loading...</div>;
-  }
-
   const detailViewProps: DetailViewProps = {
-    title: asset.name,
+    title: asset?.name ?? "Untitled Asset",
     isLoading: false,
-    co2Score: asset.co2Score,
-    isAssigned: !!asset.assigneeId,
+    co2Score: asset?.co2Score ?? 0,
+    isAssigned: Boolean(asset?.assigneeId),
     error,
     fields: [
-      { label: "Name", value: asset.name, type: "text" },
-      { label: "Price", value: asset.price, type: "currency" },
-      { label: "Category", value: asset.category.name, type: "text" },
-      { label: "Model", value: asset.model.name, type: "text" },
+      { label: "Name", value: asset?.name ?? "", type: "text" },
+      { label: "Price", value: asset?.price ?? 0, type: "currency" },
+      { label: "Category", value: asset?.category?.name ?? "", type: "text" },
+      { label: "Model", value: asset?.model?.name ?? "", type: "text" },
       {
         label: "Status",
-        value: asset.assignee?.name ? "On Loan" : "Available",
+        value: asset?.assignee?.name ? "On Loan" : "Available",
         type: "text",
       },
-      { label: "Location", value: asset.location?.name, type: "text" },
-      { label: "Department", value: asset.department?.name, type: "text" },
+      { label: "Location", value: asset?.location?.name ?? "", type: "text" },
       {
-        label: asset.assigneeId ? "Assigned To" : "Not Assigned",
-        value: asset.assigneeId ? (asset.assignee?.name ?? "") : "",
+        label: "Department",
+        value: asset?.department?.name ?? "",
         type: "text",
       },
-      { label: "Tag Number", value: asset.serialNumber, type: "text" },
-      { label: "Created At", value: asset.createdAt.toString(), type: "date" },
+      {
+        label: asset?.assigneeId ? "Assigned To" : "Not Assigned",
+        value: asset?.assignee?.name ?? "",
+        type: "text",
+      },
+      { label: "Tag Number", value: asset?.serialNumber ?? "", type: "text" },
+      {
+        label: "Created At",
+        value: asset?.createdAt?.toString() ?? "",
+        type: "date",
+      },
       {
         label: "Last Updated",
-        value: asset.updatedAt.toString(),
+        value: asset?.updatedAt?.toString() ?? "",
         type: "date",
       },
     ],
-    customFormFields: asset.formTemplate.values,
-    breadcrumbs: (
+    customFormFields: asset?.formTemplate?.values ?? [],
+    breadcrumbs: asset ? (
       <Breadcrumb className="hidden md:flex">
         <BreadcrumbList>
           <BreadcrumbItem>
@@ -298,7 +303,7 @@ export default function AssetPage({ params }: AssetPageProps) {
           <BreadcrumbSeparator />
         </BreadcrumbList>
       </Breadcrumb>
-    ),
+    ) : null,
     qrCode: (
       <div className="flex items-center gap-2">
         <QRCode value={`/qr-code/sample.png`} size={140} />
@@ -307,8 +312,8 @@ export default function AssetPage({ params }: AssetPageProps) {
     ),
     actions: {
       onArchive: () => handleAction("archive"),
-      onAssign: asset.assigneeId ? undefined : () => onAssignOpen(),
-      onUnassign: asset.assigneeId ? handleUnassign : undefined,
+      onAssign: asset?.assigneeId ? undefined : () => onAssignOpen(),
+      onUnassign: asset?.assigneeId ? handleUnassign : undefined,
       onDuplicate: () => handleAction("duplicate"),
       onEdit: () => handleAction("edit"),
       onPrintLabel: () => printQRCode("/qr-code/sample.png"),
@@ -328,7 +333,7 @@ export default function AssetPage({ params }: AssetPageProps) {
 
   return (
     <>
-      <DetailView {...detailViewProps} />
+      {asset ? <DetailView {...detailViewProps} /> : <DetailViewSkeleton />}
       <DialogContainer
         description="Assign this asset to a user"
         open={isAssignOpen}
@@ -336,7 +341,7 @@ export default function AssetPage({ params }: AssetPageProps) {
         title="Assign Asset"
         form={
           <AssignmentForm
-            itemId={asset?.id}
+            itemId={asset?.id!}
             type="asset"
             assignAction={checkout}
             onOptimisticUpdate={(userData) => {
@@ -355,7 +360,7 @@ export default function AssetPage({ params }: AssetPageProps) {
               onAssignClose();
 
               try {
-                const freshData = await findById(asset.id);
+                const freshData = await findById(asset?.id!);
                 if (!freshData.error && freshData.data) {
                   // Add check for data existence
                   setAsset((prev) => {

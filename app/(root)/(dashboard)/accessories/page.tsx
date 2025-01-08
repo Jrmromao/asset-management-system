@@ -29,6 +29,7 @@ import Link from "next/link";
 import { BsDisplay } from "react-icons/bs";
 import HeaderBox from "@/components/HeaderBox";
 import StatusCards from "@/components/StatusCards";
+import StatusCardPlaceholder from "@/components/StatusCardPlaceholder";
 
 const Accessories = () => {
   const [accessories, getAll, deleteAccessory, loading] = useAccessoryStore(
@@ -125,7 +126,7 @@ const Accessories = () => {
     [onDelete, onView],
   );
   const availableAccessories = accessories.filter((acc) => {
-    return acc.statusLabel?.name.toUpperCase() === "AVAILABLE";
+    return acc.statusLabel?.name.toLowerCase() === "available";
   });
 
   const TopCards = () => {
@@ -172,16 +173,21 @@ const Accessories = () => {
         icon={<BsDisplay className="w-4 h-4" />}
       />
       {/* Stats Cards */}
-      <TopCards />
       {loading ? (
-        <TableHeaderSkeleton />
+        <>
+          <StatusCardPlaceholder />
+          <TableHeaderSkeleton />
+        </>
       ) : (
-        <TableHeader
-          onSearch={handleSearch}
-          onFilter={handleFilter}
-          onImport={() => openDialog()}
-          onCreateNew={() => navigate.push("/accessories/create")}
-        />
+        <>
+          <TopCards />
+          <TableHeader
+            onSearch={handleSearch}
+            onFilter={handleFilter}
+            onImport={() => openDialog()}
+            onCreateNew={() => navigate.push("/accessories/create")}
+          />
+        </>
       )}
 
       <DataTable columns={columns} data={filteredData} isLoading={loading} />

@@ -13,7 +13,7 @@ const Sidebar = () => {
   const pathName = usePathname();
 
   const user: any = {
-    role: "SuperAdmin",
+    role: "admin",
   };
 
   return (

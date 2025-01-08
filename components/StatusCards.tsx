@@ -1,13 +1,12 @@
 import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import AnimatedCounter from "@/components/AnimatedCounter";
 
 interface StatusCardData {
   title: string;
   value: number | string;
+  icon: React.ReactNode;
   subtitle?: string;
-  color?: string;
-  percentage?: number;
-  total?: number;
 }
 
 interface StatusCardsProps {
@@ -29,41 +28,27 @@ const StatusCards = ({ cards, columns = 3 }: StatusCardsProps) => {
     }
   };
 
-  const getValueColor = (color?: string) => {
-    switch (color) {
-      case "yellow":
-        return "text-yellow-600";
-      case "red":
-        return "text-red-600";
-      case "green":
-        return "text-green-600";
-      case "blue":
-        return "text-blue-600";
-      default:
-        return "";
-    }
-  };
-
   return (
     <div className={`grid grid-cols-1 ${getGridCols()} gap-4`}>
       {cards.map((card, index) => (
         <Card key={index}>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              {card.title}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className={`text-2xl font-bold ${getValueColor(card.color)}`}>
-              {card.value}
-            </div>
-            {(card.percentage || card.subtitle) && (
-              <p className="text-xs text-muted-foreground mt-1">
-                {card.percentage && card.total
-                  ? `${(card.percentage / card.total) * 100}% of total`
-                  : card.subtitle}
+          <CardContent className="pt-6">
+            <div className="space-y-2">
+              <p className="text-sm text-gray-500">{card.title}</p>
+              <p className="text-3xl font-bold">
+                <AnimatedCounter
+                  value={Number(card.value)}
+                  duration={0.3}
+                  decimals={0}
+                />
               </p>
-            )}
+              {card.subtitle && (
+                <div className="flex items-center text-sm text-gray-500">
+                  {card.icon}
+                  <span className="ml-1">{card.subtitle}</span>
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
       ))}
