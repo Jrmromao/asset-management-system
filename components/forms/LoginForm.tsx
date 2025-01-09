@@ -44,6 +44,7 @@ const AuthForm = () => {
         const response = await login(data);
 
         if (response?.error) {
+          console.error(response);
           setError(response.error);
         } else {
           router.push(DEFAULT_LOGIN_REDIRECT);

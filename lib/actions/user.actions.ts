@@ -31,12 +31,15 @@ export async function login(
   }
 
   const { email, password } = validation.data;
+  console.log("USER.LOGIN::34 ", email);
 
   try {
     await signIn("credentials", {
       email,
       password,
       redirect: false,
+    }).catch((error) => {
+      console.error(error);
     });
     return { success: true };
   } catch (error) {
@@ -56,6 +59,7 @@ async function insertUser(data: RegUser, oauthId?: string) {
   if (!data.roleId) {
     throw new Error("Role ID is required");
   }
+  console.log("USER.LOGIN::62 ", data);
 
   try {
     const user = await prisma.user.create({
@@ -73,6 +77,7 @@ async function insertUser(data: RegUser, oauthId?: string) {
     });
     return user;
   } catch (error) {
+    console.error("USER.LOGIN::80 ", error);
     throw error;
   }
 }
