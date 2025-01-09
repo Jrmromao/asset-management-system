@@ -21,6 +21,8 @@ import { DetailViewProps } from "@/components/shared/DetailView/types";
 import { checkin, checkout, findById } from "@/lib/actions/assets.actions";
 import ItemDetailsTabs from "@/components/shared/DetailsTabs/ItemDetailsTabs";
 import DetailViewSkeleton from "@/components/shared/DetailView/DetailViewSkeleton";
+import printQRCode from "@/utils/QRCodePrinter";
+import { useRouter } from "next/navigation";
 
 interface AssetPageProps {
   params: {
@@ -82,7 +84,7 @@ export default function AssetPage({ params }: AssetPageProps) {
   const { id } = params;
   const { isAssignOpen, onAssignOpen, onAssignClose, unassign } =
     useAssetStore();
-
+  const navigate = useRouter();
   const [asset, setAsset] = useState<EnhancedAssetType | undefined>();
 
   useEffect(() => {
@@ -186,66 +188,6 @@ export default function AssetPage({ params }: AssetPageProps) {
     }
   };
 
-  const printQRCode = (imageUrl: string) => {
-    try {
-      // Create print window
-      const printWindow = window.open("", "_blank", "width=800,height=600");
-      if (!printWindow) {
-        throw new Error("Popup blocked");
-      }
-
-      // Write HTML content
-      printWindow.document.write(`
-            <!DOCTYPE html>
-            <html>
-                <head>
-                    <title>Print Image</title>
-                    <style>
-                        @media print {
-                            @page {
-                                margin: 0;
-                                size: auto;
-                            }
-                            body {
-                                margin: 0;
-                                padding: 0;
-                            }
-                            img {
-                                width: 100%;
-                                height: auto;
-                                page-break-inside: avoid;
-                            }
-                        }
-                        body {
-                            margin: 0;
-                            display: flex;
-                            justify-content: center;
-                            align-items: center;
-                            min-height: 100vh;
-                        }
-                        img {
-                            max-width: 100%;
-                            height: auto;
-                        }
-                    </style>
-                </head>
-                <body>
-                    <img 
-                        src="${imageUrl}" 
-                        alt="Print preview"
-                        onload="setTimeout(() => { window.print(); window.close(); }, 200);"
-                        onerror="window.close(); alert('Failed to load image');"
-                    />
-                </body>
-            </html>
-        `);
-      printWindow.document.close();
-    } catch (error) {
-      console.error("Print error:", error);
-      alert("Failed to print image. Please allow popups for this feature.");
-    }
-  };
-
   const detailViewProps: DetailViewProps = {
     title: asset?.name ?? "Untitled Asset",
     isLoading: false,
@@ -324,7 +266,7 @@ export default function AssetPage({ params }: AssetPageProps) {
     const actions: Record<typeof action, () => void> = {
       archive: () => toast.info("Archive action not implemented"),
       duplicate: () => toast.info("Duplicate action not implemented"),
-      edit: () => toast.info("Edit action not implemented", { id: "edit" }),
+      edit: () => navigate.push(`/assets/edit/${id}`),
       print: () => toast.info("Print label action not implemented"),
     };
 

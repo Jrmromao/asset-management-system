@@ -32,13 +32,12 @@ const Create = () => {
         </BreadcrumbList>
       </Breadcrumb>
 
-      <div>
-        <HeaderBox
-          title="Create new asset"
-          subtext="Fill the form to create new asset."
-          icon={<Laptop className="h-6 w-6 text-blue-500" />}
-        />
-      </div>
+      <HeaderBox
+        title="Create new asset"
+        subtext="Fill the form to create new asset."
+        icon={<Laptop className="h-6 w-6 text-blue-500" />}
+      />
+
       <AssetForm />
     </div>
   );
