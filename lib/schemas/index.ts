@@ -150,7 +150,7 @@ export const registerSchema = z
       .refine(async (email) => {
         try {
           const response = await fetch(
-            "http://localhost:3000/api/validate/email",
+            `${process.env.NEXT_PUBLIC_SITE_URL}/api/validate/email`,
             {
               method: "POST",
               headers: {
@@ -185,7 +185,7 @@ export const registerSchema = z
       .refine(async (company) => {
         try {
           const response = await fetch(
-            "http://localhost:3000/api/validate/company",
+            `${process.env.NEXT_PUBLIC_SITE_URL}/api/validate/company`,
             {
               method: "POST",
               headers: {
