@@ -25,18 +25,6 @@ export default async function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <head>
-        <link
-          rel="preconnect"
-          href="https://www.google.com"
-          crossOrigin="anonymous"
-        />
-        <link
-          rel="preconnect"
-          href="https://www.gstatic.com"
-          crossOrigin="anonymous"
-        />
-      </head>
       <body className={`${inter.variable} ${ibmPlexSerif.variable}`}>
         <ClientLayout>{children}</ClientLayout>
       </body>
