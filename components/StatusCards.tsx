@@ -1,6 +1,5 @@
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import AnimatedCounter from "@/components/AnimatedCounter";
 
 interface StatusCardData {
   title: string;
@@ -35,13 +34,7 @@ const StatusCards = ({ cards, columns = 3 }: StatusCardsProps) => {
           <CardContent className="pt-6">
             <div className="space-y-2">
               <p className="text-sm text-gray-500">{card.title}</p>
-              <p className="text-3xl font-bold">
-                <AnimatedCounter
-                  value={Number(card.value)}
-                  duration={0.3}
-                  decimals={0}
-                />
-              </p>
+              <p className="text-3xl font-bold">{card.value}</p>
               {card.subtitle && (
                 <div className="flex items-center text-sm text-gray-500">
                   {card.icon}

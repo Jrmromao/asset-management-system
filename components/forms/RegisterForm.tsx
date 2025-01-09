@@ -10,7 +10,7 @@ import { z } from "zod";
 import { Loader2 } from "lucide-react";
 import { registerCompany } from "@/lib/actions/company.actions";
 import CustomInput from "@/components/CustomInput";
-import { registerSchema } from "@/lib/schemas";
+import { inventorySchema, registerSchema } from "@/lib/schemas";
 import HeaderIcon from "@/components/page/HeaderIcon";
 import ReCAPTCHA from "@/components/ReCAPTCHA";
 
@@ -37,6 +37,10 @@ const RegisterForm = () => {
   const router = useRouter();
 
   const onSubmit = async (data: z.infer<typeof registerSchema>) => {
+    const validation = inventorySchema.safeParse(data);
+    console.log(validation);
+    console.log(validation.data);
+
     setIsLoading(true);
     try {
       if (data) {

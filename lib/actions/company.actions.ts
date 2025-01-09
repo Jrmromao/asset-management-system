@@ -18,6 +18,9 @@ export const registerCompany = async (
     };
   }
 
+  console.log(validation);
+  console.log(validation.data);
+
   const { companyName, lastName, firstName, email, password, phoneNumber } =
     validation.data;
 

@@ -103,7 +103,7 @@ export const accessoriesColumns = ({
       return (
         <LinkTableCell
           value={accessory.inventory?.name}
-          navigateTo={`/accessories/view/?id=${accessory.id}`}
+          navigateTo={`/accessories/view/${accessory.id}`}
         />
       );
     },
