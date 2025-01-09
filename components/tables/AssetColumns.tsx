@@ -1,15 +1,9 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
-import { ArrowUpDown, InfoIcon } from "lucide-react";
+import { ArrowUpDown } from "lucide-react";
 import LinkTableCell from "@/components/tables/LinkTableCell";
 import React from "react";
 import DataTableRowActions from "@/components/tables/DataTable/DataTableRowActions";
-import { FormTemplate } from "@/types/form";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 
 // const navigate = useRouter() cannot use hook in a non hook component
 interface AssetColumnsProps {
@@ -87,10 +81,10 @@ export const assetColumns = ({
     header: "Category",
 
     cell: ({ row }) => {
-      const value = row.original.model?.category;
+      const value = row.original.formTemplate;
       return (
         <LinkTableCell
-          className={"hover:underline hover:text-red-500 hover:decoration-wavy"}
+          className={"hover:underline"}
           value={value?.name}
           navigateTo={`/assets/view/${row.original.id}`}
         />

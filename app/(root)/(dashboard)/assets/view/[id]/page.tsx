@@ -104,7 +104,7 @@ export default function AssetPage({ params }: AssetPageProps) {
             serialNumber: foundAsset?.serialNumber ?? "",
             co2Score: foundAsset?.co2Score ?? 0,
             category: {
-              name: foundAsset?.model?.category?.name ?? "",
+              name: foundAsset?.formTemplate?.name ?? "-",
             },
             model: {
               name: foundAsset?.model?.name ?? "",
