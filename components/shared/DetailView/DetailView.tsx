@@ -241,38 +241,99 @@ export const DetailView: React.FC<DetailViewProps> = ({
 
   return (
     <Card className="h-full mx-2">
+      {/*<CardHeader className="space-y-0">*/}
+      {/*  {breadcrumbs && <div className="mb-4">{breadcrumbs}</div>}*/}
+      {/*  <div className="flex justify-between items-start">*/}
+      {/*    <div className="space-y-1">*/}
+      {/*      <CardTitle className="text-2xl font-semibold flex items-center gap-2">*/}
+      {/*        {title}*/}
+      {/*        {tagNumber && (*/}
+      {/*          <TooltipProvider>*/}
+      {/*            <Tooltip>*/}
+      {/*              <TooltipTrigger asChild>*/}
+      {/*                <Button*/}
+      {/*                  variant="ghost"*/}
+      {/*                  size="sm"*/}
+      {/*                  className="h-6 w-6 p-0"*/}
+      {/*                  onClick={() =>*/}
+      {/*                    navigator.clipboard.writeText(String(tagNumber))*/}
+      {/*                  }*/}
+      {/*                >*/}
+      {/*                  <ClipboardCopy className="h-4 w-4" />*/}
+      {/*                </Button>*/}
+      {/*              </TooltipTrigger>*/}
+      {/*              <TooltipContent>Copy Tag Number</TooltipContent>*/}
+      {/*            </Tooltip>*/}
+      {/*          </TooltipProvider>*/}
+      {/*        )}*/}
+      {/*      </CardTitle>*/}
+      {/*      {tagNumber && (*/}
+      {/*        <p className="text-sm text-muted-foreground">Tag: {tagNumber}</p>*/}
+      {/*      )}*/}
+      {/*    </div>*/}
+      {/*    <div className="flex flex-col sm:flex-row items-start gap-2">*/}
+      {/*      <div className="flex gap-2 w-full sm:w-auto">*/}
+      {/*        {!(getField("Seats") || getField("Units")) && (*/}
+      {/*          <AvailabilityChecker*/}
+      {/*            status={String(getField("Status")?.value)}*/}
+      {/*          />*/}
+      {/*        )}*/}
+      {/*        <CarbonScoreTooltip co2Score={1} />*/}
+      {/*      </div>*/}
+      {/*      <div className="flex flex-wrap gap-2">*/}
+      {/*        {["Seats", "Units"].map(*/}
+      {/*          (field) =>*/}
+      {/*            getField(field)?.value && (*/}
+      {/*              <span*/}
+      {/*                key={field}*/}
+      {/*                className="inline-flex items-center rounded-full bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-600/20"*/}
+      {/*              >*/}
+      {/*                {String(getField(`${field} Allocated`)?.value || 0)} /{" "}*/}
+      {/*                {String(getField(field)?.value)} {field}*/}
+      {/*              </span>*/}
+      {/*            ),*/}
+      {/*        )}*/}
+      {/*      </div>*/}
+      {/*    </div>*/}
+      {/*  </div>*/}
+      {/*</CardHeader>*/}
       <CardHeader className="space-y-0">
         {breadcrumbs && <div className="mb-4">{breadcrumbs}</div>}
-        <div className="flex justify-between items-start">
-          <div className="space-y-1">
-            <CardTitle className="text-2xl font-semibold flex items-center gap-2">
-              {title}
+        <div className="flex flex-col gap-4">
+          <div className="flex justify-between items-start">
+            <div className="space-y-1">
+              <CardTitle className="text-2xl font-semibold flex items-center gap-2">
+                {title}
+                {tagNumber && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0"
+                          onClick={() =>
+                            navigator.clipboard.writeText(String(tagNumber))
+                          }
+                        >
+                          <ClipboardCopy className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Copy Tag Number</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+              </CardTitle>
               {tagNumber && (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 w-6 p-0"
-                        onClick={() =>
-                          navigator.clipboard.writeText(String(tagNumber))
-                        }
-                      >
-                        <ClipboardCopy className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Copy Tag Number</TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                <p className="text-sm text-muted-foreground">
+                  Tag: {tagNumber}
+                </p>
               )}
-            </CardTitle>
-            {tagNumber && (
-              <p className="text-sm text-muted-foreground">Tag: {tagNumber}</p>
-            )}
+            </div>
           </div>
-          <div className="flex flex-col items-end gap-2">
-            <div className="flex gap-2">
+
+          <div className="flex flex-col sm:flex-row items-start gap-2">
+            <div className="flex gap-2 w-full sm:w-auto">
               {!(getField("Seats") || getField("Units")) && (
                 <AvailabilityChecker
                   status={String(getField("Status")?.value)}
@@ -280,13 +341,13 @@ export const DetailView: React.FC<DetailViewProps> = ({
               )}
               <CarbonScoreTooltip co2Score={1} />
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               {["Seats", "Units"].map(
                 (field) =>
                   getField(field)?.value && (
                     <span
                       key={field}
-                      className="inline-flex items-center rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-600/20"
+                      className="inline-flex items-center rounded-full bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-600/20"
                     >
                       {String(getField(`${field} Allocated`)?.value || 0)} /{" "}
                       {String(getField(field)?.value)} {field}
@@ -297,7 +358,6 @@ export const DetailView: React.FC<DetailViewProps> = ({
           </div>
         </div>
       </CardHeader>
-
       <CardContent>
         <div className="grid grid-cols-1 lg:grid-cols-6 gap-6">
           <div className="lg:col-span-5">

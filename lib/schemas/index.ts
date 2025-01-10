@@ -438,9 +438,10 @@ export const assignmentSchema = z
     },
     {
       message: "This item is already assigned to this user",
-      path: ["itemId"], // This will show the error under the item field
+      path: ["userId"], // This will show the error under the item field
     },
   );
+
 export const manufacturerSchema = z.object({
   ...nameField("Manufacturer"),
   url: z.string().url({ message: "Invalid URL" }),

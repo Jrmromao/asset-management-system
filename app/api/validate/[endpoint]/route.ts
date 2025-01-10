@@ -23,6 +23,7 @@ export async function POST(
 
       switch (type) {
         case "accessory":
+          console.log(type, userId, itemId);
           const existingAccessory = await prisma.userAccessory.findFirst({
             where: {
               AND: [{ userId: userId }, { accessoryId: itemId }],

@@ -309,7 +309,7 @@ export default function AssetPage({ params }: AssetPageProps) {
         description="Assign this asset to a user"
         open={isAssignOpen}
         onOpenChange={onAssignClose}
-        title="Assign Asset"
+        title="Accessory Checkout"
         form={
           <AssignmentForm
             itemId={id}
