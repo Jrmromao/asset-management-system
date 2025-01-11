@@ -3,13 +3,16 @@ import { parseStringify } from "@/lib/utils";
 import { prisma } from "@/app/db";
 import { auth } from "@/auth";
 
+// lib/actions/statusLabel.actions.ts
 export const insert = async (data: StatusLabel) => {
   try {
     const session = await auth();
+
     if (!session) {
       return { error: "Not authenticated" };
     }
-    await prisma.statusLabel.create({
+
+    const result = await prisma.statusLabel.create({
       data: {
         name: data.name,
         colorCode: data.colorCode || "#000000",
@@ -19,15 +22,23 @@ export const insert = async (data: StatusLabel) => {
         companyId: session?.user?.companyId,
       },
     });
+
+    return result;
   } catch (error) {
-    console.error(error);
-  } finally {
-    await prisma.$disconnect();
+    console.error("Error creating status label:", error);
+    throw error;
   }
 };
+
+// lib/actions/statusLabel.actions.ts
 export const getAll = async () => {
   try {
     const session = await auth();
+    if (!session) {
+      console.log("No session found");
+      return [];
+    }
+
     const labels = await prisma.statusLabel.findMany({
       orderBy: {
         createdAt: "desc",
@@ -36,13 +47,16 @@ export const getAll = async () => {
         companyId: session?.user?.companyId,
       },
     });
-    return parseStringify(labels);
+
+    return labels;
   } catch (error) {
-    console.log(error);
+    console.error("Error in getAll:", error);
+    throw error;
   } finally {
     await prisma.$disconnect();
   }
 };
+
 export const findById = async (id: string) => {
   try {
     const labels = await prisma.statusLabel.findFirst({

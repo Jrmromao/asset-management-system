@@ -74,8 +74,6 @@ export async function getAllSimple(): Promise<ActionResponse<Supplier[]>> {
     if (!session?.user?.companyId) {
       return { error: "Not authenticated" };
     }
-
-    console.log("Fetching suppliers...");
     const suppliers = await prisma.supplier.findMany({
       where: {
         companyId: session.user.companyId,

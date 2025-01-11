@@ -1,40 +1,38 @@
 "use client";
 
-import React, { useTransition } from "react";
+import React, { startTransition } from "react";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { Loader2 } from "lucide-react";
-import { toast } from "sonner";
 
-// Components
 import CustomInput from "@/components/CustomInput";
 import CustomColorPicker from "@/components/CustomColorPicker";
 import CustomSwitch from "@/components/CustomSwitch";
 
-// Store and Schema
-import { useStatusLabelStore } from "@/lib/stores/statusLabelStore";
 import { statusLabelSchema } from "@/lib/schemas";
-import { insert } from "@/lib/actions/statusLabel.actions";
+import { useStatusLabelUIStore } from "@/lib/stores/useStatusLabelUIStore";
+import { useStatusLabelsQuery } from "@/components/hooks/queries/useStatusLabelsQuery"; // Keep for UI state only
 
 type FormValues = z.infer<typeof statusLabelSchema>;
 
-const StatusLabelForm = () => {
-  const [isPending, startTransition] = useTransition();
-  const {
-    onClose,
-    create: createStatusLabel,
-    getAll: fetchStatusLabels,
-  } = useStatusLabelStore();
+interface StatusLabelFormProps {
+  onSuccess?: (statusLabelId: string) => void;
+}
+
+const StatusLabelForm = ({ onSuccess }: StatusLabelFormProps) => {
+  const { createStatusLabel, isCreating } = useStatusLabelsQuery(); // data operations
+
+  const { onClose } = useStatusLabelUIStore();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(statusLabelSchema),
     defaultValues: {
       name: "",
       description: "",
-      colorCode: "#000000", // Add a default color
+      colorCode: "#000000",
       isArchived: false,
       allowLoan: true,
     },
@@ -42,30 +40,25 @@ const StatusLabelForm = () => {
 
   async function onSubmit(data: FormValues) {
     startTransition(async () => {
-      try {
-        const result = createStatusLabel({
+      const result = createStatusLabel(
+        {
           name: data.name,
           description: data.description,
-          colorCode: data.colorCode!,
+          colorCode: data.colorCode ?? "", // Ensure a default value for colorCode
           isArchived: data.isArchived ?? false,
           allowLoan: data.allowLoan ?? true,
-        });
-
-        // if (result?.error) {
-        //     toast.error(result.error)
-        //     return
-        // }
-
-        insert;
-
-        fetchStatusLabels();
-        toast.success("Status Label created successfully");
-        form.reset();
-        onClose();
-      } catch (error) {
-        console.error("Create status label error:", error);
-        toast.error("Failed to create status label");
-      }
+        },
+        {
+          onSuccess: () => {
+            form.reset();
+            onClose();
+            console.log("Successfully created status label");
+          },
+          onError: (error) => {
+            console.error("Error creating status label:", error);
+          },
+        },
+      );
     });
   }
 
@@ -117,13 +110,16 @@ const StatusLabelForm = () => {
               form.reset();
               onClose();
             }}
-            disabled={isPending}
+            disabled={isCreating}
           >
             Cancel
           </Button>
 
-          <Button type="submit" disabled={isPending || !form.formState.isValid}>
-            {isPending ? (
+          <Button
+            type="submit"
+            disabled={isCreating || !form.formState.isValid}
+          >
+            {isCreating ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 Creating...

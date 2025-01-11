@@ -17,7 +17,7 @@ import CustomDatePicker from "@/components/CustomDatePicker";
 import CustomPriceInput from "@/components/CustomPriceInput";
 import Dropzone from "@/components/Dropzone";
 import { SelectWithButton } from "@/components/SelectWithButton";
-import { useStatusLabelStore } from "@/lib/stores/statusLabelStore";
+import { useStatusLabelUIStore } from "@/lib/stores/useStatusLabelUIStore";
 import { useLocationStore } from "@/lib/stores/locationStore";
 import { useDepartmentStore } from "@/lib/stores/departmentStore";
 import { useInventoryStore } from "@/lib/stores/inventoryStore";
@@ -66,7 +66,7 @@ const LicenseForm = () => {
     isOpen: isStatusOpen,
     onOpen: openStatus,
     onClose: closeStatus,
-  } = useStatusLabelStore();
+  } = useStatusLabelUIStore();
 
   const {
     departments,

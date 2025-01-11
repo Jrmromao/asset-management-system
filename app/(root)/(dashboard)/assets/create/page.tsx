@@ -19,13 +19,13 @@ const Create = () => {
         <BreadcrumbList>
           <BreadcrumbItem>
             <BreadcrumbLink asChild>
-              <Link href="/assetsx    ">Assets</Link>
+              <Link href="/assetsx">Assets</Link>
             </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
             <BreadcrumbLink asChild>
-              <Link href={`/app/(root)/(dashboard)/assets/create`}>Create</Link>
+              <Link href={`//assets/create`}>Create</Link>
             </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
@@ -35,7 +35,7 @@ const Create = () => {
       <HeaderBox
         title="Create new asset"
         subtext="Fill the form to create new asset."
-        icon={<Laptop className="h-6 w-6 text-blue-500" />}
+        icon={<Laptop className="h-6 w-6" />}
       />
 
       <AssetForm />

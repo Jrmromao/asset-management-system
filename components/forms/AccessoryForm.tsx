@@ -27,7 +27,7 @@ import { useSupplierStore } from "@/lib/stores/SupplierStore";
 import { useManufacturerStore } from "@/lib/stores/manufacturerStore";
 import { useInventoryStore } from "@/lib/stores/inventoryStore";
 import { create } from "@/lib/actions/accessory.actions";
-import { useStatusLabelStore } from "@/lib/stores/statusLabelStore";
+import { useStatusLabelUIStore } from "@/lib/stores/useStatusLabelUIStore";
 import { SelectWithButton } from "@/components/SelectWithButton";
 import { useModelStore } from "@/lib/stores/modelStore";
 import { useLocationStore } from "@/lib/stores/locationStore";
@@ -71,11 +71,10 @@ const AccessoryForm = () => {
     onClose: closeSupplier,
   } = useSupplierStore();
   const {
-    statusLabels,
     isOpen: isStatusOpen,
     onOpen: openStatus,
     onClose: closeStatus,
-  } = useStatusLabelStore();
+  } = useStatusLabelUIStore();
 
   const {
     locations,

@@ -2,19 +2,22 @@
 
 import { QueryClient, QueryClientProvider as QCP } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 
-export default function QueryClientProvider({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+interface QueryProviderProps {
+  children: ReactNode;
+}
+
+export default function QueryClientProvider({ children }: QueryProviderProps) {
+  // Ensure QueryClient is correctly instantiated
   const [queryClient] = useState(() => new QueryClient());
 
   return (
     <QCP client={queryClient}>
       {children}
-      <ReactQueryDevtools initialIsOpen={false} />
+      {process.env.NODE_ENV === "development" && (
+        <ReactQueryDevtools initialIsOpen={false} />
+      )}
     </QCP>
   );
 }
