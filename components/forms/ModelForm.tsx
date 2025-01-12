@@ -19,7 +19,6 @@ import { useModelsQuery } from "@/hooks/queries/useModelsQuery";
 const ModelForm = () => {
   const { createModel, isCreating } = useModelsQuery();
   const { onClose } = useModelUIStore();
-
   // Manufacturer store
   const {
     isOpen: manufacturerIsOpen,

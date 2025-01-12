@@ -1,78 +1,33 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getAll, insert } from "@/lib/actions/model.actions";
 import { useModelUIStore } from "@/lib/stores/useModelUIStore";
-import { toast } from "sonner";
 import { useEffect } from "react";
+import { createGenericQuery } from "@/hooks/queries/useGenericQuery";
 
 export const MODEL_KEY = ["models"] as const;
 
 export function useModelsQuery() {
-  const queryClient = useQueryClient();
   const { onClose } = useModelUIStore();
 
+  const genericQuery = createGenericQuery<Model>(
+    MODEL_KEY,
+    {
+      getAll,
+      insert,
+    },
+    {
+      onClose,
+      successMessage: "Model created successfully",
+      errorMessage: "Failed to create model",
+    },
+  );
+
   const {
-    data: models = [],
+    items: models,
     isLoading,
     error,
-  } = useQuery({
-    queryKey: MODEL_KEY,
-    queryFn: async () => {
-      const result = await getAll();
-      return result.data;
-    },
-    staleTime: 5 * 60 * 1000,
-  });
-
-  const { mutate: createModel, isPending: isCreating } = useMutation({
-    mutationFn: async (data: Omit<Model, "id">) => {
-      const newModel: Model = {
-        id: crypto.randomUUID(),
-        ...data,
-      };
-      const result = await insert(newModel);
-      if ("error" in result) throw new Error(result.error);
-      return result.data;
-    },
-    // Optimistic update
-    onMutate: async (newData) => {
-      // Cancel any outgoing refetches to avoid overwriting our optimistic update
-      await queryClient.cancelQueries({ queryKey: MODEL_KEY });
-
-      // Snapshot the previous value
-      const previousModels = queryClient.getQueryData(MODEL_KEY);
-
-      // Optimistically update the cache
-      const optimisticModel: Model = {
-        id: crypto.randomUUID(),
-        ...newData,
-      };
-
-      queryClient.setQueryData(MODEL_KEY, (old: Model[] = []) => {
-        return [...old, optimisticModel].sort((a, b) =>
-          a.name.localeCompare(b.name),
-        );
-      });
-
-      // Return context with snapshotted value
-      return { previousModels };
-    },
-    onError: (err, newModel, context) => {
-      // If mutation fails, roll back to the previous value
-      if (context?.previousModels) {
-        queryClient.setQueryData(MODEL_KEY, context.previousModels);
-      }
-      console.error("Create model error:", err?.message || err);
-      toast.error("Failed to create model");
-    },
-    onSuccess: (data) => {
-      toast.success("Model created successfully");
-      onClose();
-    },
-    onSettled: () => {
-      // Always refetch after error or success to ensure cache is synchronized
-      queryClient.invalidateQueries({ queryKey: MODEL_KEY });
-    },
-  });
+    createItem: createModel,
+    isCreating,
+  } = genericQuery();
 
   useEffect(() => {
     console.log("Models updated in component:", models);

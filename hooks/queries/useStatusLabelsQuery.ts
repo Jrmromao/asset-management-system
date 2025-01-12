@@ -20,7 +20,6 @@ export function useStatusLabelsQuery() {
       const result = await getAll();
       return result;
     },
-    staleTime: 5 * 60 * 1000, // Data stays fresh for 5 minutes
   });
 
   const { mutate: createStatusLabel, isPending: isCreating } = useMutation({
@@ -37,48 +36,21 @@ export function useStatusLabelsQuery() {
 
       return result;
     },
-    // Add optimistic update
-    onMutate: async (newData) => {
-      // Cancel any outgoing refetches
-      await queryClient.cancelQueries({ queryKey: STATUS_LABELS_KEY });
+    onSuccess: async (data: StatusLabel) => {
+      const currentCache = queryClient.getQueryData(STATUS_LABELS_KEY);
 
-      // Snapshot the previous value
-      const previousStatusLabels = queryClient.getQueryData(STATUS_LABELS_KEY);
-
-      // Create optimistic status label
-      const optimisticStatusLabel: StatusLabel = {
-        id: crypto.randomUUID(),
-        ...newData,
-      };
-
-      // Optimistically update the cache
       queryClient.setQueryData(STATUS_LABELS_KEY, (old: StatusLabel[] = []) => {
-        return [...old, optimisticStatusLabel].sort((a, b) =>
-          a.name.localeCompare(b.name),
-        );
+        return [...old, data].sort((a, b) => a.name.localeCompare(b.name));
       });
 
-      // Return context with the snapshotted value
-      return { previousStatusLabels };
-    },
-    onError: (err, newStatusLabel, context) => {
-      // If mutation fails, roll back to the previous value
-      if (context?.previousStatusLabels) {
-        queryClient.setQueryData(
-          STATUS_LABELS_KEY,
-          context.previousStatusLabels,
-        );
-      }
-      console.error("Create status label error:", err?.message || err);
-      toast.error("Failed to create status label");
-    },
-    onSuccess: (data) => {
+      await queryClient.invalidateQueries({ queryKey: STATUS_LABELS_KEY });
+
       toast.success("Status Label created successfully");
       onClose();
     },
-    onSettled: () => {
-      // Always refetch after error or success to ensure cache is synchronized
-      queryClient.invalidateQueries({ queryKey: STATUS_LABELS_KEY });
+    onError: (error) => {
+      console.error("Create status label error:", error?.message || error);
+      toast.error("Failed to create status label");
     },
   });
 

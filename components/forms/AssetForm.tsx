@@ -59,8 +59,8 @@ interface AssetFormProps {
 const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
   const { statusLabels, isLoading: isLoadingStatusLabels } =
     useStatusLabelsQuery();
-  const { models } = useModelsQuery();
   const [isLoadingInitialData, setIsLoadingInitialData] = useState(true);
+  const { models } = useModelsQuery();
 
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
