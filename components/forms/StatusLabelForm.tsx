@@ -23,7 +23,7 @@ interface StatusLabelFormProps {
 }
 
 const StatusLabelForm = ({ onSuccess }: StatusLabelFormProps) => {
-  const { createStatusLabel, isCreating } = useStatusLabelsQuery(); // data operations
+  const { createStatusLabel, isCreating } = useStatusLabelsQuery();
 
   const { onClose } = useStatusLabelUIStore();
 
@@ -40,7 +40,7 @@ const StatusLabelForm = ({ onSuccess }: StatusLabelFormProps) => {
 
   async function onSubmit(data: FormValues) {
     startTransition(async () => {
-      const result = createStatusLabel(
+      createStatusLabel(
         {
           name: data.name,
           description: data.description,

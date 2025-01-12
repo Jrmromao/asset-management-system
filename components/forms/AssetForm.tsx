@@ -25,7 +25,6 @@ import CustomDatePicker from "@/components/CustomDatePicker";
 // Forms
 // Stores
 import { useAssetStore } from "@/lib/stores/assetStore";
-import { useModelStore } from "@/lib/stores/modelStore";
 import { useLocationStore } from "@/lib/stores/locationStore";
 import { useDepartmentStore } from "@/lib/stores/departmentStore";
 import { useSupplierStore } from "@/lib/stores/SupplierStore";
@@ -41,6 +40,8 @@ import { useFormModals } from "@/hooks/useFormModals";
 import { ModalManager } from "@/components/ModalManager";
 import { useStatusLabelsQuery } from "@/hooks/queries/useStatusLabelsQuery";
 import { useStatusLabelUIStore } from "@/lib/stores/useStatusLabelUIStore";
+import { useModelsQuery } from "@/hooks/queries/useModelsQuery";
+import { useModelUIStore } from "@/lib/stores/useModelUIStore";
 
 type FormTemplate = {
   id: string;
@@ -58,6 +59,7 @@ interface AssetFormProps {
 const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
   const { statusLabels, isLoading: isLoadingStatusLabels } =
     useStatusLabelsQuery();
+  const { models } = useModelsQuery();
   const [isLoadingInitialData, setIsLoadingInitialData] = useState(true);
 
   const [isPending, startTransition] = useTransition();
@@ -72,20 +74,13 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
   >({});
   // Stores
   const { onOpen: openStatus } = useStatusLabelUIStore();
-
+  const { onOpen: openModel } = useModelUIStore();
   const {
     create: createAsset,
     update: updateAsset,
     findById,
   } = useAssetStore();
 
-  const {
-    models,
-    fetchModels,
-    isOpen: isModelOpen,
-    onOpen: openModel,
-    onClose: closeModel,
-  } = useModelStore();
   const {
     locations,
     fetchLocations,
@@ -161,7 +156,6 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
           fetchDepartments().catch(() => errors.push("Departments")),
           fetchInventories().catch(() => errors.push("Inventories")),
           fetchSuppliers().catch(() => errors.push("Suppliers")),
-          fetchModels().catch(() => errors.push("Models")),
           fetchFormTemplates().catch(() => errors.push("Form templates")),
         ]);
 

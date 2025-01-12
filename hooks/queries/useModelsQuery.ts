@@ -1,68 +1,88 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { getAll, insert } from "@/lib/actions/statusLabel.actions";
-import { useStatusLabelUIStore } from "@/lib/stores/useStatusLabelUIStore";
+import { getAll, insert } from "@/lib/actions/model.actions";
+import { useModelUIStore } from "@/lib/stores/useModelUIStore";
 import { toast } from "sonner";
 import { useEffect } from "react";
 
-export const STATUS_LABELS_KEY = ["statusLabels"] as const;
+export const MODEL_KEY = ["models"] as const;
 
-export function useStatusLabelsQuery() {
+export function useModelsQuery() {
   const queryClient = useQueryClient();
-  const { onClose } = useStatusLabelUIStore();
+  const { onClose } = useModelUIStore();
 
   const {
-    data: statusLabels = [],
+    data: models = [],
     isLoading,
     error,
   } = useQuery({
-    queryKey: STATUS_LABELS_KEY,
+    queryKey: MODEL_KEY,
     queryFn: async () => {
       const result = await getAll();
-      return result;
+      return result.data;
     },
+    staleTime: 5 * 60 * 1000,
   });
 
-  const { mutate: createStatusLabel, isPending: isCreating } = useMutation({
-    mutationFn: async (data: Omit<StatusLabel, "id">) => {
-      const newStatusLabel: StatusLabel = {
+  const { mutate: createModel, isPending: isCreating } = useMutation({
+    mutationFn: async (data: Omit<Model, "id">) => {
+      const newModel: Model = {
         id: crypto.randomUUID(),
         ...data,
       };
-      const result = await insert(newStatusLabel);
-
-      if ("error" in result) {
-        throw new Error(result.error);
-      }
-
-      return result;
+      const result = await insert(newModel);
+      if ("error" in result) throw new Error(result.error);
+      return result.data;
     },
-    onSuccess: async (data: StatusLabel) => {
-      const currentCache = queryClient.getQueryData(STATUS_LABELS_KEY);
+    // Optimistic update
+    onMutate: async (newData) => {
+      // Cancel any outgoing refetches to avoid overwriting our optimistic update
+      await queryClient.cancelQueries({ queryKey: MODEL_KEY });
 
-      queryClient.setQueryData(STATUS_LABELS_KEY, (old: StatusLabel[] = []) => {
-        return [...old, data].sort((a, b) => a.name.localeCompare(b.name));
+      // Snapshot the previous value
+      const previousModels = queryClient.getQueryData(MODEL_KEY);
+
+      // Optimistically update the cache
+      const optimisticModel: Model = {
+        id: crypto.randomUUID(),
+        ...newData,
+      };
+
+      queryClient.setQueryData(MODEL_KEY, (old: Model[] = []) => {
+        return [...old, optimisticModel].sort((a, b) =>
+          a.name.localeCompare(b.name),
+        );
       });
 
-      await queryClient.invalidateQueries({ queryKey: STATUS_LABELS_KEY });
-
-      toast.success("Status Label created successfully");
+      // Return context with snapshotted value
+      return { previousModels };
+    },
+    onError: (err, newModel, context) => {
+      // If mutation fails, roll back to the previous value
+      if (context?.previousModels) {
+        queryClient.setQueryData(MODEL_KEY, context.previousModels);
+      }
+      console.error("Create model error:", err?.message || err);
+      toast.error("Failed to create model");
+    },
+    onSuccess: (data) => {
+      toast.success("Model created successfully");
       onClose();
     },
-    onError: (error) => {
-      console.error("Create status label error:", error?.message || error);
-      toast.error("Failed to create status label");
+    onSettled: () => {
+      // Always refetch after error or success to ensure cache is synchronized
+      queryClient.invalidateQueries({ queryKey: MODEL_KEY });
     },
   });
 
   useEffect(() => {
-    console.log("Status labels updated in component:", statusLabels);
-  }, [statusLabels]);
+    console.log("Models updated in component:", models);
+  }, [models]);
 
   return {
-    statusLabels,
+    models,
     isLoading,
     error,
-    createStatusLabel,
+    createModel,
     isCreating,
   };
 }

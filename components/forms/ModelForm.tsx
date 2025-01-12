@@ -1,26 +1,24 @@
 "use client";
 
-import React, { useTransition } from "react";
+import React, { startTransition } from "react";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { Loader2, Plus } from "lucide-react";
-import { toast } from "sonner";
 import CustomInput from "@/components/CustomInput";
 import CustomSelect from "@/components/CustomSelect";
 import { DialogContainer } from "@/components/dialogs/DialogContainer";
 import ManufacturerForm from "@/components/forms/ManufacturerForm";
 import { useManufacturerStore } from "@/lib/stores/manufacturerStore";
 import { modelSchema } from "@/lib/schemas";
-import { useModelStore } from "@/lib/stores/modelStore";
-import { getAll, insert } from "@/lib/actions/model.actions";
+import { useModelUIStore } from "@/lib/stores/useModelUIStore";
+import { useModelsQuery } from "@/hooks/queries/useModelsQuery";
 
 const ModelForm = () => {
-  const [isPending, startTransition] = useTransition();
-
-  const { onClose: closeModelModal } = useModelStore();
+  const { createModel, isCreating } = useModelsQuery();
+  const { onClose } = useModelUIStore();
 
   // Manufacturer store
   const {
@@ -49,29 +47,35 @@ const ModelForm = () => {
 
   const onSubmit = async (data: z.infer<typeof modelSchema>) => {
     startTransition(async () => {
-      try {
-        await insert(data).then((_) => {
-          toast.success("Model created successfully");
-          form.reset();
-          closeModelModal();
-          getAll();
-        });
-      } catch (error) {
-        console.error(error);
-        toast.error("Something went wrong");
-      }
+      createModel(
+        {
+          name: data.name,
+          modelNo: data.modelNo,
+          manufacturerId: data.manufacturerId,
+          categoryId: "",
+        },
+        {
+          onSuccess: () => {
+            form.reset();
+            onClose();
+            console.log("Successfully created model");
+          },
+          onError: (error) => {
+            console.error("Error creating model:", error);
+          },
+        },
+      );
     });
   };
 
   function handleCancel(e: React.MouseEvent) {
     e.preventDefault();
-    closeModelModal();
+    onClose();
     form.reset();
   }
 
   return (
     <section className="w-full">
-      {/* Modals */}
       <DialogContainer
         open={manufacturerIsOpen}
         onOpenChange={closeManufacturerModal}
@@ -145,13 +149,13 @@ const ModelForm = () => {
               variant="outline"
               className="w-24"
               onClick={handleCancel}
-              disabled={isPending}
+              disabled={isCreating}
             >
               Cancel
             </Button>
 
-            <Button type="submit" className="w-24" disabled={isPending}>
-              {isPending ? (
+            <Button type="submit" className="w-24" disabled={isCreating}>
+              {isCreating ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   Saving...

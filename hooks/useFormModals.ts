@@ -1,7 +1,7 @@
 // hooks/useFormModals.ts
 import { useMemo } from "react";
 import { useStatusLabelUIStore } from "@/lib/stores/useStatusLabelUIStore";
-import { useModelStore } from "@/lib/stores/modelStore";
+import { useModelUIStore } from "@/lib/stores/useModelUIStore";
 import { ModalConfig } from "@/types/modals";
 import ModelForm from "@/components/forms/ModelForm";
 import StatusLabelForm from "@/components/forms/StatusLabelForm";
@@ -22,20 +22,16 @@ import FormTemplateCreator from "@/components/forms/FormTemplateCreator";
 
 export function useFormModals(form: any) {
   const {
-    statusLabels,
-    getAll: fetchStatusLabels,
     isOpen: isStatusOpen,
     onOpen: openStatus,
     onClose: closeStatus,
   } = useStatusLabelUIStore();
 
   const {
-    models,
-    fetchModels,
     isOpen: isModelOpen,
     onOpen: openModel,
     onClose: closeModel,
-  } = useModelStore();
+  } = useModelUIStore();
   const {
     locations,
     fetchLocations,

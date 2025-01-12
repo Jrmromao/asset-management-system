@@ -1,7 +1,7 @@
 export const roles = {
   ADMIN: "Admin",
   SUPER_ADMIN: "SuperAdmin",
-  USER: "user",
+  USER: "User",
 };
 
 export const sidebarLinks = [

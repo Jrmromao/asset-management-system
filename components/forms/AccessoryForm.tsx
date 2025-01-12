@@ -29,7 +29,7 @@ import { useInventoryStore } from "@/lib/stores/inventoryStore";
 import { create } from "@/lib/actions/accessory.actions";
 import { useStatusLabelUIStore } from "@/lib/stores/useStatusLabelUIStore";
 import { SelectWithButton } from "@/components/SelectWithButton";
-import { useModelStore } from "@/lib/stores/modelStore";
+import { useModelStore } from "@/lib/stores/useModelUIStore";
 import { useLocationStore } from "@/lib/stores/locationStore";
 import { useDepartmentStore } from "@/lib/stores/departmentStore";
 import ModelForm from "@/components/forms/ModelForm";
