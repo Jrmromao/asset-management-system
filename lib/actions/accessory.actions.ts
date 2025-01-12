@@ -1,5 +1,3 @@
-"use server";
-
 import { prisma } from "@/app/db";
 import { parseStringify, processRecordContents } from "@/lib/utils";
 import { auth } from "@/auth";

@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useTransition } from "react";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -8,15 +8,15 @@ import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { useTransition } from "react";
 import CustomInput from "@/components/CustomInput";
 import { departmentSchema } from "@/lib/schemas";
-import { insert } from "@/lib/actions/department.actions";
-import { useDepartmentStore } from "@/lib/stores/departmentStore";
+import { useDepartmentUIStore } from "@/lib/stores/useDepartmentUIStore";
+import { useDepartmentQuery } from "@/hooks/queries/useDepartmentQuery";
 
 const DepartmentForm = () => {
   const [isPending, startTransition] = useTransition();
-  const { onClose, getAll: fetchDepartments } = useDepartmentStore();
+  const { onClose } = useDepartmentUIStore();
+  const { createDepartment } = useDepartmentQuery();
 
   const form = useForm<z.infer<typeof departmentSchema>>({
     resolver: zodResolver(departmentSchema),
@@ -28,15 +28,16 @@ const DepartmentForm = () => {
   const onSubmit = async (data: z.infer<typeof departmentSchema>) => {
     startTransition(async () => {
       try {
-        const result = await insert(data);
-        if (result.error) {
-          toast.error(result.error);
-          return;
-        }
-        await fetchDepartments();
-        toast.success("Department created successfully");
-        onClose();
-        form.reset();
+        await createDepartment(data, {
+          onSuccess: () => {
+            toast.success("Department created successfully");
+            onClose();
+            form.reset();
+          },
+          onError: (error: any) => {
+            console.error("Error creating department:", error);
+          },
+        });
       } catch (error) {
         console.error("Department creation error:", error);
         toast.error("Failed to create department");

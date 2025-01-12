@@ -350,11 +350,6 @@ import { z } from "zod";
 import { modelSchema } from "@/lib/schemas";
 import { prisma } from "@/app/db";
 
-type ModelSearchParams = {
-  search?: string;
-  categoryId?: string;
-};
-
 export async function insert(
   values: z.infer<typeof modelSchema>,
 ): Promise<ActionResponse<Model>> {
@@ -399,7 +394,7 @@ export async function insert(
 }
 
 export async function getAll(
-  params?: ModelSearchParams,
+  params?: QueryParams,
 ): Promise<ActionResponse<Model[]>> {
   try {
     const session = await auth();
@@ -439,7 +434,7 @@ export async function getAll(
 }
 
 export async function getAllSimple(
-  params?: ModelSearchParams,
+  params?: QueryParams,
 ): Promise<ActionResponse<Model[]>> {
   try {
     // Auth check

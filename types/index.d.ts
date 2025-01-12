@@ -4,10 +4,22 @@ import { Company } from "@prisma/client";
 declare global {
   // ==================== Base Interfaces ====================
   interface BaseEntity {
-    id?: string;
-    createdAt?: Date;
-    updatedAt?: Date;
+    id: string;
+    createdAt: Date;
+    updatedAt: Date;
   }
+
+  interface Model extends BaseEntity {
+    name: string;
+    modelNo: string;
+    categoryId: string;
+    manufacturerId: string;
+    assets?: Asset[];
+    category?: Category;
+    manufacturer?: Manufacturer;
+  }
+
+  type QueryParams<TParams = BaseQueryParams> = TParams;
 
   type StoredCategory = Required<Pick<Category, "id">> & Category;
 
@@ -30,6 +42,7 @@ declare global {
   type ActionResponse<T> = {
     data?: T;
     error?: string;
+    message?: string;
     success?: boolean;
   };
 
@@ -71,27 +84,6 @@ declare global {
   }
 
   // ==================== Asset Management Types ====================
-  interface KitItem {
-    id: string;
-    itemId: string;
-    quantity: number;
-    remaining: number;
-  }
-
-  interface Kit {
-    id: string;
-    name: string;
-    description: string;
-    assets: KitItem[];
-    licenses: KitItem[];
-    accessories: KitItem[];
-  }
-
-  interface KitAsset {
-    id: string;
-    kitId: string;
-    assetId: string;
-  }
 
   interface FormTemplateValues {
     id: string;

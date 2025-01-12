@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { getRoles } from "@/lib/actions/role.actions";
+import { getAll } from "@/lib/actions/role.actions";
 
 interface IAssetStore {
   roles: Role[];
@@ -17,7 +17,7 @@ export const useRoleStore = create(
 
       getAll: async () => {
         set({ loading: true });
-        getRoles()
+        getAll()
           .then((roles) => {
             set({ roles: roles.data });
           })

@@ -2,7 +2,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import HeaderBox from "@/components/HeaderBox";
 import { useRouter } from "next/navigation";
-import { useLicenseStore } from "@/lib/stores/licenseStore";
 import { DataTable } from "@/components/tables/DataTable/data-table";
 import { licenseColumns } from "@/components/tables/LicensesColumns";
 import {
@@ -18,12 +17,12 @@ import TableHeaderSkeleton from "@/components/tables/TableHeaderSkeleton";
 import { FileCheck } from "lucide-react";
 import StatusCards from "@/components/StatusCards";
 import StatusCardPlaceholder from "@/components/StatusCardPlaceholder";
+import { useLicenseQuery } from "@/hooks/queries/useLicenseQuery";
 
 const Licenses = () => {
   const navigate = useRouter();
-  const [licenses, getAll, deleteLicense, loading] = useLicenseStore(
-    (state) => [state.licenses, state.getAll, state.delete, state.loading],
-  );
+  const { licenses, isLoading, deleteItem } = useLicenseQuery();
+
   const [filteredData, setFilteredData] = useState(licenses);
   const [filterDialogOpen, setFilterDialogOpen] = useState(false);
   const [filters, setFilters] = useState({
@@ -53,9 +52,7 @@ const Licenses = () => {
   };
 
   const handleDelete = async (id: string) => {
-    await deleteLicense(id).then((_) => {
-      getAll();
-    });
+    await deleteItem(id);
   };
   const handleView = async (id: string) => {
     navigate.push(`/licenses/view/${id}`);
@@ -69,10 +66,6 @@ const Licenses = () => {
     [],
   );
   const columns = useMemo(() => licenseColumns({ onDelete, onView }), []);
-
-  useEffect(() => {
-    getAll();
-  }, []);
 
   useEffect(() => {
     setFilteredData(licenses);
@@ -124,7 +117,7 @@ const Licenses = () => {
       />
       <div className="space-y-6">
         <section className="flex w-full flex-col gap-6">
-          {loading ? (
+          {isLoading ? (
             <>
               <StatusCardPlaceholder />
               <TableHeaderSkeleton />
@@ -143,7 +136,7 @@ const Licenses = () => {
           <DataTable
             columns={columns}
             data={filteredData}
-            isLoading={loading}
+            isLoading={isLoading}
           />
         </section>
       </div>

@@ -1,7 +1,6 @@
 "use client";
 import HeaderBox from "@/components/HeaderBox";
 import React from "react";
-import AccessoryForm from "@/components/forms/AccessoryForm";
 
 const Create = () => {
   return (
@@ -11,7 +10,7 @@ const Create = () => {
         subtext="Fill the form to create an Accessory."
       />
 
-      <AccessoryForm />
+      {/*<AccessoryForm />*/}
     </div>
   );
 };

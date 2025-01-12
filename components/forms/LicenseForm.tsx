@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useTransition } from "react";
+import React, { useState, useTransition } from "react";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -10,26 +10,26 @@ import { InfoIcon, Loader2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
 
 import CustomInput from "@/components/CustomInput";
 import CustomDatePicker from "@/components/CustomDatePicker";
 import CustomPriceInput from "@/components/CustomPriceInput";
 import Dropzone from "@/components/Dropzone";
 import { SelectWithButton } from "@/components/SelectWithButton";
-import { useStatusLabelUIStore } from "@/lib/stores/useStatusLabelUIStore";
-import { useLocationStore } from "@/lib/stores/locationStore";
-import { useDepartmentStore } from "@/lib/stores/departmentStore";
-import { useInventoryStore } from "@/lib/stores/inventoryStore";
-import { useSupplierStore } from "@/lib/stores/SupplierStore";
-import { DialogContainer } from "@/components/dialogs/DialogContainer";
-import SupplierForm from "@/components/forms/SupplierForm";
-import InventoryForm from "@/components/forms/InventoryForm";
-import DepartmentForm from "@/components/forms/DepartmentForm";
-import StatusLabelForm from "@/components/forms/StatusLabelForm";
-import LocationForm from "@/components/forms/LocationForm";
+import { useSupplierUIStore } from "@/lib/stores/useSupplierUIStore";
 import { licenseSchema } from "@/lib/schemas";
-import { create } from "@/lib/actions/license.actions";
+import { ModalManager } from "@/components/ModalManager";
+import { useFormModals } from "@/hooks/useFormModals";
+import { useStatusLabelUIStore } from "@/lib/stores/useStatusLabelUIStore";
+import { useStatusLabelsQuery } from "@/hooks/queries/useStatusLabelsQuery";
+import { useLicenseQuery } from "@/hooks/queries/useLicenseQuery";
+import { useDepartmentUIStore } from "@/lib/stores/useDepartmentUIStore";
+import { useDepartmentQuery } from "@/hooks/queries/useDepartmentQuery";
+import { useInventoryUIStore } from "@/lib/stores/useInventoryUIStore";
+import { useSupplierQuery } from "@/hooks/queries/useSupplierQuery";
+import { useInventoryQuery } from "@/hooks/queries/useInventoryQuery";
+import { useLocationUIStore } from "@/lib/stores/useLocationUIStore";
+import { useLocationQuery } from "@/hooks/queries/useLocationQuery";
 
 type LicenseFormValues = z.infer<typeof licenseSchema>;
 
@@ -37,57 +37,21 @@ const LicenseForm = () => {
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
   const [file, setFile] = useState<File | null>(null);
+  const { onOpen } = useStatusLabelUIStore();
+  const { statusLabels } = useStatusLabelsQuery();
+  const { createLicense } = useLicenseQuery();
+  const { onOpen: openDepartment } = useDepartmentUIStore();
+  const { departments } = useDepartmentQuery();
+  const { suppliers } = useSupplierQuery();
+  const { inventories } = useInventoryQuery();
+  const { locations } = useLocationQuery();
+  const { onOpen: openInventory } = useInventoryUIStore();
+  const { onOpen: openSupplier } = useSupplierUIStore();
 
-  const {
-    inventories,
-    getAll: fetchInventories,
-    isOpen: isInventoryOpen,
-    onOpen: openInventory,
-    onClose: closeInventory,
-  } = useInventoryStore();
-  const {
-    suppliers,
-    getAll: fetchSuppliers,
-    isOpen: isSupplierOpen,
-    onOpen: openSupplier,
-    onClose: closeSupplier,
-  } = useSupplierStore();
-
-  const {
-    locations,
-    fetchLocations,
-    isOpen: isLocationOpen,
-    onOpen: openLocation,
-    onClose: closeLocation,
-  } = useLocationStore();
-  const {
-    statusLabels,
-    getAll: fetchStatusLabels,
-    isOpen: isStatusOpen,
-    onOpen: openStatus,
-    onClose: closeStatus,
-  } = useStatusLabelUIStore();
-
-  const {
-    departments,
-    getAll: fetchDepartments,
-    isOpen: isDepartmentOpen,
-    onOpen: openDepartment,
-    onClose: closeDepartment,
-  } = useDepartmentStore();
-  useEffect(() => {
-    fetchInventories();
-    fetchSuppliers();
-    closeInventory();
-    closeSupplier();
-  }, []);
+  const { onOpen: openLocation } = useLocationUIStore();
 
   const handleDrop = (acceptedFiles: File[]) => {
     const csvFile = acceptedFiles[0];
-    // if (!csvFile.name.endsWith('.csv')) {
-    //     toast.error('Please select a CSV file.')
-    //     return
-    // }
     setFile(csvFile);
   };
 
@@ -111,78 +75,23 @@ const LicenseForm = () => {
     },
   });
 
-  const onSubmit = async (data: LicenseFormValues) => {
+  async function onSubmit(data: LicenseFormValues) {
     startTransition(async () => {
-      try {
-        const formData = {
-          ...data,
-        };
-        await create(data).then((_) => {
-          toast.success("License created successfully");
-          // router.push('/licenses')
-        });
-        form.reset();
-      } catch (error) {
-        toast.error(`Something went wrong: ${error}`);
-        console.error(error);
-      }
+      await createLicense(data, {
+        onSuccess: () => {
+          form.reset();
+          console.log("Successfully created a License");
+        },
+        onError: (error) => {
+          console.error("Error creating a License:", error);
+        },
+      });
     });
-  };
+  }
 
   return (
     <section className="w-full mx-auto p-6">
-      <DialogContainer
-        description=""
-        open={isSupplierOpen}
-        onOpenChange={closeSupplier}
-        title="Add Supplier"
-        form={<SupplierForm />}
-      />
-
-      <DialogContainer
-        description=""
-        open={isInventoryOpen}
-        onOpenChange={closeInventory}
-        title="Add Inventory"
-        form={<InventoryForm />}
-      />
-
-      <DialogContainer
-        description={""}
-        open={isDepartmentOpen}
-        onOpenChange={closeDepartment}
-        title="Add Department"
-        form={<DepartmentForm />}
-      />
-      <DialogContainer
-        description={""}
-        open={isStatusOpen}
-        onOpenChange={closeStatus}
-        title="Add Status"
-        form={<StatusLabelForm />}
-      />
-
-      <DialogContainer
-        description={""}
-        open={isLocationOpen}
-        onOpenChange={closeLocation}
-        title="Add Location"
-        form={<LocationForm />}
-      />
-      <DialogContainer
-        description={""}
-        open={isSupplierOpen}
-        onOpenChange={closeSupplier}
-        title="Add Supplier"
-        form={<SupplierForm />}
-      />
-      <DialogContainer
-        description={""}
-        open={isInventoryOpen}
-        onOpenChange={closeInventory}
-        title="Add Inventory"
-        form={<InventoryForm />}
-      />
+      <ModalManager modals={useFormModals(form)} />
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -214,7 +123,7 @@ const LicenseForm = () => {
                     isPending
                     label="Status Label"
                     data={statusLabels}
-                    onNew={openStatus}
+                    onNew={onOpen}
                     placeholder="Select status"
                     required
                   />

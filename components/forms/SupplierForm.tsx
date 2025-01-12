@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useTransition } from "react";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -8,15 +8,15 @@ import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { useTransition } from "react";
 import CustomInput from "@/components/CustomInput";
 import { supplierSchema } from "@/lib/schemas";
-import { getAllSimple, insert } from "@/lib/actions/supplier.actions";
-import { useSupplierStore } from "@/lib/stores/SupplierStore";
+import { useSupplierUIStore } from "@/lib/stores/useSupplierUIStore";
+import { useSupplierQuery } from "@/hooks/queries/useSupplierQuery";
 
 const SupplierForm = () => {
   const [isPending, startTransition] = useTransition();
-  const { onClose } = useSupplierStore();
+  const { onClose } = useSupplierUIStore();
+  const { createSupplier } = useSupplierQuery();
 
   const form = useForm<z.infer<typeof supplierSchema>>({
     resolver: zodResolver(supplierSchema),
@@ -39,17 +39,14 @@ const SupplierForm = () => {
   const onSubmit = async (data: z.infer<typeof supplierSchema>) => {
     startTransition(async () => {
       try {
-        const result = await insert(data);
-        if (result.error) {
-          toast.error(result.error);
-          return;
-        }
-
-        // const suppliersResult = await getAllSimple()
-        // if (suppliersResult.data) {
-        //     setSuppliers(suppliersResult.data)
-        // }
-
+        await createSupplier(data, {
+          onSuccess: () => {
+            console.log("Successfully created Supplier");
+          },
+          onError: (error) => {
+            console.error("Error creating Supplier:", error);
+          },
+        });
         toast.success("Supplier created successfully");
         onClose();
         form.reset();

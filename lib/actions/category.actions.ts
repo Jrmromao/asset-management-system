@@ -8,7 +8,7 @@ import { Prisma } from "@prisma/client";
 
 export async function insert(
   values: z.infer<typeof categorySchema>,
-): Promise<ActionResponse<void>> {
+): Promise<ActionResponse<Category>> {
   try {
     // Validate input against schema
     const validation = categorySchema.safeParse(values);
@@ -67,7 +67,7 @@ export async function insert(
   }
 }
 
-export async function findAll(options?: {
+export async function getAll(options?: {
   orderBy?: "name" | "createdAt";
   order?: "asc" | "desc";
   search?: string;
@@ -137,7 +137,7 @@ export async function findAll(options?: {
   }
 }
 
-export async function findById(id: string): Promise<ActionResponse<Category>> {
+export async function remove(id: string): Promise<ActionResponse<Category>> {
   try {
     // Validate session
     const session = await auth();
@@ -149,10 +149,10 @@ export async function findById(id: string): Promise<ActionResponse<Category>> {
     }
 
     // Get the category
-    const category = await prisma.category.findFirst({
+    const category = await prisma.category.delete({
       where: {
         id: id,
-        companyId: session.user.companyId, // Ensure the category belongs to the user's company
+        companyId: session.user.companyId,
       },
       select: {
         id: true,
@@ -164,22 +164,15 @@ export async function findById(id: string): Promise<ActionResponse<Category>> {
       },
     });
 
-    if (!category) {
-      return {
-        success: false,
-        error: "Category not found",
-      };
-    }
-
     return {
       success: true,
       data: category,
     };
   } catch (error) {
-    console.error("Error fetching category:", error);
+    console.error("Error removing category:", error);
     return {
       success: false,
-      error: "Failed to fetch category",
+      error: "Failed to remove category",
     };
   }
 }

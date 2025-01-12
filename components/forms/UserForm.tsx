@@ -7,15 +7,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
 
 import CustomInput from "@/components/CustomInput";
 import CustomSelect from "@/components/CustomSelect";
-import { useRoleStore } from "@/lib/stores/roleStore";
 import { userSchema } from "@/lib/schemas";
-import { createUser } from "@/lib/actions/user.actions";
-import { useUserStore } from "@/lib/stores/userStore";
 import { useDialogStore } from "@/lib/stores/store";
+import { useUserQuery } from "@/hooks/queries/useUserQuery";
+import { useRoleQuery } from "@/hooks/queries/useRoleQuery";
 
 type UserFormValues = z.infer<typeof userSchema>;
 
@@ -26,17 +24,16 @@ interface UserFormProps {
 
 const UserForm = ({ id, isUpdate = false }: UserFormProps) => {
   const [isPending, startTransition] = useTransition();
-  const router = useRouter();
-  const { roles } = useRoleStore();
-  const [fetchUsers] = useUserStore((state) => [state.getAll]);
+  const { roles } = useRoleQuery();
   const [closeDialog] = useDialogStore((state) => [state.onClose]);
+
+  const { createUser } = useUserQuery();
 
   const form = useForm<UserFormValues>({
     resolver: zodResolver(userSchema),
     defaultValues: {
       firstName: "",
       lastName: "",
-      phoneNum: "",
       email: "",
       title: "",
       employeeId: "",
@@ -48,15 +45,20 @@ const UserForm = ({ id, isUpdate = false }: UserFormProps) => {
   async function onSubmit(data: UserFormValues) {
     startTransition(async () => {
       try {
-        await createUser(data);
-        form.reset();
-        toast.success("User created successfully");
+        await createUser(data, {
+          onSuccess: () => {
+            form.reset();
+            toast.success("User created successfully");
+          },
+          onError: (error) => {
+            console.error("Error creating user:", error);
+          },
+        });
       } catch (error) {
         toast.error("Something went wrong");
         console.error(error);
       } finally {
         closeDialog();
-        fetchUsers();
       }
     });
   }
