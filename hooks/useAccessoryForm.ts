@@ -4,7 +4,7 @@ import { findAll as getAllCategories } from "@/lib/actions/category.actions";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { accessorySchema } from "@/lib/schemas";
-import { useFormData } from "@/components/hooks/useFormData";
+import { useFormData } from "@/hooks/useFormData";
 
 export function useAccessoryForm() {
   const { data: manufacturers, isLoading: isLoadingManufacturers } =

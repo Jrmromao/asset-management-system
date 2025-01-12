@@ -31,6 +31,9 @@ const MobileNav = () => {
           <SheetClose asChild>
             <nav className="flex h-full flex-col gap-6 pt-16 text-white">
               {sidebarLinks.map((item) => {
+                if (!item.visibleTo.includes("Admin")) {
+                  return null;
+                }
                 const isActive =
                   pathName === item.route ||
                   pathName.startsWith(`${item.route}/`);

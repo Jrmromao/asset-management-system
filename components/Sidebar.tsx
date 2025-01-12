@@ -8,14 +8,13 @@ import Footer from "@/components/Footer";
 
 import React from "react";
 import HeaderIcon from "@/components/page/HeaderIcon";
+import { useSession } from "next-auth/react";
 
 const Sidebar = () => {
   const pathName = usePathname();
 
-  const user: any = {
-    role: "admin",
-  };
-
+  const { data: session, status } = useSession();
+  const userRole = session?.user?.role || "guest";
   return (
     <section className={cn("sidebar", { "2xl:hidden": false })}>
       <nav className="flex flex-col gap-4">
@@ -27,7 +26,9 @@ const Sidebar = () => {
           const isActive =
             pathName === item.route || pathName.startsWith(`${item.route}/`);
 
-          if (!item.visibleTo.includes(user.role)) {
+          console.log(userRole);
+
+          if (!item.visibleTo.includes(userRole)) {
             return null;
           }
           return (

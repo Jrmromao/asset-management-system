@@ -18,7 +18,6 @@ export function useStatusLabelsQuery() {
     queryKey: STATUS_LABELS_KEY,
     queryFn: async () => {
       const result = await getAll();
-      console.log("Fetched data from backend:", result);
       return result;
     },
   });
@@ -30,7 +29,6 @@ export function useStatusLabelsQuery() {
         ...data,
       };
       const result = await insert(newStatusLabel);
-      console.log("Mutation result from insert:", result);
 
       if ("error" in result) {
         throw new Error(result.error);
@@ -39,15 +37,9 @@ export function useStatusLabelsQuery() {
       return result;
     },
     onSuccess: async (data: StatusLabel) => {
-      console.log("onSuccess triggered with data:", data);
-
       const currentCache = queryClient.getQueryData(STATUS_LABELS_KEY);
-      console.log("Current cache before setQueryData:", currentCache);
 
       queryClient.setQueryData(STATUS_LABELS_KEY, (old: StatusLabel[] = []) => {
-        console.log("Old data in cache:", old);
-        console.log("New data:", data);
-
         return [...old, data].sort((a, b) => a.name.localeCompare(b.name));
       });
 

@@ -12,6 +12,7 @@ import { Analytics } from "@vercel/analytics/react";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
 import CookieBanner from "@/components/cookies/CookieBanner";
 import { CookiePreferences } from "@/components/cookies/CookieManager";
+import { SessionProvider } from "next-auth/react";
 
 interface ProvidersProps {
   children: ReactNode;
@@ -63,8 +64,7 @@ export default function Providers({ children }: ProvidersProps) {
             </>
           )}
 
-          {children}
-
+          <SessionProvider>{children}</SessionProvider>
           <CookieBanner onPreferencesChange={handlePreferencesChange} />
           <SpeedInsights />
 

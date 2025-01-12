@@ -14,7 +14,7 @@ import CustomSwitch from "@/components/CustomSwitch";
 
 import { statusLabelSchema } from "@/lib/schemas";
 import { useStatusLabelUIStore } from "@/lib/stores/useStatusLabelUIStore";
-import { useStatusLabelsQuery } from "@/components/hooks/queries/useStatusLabelsQuery"; // Keep for UI state only
+import { useStatusLabelsQuery } from "@/hooks/queries/useStatusLabelsQuery"; // Keep for UI state only
 
 type FormValues = z.infer<typeof statusLabelSchema>;
 

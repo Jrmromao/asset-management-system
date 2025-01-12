@@ -24,6 +24,7 @@ export const create = async (
     }
 
     const session = await auth();
+
     if (!session) {
       return { error: "Not authenticated" };
     }

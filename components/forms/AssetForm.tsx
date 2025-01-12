@@ -37,9 +37,9 @@ import { assetSchema } from "@/lib/schemas";
 import { useFormTemplateStore } from "@/lib/stores/formTemplateStore";
 import { CustomField, CustomFieldOption } from "@/types/form";
 import { getFormTemplateById } from "@/lib/actions/formTemplate.actions";
-import { useFormModals } from "@/components/hooks/useFormModals";
+import { useFormModals } from "@/hooks/useFormModals";
 import { ModalManager } from "@/components/ModalManager";
-import { useStatusLabelsQuery } from "@/components/hooks/queries/useStatusLabelsQuery";
+import { useStatusLabelsQuery } from "@/hooks/queries/useStatusLabelsQuery";
 import { useStatusLabelUIStore } from "@/lib/stores/useStatusLabelUIStore";
 
 type FormTemplate = {

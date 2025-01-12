@@ -1,60 +1,54 @@
+export const roles = {
+  ADMIN: "Admin",
+  SUPER_ADMIN: "SuperAdmin",
+  USER: "user",
+};
+
 export const sidebarLinks = [
   {
-    imgURL: "/icons/admin-icon.svg",
-    route: "/admin",
+    imgURL: "/icons/Admin-icon.svg",
+    route: "/Admin",
     label: "Admin",
-    visibleTo: ["admin"],
+    visibleTo: [roles.ADMIN],
   },
   {
     imgURL: "/icons/laptop.svg",
     route: "/assets",
     label: "Assets",
-    visibleTo: ["admin", "user", "SuperAdmin"],
+    visibleTo: [roles.ADMIN, roles.USER, roles.SUPER_ADMIN],
   },
   {
     imgURL: "/icons/license.svg",
     route: "/licenses",
     label: "Licenses",
-    visibleTo: ["admin", "user", "SuperAdmin"],
+    visibleTo: [roles.ADMIN, roles.USER, roles.SUPER_ADMIN],
   },
   {
     imgURL: "/icons/monitor.svg",
     route: "/accessories",
     label: "Accessories",
-    visibleTo: ["admin", "user", "SuperAdmin"],
+    visibleTo: [roles.ADMIN, roles.USER, roles.SUPER_ADMIN],
   },
   {
     imgURL: "/icons/people.svg",
     route: "/people",
     label: "People",
-    visibleTo: ["admin", "user", "SuperAdmin"],
+    visibleTo: [roles.ADMIN, roles.USER, roles.SUPER_ADMIN],
   },
 
   {
     imgURL: "/icons/reports.svg",
     route: "/reports",
     label: "Reports",
-    visibleTo: ["admin", "SuperAdmin"],
+    visibleTo: [roles.ADMIN, roles.SUPER_ADMIN],
   },
 
   {
-    imgURL: "/icons/admin-icon.svg",
+    imgURL: "/icons/Admin-icon.svg",
     route: "/superAdmin",
     label: "Admin",
-    visibleTo: ["SuperAdmin"],
+    visibleTo: [roles.SUPER_ADMIN],
   },
-  // {
-  //     imgURL: "/icons/money-send.svg",
-  //     route: "/kits",
-  //     label: "Kits",
-  //     visibleTo: ["admin"],
-  // },
-  // {
-  //     imgURL: "/icons/plus.svg",
-  //     route: "/ai-assistant",
-  //     label: "AI Assistant",
-  //     visibleTo: ["admin"],
-  // },
 ].sort((a, b) => {
   if (a.label === "Admin") return -1;
   if (b.label === "Admin") return 1;

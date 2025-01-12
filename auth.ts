@@ -26,6 +26,8 @@ export const { auth, handlers, signIn } = NextAuth({
     async session({ session, token }) {
       if (token.sub && session.user) {
         session.user.id = token.sub;
+        // Make sure name is being passed if it exists in token
+        session.user.name = token.name || session.user.name;
       }
 
       if (token.role && session.user) {
