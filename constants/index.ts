@@ -6,8 +6,8 @@ export const roles = {
 
 export const sidebarLinks = [
   {
-    imgURL: "/icons/Admin-icon.svg",
-    route: "/Admin",
+    imgURL: "/icons/admin-icon.svg",
+    route: "/admin",
     label: "Admin",
     visibleTo: [roles.ADMIN],
   },
