@@ -601,3 +601,17 @@ export const assetSchema = z.object({
   customFields: z.array(customFieldSchema).optional(),
   endOfLife: dateField("End of Life"),
 });
+
+export const createTemplateSchema = z.object({
+  name: z.string().min(1, "Template name is required"),
+  fields: z.array(
+    z.object({
+      name: z.string().min(1, "Field name is required"),
+      type: z.enum(["text", "number", "date", "select", "checkbox"]),
+      placeholder: z.string().optional(),
+      label: z.string().optional(),
+      required: z.boolean().default(false),
+      options: z.array(z.string()).optional(),
+    }),
+  ),
+});

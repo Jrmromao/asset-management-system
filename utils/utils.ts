@@ -1,3 +1,5 @@
+import { auth } from "@/auth";
+
 export const getActionColor = (action: string) => {
   switch (action) {
     // Asset actions
@@ -53,4 +55,22 @@ export interface AssetFilter {
   type: string[];
   status: string[];
   lifecycle: string[];
+}
+
+export async function checkAuth() {
+  const session = await auth();
+  if (!session?.user?.companyId) {
+    return { error: "Unauthorized", companyId: null };
+  }
+  return { error: null, companyId: session.user.companyId };
+}
+
+export function handleError(
+  error: unknown,
+  defaultMessage: string,
+): ActionResponse<never> {
+  console.error(defaultMessage, error);
+  return {
+    error: error instanceof Error ? error.message : defaultMessage,
+  };
 }

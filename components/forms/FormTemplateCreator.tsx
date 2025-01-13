@@ -1,11 +1,11 @@
 "use client";
-import React, { useState, useTransition } from "react";
+import React, { useTransition } from "react";
 import { z } from "zod";
-import { useForm, useFieldArray } from "react-hook-form";
+import { useFieldArray, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
-import { Loader2, Plus, Trash2, GripVertical } from "lucide-react";
+import { GripVertical, Loader2, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import CustomInput from "@/components/CustomInput";
 import {
@@ -18,24 +18,23 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import {
-  DndContext,
   closestCenter,
+  DndContext,
+  DragEndEvent,
   KeyboardSensor,
   PointerSensor,
   useSensor,
   useSensors,
-  DragEndEvent,
 } from "@dnd-kit/core";
 import {
-  arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { createFormTemplate } from "@/lib/actions/formTemplate.actions";
-import { useFormTemplateStore } from "@/lib/stores/formTemplateStore";
+import { useFormTemplateUIStore } from "@/lib/stores/useFormTemplateUIStore";
+import { useFormTemplatesQuery } from "@/hooks/queries/useFormTemplatesQuery";
 
 const fieldTypes = ["text", "number", "date", "select", "checkbox"] as const;
 type FieldType = (typeof fieldTypes)[number];
@@ -268,7 +267,9 @@ const FormTemplateCreator = () => {
     },
   });
 
-  const { fetchTemplates, onClose: closeTemplate } = useFormTemplateStore();
+  const { createFormTemplate } = useFormTemplatesQuery();
+
+  const { onClose: closeTemplate } = useFormTemplateUIStore();
 
   const { fields, append, remove, move } = useFieldArray({
     control: form.control,
@@ -296,26 +297,23 @@ const FormTemplateCreator = () => {
   const onSubmit = async (data: FormTemplateValues) => {
     startTransition(async () => {
       try {
-        const response = await createFormTemplate(data);
-
-        if (response.error) {
-          console.error("Form template creation error:", response.error);
-          toast.error("Failed to create form template");
-          return;
-        }
-
-        console.log("Form template data:", data);
-        toast.success("Form template created successfully");
-        fetchTemplates();
-        closeTemplate();
-        form.reset();
+        await createFormTemplate(data, {
+          onSuccess: () => {
+            form.reset();
+            toast.success("Form template created successfully");
+            closeTemplate();
+          },
+          onError: (error) => {
+            console.error("Error creating form template:", error);
+            toast.error("Failed to create form template");
+          },
+        });
       } catch (error) {
         console.error("Form template creation error:", error);
         toast.error("Failed to create form template");
       }
     });
   };
-
   return (
     <Form {...form}>
       <form

@@ -1,62 +1,44 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { getAll, insert } from "@/lib/actions/statusLabel.actions";
+import { createGenericQuery } from "@/hooks/queries/useQueryFactory";
+import { z } from "zod";
+import { statusLabelSchema } from "@/lib/schemas";
+import { getAll, insert, remove } from "@/lib/actions/statusLabel.actions";
 import { useStatusLabelUIStore } from "@/lib/stores/useStatusLabelUIStore";
-import { toast } from "sonner";
-import { useEffect } from "react";
 
-export const STATUS_LABELS_KEY = ["statusLabels"] as const;
+export const MODEL_KEY = ["roles"] as const;
+
+type CreateStatusLabelInput = z.infer<typeof statusLabelSchema>;
 
 export function useStatusLabelsQuery() {
-  const queryClient = useQueryClient();
   const { onClose } = useStatusLabelUIStore();
 
+  const genericQuery = createGenericQuery<StatusLabel, CreateStatusLabelInput>(
+    MODEL_KEY,
+    {
+      getAll: async () => {
+        return await getAll();
+      },
+      insert: async (data: CreateStatusLabelInput) => {
+        return await insert(data);
+      },
+      delete: async (id: string) => {
+        return remove(id);
+      },
+    },
+    {
+      onClose,
+      successMessage: "",
+      errorMessage: "",
+    },
+  );
+
   const {
-    data: statusLabels = [],
+    items: statusLabels,
     isLoading,
     error,
-  } = useQuery({
-    queryKey: STATUS_LABELS_KEY,
-    queryFn: async () => {
-      const result = await getAll();
-      return result;
-    },
-  });
-
-  const { mutate: createStatusLabel, isPending: isCreating } = useMutation({
-    mutationFn: async (data: Omit<StatusLabel, "id">) => {
-      const newStatusLabel: StatusLabel = {
-        id: crypto.randomUUID(),
-        ...data,
-      };
-      const result = await insert(newStatusLabel);
-
-      if ("error" in result) {
-        throw new Error(result.error);
-      }
-
-      return result;
-    },
-    onSuccess: async (data: StatusLabel) => {
-      const currentCache = queryClient.getQueryData(STATUS_LABELS_KEY);
-
-      queryClient.setQueryData(STATUS_LABELS_KEY, (old: StatusLabel[] = []) => {
-        return [...old, data].sort((a, b) => a.name.localeCompare(b.name));
-      });
-
-      await queryClient.invalidateQueries({ queryKey: STATUS_LABELS_KEY });
-
-      toast.success("Status Label created successfully");
-      onClose();
-    },
-    onError: (error) => {
-      console.error("Create status label error:", error?.message || error);
-      toast.error("Failed to create status label");
-    },
-  });
-
-  useEffect(() => {
-    console.log("Status labels updated in component:", statusLabels);
-  }, [statusLabels]);
+    createItem: createStatusLabel,
+    isCreating,
+    refresh,
+  } = genericQuery();
 
   return {
     statusLabels,
@@ -64,5 +46,6 @@ export function useStatusLabelsQuery() {
     error,
     createStatusLabel,
     isCreating,
+    refresh,
   };
 }

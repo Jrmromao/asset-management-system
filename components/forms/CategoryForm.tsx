@@ -11,11 +11,11 @@ import { toast } from "sonner";
 import CustomInput from "@/components/CustomInput";
 import { categorySchema } from "@/lib/schemas";
 import { insert } from "@/lib/actions/category.actions";
-import { useCategoryStore } from "@/lib/stores/useCategoryUIStore";
+import { useCategoryUIStore } from "@/lib/stores/useCategoryUIStore";
 
 const CategoryForm = () => {
   const [isPending, startTransition] = useTransition();
-  const { onClose, getAll: fetchCategories } = useCategoryStore();
+  const { onClose } = useCategoryUIStore();
 
   const form = useForm<z.infer<typeof categorySchema>>({
     resolver: zodResolver(categorySchema),
@@ -32,7 +32,6 @@ const CategoryForm = () => {
           toast.error(result.error);
           return;
         }
-        await fetchCategories();
         toast.success("Category created successfully");
         onClose();
         form.reset();

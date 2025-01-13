@@ -1,50 +1,16 @@
 import React, { useMemo } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  BoxIcon,
-  ClockIcon,
-  CpuIcon,
-  KeyIcon,
-  PackageIcon,
-  UserIcon,
-} from "lucide-react";
-import { DataTable } from "@/components/tables/DataTable/data-table";
-import { auditLogColumns } from "@/components/tables/AuditLogColumns";
 import { cn } from "@/lib/utils";
-import { itemUseByColumns } from "@/components/tables/itemUseByColumns";
-
-// Types for different relationships
-type RelationshipType =
-  | "assigned_to"
-  | "assigned_to_asset"
-  | "checked_out_to"
-  | "licensed_to";
-
-interface Attachment {
-  id: string;
-  fileName: string;
-  fileSize: number;
-  uploadedAt: string;
-  uploadedBy: string;
-}
-
-interface Relationship {
-  id: string;
-  name: string;
-  type: string;
-  relationshipType: RelationshipType;
-  date: string;
-  notes?: string;
-  status?: string;
-}
+import { ClockIcon, UserIcon } from "lucide-react";
+import { DataTable } from "@/components/tables/DataTable/data-table";
 
 interface ItemDetailsTabsProps {
   itemId: string;
   itemType: "asset" | "accessory" | "license" | "component";
-  relationships?: Relationship[];
-  attachments?: Attachment[];
-  auditLogs?: AuditLog[];
+  auditLogs: AuditLog[];
   usedBy?: UserAccessory[];
+  onViewAuditLog: (id: string) => void;
+  onViewUsedBy?: (id: string) => void;
   customTabs?: {
     [key: string]: {
       label: string;
@@ -54,62 +20,91 @@ interface ItemDetailsTabsProps {
   };
 }
 
-const ItemDetailsTabs = ({
-  itemId,
+const formatDate = (dateString: string) => {
+  return new Date(dateString).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+// Helper to get action badge style
+const getActionStyle = (action: string) => {
+  const actionLower = action.toLowerCase();
+
+  if (actionLower.includes("created")) {
+    return "bg-green-100 text-green-800";
+  }
+  if (actionLower.includes("checkin")) {
+    return "bg-blue-100 text-blue-800";
+  }
+  if (actionLower.includes("checkout")) {
+    return "bg-purple-100 text-purple-800";
+  }
+  if (actionLower.includes("updated")) {
+    return "bg-yellow-100 text-yellow-800";
+  }
+  if (actionLower.includes("deleted")) {
+    return "bg-red-100 text-red-800";
+  }
+  return "bg-gray-100 text-gray-800";
+};
+
+const auditLogColumns = ({ onView }: { onView: (id: string) => void }) => [
+  {
+    accessorKey: "date",
+    header: () => <div className="font-semibold">Date</div>,
+  },
+  {
+    accessorKey: "action",
+    header: () => <div className="font-semibold">Action</div>,
+    cell: ({ row }: any) => {
+      const action = row.getValue("action") as string;
+      return (
+        <div
+          className={cn(
+            "px-3 py-1 rounded-full text-xs font-semibold inline-block",
+            getActionStyle(action),
+          )}
+        >
+          {action}
+        </div>
+      );
+    },
+  },
+  {
+    accessorKey: "details",
+    header: () => <div className="font-semibold">Details</div>,
+  },
+];
+
+const ItemDetailsTabs: React.FC<ItemDetailsTabsProps> = ({
   itemType,
-  relationships = [],
-  attachments = [],
-  customTabs = {},
-  auditLogs = [],
+  auditLogs,
+  onViewAuditLog,
   usedBy = [],
-}: ItemDetailsTabsProps) => {
-  // Helper function to get the appropriate icon based on item type
-  const getItemTypeIcon = (type: string) => {
-    switch (type.toLowerCase()) {
-      case "asset":
-        return <BoxIcon className="h-4 w-4" />;
-      case "license":
-        return <KeyIcon className="h-4 w-4" />;
-      case "component":
-        return <CpuIcon className="h-4 w-4" />;
-      case "accessory":
-        return <PackageIcon className="h-4 w-4" />;
-      default:
-        return <BoxIcon className="h-4 w-4" />;
-    }
-  };
-
-  // Helper function to format relationship type for display
-  const formatRelationshipType = (type: RelationshipType): string => {
-    return type
-      .split("_")
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(" ");
-  };
-
-  // Helper function to format file size
-  const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return "0 Bytes";
-    const k = 1024;
-    const sizes = ["Bytes", "KB", "MB", "GB"];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
-  };
+  onViewUsedBy = () => {},
+  customTabs = {},
+}) => {
+  const transformedAuditLogs = useMemo(
+    () =>
+      auditLogs?.map((log) => ({
+        id: log.id,
+        action: log.action,
+        date: formatDate(log.createdAt.toString()),
+        user: log.userId,
+        details: log.details,
+      })),
+    [auditLogs],
+  );
 
   const columns = useMemo(
-    () =>
-      auditLogColumns({
-        onView: () => {},
-      }),
-    [],
+    () => auditLogColumns({ onView: onViewAuditLog }),
+    [onViewAuditLog],
   );
-  const usedByColumns = useMemo(
-    () =>
-      itemUseByColumns({
-        onView: () => {},
-      }),
-    [],
-  );
+
   return (
     <div className="w-full">
       <Tabs defaultValue="history" className="w-full space-y-6">
@@ -126,7 +121,8 @@ const ItemDetailsTabs = ({
               <ClockIcon className="h-4 w-4" />
               History
             </TabsTrigger>
-            {itemType != "asset" && (
+
+            {itemType !== "asset" && (
               <TabsTrigger
                 value="used-by"
                 className={cn(
@@ -137,13 +133,14 @@ const ItemDetailsTabs = ({
               >
                 <UserIcon className="h-4 w-4" />
                 <span>Used By</span>
-                {relationships.length > 0 && (
+                {usedBy.length > 0 && (
                   <span className="ml-1.5 px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded-full">
-                    {relationships.length}
+                    {usedBy.length}
                   </span>
                 )}
               </TabsTrigger>
             )}
+
             {Object.entries(customTabs).map(([key, tab]) => (
               <TabsTrigger
                 key={key}
@@ -160,10 +157,11 @@ const ItemDetailsTabs = ({
             ))}
           </TabsList>
         </div>
+
         <TabsContent value="history" className="pt-4">
-          {auditLogs?.length > 0 ? (
+          {transformedAuditLogs?.length > 0 ? (
             <div className="rounded-lg border bg-white mr-3 ml-3 mb-6">
-              <DataTable columns={columns} data={auditLogs} />
+              <DataTable columns={columns} data={transformedAuditLogs} />
             </div>
           ) : (
             <div className="text-center py-12 text-gray-500">
@@ -174,21 +172,6 @@ const ItemDetailsTabs = ({
           )}
         </TabsContent>
 
-        <TabsContent value="used-by" className="pt-4">
-          {usedBy.length > 0 ? (
-            <div className="rounded-lg border bg-white mr-3 ml-3 mb-6">
-              <DataTable columns={usedByColumns} data={usedBy} />
-            </div>
-          ) : (
-            <div className="text-center py-12 text-gray-500">
-              <UserIcon className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-              <p className="text-lg font-medium">No Assignments</p>
-              <p className="text-sm">
-                This item hasn&apos;t been assigned to anyone yet.
-              </p>
-            </div>
-          )}
-        </TabsContent>
         {Object.entries(customTabs).map(([key, tab]) => (
           <TabsContent key={key} value={key} className="pt-4">
             <div className="rounded-lg border bg-white p-6">{tab.content}</div>

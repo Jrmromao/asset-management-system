@@ -2,12 +2,25 @@
 import { parseStringify } from "@/lib/utils";
 import { prisma } from "@/app/db";
 import { auth } from "@/auth";
+import { z } from "zod";
+import { statusLabelSchema } from "@/lib/schemas";
 
 // lib/actions/statusLabel.actions.ts
-export const insert = async (data: StatusLabel) => {
+export const insert = async (
+  values: z.infer<typeof statusLabelSchema>,
+): Promise<ActionResponse<StatusLabel>> => {
   try {
-    const session = await auth();
+    const validation = await statusLabelSchema.safeParseAsync(values);
 
+    if (!validation.success) {
+      return {
+        error: validation.error.errors[0].message,
+      };
+    }
+
+    const data = validation.data;
+
+    const session = await auth();
     if (!session) {
       return { error: "Not authenticated" };
     }
@@ -23,7 +36,7 @@ export const insert = async (data: StatusLabel) => {
       },
     });
 
-    return result;
+    return { data: parseStringify(result) };
   } catch (error) {
     console.error("Error creating status label:", error);
     throw error;
@@ -31,12 +44,11 @@ export const insert = async (data: StatusLabel) => {
 };
 
 // lib/actions/statusLabel.actions.ts
-export const getAll = async () => {
+export const getAll = async (): Promise<ActionResponse<StatusLabel[]>> => {
   try {
     const session = await auth();
     if (!session) {
       console.log("No session found");
-      return [];
     }
 
     const labels = await prisma.statusLabel.findMany({
@@ -48,7 +60,7 @@ export const getAll = async () => {
       },
     });
 
-    return labels;
+    return { data: parseStringify(labels) };
   } catch (error) {
     console.error("Error in getAll:", error);
     throw error;

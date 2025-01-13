@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useTransition } from "react";
+import React, { useState, useTransition } from "react";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -24,17 +24,14 @@ import CustomDatePicker from "@/components/CustomDatePicker";
 
 // Forms
 // Stores
-import { useAssetStore } from "@/lib/stores/assetStore";
 import { useLocationStore } from "@/lib/stores/locationStore";
 import { useSupplierUIStore } from "@/lib/stores/useSupplierUIStore";
 import { useInventoryUIStore } from "@/lib/stores/useInventoryUIStore";
-import { create } from "@/lib/actions/assets.actions";
 import CustomPriceInput from "../CustomPriceInput";
 import { SelectWithButton } from "@/components/SelectWithButton";
 import { assetSchema } from "@/lib/schemas";
-import { useFormTemplateStore } from "@/lib/stores/formTemplateStore";
+import { useFormTemplateUIStore } from "@/lib/stores/useFormTemplateUIStore";
 import { CustomField, CustomFieldOption } from "@/types/form";
-import { getFormTemplateById } from "@/lib/actions/formTemplate.actions";
 import { useFormModals } from "@/hooks/useFormModals";
 import { ModalManager } from "@/components/ModalManager";
 import { useStatusLabelsQuery } from "@/hooks/queries/useStatusLabelsQuery";
@@ -45,6 +42,9 @@ import { useDepartmentUIStore } from "@/lib/stores/useDepartmentUIStore";
 import { useDepartmentQuery } from "@/hooks/queries/useDepartmentQuery";
 import { useInventoryQuery } from "@/hooks/queries/useInventoryQuery";
 import { useSupplierQuery } from "@/hooks/queries/useSupplierQuery";
+import { useAssetQuery } from "@/hooks/queries/useAssetQuery";
+import { useFormTemplatesQuery } from "@/hooks/queries/useFormTemplatesQuery";
+import { useLocationQuery } from "@/hooks/queries/useLocationQuery";
 
 type FormTemplate = {
   id: string;
@@ -65,50 +65,30 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
   const { departments } = useDepartmentQuery();
   const { inventories } = useInventoryQuery();
   const { suppliers } = useSupplierQuery();
-  const {} = useStatusLabelsQuery();
-  const [isLoadingInitialData, setIsLoadingInitialData] = useState(true);
+  const { createAsset } = useAssetQuery();
   const { models } = useModelsQuery();
-
+  const { formTemplates } = useFormTemplatesQuery();
+  const { locations } = useLocationQuery();
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
   const [loadingErrors, setLoadingErrors] = useState<string[]>([]);
 
+  type CustomFieldValues = Record<string, string>;
+
   const [selectedTemplate, setSelectedTemplate] = useState<FormTemplate | null>(
     null,
   );
-  const [customFieldValues, setCustomFieldValues] = useState<
-    Record<string, any>
-  >({});
+  const [customFieldValues, setCustomFieldValues] = useState<CustomFieldValues>(
+    {},
+  );
   // Stores
   const { onOpen: openStatus } = useStatusLabelUIStore();
   const { onOpen: openModel } = useModelUIStore();
   const { onOpen: openDepartment } = useDepartmentUIStore();
-  const {
-    create: createAsset,
-    update: updateAsset,
-    findById,
-  } = useAssetStore();
-
-  const {
-    locations,
-    fetchLocations,
-    onOpen: openLocation,
-  } = useLocationStore();
-
+  const { onOpen: openLocation } = useLocationStore();
   const { onOpen: openInventory } = useInventoryUIStore();
-  const {
-    isOpen: isSupplierOpen,
-    onOpen: openSupplier,
-    onClose: closeSupplier,
-  } = useSupplierUIStore();
-
-  const {
-    isOpen: isTemplateOpen,
-    templates,
-    fetchTemplates: fetchFormTemplates,
-    onOpen: openTemplate,
-    onClose: closeTemplate,
-  } = useFormTemplateStore();
+  const { onOpen: openSupplier } = useSupplierUIStore();
+  const { onOpen: openTemplate } = useFormTemplateUIStore();
 
   const form = useForm<AssetFormValues>({
     resolver: zodResolver(assetSchema),
@@ -132,45 +112,6 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
       templateValues: {},
     },
   });
-
-  // Modify your useEffect
-  useEffect(() => {
-    const loadInitialData = async () => {
-      setIsLoadingInitialData(true);
-      setLoadingErrors([]);
-      const errors: string[] = [];
-
-      try {
-        await Promise.all([
-          fetchLocations().catch(() => errors.push("Locations")),
-          fetchFormTemplates().catch(() => errors.push("Form templates")),
-        ]);
-
-        if (errors.length > 0) {
-          setLoadingErrors(errors);
-          toast.error(`Failed to load: ${errors.join(", ")}`);
-        }
-
-        if (isUpdate && id) {
-          try {
-            const asset = await findById(id);
-            if (asset) {
-              form.reset(asset);
-            } else {
-              toast.error("Asset not found");
-              router.back();
-            }
-          } catch (error) {
-            toast.error("Failed to load asset data");
-          }
-        }
-      } finally {
-        setIsLoadingInitialData(false);
-      }
-    };
-
-    loadInitialData();
-  }, []);
 
   const renderCustomFields = () => {
     if (!selectedTemplate) return null;
@@ -239,38 +180,35 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
         form.setValue("formTemplateId", "");
         form.setValue("templateValues", {});
         setSelectedTemplate(null);
+        setCustomFieldValues({});
+        return;
+      }
+
+      const selectedTemplate = formTemplates.find(
+        (template) => template.id === formTemplateId,
+      );
+
+      if (!selectedTemplate?.fields) {
+        toast.error("Template not found or invalid");
         return;
       }
 
       // Update form with the new template ID
       form.setValue("formTemplateId", formTemplateId);
+      setSelectedTemplate(selectedTemplate);
 
-      // Fetch template details
-      const response = await getFormTemplateById(formTemplateId);
+      // Initialize empty values for template fields
+      const emptyValues = selectedTemplate.fields.reduce<CustomFieldValues>(
+        (acc, field) => ({
+          ...acc,
+          [field.name]: "",
+        }),
+        {},
+      );
 
-      if (response.error) {
-        toast.error(response.error);
-        return;
-      }
-
-      if (response.data) {
-        setSelectedTemplate(response.data);
-
-        // Type the initial accumulator object
-        const initialValues: Record<string, string> = {};
-
-        // Use typed accumulator and field parameter
-        const emptyValues = response.data.fields.reduce(
-          (acc: Record<string, string>, field: CustomField) => {
-            acc[field.name] = "";
-            return acc;
-          },
-          initialValues,
-        );
-
-        // Update form with empty values for the new template
-        form.setValue("templateValues", emptyValues);
-      }
+      // Update both form and state
+      form.setValue("templateValues", emptyValues);
+      setCustomFieldValues(emptyValues);
     } catch (error) {
       toast.error("Failed to load template details");
       console.error("Error loading template:", error);
@@ -280,7 +218,6 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
   async function onSubmit(data: AssetFormValues) {
     startTransition(async () => {
       try {
-        console.log(data);
         const formattedData = {
           ...data,
           purchaseDate: data.purchaseDate,
@@ -294,15 +231,16 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
             : {}),
         };
 
-        await create(formattedData)
-          .then(() => {
+        await createAsset(formattedData, {
+          onSuccess: () => {
             form.reset();
             toast.success("Asset created successfully");
             router.push("/assets"); // Add navigation after success
-          })
-          .catch((error) => {
-            toast.error("Something went wrong: " + error);
-          });
+          },
+          onError: (error) => {
+            toast.error("Something went wrong creating asset: " + error);
+          },
+        });
       } catch (error) {
         toast.error("Something went wrong");
         console.error(error);
@@ -312,7 +250,6 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
 
   return (
     <section className="w-full mx-auto p-6">
-      {/* Modals */}
       <ModalManager modals={useFormModals(form)} />
 
       <Form {...form}>
@@ -328,7 +265,7 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
                 <SelectWithButton
                   name="formTemplateId"
                   label="Form Template"
-                  data={templates}
+                  data={formTemplates}
                   onNew={openTemplate}
                   placeholder="Select a form template"
                   form={form}
@@ -438,18 +375,6 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-6">
-                    {/*<CustomDatePicker*/}
-                    {/*  label="Purchase Date"*/}
-                    {/*  name="purchaseDate"*/}
-                    {/*  form={form}*/}
-                    {/*  placeholder="Select purchase date"*/}
-                    {/*  required*/}
-                    {/*  disablePastDates*/}
-                    {/*  tooltip="Select the date your asset was purchased"*/}
-                    {/*  minDate={new Date()}*/}
-                    {/*  maxDate={new Date(2025, 0, 1)}*/}
-                    {/*  formatString="dd/MM/yyyy"*/}
-                    {/*/>*/}
                     <CustomDatePicker
                       name="purchaseDate"
                       form={form}

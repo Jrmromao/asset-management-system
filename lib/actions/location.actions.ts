@@ -124,8 +124,6 @@ export async function getAll(params?: {
       orderBy: { createdAt: "desc" },
     });
 
-    console.log("locations", locations);
-
     return { data: parseStringify(locations) };
   } catch (error) {
     console.error("Get locations error:", error);

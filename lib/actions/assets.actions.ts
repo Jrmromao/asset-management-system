@@ -28,7 +28,7 @@ const assetIncludes = {
   AssetHistory: true,
 } as const;
 
-export async function get(): Promise<ActionResponse<Asset[]>> {
+export async function getAll(): Promise<ActionResponse<Asset[]>> {
   try {
     const session = await auth();
     if (!session?.user?.companyId) {
@@ -50,6 +50,8 @@ export async function get(): Promise<ActionResponse<Asset[]>> {
 
 export async function findById(id: string): Promise<ActionResponse<Asset>> {
   try {
+    console.log("ASSET ID", id);
+
     if (!id) {
       return { error: "Asset ID is required" };
     }
@@ -73,6 +75,9 @@ export async function findById(id: string): Promise<ActionResponse<Asset>> {
     if (!asset) {
       return { error: "Asset not found" };
     }
+
+    console.log("ASST LOGS", auditLogs);
+    console.log(asset);
 
     return {
       data: parseStringify({
@@ -405,7 +410,7 @@ async function retryWithExponentialBackoff<T>(
   }
 }
 
-export async function create(
+export async function insert(
   values: z.infer<typeof assetSchema>,
 ): Promise<ActionResponse<Asset>> {
   const session = await auth();

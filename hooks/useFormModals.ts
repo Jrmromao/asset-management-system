@@ -8,7 +8,7 @@ import StatusLabelForm from "@/components/forms/StatusLabelForm";
 import LocationForm from "@/components/forms/LocationForm";
 import { useInventoryUIStore } from "@/lib/stores/useInventoryUIStore";
 import { useManufacturerStore } from "@/lib/stores/manufacturerStore";
-import { useFormTemplateStore } from "@/lib/stores/formTemplateStore";
+import { useFormTemplateUIStore } from "@/lib/stores/useFormTemplateUIStore";
 import DepartmentForm from "@/components/forms/DepartmentForm";
 import SupplierForm from "@/components/forms/SupplierForm";
 import InventoryForm from "@/components/forms/InventoryForm";
@@ -43,7 +43,7 @@ export function useFormModals(form: any) {
     useManufacturerStore();
 
   const { isOpen: isTemplateOpen, onClose: closeTemplate } =
-    useFormTemplateStore();
+    useFormTemplateUIStore();
 
   const modals = useMemo<ModalConfig[]>(
     () => [

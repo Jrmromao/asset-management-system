@@ -1,128 +1,80 @@
 "use server";
 import { PrismaClient } from "@prisma/client";
-import { parseStringify } from "@/lib/utils";
-import { auth } from "@/auth";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
+import { createTemplateSchema } from "@/lib/schemas";
+import { FormTemplate } from "@/types/form";
+import { parseStringify } from "@/lib/utils";
+import { checkAuth, handleError } from "@/utils/utils";
 
 const prisma = new PrismaClient();
 
-type ApiResponse<T> = {
-  data?: T;
-  error?: string;
-};
-
-const createTemplateSchema = z.object({
-  name: z.string().min(1, "Template name is required"),
-  fields: z.array(
-    z.object({
-      name: z.string().min(1, "Field name is required"),
-      type: z.enum(["text", "number", "date", "select", "checkbox"]),
-      placeholder: z.string().optional(),
-      label: z.string().optional(),
-      required: z.boolean().default(false),
-      options: z.array(z.string()).optional(),
-    }),
-  ),
-});
-
-export async function createFormTemplate(
+export async function insert(
   data: z.infer<typeof createTemplateSchema>,
-): Promise<ApiResponse<{ id: string }>> {
+): Promise<ActionResponse<FormTemplate>> {
   try {
-    const session = await auth();
+    const { error, companyId } = await checkAuth();
+    if (error) return { error };
 
-    if (!session?.user?.companyId) {
+    if (!companyId) {
       return { error: "Unauthorized" };
     }
 
     const validatedData = createTemplateSchema.parse(data);
-    console.log(validatedData);
-
     const template = await prisma.formTemplate.create({
       data: {
         name: validatedData.name,
         fields: validatedData.fields,
-        companyId: session.user.companyId,
+        companyId,
       },
       select: { id: true },
     });
 
     revalidatePath("/assets/create");
-    return { data: template };
+    return { data: parseStringify(template) };
   } catch (error) {
-    console.error("Error creating form template:", error);
-    return {
-      error:
-        error instanceof Error ? error.message : "Failed to create template",
-    };
+    return handleError(error, "Failed to create template");
   }
 }
 
-export async function getFormTemplates(): Promise<
-  ApiResponse<
-    Array<{
-      id: string;
-      name: string;
-      fields: any;
-      createdAt: Date;
-    }>
-  >
-> {
+export async function getAll(): Promise<ActionResponse<FormTemplate[]>> {
   try {
-    const session = await auth();
-    if (!session?.user?.companyId) {
+    const { error, companyId } = await checkAuth();
+    if (error) return { error };
+
+    if (!companyId) {
       return { error: "Unauthorized" };
     }
-
     const templates = await prisma.formTemplate.findMany({
-      where: {
-        companyId: session.user.companyId,
-      },
+      where: { companyId },
       select: {
         id: true,
         name: true,
         fields: true,
         createdAt: true,
       },
-      orderBy: {
-        createdAt: "desc",
-      },
+      orderBy: { createdAt: "desc" },
     });
 
-    return { data: templates };
+    console.log("templates: ", templates);
+    return { data: parseStringify(templates) };
   } catch (error) {
-    console.error("Error fetching form templates:", error);
-    return {
-      error:
-        error instanceof Error ? error.message : "Failed to fetch templates",
-    };
+    return handleError(error, "Failed to fetch templates");
   }
 }
 
-export async function getFormTemplateById(id: string): Promise<
-  ApiResponse<{
-    id: string;
-    name: string;
-    fields: any;
-    values: Array<{
-      id: string;
-      values: any;
-      assetId: string;
-    }>;
-  }>
-> {
+export async function findById(
+  id: string,
+): Promise<ActionResponse<FormTemplate>> {
   try {
-    const session = await auth();
-    if (!session?.user?.companyId) {
+    const { error, companyId } = await checkAuth();
+    if (error) return { error };
+
+    if (!companyId) {
       return { error: "Unauthorized" };
     }
-
     const template = await prisma.formTemplate.findFirst({
-      where: {
-        id,
-        companyId: session.user.companyId,
-      },
+      where: { id, companyId },
       select: {
         id: true,
         name: true,
@@ -141,12 +93,55 @@ export async function getFormTemplateById(id: string): Promise<
       return { error: "Template not found" };
     }
 
-    return { data: template };
+    return { data: parseStringify(template) };
   } catch (error) {
-    console.error("Error fetching form template:", error);
-    return {
-      error:
-        error instanceof Error ? error.message : "Failed to fetch template",
-    };
+    return handleError(error, "Failed to fetch template");
+  }
+}
+
+export async function remove(
+  id: string,
+): Promise<ActionResponse<FormTemplate>> {
+  try {
+    const { error, companyId } = await checkAuth();
+    if (error) return { error };
+
+    if (!companyId) {
+      return { error: "Unauthorized" };
+    }
+    const template = await prisma.formTemplate.deleteMany({
+      where: { id, companyId },
+    });
+
+    return { data: parseStringify(template) };
+  } catch (error) {
+    return handleError(error, "Failed to delete template");
+  }
+}
+
+export async function update(
+  id: string,
+  data: z.infer<typeof createTemplateSchema>,
+): Promise<ActionResponse<FormTemplate>> {
+  try {
+    const { error, companyId } = await checkAuth();
+    if (error) return { error };
+
+    if (!companyId) {
+      return { error: "Unauthorized" };
+    }
+    const validatedData = createTemplateSchema.parse(data);
+    const template = await prisma.formTemplate.update({
+      where: { id, companyId },
+      data: {
+        name: validatedData.name,
+        fields: validatedData.fields,
+      },
+      select: { id: true },
+    });
+
+    return { data: parseStringify(template) };
+  } catch (error) {
+    return handleError(error, "Failed to update template");
   }
 }

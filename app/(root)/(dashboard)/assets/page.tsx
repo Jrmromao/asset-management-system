@@ -2,7 +2,6 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useDialogStore } from "@/lib/stores/store";
-import { useAssetStore } from "@/lib/stores/assetStore";
 import { useRouter } from "next/navigation";
 import { assetColumns } from "@/components/tables/AssetColumns";
 import { toast } from "sonner";
@@ -25,34 +24,37 @@ import { DialogContainer } from "@/components/dialogs/DialogContainer";
 import FileUploadForm from "@/components/forms/FileUploadForm";
 import { Card, CardContent } from "@/components/ui/card";
 import { DataTable } from "@/components/tables/DataTable/data-table";
+import { useAssetQuery } from "@/hooks/queries/useAssetQuery";
 
 const Assets = () => {
+  const { isLoading, assets, deleteItem } = useAssetQuery();
+
   const [openDialog, closeDialog, isOpen] = useDialogStore((state) => [
     state.onOpen,
     state.onClose,
     state.isOpen,
   ]);
 
-  const [assets, loading, fetchAssets, getAssetById, deleteAsset] =
-    useAssetStore((state) => [
-      state.assets,
-      state.loading,
-      state.getAll,
-      state.findById,
-      state.delete,
-    ]);
+  // const [assets, loading, fetchAssets, getAssetById, deleteAsset] =
+  //   useAssetStore((state) => [
+  //     state.assets,
+  //     state.loading,
+  //     state.getAll,
+  //     state.findById,
+  //     state.delete,
+  //   ]);
 
   const navigate = useRouter();
 
   const handleDelete = async (id: string) => {
-    await deleteAsset(id)
-      .then((_) => {
-        fetchAssets();
-        toast.success("Asset has been deleted");
-      })
-      .catch((err) => {
-        toast.error(err);
-      });
+    await deleteItem(id, {
+      onSuccess: () => {
+        toast.success("Asset deleted successfully");
+      },
+      onError: () => {
+        toast.error("Failed to delete asset");
+      },
+    });
   };
 
   const [filteredData, setFilteredData] = useState(assets);
@@ -112,10 +114,6 @@ const Assets = () => {
     [onDelete, onView],
   );
 
-  useEffect(() => {
-    fetchAssets();
-  }, [fetchAssets]);
-
   const availableAssets = assets.filter((asset) => {
     return asset.statusLabel?.name.toUpperCase() === "AVAILABLE";
   });
@@ -170,7 +168,7 @@ const Assets = () => {
         icon={<Calendar className="w-4 h-4" />}
       />
 
-      {loading ? (
+      {isLoading ? (
         <>
           <StatusCardPlaceholder />
           <TableHeaderSkeleton />
@@ -193,7 +191,7 @@ const Assets = () => {
           <DataTable
             columns={columns}
             data={filteredData}
-            isLoading={loading}
+            isLoading={isLoading}
           />
         </CardContent>
       </Card>
