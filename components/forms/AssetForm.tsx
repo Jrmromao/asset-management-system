@@ -26,8 +26,8 @@ import CustomDatePicker from "@/components/CustomDatePicker";
 // Stores
 import { useAssetStore } from "@/lib/stores/assetStore";
 import { useLocationStore } from "@/lib/stores/locationStore";
-import { useSupplierStore } from "@/lib/stores/useSupplierUIStore";
-import { useInventoryStore } from "@/lib/stores/useInventoryUIStore";
+import { useSupplierUIStore } from "@/lib/stores/useSupplierUIStore";
+import { useInventoryUIStore } from "@/lib/stores/useInventoryUIStore";
 import { create } from "@/lib/actions/assets.actions";
 import CustomPriceInput from "../CustomPriceInput";
 import { SelectWithButton } from "@/components/SelectWithButton";
@@ -43,6 +43,8 @@ import { useModelsQuery } from "@/hooks/queries/useModelsQuery";
 import { useModelUIStore } from "@/lib/stores/useModelUIStore";
 import { useDepartmentUIStore } from "@/lib/stores/useDepartmentUIStore";
 import { useDepartmentQuery } from "@/hooks/queries/useDepartmentQuery";
+import { useInventoryQuery } from "@/hooks/queries/useInventoryQuery";
+import { useSupplierQuery } from "@/hooks/queries/useSupplierQuery";
 
 type FormTemplate = {
   id: string;
@@ -61,7 +63,9 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
   const { statusLabels, isLoading: isLoadingStatusLabels } =
     useStatusLabelsQuery();
   const { departments } = useDepartmentQuery();
-
+  const { inventories } = useInventoryQuery();
+  const { suppliers } = useSupplierQuery();
+  const {} = useStatusLabelsQuery();
   const [isLoadingInitialData, setIsLoadingInitialData] = useState(true);
   const { models } = useModelsQuery();
 
@@ -88,25 +92,15 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
   const {
     locations,
     fetchLocations,
-    isOpen: isLocationOpen,
     onOpen: openLocation,
-    onClose: closeLocation,
   } = useLocationStore();
 
+  const { onOpen: openInventory } = useInventoryUIStore();
   const {
-    inventories,
-    getAll: fetchInventories,
-    isOpen: isInventoryOpen,
-    onOpen: openInventory,
-    onClose: closeInventory,
-  } = useInventoryStore();
-  const {
-    suppliers,
-    getAll: fetchSuppliers,
     isOpen: isSupplierOpen,
     onOpen: openSupplier,
     onClose: closeSupplier,
-  } = useSupplierStore();
+  } = useSupplierUIStore();
 
   const {
     isOpen: isTemplateOpen,
@@ -149,8 +143,6 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
       try {
         await Promise.all([
           fetchLocations().catch(() => errors.push("Locations")),
-          fetchInventories().catch(() => errors.push("Inventories")),
-          fetchSuppliers().catch(() => errors.push("Suppliers")),
           fetchFormTemplates().catch(() => errors.push("Form templates")),
         ]);
 

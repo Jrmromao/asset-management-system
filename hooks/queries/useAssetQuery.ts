@@ -1,23 +1,27 @@
 import { useUserUIStore } from "@/lib/stores/useUserUIStore";
 import { createGenericQuery } from "@/hooks/queries/useQueryFactory";
 import { z } from "zod";
-import { categorySchema } from "@/lib/schemas";
-import { getAll, insert, remove } from "@/lib/actions/category.actions";
+import { userSchema } from "@/lib/schemas";
+import {
+  createUser as insert,
+  getAll,
+  remove,
+} from "@/lib/actions/user.actions";
 
-export const MODEL_KEY = ["categories"] as const;
+export const MODEL_KEY = ["users"] as const;
 
-type CreateCategoryInput = z.infer<typeof categorySchema>;
+type CreateModelInput = z.infer<typeof userSchema>;
 
-export function useCategoryQuery() {
+export function useAssetQuery() {
   const { onClose } = useUserUIStore();
 
-  const genericQuery = createGenericQuery<Category, CreateCategoryInput>(
+  const genericQuery = createGenericQuery<User, CreateModelInput>(
     MODEL_KEY,
     {
       getAll: async () => {
         return await getAll();
       },
-      insert: async (data: CreateCategoryInput) => {
+      insert: async (data: CreateModelInput) => {
         return await insert(data);
       },
       delete: async (id: string) => {
@@ -33,19 +37,19 @@ export function useCategoryQuery() {
   );
 
   const {
-    items: categories,
+    items: users,
     isLoading,
     error,
-    createItem: createCategory,
+    createItem: createUser,
     isCreating,
     refresh,
   } = genericQuery();
 
   return {
-    categories,
+    users,
     isLoading,
     error,
-    createCategory,
+    createUser,
     isCreating,
     refresh,
   };

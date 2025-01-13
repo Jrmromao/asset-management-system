@@ -4,7 +4,7 @@ import { manufacturerSchema } from "@/lib/schemas";
 import { getAll, insert, remove } from "@/lib/actions/manufacturer.actions";
 import { useManufacturerUIStore } from "@/lib/stores/useManufacturerUIStore";
 
-export const MODEL_KEY = ["users"] as const;
+export const MODEL_KEY = ["manufacturer"] as const;
 
 type CreateManufacturerInput = z.infer<typeof manufacturerSchema>;
 

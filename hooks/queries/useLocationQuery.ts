@@ -2,9 +2,9 @@ import { useLocationUIStore } from "@/lib/stores/useLocationUIStore";
 import { createGenericQuery } from "@/hooks/queries/useQueryFactory";
 import { z } from "zod";
 import { locationSchema } from "@/lib/schemas";
-import { getAll, insert, removeCat } from "@/lib/actions/location.actions";
+import { getAll, insert, remove } from "@/lib/actions/location.actions";
 
-export const MODEL_KEY = ["users"] as const;
+export const MODEL_KEY = ["locations"] as const;
 
 type CreateLocationInput = z.infer<typeof locationSchema>;
 
@@ -24,7 +24,7 @@ export function useLocationQuery() {
         return await insert(data);
       },
       delete: async (id: string) => {
-        return await removeCat(id);
+        return await remove(id);
       },
     },
     {

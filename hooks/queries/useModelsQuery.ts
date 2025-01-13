@@ -1,4 +1,4 @@
-import { getAll, insert } from "@/lib/actions/model.actions";
+import { getAll, insert, remove } from "@/lib/actions/model.actions";
 import { useModelUIStore } from "@/lib/stores/useModelUIStore";
 import { createGenericQuery } from "@/hooks/queries/useQueryFactory";
 import { z } from "zod";
@@ -19,6 +19,9 @@ export function useModelsQuery() {
       },
       insert: async (data: CreateModelInput) => {
         return await insert(data);
+      },
+      delete: async (id: string) => {
+        return await remove(id);
       },
     },
     {

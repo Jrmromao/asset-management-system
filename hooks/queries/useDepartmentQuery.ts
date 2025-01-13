@@ -4,7 +4,7 @@ import { z } from "zod";
 import { departmentSchema } from "@/lib/schemas";
 import { useDepartmentUIStore } from "@/lib/stores/useDepartmentUIStore";
 
-export const MODEL_KEY = ["models"] as const;
+export const MODEL_KEY = ["departments"] as const;
 
 type CreateDepartmentInput = z.infer<typeof departmentSchema>;
 

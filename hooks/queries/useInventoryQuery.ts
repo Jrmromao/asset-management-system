@@ -4,7 +4,7 @@ import { inventorySchema } from "@/lib/schemas";
 import { getAll, insert, remove } from "@/lib/actions/inventory.actions";
 import { useInventoryUIStore } from "@/lib/stores/useInventoryUIStore";
 
-export const MODEL_KEY = ["users"] as const;
+export const MODEL_KEY = ["inventories"] as const;
 
 type CreateInventorySchemaInput = z.infer<typeof inventorySchema>;
 

@@ -524,3 +524,31 @@ export async function findById(id: string): Promise<ActionResponse<Model>> {
     await prisma.$disconnect();
   }
 }
+
+export async function remove(id: string): Promise<ActionResponse<Model>> {
+  try {
+    // Auth check
+    const session = await auth();
+    if (!session?.user?.companyId) {
+      return { error: "Not authenticated" };
+    }
+
+    // Delete model
+    await prisma.model.delete({
+      where: {
+        id,
+        companyId: session.user.companyId,
+      },
+    });
+
+    // Success response
+    return {
+      success: true,
+      data: parseStringify({ id }),
+    };
+  } catch (error) {
+    return { error: "Failed to delete model" };
+  } finally {
+    await prisma.$disconnect();
+  }
+}

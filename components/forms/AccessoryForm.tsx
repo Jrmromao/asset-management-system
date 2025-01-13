@@ -1,49 +1,54 @@
 "use client";
-
+//
 import React, { useTransition } from "react";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-
+//
 import { useCategoryUIStore } from "@/lib/stores/useCategoryUIStore";
-import { create } from "@/lib/actions/accessory.actions";
+// import { create } from "@/lib/actions/accessory.actions";
 import { useStatusLabelUIStore } from "@/lib/stores/useStatusLabelUIStore";
-
-import { useLocationStore } from "@/lib/stores/locationStore";
+//
 import { accessorySchema } from "@/lib/schemas";
 import { useStatusLabelsQuery } from "@/hooks/queries/useStatusLabelsQuery";
-import { ModalManager } from "@/components/ModalManager";
-import { useFormModals } from "@/hooks/useFormModals";
 import { useSupplierQuery } from "@/hooks/queries/useSupplierQuery";
 import { useSupplierUIStore } from "@/lib/stores/useSupplierUIStore";
 import { useInventoryUIStore } from "@/lib/stores/useInventoryUIStore";
-import { useInventoryQuery } from "@/hooks/queries/useInventoryQuery";
 import { useCategoryQuery } from "@/hooks/queries/useCategoryQuery";
-import { SelectWithButton } from "@/components/SelectWithButton";
 import { Card } from "@/components/ui/card";
 import { Form } from "@/components/ui/form";
+import { Button } from "@/components/ui/button";
+import { InfoIcon, Loader2 } from "lucide-react";
+import { useDepartmentQuery } from "@/hooks/queries/useDepartmentQuery";
+import { useDepartmentUIStore } from "@/lib/stores/useDepartmentUIStore";
+import { SelectWithButton } from "@/components/SelectWithButton";
 import CustomInput from "@/components/CustomInput";
 import CustomDatePicker from "@/components/CustomDatePicker";
 import CustomPriceInput from "@/components/CustomPriceInput";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { InfoIcon, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useDepartmentQuery } from "@/hooks/queries/useDepartmentQuery";
-import { useDepartmentUIStore } from "@/lib/stores/useDepartmentUIStore";
+import { useLocationUIStore } from "@/lib/stores/useLocationUIStore";
+import { useLocationQuery } from "@/hooks/queries/useLocationQuery";
+import { useInventoryQuery } from "@/hooks/queries/useInventoryQuery";
+import { ModalManager } from "@/components/ModalManager";
+import { useFormModals } from "@/hooks/useFormModals";
+import { useAccessoryQuery } from "@/hooks/queries/useAccessoryQuery";
 
 type AccessoryFormValues = z.infer<typeof accessorySchema>;
 
 const AccessoryForm = () => {
-  const [isPending, startTransition] = useTransition();
   const router = useRouter();
+  const [isPending, startTransition] = useTransition();
   const { statusLabels, isLoading: isLoadingStatusLabels } =
     useStatusLabelsQuery();
+  const { createAccessory, isCreating } = useAccessoryQuery();
+
   const { suppliers } = useSupplierQuery();
   const { inventories } = useInventoryQuery();
   const { categories } = useCategoryQuery();
   const { departments } = useDepartmentQuery();
+  const { locations } = useLocationQuery();
 
   const { onOpen: openSupplier } = useSupplierUIStore();
   const {
@@ -63,11 +68,10 @@ const AccessoryForm = () => {
   } = useStatusLabelUIStore();
 
   const {
-    locations,
     isOpen: isLocationOpen,
     onOpen: openLocation,
     onClose: closeLocation,
-  } = useLocationStore();
+  } = useLocationUIStore();
 
   const form = useForm<AccessoryFormValues>({
     resolver: zodResolver(accessorySchema),
@@ -90,10 +94,16 @@ const AccessoryForm = () => {
   const onSubmit = async (data: AccessoryFormValues) => {
     startTransition(async () => {
       try {
-        await create(data).then((_) => {
-          form.reset();
-          toast.success("Accessory created successfully");
-          router.push("/accessories");
+        await createAccessory(data, {
+          onSuccess: () => {
+            form.reset();
+            toast.success("Accessory created successfully");
+            router.push("/accessories");
+          },
+          onError: (error) => {
+            toast.error("Something went wrong");
+            console.error(error);
+          },
         });
       } catch (error) {
         toast.error("Something went wrong");

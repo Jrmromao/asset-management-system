@@ -404,6 +404,12 @@ export const kitItemSchema = z.object({
   itemID: z.string().optional(),
 });
 
+export const unassignSchema = z.object({
+  itemId: z.string(),
+  userId: z.string(),
+  notes: z.string().optional(),
+});
+
 export const assignmentSchema = z
   .object({
     userId: z.string().min(1, "Item ID is required"),

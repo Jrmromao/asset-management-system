@@ -1,6 +1,6 @@
 "use server";
 
-import { Prisma, PrismaClient } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 import { parseStringify } from "@/lib/utils";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
@@ -9,7 +9,7 @@ import { locationSchema } from "@/lib/schemas";
 
 const prisma = new PrismaClient();
 
-export async function removeCat(
+export async function remove(
   id: string,
 ): Promise<ActionResponse<DepartmentLocation>> {
   try {
@@ -94,34 +94,33 @@ export async function getAll(params?: {
       return { error: "Not authenticated" };
     }
 
-    const where: Prisma.DepartmentLocationWhereInput = {
-      companyId: session.user.companyId!,
-      ...(params?.search && {
-        OR: [
-          {
-            name: {
-              contains: params.search,
-              mode: "insensitive" as Prisma.QueryMode,
-            },
-          },
-          {
-            city: {
-              contains: params.search,
-              mode: "insensitive" as Prisma.QueryMode,
-            },
-          },
-          {
-            state: {
-              contains: params.search,
-              mode: "insensitive" as Prisma.QueryMode,
-            },
-          },
-        ],
-      }),
-    };
+    // const where: Prisma.DepartmentLocationWhereInput = {
+    //   companyId: session.user.companyId!,
+    //   ...(params?.search && {
+    //     OR: [
+    //       {
+    //         name: {
+    //           contains: params.search,
+    //           mode: "insensitive" as Prisma.QueryMode,
+    //         },
+    //       },
+    //       {
+    //         city: {
+    //           contains: params.search,
+    //           mode: "insensitive" as Prisma.QueryMode,
+    //         },
+    //       },
+    //       {
+    //         state: {
+    //           contains: params.search,
+    //           mode: "insensitive" as Prisma.QueryMode,
+    //         },
+    //       },
+    //     ],
+    //   }),
+    // };
 
     const locations = await prisma.departmentLocation.findMany({
-      where,
       orderBy: { createdAt: "desc" },
     });
 
