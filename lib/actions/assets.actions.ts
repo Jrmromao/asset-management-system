@@ -28,12 +28,7 @@ const assetIncludes = {
   AssetHistory: true,
 } as const;
 
-type ApiResponse<T> = {
-  data?: T;
-  error?: string;
-};
-
-export async function get(): Promise<ApiResponse<Asset[]>> {
+export async function get(): Promise<ActionResponse<Asset[]>> {
   try {
     const session = await auth();
     if (!session?.user?.companyId) {
@@ -53,7 +48,7 @@ export async function get(): Promise<ApiResponse<Asset[]>> {
   }
 }
 
-export async function findById(id: string): Promise<ApiResponse<Asset>> {
+export async function findById(id: string): Promise<ActionResponse<Asset>> {
   try {
     if (!id) {
       return { error: "Asset ID is required" };
@@ -91,7 +86,7 @@ export async function findById(id: string): Promise<ApiResponse<Asset>> {
   }
 }
 
-export async function remove(id: string): Promise<ApiResponse<Asset>> {
+export async function remove(id: string): Promise<ActionResponse<Asset>> {
   try {
     if (!id) {
       return { error: "Asset ID is required" };
@@ -141,7 +136,7 @@ export async function remove(id: string): Promise<ApiResponse<Asset>> {
 export async function update(
   asset: Asset,
   id: string,
-): Promise<ApiResponse<Asset>> {
+): Promise<ActionResponse<Asset>> {
   try {
     if (!id || !asset) {
       return { error: "Asset ID and data are required" };
@@ -175,7 +170,7 @@ export async function update(
 
 export async function checkout(
   values: z.infer<typeof assignmentSchema>,
-): Promise<ApiResponse<Asset>> {
+): Promise<ActionResponse<Asset>> {
   try {
     const validation = await assignmentSchema.safeParseAsync(values);
 
@@ -240,7 +235,7 @@ export async function checkout(
   }
 }
 
-export async function checkin(assetId: string): Promise<ApiResponse<Asset>> {
+export async function checkin(assetId: string): Promise<ActionResponse<Asset>> {
   try {
     if (!assetId) {
       return { error: "Asset ID is required" };
@@ -412,7 +407,7 @@ async function retryWithExponentialBackoff<T>(
 
 export async function create(
   values: z.infer<typeof assetSchema>,
-): Promise<ApiResponse<Asset>> {
+): Promise<ActionResponse<Asset>> {
   const session = await auth();
   if (!session?.user) {
     return { error: "Unauthorized access" };

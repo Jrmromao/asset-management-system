@@ -20,7 +20,7 @@ import { useAccessoryStore } from "@/lib/stores/accessoryStore";
 import { useItemDetails } from "@/components/shared/DetailsTabs/useItemDetails";
 import ItemDetailsTabs from "@/components/shared/DetailsTabs/ItemDetailsTabs";
 import { sumUnitsAssigned } from "@/lib/utils";
-import printQRCode from "@/utils/QRCodePrinter";
+// import printQRCode from "@/utils/QRCodePrinter";
 import QRCode from "react-qr-code";
 import DetailViewSkeleton from "@/components/shared/DetailView/DetailViewSkeleton";
 
@@ -296,7 +296,7 @@ export default function AssetPage({ params }: AssetPageProps) {
       archive: () => toast.info("Archive action not implemented"),
       duplicate: () => toast.info("Duplicate action not implemented"),
       edit: () => toast.info("Edit action not implemented", { id: "edit" }),
-      print: () => printQRCode("/qr-code/sample.png"),
+      print: () => toast.info("Print label action not implemented"),
     };
 
     actions[action]();

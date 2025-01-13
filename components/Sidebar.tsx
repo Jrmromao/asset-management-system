@@ -25,9 +25,6 @@ const Sidebar = () => {
         {sidebarLinks.map((item) => {
           const isActive =
             pathName === item.route || pathName.startsWith(`${item.route}/`);
-
-          console.log(userRole);
-
           if (!item.visibleTo.includes(userRole)) {
             return null;
           }

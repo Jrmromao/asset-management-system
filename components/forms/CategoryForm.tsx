@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useTransition } from "react";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -8,11 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { useTransition } from "react";
 import CustomInput from "@/components/CustomInput";
 import { categorySchema } from "@/lib/schemas";
 import { insert } from "@/lib/actions/category.actions";
-import { useCategoryStore } from "@/lib/stores/categoryStore";
+import { useCategoryStore } from "@/lib/stores/useCategoryUIStore";
 
 const CategoryForm = () => {
   const [isPending, startTransition] = useTransition();

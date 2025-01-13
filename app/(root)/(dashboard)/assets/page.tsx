@@ -4,11 +4,9 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useDialogStore } from "@/lib/stores/store";
 import { useAssetStore } from "@/lib/stores/assetStore";
 import { useRouter } from "next/navigation";
-import { DialogContainer } from "@/components/dialogs/DialogContainer";
-import FileUploadForm from "@/components/forms/FileUploadForm";
-import { DataTable } from "@/components/tables/DataTable/data-table";
 import { assetColumns } from "@/components/tables/AssetColumns";
 import { toast } from "sonner";
+import StatusCards from "@/components/StatusCards";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -17,14 +15,16 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import Link from "next/link";
-import FilterDialog from "@/components/dialogs/FilterDialog";
-import { Card, CardContent } from "@/components/ui/card";
-import { Calendar } from "lucide-react";
 import HeaderBox from "@/components/HeaderBox";
-import StatusCards from "@/components/StatusCards";
+import { Calendar } from "lucide-react";
 import StatusCardPlaceholder from "@/components/StatusCardPlaceholder";
 import TableHeaderSkeleton from "@/components/tables/TableHeaderSkeleton";
 import { TableHeader } from "@/components/tables/TableHeader";
+import FilterDialog from "@/components/dialogs/FilterDialog";
+import { DialogContainer } from "@/components/dialogs/DialogContainer";
+import FileUploadForm from "@/components/forms/FileUploadForm";
+import { Card, CardContent } from "@/components/ui/card";
+import { DataTable } from "@/components/tables/DataTable/data-table";
 
 const Assets = () => {
   const [openDialog, closeDialog, isOpen] = useDialogStore((state) => [
@@ -163,14 +163,13 @@ const Assets = () => {
         </BreadcrumbList>
       </Breadcrumb>
 
-      {/* Header Section */}
+      {/*/!* Header Section *!/*/}
       <HeaderBox
         title="Assets"
         subtext="Manage and track your assets"
         icon={<Calendar className="w-4 h-4" />}
       />
 
-      {/*/!* Stats Cards *!/*/}
       {loading ? (
         <>
           <StatusCardPlaceholder />
@@ -188,7 +187,7 @@ const Assets = () => {
         </>
       )}
 
-      {/* Table */}
+      {/*/!* Table *!/*/}
       <Card>
         <CardContent className="p-0">
           <DataTable
@@ -199,7 +198,7 @@ const Assets = () => {
         </CardContent>
       </Card>
 
-      {/* Dialogs */}
+      {/*/!* Dialogs *!/*/}
       <FilterDialog
         open={filterDialogOpen}
         onOpenChange={setFilterDialogOpen}

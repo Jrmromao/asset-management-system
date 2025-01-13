@@ -6,11 +6,7 @@ import { ModalConfig } from "@/types/modals";
 import ModelForm from "@/components/forms/ModelForm";
 import StatusLabelForm from "@/components/forms/StatusLabelForm";
 import LocationForm from "@/components/forms/LocationForm";
-import { useLocationStore } from "@/lib/stores/locationStore";
-import { useDepartmentStore } from "@/lib/stores/departmentStore";
-import { useInventoryStore } from "@/lib/stores/inventoryStore";
-import { useSupplierStore } from "@/lib/stores/SupplierStore";
-import { useCategoryStore } from "@/lib/stores/categoryStore";
+import { useInventoryUIStore } from "@/lib/stores/useInventoryUIStore";
 import { useManufacturerStore } from "@/lib/stores/manufacturerStore";
 import { useFormTemplateStore } from "@/lib/stores/formTemplateStore";
 import DepartmentForm from "@/components/forms/DepartmentForm";
@@ -19,71 +15,35 @@ import InventoryForm from "@/components/forms/InventoryForm";
 import CategoryForm from "@/components/forms/CategoryForm";
 import ManufacturerForm from "@/components/forms/ManufacturerForm";
 import FormTemplateCreator from "@/components/forms/FormTemplateCreator";
+import { useDepartmentUIStore } from "@/lib/stores/useDepartmentUIStore";
+import { useSupplierUIStore } from "@/lib/stores/useSupplierUIStore";
+import { useLocationUIStore } from "@/lib/stores/useLocationUIStore";
+import { useCategoryUIStore } from "@/lib/stores/useCategoryUIStore";
 
 export function useFormModals(form: any) {
-  const {
-    isOpen: isStatusOpen,
-    onOpen: openStatus,
-    onClose: closeStatus,
-  } = useStatusLabelUIStore();
+  const { isOpen: isStatusOpen, onClose: closeStatus } =
+    useStatusLabelUIStore();
 
-  const {
-    isOpen: isModelOpen,
-    onOpen: openModel,
-    onClose: closeModel,
-  } = useModelUIStore();
-  const {
-    locations,
-    fetchLocations,
-    isOpen: isLocationOpen,
-    onOpen: openLocation,
-    onClose: closeLocation,
-  } = useLocationStore();
-  const {
-    departments,
-    getAll: fetchDepartments,
-    isOpen: isDepartmentOpen,
-    onOpen: openDepartment,
-    onClose: closeDepartment,
-  } = useDepartmentStore();
-  const {
-    inventories,
-    getAll: fetchInventories,
-    isOpen: isInventoryOpen,
-    onOpen: openInventory,
-    onClose: closeInventory,
-  } = useInventoryStore();
-  const {
-    suppliers,
-    getAll: fetchSuppliers,
-    isOpen: isSupplierOpen,
-    onOpen: openSupplier,
-    onClose: closeSupplier,
-  } = useSupplierStore();
+  const { isOpen: isModelOpen, onClose: closeModel } = useModelUIStore();
 
-  const {
-    categories,
-    getAll: fetchCategories,
-    isOpen: isCategoryOpen,
-    onOpen: openCategory,
-    onClose: closeCategory,
-  } = useCategoryStore();
+  const { isOpen: isDepartmentOpen, onClose: closeDepartment } =
+    useDepartmentUIStore();
 
-  const {
-    manufacturers,
-    isOpen: isManufacturerOpen,
-    onOpen: openManufacturer,
-    onClose: closeManufacturer,
-    getAll: fetchManufacturers,
-  } = useManufacturerStore();
+  const { isOpen: isLocationOpen, onClose: closeLocation } =
+    useLocationUIStore();
+  const { isOpen: isInventoryOpen, onClose: closeInventory } =
+    useInventoryUIStore();
+  const { isOpen: isSupplierOpen, onClose: closeSupplier } =
+    useSupplierUIStore();
 
-  const {
-    isOpen: isTemplateOpen,
-    templates,
-    fetchTemplates: fetchFormTemplates,
-    onOpen: openTemplate,
-    onClose: closeTemplate,
-  } = useFormTemplateStore();
+  const { isOpen: isCategoryOpen, onClose: closeCategory } =
+    useCategoryUIStore();
+
+  const { isOpen: isManufacturerOpen, onClose: closeManufacturer } =
+    useManufacturerStore();
+
+  const { isOpen: isTemplateOpen, onClose: closeTemplate } =
+    useFormTemplateStore();
 
   const modals = useMemo<ModalConfig[]>(
     () => [

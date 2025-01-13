@@ -350,11 +350,6 @@ import { z } from "zod";
 import { modelSchema } from "@/lib/schemas";
 import { prisma } from "@/app/db";
 
-type ModelSearchParams = {
-  search?: string;
-  categoryId?: string;
-};
-
 export async function insert(
   values: z.infer<typeof modelSchema>,
 ): Promise<ActionResponse<Model>> {
@@ -399,7 +394,7 @@ export async function insert(
 }
 
 export async function getAll(
-  params?: ModelSearchParams,
+  params?: QueryParams,
 ): Promise<ActionResponse<Model[]>> {
   try {
     const session = await auth();
@@ -439,7 +434,7 @@ export async function getAll(
 }
 
 export async function getAllSimple(
-  params?: ModelSearchParams,
+  params?: QueryParams,
 ): Promise<ActionResponse<Model[]>> {
   try {
     // Auth check
@@ -525,6 +520,34 @@ export async function findById(id: string): Promise<ActionResponse<Model>> {
     };
   } catch (error) {
     return { error: "Failed to fetch model" };
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+export async function remove(id: string): Promise<ActionResponse<Model>> {
+  try {
+    // Auth check
+    const session = await auth();
+    if (!session?.user?.companyId) {
+      return { error: "Not authenticated" };
+    }
+
+    // Delete model
+    await prisma.model.delete({
+      where: {
+        id,
+        companyId: session.user.companyId,
+      },
+    });
+
+    // Success response
+    return {
+      success: true,
+      data: parseStringify({ id }),
+    };
+  } catch (error) {
+    return { error: "Failed to delete model" };
   } finally {
     await prisma.$disconnect();
   }

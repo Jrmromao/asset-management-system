@@ -1,22 +1,20 @@
 "use server";
 
 import { prisma } from "@/app/db";
-import { parseStringify, processRecordContents } from "@/lib/utils";
+import { parseStringify } from "@/lib/utils";
 import { auth } from "@/auth";
 import { z } from "zod";
-import { accessorySchema, assignmentSchema } from "@/lib/schemas";
-import { revalidatePath } from "next/cache";
+import {
+  accessorySchema,
+  assignmentSchema,
+  unassignSchema,
+} from "@/lib/schemas";
 import { getAuditLog } from "@/lib/actions/auditLog.actions";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/binary";
 
-type ApiResponse<T> = {
-  data?: T;
-  error?: string;
-};
-
-export const create = async (
+export const insert = async (
   values: z.infer<typeof accessorySchema>,
-): Promise<ApiResponse<Accessory>> => {
+): Promise<ActionResponse<Accessory>> => {
   try {
     const validation = accessorySchema.safeParse(values);
     if (!validation.success) {
@@ -88,7 +86,7 @@ export const create = async (
   }
 };
 
-export const getAll = async (): Promise<ApiResponse<Accessory[]>> => {
+export const getAll = async (): Promise<ActionResponse<Accessory[]>> => {
   try {
     const session = await auth();
     if (!session?.user?.companyId) {
@@ -115,7 +113,9 @@ export const getAll = async (): Promise<ApiResponse<Accessory[]>> => {
   }
 };
 
-export const findById = async (id: string): Promise<ApiResponse<Accessory>> => {
+export const findById = async (
+  id: string,
+): Promise<ActionResponse<Accessory>> => {
   try {
     // 1. Define the query shape upfront for better type safety and reusability
     const accessoryQuery = {
@@ -231,93 +231,93 @@ export const remove = async (id: string) => {
 //   }
 // };
 
-export async function processAccessoryCSV(csvContent: string) {
-  try {
-    const data = processRecordContents(csvContent);
-    const session = await auth();
-
-    if (!session?.user?.companyId) {
-      throw new Error("User session or company ID is invalid.");
-    }
-
-    // const companyId = session.user.companyId;
-    const companyId = "bf40528b-ae07-4531-a801-ede53fb31f04";
-
-    const records = await prisma.$transaction(async (tx) => {
-      const recordPromises = data.map(async (item) => {
-        // Fetch associations
-        const [statusLabel, supplier, location, department, inventory] =
-          await Promise.all([
-            tx.statusLabel.findFirst({ where: { name: item["statusLabel"] } }),
-            tx.supplier.findFirst({ where: { name: item["supplier"] } }),
-            tx.departmentLocation.findFirst({
-              where: { name: item["location"] },
-            }),
-            tx.department.findFirst({ where: { name: item["department"] } }),
-            tx.inventory.findFirst({ where: { name: item["inventory"] } }),
-          ]);
-
-        // // Validate required associations
-        if (!statusLabel || !supplier) {
-          console.warn(
-            `Skipping record: Missing required associations for model="${item["model"]}", statusLabel="${item["statusLabel"]}", supplier="${item["supplier"]}"`,
-          );
-          return null;
-        }
-
-        // Create accessory record
-        return tx.accessory.create({
-          data: {
-            name: item["name"],
-            purchaseDate: item["purchaseDate"],
-            endOfLife: item["endOfLife"],
-            alertEmail: item["alertEmail"],
-            modelNumber: item["modelNumber"],
-            statusLabelId: statusLabel?.id,
-            departmentId: department?.id || null,
-            locationId: location?.id || null,
-            price: parseFloat(item["price"]) || 0,
-            companyId,
-            reorderPoint: Number(item["reorderPoint"]) || 0,
-            totalQuantityCount: Number(item["totalQuantityCount"]) || 0,
-            material: item["material"],
-            weight: item["weight"],
-            supplierId: supplier?.id,
-            inventoryId: inventory?.id || null,
-            poNumber: item["poNumber"],
-            notes: item["notes"],
-          },
-        });
-      });
-
-      // Revalidate the necessary path
-      revalidatePath("/accessories");
-
-      // Resolve and filter out null results
-      return (await Promise.all(recordPromises)).filter(Boolean);
-    });
-
-    // Revalidate the necessary path
-    revalidatePath("/assets");
-
-    return {
-      success: true,
-      message: `Successfully processed ${records.length} records`,
-      data: records,
-    };
-  } catch (error) {
-    console.error("Error processing CSV:", error);
-    return {
-      success: false,
-      message:
-        error instanceof Error ? error.message : "Failed to process CSV file",
-    };
-  }
-}
+// export async function processAccessoryCSV(csvContent: string) {
+//   try {
+//     const data = processRecordContents(csvContent);
+//     const session = await auth();
+//
+//     if (!session?.user?.companyId) {
+//       throw new Error("User session or company ID is invalid.");
+//     }
+//
+//     // const companyId = session.user.companyId;
+//     const companyId = "bf40528b-ae07-4531-a801-ede53fb31f04";
+//
+//     const records = await prisma.$transaction(async (tx) => {
+//       const recordPromises = data.map(async (item) => {
+//         // Fetch associations
+//         const [statusLabel, supplier, location, department, inventory] =
+//           await Promise.all([
+//             tx.statusLabel.findFirst({ where: { name: item["statusLabel"] } }),
+//             tx.supplier.findFirst({ where: { name: item["supplier"] } }),
+//             tx.departmentLocation.findFirst({
+//               where: { name: item["location"] },
+//             }),
+//             tx.department.findFirst({ where: { name: item["department"] } }),
+//             tx.inventory.findFirst({ where: { name: item["inventory"] } }),
+//           ]);
+//
+//         // // Validate required associations
+//         if (!statusLabel || !supplier) {
+//           console.warn(
+//             `Skipping record: Missing required associations for model="${item["model"]}", statusLabel="${item["statusLabel"]}", supplier="${item["supplier"]}"`,
+//           );
+//           return null;
+//         }
+//
+//         // Create accessory record
+//         return tx.accessory.create({
+//           data: {
+//             name: item["name"],
+//             purchaseDate: item["purchaseDate"],
+//             endOfLife: item["endOfLife"],
+//             alertEmail: item["alertEmail"],
+//             modelNumber: item["modelNumber"],
+//             statusLabelId: statusLabel?.id,
+//             departmentId: department?.id || null,
+//             locationId: location?.id || null,
+//             price: parseFloat(item["price"]) || 0,
+//             companyId,
+//             reorderPoint: Number(item["reorderPoint"]) || 0,
+//             totalQuantityCount: Number(item["totalQuantityCount"]) || 0,
+//             material: item["material"],
+//             weight: item["weight"],
+//             supplierId: supplier?.id,
+//             inventoryId: inventory?.id || null,
+//             poNumber: item["poNumber"],
+//             notes: item["notes"],
+//           },
+//         });
+//       });
+//
+//       // Revalidate the necessary path
+//       revalidatePath("/accessories");
+//
+//       // Resolve and filter out null results
+//       return (await Promise.all(recordPromises)).filter(Boolean);
+//     });
+//
+//     // Revalidate the necessary path
+//     revalidatePath("/assets");
+//
+//     return {
+//       success: true,
+//       message: `Successfully processed ${records.length} records`,
+//       data: records,
+//     };
+//   } catch (error) {
+//     console.error("Error processing CSV:", error);
+//     return {
+//       success: false,
+//       message:
+//         error instanceof Error ? error.message : "Failed to process CSV file",
+//     };
+//   }
+// }
 
 export async function assign(
   values: z.infer<typeof assignmentSchema>,
-): Promise<ApiResponse<Accessory>> {
+): Promise<ActionResponse<Accessory>> {
   try {
     try {
       await assignmentSchema.parseAsync(values);
@@ -428,7 +428,7 @@ export async function assign(
 
 export async function unassign(
   values: z.infer<typeof unassignSchema>,
-): Promise<ApiResponse<Accessory>> {
+): Promise<ActionResponse<Accessory>> {
   try {
     const validation = unassignSchema.safeParse(values);
     if (!validation.success) {
@@ -521,10 +521,3 @@ export async function unassign(
     };
   }
 }
-
-// Schema for unassign
-const unassignSchema = z.object({
-  itemId: z.string(),
-  userId: z.string(),
-  notes: z.string().optional(),
-});

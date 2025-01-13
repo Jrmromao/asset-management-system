@@ -1,75 +1,66 @@
 "use client";
-
-import React, { useEffect, useState, useTransition } from "react";
+//
+import React, { useTransition } from "react";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { Button } from "@/components/ui/button";
-import { Form } from "@/components/ui/form";
-import { InfoIcon, Loader2 } from "lucide-react";
-import { Card } from "@/components/ui/card";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-
+//
+import { useCategoryUIStore } from "@/lib/stores/useCategoryUIStore";
+// import { create } from "@/lib/actions/accessory.actions";
+import { useStatusLabelUIStore } from "@/lib/stores/useStatusLabelUIStore";
+//
+import { accessorySchema } from "@/lib/schemas";
+import { useStatusLabelsQuery } from "@/hooks/queries/useStatusLabelsQuery";
+import { useSupplierQuery } from "@/hooks/queries/useSupplierQuery";
+import { useSupplierUIStore } from "@/lib/stores/useSupplierUIStore";
+import { useInventoryUIStore } from "@/lib/stores/useInventoryUIStore";
+import { useCategoryQuery } from "@/hooks/queries/useCategoryQuery";
+import { Card } from "@/components/ui/card";
+import { Form } from "@/components/ui/form";
+import { Button } from "@/components/ui/button";
+import { InfoIcon, Loader2 } from "lucide-react";
+import { useDepartmentQuery } from "@/hooks/queries/useDepartmentQuery";
+import { useDepartmentUIStore } from "@/lib/stores/useDepartmentUIStore";
+import { SelectWithButton } from "@/components/SelectWithButton";
 import CustomInput from "@/components/CustomInput";
 import CustomDatePicker from "@/components/CustomDatePicker";
 import CustomPriceInput from "@/components/CustomPriceInput";
-import { DialogContainer } from "@/components/dialogs/DialogContainer";
-
-import CategoryForm from "@/components/forms/CategoryForm";
-import SupplierForm from "@/components/forms/SupplierForm";
-import ManufacturerForm from "@/components/forms/ManufacturerForm";
-import InventoryForm from "@/components/forms/InventoryForm";
-
-import { useCategoryStore } from "@/lib/stores/categoryStore";
-import { useSupplierStore } from "@/lib/stores/SupplierStore";
-import { useManufacturerStore } from "@/lib/stores/manufacturerStore";
-import { useInventoryStore } from "@/lib/stores/inventoryStore";
-import { create } from "@/lib/actions/accessory.actions";
-import { useStatusLabelUIStore } from "@/lib/stores/useStatusLabelUIStore";
-import { SelectWithButton } from "@/components/SelectWithButton";
-import { useModelStore } from "@/lib/stores/useModelUIStore";
-import { useLocationStore } from "@/lib/stores/locationStore";
-import { useDepartmentStore } from "@/lib/stores/departmentStore";
-import ModelForm from "@/components/forms/ModelForm";
-import { accessorySchema } from "@/lib/schemas";
-import { getAllSimple } from "@/lib/actions/supplier.actions";
-import StatusLabelForm from "@/components/forms/StatusLabelForm";
-import DepartmentForm from "@/components/forms/DepartmentForm";
-import LocationForm from "@/components/forms/LocationForm";
-import { findAll } from "@/lib/actions/category.actions";
-import { getAll as getAllModels } from "@/lib/actions/model.actions";
-import { getAll as getAllInventories } from "@/lib/actions/inventory.actions";
-import { getAll as getAllManufacturers } from "@/lib/actions/manufacturer.actions";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useLocationUIStore } from "@/lib/stores/useLocationUIStore";
+import { useLocationQuery } from "@/hooks/queries/useLocationQuery";
+import { useInventoryQuery } from "@/hooks/queries/useInventoryQuery";
+import { ModalManager } from "@/components/ModalManager";
+import { useFormModals } from "@/hooks/useFormModals";
+import { useAccessoryQuery } from "@/hooks/queries/useAccessoryQuery";
 
 type AccessoryFormValues = z.infer<typeof accessorySchema>;
 
 const AccessoryForm = () => {
-  const [isPending, startTransition] = useTransition();
   const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const { statusLabels, isLoading: isLoadingStatusLabels } =
+    useStatusLabelsQuery();
+  const { createAccessory, isCreating } = useAccessoryQuery();
 
-  const {
-    isOpen: isCategoryOpen,
-    onOpen: openCategory,
-    onClose: closeCategory,
-  } = useCategoryStore();
-  const {
-    isOpen: isManufacturerOpen,
-    onOpen: openManufacturer,
-    onClose: closeManufacturer,
-  } = useManufacturerStore();
+  const { suppliers } = useSupplierQuery();
+  const { inventories } = useInventoryQuery();
+  const { categories } = useCategoryQuery();
+  const { departments } = useDepartmentQuery();
+  const { locations } = useLocationQuery();
+
+  const { onOpen: openSupplier } = useSupplierUIStore();
   const {
     isOpen: isInventoryOpen,
     onOpen: openInventory,
     onClose: closeInventory,
-  } = useInventoryStore();
-  const {
-    // suppliers,
-    isOpen: isSupplierOpen,
-    onOpen: openSupplier,
-    onClose: closeSupplier,
-  } = useSupplierStore();
+  } = useInventoryUIStore();
+
+  const { onOpen: openCategory } = useCategoryUIStore();
+
+  const { onOpen: openDepartment } = useDepartmentUIStore();
+
   const {
     isOpen: isStatusOpen,
     onOpen: openStatus,
@@ -77,38 +68,10 @@ const AccessoryForm = () => {
   } = useStatusLabelUIStore();
 
   const {
-    locations,
     isOpen: isLocationOpen,
     onOpen: openLocation,
     onClose: closeLocation,
-  } = useLocationStore();
-  const {
-    departments,
-    isOpen: isDepartmentOpen,
-    onOpen: openDepartment,
-    onClose: closeDepartment,
-  } = useDepartmentStore();
-
-  const {
-    isOpen: isModelOpen,
-    onOpen: openModel,
-    onClose: closeModel,
-  } = useModelStore();
-
-  // Category store
-  const {
-    isOpen: categoryIsOpen,
-    onClose: closeCategoryModal,
-    onOpen: openCategoryModal,
-    categories: categoryList,
-    getAll: fetchCategories,
-  } = useCategoryStore();
-
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-  const [manufacturers, setManufacturers] = useState<Manufacturer[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [models, setModels] = useState<Model[]>([]);
-  const [inventories, setInventories] = useState<Inventory[]>([]);
+  } = useLocationUIStore();
 
   const form = useForm<AccessoryFormValues>({
     resolver: zodResolver(accessorySchema),
@@ -128,43 +91,19 @@ const AccessoryForm = () => {
     },
   });
 
-  useEffect(() => {
-    const fetchData = async () => {
-      const suppliersResult = await getAllSimple();
-      if (suppliersResult.data) {
-        setSuppliers(suppliersResult.data);
-      }
-
-      const categoryResult = await findAll();
-      if (categoryResult.data) {
-        setCategories(categoryResult.data);
-      }
-
-      const modelsResult = await getAllModels();
-      if (modelsResult.data) {
-        setModels(modelsResult.data);
-      }
-
-      const inventoryResult = await getAllInventories();
-      if (inventoryResult.data) {
-        setInventories(inventoryResult.data);
-      }
-      const manufacturersResult = await getAllManufacturers();
-      if (manufacturersResult.data) {
-        setManufacturers(manufacturersResult.data);
-      }
-    };
-
-    fetchData();
-  }, []);
-
   const onSubmit = async (data: AccessoryFormValues) => {
     startTransition(async () => {
       try {
-        await create(data).then((_) => {
-          form.reset();
-          toast.success("Accessory created successfully");
-          router.push("/accessories");
+        await createAccessory(data, {
+          onSuccess: () => {
+            form.reset();
+            toast.success("Accessory created successfully");
+            router.push("/accessories");
+          },
+          onError: (error) => {
+            toast.error("Something went wrong");
+            console.error(error);
+          },
         });
       } catch (error) {
         toast.error("Something went wrong");
@@ -175,73 +114,7 @@ const AccessoryForm = () => {
 
   return (
     <section className="w-full mx-auto p-6">
-      <DialogContainer
-        description=""
-        open={isModelOpen}
-        onOpenChange={closeModel}
-        title="Add Model"
-        form={<ModelForm />}
-      />
-      <DialogContainer
-        description=""
-        open={isCategoryOpen}
-        onOpenChange={closeCategory}
-        title="Add Category"
-        form={<CategoryForm />}
-      />
-      <DialogContainer
-        description=""
-        open={isSupplierOpen}
-        onOpenChange={closeSupplier}
-        title="Add Supplier"
-        form={<SupplierForm />}
-      />
-      <DialogContainer
-        description=""
-        open={isManufacturerOpen}
-        onOpenChange={closeManufacturer}
-        title="Add Manufacturer"
-        form={<ManufacturerForm />}
-      />
-      <DialogContainer
-        description=""
-        open={isInventoryOpen}
-        onOpenChange={closeInventory}
-        title="Add Inventory"
-        form={<InventoryForm />}
-      />
-
-      <DialogContainer
-        description=""
-        open={isStatusOpen}
-        onOpenChange={closeStatus}
-        title="Add Status Label"
-        form={<StatusLabelForm />}
-      />
-
-      <DialogContainer
-        description=""
-        open={isDepartmentOpen}
-        onOpenChange={closeDepartment}
-        title="Add Department"
-        form={<DepartmentForm />}
-      />
-
-      <DialogContainer
-        description=""
-        open={isLocationOpen}
-        onOpenChange={closeLocation}
-        title="Add Department"
-        form={<LocationForm />}
-      />
-
-      <DialogContainer
-        open={categoryIsOpen}
-        onOpenChange={closeCategoryModal}
-        title="Add Category"
-        description="Add a new category for your accessories."
-        form={<CategoryForm />}
-      />
+      <ModalManager modals={useFormModals(form)} />
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
@@ -255,7 +128,7 @@ const AccessoryForm = () => {
               form={form}
               required
               onNew={openCategory}
-              data={categoryList}
+              data={categories}
               placeholder="Select category"
               isPending={isPending}
             />

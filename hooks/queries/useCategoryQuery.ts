@@ -1,23 +1,23 @@
-import { getAll, insert, remove } from "@/lib/actions/model.actions";
-import { useModelUIStore } from "@/lib/stores/useModelUIStore";
+import { useUserUIStore } from "@/lib/stores/useUserUIStore";
 import { createGenericQuery } from "@/hooks/queries/useQueryFactory";
 import { z } from "zod";
-import { modelSchema } from "@/lib/schemas";
+import { categorySchema } from "@/lib/schemas";
+import { getAll, insert, remove } from "@/lib/actions/category.actions";
 
-export const MODEL_KEY = ["models"] as const;
+export const MODEL_KEY = ["categories"] as const;
 
-type CreateModelInput = z.infer<typeof modelSchema>;
+type CreateCategoryInput = z.infer<typeof categorySchema>;
 
-export function useModelsQuery() {
-  const { onClose } = useModelUIStore();
+export function useCategoryQuery() {
+  const { onClose } = useUserUIStore();
 
-  const genericQuery = createGenericQuery<Model, CreateModelInput>(
+  const genericQuery = createGenericQuery<Category, CreateCategoryInput>(
     MODEL_KEY,
     {
       getAll: async () => {
         return await getAll();
       },
-      insert: async (data: CreateModelInput) => {
+      insert: async (data: CreateCategoryInput) => {
         return await insert(data);
       },
       delete: async (id: string) => {
@@ -33,19 +33,19 @@ export function useModelsQuery() {
   );
 
   const {
-    items: models,
+    items: categories,
     isLoading,
     error,
-    createItem: createModel,
+    createItem: createCategory,
     isCreating,
     refresh,
   } = genericQuery();
 
   return {
-    models,
+    categories,
     isLoading,
     error,
-    createModel,
+    createCategory,
     isCreating,
     refresh,
   };

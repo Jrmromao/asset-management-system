@@ -26,9 +26,8 @@ import CustomDatePicker from "@/components/CustomDatePicker";
 // Stores
 import { useAssetStore } from "@/lib/stores/assetStore";
 import { useLocationStore } from "@/lib/stores/locationStore";
-import { useDepartmentStore } from "@/lib/stores/departmentStore";
-import { useSupplierStore } from "@/lib/stores/SupplierStore";
-import { useInventoryStore } from "@/lib/stores/inventoryStore";
+import { useSupplierUIStore } from "@/lib/stores/useSupplierUIStore";
+import { useInventoryUIStore } from "@/lib/stores/useInventoryUIStore";
 import { create } from "@/lib/actions/assets.actions";
 import CustomPriceInput from "../CustomPriceInput";
 import { SelectWithButton } from "@/components/SelectWithButton";
@@ -42,6 +41,10 @@ import { useStatusLabelsQuery } from "@/hooks/queries/useStatusLabelsQuery";
 import { useStatusLabelUIStore } from "@/lib/stores/useStatusLabelUIStore";
 import { useModelsQuery } from "@/hooks/queries/useModelsQuery";
 import { useModelUIStore } from "@/lib/stores/useModelUIStore";
+import { useDepartmentUIStore } from "@/lib/stores/useDepartmentUIStore";
+import { useDepartmentQuery } from "@/hooks/queries/useDepartmentQuery";
+import { useInventoryQuery } from "@/hooks/queries/useInventoryQuery";
+import { useSupplierQuery } from "@/hooks/queries/useSupplierQuery";
 
 type FormTemplate = {
   id: string;
@@ -59,6 +62,10 @@ interface AssetFormProps {
 const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
   const { statusLabels, isLoading: isLoadingStatusLabels } =
     useStatusLabelsQuery();
+  const { departments } = useDepartmentQuery();
+  const { inventories } = useInventoryQuery();
+  const { suppliers } = useSupplierQuery();
+  const {} = useStatusLabelsQuery();
   const [isLoadingInitialData, setIsLoadingInitialData] = useState(true);
   const { models } = useModelsQuery();
 
@@ -75,6 +82,7 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
   // Stores
   const { onOpen: openStatus } = useStatusLabelUIStore();
   const { onOpen: openModel } = useModelUIStore();
+  const { onOpen: openDepartment } = useDepartmentUIStore();
   const {
     create: createAsset,
     update: updateAsset,
@@ -84,31 +92,15 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
   const {
     locations,
     fetchLocations,
-    isOpen: isLocationOpen,
     onOpen: openLocation,
-    onClose: closeLocation,
   } = useLocationStore();
+
+  const { onOpen: openInventory } = useInventoryUIStore();
   const {
-    departments,
-    getAll: fetchDepartments,
-    isOpen: isDepartmentOpen,
-    onOpen: openDepartment,
-    onClose: closeDepartment,
-  } = useDepartmentStore();
-  const {
-    inventories,
-    getAll: fetchInventories,
-    isOpen: isInventoryOpen,
-    onOpen: openInventory,
-    onClose: closeInventory,
-  } = useInventoryStore();
-  const {
-    suppliers,
-    getAll: fetchSuppliers,
     isOpen: isSupplierOpen,
     onOpen: openSupplier,
     onClose: closeSupplier,
-  } = useSupplierStore();
+  } = useSupplierUIStore();
 
   const {
     isOpen: isTemplateOpen,
@@ -121,7 +113,6 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
   const form = useForm<AssetFormValues>({
     resolver: zodResolver(assetSchema),
     defaultValues: {
-      purchaseDate: new Date(),
       name: "",
       serialNumber: "",
       modelId: "",
@@ -133,7 +124,6 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
       supplierId: "",
       poNumber: "",
       weight: 0,
-      endOfLife: new Date(),
       material: "",
       energyRating: "",
       licenseId: "",
@@ -153,9 +143,6 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
       try {
         await Promise.all([
           fetchLocations().catch(() => errors.push("Locations")),
-          fetchDepartments().catch(() => errors.push("Departments")),
-          fetchInventories().catch(() => errors.push("Inventories")),
-          fetchSuppliers().catch(() => errors.push("Suppliers")),
           fetchFormTemplates().catch(() => errors.push("Form templates")),
         ]);
 
@@ -402,7 +389,7 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
                     isPending={isLoadingStatusLabels}
                     label="Status Label"
                     data={statusLabels}
-                    onNew={openStatus}
+                    onNew={openDepartment}
                     placeholder="Select status"
                     required
                   />
@@ -412,7 +399,7 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
                     name="departmentId"
                     label="Department"
                     data={departments}
-                    onNew={openDepartment}
+                    onNew={openStatus}
                     placeholder="Select department"
                     required
                   />
@@ -451,17 +438,24 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-6">
+                    {/*<CustomDatePicker*/}
+                    {/*  label="Purchase Date"*/}
+                    {/*  name="purchaseDate"*/}
+                    {/*  form={form}*/}
+                    {/*  placeholder="Select purchase date"*/}
+                    {/*  required*/}
+                    {/*  disablePastDates*/}
+                    {/*  tooltip="Select the date your asset was purchased"*/}
+                    {/*  minDate={new Date()}*/}
+                    {/*  maxDate={new Date(2025, 0, 1)}*/}
+                    {/*  formatString="dd/MM/yyyy"*/}
+                    {/*/>*/}
                     <CustomDatePicker
-                      label="Purchase Date"
                       name="purchaseDate"
                       form={form}
-                      placeholder="Select purchase date"
-                      required
-                      disablePastDates
-                      tooltip="Select the date your asset was purchased"
-                      minDate={new Date()}
-                      maxDate={new Date(2025, 0, 1)}
-                      formatString="dd/MM/yyyy"
+                      tooltip="Select the date your asset will no longer be used"
+                      label="Purchase Date"
+                      placeholder="Select date"
                     />
                     <CustomDatePicker
                       label="End of Life"
@@ -469,9 +463,8 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
                       form={form}
                       placeholder="Select end of life"
                       required
-                      disablePastDates
                       tooltip="Select the date your asset will no longer be used"
-                      minDate={new Date()}
+                      minDate={new Date(2001, 0, 1)}
                       maxDate={new Date(2100, 0, 1)}
                       formatString="dd/MM/yyyy"
                     />

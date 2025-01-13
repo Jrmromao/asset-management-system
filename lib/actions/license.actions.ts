@@ -21,6 +21,8 @@ export const create = async (
       throw new Error(validation.error.errors[0].message);
     }
 
+    console.log(validation.data);
+
     const session = await auth();
     if (!session) {
       return { error: "Not authenticated" };
@@ -82,7 +84,7 @@ export const create = async (
   }
 };
 
-export const getAll = async () => {
+export const getAll = async (): Promise<ActionResponse<License[]>> => {
   try {
     const session = await auth();
     if (!session) {
@@ -103,13 +105,22 @@ export const getAll = async () => {
         users: true,
       },
     });
-    return parseStringify(licenses);
+
+    return {
+      success: true,
+      data: parseStringify(licenses),
+    };
   } catch (error) {
-    console.log(error);
+    console.error("Error fetching licenses:", error);
+    return {
+      success: false,
+      error: "Failed to fetch licenses",
+    };
   } finally {
     await prisma.$disconnect();
   }
 };
+
 export const findById = async (id: string): Promise<ApiResponse<License>> => {
   try {
     const license = await prisma.license.findFirst({

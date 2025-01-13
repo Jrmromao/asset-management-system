@@ -1,17 +1,21 @@
-import { getAll, insert, remove } from "@/lib/actions/model.actions";
-import { useModelUIStore } from "@/lib/stores/useModelUIStore";
+import { useUserUIStore } from "@/lib/stores/useUserUIStore";
 import { createGenericQuery } from "@/hooks/queries/useQueryFactory";
 import { z } from "zod";
-import { modelSchema } from "@/lib/schemas";
+import { userSchema } from "@/lib/schemas";
+import {
+  createUser as insert,
+  getAll,
+  remove,
+} from "@/lib/actions/user.actions";
 
-export const MODEL_KEY = ["models"] as const;
+export const MODEL_KEY = ["users"] as const;
 
-type CreateModelInput = z.infer<typeof modelSchema>;
+type CreateModelInput = z.infer<typeof userSchema>;
 
-export function useModelsQuery() {
-  const { onClose } = useModelUIStore();
+export function useUserQuery() {
+  const { onClose } = useUserUIStore();
 
-  const genericQuery = createGenericQuery<Model, CreateModelInput>(
+  const genericQuery = createGenericQuery<User, CreateModelInput>(
     MODEL_KEY,
     {
       getAll: async () => {
@@ -33,19 +37,19 @@ export function useModelsQuery() {
   );
 
   const {
-    items: models,
+    items: users,
     isLoading,
     error,
-    createItem: createModel,
+    createItem: createUser,
     isCreating,
     refresh,
   } = genericQuery();
 
   return {
-    models,
+    users,
     isLoading,
     error,
-    createModel,
+    createUser,
     isCreating,
     refresh,
   };

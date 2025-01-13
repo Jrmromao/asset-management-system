@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useTransition } from "react";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -8,15 +8,15 @@ import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { useTransition } from "react";
 import CustomInput from "@/components/CustomInput";
 import { inventorySchema } from "@/lib/schemas";
-import { insert } from "@/lib/actions/inventory.actions";
-import { useInventoryStore } from "@/lib/stores/inventoryStore";
+import { useInventoryUIStore } from "@/lib/stores/useInventoryUIStore";
+import { useInventoryQuery } from "@/hooks/queries/useInventoryQuery";
 
 const CategoryForm = () => {
   const [isPending, startTransition] = useTransition();
-  const { onClose, getAll: fetchInventories } = useInventoryStore();
+  const { createInventory } = useInventoryQuery();
+  const { onClose } = useInventoryUIStore();
 
   const form = useForm<z.infer<typeof inventorySchema>>({
     resolver: zodResolver(inventorySchema),
@@ -28,15 +28,16 @@ const CategoryForm = () => {
   async function onSubmit(data: z.infer<typeof inventorySchema>) {
     startTransition(async () => {
       try {
-        const result = await insert(data);
-        if (result.error) {
-          toast.error(result.error);
-          return;
-        }
-        fetchInventories();
-        toast.success("Inventory created successfully");
-        onClose();
-        form.reset();
+        await createInventory(data, {
+          onSuccess: () => {
+            onClose();
+            form.reset();
+            console.log("Successfully created Inventory");
+          },
+          onError: (error) => {
+            console.error("Error creating Inventory:", error);
+          },
+        });
       } catch (error) {
         console.error("Inventory creation error:", error);
         toast.error("Failed to create Inventory");

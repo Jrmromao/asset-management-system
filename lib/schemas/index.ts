@@ -344,6 +344,10 @@ export const categorySchema = z.object({
   ...nameField("Category"),
 });
 
+export const roleSchema = z.object({
+  ...nameField("role"),
+});
+
 export const loginSchema = z.object({
   email: z
     .string()
@@ -398,6 +402,12 @@ export const kitSchema = z.object({
 
 export const kitItemSchema = z.object({
   itemID: z.string().optional(),
+});
+
+export const unassignSchema = z.object({
+  itemId: z.string(),
+  userId: z.string(),
+  notes: z.string().optional(),
 });
 
 export const assignmentSchema = z
@@ -518,7 +528,7 @@ export const userSchema = z.object({
         throw new Error("Email validation failed");
       }
     }, "Email already exists"),
-  phoneNum: z.string().min(1, "Phone number is required"),
+  // phoneNum: z.string().min(1, "Phone number is required"),
   title: z.string().min(1, "Title is required"),
   employeeId: z
     .string()
@@ -543,6 +553,7 @@ const customFieldSchema = z.object({
   value: z.union([z.string(), z.number(), z.date(), z.boolean()]).optional(),
   options: z.array(z.string()).optional(),
 });
+
 export const assetSchema = z.object({
   name: z.string().min(1, "Asset name is required"),
   purchaseDate: z.date({

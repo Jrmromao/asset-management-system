@@ -1,23 +1,11 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { useAccessoryStore } from "@/lib/stores/accessoryStore";
+import { useDialogStore } from "@/lib/stores/store";
 import { useRouter } from "next/navigation";
-import { DataTable } from "@/components/tables/DataTable/data-table";
-import { accessoriesColumns } from "@/components/tables/AccessoriesColumns";
-import { TableHeader } from "@/components/tables/TableHeader";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { DialogContainer } from "@/components/dialogs/DialogContainer";
 import FileUploadForm from "@/components/forms/FileUploadForm";
-import { useDialogStore } from "@/lib/stores/store";
-import TableHeaderSkeleton from "@/components/tables/TableHeaderSkeleton";
+import { DataTable } from "@/components/tables/DataTable/data-table";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -26,15 +14,25 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import Link from "next/link";
-import { BsDisplay } from "react-icons/bs";
 import HeaderBox from "@/components/HeaderBox";
 import StatusCards from "@/components/StatusCards";
 import StatusCardPlaceholder from "@/components/StatusCardPlaceholder";
+import TableHeaderSkeleton from "@/components/tables/TableHeaderSkeleton";
+import { TableHeader } from "@/components/tables/TableHeader";
+import { accessoriesColumns } from "@/components/tables/AccessoriesColumns";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { BsDisplay } from "react-icons/bs";
+import { useAccessoryQuery } from "@/hooks/queries/useAccessoryQuery";
 
 const Accessories = () => {
-  const [accessories, getAll, deleteAccessory, loading] = useAccessoryStore(
-    (state) => [state.accessories, state.getAll, state.delete, state.loading],
-  );
+  const { accessories, isLoading, deleteItem } = useAccessoryQuery();
 
   const [filteredData, setFilteredData] = useState(accessories);
   const [filterDialogOpen, setFilterDialogOpen] = useState(false);
@@ -51,10 +49,6 @@ const Accessories = () => {
   ]);
 
   const navigate = useRouter();
-
-  useEffect(() => {
-    getAll();
-  }, [getAll]);
 
   useEffect(() => {
     setFilteredData(accessories);
@@ -105,8 +99,7 @@ const Accessories = () => {
   };
 
   const handleDelete = async (id: string) => {
-    await deleteAccessory(id);
-    getAll();
+    await deleteItem(id);
   };
 
   const handleView = (id: string) => {
@@ -154,7 +147,7 @@ const Accessories = () => {
 
   return (
     <div className="min-h-screen p-6 space-y-6 mt-5">
-      {/* Breadcrumb */}
+      Breadcrumb
       <Breadcrumb className="hidden md:flex">
         <BreadcrumbList>
           <BreadcrumbItem>
@@ -165,7 +158,6 @@ const Accessories = () => {
           <BreadcrumbSeparator />
         </BreadcrumbList>
       </Breadcrumb>
-
       {/* Header Section */}
       <HeaderBox
         title="Accessories"
@@ -173,7 +165,7 @@ const Accessories = () => {
         icon={<BsDisplay className="w-4 h-4" />}
       />
       {/* Stats Cards */}
-      {loading ? (
+      {isLoading ? (
         <>
           <StatusCardPlaceholder />
           <TableHeaderSkeleton />
@@ -189,9 +181,7 @@ const Accessories = () => {
           />
         </>
       )}
-
-      <DataTable columns={columns} data={filteredData} isLoading={loading} />
-
+      <DataTable columns={columns} data={filteredData} isLoading={isLoading} />
       <Dialog open={filterDialogOpen} onOpenChange={setFilterDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -218,7 +208,6 @@ const Accessories = () => {
           </div>
         </DialogContent>
       </Dialog>
-
       <DialogContainer
         open={isOpen}
         onOpenChange={closeDialog}

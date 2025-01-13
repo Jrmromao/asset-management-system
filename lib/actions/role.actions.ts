@@ -12,7 +12,7 @@ type ActionReturn<T> = {
   error?: string;
 };
 
-export async function getRoles(): Promise<ActionReturn<Role[]>> {
+export async function getAll(): Promise<ActionReturn<Role[]>> {
   try {
     const session = await auth();
     if (!session) {
@@ -40,7 +40,7 @@ export async function getRoles(): Promise<ActionReturn<Role[]>> {
   }
 }
 
-export async function createRole(
+export async function insert(
   data: Pick<Role, "name">,
 ): Promise<ActionReturn<Role>> {
   try {
@@ -105,6 +105,26 @@ export async function getRoleById(id: string): Promise<ActionReturn<Role>> {
   } catch (error) {
     console.error("Get role error:", error);
     return { error: "Failed to fetch role" };
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+export async function remove(id: string): Promise<ActionReturn<Role>> {
+  try {
+    const session = await auth();
+    if (!session) {
+      return { error: "Not authenticated" };
+    }
+    const role = await prisma.role.delete({
+      where: {
+        id,
+      },
+    });
+    return { data: parseStringify(role) };
+  } catch (error) {
+    console.error("Delete role error:", error);
+    return { error: "Failed to delete role" };
   } finally {
     await prisma.$disconnect();
   }

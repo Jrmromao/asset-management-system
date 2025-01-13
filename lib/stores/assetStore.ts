@@ -1,12 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import produce from "immer";
-import {
-  checkin,
-  get as fetch,
-  remove,
-  update,
-} from "@/lib/actions/assets.actions";
+import { checkin } from "@/lib/actions/assets.actions";
 
 interface IAssetStore {
   assets: Asset[];
@@ -32,15 +27,16 @@ export const useAssetStore = create(
 
       getAll: async () => {
         set({ loading: true });
-        fetch()
-          .then((assets) => {
-            set({ assets: assets.data, loading: false });
-          })
-          .catch((error) => {
-            set({ assets: [], loading: false });
-            console.error("Error fetching assets:", error);
-            set({ loading: false });
-          });
+
+        // getAll()
+        // .then((assets: any) => {
+        //   set({ assets: assets.data || [], loading: false });
+        // })
+        // .catch((error: any) => {
+        //   set({ assets: [], loading: false });
+        //   console.error("Error fetching assets:", error);
+        //   set({ loading: false });
+        // });
       },
       create: async (asset: Asset) => {
         try {
@@ -61,17 +57,18 @@ export const useAssetStore = create(
           set(
             produce((state) => {
               updatedAsset.id = id;
-              update(updatedAsset, id)
-                .then(() => {
-                  state.assets = state.assets.filter((a: Asset) => a.id !== id);
-                })
-                .catch((error) => console.log(error));
-              const index = state.assets.findIndex(
-                (asset: Asset) => asset.id === id,
-              );
-              if (index !== -1) {
-                state.assets[index] = updatedAsset;
-              }
+              // assetActions
+              //   .update(updatedAsset, id)
+              //   .then(() => {
+              //     state.assets = state.assets.filter((a: Asset) => a.id !== id);
+              //   })
+              //   .catch((error: any) => console.log(error));
+              // const index = state.assets.findIndex(
+              //   (asset: Asset) => asset.id === id,
+              // );
+              // if (index !== -1) {
+              //   state.assets[index] = updatedAsset;
+              // }
             }),
           );
           return updatedAsset;
@@ -83,7 +80,7 @@ export const useAssetStore = create(
         set(
           produce((state) => {
             try {
-              remove(id); // 'await' the Promise returned by 'remove'
+              // remove(id); // 'await' the Promise returned by 'remove'
               state.assets = state.assets.filter((a: Asset) => a.id !== id);
             } catch (error) {
               console.error(error);

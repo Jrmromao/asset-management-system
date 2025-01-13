@@ -1,23 +1,27 @@
-import { getAll, insert, remove } from "@/lib/actions/model.actions";
-import { useModelUIStore } from "@/lib/stores/useModelUIStore";
+import { useUserUIStore } from "@/lib/stores/useUserUIStore";
 import { createGenericQuery } from "@/hooks/queries/useQueryFactory";
 import { z } from "zod";
-import { modelSchema } from "@/lib/schemas";
+import { accessorySchema } from "@/lib/schemas";
+import {
+  getAll,
+  insert as insert,
+  remove,
+} from "@/lib/actions/accessory.actions";
 
-export const MODEL_KEY = ["models"] as const;
+export const MODEL_KEY = ["accessories"] as const;
 
-type CreateModelInput = z.infer<typeof modelSchema>;
+type CreateAccessoryInput = z.infer<typeof accessorySchema>;
 
-export function useModelsQuery() {
-  const { onClose } = useModelUIStore();
+export function useAccessoryQuery() {
+  const { onClose } = useUserUIStore();
 
-  const genericQuery = createGenericQuery<Model, CreateModelInput>(
+  const genericQuery = createGenericQuery<Accessory, CreateAccessoryInput>(
     MODEL_KEY,
     {
       getAll: async () => {
         return await getAll();
       },
-      insert: async (data: CreateModelInput) => {
+      insert: async (data: CreateAccessoryInput) => {
         return await insert(data);
       },
       delete: async (id: string) => {
@@ -33,19 +37,21 @@ export function useModelsQuery() {
   );
 
   const {
-    items: models,
+    items: accessories,
     isLoading,
     error,
-    createItem: createModel,
+    createItem: createAccessory,
     isCreating,
     refresh,
+    deleteItem,
   } = genericQuery();
 
   return {
-    models,
+    accessories,
     isLoading,
     error,
-    createModel,
+    deleteItem,
+    createAccessory,
     isCreating,
     refresh,
   };
