@@ -4,13 +4,13 @@ import { cn } from "@/lib/utils";
 import { ClockIcon, UserIcon } from "lucide-react";
 import { DataTable } from "@/components/tables/DataTable/data-table";
 import { auditLogColumns } from "@/components/tables/AuditLogColumns";
-import { usedByColumns } from "@/components/tables/usedByColumns";
+import { usedByAccColumns } from "@/components/tables/usedByColumns";
 
 interface ItemDetailsTabsProps {
   itemId: string;
   itemType: "asset" | "accessory" | "license" | "component";
   auditLogs: AuditLog[];
-  usedBy?: UserAccessory[];
+  usedBy?: UserItems[];
   isCheckingIn: Set<string>;
   isRefreshing: boolean;
   handleCheckIn: (id: string) => Promise<void>;
@@ -33,14 +33,15 @@ const ItemDetailsTabs: React.FC<ItemDetailsTabsProps> = ({
   isCheckingIn,
 }) => {
   const auditLogColumnsMemo = useMemo(() => auditLogColumns(), []);
-  const usedByColumnsMemo = useMemo(
+  const usedByAccessoryColumnsMemo = useMemo(
     () =>
-      usedByColumns({
+      usedByAccColumns({
         onCheckIn: handleCheckIn,
         checkingInIds: isCheckingIn,
       }),
     [handleCheckIn, isCheckingIn],
   );
+
   return (
     <div className="w-full">
       <Tabs defaultValue="history" className="w-full space-y-6">
@@ -69,11 +70,6 @@ const ItemDetailsTabs: React.FC<ItemDetailsTabsProps> = ({
               >
                 <UserIcon className="h-4 w-4" />
                 <span>Used By</span>
-                {usedBy.length > 0 && (
-                  <span className="ml-1.5 px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded-full">
-                    {usedBy.length}
-                  </span>
-                )}
               </TabsTrigger>
             )}
 
@@ -109,9 +105,9 @@ const ItemDetailsTabs: React.FC<ItemDetailsTabsProps> = ({
         </TabsContent>
 
         <TabsContent value="used-by" className="pt-4">
-          {usedBy?.length > 0 ? (
+          {(usedBy?.length | usedBy.length) > 0 ? (
             <div className="rounded-lg border bg-white mx-3 mb-6">
-              <DataTable columns={usedByColumnsMemo} data={usedBy} />
+              <DataTable columns={usedByAccessoryColumnsMemo} data={usedBy} />
             </div>
           ) : (
             <div className="text-center py-12 text-gray-500">

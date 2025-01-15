@@ -1,32 +1,27 @@
 "use server";
 import { parseStringify } from "@/lib/utils";
-import { PrismaClient, UserLicense } from "@prisma/client";
+import { ItemType, PrismaClient } from "@prisma/client";
 import { z } from "zod";
 import { assignmentSchema, licenseSchema } from "@/lib/schemas";
 import { auth } from "@/auth";
+import { getAuditLog } from "@/lib/actions/auditLog.actions";
 
 const prisma = new PrismaClient();
 
-type ApiResponse<T> = {
-  data?: T;
-  error?: string;
-};
-
 export const create = async (
   values: z.infer<typeof licenseSchema>,
-): Promise<ApiResponse<License>> => {
+): Promise<ActionResponse<License>> => {
   try {
     const validation = licenseSchema.safeParse(values);
     if (!validation.success) {
       throw new Error(validation.error.errors[0].message);
     }
-
-    console.log(validation.data);
-
     const session = await auth();
     if (!session) {
       return { error: "Not authenticated" };
     }
+
+    console.log(session.user);
 
     return await prisma.$transaction(async (tx) => {
       // Create license
@@ -102,7 +97,7 @@ export const getAll = async (): Promise<ActionResponse<License[]>> => {
         department: true,
         departmentLocation: true,
         inventory: true,
-        users: true,
+        userItems: true,
       },
     });
 
@@ -121,9 +116,11 @@ export const getAll = async (): Promise<ActionResponse<License[]>> => {
   }
 };
 
-export const findById = async (id: string): Promise<ApiResponse<License>> => {
+export const findById = async (
+  id: string,
+): Promise<ActionResponse<License>> => {
   try {
-    const license = await prisma.license.findFirst({
+    const licenseQuery = {
       where: { id },
       include: {
         company: true,
@@ -132,9 +129,28 @@ export const findById = async (id: string): Promise<ApiResponse<License>> => {
         department: true,
         departmentLocation: true,
         inventory: true,
-        users: true,
+        LicenseSeat: true,
+        userItems: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                title: true,
+                employeeId: true,
+                active: true,
+              },
+            },
+          },
+        },
       },
-    });
+    };
+
+    const [license, auditLogsResult] = await Promise.all([
+      prisma.license.findUnique(licenseQuery),
+      id ? getAuditLog(id) : Promise.resolve({ success: false, data: [] }),
+    ]);
 
     if (!license) {
       return {
@@ -142,48 +158,21 @@ export const findById = async (id: string): Promise<ApiResponse<License>> => {
       };
     }
 
-    // Transform the Prisma result to match the License type
-    const transformedLicense: License = {
-      id: license.id,
-      name: license.name,
-      licensedEmail: license.licensedEmail,
-      poNumber: license.poNumber,
-      // licenseKey: license.licenseKey,
-      companyId: license.companyId,
-      statusLabelId: license.statusLabelId ?? undefined, // Convert null to undefined
-      supplierId: license.supplierId ?? undefined,
-      departmentId: license.departmentId ?? undefined,
-      locationId: license.locationId ?? undefined,
-      inventoryId: license.inventoryId ?? undefined,
-      renewalDate: license.renewalDate,
-      purchaseDate: license.purchaseDate,
-      purchaseNotes: license.purchaseNotes ?? undefined,
-      licenseUrl: license.licenseUrl ?? undefined,
-      minSeatsAlert: license.minSeatsAlert,
-      alertRenewalDays: license.alertRenewalDays,
-      seats: license.seats,
-      purchasePrice: Number(license.purchasePrice),
-      createdAt: license.createdAt,
-      updatedAt: license.updatedAt,
-
-      // Relations - convert nulls to undefined and ensure proper type conversion
-      company: license?.company ?? undefined,
-      statusLabel: license.statusLabel ?? undefined,
-      supplier: license.supplier,
-      department: license.department ?? undefined,
-      departmentLocation: license.departmentLocation
-        ? {
-            ...license.departmentLocation,
-            addressLine2: license.departmentLocation.addressLine2 ?? undefined,
-            companyId: license.departmentLocation.companyId ?? undefined,
-          }
-        : undefined,
-      inventory: license.inventory ?? undefined,
-      users: license?.users ?? [],
+    const licenseWithComputedFields = {
+      ...license,
+      stockHistory: license.LicenseSeat,
+      auditLogs: auditLogsResult.success ? auditLogsResult.data : [],
+      userLicenses: license.userItems,
+      currentAssignments: license.userItems,
     };
 
+    console.log(
+      "parseStringify(transformedLicense): ",
+      parseStringify(licenseWithComputedFields?.userLicenses),
+    );
+
     return {
-      data: transformedLicense,
+      data: parseStringify(licenseWithComputedFields),
     };
   } catch (error) {
     console.error("Error finding license:", error);
@@ -194,6 +183,7 @@ export const findById = async (id: string): Promise<ApiResponse<License>> => {
     await prisma.$disconnect();
   }
 };
+
 export const update = async (data: License, id: string) => {
   try {
     // const licenseTool = await prisma.license.update({
@@ -218,9 +208,9 @@ export const remove = async (id: string) => {
   return parseStringify(licenseTool);
 };
 
-export async function assignLicense(
+export async function checkout(
   values: z.infer<typeof assignmentSchema>,
-): Promise<ApiResponse<UserLicense>> {
+): Promise<ActionResponse<UserItems>> {
   try {
     const validation = await assignmentSchema.safeParseAsync(values);
 
@@ -236,15 +226,15 @@ export async function assignLicense(
     const userLicense = await prisma.$transaction(async (tx) => {
       const license = await tx.license.findUnique({
         where: { id: values.itemId },
-        include: { users: true },
+        include: { userItems: true },
       });
 
       if (!license) {
         throw new Error("License not found");
       }
 
-      const usedSeats = license.users.reduce(
-        (sum, user) => sum + user.seatsAssigned,
+      const usedSeats = license.userItems.reduce(
+        (sum, user) => sum + user.quantity,
         0,
       );
       const availableSeats = license.seats - usedSeats;
@@ -256,11 +246,13 @@ export async function assignLicense(
         );
       }
 
-      const assignment = await tx.userLicense.create({
+      const assignment = await tx.userItem.create({
         data: {
+          itemType: ItemType.LICENSE,
+          companyId: session.user.companyId,
           userId: values.userId,
           licenseId: values.itemId,
-          seatsAssigned: seatsRequested,
+          quantity: seatsRequested,
         },
         include: {
           user: true,
@@ -296,5 +288,108 @@ export async function assignLicense(
   } catch (error) {
     console.error("Error assigning license:", error);
     return { error: error instanceof Error ? error.message : String(error) };
+  }
+}
+
+export async function checkin(
+  userLicenseId: string,
+): Promise<ActionResponse<License>> {
+  try {
+    const session = await auth();
+    if (!session) {
+      return { error: "Not authenticated" };
+    }
+
+    const result = await prisma.$transaction(
+      async (tx) => {
+        // Get current assignment
+        const currentAssignment = await tx.userItem.findFirst({
+          where: {
+            id: userLicenseId,
+          },
+          include: {
+            license: true,
+            user: true,
+          },
+        });
+
+        if (!currentAssignment) {
+          throw new Error(
+            "No active assignment found for this user and license",
+          );
+        }
+
+        // Delete the user license assignment
+        await tx.userItem.delete({
+          where: {
+            id: userLicenseId,
+          },
+        });
+
+        // Record seat release in LicenseSeat
+        await tx.licenseSeat.create({
+          data: {
+            licenseId: currentAssignment.licenseId!,
+            quantity: currentAssignment.quantity,
+            type: "release",
+            companyId: session.user.companyId,
+            notes: `Released ${currentAssignment.quantity} seat(s) from user ${currentAssignment.userId}`,
+          },
+        });
+
+        // Create audit log
+        await tx.auditLog.create({
+          data: {
+            action: "LICENSE_CHECKIN",
+            entity: "LICENSE",
+            entityId: currentAssignment.licenseId,
+            userId: session.user.id || "",
+            companyId: session.user.companyId,
+            details: `Released ${currentAssignment.quantity} seat(s) from user ${currentAssignment.user.name}`,
+          },
+        });
+
+        // Get updated license with current assignments
+        const updatedLicense = await tx.license.findUnique({
+          where: { id: currentAssignment?.licenseId! },
+          include: {
+            userItems: {
+              include: {
+                user: {
+                  select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                  },
+                },
+              },
+            },
+            // licenseSeat: {
+            //   orderBy: {
+            //     createdAt: "desc",
+            //   },
+            //   take: 5,
+            // },
+          },
+        });
+
+        if (!updatedLicense) {
+          throw new Error("Failed to fetch updated license");
+        }
+
+        return updatedLicense;
+      },
+      {
+        maxWait: 5000,
+        timeout: 10000,
+      },
+    );
+
+    return { data: parseStringify(result) };
+  } catch (error) {
+    console.error("Error checking in license:", error);
+    return {
+      error: error instanceof Error ? error.message : String(error),
+    };
   }
 }

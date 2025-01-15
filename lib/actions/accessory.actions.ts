@@ -8,6 +8,7 @@ import { accessorySchema, assignmentSchema } from "@/lib/schemas";
 import { getAuditLog } from "@/lib/actions/auditLog.actions";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/binary";
 import { revalidatePath } from "next/cache";
+import { ItemType } from "@prisma/client";
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000; // 1 second
@@ -130,7 +131,7 @@ export const findById = async (
         department: true,
         category: true,
         departmentLocation: true,
-        UserAccessory: {
+        userItems: {
           include: {
             user: {
               select: {
@@ -161,17 +162,12 @@ export const findById = async (
       return { error: "Accessory not found" };
     }
 
-    // 4. Construct the response object with computed fields
-    // const { totalStock, assignedQuantity, availableQuantity } = computeQuantities(accessory);
-
     const accessoryWithComputedFields = {
       ...accessory,
-      // availableQuantity,
-      // assignedQuantity,
       auditLogs: auditLogsResult.success ? auditLogsResult.data : [],
-      userAccessories: accessory.UserAccessory,
+      userAccessories: accessory.userItems,
       stockHistory: accessory.AccessoryStock,
-      currentAssignments: accessory.UserAccessory,
+      currentAssignments: accessory.userItems,
     };
 
     return {
@@ -191,19 +187,6 @@ export const findById = async (
   }
 };
 
-// const computeQuantities = (accessory: Accessory) => {
-//   const totalStock = accessory.totalQuantityCount;
-//   const assignedQuantity = accessory?.userAccessories?.reduce(
-//     (sum: number, assignment: UserAccessory) => sum + assignment.quantity,
-//     0,
-//   );
-//   return {
-//     totalStock,
-//     assignedQuantity,
-//     availableQuantity: totalStock - assignedQuantity!,
-//   };
-// };
-
 export const remove = async (id: string) => {
   try {
     const asset = await prisma.accessory.delete({
@@ -216,22 +199,6 @@ export const remove = async (id: string) => {
     console.log(error);
   }
 };
-
-// export const update = async (asset: Accessory, id: string) => {
-//   try {
-//     // const assets = await prisma.asset.update({
-//     //     where: {
-//     //         id: id
-//     //     },
-//     //     data: {
-//     //         ...asset
-//     //     }
-//     // });
-//     // return parseStringify(assets);
-//   } catch (error) {
-//     console.log(error);
-//   }
-// };
 
 export async function processAccessoryCSV(csvContent: string) {
   try {
@@ -340,7 +307,7 @@ export async function checkout(
       const accessory = await tx.accessory.findUnique({
         where: { id: values.itemId },
         include: {
-          UserAccessory: true,
+          userItems: true,
         },
       });
 
@@ -349,12 +316,12 @@ export async function checkout(
       }
 
       // Calculate available quantity
-      const assignedQuantity = accessory.UserAccessory.reduce(
+      // Calculate available quantity
+      const assignedQuantity = accessory.userItems.reduce(
         (sum, assignment) => sum + assignment.quantity,
         0,
       );
       const availableQuantity = accessory.totalQuantityCount - assignedQuantity;
-
       // Check if we have enough quantity to assign
       const requestedQuantity = 1; // Default to 1 if not specified
       if (availableQuantity < requestedQuantity) {
@@ -364,8 +331,9 @@ export async function checkout(
       }
 
       // Create user accessory assignment
-      await tx.userAccessory.create({
+      await tx.userItem.create({
         data: {
+          itemType: ItemType.ACCESSORY,
           userId: values.userId,
           accessoryId: values.itemId,
           quantity: requestedQuantity,
@@ -401,7 +369,7 @@ export async function checkout(
       const updatedAccessory = await tx.accessory.findUnique({
         where: { id: values.itemId },
         include: {
-          UserAccessory: {
+          userItems: {
             include: {
               user: {
                 select: {
@@ -444,7 +412,7 @@ export async function checkin(
       const result = await prisma.$transaction(
         async (tx) => {
           // Get current assignment
-          const currentAssignment = await tx.userAccessory.findFirst({
+          const currentAssignment = await tx.userItem.findFirst({
             where: {
               id: userAccessoryId,
             },
@@ -457,7 +425,7 @@ export async function checkin(
           }
 
           // Delete the assignment
-          await tx.userAccessory.delete({
+          await tx.userItem.delete({
             where: {
               id: currentAssignment.id,
             },
@@ -466,7 +434,7 @@ export async function checkin(
           // Record stock return in AccessoryStock
           await tx.accessoryStock.create({
             data: {
-              accessoryId: currentAssignment.accessoryId,
+              accessoryId: currentAssignment.accessoryId!,
               quantity: currentAssignment.quantity,
               type: "return",
               companyId: session.user.companyId,
@@ -488,9 +456,9 @@ export async function checkin(
 
           // Get updated accessory with current assignments
           const updatedAccessory = await tx.accessory.findUnique({
-            where: { id: currentAssignment.accessoryId },
+            where: { id: currentAssignment.accessoryId! },
             include: {
-              UserAccessory: {
+              userItems: {
                 include: {
                   user: {
                     select: {

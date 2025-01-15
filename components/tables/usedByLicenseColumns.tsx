@@ -10,10 +10,10 @@ interface UsedByColumnsProps {
   checkingInIds: Set<string>;
 }
 
-export const usedByAccColumns = ({
+export const usedByLicenseColumns = ({
   onCheckIn,
   checkingInIds,
-}: UsedByColumnsProps): ColumnDef<UserAccessory>[] => [
+}: UsedByColumnsProps): ColumnDef<LicenseAssignment>[] => [
   {
     accessorKey: "user.name",
     header: ({ column }) => {
@@ -40,8 +40,8 @@ export const usedByAccColumns = ({
           )}
         >
           <LinkTableCell
-            value={user.name}
-            navigateTo={`/users/view/${user.id}`}
+            value={user?.name}
+            navigateTo={`/users/view/${user?.id}`}
           />
         </div>
       );
@@ -216,7 +216,7 @@ export const usedByAccColumns = ({
   {
     id: "actions",
     cell: ({ row }) => {
-      const returnedAt = row.original.returnedAt;
+      const returnedAt = row.original.assignedAt;
       const isCheckingIn = checkingInIds.has(row.original.id);
 
       if (returnedAt) return null;
@@ -233,7 +233,7 @@ export const usedByAccColumns = ({
       return (
         <ConfirmationDialog
           title="Check in item?"
-          description={`Are you sure you want to check in this item from ${row.original.user.name}?`}
+          description={`Are you sure you want to check in this item from ${row.original.user?.name}?`}
           confirmText="Yes, check it in"
           variant="warning"
           onConfirm={(e?: React.MouseEvent) => {
@@ -251,7 +251,7 @@ export const usedByAccColumns = ({
                 ? "text-yellow-600 animate-pulse cursor-not-allowed"
                 : "text-muted-foreground hover:text-green-600",
             )}
-            aria-label={`Check in item from ${row.original.user.name}`}
+            aria-label={`Check in item from ${row.original.user?.name}`}
             disabled={isCheckingIn}
           >
             <CheckCircle className="h-4 w-4" />

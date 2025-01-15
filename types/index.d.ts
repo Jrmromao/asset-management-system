@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-vars */
-import { Company } from "@prisma/client";
+import { Company, LicenseSeat } from "@prisma/client";
 
 declare global {
   // ==================== Base Interfaces ====================
@@ -160,7 +160,7 @@ declare global {
     locationId?: string | null;
     inventoryId?: string | null;
     purchaseNotes?: string | null;
-    licenseUrl?: string | null;
+    LicenseUrl?: string | null;
 
     // Relations
     company?: Company | null;
@@ -172,7 +172,11 @@ declare global {
     inventory?: Inventory | null;
     category?: Category | null;
     model?: Model | null;
-    users?: LicenseAssignment[] | null;
+    users?: UserItems[] | null;
+    userLicenses?: UserItems[] | null;
+    currentAssignments?: UserItems[] | null;
+    LicenseSeats?: LicenseSeat[] | null;
+    auditLogs?: AuditLog[] | null;
   }
 
   interface Accessory extends BaseEntity {
@@ -215,7 +219,7 @@ declare global {
     assignee?: User | null;
     category?: Category | null;
     license?: License | null;
-    userAccessories?: UserAccessory[] | null;
+    userAccessories?: UserItems[] | null;
     auditLogs?: AuditLog[] | null;
   }
 
@@ -287,7 +291,21 @@ declare global {
   }
 
   // ==================== Association Types ====================
-  interface UserAccessory {
+  // interface UserAccessory {
+  //   id: string;
+  //   userId: string;
+  //   accessoryId: string;
+  //   quantity: number;
+  //   assignedAt: Date;
+  //   returnedAt?: Date | null;
+  //   notes?: string | null;
+  //   companyId: string;
+  //   user: User;
+  //   accessory: Accessory;
+  //   company: Company;
+  // }
+
+  interface UserItems {
     id: string;
     userId: string;
     accessoryId: string;
@@ -301,16 +319,16 @@ declare global {
     company: Company;
   }
 
-  interface LicenseAssignment {
-    id: string;
-    userId: string;
-    licenseId: string;
-    assignedAt: Date;
-    expiresAt?: Date | null;
-    seatsAssigned: number;
-    user?: User;
-    license?: License;
-  }
+  // interface LicenseAssignment {
+  //   id: string;
+  //   userId: string;
+  //   licenseId: string;
+  //   assignedAt: Date;
+  //   expiresAt?: Date | null;
+  //   seatsAssigned: number;
+  //   user?: User;
+  //   license?: License;
+  // }
 
   interface AuditLog {
     id: string;

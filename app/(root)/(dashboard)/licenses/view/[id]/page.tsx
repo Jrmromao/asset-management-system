@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { DetailView } from "@/components/shared/DetailView/DetailView";
 import Link from "next/link";
 import { toast } from "sonner";
-import Swal from "sweetalert2";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -15,12 +14,10 @@ import {
 import { DialogContainer } from "@/components/dialogs/DialogContainer";
 import AssignmentForm from "@/components/forms/AssignmentForm";
 import { DetailViewProps } from "@/components/shared/DetailView/types";
-import { assignLicense, findById } from "@/lib/actions/license.actions";
+import { checkin, checkout, findById } from "@/lib/actions/license.actions";
 import { useAccessoryStore } from "@/lib/stores/accessoryStore";
 import ItemDetailsTabs from "@/components/shared/DetailsTabs/ItemDetailsTabs";
-import { useItemDetails } from "@/components/shared/DetailsTabs/useItemDetails";
-import { BoxIcon } from "lucide-react";
-import { sumSeatsAssigned } from "@/lib/utils";
+import { sleep, sumSeatsAssigned } from "@/lib/utils";
 import DetailViewSkeleton from "@/components/shared/DetailView/DetailViewSkeleton";
 
 interface AssetPageProps {
@@ -46,9 +43,7 @@ interface EnhancedLicenseType {
     name: string;
   };
   assigneeId?: string;
-  useBy: {
-    name: string;
-  };
+  usedBy: UserItems[];
   inventory: {
     name: string;
   };
@@ -60,107 +55,163 @@ interface EnhancedLicenseType {
     name: string;
   };
   poNumber: string;
+  auditLogs: AuditLog[];
 }
 
-const UnassignModal = async () => {
-  return await Swal.fire({
-    title: "Are you sure?",
-    text: "You won't be able to revert this operation!",
-    icon: "warning",
-    showCancelButton: true,
-    confirmButtonColor: "#3085d6",
-    cancelButtonColor: "#d33",
-    confirmButtonText: "Yes, unassign it!",
-  });
-};
+interface LoadingStates {
+  isInitialLoading: boolean;
+  isCheckingIn: Set<string>;
+  isAssigning: boolean;
+  isRefreshing: boolean;
+}
 
 export default function View({ params }: AssetPageProps) {
   const [error, setError] = useState<string | null>(null);
   const { id } = params;
   const { isAssignOpen, onAssignOpen, onAssignClose } = useAccessoryStore();
-
   const [license, setLicense] = useState<EnhancedLicenseType | undefined>();
-  const { relationships, attachments, isLoading } = useItemDetails({
-    itemId: id,
-    itemType: "license",
+  const [loadingStates, setLoadingStates] = useState<LoadingStates>({
+    isInitialLoading: true,
+    isCheckingIn: new Set<string>(),
+    isAssigning: false,
+    isRefreshing: false,
   });
 
-  useEffect(() => {
-    const fetchAsset = async () => {
-      if (!id) return;
+  const updateLoadingState = (
+    key: keyof Omit<LoadingStates, "isCheckingIn">,
+    value: boolean,
+  ) => {
+    setLoadingStates((prev) => ({ ...prev, [key]: value }));
+  };
 
-      try {
-        const foundLicenseResponse = await findById(id);
-        if (!foundLicenseResponse.error) {
-          const foundLicense = foundLicenseResponse.data;
+  const addCheckingInId = (id: string) => {
+    setLoadingStates((prev) => ({
+      ...prev,
+      isCheckingIn: new Set([...prev.isCheckingIn, id]),
+    }));
+  };
+  const removeCheckingInId = (id: string) => {
+    setLoadingStates((prev) => {
+      const newSet = new Set(prev.isCheckingIn);
+      newSet.delete(id);
+      return { ...prev, isCheckingIn: newSet };
+    });
+  };
 
-          setLicense({
-            id: foundLicense?.id!,
-            name: foundLicense?.name ?? "",
-            co2Score: 23,
-            statusLabel: {
-              name: foundLicense?.statusLabel?.name ?? "",
-              colorCode: foundLicense?.statusLabel?.colorCode ?? "#000000",
-            },
-            useBy: {
-              name: "",
-            },
-            location: {
-              name: foundLicense?.departmentLocation?.name ?? "",
-            },
-            department: {
-              name: foundLicense?.department?.name ?? "",
-            },
-            // assigneeId: foundLicense?.assigneeId!,
-            purchaseDate: foundLicense?.purchaseDate ?? new Date(),
-            renewalDate: foundLicense?.renewalDate ?? new Date(),
-            inventory: {
-              name: foundLicense?.inventory?.name ?? "",
-            },
-            seats: foundLicense?.seats ?? 0,
-            seatsAllocated: sumSeatsAssigned(foundLicense?.users ?? []),
-            reorderPoint: foundLicense?.minSeatsAlert ?? 0,
-            seatsAlert: foundLicense?.licensedEmail ?? "",
-            supplier: {
-              name: foundLicense?.supplier?.name ?? "",
-            },
-            poNumber: foundLicense?.poNumber ?? "",
-          });
-        }
-      } catch (error) {
-        console.error("Error fetching asset:", error);
-        setError("Failed to fetch asset details");
+  const fetcdData = async (isRefresh = false) => {
+    if (!id) return;
+
+    try {
+      updateLoadingState(isRefresh ? "isRefreshing" : "isInitialLoading", true);
+
+      const response = await findById(id);
+      if (response.error) {
+        setError(response.error);
+        return;
       }
-    };
 
-    fetchAsset();
+      const foundLicense = response.data;
+      if (!foundLicense) return;
+
+      setLicense({
+        id: foundLicense?.id!,
+        name: foundLicense?.name ?? "",
+        co2Score: 23,
+        statusLabel: {
+          name: foundLicense?.statusLabel?.name ?? "",
+          colorCode: foundLicense?.statusLabel?.colorCode ?? "#000000",
+        },
+        location: {
+          name: foundLicense?.departmentLocation?.name ?? "",
+        },
+        department: {
+          name: foundLicense?.department?.name ?? "",
+        },
+        purchaseDate: foundLicense?.purchaseDate ?? new Date(),
+        renewalDate: foundLicense?.renewalDate ?? new Date(),
+        inventory: {
+          name: foundLicense?.inventory?.name ?? "",
+        },
+        auditLogs: foundLicense?.auditLogs ?? [],
+        seats: foundLicense?.seats ?? 0,
+        seatsAllocated: sumSeatsAssigned(foundLicense?.users ?? []),
+        reorderPoint: foundLicense?.minSeatsAlert ?? 0,
+        seatsAlert: foundLicense?.licensedEmail ?? "",
+        supplier: {
+          name: foundLicense?.supplier?.name ?? "",
+        },
+        poNumber: foundLicense?.poNumber ?? "",
+        usedBy: foundLicense?.userLicenses ?? [],
+      });
+    } catch (error) {
+      console.error("Error fetching license:", error);
+      setError("Failed to fetch license details");
+    } finally {
+      updateLoadingState(
+        isRefresh ? "isRefreshing" : "isInitialLoading",
+        false,
+      );
+    }
+  };
+
+  useEffect(() => {
+    fetcdData();
   }, [id]);
 
-  const handleUnassign = async (e?: React.MouseEvent) => {
-    e?.preventDefault();
-    if (!license?.id) return;
+  const handleCheckIn = async (userLicenseId: string) => {
+    const previousState = license;
 
-    const result = await UnassignModal();
+    try {
+      addCheckingInId(userLicenseId);
 
-    if (result.isConfirmed) {
-      const previousState = { ...license };
-      try {
-        setLicense((prev) =>
-          prev
-            ? {
-                ...prev,
-                assigneeId: undefined,
-                useBy: { name: "" },
-              }
-            : undefined,
+      // Wait a moment to show the transition state
+      await sleep(1000);
+
+      // Optimistic update including usedBy
+      setLicense((prev) => {
+        if (!prev) return undefined;
+        const updatedUsedBy = prev.usedBy.filter(
+          (ul) => ul.id !== userLicenseId,
         );
+        return {
+          ...prev,
+          seatsAllocated: Math.max(0, prev.seatsAllocated - 1),
+          usedBy: updatedUsedBy,
+        };
+      });
 
-        toast.success("Asset unassigned successfully");
-      } catch (error) {
-        setLicense(previousState);
-        toast.error("Failed to unassign asset");
+      const result = await checkin(userLicenseId);
+
+      if (!result.data || result.error) {
+        throw new Error(result.error || "Failed to check in license");
       }
+
+      // Wait a moment to show completion
+      await sleep(500);
+
+      // Fetch fresh data
+      await fetcdData(true);
+      toast.success("License seat released successfully");
+    } catch (error) {
+      setLicense(previousState);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to release license seat",
+      );
+    } finally {
+      removeCheckingInId(userLicenseId);
     }
+  };
+  const handleAction = (action: "archive" | "duplicate" | "edit" | "print") => {
+    const actions: Record<typeof action, () => void> = {
+      archive: () => toast.info("Archive action not implemented"),
+      duplicate: () => toast.info("Duplicate action not implemented"),
+      edit: () => toast.info("Edit action not implemented", { id: "edit" }),
+      print: () => toast.info("Print label action not implemented"),
+    };
+
+    actions[action]();
   };
   const detailViewProps: DetailViewProps = {
     title: license?.name ?? "Untitled License",
@@ -175,7 +226,11 @@ export default function View({ params }: AssetPageProps) {
         value: license?.statusLabel?.name ?? "",
         type: "text",
       },
-      { label: "Location", value: license?.location?.name ?? "", type: "text" },
+      {
+        label: "Location",
+        value: license?.location?.name ?? "",
+        type: "text",
+      },
       {
         label: "Department",
         value: license?.department?.name ?? "",
@@ -205,8 +260,16 @@ export default function View({ params }: AssetPageProps) {
         value: license?.reorderPoint ?? 0,
         type: "text",
       },
-      { label: "Alert Email", value: license?.seatsAlert ?? "", type: "text" },
-      { label: "Supplier", value: license?.supplier?.name ?? "", type: "text" },
+      {
+        label: "Alert Email",
+        value: license?.seatsAlert ?? "",
+        type: "text",
+      },
+      {
+        label: "Supplier",
+        value: license?.supplier?.name ?? "",
+        type: "text",
+      },
       { label: "PO Number", value: license?.poNumber ?? "", type: "text" },
       { label: "Seats", value: license?.seats ?? 0, type: "text" },
       {
@@ -237,22 +300,11 @@ export default function View({ params }: AssetPageProps) {
     actions: {
       onArchive: () => handleAction("archive"),
       onAssign: license?.assigneeId ? undefined : () => onAssignOpen(),
-      onUnassign: license?.assigneeId ? handleUnassign : undefined,
+      onUnassign: license?.assigneeId ? () => handleCheckIn : undefined,
       onDuplicate: () => handleAction("duplicate"),
       onEdit: () => handleAction("edit"),
     },
     sourceData: "license",
-  };
-
-  const handleAction = (action: "archive" | "duplicate" | "edit" | "print") => {
-    const actions: Record<typeof action, () => void> = {
-      archive: () => toast.info("Archive action not implemented"),
-      duplicate: () => toast.info("Duplicate action not implemented"),
-      edit: () => toast.info("Edit action not implemented", { id: "edit" }),
-      print: () => toast.info("Print label action not implemented"),
-    };
-
-    actions[action]();
   };
 
   return (
@@ -269,51 +321,48 @@ export default function View({ params }: AssetPageProps) {
             itemId={license?.id!}
             type="license"
             seatsRequested={1}
-            assignAction={assignLicense}
-            onOptimisticUpdate={(userData) => {
-              setLicense((prev) =>
-                prev
-                  ? {
-                      ...prev,
-                      seatsAllocated: prev.seatsAllocated + 1,
-                    }
-                  : undefined,
-              );
+            assignAction={checkout}
+            onOptimisticUpdate={(formData) => {
+              setLicense((prev: EnhancedLicenseType | undefined) => {
+                if (!prev) return undefined;
+
+                return {
+                  ...prev,
+                  seatsAllocated: prev.seatsAllocated + 1,
+                  usedBy: [...prev.usedBy],
+                };
+              });
             }}
-            onSuccess={() => {
-              toast.success("Asset assigned successfully");
+            onSuccess={async () => {
+              toast.success("License assigned successfully");
               onAssignClose();
+              await fetcdData(true);
             }}
             onError={(previousData) => {
-              if (previousData) {
-                setLicense((prev) =>
-                  prev
-                    ? {
-                        ...prev,
-                        seatsAllocated: prev.seatsAllocated - 1,
-                      }
-                    : undefined,
-                );
-              }
+              setLicense((prev: EnhancedLicenseType | undefined) => {
+                if (!prev) return undefined;
+                return {
+                  ...prev,
+                  seatsAllocated: prev.seatsAllocated - 1,
+                  usedBy: prev.usedBy.filter(
+                    (user) => user.id !== previousData?.userId,
+                  ),
+                };
+              });
               toast.error("Failed to checkout license seat");
             }}
           />
         }
       />
-
-      <div className="mt-5 ">
+      <div className="mt-5">
         <ItemDetailsTabs
+          handleCheckIn={handleCheckIn}
+          auditLogs={license?.auditLogs ?? []}
           itemId={id}
+          usedBy={license?.usedBy ?? []}
           itemType="license"
-          relationships={relationships}
-          attachments={attachments}
-          customTabs={{
-            inventory: {
-              label: "Inventory",
-              icon: <BoxIcon className="h-4 w-4" />,
-              content: <div>{/* Custom inventory content */}</div>,
-            },
-          }}
+          isCheckingIn={loadingStates.isCheckingIn}
+          isRefreshing={loadingStates.isRefreshing}
         />
       </div>
     </>

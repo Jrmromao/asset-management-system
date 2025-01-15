@@ -33,16 +33,16 @@ model User {
   lastConsentUpdate     DateTime?
 
   // Relations
-  company       Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  role          Role            @relation(fields: [roleId], references: [id], onDelete: Restrict)
-  department    Department?     @relation(fields: [departmentId], references: [id], onDelete: SetNull)
-  assets        Asset[]         @relation("assignedToUser")
-  auditLogs     AuditLog[]
-  accounts      Account[]
-  userKits      UserKit[]
-  licenses      UserLicense[]
-  UserAccessory UserAccessory[]
-  Co2eRecord    Co2eRecord[]
+  company    Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  role       Role         @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  department Department?  @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  assets     Asset[]      @relation("assignedToUser")
+  auditLogs  AuditLog[]
+  accounts   Account[]
+  userKits   UserKit[]
+  // licenses      UserLicense[]
+  userItem   UserItem[]
+  Co2eRecord Co2eRecord[]
 
   @@unique([employeeId, companyId])
   @@index([companyId])
@@ -79,7 +79,7 @@ model License {
   department         Department?         @relation(fields: [departmentId], references: [id], onDelete: SetNull)
   departmentLocation DepartmentLocation? @relation(fields: [locationId], references: [id], onDelete: SetNull)
   inventory          Inventory?          @relation(fields: [inventoryId], references: [id], onDelete: SetNull)
-  users              UserLicense[]
+  userItems          UserItem[]
 
   LicenseSeat LicenseSeat[]
   Asset       Asset[]
@@ -115,7 +115,7 @@ model Accessory {
   department         Department?         @relation(fields: [departmentId], references: [id], onDelete: SetNull)
   departmentLocation DepartmentLocation? @relation(fields: [locationId], references: [id], onDelete: SetNull)
   inventory          Inventory?          @relation(fields: [inventoryId], references: [id], onDelete: SetNull)
-  UserAccessory      UserAccessory[]
+  userItems          UserItem[]
   AccessoryStock     AccessoryStock[]
   Co2eRecord         Co2eRecord[]
   category           Category?           @relation(fields: [categoryId], references: [id])
@@ -164,42 +164,74 @@ model FormTemplateValue {
   @@index([templateId])
 }
 
-model UserLicense {
-  id            String    @id @default(cuid())
-  userId        String
-  licenseId     String
-  assignedAt    DateTime  @default(now())
-  expiresAt     DateTime?
-  seatsAssigned Int
+// model UserLicense {
+//   id            String    @id @default(cuid())
+//   userId        String
+//   licenseId     String
+//   assignedAt    DateTime  @default(now())
+//   expiresAt     DateTime?
+//   seatsAssigned Int
+//
+//   // Relations
+//   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+//   license License @relation(fields: [licenseId], references: [id], onDelete: Cascade)
+//
+//   @@unique([userId, licenseId]) // Prevents duplicate assignments
+//   @@index([userId])
+//   @@index([licenseId])
+// }
 
-  // Relations
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  license License @relation(fields: [licenseId], references: [id], onDelete: Cascade)
+// model UserAccessory {
+//   id          String    @id @default(cuid())
+//   userId      String
+//   accessoryId String
+//   quantity    Int       @default(1)
+//   assignedAt  DateTime  @default(now())
+//   returnedAt  DateTime?
+//   notes       String?
+//   companyId   String
+//
+//   // Relations
+//   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+//   accessory Accessory @relation(fields: [accessoryId], references: [id], onDelete: Cascade)
+//   company   Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+//
+//   @@unique([userId, accessoryId]) // Prevent duplicate assignments
+//   @@index([userId])
+//   @@index([accessoryId])
+//   @@index([companyId])
+// }
 
-  @@unique([userId, licenseId]) // Prevents duplicate assignments
-  @@index([userId])
-  @@index([licenseId])
-}
-
-model UserAccessory {
+model UserItem {
   id          String    @id @default(cuid())
   userId      String
-  accessoryId String
+  itemType    ItemType
+  licenseId   String?
+  accessoryId String?
   quantity    Int       @default(1)
   assignedAt  DateTime  @default(now())
+  revokedAt   DateTime?
   returnedAt  DateTime?
   notes       String?
   companyId   String
 
   // Relations
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  accessory Accessory @relation(fields: [accessoryId], references: [id], onDelete: Cascade)
-  company   Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  license   License?   @relation(fields: [licenseId], references: [id], onDelete: Cascade)
+  accessory Accessory? @relation(fields: [accessoryId], references: [id], onDelete: Cascade)
+  company   Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, accessoryId]) // Prevent duplicate assignments
+  @@unique([userId, licenseId])
+  @@unique([userId, accessoryId])
   @@index([userId])
+  @@index([licenseId])
   @@index([accessoryId])
   @@index([companyId])
+}
+
+enum ItemType {
+  LICENSE
+  ACCESSORY
 }
 
 model Account {
@@ -254,7 +286,7 @@ model Company {
   suppliers      Supplier[] // Add this relation
   License        License[]
   FormTemplate   FormTemplate[]
-  UserAccessory  UserAccessory[]
+  userItem       UserItem[]
   AccessoryStock AccessoryStock[]
   LicenseSeat    LicenseSeat[]
   AssetHistory   AssetHistory[]

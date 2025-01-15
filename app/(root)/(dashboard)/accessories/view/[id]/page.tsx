@@ -65,7 +65,7 @@ interface EnhancedAccessoryType {
   } | null;
   poNumber: string | null;
   auditLogs: AuditLog[];
-  usedBy: UserAccessory[];
+  usedBy: UserItems[];
   co2Score?: number;
 }
 
@@ -182,46 +182,6 @@ export default function Page({ params }: AssetPageProps) {
     fetchAccessory();
   }, [id]);
 
-  // const handleCheckIn = async (userAccessoryId: string) => {
-  //   const previousState = accessory;
-  //
-  //   try {
-  //     addCheckingInId(userAccessoryId);
-  //
-  //     // Optimistic update
-  //     setAccessory((prev) => {
-  //       if (!prev) return undefined;
-  //
-  //       const updatedUsedBy = prev.usedBy.filter(
-  //         (ua) => ua.id !== userAccessoryId,
-  //       );
-  //
-  //       return {
-  //         ...prev,
-  //         usedBy: updatedUsedBy,
-  //         unitsAllocated: sumUnitsAssigned(updatedUsedBy),
-  //       };
-  //     });
-  //
-  //     // Make the actual API call
-  //     const result = await checkin(userAccessoryId);
-  //
-  //     if (result.error) {
-  //       throw new Error(result.error);
-  //     }
-  //
-  //     // Fetch fresh data to ensure consistency
-  //     await fetchAccessory(true);
-  //     toast.success("Item checked in successfully");
-  //   } catch (error) {
-  //     setAccessory(previousState);
-  //     toast.error(
-  //       error instanceof Error ? error.message : "Failed to check in item",
-  //     );
-  //   } finally {
-  //     removeCheckingInId(userAccessoryId);
-  //   }
-  // };
   const handleCheckIn = async (userAccessoryId: string) => {
     const previousState = accessory;
 
@@ -458,7 +418,6 @@ export default function Page({ params }: AssetPageProps) {
           />
         }
       />
-
       <div className="mt-5">
         <ItemDetailsTabs
           handleCheckIn={handleCheckIn}

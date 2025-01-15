@@ -19,7 +19,6 @@ import AssignmentForm from "@/components/forms/AssignmentForm";
 import { useAssetStore } from "@/lib/stores/assetStore";
 import { DetailViewProps } from "@/components/shared/DetailView/types";
 import { checkin, checkout, findById } from "@/lib/actions/assets.actions";
-import ItemDetailsTabs from "@/components/shared/DetailsTabs/ItemDetailsTabs";
 import DetailViewSkeleton from "@/components/shared/DetailView/DetailViewSkeleton";
 import printQRCode from "@/utils/QRCodePrinter";
 import { useRouter } from "next/navigation";
@@ -341,12 +340,11 @@ export default function AssetPage({ params }: AssetPageProps) {
       />
 
       <div className="mt-5 ">
-        <ItemDetailsTabs
-          itemId={id}
-          itemType="asset"
-          auditLogs={asset?.auditLogs ?? []}
-          handleCheckin={() => {}}
-        />
+        {/*<ItemDetailsTabs*/}
+        {/*  itemId={id}*/}
+        {/*  itemType="asset"*/}
+        {/*  auditLogs={asset?.auditLogs ?? []}*/}
+        {/* />*/}
       </div>
     </>
   );

@@ -27,7 +27,7 @@ export const getActionColor = (action: string) => {
       return "text-red-600";
     case "ACCESSORY_CHECKOUT":
       return "text-blue-600";
-    case "ACCESSORY_ASSIGNED":
+    case "ACCESSORY_CHECKIN":
       return "text-green-600";
     case "ACCESSORY_ARCHIVED":
       return "text-gray-600";
