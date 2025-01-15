@@ -1,7 +1,9 @@
 import { auth } from "@/auth";
 
 export const getActionColor = (action: string) => {
-  switch (action) {
+  if (!action) return "text-gray-600"; // Safe fallback
+
+  switch (action.trim().toUpperCase()) {
     // Asset actions
     case "ASSET_CHECKIN":
       return "text-green-600";
@@ -25,7 +27,7 @@ export const getActionColor = (action: string) => {
       return "text-red-600";
     case "ACCESSORY_CHECKOUT":
       return "text-blue-600";
-    case "ACCESSORY_CHECKIN":
+    case "ACCESSORY_ASSIGNED":
       return "text-green-600";
     case "ACCESSORY_ARCHIVED":
       return "text-gray-600";

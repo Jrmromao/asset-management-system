@@ -3,13 +3,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { ClockIcon, UserIcon } from "lucide-react";
 import { DataTable } from "@/components/tables/DataTable/data-table";
+import { auditLogColumns } from "@/components/tables/AuditLogColumns";
+import { usedByColumns } from "@/components/tables/usedByColumns";
 
 interface ItemDetailsTabsProps {
   itemId: string;
   itemType: "asset" | "accessory" | "license" | "component";
   auditLogs: AuditLog[];
   usedBy?: UserAccessory[];
-  onViewAuditLog: (id: string) => void;
+  isCheckingIn: Set<string>;
+  isRefreshing: boolean;
+  handleCheckIn: (id: string) => Promise<void>;
   onViewUsedBy?: (id: string) => void;
   customTabs?: {
     [key: string]: {
@@ -20,91 +24,23 @@ interface ItemDetailsTabsProps {
   };
 }
 
-const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-};
-
-// Helper to get action badge style
-const getActionStyle = (action: string) => {
-  const actionLower = action.toLowerCase();
-
-  if (actionLower.includes("created")) {
-    return "bg-green-100 text-green-800";
-  }
-  if (actionLower.includes("checkin")) {
-    return "bg-blue-100 text-blue-800";
-  }
-  if (actionLower.includes("checkout")) {
-    return "bg-purple-100 text-purple-800";
-  }
-  if (actionLower.includes("updated")) {
-    return "bg-yellow-100 text-yellow-800";
-  }
-  if (actionLower.includes("deleted")) {
-    return "bg-red-100 text-red-800";
-  }
-  return "bg-gray-100 text-gray-800";
-};
-
-const auditLogColumns = ({ onView }: { onView: (id: string) => void }) => [
-  {
-    accessorKey: "date",
-    header: () => <div className="font-semibold">Date</div>,
-  },
-  {
-    accessorKey: "action",
-    header: () => <div className="font-semibold">Action</div>,
-    cell: ({ row }: any) => {
-      const action = row.getValue("action") as string;
-      return (
-        <div
-          className={cn(
-            "px-3 py-1 rounded-full text-xs font-semibold inline-block",
-            getActionStyle(action),
-          )}
-        >
-          {action}
-        </div>
-      );
-    },
-  },
-  {
-    accessorKey: "details",
-    header: () => <div className="font-semibold">Details</div>,
-  },
-];
-
 const ItemDetailsTabs: React.FC<ItemDetailsTabsProps> = ({
   itemType,
   auditLogs,
-  onViewAuditLog,
   usedBy = [],
-  onViewUsedBy = () => {},
+  handleCheckIn,
   customTabs = {},
+  isCheckingIn,
 }) => {
-  const transformedAuditLogs = useMemo(
+  const auditLogColumnsMemo = useMemo(() => auditLogColumns(), []);
+  const usedByColumnsMemo = useMemo(
     () =>
-      auditLogs?.map((log) => ({
-        id: log.id,
-        action: log.action,
-        date: formatDate(log.createdAt.toString()),
-        user: log.userId,
-        details: log.details,
-      })),
-    [auditLogs],
+      usedByColumns({
+        onCheckIn: handleCheckIn,
+        checkingInIds: isCheckingIn,
+      }),
+    [handleCheckIn, isCheckingIn],
   );
-
-  const columns = useMemo(
-    () => auditLogColumns({ onView: onViewAuditLog }),
-    [onViewAuditLog],
-  );
-
   return (
     <div className="w-full">
       <Tabs defaultValue="history" className="w-full space-y-6">
@@ -159,15 +95,29 @@ const ItemDetailsTabs: React.FC<ItemDetailsTabsProps> = ({
         </div>
 
         <TabsContent value="history" className="pt-4">
-          {transformedAuditLogs?.length > 0 ? (
+          {auditLogs?.length > 0 ? (
             <div className="rounded-lg border bg-white mr-3 ml-3 mb-6">
-              <DataTable columns={columns} data={transformedAuditLogs} />
+              <DataTable columns={auditLogColumnsMemo} data={auditLogs} />
             </div>
           ) : (
             <div className="text-center py-12 text-gray-500">
               <ClockIcon className="h-12 w-12 mx-auto mb-4 text-gray-400" />
               <p className="text-lg font-medium">No Activity Log</p>
               <p className="text-sm">No activities have been recorded yet.</p>
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="used-by" className="pt-4">
+          {usedBy?.length > 0 ? (
+            <div className="rounded-lg border bg-white mx-3 mb-6">
+              <DataTable columns={usedByColumnsMemo} data={usedBy} />
+            </div>
+          ) : (
+            <div className="text-center py-12 text-gray-500">
+              <UserIcon className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+              <p className="text-lg font-medium">{`No checkout history for this ${itemType}`}</p>
+              <p className="text-sm">No activity has been recorded yet</p>
             </div>
           )}
         </TabsContent>

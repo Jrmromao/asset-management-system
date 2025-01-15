@@ -4,9 +4,9 @@ import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { Activity, ArrowUpDown, Clock, Info, User } from "lucide-react";
 import { formatDateTime } from "@/lib/utils";
-import { getActionColor } from "@/utils/utils";
+import { getActionColor } from "@/components/shared/DetailsTabs/action-colors";
 
-export const auditLogColumns = ({}): ColumnDef<AuditLog>[] => [
+export const auditLogColumns = (): ColumnDef<AuditLog>[] => [
   {
     id: "createdAt",
     accessorFn: (row) => new Date(row.createdAt).getTime(),
@@ -35,7 +35,7 @@ export const auditLogColumns = ({}): ColumnDef<AuditLog>[] => [
   },
   {
     id: "action",
-    accessorFn: (row) => row.action.toLowerCase(),
+    accessorFn: (row) => row.action,
     enableSorting: true,
     header: ({ column }) => {
       return (

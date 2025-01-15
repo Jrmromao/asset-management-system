@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { DetailView } from "@/components/shared/DetailView/DetailView";
 import Link from "next/link";
 import { toast } from "sonner";
-import Swal from "sweetalert2";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -15,14 +14,19 @@ import {
 import { DialogContainer } from "@/components/dialogs/DialogContainer";
 import AssignmentForm from "@/components/forms/AssignmentForm";
 import { DetailViewProps } from "@/components/shared/DetailView/types";
-import { assign, findById } from "@/lib/actions/accessory.actions";
+import { checkin, checkout, findById } from "@/lib/actions/accessory.actions";
 import { useAccessoryStore } from "@/lib/stores/accessoryStore";
-import { useItemDetails } from "@/components/shared/DetailsTabs/useItemDetails";
 import ItemDetailsTabs from "@/components/shared/DetailsTabs/ItemDetailsTabs";
-import { sumUnitsAssigned } from "@/lib/utils";
-// import printQRCode from "@/utils/QRCodePrinter";
+import { sleep, sumUnitsAssigned } from "@/lib/utils";
 import QRCode from "react-qr-code";
 import DetailViewSkeleton from "@/components/shared/DetailView/DetailViewSkeleton";
+
+interface LoadingStates {
+  isInitialLoading: boolean;
+  isCheckingIn: Set<string>; // Track multiple check-in operations
+  isAssigning: boolean;
+  isRefreshing: boolean;
+}
 
 interface AssetPageProps {
   params: {
@@ -35,202 +39,322 @@ interface EnhancedAccessoryType {
   name: string;
   category: {
     name: string;
-  };
+  } | null;
   statusLabel: {
     name: string;
     colorCode: string;
-  };
-  assignee?: {
-    name: string;
-  };
-  co2Score?: number;
-  modelNumber: string;
+  } | null;
+  modelNumber: string | null;
   location: {
     name: string;
-  };
+  } | null;
   department: {
     name: string;
-  };
+  } | null;
   createdAt: Date;
   updatedAt: Date;
   inventory: {
     name: string;
-  };
+  } | null;
   totalQuantity: number;
   reorderPoint: number;
   unitsAllocated: number;
   alertEmail: string;
   supplier: {
     name: string;
-  };
-  poNumber: string;
-  auditLogs?: AuditLog[];
-  usedBy?: UserAccessory[];
+  } | null;
+  poNumber: string | null;
+  auditLogs: AuditLog[];
+  usedBy: UserAccessory[];
+  co2Score?: number;
 }
 
-const UnassignModal = async () => {
-  return await Swal.fire({
-    title: "Are you sure?",
-    text: "You won't be able to revert this operation!",
-    icon: "warning",
-    showCancelButton: true,
-    confirmButtonColor: "#3085d6",
-    cancelButtonColor: "#d33",
-    confirmButtonText: "Yes, unassign it!",
-  });
-};
-
-export default function AssetPage({ params }: AssetPageProps) {
+export default function Page({ params }: AssetPageProps) {
   const [error, setError] = useState<string | null>(null);
   const { id } = params;
   const { isAssignOpen, onAssignOpen, onAssignClose } = useAccessoryStore();
-
   const [accessory, setAccessory] = useState<
     EnhancedAccessoryType | undefined
   >();
-  const { relationships, attachments, isLoading } = useItemDetails({
-    itemId: id,
-    itemType: "accessory",
+
+  const [loadingStates, setLoadingStates] = useState<LoadingStates>({
+    isInitialLoading: true,
+    isCheckingIn: new Set<string>(),
+    isAssigning: false,
+    isRefreshing: false,
   });
-  useEffect(() => {
-    const fetchAccessory = async () => {
-      if (!id) return;
 
-      try {
-        const foundAccessoryResponse = await findById(id);
-        if (!foundAccessoryResponse.error) {
-          const foundAccessory = foundAccessoryResponse.data;
-          console.log("foundAccessory: ", foundAccessoryResponse);
+  const updateLoadingState = (
+    key: keyof Omit<LoadingStates, "isCheckingIn">,
+    value: boolean,
+  ) => {
+    setLoadingStates((prev) => ({ ...prev, [key]: value }));
+  };
 
-          setAccessory({
-            id: foundAccessory?.id ?? "-",
-            name: foundAccessory?.name ?? "-",
-            co2Score: 0,
-            category: {
-              name: foundAccessory?.category?.name ?? "-",
-            },
-            modelNumber: foundAccessory?.modelNumber ?? "-",
-            statusLabel: {
-              name: foundAccessory?.statusLabel?.name ?? "-",
-              colorCode: foundAccessory?.statusLabel?.colorCode ?? "#000000",
-            },
-            location: {
-              name: foundAccessory?.departmentLocation?.name ?? "-",
-            },
-            department: {
-              name: foundAccessory?.department?.name ?? "-",
-            },
-            unitsAllocated: sumUnitsAssigned(
-              foundAccessory?.userAccessories ?? [],
-            ),
-            createdAt: foundAccessory?.createdAt ?? new Date(),
-            updatedAt: foundAccessory?.updatedAt ?? new Date(),
-            alertEmail: foundAccessory?.alertEmail ?? "-",
-            inventory: {
-              name: foundAccessory?.inventory?.name ?? "-",
-            },
-            poNumber: foundAccessory?.poNumber ?? "-",
-            reorderPoint: foundAccessory?.reorderPoint ?? 0,
-            supplier: { name: foundAccessory?.supplier?.name ?? "-" },
-            totalQuantity: foundAccessory?.totalQuantityCount ?? 0,
-            auditLogs: foundAccessory?.auditLogs ?? [],
-            usedBy: foundAccessory?.userAccessories ?? [],
-          });
-        }
-      } catch (error) {
-        console.error("Error fetching asset:", error);
-        // Handle error appropriately - maybe set an error state
+  const addCheckingInId = (id: string) => {
+    setLoadingStates((prev) => ({
+      ...prev,
+      isCheckingIn: new Set(prev.isCheckingIn).add(id),
+    }));
+  };
+
+  const removeCheckingInId = (id: string) => {
+    setLoadingStates((prev) => {
+      const newSet = new Set(prev.isCheckingIn);
+      newSet.delete(id);
+      return { ...prev, isCheckingIn: newSet };
+    });
+  };
+
+  const fetchAccessory = async (isRefresh = false) => {
+    if (!id) return;
+
+    try {
+      updateLoadingState(isRefresh ? "isRefreshing" : "isInitialLoading", true);
+
+      const response = await findById(id);
+      if (response.error) {
+        setError(response.error);
+        return;
       }
-    };
 
+      const foundAccessory = response.data;
+      if (!foundAccessory) return;
+
+      setAccessory({
+        id: foundAccessory.id,
+        name: foundAccessory.name,
+        co2Score: 0,
+        category: foundAccessory.category
+          ? {
+              name: foundAccessory.category.name,
+            }
+          : null,
+        modelNumber: foundAccessory.modelNumber || null,
+        statusLabel: foundAccessory.statusLabel
+          ? {
+              name: foundAccessory.statusLabel.name,
+              colorCode: foundAccessory.statusLabel.colorCode,
+            }
+          : null,
+        location: foundAccessory.departmentLocation
+          ? {
+              name: foundAccessory.departmentLocation.name,
+            }
+          : null,
+        department: foundAccessory.department
+          ? {
+              name: foundAccessory.department.name,
+            }
+          : null,
+        unitsAllocated: sumUnitsAssigned(foundAccessory.userAccessories ?? []),
+        createdAt: new Date(foundAccessory.createdAt),
+        updatedAt: new Date(foundAccessory.updatedAt),
+        alertEmail: foundAccessory.alertEmail,
+        inventory: foundAccessory.inventory
+          ? {
+              name: foundAccessory.inventory.name,
+            }
+          : null,
+        poNumber: foundAccessory.poNumber || null,
+        reorderPoint: foundAccessory.reorderPoint,
+        supplier: foundAccessory.supplier
+          ? {
+              name: foundAccessory.supplier.name,
+            }
+          : null,
+        totalQuantity: foundAccessory.totalQuantityCount,
+        auditLogs: foundAccessory.auditLogs ?? [],
+        usedBy: foundAccessory.userAccessories ?? [],
+      });
+    } catch (error) {
+      console.error("Error fetching accessory:", error);
+      setError("Failed to load accessory details");
+    } finally {
+      updateLoadingState(
+        isRefresh ? "isRefreshing" : "isInitialLoading",
+        false,
+      );
+    }
+  };
+
+  useEffect(() => {
     fetchAccessory();
   }, [id]);
 
-  const handleUnassign = async (e?: React.MouseEvent) => {
-    e?.preventDefault();
-    if (!accessory?.id) return;
+  // const handleCheckIn = async (userAccessoryId: string) => {
+  //   const previousState = accessory;
+  //
+  //   try {
+  //     addCheckingInId(userAccessoryId);
+  //
+  //     // Optimistic update
+  //     setAccessory((prev) => {
+  //       if (!prev) return undefined;
+  //
+  //       const updatedUsedBy = prev.usedBy.filter(
+  //         (ua) => ua.id !== userAccessoryId,
+  //       );
+  //
+  //       return {
+  //         ...prev,
+  //         usedBy: updatedUsedBy,
+  //         unitsAllocated: sumUnitsAssigned(updatedUsedBy),
+  //       };
+  //     });
+  //
+  //     // Make the actual API call
+  //     const result = await checkin(userAccessoryId);
+  //
+  //     if (result.error) {
+  //       throw new Error(result.error);
+  //     }
+  //
+  //     // Fetch fresh data to ensure consistency
+  //     await fetchAccessory(true);
+  //     toast.success("Item checked in successfully");
+  //   } catch (error) {
+  //     setAccessory(previousState);
+  //     toast.error(
+  //       error instanceof Error ? error.message : "Failed to check in item",
+  //     );
+  //   } finally {
+  //     removeCheckingInId(userAccessoryId);
+  //   }
+  // };
+  const handleCheckIn = async (userAccessoryId: string) => {
+    const previousState = accessory;
 
-    const result = await UnassignModal();
+    try {
+      // Add to checking in set
+      addCheckingInId(userAccessoryId);
 
-    if (result.isConfirmed) {
-      const previousState = { ...accessory };
-      try {
-        setAccessory((prev) =>
-          prev
-            ? {
-                ...prev,
-                assigneeId: undefined,
-                assignee: undefined,
-              }
-            : undefined,
-        );
+      // Wait a moment to show the transition state
+      await sleep(1000);
 
-        // await unassign(asset.id);
-        const freshData = await findById(accessory.id);
-        if (!freshData.error && freshData.data) {
-          setAccessory((prev) => {
-            if (!prev) return undefined;
+      // Make the actual API call
+      const result = await checkin(userAccessoryId);
 
-            return {
-              ...prev,
-              auditLogs: freshData.data?.auditLogs ?? [],
-              usedBy: freshData.data?.userAccessories ?? [],
-              unitsAllocated: sumUnitsAssigned(
-                freshData.data?.userAccessories ?? [],
-              ),
-              assigneeId: undefined,
-              assignee: undefined,
-            };
-          });
-        }
-        toast.success("Asset unassigned successfully");
-      } catch (error) {
-        setAccessory(previousState);
-        toast.error("Failed to unassign asset");
+      if (result.error) {
+        throw new Error(result.error);
       }
+
+      // Wait a moment to show completion
+      await sleep(500);
+
+      // Update with server response to ensure consistency
+      if (result.data) {
+        setAccessory((prev) => {
+          if (!prev) return undefined;
+
+          const updatedUsedBy = prev.usedBy.filter(
+            (ua) => ua.id !== userAccessoryId,
+          );
+
+          return {
+            ...prev,
+            usedBy: updatedUsedBy,
+            unitsAllocated: sumUnitsAssigned(updatedUsedBy),
+          };
+        });
+      }
+
+      toast.success("Item checked in successfully");
+    } catch (error) {
+      console.error("Check-in error:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Failed to check in item",
+      );
+    } finally {
+      removeCheckingInId(userAccessoryId);
     }
+  };
+  const handleAssignment = async (formData: any) => {
+    try {
+      updateLoadingState("isAssigning", true);
+
+      // Optimistic update
+      setAccessory((prev) =>
+        prev
+          ? {
+              ...prev,
+              unitsAllocated: prev.unitsAllocated + 1,
+            }
+          : undefined,
+      );
+
+      await checkout(formData);
+      toast.success("Asset assigned successfully");
+      onAssignClose();
+
+      // Refresh data
+      await fetchAccessory(true);
+    } catch (error) {
+      setAccessory((prev) =>
+        prev
+          ? {
+              ...prev,
+              unitsAllocated: Math.max(0, prev.unitsAllocated - 1),
+            }
+          : undefined,
+      );
+      toast.error("Failed to assign asset");
+    } finally {
+      updateLoadingState("isAssigning", false);
+    }
+  };
+
+  const handleAction = (action: "archive" | "duplicate" | "edit" | "print") => {
+    const actions: Record<typeof action, () => void> = {
+      archive: () => toast.info("Archive action not implemented"),
+      duplicate: () => toast.info("Duplicate action not implemented"),
+      edit: () => toast.info("Edit action not implemented"),
+      print: () => toast.info("Print label action not implemented"),
+    };
+
+    actions[action]();
   };
 
   const detailViewProps: DetailViewProps = {
     title: accessory?.name ?? "Untitled Accessory",
-    isLoading: false,
+    isLoading: loadingStates.isInitialLoading || loadingStates.isRefreshing,
     co2Score: accessory?.co2Score ?? 0,
     error,
     fields: [
-      { label: "Name", value: accessory?.name ?? "", type: "text" },
+      { label: "Name", value: accessory?.name ?? "-", type: "text" },
       {
         label: "Category",
-        value: accessory?.category?.name ?? "",
+        value: accessory?.category?.name ?? "-",
         type: "text",
       },
       {
         label: "Model Number",
-        value: accessory?.modelNumber ?? "",
+        value: accessory?.modelNumber ?? "-",
         type: "text",
       },
       {
         label: "Status",
-        value: accessory?.statusLabel?.name ?? "",
+        value: accessory?.statusLabel?.name ?? "-",
         type: "text",
       },
       {
         label: "Location",
-        value: accessory?.location?.name ?? "",
+        value: accessory?.location?.name ?? "-",
         type: "text",
       },
       {
         label: "Department",
-        value: accessory?.department?.name ?? "",
+        value: accessory?.department?.name ?? "-",
         type: "text",
       },
       {
         label: "Created At",
-        value: accessory?.createdAt?.toString() ?? "",
+        value: accessory?.createdAt?.toISOString() ?? "-",
         type: "date",
       },
       {
         label: "Last Updated",
-        value: accessory?.updatedAt?.toString() ?? "",
+        value: accessory?.updatedAt?.toISOString() ?? "-",
         type: "date",
       },
       { label: "Quantity", value: accessory?.totalQuantity ?? 0, type: "text" },
@@ -241,12 +365,12 @@ export default function AssetPage({ params }: AssetPageProps) {
       },
       {
         label: "Alert Email",
-        value: accessory?.alertEmail ?? "",
+        value: accessory?.alertEmail ?? "-",
         type: "text",
       },
       {
         label: "Supplier",
-        value: accessory?.supplier?.name ?? "",
+        value: accessory?.supplier?.name ?? "-",
         type: "text",
       },
       { label: "Units", value: accessory?.totalQuantity ?? 0, type: "text" },
@@ -276,30 +400,20 @@ export default function AssetPage({ params }: AssetPageProps) {
     ),
     qrCode: (
       <div className="flex flex-col items-center justify-center gap-2">
-        <QRCode value={`/qr-code/sample.png`} size={140} />
+        <QRCode value={`/assets/view/${id}`} size={140} />
       </div>
     ),
     actions: {
       onArchive: () => handleAction("archive"),
-      onAssign: () => onAssignOpen(),
-      onUnassign: handleUnassign,
+      onAssign: onAssignOpen,
+      onUnassign: () => handleCheckIn,
       onDuplicate: () => handleAction("duplicate"),
       onEdit: () => handleAction("edit"),
       onPrintLabel: () => handleAction("print"),
     },
     sourceData: "accessory",
     checkoutDisabled:
-      (accessory?.unitsAllocated ?? 0) === (accessory?.totalQuantity ?? 0),
-  };
-  const handleAction = (action: "archive" | "duplicate" | "edit" | "print") => {
-    const actions: Record<typeof action, () => void> = {
-      archive: () => toast.info("Archive action not implemented"),
-      duplicate: () => toast.info("Duplicate action not implemented"),
-      edit: () => toast.info("Edit action not implemented", { id: "edit" }),
-      print: () => toast.info("Print label action not implemented"),
-    };
-
-    actions[action]();
+      (accessory?.unitsAllocated ?? 0) >= (accessory?.totalQuantity ?? 0),
   };
 
   return (
@@ -314,9 +428,8 @@ export default function AssetPage({ params }: AssetPageProps) {
           <AssignmentForm
             itemId={id}
             type="accessory"
-            assignAction={assign}
-            onOptimisticUpdate={(userData) => {
-              // Immediately update the UI for units allocated
+            assignAction={checkout}
+            onOptimisticUpdate={() => {
               setAccessory((prev) =>
                 prev
                   ? {
@@ -329,53 +442,32 @@ export default function AssetPage({ params }: AssetPageProps) {
             onSuccess={async () => {
               toast.success("Asset assigned successfully");
               onAssignClose();
-
-              // Fetch fresh data to update audit logs
-              try {
-                const freshData = await findById(id);
-                if (!freshData.error && freshData.data) {
-                  setAccessory((prev) => {
-                    if (!prev) return undefined;
-
-                    return {
-                      ...prev,
-                      auditLogs: freshData.data?.auditLogs ?? [],
-                      usedBy: freshData.data?.userAccessories ?? [],
-                      unitsAllocated: sumUnitsAssigned(
-                        freshData.data?.userAccessories ?? [],
-                      ),
-                    };
-                  });
-                }
-              } catch (error) {
-                console.error("Error refreshing accessory data:", error);
-              }
+              await fetchAccessory(); // Refresh data
             }}
-            onError={(previousData) => {
-              if (previousData) {
-                setAccessory((prev) =>
-                  prev
-                    ? {
-                        ...prev,
-                        unitsAllocated: prev.unitsAllocated - 1,
-                      }
-                    : undefined,
-                );
-              }
+            onError={() => {
+              setAccessory((prev) =>
+                prev
+                  ? {
+                      ...prev,
+                      unitsAllocated: Math.max(0, prev.unitsAllocated - 1),
+                    }
+                  : undefined,
+              );
               toast.error("Failed to assign asset");
             }}
           />
         }
       />
 
-      <div className="mt-5 ">
+      <div className="mt-5">
         <ItemDetailsTabs
-          auditLogs={accessory?.auditLogs}
+          handleCheckIn={handleCheckIn}
+          auditLogs={accessory?.auditLogs ?? []}
           itemId={id}
           usedBy={accessory?.usedBy}
-          itemType="license"
-          relationships={relationships}
-          attachments={attachments}
+          itemType="accessory"
+          isCheckingIn={loadingStates.isCheckingIn}
+          isRefreshing={loadingStates.isRefreshing}
         />
       </div>
     </>

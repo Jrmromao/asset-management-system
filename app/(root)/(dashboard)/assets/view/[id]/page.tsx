@@ -344,7 +344,8 @@ export default function AssetPage({ params }: AssetPageProps) {
         <ItemDetailsTabs
           itemId={id}
           itemType="asset"
-          auditLogs={asset?.auditLogs}
+          auditLogs={asset?.auditLogs ?? []}
+          handleCheckin={() => {}}
         />
       </div>
     </>

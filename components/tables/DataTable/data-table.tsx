@@ -47,11 +47,17 @@ export function DataTable<TData, TValue>({
     pageIndex: 0,
     pageSize: 10,
   });
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
 
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 768);
-    handleResize();
+    const handleResize = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile((prevState) => {
+        if (prevState !== mobile) return mobile;
+        return prevState;
+      });
+    };
+
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);

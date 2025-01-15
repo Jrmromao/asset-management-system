@@ -4,14 +4,15 @@ import { prisma } from "@/app/db";
 import { parseStringify, processRecordContents } from "@/lib/utils";
 import { auth } from "@/auth";
 import { z } from "zod";
-import {
-  accessorySchema,
-  assignmentSchema,
-  unassignSchema,
-} from "@/lib/schemas";
+import { accessorySchema, assignmentSchema } from "@/lib/schemas";
 import { getAuditLog } from "@/lib/actions/auditLog.actions";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/binary";
 import { revalidatePath } from "next/cache";
+
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 1000; // 1 second
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export const insert = async (
   values: z.infer<typeof accessorySchema>,
@@ -316,7 +317,7 @@ export async function processAccessoryCSV(csvContent: string) {
   }
 }
 
-export async function assign(
+export async function checkout(
   values: z.infer<typeof assignmentSchema>,
 ): Promise<ActionResponse<Accessory>> {
   try {
@@ -387,7 +388,7 @@ export async function assign(
       // Create audit log
       await tx.auditLog.create({
         data: {
-          action: "ACCESSORY_ASSIGNED",
+          action: "ACCESSORY_CHECKOUT",
           entity: "ACCESSORY",
           entityId: values.itemId,
           userId: session.user.id || "",
@@ -427,98 +428,126 @@ export async function assign(
   }
 }
 
-export async function unassign(
-  values: z.infer<typeof unassignSchema>,
+export async function checkin(
+  userAccessoryId: string,
 ): Promise<ActionResponse<Accessory>> {
-  try {
-    const validation = unassignSchema.safeParse(values);
-    if (!validation.success) {
-      return { error: validation.error.errors[0].message };
-    }
+  let retries = 0;
 
-    const session = await auth();
-    if (!session) {
-      return { error: "Not authenticated" };
-    }
-
-    return await prisma.$transaction(async (tx) => {
-      // Get current assignment
-      const currentAssignment = await tx.userAccessory.findFirst({
-        where: {
-          accessoryId: values.itemId,
-          userId: values.userId,
-        },
-      });
-
-      if (!currentAssignment) {
-        throw new Error(
-          "No active assignment found for this user and accessory",
-        );
+  while (retries < MAX_RETRIES) {
+    try {
+      const session = await auth();
+      if (!session) {
+        return { error: "Not authenticated" };
       }
 
-      // Delete the assignment
-      await tx.userAccessory.delete({
-        where: {
-          id: currentAssignment.id,
-        },
-      });
+      // Start a new prisma client for each attempt
+      const result = await prisma.$transaction(
+        async (tx) => {
+          // Get current assignment
+          const currentAssignment = await tx.userAccessory.findFirst({
+            where: {
+              id: userAccessoryId,
+            },
+          });
 
-      // Record stock return in AccessoryStock
-      await tx.accessoryStock.create({
-        data: {
-          accessoryId: values.itemId,
-          quantity: currentAssignment.quantity, // Positive number for return
-          type: "return",
-          companyId: session.user.companyId,
-          notes: `Returned ${currentAssignment.quantity} units from user ${values.userId}`,
-        },
-      });
+          if (!currentAssignment) {
+            throw new Error(
+              "No active assignment found for this user and accessory",
+            );
+          }
 
-      // Create audit log
-      await tx.auditLog.create({
-        data: {
-          action: "ACCESSORY_UNASSIGNED",
-          entity: "ACCESSORY",
-          entityId: values.itemId,
-          userId: session.user.id || "",
-          companyId: session.user.companyId,
-          details: `Unassigned ${currentAssignment.quantity} units from user ${values.userId}`,
-        },
-      });
+          // Delete the assignment
+          await tx.userAccessory.delete({
+            where: {
+              id: currentAssignment.id,
+            },
+          });
 
-      // Get updated accessory with current assignments
-      const updatedAccessory = await tx.accessory.findUnique({
-        where: { id: values.itemId },
-        include: {
-          UserAccessory: {
+          // Record stock return in AccessoryStock
+          await tx.accessoryStock.create({
+            data: {
+              accessoryId: currentAssignment.accessoryId,
+              quantity: currentAssignment.quantity,
+              type: "return",
+              companyId: session.user.companyId,
+              notes: `Returned ${currentAssignment.quantity} units from user ${currentAssignment.userId}`,
+            },
+          });
+
+          // Create audit log
+          await tx.auditLog.create({
+            data: {
+              action: "ACCESSORY_CHECKIN",
+              entity: "ACCESSORY",
+              entityId: currentAssignment.accessoryId,
+              userId: session.user.id || "",
+              companyId: session.user.companyId,
+              details: `Unassigned ${currentAssignment.quantity} units from user ${currentAssignment.userId}`,
+            },
+          });
+
+          // Get updated accessory with current assignments
+          const updatedAccessory = await tx.accessory.findUnique({
+            where: { id: currentAssignment.accessoryId },
             include: {
-              user: {
-                select: {
-                  id: true,
-                  name: true,
-                  email: true,
+              UserAccessory: {
+                include: {
+                  user: {
+                    select: {
+                      id: true,
+                      name: true,
+                      email: true,
+                    },
+                  },
                 },
               },
+              AccessoryStock: {
+                orderBy: {
+                  date: "desc",
+                },
+                take: 5,
+              },
             },
-          },
-          AccessoryStock: {
-            orderBy: {
-              date: "desc",
-            },
-            take: 5, // Get last 5 stock movements
-          },
+          });
+
+          return updatedAccessory;
         },
-      });
+        {
+          maxWait: 5000, // 5 seconds max wait
+          timeout: 10000, // 10 seconds timeout
+        },
+      );
 
       return {
-        data: parseStringify(updatedAccessory),
+        success: true,
+        data: parseStringify(result),
       };
-    });
-  } catch (error) {
-    console.error("Error unassigning Accessory:", error);
-    return {
-      error:
-        error instanceof Error ? error.message : "Failed to unassign Accessory",
-    };
+    } catch (error) {
+      console.error(`Attempt ${retries + 1} failed:`, error);
+
+      // If it's not the transaction error, throw immediately
+      if (
+        !(error instanceof Error) ||
+        !error.message.includes("Transaction not found")
+      ) {
+        throw error;
+      }
+
+      retries++;
+
+      // If we've exhausted retries, throw the error
+      if (retries === MAX_RETRIES) {
+        console.error("All retries failed");
+        throw error;
+      }
+
+      // Wait before retrying
+      await sleep(RETRY_DELAY * retries);
+    }
   }
+
+  // This should never be reached due to the throw in the loop
+  return {
+    error: "Failed to complete check-in after all retries",
+  };
 }
