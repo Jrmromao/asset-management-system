@@ -36,7 +36,7 @@ export const usedByColumns = ({
         <div
           className={cn(
             "transition-all duration-500",
-            isCheckingIn && "bg-yellow-50",
+            isCheckingIn && "text-yellow-600",
           )}
         >
           <LinkTableCell
@@ -67,7 +67,7 @@ export const usedByColumns = ({
         <div
           className={cn(
             "transition-all duration-500",
-            isCheckingIn && "bg-yellow-50",
+            isCheckingIn && "text-yellow-600",
           )}
         >
           {row.getValue("user.employeeId")}
@@ -92,12 +92,7 @@ export const usedByColumns = ({
     cell: ({ row }) => {
       const isCheckingIn = checkingInIds.has(row.original.id);
       return (
-        <div
-          className={cn(
-            "transition-all duration-500",
-            isCheckingIn && "bg-yellow-50",
-          )}
-        >
+        <div className={cn("transition-all duration-500")}>
           {row.getValue("user.title")}
         </div>
       );
@@ -123,7 +118,7 @@ export const usedByColumns = ({
         <div
           className={cn(
             "transition-all duration-500",
-            isCheckingIn && "bg-yellow-50",
+            isCheckingIn && "text-yellow-600",
           )}
         >
           {row.getValue("quantity")}
@@ -152,7 +147,7 @@ export const usedByColumns = ({
         <div
           className={cn(
             "transition-all duration-500",
-            isCheckingIn && "bg-yellow-50",
+            isCheckingIn && "text-yellow-600",
           )}
         >
           {date.toLocaleDateString()}
@@ -180,7 +175,7 @@ export const usedByColumns = ({
         <div
           className={cn(
             "transition-all duration-500",
-            isCheckingIn && "bg-yellow-50",
+            isCheckingIn && "text-yellow-600",
           )}
         >
           {row.getValue("notes")}
@@ -210,7 +205,7 @@ export const usedByColumns = ({
           className={cn(
             "transition-all duration-500",
             returnedAt ? "text-red-500" : "text-green-500",
-            isCheckingIn && "bg-yellow-50 text-yellow-600",
+            isCheckingIn && "text-yellow-600",
           )}
         >
           {isCheckingIn ? "Checking in..." : returnedAt ? "Returned" : "Active"}
