@@ -147,7 +147,6 @@ const Accessories = () => {
 
   return (
     <div className="min-h-screen p-6 space-y-6 mt-5">
-      Breadcrumb
       <Breadcrumb className="hidden md:flex">
         <BreadcrumbList>
           <BreadcrumbItem>

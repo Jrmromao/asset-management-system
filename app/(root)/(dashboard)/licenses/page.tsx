@@ -1,5 +1,5 @@
 "use client";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import HeaderBox from "@/components/HeaderBox";
 import { useRouter } from "next/navigation";
 import { DataTable } from "@/components/tables/DataTable/data-table";
@@ -23,40 +23,48 @@ const Licenses = () => {
   const navigate = useRouter();
   const { licenses, isLoading, deleteItem } = useLicenseQuery();
 
-  const [filteredData, setFilteredData] = useState(licenses);
+  const [searchTerm, setSearchTerm] = useState("");
   const [filterDialogOpen, setFilterDialogOpen] = useState(false);
   const [filters, setFilters] = useState({
     supplier: "",
     inventory: "",
   });
 
+  // Memoize filtered data instead of using state
+  const filteredData = useMemo(() => {
+    if (!searchTerm.trim()) {
+      return licenses;
+    }
+
+    return licenses.filter((item: any) =>
+      Object.entries(item).some(([key, val]) => {
+        if (typeof val === "string" || typeof val === "number") {
+          return val
+            .toString()
+            .toLowerCase()
+            .includes(searchTerm.toLowerCase());
+        }
+        return false;
+      }),
+    );
+  }, [licenses, searchTerm]);
+
   const handleFilter = () => {
     setFilterDialogOpen(true);
   };
 
   const handleSearch = (value: string) => {
-    if (!value.trim()) {
-      setFilteredData(licenses);
-      return;
-    }
-
-    const searchResults = licenses.filter((item: any) =>
-      Object.entries(item).some(([key, val]) => {
-        if (typeof val === "string" || typeof val === "number") {
-          return val.toString().toLowerCase().includes(value.toLowerCase());
-        }
-        return false;
-      }),
-    );
-    setFilteredData(searchResults);
+    setSearchTerm(value);
   };
 
   const handleDelete = async (id: string) => {
     await deleteItem(id);
   };
+
   const handleView = async (id: string) => {
     navigate.push(`/licenses/view/${id}`);
   };
+
   const onDelete = useCallback(
     (accessory: any) => handleDelete(accessory?.id!),
     [],
@@ -65,17 +73,22 @@ const Licenses = () => {
     (accessory: any) => handleView(accessory?.id!),
     [],
   );
-  const columns = useMemo(() => licenseColumns({ onDelete, onView }), []);
 
-  useEffect(() => {
-    setFilteredData(licenses);
-  }, [licenses]);
-
-  const availableLicenses = licenses.filter(
-    (license) => license.statusLabel?.name.toUpperCase() === "AVAILABLE",
+  const columns = useMemo(
+    () => licenseColumns({ onDelete, onView }),
+    [onDelete, onView],
   );
 
-  const TopCards = () => {
+  // Memoize available licenses calculation
+  const availableLicenses = useMemo(
+    () =>
+      licenses.filter(
+        (license) => license.statusLabel?.name.toUpperCase() === "AVAILABLE",
+      ),
+    [licenses],
+  );
+
+  const TopCards = useCallback(() => {
     const cardData = [
       {
         title: "Total Licenses",
@@ -96,7 +109,7 @@ const Licenses = () => {
     ];
 
     return <StatusCards cards={cardData} />;
-  };
+  }, [licenses.length, availableLicenses.length]);
 
   return (
     <div className="p-6 space-y-6">
@@ -143,4 +156,5 @@ const Licenses = () => {
     </div>
   );
 };
+
 export default Licenses;

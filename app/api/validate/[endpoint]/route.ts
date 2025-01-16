@@ -24,7 +24,7 @@ export async function POST(
       switch (type) {
         case "accessory":
           console.log(type, userId, itemId);
-          const existingAccessory = await prisma.userAccessory.findFirst({
+          const existingAccessory = await prisma.userItem.findFirst({
             where: {
               AND: [{ userId: userId }, { accessoryId: itemId }],
             },
@@ -33,7 +33,7 @@ export async function POST(
           break;
 
         case "license":
-          const existingLicense = await prisma.userLicense.findFirst({
+          const existingLicense = await prisma.userItem.findFirst({
             where: {
               AND: [{ userId: userId }, { licenseId: itemId }],
             },

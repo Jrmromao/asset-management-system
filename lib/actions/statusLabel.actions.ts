@@ -43,7 +43,6 @@ export const insert = async (
   }
 };
 
-// lib/actions/statusLabel.actions.ts
 export const getAll = async (): Promise<ActionResponse<StatusLabel[]>> => {
   try {
     const session = await auth();

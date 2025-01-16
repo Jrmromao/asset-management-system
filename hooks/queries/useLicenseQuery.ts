@@ -22,8 +22,6 @@ export function useLicenseQuery() {
         return await getAll();
       },
       insert: async (data: CreateLicenseInput) => {
-        console.log(data);
-
         return await insert(data);
       },
       delete: async (id: string) => {
