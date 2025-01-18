@@ -114,6 +114,7 @@ interface UrlQueryParams {
   key: string;
   value: string;
 }
+
 export const sleep = (ms = 1000) =>
   new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -364,14 +365,11 @@ export const getAvailability = (value: string = "") => {
   };
 };
 
-export function sumSeatsAssigned(assignments: LicenseAssignment[]): number {
-  return assignments.reduce(
-    (sum, assignment) => sum + assignment.seatsAssigned,
-    0,
-  );
+export function sumSeatsAssigned(assignments: UserItems[]): number {
+  return assignments.reduce((sum, assignment) => sum + assignment.quantity, 0);
 }
 
-export function sumUnitsAssigned(assignments: UserAccessory[]): number {
+export function sumUnitsAssigned(assignments: UserItems[]): number {
   return assignments.reduce((sum, item) => sum + item.quantity, 0);
 }
 

@@ -1,65 +1,51 @@
 "use client";
 
-import React, { useState, useTransition } from "react";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { Button } from "@/components/ui/button";
-import { Form } from "@/components/ui/form";
-import { Loader2 } from "lucide-react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import React from "react";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
+import { Form } from "@/components/ui/form";
+import { ModalManager } from "@/components/ModalManager";
+import { useFormModals } from "@/hooks/useFormModals";
 
 // Components
+import { CollapsibleSection } from "@/components/CollapsibleSection";
+import { FormProgress } from "@/components/FormProgress";
+import { ActionBar } from "@/components/ActionBar";
+import { ProgressHeader } from "@/components/ProgressHeader";
 import CustomInput from "@/components/CustomInput";
 import CustomSelect from "@/components/CustomSelect";
 import CustomDatePicker from "@/components/CustomDatePicker";
-
-// Forms
-// Stores
-import { useLocationStore } from "@/lib/stores/locationStore";
-import { useSupplierUIStore } from "@/lib/stores/useSupplierUIStore";
-import { useInventoryUIStore } from "@/lib/stores/useInventoryUIStore";
-import CustomPriceInput from "../CustomPriceInput";
+import CustomPriceInput from "@/components/CustomPriceInput";
 import { SelectWithButton } from "@/components/SelectWithButton";
-import { assetSchema } from "@/lib/schemas";
-import { useFormTemplateUIStore } from "@/lib/stores/useFormTemplateUIStore";
-import { CustomField, CustomFieldOption } from "@/types/form";
-import { useFormModals } from "@/hooks/useFormModals";
-import { ModalManager } from "@/components/ModalManager";
+
+// Queries
 import { useStatusLabelsQuery } from "@/hooks/queries/useStatusLabelsQuery";
-import { useStatusLabelUIStore } from "@/lib/stores/useStatusLabelUIStore";
-import { useModelsQuery } from "@/hooks/queries/useModelsQuery";
-import { useModelUIStore } from "@/lib/stores/useModelUIStore";
-import { useDepartmentUIStore } from "@/lib/stores/useDepartmentUIStore";
 import { useDepartmentQuery } from "@/hooks/queries/useDepartmentQuery";
 import { useInventoryQuery } from "@/hooks/queries/useInventoryQuery";
 import { useSupplierQuery } from "@/hooks/queries/useSupplierQuery";
 import { useAssetQuery } from "@/hooks/queries/useAssetQuery";
+import { useModelsQuery } from "@/hooks/queries/useModelsQuery";
 import { useFormTemplatesQuery } from "@/hooks/queries/useFormTemplatesQuery";
 import { useLocationQuery } from "@/hooks/queries/useLocationQuery";
 
-type FormTemplate = {
-  id: string;
-  name: string;
-  fields: CustomField[];
-};
+// Store Hooks
+import { useLocationStore } from "@/lib/stores/locationStore";
+import { useSupplierUIStore } from "@/lib/stores/useSupplierUIStore";
+import { useInventoryUIStore } from "@/lib/stores/useInventoryUIStore";
+import { useFormTemplateUIStore } from "@/lib/stores/useFormTemplateUIStore";
+import { useStatusLabelUIStore } from "@/lib/stores/useStatusLabelUIStore";
+import { useModelUIStore } from "@/lib/stores/useModelUIStore";
+import { useDepartmentUIStore } from "@/lib/stores/useDepartmentUIStore";
 
-type AssetFormValues = z.infer<typeof assetSchema>;
+// Types
+import type { AssetFormProps } from "@/types/form";
 
-interface AssetFormProps {
-  id?: string;
-  isUpdate?: boolean;
-}
+// Custom Hook
+import { useAssetForm } from "@/hooks/useAssetForm";
 
 const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
+  const router = useRouter();
+
+  // Queries
   const { statusLabels, isLoading: isLoadingStatusLabels } =
     useStatusLabelsQuery();
   const { departments } = useDepartmentQuery();
@@ -69,19 +55,8 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
   const { models } = useModelsQuery();
   const { formTemplates } = useFormTemplatesQuery();
   const { locations } = useLocationQuery();
-  const [isPending, startTransition] = useTransition();
-  const router = useRouter();
-  const [loadingErrors, setLoadingErrors] = useState<string[]>([]);
 
-  type CustomFieldValues = Record<string, string>;
-
-  const [selectedTemplate, setSelectedTemplate] = useState<FormTemplate | null>(
-    null,
-  );
-  const [customFieldValues, setCustomFieldValues] = useState<CustomFieldValues>(
-    {},
-  );
-  // Stores
+  // UI Store Actions
   const { onOpen: openStatus } = useStatusLabelUIStore();
   const { onOpen: openModel } = useModelUIStore();
   const { onOpen: openDepartment } = useDepartmentUIStore();
@@ -90,50 +65,27 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
   const { onOpen: openSupplier } = useSupplierUIStore();
   const { onOpen: openTemplate } = useFormTemplateUIStore();
 
-  const form = useForm<AssetFormValues>({
-    resolver: zodResolver(assetSchema),
-    defaultValues: {
-      name: "",
-      serialNumber: "",
-      modelId: "",
-      price: 0,
-      statusLabelId: "",
-      departmentId: "",
-      inventoryId: "",
-      locationId: "",
-      supplierId: "",
-      poNumber: "",
-      weight: 0,
-      material: "",
-      energyRating: "",
-      licenseId: "",
-      dailyOperatingHours: "",
-      formTemplateId: "",
-      templateValues: {},
-    },
-  });
+  // Form Hook
+  const {
+    form,
+    isPending,
+    selectedTemplate,
+    expandedSections,
+    toggleSection,
+    handleTemplateChange,
+    onSubmit,
+    isSectionComplete,
+  } = useAssetForm(isUpdate);
 
+  // Custom Fields Rendering
   const renderCustomFields = () => {
     if (!selectedTemplate) return null;
 
-    return selectedTemplate.fields.map((field: CustomField) => {
+    return selectedTemplate.fields.map((field) => {
       const fieldName = `templateValues.${field.name}`;
 
       switch (field.type) {
         case "text":
-          return (
-            <div key={field.name}>
-              <CustomInput
-                name={fieldName}
-                label={field.label}
-                control={form.control}
-                required={field.required}
-                placeholder={
-                  field.placeholder || `Enter ${field?.label.toLowerCase()}`
-                }
-              />
-            </div>
-          );
         case "number":
           return (
             <div key={field.name}>
@@ -142,15 +94,15 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
                 label={field.label}
                 control={form.control}
                 required={field.required}
-                type="number"
+                type={field.type}
                 placeholder={
-                  field.placeholder || `Enter ${field?.label.toLowerCase()}`
+                  field.placeholder || `Enter ${field.label.toLowerCase()}`
                 }
               />
             </div>
           );
         case "select":
-          const formattedOptions: CustomFieldOption[] =
+          const formattedOptions =
             field.options?.map((option: string) => ({
               id: option,
               name: option,
@@ -173,152 +125,122 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
     });
   };
 
-  const handleTemplateChange = async (formTemplateId: string) => {
-    try {
-      if (!formTemplateId) {
-        // Reset if no template is selected
-        form.setValue("formTemplateId", "");
-        form.setValue("templateValues", {});
-        setSelectedTemplate(null);
-        setCustomFieldValues({});
-        return;
-      }
-
-      const selectedTemplate = formTemplates.find(
-        (template) => template.id === formTemplateId,
-      );
-
-      if (!selectedTemplate?.fields) {
-        toast.error("Template not found or invalid");
-        return;
-      }
-
-      // Update form with the new template ID
-      form.setValue("formTemplateId", formTemplateId);
-      setSelectedTemplate(selectedTemplate);
-
-      // Initialize empty values for template fields
-      const emptyValues = selectedTemplate.fields.reduce<CustomFieldValues>(
-        (acc, field) => ({
-          ...acc,
-          [field.name]: "",
-        }),
-        {},
-      );
-
-      // Update both form and state
-      form.setValue("templateValues", emptyValues);
-      setCustomFieldValues(emptyValues);
-    } catch (error) {
-      toast.error("Failed to load template details");
-      console.error("Error loading template:", error);
-    }
-  };
-
-  async function onSubmit(data: AssetFormValues) {
-    startTransition(async () => {
-      try {
-        const formattedData = {
-          ...data,
-          purchaseDate: data.purchaseDate,
-          endOfLife: data.endOfLife,
-          weight: data.weight,
-          ...(data.formTemplateId
-            ? {
-                formTemplateId: data.formTemplateId,
-                templateValues: data.templateValues,
-              }
-            : {}),
-        };
-
-        await createAsset(formattedData, {
-          onSuccess: () => {
-            form.reset();
-            toast.success("Asset created successfully");
-            router.push("/assets"); // Add navigation after success
-          },
-          onError: (error) => {
-            toast.error("Something went wrong creating asset: " + error);
-          },
-        });
-      } catch (error) {
-        toast.error("Something went wrong");
-        console.error(error);
-      }
-    });
-  }
+  const formSections = [
+    {
+      id: "basic",
+      label: "Basic Information",
+      description: "Core details about your asset",
+      isComplete: isSectionComplete("basic"),
+    },
+    {
+      id: "status",
+      label: "Status & Location",
+      description: "Current status and placement details",
+      isComplete: isSectionComplete("status"),
+    },
+    {
+      id: "purchase",
+      label: "Purchase Information",
+      description: "Purchase and supplier details",
+      isComplete: isSectionComplete("purchase"),
+    },
+    {
+      id: "physical",
+      label: "Physical Properties",
+      description: "Physical characteristics of the asset",
+      isComplete: isSectionComplete("physical"),
+    },
+    {
+      id: "energy",
+      label: "Energy Consumption",
+      description: "Energy usage details",
+      isComplete: isSectionComplete("energy"),
+    },
+  ];
 
   return (
-    <section className="w-full mx-auto p-6">
+    <div className="min-h-screen bg-slate-50">
       <ModalManager modals={useFormModals(form)} />
+      <ProgressHeader form={form} />
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          {/* Template Selection */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle>Category</CardTitle>
-              <CardDescription>Select a category for the asset</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                <SelectWithButton
-                  name="formTemplateId"
-                  label="Form Template"
-                  data={formTemplates}
-                  onNew={openTemplate}
-                  placeholder="Select a form template"
-                  form={form}
-                  isPending={isPending}
-                  onChange={handleTemplateChange}
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Main Information Card */}
-          <Card className="p-6">
-            <div className="space-y-6">
+        <form
+          onSubmit={form.handleSubmit(onSubmit(createAsset))}
+          className="max-w-[1200px] mx-auto px-4 py-6 mb-6"
+        >
+          <div className="grid grid-cols-12 gap-6">
+            {/* Main Form Content */}
+            <div className="col-span-12 lg:col-span-8 space-y-6">
               {/* Basic Information */}
-              <div className="space-y-6">
-                <h3 className="text-lg font-semibold mb-4">
-                  Basic Information
-                </h3>
-                <div className="grid grid-cols-2 gap-6">
-                  <CustomInput
+              <CollapsibleSection
+                title="Basic Information"
+                description="Core details about your asset"
+                isExpanded={true}
+                onToggle={() => {}}
+                isComplete={isSectionComplete("basic")}
+              >
+                <div className="space-y-6">
+                  <SelectWithButton
+                    name="formTemplateId"
+                    label="Category"
+                    data={formTemplates}
+                    onNew={openTemplate}
+                    placeholder="Select a category template"
+                    form={form}
+                    isPending={isPending}
+                    onChange={(id) => handleTemplateChange(id, formTemplates)}
                     required
-                    name="name"
-                    label="Asset Name"
-                    control={form.control}
-                    type="text"
-                    placeholder="Enter asset name"
                   />
-                  <CustomInput
-                    required
-                    name="serialNumber"
-                    label="Tag Number"
-                    control={form.control}
-                    type="text"
-                    placeholder="Enter tag number"
-                  />
+
+                  <div className="grid grid-cols-2 gap-6">
+                    <CustomInput
+                      required
+                      name="name"
+                      label="Asset Name"
+                      control={form.control}
+                      type="text"
+                      placeholder="Enter asset name"
+                    />
+                    <CustomInput
+                      required
+                      name="serialNumber"
+                      label="Tag Number"
+                      control={form.control}
+                      type="text"
+                      placeholder="Enter tag number"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <SelectWithButton
+                      name="modelId"
+                      form={form}
+                      isPending={isPending}
+                      label="Model"
+                      data={models}
+                      onNew={openModel}
+                      placeholder="Select model"
+                      required
+                    />
+                    <CustomInput
+                      name="licenseId"
+                      label="License ID"
+                      control={form.control}
+                      type="text"
+                      placeholder="Enter license ID"
+                    />
+                  </div>
                 </div>
-                <SelectWithButton
-                  name="modelId"
-                  form={form}
-                  isPending
-                  label="Model"
-                  data={models}
-                  onNew={openModel}
-                  placeholder="Select model"
-                  required
-                />
-              </div>
+              </CollapsibleSection>
 
               {/* Status & Location */}
-              <div className="border-t pt-6">
-                <h3 className="text-lg font-semibold mb-4">
-                  Status & Location
-                </h3>
+              <CollapsibleSection
+                title="Status & Location"
+                description="Current status and placement details"
+                isExpanded={expandedSections.includes("status")}
+                onToggle={(e) => toggleSection(e, "status")}
+                isComplete={isSectionComplete("status")}
+              >
                 <div className="space-y-6">
                   <SelectWithButton
                     name="statusLabelId"
@@ -326,22 +248,22 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
                     isPending={isLoadingStatusLabels}
                     label="Status Label"
                     data={statusLabels}
-                    onNew={openDepartment}
+                    onNew={openStatus}
                     placeholder="Select status"
                     required
                   />
                   <SelectWithButton
                     form={form}
-                    isPending
+                    isPending={isPending}
                     name="departmentId"
                     label="Department"
                     data={departments}
-                    onNew={openStatus}
+                    onNew={openDepartment}
                     placeholder="Select department"
                     required
                   />
                   <SelectWithButton
-                    isPending
+                    isPending={isPending}
                     form={form}
                     name="locationId"
                     label="Location"
@@ -351,15 +273,18 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
                     required
                   />
                 </div>
-              </div>
+              </CollapsibleSection>
 
               {/* Purchase Information */}
-              <div className="border-t pt-6">
-                <h3 className="text-lg font-semibold mb-4">
-                  Purchase Information
-                </h3>
+              <CollapsibleSection
+                title="Purchase Information"
+                description="Purchase and supplier details"
+                isExpanded={expandedSections.includes("purchase")}
+                onToggle={(e) => toggleSection(e, "purchase")}
+                isComplete={isSectionComplete("purchase")}
+              >
                 <div className="space-y-6">
-                  <div className="grid grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <CustomInput
                       name="poNumber"
                       label="PO Number"
@@ -374,11 +299,11 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
                       required
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <CustomDatePicker
                       name="purchaseDate"
                       form={form}
-                      tooltip="Select the date your asset will no longer be used"
+                      tooltip="Select purchase date"
                       label="Purchase Date"
                       placeholder="Select date"
                     />
@@ -402,11 +327,11 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
                     placeholder="Select supplier"
                     required
                     form={form}
-                    isPending
+                    isPending={isPending}
                   />
                   <SelectWithButton
                     form={form}
-                    isPending
+                    isPending={isPending}
                     name="inventoryId"
                     label="Inventory"
                     data={inventories}
@@ -415,14 +340,17 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
                     required
                   />
                 </div>
-              </div>
+              </CollapsibleSection>
 
               {/* Physical Properties */}
-              <div className="border-t pt-6">
-                <h3 className="text-lg font-semibold mb-4">
-                  Physical Properties
-                </h3>
-                <div className="grid grid-cols-2 gap-6">
+              <CollapsibleSection
+                title="Physical Properties"
+                description="Physical characteristics of the asset"
+                isExpanded={expandedSections.includes("physical")}
+                onToggle={(e) => toggleSection(e, "physical")}
+                isComplete={isSectionComplete("physical")}
+              >
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <CustomInput
                     name="material"
                     label="Material"
@@ -437,14 +365,17 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
                     placeholder="Enter weight"
                   />
                 </div>
-              </div>
+              </CollapsibleSection>
 
               {/* Energy Consumption */}
-              <div className="border-t pt-6">
-                <h3 className="text-lg font-semibold mb-4">
-                  Energy Consumption
-                </h3>
-                <div className="grid grid-cols-2 gap-6">
+              <CollapsibleSection
+                title="Energy Consumption"
+                description="Energy usage details"
+                isExpanded={expandedSections.includes("energy")}
+                onToggle={(e) => toggleSection(e, "energy")}
+                isComplete={isSectionComplete("energy")}
+              >
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <CustomInput
                     name="energyRating"
                     label="Energy Rating (kW)"
@@ -459,64 +390,46 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
                     placeholder="Enter operating hours"
                   />
                 </div>
+              </CollapsibleSection>
+
+              {/* Custom Template Fields */}
+              {selectedTemplate && (
+                <CollapsibleSection
+                  title="Additional Category Fields"
+                  description={`Fields specific to ${selectedTemplate.name}`}
+                  isExpanded={expandedSections.includes("template")}
+                  onToggle={(e) => toggleSection(e, "template")}
+                  isComplete={
+                    Object.keys(form.watch("templateValues") || {}).length > 0
+                  }
+                >
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {renderCustomFields()}
+                  </div>
+                </CollapsibleSection>
+              )}
+            </div>
+
+            {/* Right Sidebar */}
+            <div className="col-span-12 lg:col-span-4">
+              <div className="sticky top-24">
+                <FormProgress
+                  sections={formSections}
+                  expandedSections={expandedSections}
+                  toggleSection={toggleSection}
+                />
               </div>
             </div>
-          </Card>
-
-          <Card className="border-2 border-dashed border-slate-200 bg-slate-50/50">
-            <CardHeader className="pb-3 px-4 sm:px-6">
-              <CardTitle className="text-lg font-semibold text-slate-700 break-words">
-                Additional Category Fields
-              </CardTitle>
-              <CardDescription className="text-sm">
-                Fields specific to the selected category template
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="bg-white rounded-lg mx-2 sm:mx-4 mb-4 p-3 sm:p-6 shadow-sm">
-              {selectedTemplate ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {renderCustomFields()}
-                </div>
-              ) : (
-                <div className="py-6 sm:py-8 text-center text-slate-500">
-                  <p className="text-sm sm:text-base">
-                    Select a category template to show additional fields
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Action Buttons */}
-          <div className="flex justify-end gap-4 sticky bottom-0 bg-white p-4 border-t shadow-lg">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => router.back()}
-              disabled={isPending}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              disabled={isPending}
-              className="min-w-[120px]"
-            >
-              {isPending ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  {isUpdate ? "Updating..." : "Creating..."}
-                </>
-              ) : isUpdate ? (
-                "Update Asset"
-              ) : (
-                "Create Asset"
-              )}
-            </Button>
           </div>
+          <ActionBar
+            form={form}
+            isPending={isPending}
+            isUpdate={isUpdate}
+            onCancel={() => router.back()}
+          />
         </form>
       </Form>
-    </section>
+    </div>
   );
 };
 

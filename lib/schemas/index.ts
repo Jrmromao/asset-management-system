@@ -555,17 +555,18 @@ const customFieldSchema = z.object({
 });
 
 export const assetSchema = z.object({
+  // Basic Information - Required fields
   name: z.string().min(1, "Asset name is required"),
-  purchaseDate: z.date({
-    message: "Purchase Date is required.",
-  }),
   serialNumber: z.string().min(1, "Serial number is required"),
-  modelId: z.string().min(1, "Model is required").optional(),
-  statusLabelId: z.string().min(1, "Status is required").optional(),
-  departmentId: z.string().min(1, "Department is required").optional(),
-  inventoryId: z.string().min(1, "Inventory is required").optional(),
-  locationId: z.string().min(1, "Location is required").optional(),
-  supplierId: z.string().min(1, "Supplier is required").optional(),
+  formTemplateId: z.string().min(1, "Category is required"),
+  modelId: z.string().min(1, "Model is required"),
+
+  // Status & Location - Required fields
+  statusLabelId: z.string().min(1, "Status is required"),
+  departmentId: z.string().min(1, "Department is required"),
+  locationId: z.string().min(1, "Location is required"),
+
+  // Purchase Information - Required fields
   price: z.union([
     z
       .string()
@@ -575,31 +576,41 @@ export const assetSchema = z.object({
         if (isNaN(parsed)) throw new Error("Invalid price");
         return parsed;
       }),
-    z.number(),
+    z.number().min(0, "Price must be a positive number"),
   ]),
-  weight: z.union([
-    z.string().transform((val) => {
-      if (!val) return undefined;
-      const parsed = parseFloat(val);
-      if (isNaN(parsed)) throw new Error("Invalid weight");
-      return parsed;
-    }),
-    z.number().optional(),
-  ]),
-  poNumber: z.string().min(1, "PO Number is required").optional(),
-  material: z.string().optional(),
-  formTemplateId: z.string().optional(),
-  templateValues: z.record(z.any()).optional(),
-  energyRating: z.string().optional(),
+  purchaseDate: z.date({
+    required_error: "Purchase Date is required",
+  }),
+  endOfLife: z.date({
+    required_error: "End of Life is required",
+  }),
+  supplierId: z.string().min(1, "Supplier is required"),
+  inventoryId: z.string().min(1, "Inventory is required"),
+
+  // Optional fields
   licenseId: z.string().optional(),
+  poNumber: z.string().optional(),
+  material: z.string().optional(),
+  weight: z
+    .union([
+      z.string().transform((val) => {
+        if (!val) return undefined;
+        const parsed = parseFloat(val);
+        if (isNaN(parsed)) throw new Error("Invalid weight");
+        return parsed;
+      }),
+      z.number().min(0, "Weight must be a positive number"),
+    ])
+    .optional(),
+  energyRating: z.string().optional(),
   dailyOperatingHours: z
     .string()
-    .refine((val) => !Number.isNaN(parseInt(val, 10)), {
-      // message: "Daily operating hours must be a number",
+    .refine((val) => !val || !Number.isNaN(parseInt(val, 10)), {
+      message: "Daily operating hours must be a number",
     })
     .optional(),
+  templateValues: z.record(z.any()).optional(),
   customFields: z.array(customFieldSchema).optional(),
-  endOfLife: dateField("End of Life"),
 });
 
 export const createTemplateSchema = z.object({
