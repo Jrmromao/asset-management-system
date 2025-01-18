@@ -1,5 +1,5 @@
 import React, { useState, useTransition } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, UseFormReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Card,
@@ -15,8 +15,6 @@ import { toast } from "sonner";
 // Components
 import CustomInput from "@/components/CustomInput";
 import CustomSelect from "@/components/CustomSelect";
-import CustomDatePicker from "@/components/CustomDatePicker";
-import CustomPriceInput from "@/components/CustomPriceInput";
 import { SelectWithButton } from "@/components/SelectWithButton";
 import { ModalManager } from "@/components/ModalManager";
 
@@ -44,7 +42,10 @@ import { useStatusLabelUIStore } from "@/lib/stores/useStatusLabelUIStore";
 import { useModelUIStore } from "@/lib/stores/useModelUIStore";
 import { useDepartmentUIStore } from "@/lib/stores/useDepartmentUIStore";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
+import { ChevronDown, Loader2 } from "lucide-react";
+import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
+import CustomDatePicker from "@/components/CustomDatePicker";
+import CustomPriceInput from "@/components/CustomPriceInput";
 
 type FormTemplate = {
   id: string;
@@ -107,6 +108,61 @@ const ProgressIndicator = ({ form }: { form: any }) => {
     </div>
   );
 };
+
+function ActionFooter(
+  form: UseFormReturn<AssetFormValues, any, undefined>,
+  router: AppRouterInstance,
+  isPending: boolean,
+  isUpdate: boolean | undefined,
+) {
+  return (
+    //  fixed bottom-0 right-0 left-0 bg-white border-t shadow-lg
+    <div className="sticky bottom-0 right-0 bg-white border-t border-b shadow ">
+      <div className="max-w-[1000px] mx-auto px-4 py-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            {form.formState.isDirty && (
+              <span className="text-orange-500 text-sm">• Unsaved changes</span>
+            )}
+          </div>
+          <div className="flex items-center gap-2 bg-white">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                if (form.formState.isDirty) {
+                  if (
+                    window.confirm(
+                      "You have unsaved changes. Are you sure you want to leave?",
+                    )
+                  ) {
+                    router.back();
+                  }
+                } else {
+                  router.back();
+                }
+              }}
+              className="h-9"
+              disabled={isPending}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isPending} className="h-9 bg-white">
+              {isPending ? (
+                <div className="flex items-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>{isUpdate ? "Updating..." : "Creating..."}</span>
+                </div>
+              ) : (
+                <span>{isUpdate ? "Update Asset" : "Create Asset"} →</span>
+              )}
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
   const router = useRouter();
@@ -271,263 +327,431 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
   return (
     <div className="min-h-screen bg-slate-50">
       <ModalManager modals={useFormModals(form)} />
-      <ProgressIndicator form={form} />
+
+      {/* Top Navigation */}
+      <div className="bg-white border-b">
+        <div className="max-w-[1200px] mx-auto">
+          <div className="flex items-center h-14 px-4">
+            <div className="flex items-center gap-2 text-sm text-slate-600">
+              <span>Assets</span>
+              <span>/</span>
+              <span className="font-medium text-slate-900">
+                {isUpdate ? "Update Asset" : "Create Asset"}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Progress Header */}
+      <div className="sticky top-0 z-50 bg-white border-b shadow-sm">
+        <div className="max-w-[1200px] mx-auto px-4">
+          <div className="h-16 flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <h1 className="text-lg font-semibold">
+                {isUpdate ? "Update Asset" : "Create New Asset"}
+              </h1>
+              <div
+                className={`px-2.5 py-0.5 text-xs font-medium rounded-full ${
+                  form.formState.isValid
+                    ? "bg-green-50 text-green-700 border border-green-200"
+                    : "bg-yellow-50 text-yellow-700 border border-yellow-200"
+                }`}
+              >
+                {form.formState.isValid
+                  ? "Ready to submit"
+                  : "Required fields missing"}
+              </div>
+            </div>
+            <span className="text-sm text-slate-600">
+              {Object.keys(form.formState.dirtyFields).length} of{" "}
+              {Object.keys(form.getValues()).length} fields completed
+            </span>
+          </div>
+          <div className="h-0.5 bg-slate-100">
+            <div
+              className="h-full bg-blue-500 transition-all duration-300"
+              style={{
+                width: `${
+                  (Object.keys(form.formState.dirtyFields).length /
+                    Object.keys(form.getValues()).length) *
+                  100
+                }%`,
+              }}
+            />
+          </div>
+        </div>
+      </div>
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
-          <div className="max-w-[1000px] mx-auto px-4 py-6 space-y-6">
-            {/* Template Selection */}
-            <Card className="bg-white shadow-sm">
-              <CardHeader>
-                <CardTitle className="text-xl font-semibold">
-                  Asset Category
-                </CardTitle>
-                <CardDescription>
-                  Select a category to determine additional fields
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <SelectWithButton
-                  name="formTemplateId"
-                  label="Category Template"
-                  data={formTemplates}
-                  onNew={openTemplate}
-                  placeholder="Select a template"
-                  form={form}
-                  isPending={isPending}
-                  onChange={handleTemplateChange}
-                />
-              </CardContent>
-            </Card>
+          <div className="max-w-[1200px] mx-auto px-4 py-6">
+            <div className="grid grid-cols-12 gap-6">
+              {/* Main Form Content */}
+              <div className="col-span-12 lg:col-span-8 space-y-6">
+                {/* Main Form Card */}
+                <Card className={"bg-white"}>
+                  <CardContent className="divide-y divide-slate-100">
+                    {/* Basic Information */}
+                    <div className="p-6">
+                      <FormSection title="Basic Information">
+                        <SelectWithButton
+                          name="formTemplateId"
+                          label="Category Template"
+                          data={formTemplates}
+                          onNew={openTemplate}
+                          placeholder="Select a template"
+                          form={form}
+                          isPending={isPending}
+                          onChange={handleTemplateChange}
+                        />
 
-            {/* Main Form */}
-            <Card className="bg-white shadow-sm divide-y divide-slate-100">
-              <CardContent className="p-6">
-                {/* Basic Information */}
-                <FormSection title="Basic Information">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <CustomInput
-                      required
-                      name="name"
-                      label="Asset Name"
-                      control={form.control}
-                      placeholder="Enter asset name"
-                    />
-                    <CustomInput
-                      required
-                      name="serialNumber"
-                      label="Tag Number"
-                      control={form.control}
-                      placeholder="Enter tag number"
-                    />
-                  </div>
-                  <SelectWithButton
-                    name="modelId"
-                    form={form}
-                    label="Model"
-                    data={models}
-                    onNew={openModel}
-                    placeholder="Select model"
-                    required
-                  />
-                </FormSection>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <CustomInput
+                            required
+                            name="name"
+                            label="Asset Name"
+                            control={form.control}
+                            placeholder="Enter asset name"
+                          />
+                          <CustomInput
+                            required
+                            name="serialNumber"
+                            label="Tag Number"
+                            control={form.control}
+                            placeholder="Enter tag number"
+                          />
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <SelectWithButton
+                            name="modelId"
+                            form={form}
+                            label="Model"
+                            data={models}
+                            onNew={openModel}
+                            placeholder="Select model"
+                            required
+                          />
+                          <CustomInput
+                            name="licenseId"
+                            label="License ID"
+                            control={form.control}
+                            placeholder="Enter license ID"
+                          />
+                        </div>
+                      </FormSection>
+                    </div>
 
-                {/* Status & Location */}
-                <FormSection title="Status & Location" className="pt-8">
-                  <SelectWithButton
-                    name="statusLabelId"
-                    form={form}
-                    isPending={isLoadingStatusLabels}
-                    label="Status"
-                    data={statusLabels}
-                    onNew={openStatus}
-                    placeholder="Select status"
-                    required
-                  />
-                  <SelectWithButton
-                    form={form}
-                    name="departmentId"
-                    label="Department"
-                    data={departments}
-                    onNew={openDepartment}
-                    placeholder="Select department"
-                    required
-                  />
-                  <SelectWithButton
-                    form={form}
-                    name="locationId"
-                    label="Location"
-                    data={locations}
-                    onNew={openLocation}
-                    placeholder="Select location"
-                    required
-                  />
-                </FormSection>
+                    {/* Status & Location */}
+                    <div className="p-6">
+                      <FormSection title="Status & Location">
+                        <div className="space-y-6">
+                          <SelectWithButton
+                            name="statusLabelId"
+                            form={form}
+                            isPending={isLoadingStatusLabels}
+                            label="Status"
+                            data={statusLabels}
+                            onNew={openStatus}
+                            placeholder="Select status"
+                            required
+                          />
+                          <SelectWithButton
+                            form={form}
+                            name="departmentId"
+                            label="Department"
+                            data={departments}
+                            onNew={openDepartment}
+                            placeholder="Select department"
+                            required
+                          />
+                          <SelectWithButton
+                            form={form}
+                            name="locationId"
+                            label="Location"
+                            data={locations}
+                            onNew={openLocation}
+                            placeholder="Select location"
+                            required
+                          />
+                        </div>
+                      </FormSection>
+                    </div>
 
-                {/* Purchase Information */}
-                <FormSection title="Purchase Information" className="pt-8">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <CustomInput
-                      name="poNumber"
-                      label="PO Number"
-                      control={form.control}
-                      placeholder="Enter PO number"
-                    />
-                    <CustomPriceInput
-                      name="price"
-                      label="Unit Price"
-                      control={form.control}
-                      placeholder="0.00"
-                      required
-                    />
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <CustomDatePicker
-                      name="purchaseDate"
-                      form={form}
-                      label="Purchase Date"
-                      placeholder="Select date"
-                    />
-                    <CustomDatePicker
-                      name="endOfLife"
-                      form={form}
-                      label="End of Life"
-                      placeholder="Select end of life"
-                      required
-                      tooltip="Expected end of life date"
-                      minDate={new Date(2001, 0, 1)}
-                      maxDate={new Date(2100, 0, 1)}
-                    />
-                  </div>
-                  <SelectWithButton
-                    name="supplierId"
-                    label="Supplier"
-                    data={suppliers}
-                    onNew={openSupplier}
-                    placeholder="Select supplier"
-                    required
-                    form={form}
-                  />
-                  <SelectWithButton
-                    form={form}
-                    name="inventoryId"
-                    label="Inventory"
-                    data={inventories}
-                    onNew={openInventory}
-                    placeholder="Select inventory"
-                    required
-                  />
-                </FormSection>
+                    {/* Purchase Information */}
+                    <div className="p-6">
+                      <FormSection title="Purchase Information">
+                        <div className="space-y-6">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <CustomInput
+                              name="poNumber"
+                              label="PO Number"
+                              control={form.control}
+                              placeholder="Enter PO number"
+                            />
+                            <CustomPriceInput
+                              name="price"
+                              label="Unit Price"
+                              control={form.control}
+                              placeholder="0.00"
+                              required
+                            />
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <CustomDatePicker
+                              name="purchaseDate"
+                              form={form}
+                              label="Purchase Date"
+                              placeholder="Select date"
+                              required
+                            />
+                            <CustomDatePicker
+                              name="endOfLife"
+                              form={form}
+                              label="End of Life"
+                              placeholder="Select end of life"
+                              required
+                              tooltip="Expected end of life date"
+                              minDate={new Date(2001, 0, 1)}
+                              maxDate={new Date(2100, 0, 1)}
+                            />
+                          </div>
+                          <SelectWithButton
+                            name="supplierId"
+                            label="Supplier"
+                            data={suppliers}
+                            onNew={openSupplier}
+                            placeholder="Select supplier"
+                            required
+                            form={form}
+                          />
+                          <SelectWithButton
+                            form={form}
+                            name="inventoryId"
+                            label="Inventory"
+                            data={inventories}
+                            onNew={openInventory}
+                            placeholder="Select inventory"
+                            required
+                          />
+                        </div>
+                      </FormSection>
+                    </div>
 
-                {/* Technical Details */}
-                <FormSection title="Technical Details" className="pt-8">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <CustomInput
-                      name="material"
-                      label="Material"
-                      control={form.control}
-                      placeholder="Enter material"
-                    />
-                    <CustomInput
-                      name="weight"
-                      label="Weight (kg)"
-                      control={form.control}
-                      type="number"
-                      placeholder="Enter weight"
-                    />
-                    <CustomInput
-                      name="energyRating"
-                      label="Energy Rating (kW)"
-                      control={form.control}
-                      placeholder="Enter energy rating"
-                    />
-                    <CustomInput
-                      name="dailyOperatingHours"
-                      label="Operating Hours"
-                      control={form.control}
-                      type="number"
-                      placeholder="Hours per day"
-                    />
-                  </div>
-                </FormSection>
-              </CardContent>
-            </Card>
+                    {/* Technical Details - Combined Physical & Energy */}
+                    <div className="p-6">
+                      <FormSection title="Technical Details">
+                        <div className="space-y-6">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <CustomInput
+                              name="material"
+                              label="Material"
+                              control={form.control}
+                              placeholder="Enter material"
+                            />
+                            <CustomInput
+                              name="weight"
+                              label="Weight (kg)"
+                              control={form.control}
+                              type="number"
+                              placeholder="Enter weight"
+                            />
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <CustomInput
+                              name="energyRating"
+                              label="Energy Rating (kW)"
+                              control={form.control}
+                              placeholder="Enter energy rating"
+                            />
+                            <CustomInput
+                              name="dailyOperatingHours"
+                              label="Operating Hours"
+                              control={form.control}
+                              type="number"
+                              placeholder="Hours per day"
+                            />
+                          </div>
+                        </div>
+                      </FormSection>
+                    </div>
+                  </CardContent>
+                </Card>
 
-            {/* Template Fields */}
-            {selectedTemplate && (
-              <Card className="bg-white shadow-sm">
-                <CardHeader className="border-b">
-                  <div className="flex items-center gap-2">
-                    <CardTitle className="text-xl font-semibold">
-                      {selectedTemplate.name}
-                    </CardTitle>
-                    <span className="px-2 py-1 text-xs bg-blue-50 text-blue-600 rounded-full">
-                      Category Fields
-                    </span>
-                  </div>
-                  <CardDescription>
-                    Additional fields specific to{" "}
-                    {selectedTemplate.name.toLowerCase()}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="p-6">
-                  {renderCustomFields()}
-                </CardContent>
-              </Card>
-            )}
-          </div>
-          <div className="sticky bottom-0 right-0 bg-white border-t">
-            <div className="max-w-[1000px] mx-auto px-4 py-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  {form.formState.isDirty && (
-                    <span className="text-orange-500 text-sm">
-                      • Unsaved changes
-                    </span>
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      if (form.formState.isDirty) {
-                        if (
-                          window.confirm(
-                            "You have unsaved changes. Are you sure you want to leave?",
-                          )
-                        ) {
-                          router.back();
-                        }
-                      } else {
-                        router.back();
-                      }
-                    }}
-                    className="h-9"
-                    disabled={isPending}
-                  >
-                    Cancel
-                  </Button>
-                  <Button type="submit" disabled={isPending} className="h-9">
-                    {isPending ? (
+                {/* Template Fields Card */}
+                {selectedTemplate && (
+                  <Card>
+                    <CardHeader className="border-b bg-slate-50">
                       <div className="flex items-center gap-2">
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        <span>{isUpdate ? "Updating..." : "Creating..."}</span>
+                        <CardTitle className="text-lg font-medium">
+                          {selectedTemplate.name}
+                        </CardTitle>
+                        <span className="px-2 py-1 text-xs bg-blue-50 text-blue-600 rounded-full border border-blue-100">
+                          Category Fields
+                        </span>
                       </div>
-                    ) : (
-                      <span>
-                        {isUpdate ? "Update Asset" : "Create Asset"} →
-                      </span>
-                    )}
-                  </Button>
+                      <CardDescription>
+                        Additional fields specific to{" "}
+                        {selectedTemplate.name.toLowerCase()}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="p-6">
+                      {renderCustomFields()}
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Template Fields Card */}
+                {selectedTemplate && (
+                  <Card>
+                    <CardHeader className="border-b bg-slate-50">
+                      <div className="flex items-center gap-2">
+                        <CardTitle className="text-lg font-medium">
+                          {selectedTemplate.name}
+                        </CardTitle>
+                        <span className="px-2 py-1 text-xs bg-blue-50 text-blue-600 rounded-full border border-blue-100">
+                          Category Fields
+                        </span>
+                      </div>
+                      <CardDescription>
+                        Additional fields specific to{" "}
+                        {selectedTemplate.name.toLowerCase()}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="p-6">
+                      {renderCustomFields()}
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+
+              {/* Right Sidebar */}
+              <div className="col-span-12 lg:col-span-4 space-y-6">
+                <div className="sticky top-[104px]">
+                  <Card className={"bg-white"}>
+                    <CardHeader className="border-b">
+                      <CardTitle className="text-base font-medium">
+                        Form Progress
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-4">
+                      <div className="space-y-3">
+                        {[
+                          "Basic Information",
+                          "Status & Location",
+                          "Purchase Information",
+                          "Technical Details",
+                        ].map((section) => {
+                          const isValid =
+                            section === "Basic Information"
+                              ? !!form.watch("name") &&
+                                !!form.watch("serialNumber")
+                              : section === "Purchase Information"
+                                ? !!form.watch("price")
+                                : true;
+
+                          return (
+                            <div
+                              key={section}
+                              className="flex items-center justify-between py-2 px-3 rounded hover:bg-slate-50"
+                            >
+                              <div className="flex items-center gap-3">
+                                <div
+                                  className={`w-1.5 h-1.5 rounded-full ${
+                                    isValid ? "bg-green-500" : "bg-slate-200"
+                                  }`}
+                                />
+                                <span className="text-sm text-slate-600">
+                                  {section}
+                                </span>
+                              </div>
+                              {isValid && (
+                                <div className="h-5 w-5 rounded-full bg-green-50 flex items-center justify-center">
+                                  <svg
+                                    className="h-3 w-3 text-green-500"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M5 13l4 4L19 7"
+                                    />
+                                  </svg>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
               </div>
             </div>
           </div>
+
+          {/* Footer */}
+          {ActionFooter(form, router, isPending, isUpdate)}
         </form>
       </Form>
     </div>
   );
 };
+
+// Enhanced CollapsibleSection
+const CollapsibleSection = ({
+  title,
+  description,
+  children,
+  isExpanded,
+  onToggle,
+  isComplete = false,
+}: {
+  title: string;
+  description: string;
+  children: React.ReactNode;
+  isExpanded: boolean;
+  onToggle: () => void;
+  isComplete?: boolean;
+}) => (
+  <div className="bg-white rounded-lg border shadow-sm overflow-hidden">
+    <button
+      onClick={onToggle}
+      className="w-full flex items-center justify-between p-4 hover:bg-slate-50 transition-colors"
+    >
+      <div className="flex items-center gap-3">
+        <div
+          className={`w-2 h-2 rounded-full ${
+            isComplete ? "bg-green-500" : "bg-slate-200"
+          }`}
+        />
+        <div>
+          <h2 className="text-base font-medium">{title}</h2>
+          <p className="text-sm text-slate-500">{description}</p>
+        </div>
+      </div>
+      <div
+        className={`transform transition-transform duration-200 ${
+          isExpanded ? "rotate-180" : ""
+        }`}
+      >
+        <ChevronDown className="h-5 w-5 text-slate-400" />
+      </div>
+    </button>
+
+    <div
+      className={`transition-all duration-300 ${
+        isExpanded
+          ? "max-h-[2000px] opacity-100"
+          : "max-h-0 opacity-0 overflow-hidden"
+      }`}
+    >
+      <div className="p-6 border-t">{children}</div>
+    </div>
+  </div>
+);
 
 export default AssetForm;
