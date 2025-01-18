@@ -1,12 +1,6 @@
-"use client";
-
 import React, { useState, useTransition } from "react";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { Button } from "@/components/ui/button";
-import { Form } from "@/components/ui/form";
-import { Loader2 } from "lucide-react";
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Card,
   CardContent,
@@ -14,6 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Form } from "@/components/ui/form";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
@@ -21,30 +16,35 @@ import { toast } from "sonner";
 import CustomInput from "@/components/CustomInput";
 import CustomSelect from "@/components/CustomSelect";
 import CustomDatePicker from "@/components/CustomDatePicker";
-
-// Forms
-// Stores
-import { useLocationStore } from "@/lib/stores/locationStore";
-import { useSupplierUIStore } from "@/lib/stores/useSupplierUIStore";
-import { useInventoryUIStore } from "@/lib/stores/useInventoryUIStore";
-import CustomPriceInput from "../CustomPriceInput";
+import CustomPriceInput from "@/components/CustomPriceInput";
 import { SelectWithButton } from "@/components/SelectWithButton";
-import { assetSchema } from "@/lib/schemas";
-import { useFormTemplateUIStore } from "@/lib/stores/useFormTemplateUIStore";
-import { CustomField, CustomFieldOption } from "@/types/form";
-import { useFormModals } from "@/hooks/useFormModals";
 import { ModalManager } from "@/components/ModalManager";
+
+// Schema and types
+import { assetSchema } from "@/lib/schemas";
+import type { z } from "zod";
+import type { CustomField, CustomFieldOption } from "@/types/form";
+
+// Hooks and stores
+import { useFormModals } from "@/hooks/useFormModals";
 import { useStatusLabelsQuery } from "@/hooks/queries/useStatusLabelsQuery";
-import { useStatusLabelUIStore } from "@/lib/stores/useStatusLabelUIStore";
 import { useModelsQuery } from "@/hooks/queries/useModelsQuery";
-import { useModelUIStore } from "@/lib/stores/useModelUIStore";
-import { useDepartmentUIStore } from "@/lib/stores/useDepartmentUIStore";
 import { useDepartmentQuery } from "@/hooks/queries/useDepartmentQuery";
 import { useInventoryQuery } from "@/hooks/queries/useInventoryQuery";
 import { useSupplierQuery } from "@/hooks/queries/useSupplierQuery";
 import { useAssetQuery } from "@/hooks/queries/useAssetQuery";
 import { useFormTemplatesQuery } from "@/hooks/queries/useFormTemplatesQuery";
 import { useLocationQuery } from "@/hooks/queries/useLocationQuery";
+
+import { useLocationStore } from "@/lib/stores/locationStore";
+import { useSupplierUIStore } from "@/lib/stores/useSupplierUIStore";
+import { useInventoryUIStore } from "@/lib/stores/useInventoryUIStore";
+import { useFormTemplateUIStore } from "@/lib/stores/useFormTemplateUIStore";
+import { useStatusLabelUIStore } from "@/lib/stores/useStatusLabelUIStore";
+import { useModelUIStore } from "@/lib/stores/useModelUIStore";
+import { useDepartmentUIStore } from "@/lib/stores/useDepartmentUIStore";
+import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 
 type FormTemplate = {
   id: string;
@@ -59,7 +59,63 @@ interface AssetFormProps {
   isUpdate?: boolean;
 }
 
+const FormSection = ({
+  title,
+  children,
+  className = "",
+}: {
+  title: string;
+  children: React.ReactNode;
+  className?: string;
+}) => (
+  <div className={`space-y-4 ${className}`}>
+    <h3 className="text-lg font-semibold text-slate-800">{title}</h3>
+    <div className="space-y-6">{children}</div>
+  </div>
+);
+
+const ProgressIndicator = ({ form }: { form: any }) => {
+  const totalFields = Object.keys(form.getValues()).length;
+  const completedFields = Object.keys(form.formState.dirtyFields).length;
+  const percentage = (completedFields / totalFields) * 100;
+
+  return (
+    <div className="bg-white border-b">
+      <div className="max-w-[1000px] mx-auto px-4 py-3">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-3">
+            <span
+              className={`text-sm font-medium ${form.formState.isValid ? "text-green-600" : "text-yellow-600"}`}
+            >
+              {form.formState.isValid ? "Ready to submit" : "Form incomplete"}
+            </span>
+            <span className="text-sm text-slate-500">
+              {completedFields} of {totalFields} fields completed
+            </span>
+          </div>
+          <span className="text-sm font-medium text-slate-700">
+            {Math.round(percentage)}%
+          </span>
+        </div>
+        <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+          <div
+            className="h-full bg-blue-500 transition-all duration-300 ease-out"
+            style={{ width: `${percentage}%` }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const [selectedTemplate, setSelectedTemplate] = useState<FormTemplate | null>(
+    null,
+  );
+
+  // Queries
   const { statusLabels, isLoading: isLoadingStatusLabels } =
     useStatusLabelsQuery();
   const { departments } = useDepartmentQuery();
@@ -69,19 +125,8 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
   const { models } = useModelsQuery();
   const { formTemplates } = useFormTemplatesQuery();
   const { locations } = useLocationQuery();
-  const [isPending, startTransition] = useTransition();
-  const router = useRouter();
-  const [loadingErrors, setLoadingErrors] = useState<string[]>([]);
 
-  type CustomFieldValues = Record<string, string>;
-
-  const [selectedTemplate, setSelectedTemplate] = useState<FormTemplate | null>(
-    null,
-  );
-  const [customFieldValues, setCustomFieldValues] = useState<CustomFieldValues>(
-    {},
-  );
-  // Stores
+  // Store actions
   const { onOpen: openStatus } = useStatusLabelUIStore();
   const { onOpen: openModel } = useModelUIStore();
   const { onOpen: openDepartment } = useDepartmentUIStore();
@@ -114,234 +159,201 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
   });
 
   const renderCustomFields = () => {
-    if (!selectedTemplate) return null;
+    if (!selectedTemplate?.fields?.length) return null;
 
-    return selectedTemplate.fields.map((field: CustomField) => {
-      const fieldName = `templateValues.${field.name}`;
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {selectedTemplate.fields.map((field: CustomField) => {
+          const fieldName = `templateValues.${field.name}`;
 
-      switch (field.type) {
-        case "text":
-          return (
-            <div key={field.name}>
-              <CustomInput
-                name={fieldName}
-                label={field.label}
-                control={form.control}
-                required={field.required}
-                placeholder={
-                  field.placeholder || `Enter ${field?.label.toLowerCase()}`
-                }
-              />
-            </div>
-          );
-        case "number":
-          return (
-            <div key={field.name}>
-              <CustomInput
-                name={fieldName}
-                label={field.label}
-                control={form.control}
-                required={field.required}
-                type="number"
-                placeholder={
-                  field.placeholder || `Enter ${field?.label.toLowerCase()}`
-                }
-              />
-            </div>
-          );
-        case "select":
-          const formattedOptions: CustomFieldOption[] =
-            field.options?.map((option: string) => ({
-              id: option,
-              name: option,
-            })) || [];
-          return (
-            <div key={field.name}>
-              <CustomSelect
-                name={fieldName}
-                label={field.label}
-                control={form.control}
-                required={field.required}
-                data={formattedOptions}
-                placeholder={`Select ${field.label.toLowerCase()}`}
-              />
-            </div>
-          );
-        default:
-          return null;
-      }
-    });
+          switch (field.type) {
+            case "text":
+            case "number":
+              return (
+                <CustomInput
+                  key={field.name}
+                  name={fieldName}
+                  label={field.label}
+                  control={form.control}
+                  required={field.required}
+                  type={field.type}
+                  placeholder={
+                    field.placeholder || `Enter ${field.label.toLowerCase()}`
+                  }
+                />
+              );
+            case "select":
+              const options: CustomFieldOption[] =
+                field.options?.map((option) => ({
+                  id: option,
+                  name: option,
+                })) || [];
+              return (
+                <CustomSelect
+                  key={field.name}
+                  name={fieldName}
+                  label={field.label}
+                  control={form.control}
+                  required={field.required}
+                  data={options}
+                  placeholder={`Select ${field.label.toLowerCase()}`}
+                />
+              );
+            default:
+              return null;
+          }
+        })}
+      </div>
+    );
   };
 
-  const handleTemplateChange = async (formTemplateId: string) => {
-    try {
-      if (!formTemplateId) {
-        // Reset if no template is selected
-        form.setValue("formTemplateId", "");
-        form.setValue("templateValues", {});
-        setSelectedTemplate(null);
-        setCustomFieldValues({});
-        return;
-      }
-
-      const selectedTemplate = formTemplates.find(
-        (template) => template.id === formTemplateId,
-      );
-
-      if (!selectedTemplate?.fields) {
-        toast.error("Template not found or invalid");
-        return;
-      }
-
-      // Update form with the new template ID
-      form.setValue("formTemplateId", formTemplateId);
-      setSelectedTemplate(selectedTemplate);
-
-      // Initialize empty values for template fields
-      const emptyValues = selectedTemplate.fields.reduce<CustomFieldValues>(
-        (acc, field) => ({
-          ...acc,
-          [field.name]: "",
-        }),
-        {},
-      );
-
-      // Update both form and state
-      form.setValue("templateValues", emptyValues);
-      setCustomFieldValues(emptyValues);
-    } catch (error) {
-      toast.error("Failed to load template details");
-      console.error("Error loading template:", error);
+  const handleTemplateChange = (formTemplateId: string) => {
+    if (!formTemplateId) {
+      form.setValue("formTemplateId", "");
+      form.setValue("templateValues", {});
+      setSelectedTemplate(null);
+      return;
     }
+
+    const template = formTemplates.find((t) => t.id === formTemplateId);
+    if (!template?.fields) {
+      toast.error("Template not found or invalid");
+      return;
+    }
+
+    form.setValue("formTemplateId", formTemplateId);
+    setSelectedTemplate(template);
+
+    const emptyValues = template.fields.reduce(
+      (acc, field) => ({
+        ...acc,
+        [field.name]: "",
+      }),
+      {},
+    );
+
+    form.setValue("templateValues", emptyValues);
   };
 
-  async function onSubmit(data: AssetFormValues) {
+  const onSubmit = (data: AssetFormValues) => {
     startTransition(async () => {
       try {
-        const formattedData = {
-          ...data,
-          purchaseDate: data.purchaseDate,
-          endOfLife: data.endOfLife,
-          weight: data.weight,
-          ...(data.formTemplateId
-            ? {
-                formTemplateId: data.formTemplateId,
-                templateValues: data.templateValues,
-              }
-            : {}),
-        };
-
-        await createAsset(formattedData, {
-          onSuccess: () => {
-            form.reset();
-            toast.success("Asset created successfully");
-            router.push("/assets"); // Add navigation after success
+        await createAsset(
+          {
+            ...data,
+            purchaseDate: data.purchaseDate,
+            endOfLife: data.endOfLife,
+            weight: data.weight,
+            ...(data.formTemplateId
+              ? {
+                  formTemplateId: data.formTemplateId,
+                  templateValues: data.templateValues,
+                }
+              : {}),
           },
-          onError: (error) => {
-            toast.error("Something went wrong creating asset: " + error);
+          {
+            onSuccess: () => {
+              toast.success("Asset created successfully");
+              router.push("/assets");
+            },
+            onError: (error) => {
+              toast.error("Failed to create asset: " + error);
+            },
           },
-        });
+        );
       } catch (error) {
-        toast.error("Something went wrong");
+        toast.error("An unexpected error occurred");
         console.error(error);
       }
     });
-  }
+  };
 
   return (
-    <section className="w-full mx-auto p-6">
+    <div className="min-h-screen bg-slate-50">
       <ModalManager modals={useFormModals(form)} />
+      <ProgressIndicator form={form} />
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          {/* Template Selection */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle>Category</CardTitle>
-              <CardDescription>Select a category for the asset</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
+        <form onSubmit={form.handleSubmit(onSubmit)}>
+          <div className="max-w-[1000px] mx-auto px-4 py-6 space-y-6">
+            {/* Template Selection */}
+            <Card className="bg-white shadow-sm">
+              <CardHeader>
+                <CardTitle className="text-xl font-semibold">
+                  Asset Category
+                </CardTitle>
+                <CardDescription>
+                  Select a category to determine additional fields
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
                 <SelectWithButton
                   name="formTemplateId"
-                  label="Form Template"
+                  label="Category Template"
                   data={formTemplates}
                   onNew={openTemplate}
-                  placeholder="Select a form template"
+                  placeholder="Select a template"
                   form={form}
                   isPending={isPending}
                   onChange={handleTemplateChange}
                 />
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
-          {/* Main Information Card */}
-          <Card className="p-6">
-            <div className="space-y-6">
-              {/* Basic Information */}
-              <div className="space-y-6">
-                <h3 className="text-lg font-semibold mb-4">
-                  Basic Information
-                </h3>
-                <div className="grid grid-cols-2 gap-6">
-                  <CustomInput
+            {/* Main Form */}
+            <Card className="bg-white shadow-sm divide-y divide-slate-100">
+              <CardContent className="p-6">
+                {/* Basic Information */}
+                <FormSection title="Basic Information">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <CustomInput
+                      required
+                      name="name"
+                      label="Asset Name"
+                      control={form.control}
+                      placeholder="Enter asset name"
+                    />
+                    <CustomInput
+                      required
+                      name="serialNumber"
+                      label="Tag Number"
+                      control={form.control}
+                      placeholder="Enter tag number"
+                    />
+                  </div>
+                  <SelectWithButton
+                    name="modelId"
+                    form={form}
+                    label="Model"
+                    data={models}
+                    onNew={openModel}
+                    placeholder="Select model"
                     required
-                    name="name"
-                    label="Asset Name"
-                    control={form.control}
-                    type="text"
-                    placeholder="Enter asset name"
                   />
-                  <CustomInput
-                    required
-                    name="serialNumber"
-                    label="Tag Number"
-                    control={form.control}
-                    type="text"
-                    placeholder="Enter tag number"
-                  />
-                </div>
-                <SelectWithButton
-                  name="modelId"
-                  form={form}
-                  isPending
-                  label="Model"
-                  data={models}
-                  onNew={openModel}
-                  placeholder="Select model"
-                  required
-                />
-              </div>
+                </FormSection>
 
-              {/* Status & Location */}
-              <div className="border-t pt-6">
-                <h3 className="text-lg font-semibold mb-4">
-                  Status & Location
-                </h3>
-                <div className="space-y-6">
+                {/* Status & Location */}
+                <FormSection title="Status & Location" className="pt-8">
                   <SelectWithButton
                     name="statusLabelId"
                     form={form}
                     isPending={isLoadingStatusLabels}
-                    label="Status Label"
+                    label="Status"
                     data={statusLabels}
-                    onNew={openDepartment}
+                    onNew={openStatus}
                     placeholder="Select status"
                     required
                   />
                   <SelectWithButton
                     form={form}
-                    isPending
                     name="departmentId"
                     label="Department"
                     data={departments}
-                    onNew={openStatus}
+                    onNew={openDepartment}
                     placeholder="Select department"
                     required
                   />
                   <SelectWithButton
-                    isPending
                     form={form}
                     name="locationId"
                     label="Location"
@@ -350,16 +362,11 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
                     placeholder="Select location"
                     required
                   />
-                </div>
-              </div>
+                </FormSection>
 
-              {/* Purchase Information */}
-              <div className="border-t pt-6">
-                <h3 className="text-lg font-semibold mb-4">
-                  Purchase Information
-                </h3>
-                <div className="space-y-6">
-                  <div className="grid grid-cols-2 gap-6">
+                {/* Purchase Information */}
+                <FormSection title="Purchase Information" className="pt-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <CustomInput
                       name="poNumber"
                       label="PO Number"
@@ -374,24 +381,22 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
                       required
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <CustomDatePicker
                       name="purchaseDate"
                       form={form}
-                      tooltip="Select the date your asset will no longer be used"
                       label="Purchase Date"
                       placeholder="Select date"
                     />
                     <CustomDatePicker
-                      label="End of Life"
                       name="endOfLife"
                       form={form}
+                      label="End of Life"
                       placeholder="Select end of life"
                       required
-                      tooltip="Select the date your asset will no longer be used"
+                      tooltip="Expected end of life date"
                       minDate={new Date(2001, 0, 1)}
                       maxDate={new Date(2100, 0, 1)}
-                      formatString="dd/MM/yyyy"
                     />
                   </div>
                   <SelectWithButton
@@ -402,121 +407,126 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
                     placeholder="Select supplier"
                     required
                     form={form}
-                    isPending
                   />
                   <SelectWithButton
                     form={form}
-                    isPending
                     name="inventoryId"
                     label="Inventory"
                     data={inventories}
                     onNew={openInventory}
-                    placeholder="Select an inventory"
+                    placeholder="Select inventory"
                     required
                   />
-                </div>
-              </div>
+                </FormSection>
 
-              {/* Physical Properties */}
-              <div className="border-t pt-6">
-                <h3 className="text-lg font-semibold mb-4">
-                  Physical Properties
-                </h3>
-                <div className="grid grid-cols-2 gap-6">
-                  <CustomInput
-                    name="material"
-                    label="Material"
-                    control={form.control}
-                    placeholder="Enter material"
-                  />
-                  <CustomInput
-                    name="weight"
-                    label="Weight (kg)"
-                    control={form.control}
-                    type="text"
-                    placeholder="Enter weight"
-                  />
-                </div>
-              </div>
+                {/* Technical Details */}
+                <FormSection title="Technical Details" className="pt-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <CustomInput
+                      name="material"
+                      label="Material"
+                      control={form.control}
+                      placeholder="Enter material"
+                    />
+                    <CustomInput
+                      name="weight"
+                      label="Weight (kg)"
+                      control={form.control}
+                      type="number"
+                      placeholder="Enter weight"
+                    />
+                    <CustomInput
+                      name="energyRating"
+                      label="Energy Rating (kW)"
+                      control={form.control}
+                      placeholder="Enter energy rating"
+                    />
+                    <CustomInput
+                      name="dailyOperatingHours"
+                      label="Operating Hours"
+                      control={form.control}
+                      type="number"
+                      placeholder="Hours per day"
+                    />
+                  </div>
+                </FormSection>
+              </CardContent>
+            </Card>
 
-              {/* Energy Consumption */}
-              <div className="border-t pt-6">
-                <h3 className="text-lg font-semibold mb-4">
-                  Energy Consumption
-                </h3>
-                <div className="grid grid-cols-2 gap-6">
-                  <CustomInput
-                    name="energyRating"
-                    label="Energy Rating (kW)"
-                    control={form.control}
-                    placeholder="Enter energy rating"
-                  />
-                  <CustomInput
-                    name="dailyOperatingHours"
-                    label="Operating Hours (per day)"
-                    control={form.control}
-                    type="number"
-                    placeholder="Enter operating hours"
-                  />
+            {/* Template Fields */}
+            {selectedTemplate && (
+              <Card className="bg-white shadow-sm">
+                <CardHeader className="border-b">
+                  <div className="flex items-center gap-2">
+                    <CardTitle className="text-xl font-semibold">
+                      {selectedTemplate.name}
+                    </CardTitle>
+                    <span className="px-2 py-1 text-xs bg-blue-50 text-blue-600 rounded-full">
+                      Category Fields
+                    </span>
+                  </div>
+                  <CardDescription>
+                    Additional fields specific to{" "}
+                    {selectedTemplate.name.toLowerCase()}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="p-6">
+                  {renderCustomFields()}
+                </CardContent>
+              </Card>
+            )}
+          </div>
+          <div className="sticky bottom-0 right-0 bg-white border-t">
+            <div className="max-w-[1000px] mx-auto px-4 py-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  {form.formState.isDirty && (
+                    <span className="text-orange-500 text-sm">
+                      • Unsaved changes
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      if (form.formState.isDirty) {
+                        if (
+                          window.confirm(
+                            "You have unsaved changes. Are you sure you want to leave?",
+                          )
+                        ) {
+                          router.back();
+                        }
+                      } else {
+                        router.back();
+                      }
+                    }}
+                    className="h-9"
+                    disabled={isPending}
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={isPending} className="h-9">
+                    {isPending ? (
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>{isUpdate ? "Updating..." : "Creating..."}</span>
+                      </div>
+                    ) : (
+                      <span>
+                        {isUpdate ? "Update Asset" : "Create Asset"} →
+                      </span>
+                    )}
+                  </Button>
                 </div>
               </div>
             </div>
-          </Card>
-
-          <Card className="border-2 border-dashed border-slate-200 bg-slate-50/50">
-            <CardHeader className="pb-3 px-4 sm:px-6">
-              <CardTitle className="text-lg font-semibold text-slate-700 break-words">
-                Additional Category Fields
-              </CardTitle>
-              <CardDescription className="text-sm">
-                Fields specific to the selected category template
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="bg-white rounded-lg mx-2 sm:mx-4 mb-4 p-3 sm:p-6 shadow-sm">
-              {selectedTemplate ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {renderCustomFields()}
-                </div>
-              ) : (
-                <div className="py-6 sm:py-8 text-center text-slate-500">
-                  <p className="text-sm sm:text-base">
-                    Select a category template to show additional fields
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Action Buttons */}
-          <div className="flex justify-end gap-4 sticky bottom-0 bg-white p-4 border-t shadow-lg">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => router.back()}
-              disabled={isPending}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              disabled={isPending}
-              className="min-w-[120px]"
-            >
-              {isPending ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  {isUpdate ? "Updating..." : "Creating..."}
-                </>
-              ) : isUpdate ? (
-                "Update Asset"
-              ) : (
-                "Create Asset"
-              )}
-            </Button>
           </div>
         </form>
       </Form>
-    </section>
+    </div>
   );
 };
 
