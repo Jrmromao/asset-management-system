@@ -16,7 +16,6 @@ import { toast } from "sonner";
 import CustomInput from "@/components/CustomInput";
 import CustomSelect from "@/components/CustomSelect";
 import { SelectWithButton } from "@/components/SelectWithButton";
-import { ModalManager } from "@/components/ModalManager";
 
 // Schema and types
 import { assetSchema } from "@/lib/schemas";
@@ -24,7 +23,6 @@ import type { z } from "zod";
 import type { CustomField, CustomFieldOption } from "@/types/form";
 
 // Hooks and stores
-import { useFormModals } from "@/hooks/useFormModals";
 import { useStatusLabelsQuery } from "@/hooks/queries/useStatusLabelsQuery";
 import { useModelsQuery } from "@/hooks/queries/useModelsQuery";
 import { useDepartmentQuery } from "@/hooks/queries/useDepartmentQuery";
@@ -46,6 +44,7 @@ import { ChevronDown, Loader2 } from "lucide-react";
 import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import CustomDatePicker from "@/components/CustomDatePicker";
 import CustomPriceInput from "@/components/CustomPriceInput";
+import { FormContainer } from "@/components/forms/FormContainer";
 
 type FormTemplate = {
   id: string;
@@ -325,64 +324,7 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <ModalManager modals={useFormModals(form)} />
-
-      {/* Top Navigation */}
-      <div className="bg-white border-b">
-        <div className="max-w-[1200px] mx-auto">
-          <div className="flex items-center h-14 px-4">
-            <div className="flex items-center gap-2 text-sm text-slate-600">
-              <span>Assets</span>
-              <span>/</span>
-              <span className="font-medium text-slate-900">
-                {isUpdate ? "Update Asset" : "Create Asset"}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Progress Header */}
-      <div className="sticky top-0 z-50 bg-white border-b shadow-sm">
-        <div className="max-w-[1200px] mx-auto px-4">
-          <div className="h-16 flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <h1 className="text-lg font-semibold">
-                {isUpdate ? "Update Asset" : "Create New Asset"}
-              </h1>
-              <div
-                className={`px-2.5 py-0.5 text-xs font-medium rounded-full ${
-                  form.formState.isValid
-                    ? "bg-green-50 text-green-700 border border-green-200"
-                    : "bg-yellow-50 text-yellow-700 border border-yellow-200"
-                }`}
-              >
-                {form.formState.isValid
-                  ? "Ready to submit"
-                  : "Required fields missing"}
-              </div>
-            </div>
-            <span className="text-sm text-slate-600">
-              {Object.keys(form.formState.dirtyFields).length} of{" "}
-              {Object.keys(form.getValues()).length} fields completed
-            </span>
-          </div>
-          <div className="h-0.5 bg-slate-100">
-            <div
-              className="h-full bg-blue-500 transition-all duration-300"
-              style={{
-                width: `${
-                  (Object.keys(form.formState.dirtyFields).length /
-                    Object.keys(form.getValues()).length) *
-                  100
-                }%`,
-              }}
-            />
-          </div>
-        </div>
-      </div>
-
+    <FormContainer form={form}>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <div className="max-w-[1200px] mx-auto px-4 py-6">
@@ -697,7 +639,7 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
           {ActionFooter(form, router, isPending, isUpdate)}
         </form>
       </Form>
-    </div>
+    </FormContainer>
   );
 };
 

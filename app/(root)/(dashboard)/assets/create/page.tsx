@@ -19,13 +19,13 @@ const Create = () => {
         <BreadcrumbList>
           <BreadcrumbItem>
             <BreadcrumbLink asChild>
-              <Link href="/assetsx">Assets</Link>
+              <Link href="/assets">Assets</Link>
             </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
             <BreadcrumbLink asChild>
-              <Link href={`//assets/create`}>Create</Link>
+              <Link href={`/assets/create`}>Create</Link>
             </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
