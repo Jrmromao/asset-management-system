@@ -45,6 +45,7 @@ import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.share
 import CustomDatePicker from "@/components/CustomDatePicker";
 import CustomPriceInput from "@/components/CustomPriceInput";
 import { FormContainer } from "@/components/forms/FormContainer";
+import FormSection from "@/components/forms/FormSection";
 
 type FormTemplate = {
   id: string;
@@ -58,21 +59,6 @@ interface AssetFormProps {
   id?: string;
   isUpdate?: boolean;
 }
-
-const FormSection = ({
-  title,
-  children,
-  className = "",
-}: {
-  title: string;
-  children: React.ReactNode;
-  className?: string;
-}) => (
-  <div className={`space-y-4 ${className}`}>
-    <h3 className="text-lg font-semibold text-slate-800">{title}</h3>
-    <div className="space-y-6">{children}</div>
-  </div>
-);
 
 const ProgressIndicator = ({ form }: { form: any }) => {
   const totalFields = Object.keys(form.getValues()).length;
@@ -116,7 +102,7 @@ function ActionFooter(
 ) {
   return (
     //  fixed bottom-0 right-0 left-0 bg-white border-t shadow-lg
-    <div className="sticky bottom-0 right-0 bg-white border-t border-b shadow ">
+    <div className="bottom-0 right-0 bg-white border-t border-b shadow ">
       <div className="max-w-[1000px] mx-auto px-4 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center">
@@ -329,194 +315,186 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <div className="max-w-[1200px] mx-auto px-4 py-6">
             <div className="grid grid-cols-12 gap-6">
-              {/* Main Form Content */}
               <div className="col-span-12 lg:col-span-8 space-y-6">
                 {/* Main Form Card */}
                 <Card className={"bg-white"}>
                   <CardContent className="divide-y divide-slate-100">
                     {/* Basic Information */}
-                    <div className="p-6">
-                      <FormSection title="Basic Information">
-                        <SelectWithButton
-                          name="formTemplateId"
-                          label="Category Template"
-                          data={formTemplates}
-                          onNew={openTemplate}
-                          placeholder="Select a template"
-                          form={form}
-                          isPending={isPending}
-                          onChange={handleTemplateChange}
-                        />
+                    <FormSection title="Basic Information">
+                      <SelectWithButton
+                        name="formTemplateId"
+                        label="Category Template"
+                        data={formTemplates}
+                        onNew={openTemplate}
+                        placeholder="Select a template"
+                        form={form}
+                        isPending={isPending}
+                        onChange={handleTemplateChange}
+                      />
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <CustomInput
-                            required
-                            name="name"
-                            label="Asset Name"
-                            control={form.control}
-                            placeholder="Enter asset name"
-                          />
-                          <CustomInput
-                            required
-                            name="serialNumber"
-                            label="Tag Number"
-                            control={form.control}
-                            placeholder="Enter tag number"
-                          />
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <SelectWithButton
-                            name="modelId"
-                            form={form}
-                            label="Model"
-                            data={models}
-                            onNew={openModel}
-                            placeholder="Select model"
-                            required
-                          />
-                          <CustomInput
-                            name="licenseId"
-                            label="License ID"
-                            control={form.control}
-                            placeholder="Enter license ID"
-                          />
-                        </div>
-                      </FormSection>
-                    </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <CustomInput
+                          required
+                          name="name"
+                          label="Asset Name"
+                          control={form.control}
+                          placeholder="Enter asset name"
+                        />
+                        <CustomInput
+                          required
+                          name="serialNumber"
+                          label="Tag Number"
+                          control={form.control}
+                          placeholder="Enter tag number"
+                        />
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <SelectWithButton
+                          name="modelId"
+                          form={form}
+                          label="Model"
+                          data={models}
+                          onNew={openModel}
+                          placeholder="Select model"
+                          required
+                        />
+                        <CustomInput
+                          name="licenseId"
+                          label="License ID"
+                          control={form.control}
+                          placeholder="Enter license ID"
+                        />
+                      </div>
+                    </FormSection>
 
                     {/* Status & Location */}
-                    <div className="p-6">
-                      <FormSection title="Status & Location">
-                        <div className="space-y-6">
-                          <SelectWithButton
-                            name="statusLabelId"
-                            form={form}
-                            isPending={isLoadingStatusLabels}
-                            label="Status"
-                            data={statusLabels}
-                            onNew={openStatus}
-                            placeholder="Select status"
-                            required
-                          />
-                          <SelectWithButton
-                            form={form}
-                            name="departmentId"
-                            label="Department"
-                            data={departments}
-                            onNew={openDepartment}
-                            placeholder="Select department"
-                            required
-                          />
-                          <SelectWithButton
-                            form={form}
-                            name="locationId"
-                            label="Location"
-                            data={locations}
-                            onNew={openLocation}
-                            placeholder="Select location"
-                            required
-                          />
-                        </div>
-                      </FormSection>
-                    </div>
+
+                    <FormSection title="Status & Location">
+                      <div className="space-y-6">
+                        <SelectWithButton
+                          name="statusLabelId"
+                          form={form}
+                          isPending={isLoadingStatusLabels}
+                          label="Status"
+                          data={statusLabels}
+                          onNew={openStatus}
+                          placeholder="Select status"
+                          required
+                        />
+                        <SelectWithButton
+                          form={form}
+                          name="departmentId"
+                          label="Department"
+                          data={departments}
+                          onNew={openDepartment}
+                          placeholder="Select department"
+                          required
+                        />
+                        <SelectWithButton
+                          form={form}
+                          name="locationId"
+                          label="Location"
+                          data={locations}
+                          onNew={openLocation}
+                          placeholder="Select location"
+                          required
+                        />
+                      </div>
+                    </FormSection>
 
                     {/* Purchase Information */}
-                    <div className="p-6">
-                      <FormSection title="Purchase Information">
-                        <div className="space-y-6">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <CustomInput
-                              name="poNumber"
-                              label="PO Number"
-                              control={form.control}
-                              placeholder="Enter PO number"
-                            />
-                            <CustomPriceInput
-                              name="price"
-                              label="Unit Price"
-                              control={form.control}
-                              placeholder="0.00"
-                              required
-                            />
-                          </div>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <CustomDatePicker
-                              name="purchaseDate"
-                              form={form}
-                              label="Purchase Date"
-                              placeholder="Select date"
-                              required
-                            />
-                            <CustomDatePicker
-                              name="endOfLife"
-                              form={form}
-                              label="End of Life"
-                              placeholder="Select end of life"
-                              required
-                              tooltip="Expected end of life date"
-                              minDate={new Date(2001, 0, 1)}
-                              maxDate={new Date(2100, 0, 1)}
-                            />
-                          </div>
-                          <SelectWithButton
-                            name="supplierId"
-                            label="Supplier"
-                            data={suppliers}
-                            onNew={openSupplier}
-                            placeholder="Select supplier"
-                            required
-                            form={form}
+                    <FormSection title="Purchase Information">
+                      <div className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <CustomInput
+                            name="poNumber"
+                            label="PO Number"
+                            control={form.control}
+                            placeholder="Enter PO number"
                           />
-                          <SelectWithButton
-                            form={form}
-                            name="inventoryId"
-                            label="Inventory"
-                            data={inventories}
-                            onNew={openInventory}
-                            placeholder="Select inventory"
+                          <CustomPriceInput
+                            name="price"
+                            label="Unit Price"
+                            control={form.control}
+                            placeholder="0.00"
                             required
                           />
                         </div>
-                      </FormSection>
-                    </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <CustomDatePicker
+                            name="purchaseDate"
+                            form={form}
+                            label="Purchase Date"
+                            placeholder="Select date"
+                            required
+                          />
+                          <CustomDatePicker
+                            name="endOfLife"
+                            form={form}
+                            label="End of Life"
+                            placeholder="Select end of life"
+                            required
+                            tooltip="Expected end of life date"
+                            minDate={new Date(2001, 0, 1)}
+                            maxDate={new Date(2100, 0, 1)}
+                          />
+                        </div>
+                        <SelectWithButton
+                          name="supplierId"
+                          label="Supplier"
+                          data={suppliers}
+                          onNew={openSupplier}
+                          placeholder="Select supplier"
+                          required
+                          form={form}
+                        />
+                        <SelectWithButton
+                          form={form}
+                          name="inventoryId"
+                          label="Inventory"
+                          data={inventories}
+                          onNew={openInventory}
+                          placeholder="Select inventory"
+                          required
+                        />
+                      </div>
+                    </FormSection>
 
                     {/* Technical Details - Combined Physical & Energy */}
-                    <div className="p-6">
-                      <FormSection title="Technical Details">
-                        <div className="space-y-6">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <CustomInput
-                              name="material"
-                              label="Material"
-                              control={form.control}
-                              placeholder="Enter material"
-                            />
-                            <CustomInput
-                              name="weight"
-                              label="Weight (kg)"
-                              control={form.control}
-                              type="number"
-                              placeholder="Enter weight"
-                            />
-                          </div>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <CustomInput
-                              name="energyRating"
-                              label="Energy Rating (kW)"
-                              control={form.control}
-                              placeholder="Enter energy rating"
-                            />
-                            <CustomInput
-                              name="dailyOperatingHours"
-                              label="Operating Hours"
-                              control={form.control}
-                              type="number"
-                              placeholder="Hours per day"
-                            />
-                          </div>
+                    <FormSection title="Technical Details">
+                      <div className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <CustomInput
+                            name="material"
+                            label="Material"
+                            control={form.control}
+                            placeholder="Enter material"
+                          />
+                          <CustomInput
+                            name="weight"
+                            label="Weight (kg)"
+                            control={form.control}
+                            type="number"
+                            placeholder="Enter weight"
+                          />
                         </div>
-                      </FormSection>
-                    </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <CustomInput
+                            name="energyRating"
+                            label="Energy Rating (kW)"
+                            control={form.control}
+                            placeholder="Enter energy rating"
+                          />
+                          <CustomInput
+                            name="dailyOperatingHours"
+                            label="Operating Hours"
+                            control={form.control}
+                            type="number"
+                            placeholder="Hours per day"
+                          />
+                        </div>
+                      </div>
+                    </FormSection>
                   </CardContent>
                 </Card>
 

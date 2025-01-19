@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { ChevronDown, InfoIcon } from "lucide-react";
+import { ChevronDown, Info } from "lucide-react";
 
 // Imports from previous component
 import { useCategoryUIStore } from "@/lib/stores/useCategoryUIStore";
@@ -32,8 +32,9 @@ import CustomInput from "@/components/CustomInput";
 import CustomDatePicker from "@/components/CustomDatePicker";
 import CustomPriceInput from "@/components/CustomPriceInput";
 import { FormContainer } from "@/components/forms/FormContainer";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import ActionFooter from "@/components/forms/ActionFooter";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import FormSection from "@/components/forms/FormSection";
 
 type AccessoryFormValues = z.infer<typeof accessorySchema>;
 
@@ -143,14 +144,6 @@ const AccessoryForm = () => {
     },
   });
 
-  // Section toggle handler
-  const toggleSection = (section: keyof typeof expandedSections) => {
-    setExpandedSections((prev) => ({
-      ...prev,
-      [section]: !prev[section],
-    }));
-  };
-
   // Submit handler
   const onSubmit = async (data: AccessoryFormValues) => {
     startTransition(async () => {
@@ -177,76 +170,52 @@ const AccessoryForm = () => {
     <FormContainer form={form}>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
-          {/* Progress Indicator */}
           <div className="max-w-[1200px] mx-auto px-4 py-6">
             <div className="grid grid-cols-12 gap-6">
-              {/* Main Form Content */}
               <div className="col-span-12 lg:col-span-8 space-y-6">
-                {/* Category Selection */}
-                <CollapsibleSection
-                  title="Category"
-                  description="Select the category for your accessory"
-                  isExpanded={expandedSections.category}
-                  onToggle={() => toggleSection("category")}
-                  isComplete={!!form.watch("categoryId")}
-                >
-                  <SelectWithButton
-                    name="categoryId"
-                    label="Category"
-                    form={form}
-                    required
-                    onNew={openCategory}
-                    data={categories}
-                    placeholder="Select category"
-                    isPending={isPending}
-                  />
-                </CollapsibleSection>
+                <Card className={"bg-white"}>
+                  <CardContent className="divide-y divide-slate-100">
+                    <FormSection title="Basic Information">
+                      <SelectWithButton
+                        name="categoryId"
+                        label="Category"
+                        form={form}
+                        required
+                        onNew={openCategory}
+                        data={categories}
+                        placeholder="Select category"
+                        isPending={isPending}
+                      />
 
-                {/* Basic Information */}
-                <CollapsibleSection
-                  title="Basic Information"
-                  description="Enter fundamental details about the accessory"
-                  isExpanded={expandedSections.basicInfo}
-                  onToggle={() => toggleSection("basicInfo")}
-                  isComplete={
-                    !!form.watch("name") && !!form.watch("serialNumber")
-                  }
-                >
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <CustomInput
-                      required
-                      name="name"
-                      label="Name"
-                      control={form.control}
-                      type="text"
-                    />
-                    <CustomInput
-                      required
-                      name="serialNumber"
-                      label="Serial Number"
-                      control={form.control}
-                      type="text"
-                    />
-                    <CustomInput
-                      name="modelNumber"
-                      label="Model Number"
-                      control={form.control}
-                      type="text"
-                      className="md:col-span-2"
-                      required
-                    />
-                  </div>
-                </CollapsibleSection>
+                      {/* Basic Information */}
 
-                {/* More sections in a similar collapsible pattern */}
-                <CollapsibleSection
-                  title="Status & Location"
-                  description="Define the current status and location of the accessory"
-                  isExpanded={expandedSections.statusLocation}
-                  onToggle={() => toggleSection("statusLocation")}
-                >
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-4">
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <CustomInput
+                          required
+                          name="name"
+                          label="Name"
+                          control={form.control}
+                          type="text"
+                        />
+                        <CustomInput
+                          required
+                          name="serialNumber"
+                          label="Serial Number"
+                          control={form.control}
+                          type="text"
+                        />
+                      </div>
+                      <CustomInput
+                        name="modelNumber"
+                        label="Model Number"
+                        control={form.control}
+                        type="text"
+                        className="md:col-span-2"
+                        required
+                      />
+                    </FormSection>
+
+                    <FormSection title="Status & Location">
                       <SelectWithButton
                         name="statusLabelId"
                         label="Status"
@@ -277,71 +246,61 @@ const AccessoryForm = () => {
                         placeholder="Select location"
                         isPending={isPending}
                       />
-                    </div>
-                    <div>
-                      <CustomInput
-                        name="material"
-                        label="Material"
-                        control={form.control}
-                      />
-                      <CustomInput
-                        name="weight"
-                        label="Weight (kg)"
-                        control={form.control}
-                        type="number"
-                        required
-                      />
-                    </div>
-                  </div>
-                </CollapsibleSection>
+                      {/*<div className="grid gap-4 md:grid-cols-2">*/}
+                      {/*  <CustomInput*/}
+                      {/*    required*/}
+                      {/*    name="material"*/}
+                      {/*    label="Material"*/}
+                      {/*    control={form.control}*/}
+                      {/*  />*/}
+                      {/*  <CustomInput*/}
+                      {/*    name="weight"*/}
+                      {/*    label="Weight (kg)"*/}
+                      {/*    control={form.control}*/}
+                      {/*    type="number"*/}
+                      {/*    required*/}
+                      {/*  />*/}
+                      {/*</div>*/}
+                    </FormSection>
 
-                {/* Purchase Information */}
-                <CollapsibleSection
-                  title="Purchase Information"
-                  description="Details about the accessory's purchase"
-                  isExpanded={expandedSections.purchaseInfo}
-                  onToggle={() => toggleSection("purchaseInfo")}
-                >
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <CustomInput
-                      name="poNumber"
-                      label="PO Number"
-                      control={form.control}
-                    />
-                    <CustomPriceInput
-                      name="price"
-                      label="Unit Price"
-                      control={form.control}
-                      required
-                    />
-                    <CustomDatePicker
-                      name="purchaseDate"
-                      form={form}
-                      label="Purchase Date"
-                    />
-                    <CustomDatePicker
-                      name="endOfLife"
-                      form={form}
-                      label="End of Life"
-                    />
-                    <div className="md:col-span-2">
-                      {/*<SelectWithButton*/}
-                      {/*    name="supplierId"*/}
-                      {/*    label="Supplier"*/}
-                      {/*    form={form}*/}
-                      {/*    on*/}
-                    </div>
-                  </div>
-                </CollapsibleSection>
+                    {/* Purchase Information */}
 
-                <CollapsibleSection
-                  title="Inventory Management"
-                  description="Track and manage inventory details"
-                  isExpanded={expandedSections.inventoryManagement}
-                  onToggle={() => toggleSection("inventoryManagement")}
-                >
-                  <div className="grid gap-6 md:grid-cols-2">
-                    <div className="space-y-4">
+                    <FormSection title={"Purchase Information"}>
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <CustomInput
+                          name="poNumber"
+                          label="PO Number"
+                          control={form.control}
+                        />
+                        <CustomPriceInput
+                          name="price"
+                          label="Unit Price"
+                          control={form.control}
+                          required
+                        />
+                        <CustomDatePicker
+                          name="purchaseDate"
+                          form={form}
+                          label="Purchase Date"
+                        />
+                        <CustomDatePicker
+                          name="endOfLife"
+                          form={form}
+                          label="End of Life"
+                        />
+                      </div>
+                      <SelectWithButton
+                        name="supplierId"
+                        label="Supplier"
+                        form={form}
+                        data={suppliers}
+                        onNew={openSupplier}
+                        placeholder={""}
+                        isPending={isPending}
+                      />
+                    </FormSection>
+
+                    <FormSection title={"Inventory Information"}>
                       <SelectWithButton
                         name="inventoryId"
                         label="Inventory"
@@ -352,53 +311,50 @@ const AccessoryForm = () => {
                         placeholder="Select inventory"
                         isPending={isPending}
                       />
-                      <CustomInput
-                        name="totalQuantityCount"
-                        label="Total Quantity"
-                        control={form.control}
-                        type="number"
-                        required
-                      />
-                      <CustomInput
-                        name="reorderPoint"
-                        label="Reorder Point"
-                        control={form.control}
-                        type="number"
-                        required
-                      />
-                      <CustomInput
-                        name="alertEmail"
-                        label="Alert Email"
-                        control={form.control}
-                        type="email"
-                        required
-                      />
-                    </div>
-                    <Alert className="h-fit">
-                      <InfoIcon className="h-4 w-4" />
-                      <AlertTitle>Inventory Alert Settings</AlertTitle>
-                      <AlertDescription>
-                        System will notify when inventory reaches minimum
-                        quantity or reorder point.
-                      </AlertDescription>
-                    </Alert>
-                  </div>
-                </CollapsibleSection>
 
-                {/* Notes */}
-                <CollapsibleSection
-                  title="Additional Information"
-                  description="Add any extra notes or comments"
-                  isExpanded={expandedSections.notes}
-                  onToggle={() => toggleSection("notes")}
-                >
-                  <CustomInput
-                    name="notes"
-                    control={form.control}
-                    type="textarea"
-                    placeholder="Add any additional notes..."
-                  />
-                </CollapsibleSection>
+                      {/* Quantity and Email Grid */}
+                      <div className="grid gap-6 md:grid-cols-2">
+                        <div className="space-y-6">
+                          <CustomInput
+                            name="totalQuantity"
+                            label="Total Quantity"
+                            control={form.control}
+                            type="number"
+                            required
+                          />
+
+                          <CustomInput
+                            name="alertEmail"
+                            label="Alert Email"
+                            control={form.control}
+                            type="email"
+                            required
+                          />
+                        </div>
+
+                        <div className="space-y-6">
+                          <CustomInput
+                            name="reoderPoint"
+                            label="Reorder Point"
+                            control={form.control}
+                            type="number"
+                            required
+                          />
+                          <Alert className="bg-blue-50 border-blue-200">
+                            <Info className="text-blue-500" />
+                            <AlertTitle className="text-blue-800 font-medium">
+                              Inventory Alert Settings
+                            </AlertTitle>
+                            <AlertDescription className="text-blue-600 mt-1">
+                              System will notify when inventory reaches minimum
+                              quantity or reorder point.
+                            </AlertDescription>
+                          </Alert>
+                        </div>
+                      </div>
+                    </FormSection>
+                  </CardContent>
+                </Card>
               </div>
 
               {/* Right Sidebar - Form Progress */}
