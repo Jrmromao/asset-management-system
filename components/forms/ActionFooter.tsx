@@ -10,7 +10,7 @@ interface ActionFooterProps {
 
 const ActionFooter = ({ form, isPending, router }: ActionFooterProps) => {
   return (
-    <div className="bottom-0 right-0 bg-white border-t border-b shadow">
+    <div className="sticky bottom-0 right-0 bg-white border-t border-b shadow">
       <div className="max-w-[1000px] mx-auto px-4 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center">

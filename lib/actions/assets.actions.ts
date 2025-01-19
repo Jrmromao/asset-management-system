@@ -419,11 +419,12 @@ export async function insert(
   }
 
   try {
-    const validation = assetSchema.safeParse(values);
+    const validation = await assetSchema.safeParseAsync(values);
 
     if (!validation.success) {
-      console.error("Validation errors:", validation.error.errors);
-      return { error: validation.error.errors[0].message };
+      return {
+        error: validation.error.errors[0].message,
+      };
     }
 
     const calculator = new CO2Calculator({

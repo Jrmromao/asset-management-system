@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+const baseUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
+
 const requiredString = (message: string) =>
   z.string({ required_error: message });
 const nameField = (name: string) => ({
@@ -50,97 +52,6 @@ const passwordSchema = z
     },
   );
 
-// export const registerSchema = z.object({
-//     email: emailField('user'),
-//     password: passwordSchema,
-//     repeatPassword: z.string().min(1, "Password is required"),
-//     firstName: z.string().min(1, "First name is required"),
-//     lastName: z.string().min(1, "Last name is required"),
-//     phoneNumber: phoneNumField,
-//     companyName: z.string().min(1, "Company name is required")
-//         .refine(
-//             async (company) =>console.log('company', company),
-//             "Company name already exists"
-//         )
-// }).refine((data) => data.password === data.repeatPassword, {
-//     message: "Passwords do not match",
-//     path: ["repeatPassword"],
-// });
-
-// export const registerSchema = z
-//   .object({
-//     email: z
-//       .string()
-//       .min(1, "Email is required")
-//       .email("Invalid email format")
-//       .refine(async (email) => {
-//         try {
-//           const response = await fetch(
-//             "http://localhost:3000/api/validate/email",
-//             {
-//               method: "POST",
-//               headers: {
-//                 "Content-Type": "application/json",
-//               },
-//               body: JSON.stringify({ email }),
-//             },
-//           );
-//
-//           if (!response.ok) {
-//             throw new Error("Validation request failed");
-//           }
-//
-//           const data = await response.json();
-//           // Return true if email doesn't exist (available for registration)
-//           return !data.exists;
-//         } catch (error) {
-//           console.error("Email validation error:", error);
-//           throw new Error("Email validation failed");
-//         }
-//       }, "Email already exists"),
-//     password: passwordSchema,
-//     repeatPassword: z.string().min(1, "Password is required"),
-//     firstName: z.string().min(1, "First name is required"),
-//     lastName: z.string().min(1, "Last name is required"),
-//     phoneNumber: phoneNumField,
-//     recaptchaToken: z
-//       .string()
-//       .min(1, "Please complete the captcha verification"),
-//
-//     companyName: z
-//       .string()
-//       .min(1, "Company name is required")
-//       .refine(async (company) => {
-//         try {
-//           const response = await fetch(
-//             "http://localhost:3000/api/validate/company",
-//             {
-//               method: "POST",
-//               headers: {
-//                 "Content-Type": "application/json",
-//               },
-//               body: JSON.stringify({ company }),
-//             },
-//           );
-//
-//           if (!response.ok) {
-//             throw new Error("Validation request failed");
-//           }
-//
-//           const data = await response.json();
-//           // Return true if company doesn't exist (available for registration)
-//           return !data.exists;
-//         } catch (error) {
-//           console.error("Company validation error:", error);
-//           throw new Error("Company validation failed");
-//         }
-//       }, "Company name already exists"),
-//   })
-//   .refine((data) => data.password === data.repeatPassword, {
-//     message: "Passwords do not match",
-//     path: ["repeatPassword"],
-//   });
-
 export const registerSchema = z
   .object({
     email: z
@@ -149,16 +60,13 @@ export const registerSchema = z
       .email("Invalid email format")
       .refine(async (email) => {
         try {
-          const response = await fetch(
-            `${process.env.NEXT_PUBLIC_SITE_URL}/api/validate/email`,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({ email }),
+          const response = await fetch(`${baseUrl}/api/validate/email`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
             },
-          );
+            body: JSON.stringify({ email }),
+          });
 
           if (!response.ok) {
             throw new Error("Validation request failed");
@@ -184,16 +92,13 @@ export const registerSchema = z
       .min(1, "Company name is required")
       .refine(async (company) => {
         try {
-          const response = await fetch(
-            `${process.env.NEXT_PUBLIC_SITE_URL}/api/validate/company`,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({ company }),
+          const response = await fetch(`${baseUrl}/api/validate/company`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
             },
-          );
+            body: JSON.stringify({ company }),
+          });
 
           if (!response.ok) {
             throw new Error("Validation request failed");
@@ -211,48 +116,6 @@ export const registerSchema = z
     message: "Passwords do not match",
     path: ["repeatPassword"],
   });
-// export const licenseSchema = z
-//   .object({
-//     licenseName: z.string().min(1, "License name is required"),
-//     seats: z.string().refine((val) => !Number.isNaN(parseInt(val, 10)), {
-//       message: "License copies count is required",
-//     }),
-//     minSeatsAlert: z
-//       .string()
-//       .refine((val) => !Number.isNaN(parseInt(val, 10)), {
-//         message: "Min. copies alert is required",
-//       }),
-//     licensedEmail: z.string().email("Valid email is required"),
-//     purchaseDate: z.date(),
-//     renewalDate: z.date(),
-//     statusLabelId: z.string().min(1, "Status is required"),
-//     alertRenewalDays: z
-//       .string()
-//       .refine((val) => !Number.isNaN(parseInt(val, 10)), {
-//         message: "Alert renewal days is required",
-//       }),
-//     purchasePrice: z
-//       .string()
-//       .refine((val) => !Number.isNaN(parseInt(val, 10)), {
-//         message: "Purchase price is required",
-//       }),
-//     poNumber: z.string().min(1, "PO number is required"),
-//     notes: z.string().optional(),
-//     departmentId: z.string().min(1, "Department is required"),
-//     inventoryId: z.string().min(1, "Inventory is required"),
-//     locationId: z.string().min(1, "Location is required"),
-//     supplierId: z.string().min(1, "Supplier is required"),
-//     attachments: z.array(z.any()).optional(),
-//   })
-//   .refine((data) => data.seats < data.minSeatsAlert, {
-//     message:
-//       "Min. Copies must be greater than or equal to license copies count",
-//     path: ["minCopiesAlert"],
-//   })
-//   .refine((data) => data.purchaseDate <= data.renewalDate, {
-//     message: "Renewal date must in the future",
-//     path: ["renewalDate"],
-//   });
 
 export const licenseSchema = z
   .object({
@@ -420,20 +283,17 @@ export const assignmentSchema = z
   .refine(
     async (data) => {
       try {
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_SITE_URL}/api/validate/assignment`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              userId: data.userId,
-              itemId: data.itemId,
-              type: data.type,
-            }),
+        const response = await fetch(`${baseUrl}/api/validate/assignment`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
           },
-        );
+          body: JSON.stringify({
+            userId: data.userId,
+            itemId: data.itemId,
+            type: data.type,
+          }),
+        });
 
         if (!response.ok) {
           throw new Error("Validation request failed");
@@ -498,54 +358,63 @@ export const supplierSchema = z.object({
 export const userSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
-  // email: z.string().min(1, "Email is required").email("Valid email is required"),
   email: z
     .string()
     .min(1, "Email is required")
     .email("Invalid email format")
     .refine(async (email) => {
       try {
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_SITE_URL}/api/validate/email`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ email }),
+        const response = await fetch(`${baseUrl}/api/validate/email`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
           },
-        );
+          body: JSON.stringify({ email }),
+          credentials: "same-origin",
+          cache: "no-store",
+        });
 
         if (!response.ok) {
-          throw new Error("Validation request failed");
+          return false;
         }
 
         const data = await response.json();
-        // Return true if email doesn't exist (available for registration)
         return !data.exists;
       } catch (error) {
         console.error("Email validation error:", error);
-        throw new Error("Email validation failed");
+        return false;
       }
     }, "Email already exists"),
-  // phoneNum: z.string().min(1, "Phone number is required"),
   title: z.string().min(1, "Title is required"),
   employeeId: z
     .string()
     .min(1, "Employee ID is required")
     .refine(async (employeeId) => {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_SITE_URL}/api/validate/employeeId`,
-        {
+      try {
+        const response = await fetch(`${baseUrl}/api/validate/employeeId`, {
           method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
           body: JSON.stringify({ employeeId }),
-        },
-      );
-      const exists = await res.json();
-      return !exists;
+          credentials: "same-origin",
+          cache: "no-store",
+        });
+
+        if (!response.ok) {
+          return false;
+        }
+
+        const data = await response.json();
+        return !data.exists;
+      } catch (error) {
+        console.error("EmployeeId validation error:", error);
+        return false;
+      }
     }, "Employee ID already exists"),
   roleId: z.string().min(1, "Role is required"),
 });
+
 const customFieldSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -586,7 +455,32 @@ export const assetSchema = z.object({
     }),
     z.number().optional(),
   ]),
-  poNumber: z.string().min(1, "PO Number is required").optional(),
+  poNumber: z
+    .string()
+    .min(1, "PO Number is required")
+    .refine(async (email) => {
+      try {
+        const response = await fetch(`${baseUrl}/api/validate/poNumber`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email }),
+          credentials: "same-origin",
+          cache: "no-store",
+        });
+
+        if (!response.ok) {
+          return false;
+        }
+
+        const data = await response.json();
+        return !data.exists;
+      } catch (error) {
+        console.error("Email validation error:", error);
+        return false;
+      }
+    }, "PO Number already exists"),
   material: z.string().optional(),
   formTemplateId: z.string().optional(),
   templateValues: z.record(z.any()).optional(),

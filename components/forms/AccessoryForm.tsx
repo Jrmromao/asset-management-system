@@ -25,7 +25,7 @@ import { useInventoryQuery } from "@/hooks/queries/useInventoryQuery";
 import { useAccessoryQuery } from "@/hooks/queries/useAccessoryQuery";
 
 // UI Components
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Form } from "@/components/ui/form";
 import { SelectWithButton } from "@/components/SelectWithButton";
 import CustomInput from "@/components/CustomInput";
@@ -35,6 +35,9 @@ import { FormContainer } from "@/components/forms/FormContainer";
 import ActionFooter from "@/components/forms/ActionFooter";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import FormSection from "@/components/forms/FormSection";
+import MainFormSkeleton from "@/components/forms/MainFormSkeleton";
+import FormProgressSkeleton from "@/components/forms/FormProgressSkeleton";
+import { FormProgress } from "@/components/forms/FormProgress";
 
 type AccessoryFormValues = z.infer<typeof accessorySchema>;
 
@@ -172,268 +175,227 @@ const AccessoryForm = () => {
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <div className="max-w-[1200px] mx-auto px-4 py-6">
             <div className="grid grid-cols-12 gap-6">
-              <div className="col-span-12 lg:col-span-8 space-y-6">
-                <Card className={"bg-white"}>
-                  <CardContent className="divide-y divide-slate-100">
-                    <FormSection title="Basic Information">
-                      <SelectWithButton
-                        name="categoryId"
-                        label="Category"
-                        form={form}
-                        required
-                        onNew={openCategory}
-                        data={categories}
-                        placeholder="Select category"
-                        isPending={isPending}
-                      />
-
-                      {/* Basic Information */}
-
-                      <div className="grid gap-4 md:grid-cols-2">
-                        <CustomInput
-                          required
-                          name="name"
-                          label="Name"
-                          control={form.control}
-                          type="text"
-                        />
-                        <CustomInput
-                          required
-                          name="serialNumber"
-                          label="Serial Number"
-                          control={form.control}
-                          type="text"
-                        />
-                      </div>
-                      <CustomInput
-                        name="modelNumber"
-                        label="Model Number"
-                        control={form.control}
-                        type="text"
-                        className="md:col-span-2"
-                        required
-                      />
-                    </FormSection>
-
-                    <FormSection title="Status & Location">
-                      <SelectWithButton
-                        name="statusLabelId"
-                        label="Status"
-                        form={form}
-                        required
-                        onNew={openStatus}
-                        data={statusLabels}
-                        placeholder="Select status"
-                        isPending={isPending}
-                      />
-                      <SelectWithButton
-                        name="departmentId"
-                        label="Department"
-                        form={form}
-                        required
-                        onNew={openDepartment}
-                        data={departments}
-                        placeholder="Select department"
-                        isPending={isPending}
-                      />
-                      <SelectWithButton
-                        name="locationId"
-                        label="Location"
-                        form={form}
-                        required
-                        onNew={openLocation}
-                        data={locations}
-                        placeholder="Select location"
-                        isPending={isPending}
-                      />
-                      {/*<div className="grid gap-4 md:grid-cols-2">*/}
-                      {/*  <CustomInput*/}
-                      {/*    required*/}
-                      {/*    name="material"*/}
-                      {/*    label="Material"*/}
-                      {/*    control={form.control}*/}
-                      {/*  />*/}
-                      {/*  <CustomInput*/}
-                      {/*    name="weight"*/}
-                      {/*    label="Weight (kg)"*/}
-                      {/*    control={form.control}*/}
-                      {/*    type="number"*/}
-                      {/*    required*/}
-                      {/*  />*/}
-                      {/*</div>*/}
-                    </FormSection>
-
-                    {/* Purchase Information */}
-
-                    <FormSection title={"Purchase Information"}>
-                      <div className="grid gap-4 md:grid-cols-2">
-                        <CustomInput
-                          name="poNumber"
-                          label="PO Number"
-                          control={form.control}
-                        />
-                        <CustomPriceInput
-                          name="price"
-                          label="Unit Price"
-                          control={form.control}
-                          required
-                        />
-                        <CustomDatePicker
-                          name="purchaseDate"
+              {isPending ? (
+                <MainFormSkeleton />
+              ) : (
+                <div className="col-span-12 lg:col-span-8 space-y-6">
+                  <Card className={"bg-white"}>
+                    <CardContent className="divide-y divide-slate-100">
+                      <FormSection title="Basic Information">
+                        <SelectWithButton
+                          name="categoryId"
+                          label="Category"
                           form={form}
-                          label="Purchase Date"
+                          required
+                          onNew={openCategory}
+                          data={categories}
+                          placeholder="Select category"
+                          isPending={isPending}
                         />
-                        <CustomDatePicker
-                          name="endOfLife"
-                          form={form}
-                          label="End of Life"
-                        />
-                      </div>
-                      <SelectWithButton
-                        name="supplierId"
-                        label="Supplier"
-                        form={form}
-                        data={suppliers}
-                        onNew={openSupplier}
-                        placeholder={""}
-                        isPending={isPending}
-                      />
-                    </FormSection>
 
-                    <FormSection title={"Inventory Information"}>
-                      <SelectWithButton
-                        name="inventoryId"
-                        label="Inventory"
-                        form={form}
-                        required
-                        onNew={openInventory}
-                        data={inventories}
-                        placeholder="Select inventory"
-                        isPending={isPending}
-                      />
+                        {/* Basic Information */}
 
-                      {/* Quantity and Email Grid */}
-                      <div className="grid gap-6 md:grid-cols-2">
-                        <div className="space-y-6">
+                        <div className="grid gap-4 md:grid-cols-2">
                           <CustomInput
-                            name="totalQuantity"
-                            label="Total Quantity"
-                            control={form.control}
-                            type="number"
                             required
+                            name="name"
+                            label="Name"
+                            control={form.control}
+                            type="text"
                           />
-
                           <CustomInput
-                            name="alertEmail"
-                            label="Alert Email"
-                            control={form.control}
-                            type="email"
                             required
+                            name="serialNumber"
+                            label="Serial Number"
+                            control={form.control}
+                            type="text"
                           />
                         </div>
+                        <CustomInput
+                          name="modelNumber"
+                          label="Model Number"
+                          control={form.control}
+                          type="text"
+                          className="md:col-span-2"
+                          required
+                        />
+                      </FormSection>
 
-                        <div className="space-y-6">
+                      <FormSection title="Status & Location">
+                        <SelectWithButton
+                          name="statusLabelId"
+                          label="Status"
+                          form={form}
+                          required
+                          onNew={openStatus}
+                          data={statusLabels}
+                          placeholder="Select status"
+                          isPending={isPending}
+                        />
+                        <SelectWithButton
+                          name="departmentId"
+                          label="Department"
+                          form={form}
+                          required
+                          onNew={openDepartment}
+                          data={departments}
+                          placeholder="Select department"
+                          isPending={isPending}
+                        />
+                        <SelectWithButton
+                          name="locationId"
+                          label="Location"
+                          form={form}
+                          required
+                          onNew={openLocation}
+                          data={locations}
+                          placeholder="Select location"
+                          isPending={isPending}
+                        />
+                        {/*<div className="grid gap-4 md:grid-cols-2">*/}
+                        {/*  <CustomInput*/}
+                        {/*    required*/}
+                        {/*    name="material"*/}
+                        {/*    label="Material"*/}
+                        {/*    control={form.control}*/}
+                        {/*  />*/}
+                        {/*  <CustomInput*/}
+                        {/*    name="weight"*/}
+                        {/*    label="Weight (kg)"*/}
+                        {/*    control={form.control}*/}
+                        {/*    type="number"*/}
+                        {/*    required*/}
+                        {/*  />*/}
+                        {/*</div>*/}
+                      </FormSection>
+
+                      {/* Purchase Information */}
+
+                      <FormSection title={"Purchase Information"}>
+                        <div className="grid gap-4 md:grid-cols-2">
                           <CustomInput
-                            name="reoderPoint"
-                            label="Reorder Point"
+                            name="poNumber"
+                            label="PO Number"
                             control={form.control}
-                            type="number"
+                          />
+                          <CustomPriceInput
+                            name="price"
+                            label="Unit Price"
+                            control={form.control}
                             required
                           />
-                          <Alert className="bg-blue-50 border-blue-200">
-                            <Info className="text-blue-500" />
-                            <AlertTitle className="text-blue-800 font-medium">
-                              Inventory Alert Settings
-                            </AlertTitle>
-                            <AlertDescription className="text-blue-600 mt-1">
-                              System will notify when inventory reaches minimum
-                              quantity or reorder point.
-                            </AlertDescription>
-                          </Alert>
+                          <CustomDatePicker
+                            name="purchaseDate"
+                            form={form}
+                            label="Purchase Date"
+                          />
+                          <CustomDatePicker
+                            name="endOfLife"
+                            form={form}
+                            label="End of Life"
+                          />
                         </div>
-                      </div>
-                    </FormSection>
-                  </CardContent>
-                </Card>
-              </div>
+                        <SelectWithButton
+                          name="supplierId"
+                          label="Supplier"
+                          form={form}
+                          data={suppliers}
+                          onNew={openSupplier}
+                          placeholder={""}
+                          isPending={isPending}
+                        />
+                      </FormSection>
 
-              {/* Right Sidebar - Form Progress */}
-              <div className="col-span-12 lg:col-span-4 space-y-6">
-                <div className="sticky top-[104px]">
-                  <Card className="bg-white">
-                    <CardHeader className="border-b">
-                      <CardTitle className="text-base font-medium">
-                        Form Progress
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-4">
-                      <div className="space-y-3">
-                        {[
-                          {
-                            name: "Category",
-                            isValid: !!form.watch("categoryId"),
-                          },
-                          {
-                            name: "Basic Information",
-                            isValid:
-                              !!form.watch("name") &&
-                              !!form.watch("serialNumber"),
-                          },
-                          {
-                            name: "Status & Location",
-                            isValid:
-                              !!form.watch("statusLabelId") &&
-                              !!form.watch("locationId"),
-                          },
-                          {
-                            name: "Purchase Information",
-                            isValid: !!form.watch("price"),
-                          },
-                          {
-                            name: "Inventory Management",
-                            isValid: !!form.watch("inventoryId"),
-                          },
-                        ].map((section) => (
-                          <div
-                            key={section.name}
-                            className="flex items-center justify-between py-2 px-3 rounded hover:bg-slate-50"
-                          >
-                            <div className="flex items-center gap-3">
-                              <div
-                                className={`w-1.5 h-1.5 rounded-full ${
-                                  section.isValid
-                                    ? "bg-green-500"
-                                    : "bg-slate-200"
-                                }`}
-                              />
-                              <span className="text-sm text-slate-600">
-                                {section.name}
-                              </span>
-                            </div>
-                            {section.isValid && (
-                              <div className="h-5 w-5 rounded-full bg-green-50 flex items-center justify-center">
-                                <svg
-                                  className="h-3 w-3 text-green-500"
-                                  fill="none"
-                                  viewBox="0 0 24 24"
-                                  stroke="currentColor"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M5 13l4 4L19 7"
-                                  />
-                                </svg>
-                              </div>
-                            )}
+                      <FormSection title={"Inventory Information"}>
+                        <SelectWithButton
+                          name="inventoryId"
+                          label="Inventory"
+                          form={form}
+                          required
+                          onNew={openInventory}
+                          data={inventories}
+                          placeholder="Select inventory"
+                          isPending={isPending}
+                        />
+
+                        {/* Quantity and Email Grid */}
+                        <div className="grid gap-6 md:grid-cols-2">
+                          <div className="space-y-6">
+                            <CustomInput
+                              name="totalQuantity"
+                              label="Total Quantity"
+                              control={form.control}
+                              type="number"
+                              required
+                            />
+
+                            <CustomInput
+                              name="alertEmail"
+                              label="Alert Email"
+                              control={form.control}
+                              type="email"
+                              required
+                            />
                           </div>
-                        ))}
-                      </div>
+
+                          <div className="space-y-6">
+                            <CustomInput
+                              name="reoderPoint"
+                              label="Reorder Point"
+                              control={form.control}
+                              type="number"
+                              required
+                            />
+                            <Alert className="bg-blue-50 border-blue-200">
+                              <Info className="text-blue-500" />
+                              <AlertTitle className="text-blue-800 font-medium">
+                                Inventory Alert Settings
+                              </AlertTitle>
+                              <AlertDescription className="text-blue-600 mt-1">
+                                System will notify when inventory reaches
+                                minimum quantity or reorder point.
+                              </AlertDescription>
+                            </Alert>
+                          </div>
+                        </div>
+                      </FormSection>
                     </CardContent>
                   </Card>
                 </div>
-              </div>
+              )}
+
+              {/* Right Sidebar - Form Progress */}
+              {isPending ? (
+                <FormProgressSkeleton />
+              ) : (
+                <FormProgress
+                  sections={[
+                    {
+                      name: "Category",
+                      isValid: !!form.watch("categoryId"),
+                    },
+                    {
+                      name: "Basic Information",
+                      isValid:
+                        !!form.watch("name") && !!form.watch("serialNumber"),
+                    },
+                    {
+                      name: "Status & Location",
+                      isValid:
+                        !!form.watch("statusLabelId") &&
+                        !!form.watch("locationId"),
+                    },
+                    {
+                      name: "Purchase Information",
+                      isValid: !!form.watch("price"),
+                    },
+                    {
+                      name: "Inventory Management",
+                      isValid: !!form.watch("inventoryId"),
+                    },
+                  ]}
+                />
+              )}
             </div>
           </div>
 
