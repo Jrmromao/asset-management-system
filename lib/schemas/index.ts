@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-const baseUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
+const baseUrl = process.env.NEXT_PUBLIC_APP_URL;
 
 const requiredString = (message: string) =>
   z.string({ required_error: message });

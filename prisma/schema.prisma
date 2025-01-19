@@ -81,9 +81,33 @@ model License {
   inventory          Inventory?          @relation(fields: [inventoryId], references: [id], onDelete: SetNull)
   userItems          UserItem[]
 
-  LicenseSeat LicenseSeat[]
-  Asset       Asset[]
+  LicenseSeat     LicenseSeat[]
+  Asset           Asset[]
+  // PurchaseOrder   PurchaseOrder? @relation(fields: [purchaseOrderId], references: [id])
+  purchaseOrderId String?
 }
+
+// model PurchaseOrder {
+//   id           String   @id @default(cuid())
+//   poNumber     String   @unique
+//   companyId    String
+//   supplierId   String?
+//   purchaseDate DateTime
+//   status       String // e.g., "draft", "submitted", "approved", "received"
+//   notes        String?
+//   totalAmount  Decimal  @db.Decimal(10, 2)
+//   createdAt    DateTime @default(now())
+//   updatedAt    DateTime @updatedAt
+//
+//   // Relations
+//   company     Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+//   supplier    Supplier?   @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+//   licenses    License[]
+//   accessories Accessory[]
+//
+//   @@index([companyId])
+//   @@index([supplierId])
+// }
 
 model Accessory {
   id                 String              @id @default(cuid())
@@ -119,6 +143,8 @@ model Accessory {
   AccessoryStock     AccessoryStock[]
   Co2eRecord         Co2eRecord[]
   category           Category?           @relation(fields: [categoryId], references: [id])
+  // PurchaseOrder      PurchaseOrder?      @relation(fields: [purchaseOrderId], references: [id])
+  purchaseOrderId    String?
 
   @@index([companyId])
   @@index([categoryId])
@@ -293,6 +319,7 @@ model Company {
 
   ReportConfiguration ReportConfiguration[]
   GeneratedReport     GeneratedReport[]
+  // PurchaseOrder       PurchaseOrder[]
 }
 
 model Manufacturer {
@@ -411,6 +438,7 @@ model Supplier {
   company     Company     @relation(fields: [companyId], references: [id])
   companyId   String
   License     License[]
+  // PurchaseOrder PurchaseOrder[]
 
   @@unique([email, companyId]) // Updated to make email unique per company
 }
