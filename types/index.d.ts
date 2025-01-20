@@ -102,7 +102,6 @@ declare global {
     serialNumber: string;
     companyId: string;
     supplierId: string;
-    weight?: number;
     price: number;
     energyRating?: string;
     dailyOperationHours?: number;

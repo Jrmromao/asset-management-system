@@ -447,7 +447,7 @@ model Asset {
   id                  String    @id @default(cuid())
   name                String
   serialNumber        String    @unique
-  material            String
+  material            String?
   endOfLife           DateTime?
   datePurchased       DateTime?
   assigneeId          String?
@@ -458,7 +458,7 @@ model Asset {
   supplierId          String?
   departmentId        String?
   modelId             String?
-  energyRating        String
+  energyRating        String?
   dailyOperatingHours Int?
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
