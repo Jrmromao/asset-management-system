@@ -11,7 +11,11 @@ import CustomInput from "@/components/CustomInput";
 import { SelectWithButton } from "@/components/SelectWithButton";
 
 // Schema and types
-import { assetSchema } from "@/lib/schemas";
+import {
+  assetSchema,
+  getRequiredFieldCount,
+  getRequiredFieldsList,
+} from "@/lib/schemas";
 import type { z } from "zod";
 import type { CustomField } from "@/types/form";
 
@@ -100,21 +104,21 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
   const form = useForm<AssetFormValues>({
     resolver: zodResolver(assetSchema),
     defaultValues: {
-      name: "",
-      serialNumber: "",
-      modelId: "",
-      price: 0,
+      // name: "",
+      // serialNumber: "",
+      // modelId: "",
+      // price: 0,
       statusLabelId: "",
       departmentId: "",
       inventoryId: "",
       locationId: "",
-      supplierId: "",
-      poNumber: "",
-      weight: 0,
-      material: "",
-      energyRating: "",
-      licenseId: "",
-      dailyOperatingHours: "",
+      // supplierId: "",
+      // poNumber: "",
+      // weight: 0,
+      // material: "",
+      // energyRating: "",
+      // licenseId: "",
+      // dailyOperatingHours: "",
       formTemplateId: "",
       templateValues: {},
     },
@@ -150,6 +154,7 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
     form.setValue("templateValues", emptyValues);
     setSpecialFieldsValid(false); // Add this line
   };
+
   const renderCustomFields = () => {
     if (!selectedTemplate?.fields?.length) return null;
 
@@ -159,13 +164,6 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
           <span className="px-2 py-1 text-xs bg-blue-50 text-blue-600 rounded-full border border-blue-100">
             Additional fields specific to this category
           </span>
-          <span
-            className={`text-xs px-2 py-1 rounded-full ${
-              specialFieldsValid
-                ? "bg-green-50 text-green-600 border border-green-100"
-                : "bg-red-50 text-red-600 border border-red-100"
-            }`}
-          ></span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -213,9 +211,7 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
                     className={`absolute -top-1 right-0 text-xs ${
                       isFieldValid ? "text-green-600" : "text-red-600"
                     }`}
-                  >
-                    {isFieldValid ? "✓" : "×"}
-                  </span>
+                  ></span>
                 )}
               </div>
             );
@@ -231,9 +227,9 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
         await createAsset(
           {
             ...data,
-            purchaseDate: data.purchaseDate,
-            endOfLife: data.endOfLife,
-            weight: data.weight,
+            // purchaseDate: data.purchaseDate,
+            // endOfLife: data.endOfLife,
+            // weight: data.weight,
             ...(data.formTemplateId
               ? {
                   formTemplateId: data.formTemplateId,
@@ -341,7 +337,11 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
   }, [formValues, selectedTemplate, specialFieldsValid]);
 
   return (
-    <FormContainer form={form}>
+    <FormContainer
+      form={form}
+      requiredFields={getRequiredFieldsList(assetSchema)}
+      requiredFieldsCount={getRequiredFieldCount(assetSchema)}
+    >
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <div className="max-w-[1200px] mx-auto px-4 py-6">

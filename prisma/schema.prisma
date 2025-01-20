@@ -448,7 +448,7 @@ model Asset {
   name                String
   serialNumber        String    @unique
   material            String
-  endOfLife           DateTime
+  endOfLife           DateTime?
   datePurchased       DateTime?
   assigneeId          String?
   statusLabelId       String?

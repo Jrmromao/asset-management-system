@@ -2,6 +2,40 @@ import { z } from "zod";
 
 const baseUrl = process.env.NEXT_PUBLIC_APP_URL;
 
+const isRequiredField = (field: unknown): field is z.ZodTypeAny => {
+  if (!(field instanceof z.ZodType)) return false;
+
+  // Check if it's explicitly optional
+  if (field instanceof z.ZodOptional) return false;
+
+  // Check if it's a string with min validation
+  if (field instanceof z.ZodString) {
+    const checks = field._def.checks || [];
+    return checks.some((check) => check.kind === "min" && check.value > 0);
+  }
+
+  // Handle other required types
+  return true;
+};
+
+export const getRequiredFieldCount = (
+  schema: z.ZodObject<any, any>,
+): number => {
+  const shape = schema._def.shape();
+  return Object.values(shape).filter((field): field is z.ZodTypeAny =>
+    isRequiredField(field),
+  ).length;
+};
+
+export const getRequiredFieldsList = (
+  schema: z.ZodObject<any, any>,
+): string[] => {
+  const shape = schema._def.shape();
+  return Object.entries(shape)
+    .filter(([_, field]) => isRequiredField(field))
+    .map(([key]) => key);
+};
+
 const requiredString = (message: string) =>
   z.string({ required_error: message });
 const nameField = (name: string) => ({
@@ -425,75 +459,15 @@ const customFieldSchema = z.object({
 
 export const assetSchema = z.object({
   name: z.string().min(1, "Asset name is required"),
-  purchaseDate: z.date({
-    message: "Purchase Date is required.",
-  }),
   serialNumber: z.string().min(1, "Serial number is required"),
-  modelId: z.string().min(1, "Model is required").optional(),
-  statusLabelId: z.string().min(1, "Status is required").optional(),
-  departmentId: z.string().min(1, "Department is required").optional(),
-  inventoryId: z.string().min(1, "Inventory is required").optional(),
-  locationId: z.string().min(1, "Location is required").optional(),
-  supplierId: z.string().min(1, "Supplier is required").optional(),
-  price: z.union([
-    z
-      .string()
-      .min(1, "Price is required")
-      .transform((val) => {
-        const parsed = parseFloat(val);
-        if (isNaN(parsed)) throw new Error("Invalid price");
-        return parsed;
-      }),
-    z.number(),
-  ]),
-  weight: z.union([
-    z.string().transform((val) => {
-      if (!val) return undefined;
-      const parsed = parseFloat(val);
-      if (isNaN(parsed)) throw new Error("Invalid weight");
-      return parsed;
-    }),
-    z.number().optional(),
-  ]),
-  poNumber: z
-    .string()
-    .min(1, "PO Number is required")
-    .refine(async (email) => {
-      try {
-        const response = await fetch(`${baseUrl}/api/validate/poNumber`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ email }),
-          credentials: "same-origin",
-          cache: "no-store",
-        });
-
-        if (!response.ok) {
-          return false;
-        }
-
-        const data = await response.json();
-        return !data.exists;
-      } catch (error) {
-        console.error("Email validation error:", error);
-        return false;
-      }
-    }, "PO Number already exists"),
-  material: z.string().optional(),
-  formTemplateId: z.string().optional(),
+  modelId: z.string().min(1, "Model is required"),
+  statusLabelId: z.string().min(1, "Status is required"),
+  departmentId: z.string().min(1, "Department is required"),
+  inventoryId: z.string().min(1, "Inventory is required"),
+  locationId: z.string().min(1, "Location is required"),
+  formTemplateId: z.string(),
   templateValues: z.record(z.any()).optional(),
-  energyRating: z.string().optional(),
-  licenseId: z.string().optional(),
-  dailyOperatingHours: z
-    .string()
-    .refine((val) => !Number.isNaN(parseInt(val, 10)), {
-      // message: "Daily operating hours must be a number",
-    })
-    .optional(),
   customFields: z.array(customFieldSchema).optional(),
-  endOfLife: dateField("End of Life"),
 });
 
 export const createTemplateSchema = z.object({

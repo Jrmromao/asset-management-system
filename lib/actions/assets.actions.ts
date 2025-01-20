@@ -482,7 +482,7 @@ export async function insert(
       console.log(`Successfully calculated CO2 score: ${co2Score}`);
     } catch (error) {
       console.error("Failed to calculate CO2 score after retries:", error);
-      // Continue with asset creation even if CO2 calculation fails
+      // Continue with asset creation {}|:"?Pprisma migrate dev --namebn|:"?{even if CO2 calculation fails
     }
 
     // Use a transaction to ensure both asset creation and audit log are atomic
@@ -491,23 +491,13 @@ export async function insert(
         data: {
           name: values.name,
           serialNumber: values.serialNumber,
-          material: values.material || "",
           modelId: values.modelId,
-          endOfLife: values.endOfLife!,
           statusLabelId: values.statusLabelId,
-          supplierId: values.supplierId,
           companyId: session.user.companyId,
           locationId: values.locationId,
           departmentId: values.departmentId,
-          weight: values.weight || 90,
-          price: values.price,
-          poNumber: values.poNumber,
-          datePurchased: values.purchaseDate || new Date(),
           inventoryId: values.inventoryId,
-          energyRating: values.energyRating || "",
-          dailyOperatingHours: Number(values.dailyOperatingHours),
           formTemplateId: values.formTemplateId || null,
-          // co2Score, // Include the calculated CO2 score
         },
         include: assetIncludes,
       });

@@ -1,9 +1,34 @@
 import React from "react";
+import { useWatch } from "react-hook-form";
 
-export const ProgressIndicator = ({ form }: { form: any }) => {
-  const totalFields = Object.keys(form.getValues()).length;
-  const completedFields = Object.keys(form.formState.dirtyFields).length;
-  const percentage = Math.round((completedFields / totalFields) * 100);
+export const ProgressIndicator = ({
+  form,
+  requiredFieldsCount,
+  requiredFields, // Add this prop to know which fields are required
+}: {
+  form: any;
+  requiredFieldsCount: number;
+  requiredFields: string[]; // Array of required field names
+}) => {
+  const formValues = useWatch({ control: form.control });
+
+  const completedFields = React.useMemo(() => {
+    // Only count fields that are in the requiredFields array
+    return requiredFields.filter((fieldName) => {
+      const value = formValues?.[fieldName];
+
+      if (Array.isArray(value)) return value.length > 0;
+      if (typeof value === "object" && value !== null) {
+        return Object.keys(value).length > 0;
+      }
+      return value !== undefined && value !== null && value !== "";
+    }).length;
+  }, [formValues, requiredFields]);
+
+  const percentage = React.useMemo(() => {
+    if (!requiredFieldsCount || requiredFieldsCount === 0) return 0;
+    return Math.round((completedFields / requiredFieldsCount) * 100) || 0;
+  }, [completedFields, requiredFieldsCount]);
 
   return (
     <div className="sticky top-0 z-50 bg-white border-b shadow-sm">
@@ -26,7 +51,7 @@ export const ProgressIndicator = ({ form }: { form: any }) => {
             </span>
           </div>
           <span className="text-sm text-slate-600">
-            {completedFields} of {totalFields} fields completed
+            {completedFields} of {requiredFieldsCount} required fields completed
           </span>
         </div>
         <div className="h-1 bg-slate-100 rounded-full overflow-hidden">
@@ -39,7 +64,7 @@ export const ProgressIndicator = ({ form }: { form: any }) => {
                   : "bg-amber-500"
             }`}
             style={{
-              width: `${percentage}%`,
+              width: `${Math.max(0, Math.min(100, percentage))}%`,
               boxShadow: "0 0 8px rgba(59, 130, 246, 0.5)",
             }}
           />
