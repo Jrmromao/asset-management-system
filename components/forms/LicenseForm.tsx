@@ -37,6 +37,10 @@ import FormSection from "@/components/forms/FormSection";
 import MainFormSkeleton from "@/components/forms/MainFormSkeleton";
 import FormProgressSkeleton from "@/components/forms/FormProgressSkeleton";
 import { FormProgress } from "@/components/forms/FormProgress";
+import {
+  getRequiredFieldCount,
+  getRequiredFieldsList,
+} from "@/lib/schemas/schema-utils";
 
 type LicenseFormValues = z.infer<typeof licenseSchema>;
 
@@ -240,7 +244,11 @@ const LicenseForm = () => {
   ];
 
   return (
-    <FormContainer form={form}>
+    <FormContainer
+      form={form}
+      requiredFields={getRequiredFieldsList(licenseSchema)}
+      requiredFieldsCount={getRequiredFieldCount(licenseSchema)}
+    >
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <div className="max-w-[1200px] mx-auto px-4 py-6">

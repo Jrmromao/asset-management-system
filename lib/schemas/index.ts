@@ -1,90 +1,22 @@
 import { z } from "zod";
+import {
+  addressFields,
+  emailField,
+  nameField,
+  passwordSchema,
+  phoneNumField,
+  validateUniqueField,
+} from "./schema-utils";
 
 const baseUrl = process.env.NEXT_PUBLIC_APP_URL;
 
-const isRequiredField = (field: unknown): field is z.ZodTypeAny => {
-  if (!(field instanceof z.ZodType)) return false;
-
-  // Check if it's explicitly optional
-  if (field instanceof z.ZodOptional) return false;
-
-  // Check if it's a string with min validation
-  if (field instanceof z.ZodString) {
-    const checks = field._def.checks || [];
-    return checks.some((check) => check.kind === "min" && check.value > 0);
-  }
-
-  // Handle other required types
-  return true;
-};
-
-export const getRequiredFieldCount = (
-  schema: z.ZodObject<any, any>,
-): number => {
-  const shape = schema._def.shape();
-  return Object.values(shape).filter((field): field is z.ZodTypeAny =>
-    isRequiredField(field),
-  ).length;
-};
-
-export const getRequiredFieldsList = (
-  schema: z.ZodObject<any, any>,
-): string[] => {
-  const shape = schema._def.shape();
-  return Object.entries(shape)
-    .filter(([_, field]) => isRequiredField(field))
-    .map(([key]) => key);
-};
-
-const requiredString = (message: string) =>
-  z.string({ required_error: message });
-const nameField = (name: string) => ({
-  name: requiredString(`${name} name is required`),
+const customFieldSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  type: z.enum(["text", "number", "date", "select", "checkbox"]),
+  value: z.union([z.string(), z.number(), z.date(), z.boolean()]).optional(),
+  options: z.array(z.string()).optional(),
 });
-
-const addressFields = {
-  addressLine1: requiredString("Address line 1 is required"),
-  addressLine2: z.string().optional(),
-  state: requiredString("State is required"),
-  city: requiredString("City is required"),
-  zip: requiredString("Zipcode is required"),
-  country: requiredString("Country is required"),
-};
-
-const emailField = () =>
-  z
-    .string()
-    .min(1, "Email is required")
-    .email("Valid email is required")
-    .optional();
-// .refine(
-//     async (email) => validateUnique('email', email, 'email', entity),
-//     "Email already exists"
-// )
-
-const phoneNumField = z.string().min(1, "Phone number is required").optional();
-// .refine(
-//     async (phoneNum) => validateUnique('phoneNum', phoneNum, 'phoneNum'),
-//     "Phone number already exists"
-// )
-
-const dateField = (fieldName: string) =>
-  z
-    .date({
-      required_error: `${fieldName} is required`,
-    })
-    .optional();
-
-const passwordSchema = z
-  .string()
-  .refine(
-    (value) =>
-      /^(?=.*\d)(?=.*[!@#$%^&*])(?=.*[A-Z])(?=.*[a-z]).{8,}$/.test(value),
-    {
-      message:
-        "Password must contain at least one number, one special character, one uppercase letter, one lowercase letter, and be at least 8 characters long.",
-    },
-  );
 
 export const registerSchema = z
   .object({
@@ -96,21 +28,14 @@ export const registerSchema = z
         try {
           const response = await fetch(`${baseUrl}/api/validate/email`, {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ email }),
           });
-
-          if (!response.ok) {
-            throw new Error("Validation request failed");
-          }
-
+          if (!response.ok) throw new Error("Validation request failed");
           const data = await response.json();
           return !data.exists;
         } catch (error) {
           console.error("Email validation error:", error);
-          // throw new Error("Email validation failed");
         }
       }, "Email already exists"),
     password: passwordSchema,
@@ -128,16 +53,10 @@ export const registerSchema = z
         try {
           const response = await fetch(`${baseUrl}/api/validate/company`, {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ company }),
           });
-
-          if (!response.ok) {
-            throw new Error("Validation request failed");
-          }
-
+          if (!response.ok) throw new Error("Validation request failed");
           const data = await response.json();
           return !data.exists;
         } catch (error) {
@@ -260,7 +179,7 @@ export const accountVerificationSchema = z.object({
     .string()
     .min(1, "Email is required")
     .email("Valid email is required"),
-  code: requiredString("Verification Code is required"),
+  code: z.string().min(1, "Verification Code is required"),
 });
 
 export const forgotPasswordConfirmSchema = z
@@ -319,20 +238,14 @@ export const assignmentSchema = z
       try {
         const response = await fetch(`${baseUrl}/api/validate/assignment`, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             userId: data.userId,
             itemId: data.itemId,
             type: data.type,
           }),
         });
-
-        if (!response.ok) {
-          throw new Error("Validation request failed");
-        }
-
+        if (!response.ok) throw new Error("Validation request failed");
         const result = await response.json();
         return !result.exists;
       } catch (error) {
@@ -342,20 +255,20 @@ export const assignmentSchema = z
     },
     {
       message: "This item is already assigned to this user",
-      path: ["userId"], // This will show the error under the item field
+      path: ["userId"],
     },
   );
 
 export const manufacturerSchema = z.object({
   ...nameField("Manufacturer"),
   url: z.string().url({ message: "Invalid URL" }),
-  supportUrl: requiredString("Support URL is required"),
+  supportUrl: z.string().min(1, "Support URL is required"),
   supportPhone: z.string().optional(),
   supportEmail: z.string().optional(),
 });
 
 export const modelSchema = z.object({
-  name: requiredString("Location name is required"),
+  name: z.string().min(1, "Location name is required"),
   manufacturerId: z.string().min(1, "Manufacturer is required"),
   modelNo: z.string().min(1, "Model number is required"),
   endOfLife: z.string().optional(),
@@ -367,28 +280,26 @@ export const locationSchema = z.object({
   ...nameField("Location"),
   ...addressFields,
 });
+
 export const inventorySchema = z.object({
   ...nameField("Inventory"),
 });
+
 export const departmentSchema = z.object({
   ...nameField("Department"),
 });
+
 export const supplierSchema = z.object({
   ...nameField("Supplier"),
-
-  contactName: requiredString("Contact name is required"),
+  contactName: z.string().min(1, "Contact name is required"),
   email: emailField(),
   phoneNum: z.string().optional(),
   url: z.string().url().optional(),
   notes: z.string().optional(),
   name: z.string().min(1, "Company name is required"),
-  addressLine1: z.string().min(1, "Address is required"),
-  addressLine2: z.string().optional(),
-  city: z.string().min(1, "City is required"),
-  state: z.string().min(1, "State is required"),
-  zip: z.string().min(1, "Postal code is required"),
-  country: z.string().min(1, "Country is required"),
+  ...addressFields,
 });
+
 export const userSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
@@ -400,18 +311,12 @@ export const userSchema = z.object({
       try {
         const response = await fetch(`${baseUrl}/api/validate/email`, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email }),
           credentials: "same-origin",
           cache: "no-store",
         });
-
-        if (!response.ok) {
-          return false;
-        }
-
+        if (!response.ok) return false;
         const data = await response.json();
         return !data.exists;
       } catch (error) {
@@ -427,18 +332,12 @@ export const userSchema = z.object({
       try {
         const response = await fetch(`${baseUrl}/api/validate/employeeId`, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ employeeId }),
           credentials: "same-origin",
           cache: "no-store",
         });
-
-        if (!response.ok) {
-          return false;
-        }
-
+        if (!response.ok) return false;
         const data = await response.json();
         return !data.exists;
       } catch (error) {
@@ -449,17 +348,30 @@ export const userSchema = z.object({
   roleId: z.string().min(1, "Role is required"),
 });
 
-const customFieldSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  type: z.enum(["text", "number", "date", "select", "checkbox"]),
-  value: z.union([z.string(), z.number(), z.date(), z.boolean()]).optional(),
-  options: z.array(z.string()).optional(),
+export const assetValidationSchema = z.object({
+  type: z.enum(["serialNum", "name"]),
+  value: z.string().min(1, "Value is required"),
 });
 
 export const assetSchema = z.object({
-  name: z.string().min(1, "Asset name is required"),
-  serialNumber: z.string().min(1, "Serial number is required"),
+  serialNumber: z
+    .string()
+    .min(1, "Serial number is required")
+    .transform(
+      validateUniqueField({
+        field: "Serial number",
+        type: "serialNum",
+      }),
+    ),
+  name: z
+    .string()
+    .min(1, "Name is required")
+    .transform(
+      validateUniqueField({
+        field: "Name",
+        type: "name",
+      }),
+    ),
   modelId: z.string().min(1, "Model is required"),
   statusLabelId: z.string().min(1, "Status is required"),
   departmentId: z.string().min(1, "Department is required"),

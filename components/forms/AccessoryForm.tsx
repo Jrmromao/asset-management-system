@@ -38,6 +38,10 @@ import FormSection from "@/components/forms/FormSection";
 import MainFormSkeleton from "@/components/forms/MainFormSkeleton";
 import FormProgressSkeleton from "@/components/forms/FormProgressSkeleton";
 import { FormProgress } from "@/components/forms/FormProgress";
+import {
+  getRequiredFieldCount,
+  getRequiredFieldsList,
+} from "@/lib/schemas/schema-utils";
 
 type AccessoryFormValues = z.infer<typeof accessorySchema>;
 
@@ -170,7 +174,11 @@ const AccessoryForm = () => {
   };
 
   return (
-    <FormContainer form={form}>
+    <FormContainer
+      form={form}
+      requiredFields={getRequiredFieldsList(accessorySchema)}
+      requiredFieldsCount={getRequiredFieldCount(accessorySchema)}
+    >
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <div className="max-w-[1200px] mx-auto px-4 py-6">

@@ -112,6 +112,28 @@ export async function POST(
         exists = user !== null;
         break;
 
+      case "serialNum":
+        const assetSerialNumber = await prisma.asset.findFirst({
+          where: {
+            serialNumber: {
+              equals: value as string,
+              mode: "insensitive",
+            },
+          },
+        });
+
+        // const accessorySerialNumber = await prisma.accessory.findFirst({
+        //   where: {
+        //     serialNumber: {
+        //       equals: value as string,
+        //       mode: "insensitive",
+        //     },
+        //   },
+        // });
+
+        exists = assetSerialNumber !== null;
+        break;
+
       case "poNumber":
         const assetPONumber = await prisma.asset.findFirst({
           where: {

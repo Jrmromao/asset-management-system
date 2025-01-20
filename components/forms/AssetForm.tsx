@@ -11,11 +11,7 @@ import CustomInput from "@/components/CustomInput";
 import { SelectWithButton } from "@/components/SelectWithButton";
 
 // Schema and types
-import {
-  assetSchema,
-  getRequiredFieldCount,
-  getRequiredFieldsList,
-} from "@/lib/schemas";
+import { assetSchema } from "@/lib/schemas";
 import type { z } from "zod";
 import type { CustomField } from "@/types/form";
 
@@ -42,6 +38,10 @@ import MainFormSkeleton from "@/components/forms/MainFormSkeleton";
 import FormProgressSkeleton from "@/components/forms/FormProgressSkeleton";
 import { FormProgress } from "@/components/forms/FormProgress";
 import CustomSelect from "@/components/CustomSelect";
+import {
+  getRequiredFieldCount,
+  getRequiredFieldsList,
+} from "@/lib/schemas/schema-utils";
 
 type FormTemplate = {
   id: string;
