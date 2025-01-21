@@ -359,7 +359,7 @@ export const assetSchema = z.object({
     .refine(
       async (serialNumber) => {
         try {
-          const response = await fetch(`${baseUrl}/api/validate/assets`, {
+          const response = await fetch(`/api/validate/assets`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ value: serialNumber, type: "serialNumber" }),
@@ -386,7 +386,7 @@ export const assetSchema = z.object({
     .refine(
       async (name) => {
         try {
-          const response = await fetch(`${baseUrl}/api/validate/assets`, {
+          const response = await fetch(`/api/validate/assets`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ value: name, type: "asset-name" }),

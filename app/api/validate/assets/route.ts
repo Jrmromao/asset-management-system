@@ -10,7 +10,7 @@ export async function POST(
     const body = await req.json();
     const session = await auth();
 
-    console.log(body);
+    console.log(session?.user.companyId);
     // Original validation logic for other endpoints
     const { value, type } = body;
 

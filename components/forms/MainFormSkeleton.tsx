@@ -56,6 +56,19 @@ const MainFormSkeleton = () => {
               <SkeletonField hasButton />
             </div>
           </div>
+
+          <div className="space-y-6 py-6">
+            <SectionTitle />
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <SkeletonField />
+                <SkeletonField />
+              </div>
+
+              <SkeletonField hasButton />
+              <SkeletonField hasButton />
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>
