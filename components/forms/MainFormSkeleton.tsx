@@ -28,7 +28,6 @@ const MainFormSkeleton = () => {
     <div className="col-span-12 lg:col-span-8 space-y-6">
       <Card className="bg-white">
         <CardContent className="divide-y divide-slate-100">
-          {/* Basic Information */}
           <div className="space-y-6 py-6">
             <SectionTitle />
             <SkeletonField hasButton />
@@ -42,17 +41,6 @@ const MainFormSkeleton = () => {
             </div>
           </div>
 
-          {/* Status & Location */}
-          <div className="space-y-6 py-6">
-            <SectionTitle />
-            <div className="space-y-6">
-              <SkeletonField hasButton />
-              <SkeletonField hasButton />
-              <SkeletonField hasButton />
-            </div>
-          </div>
-
-          {/* Purchase Information */}
           <div className="space-y-6 py-6">
             <SectionTitle />
             <div className="space-y-6">
@@ -66,21 +54,6 @@ const MainFormSkeleton = () => {
               </div>
               <SkeletonField hasButton />
               <SkeletonField hasButton />
-            </div>
-          </div>
-
-          {/* Technical Details */}
-          <div className="space-y-6 py-6">
-            <SectionTitle />
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <SkeletonField />
-                <SkeletonField />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <SkeletonField />
-                <SkeletonField />
-              </div>
             </div>
           </div>
         </CardContent>

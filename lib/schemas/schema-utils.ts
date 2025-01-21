@@ -92,52 +92,29 @@ export const passwordSchema = z
 
 type ValidationOptions = {
   field: string;
-  type: "serialNum" | "name";
-  errorMessage?: string;
-  existsMessage?: string;
+  value: string;
+  basePath: string;
 };
 
-export const validateUniqueField = ({
+export const validateUniqueField = async ({
   field,
-  type,
-  errorMessage = `Failed to validate ${field}`,
-  existsMessage = `${field} already exists`,
+  value,
+  basePath,
 }: ValidationOptions) => {
-  return async (value: string, ctx: z.RefinementCtx) => {
-    try {
-      const response = await fetch("/api/validate/assets", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type, value }),
-        credentials: "same-origin",
-        cache: "no-store",
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: data.error ?? errorMessage,
-        });
-        return z.NEVER;
-      }
-
-      if (data.exists) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: existsMessage,
-        });
-        return z.NEVER;
-      }
-
-      return value;
-    } catch (error) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: errorMessage,
-      });
-      return z.NEVER;
+  try {
+    const response = await fetch(`${basePath}/api/validate/${field}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ value }),
+      credentials: "same-origin",
+      cache: "no-store",
+    });
+    if (!response.ok) return false;
+    const data = await response.json();
+    return !data.exists;
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      throw error;
     }
-  };
+  }
 };

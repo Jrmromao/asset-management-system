@@ -1,32 +1,60 @@
-// app/api/validate/assets/route.ts
 import { NextResponse } from "next/server";
 import { prisma } from "@/app/db";
 import { auth } from "@/auth";
-import { assetValidationSchema } from "@/lib/schemas";
 
-export async function POST(req: Request) {
+export async function POST(
+  req: Request,
+  { params }: { params: { endpoint: string } },
+) {
   try {
-    const session = await auth();
-    if (!session?.user?.companyId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const body = await req.json();
-    const result = assetValidationSchema.safeParse(body);
+    const session = await auth();
 
-    if (!result.success) {
+    console.log(body);
+    // Original validation logic for other endpoints
+    const { value, type } = body;
+
+    if (!value || !type) {
       return NextResponse.json(
-        { error: result.error.issues[0].message },
+        { error: `${value} is required` },
         { status: 400 },
       );
     }
 
-    const { type, value } = result.data;
+    let exists = false;
 
-    const exists =
-      (await prisma.asset.findFirst({
-        where: { serialNumber: value, companyId: session.user.companyId },
-      })) !== null;
+    switch (type) {
+      case "serialNumber":
+        const assetSerialNum = await prisma.asset.findFirst({
+          where: {
+            serialNumber: {
+              equals: value as string,
+              mode: "insensitive",
+            },
+            companyId: session?.user.companyId,
+          },
+        });
+
+        exists = assetSerialNum !== null;
+        break;
+
+      case "asset-name":
+        const assetName = await prisma.asset.findFirst({
+          where: {
+            companyId: session?.user.companyId,
+            name: {
+              equals: value as string,
+              mode: "insensitive",
+            },
+          },
+        });
+        exists = assetName !== null;
+        break;
+
+      default:
+        return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+    }
+
     return NextResponse.json({ exists });
   } catch (error) {
     console.error("Validation error:", error);

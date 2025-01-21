@@ -16,7 +16,6 @@ import { useLicenseQuery } from "@/hooks/queries/useLicenseQuery";
 import { useDepartmentUIStore } from "@/lib/stores/useDepartmentUIStore";
 import { useDepartmentQuery } from "@/hooks/queries/useDepartmentQuery";
 import { useInventoryUIStore } from "@/lib/stores/useInventoryUIStore";
-import { useSupplierUIStore } from "@/lib/stores/useSupplierUIStore";
 import { useSupplierQuery } from "@/hooks/queries/useSupplierQuery";
 import { useInventoryQuery } from "@/hooks/queries/useInventoryQuery";
 import { useLocationUIStore } from "@/lib/stores/useLocationUIStore";
@@ -28,8 +27,6 @@ import { Form } from "@/components/ui/form";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { SelectWithButton } from "@/components/SelectWithButton";
 import CustomInput from "@/components/CustomInput";
-import CustomDatePicker from "@/components/CustomDatePicker";
-import CustomPriceInput from "@/components/CustomPriceInput";
 import Dropzone from "@/components/Dropzone";
 import { FormContainer } from "@/components/forms/FormContainer";
 import ActionFooter from "@/components/forms/ActionFooter";
@@ -41,43 +38,9 @@ import {
   getRequiredFieldCount,
   getRequiredFieldsList,
 } from "@/lib/schemas/schema-utils";
+import { getStatusLocationSection } from "@/components/forms/formSections";
 
 type LicenseFormValues = z.infer<typeof licenseSchema>;
-
-// Progress Indicator Component
-const ProgressIndicator = ({ form }: { form: any }) => {
-  const totalFields = Object.keys(form.getValues()).length;
-  const completedFields = Object.keys(form.formState.dirtyFields).length;
-  const percentage = (completedFields / totalFields) * 100;
-
-  return (
-    <div className="bg-white border-b">
-      <div className="max-w-[1000px] mx-auto px-4 py-3">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-3">
-            <span
-              className={`text-sm font-medium ${form.formState.isValid ? "text-green-600" : "text-yellow-600"}`}
-            >
-              {form.formState.isValid ? "Ready to submit" : "Form incomplete"}
-            </span>
-            <span className="text-sm text-slate-500">
-              {completedFields} of {totalFields} fields completed
-            </span>
-          </div>
-          <span className="text-sm font-medium text-slate-700">
-            {Math.round(percentage)}%
-          </span>
-        </div>
-        <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-          <div
-            className="h-full bg-blue-500 transition-all duration-300 ease-out"
-            style={{ width: `${percentage}%` }}
-          />
-        </div>
-      </div>
-    </div>
-  );
-};
 
 // Collapsible Section Component
 const CollapsibleSection = ({
@@ -148,7 +111,7 @@ const LicenseForm = () => {
   });
 
   // Queries and UI stores
-  const { onOpen: openStatusLabel } = useStatusLabelUIStore();
+  const { onOpen: openStatus } = useStatusLabelUIStore();
   const { statusLabels } = useStatusLabelsQuery();
   const { createLicense } = useLicenseQuery();
   const { onOpen: openDepartment } = useDepartmentUIStore();
@@ -157,7 +120,6 @@ const LicenseForm = () => {
   const { inventories } = useInventoryQuery();
   const { locations } = useLocationQuery();
   const { onOpen: openInventory } = useInventoryUIStore();
-  const { onOpen: openSupplier } = useSupplierUIStore();
   const { onOpen: openLocation } = useLocationUIStore();
 
   // File drop handler
@@ -185,12 +147,23 @@ const LicenseForm = () => {
       inventoryId: "",
       minSeatsAlert: "",
       seats: "",
-      supplierId: "",
-      poNumber: "",
-      purchasePrice: "",
+
       alertRenewalDays: "",
       notes: "",
     },
+  });
+
+  const statusLocationSection = getStatusLocationSection({
+    form,
+    statusLabels,
+    locations,
+    departments,
+    inventories,
+    openStatus,
+    openLocation,
+    openDepartment,
+    openInventory,
+    isLoading: false,
   });
 
   // Submit handler
@@ -274,36 +247,9 @@ const LicenseForm = () => {
                       {/* Status & Location */}
                       <FormSection title="Status & Location">
                         <div className="space-y-6">
-                          <SelectWithButton
-                            name="statusLabelId"
-                            form={form}
-                            label="Status Label"
-                            data={statusLabels}
-                            onNew={openStatusLabel}
-                            placeholder="Select status"
-                            required
-                            isPending={isPending}
-                          />
-                          <SelectWithButton
-                            form={form}
-                            name="departmentId"
-                            label="Department"
-                            data={departments}
-                            onNew={openDepartment}
-                            placeholder="Select department"
-                            required
-                            isPending={isPending}
-                          />
-                          <SelectWithButton
-                            form={form}
-                            name="locationId"
-                            label="Location"
-                            data={locations}
-                            onNew={openLocation}
-                            placeholder="Select location"
-                            required
-                            isPending={isPending}
-                          />
+                          {statusLocationSection.map((section, index) => (
+                            <SelectWithButton key={index} {...section} />
+                          ))}
                         </div>
                       </FormSection>
 
@@ -325,61 +271,6 @@ const LicenseForm = () => {
                             type="number"
                             placeholder="Enter minimum threshold"
                             required
-                          />
-                        </div>
-                      </FormSection>
-                      {/* Purchase Information */}
-
-                      <FormSection title="Purchase Information">
-                        <div className="space-y-6">
-                          <div className="grid grid-cols-2 gap-6">
-                            <CustomInput
-                              name="poNumber"
-                              label="PO Number"
-                              control={form.control}
-                              placeholder="Enter PO number"
-                            />
-                            <CustomPriceInput
-                              name="purchasePrice"
-                              label="Unit Price"
-                              control={form.control}
-                              placeholder="0.00"
-                              required
-                            />
-                          </div>
-                          <div className="grid grid-cols-2 gap-6">
-                            <CustomDatePicker
-                              name="purchaseDate"
-                              form={form}
-                              label="Purchase Date"
-                              placeholder="Select date"
-                            />
-                            <CustomDatePicker
-                              name="renewalDate"
-                              form={form}
-                              label="Renewal Date"
-                              placeholder="Select date"
-                            />
-                          </div>
-                          <SelectWithButton
-                            name="supplierId"
-                            label="Supplier"
-                            data={suppliers}
-                            onNew={openSupplier}
-                            placeholder="Select supplier"
-                            required
-                            form={form}
-                            isPending={isPending}
-                          />
-                          <SelectWithButton
-                            form={form}
-                            name="inventoryId"
-                            label="Inventory"
-                            data={inventories}
-                            onNew={openInventory}
-                            placeholder="Select an inventory"
-                            required
-                            isPending={isPending}
                           />
                         </div>
                       </FormSection>

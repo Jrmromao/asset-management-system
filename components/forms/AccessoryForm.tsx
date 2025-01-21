@@ -29,8 +29,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Form } from "@/components/ui/form";
 import { SelectWithButton } from "@/components/SelectWithButton";
 import CustomInput from "@/components/CustomInput";
-import CustomDatePicker from "@/components/CustomDatePicker";
-import CustomPriceInput from "@/components/CustomPriceInput";
 import { FormContainer } from "@/components/forms/FormContainer";
 import ActionFooter from "@/components/forms/ActionFooter";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -138,15 +136,15 @@ const AccessoryForm = () => {
     defaultValues: {
       name: "",
       serialNumber: "",
-      supplierId: "",
+      // supplierId: "",
       modelNumber: "",
       locationId: "",
       inventoryId: "",
-      poNumber: "",
+      // poNumber: "",
       alertEmail: "",
-      material: "",
+      // material: "",
       statusLabelId: "",
-      notes: "",
+      // notes: "",
       categoryId: "",
     },
   });
@@ -279,40 +277,40 @@ const AccessoryForm = () => {
 
                       {/* Purchase Information */}
 
-                      <FormSection title={"Purchase Information"}>
-                        <div className="grid gap-4 md:grid-cols-2">
-                          <CustomInput
-                            name="poNumber"
-                            label="PO Number"
-                            control={form.control}
-                          />
-                          <CustomPriceInput
-                            name="price"
-                            label="Unit Price"
-                            control={form.control}
-                            required
-                          />
-                          <CustomDatePicker
-                            name="purchaseDate"
-                            form={form}
-                            label="Purchase Date"
-                          />
-                          <CustomDatePicker
-                            name="endOfLife"
-                            form={form}
-                            label="End of Life"
-                          />
-                        </div>
-                        <SelectWithButton
-                          name="supplierId"
-                          label="Supplier"
-                          form={form}
-                          data={suppliers}
-                          onNew={openSupplier}
-                          placeholder={""}
-                          isPending={isPending}
-                        />
-                      </FormSection>
+                      {/*<FormSection title={"Purchase Information"}>*/}
+                      {/*  <div className="grid gap-4 md:grid-cols-2">*/}
+                      {/*    <CustomInput*/}
+                      {/*      name="poNumber"*/}
+                      {/*      label="PO Number"*/}
+                      {/*      control={form.control}*/}
+                      {/*    />*/}
+                      {/*    <CustomPriceInput*/}
+                      {/*      name="price"*/}
+                      {/*      label="Unit Price"*/}
+                      {/*      control={form.control}*/}
+                      {/*      required*/}
+                      {/*    />*/}
+                      {/*    <CustomDatePicker*/}
+                      {/*      name="purchaseDate"*/}
+                      {/*      form={form}*/}
+                      {/*      label="Purchase Date"*/}
+                      {/*    />*/}
+                      {/*    <CustomDatePicker*/}
+                      {/*      name="endOfLife"*/}
+                      {/*      form={form}*/}
+                      {/*      label="End of Life"*/}
+                      {/*    />*/}
+                      {/*  </div>*/}
+                      {/*  <SelectWithButton*/}
+                      {/*    name="supplierId"*/}
+                      {/*    label="Supplier"*/}
+                      {/*    form={form}*/}
+                      {/*    data={suppliers}*/}
+                      {/*    onNew={openSupplier}*/}
+                      {/*    placeholder={""}*/}
+                      {/*    isPending={isPending}*/}
+                      {/*  />*/}
+                      {/*</FormSection>*/}
 
                       <FormSection title={"Inventory Information"}>
                         <SelectWithButton
@@ -330,7 +328,7 @@ const AccessoryForm = () => {
                         <div className="grid gap-6 md:grid-cols-2">
                           <div className="space-y-6">
                             <CustomInput
-                              name="totalQuantity"
+                              name="totalQuantityCount"
                               label="Total Quantity"
                               control={form.control}
                               type="number"
@@ -348,7 +346,7 @@ const AccessoryForm = () => {
 
                           <div className="space-y-6">
                             <CustomInput
-                              name="reoderPoint"
+                              name="reorderPoint"
                               label="Reorder Point"
                               control={form.control}
                               type="number"
@@ -393,13 +391,17 @@ const AccessoryForm = () => {
                         !!form.watch("statusLabelId") &&
                         !!form.watch("locationId"),
                     },
-                    {
-                      name: "Purchase Information",
-                      isValid: !!form.watch("price"),
-                    },
+                    // {
+                    //   name: "Purchase Information",
+                    //   isValid: !!form.watch("price"),
+                    // },
                     {
                       name: "Inventory Management",
-                      isValid: !!form.watch("inventoryId"),
+                      isValid:
+                        !!form.watch("inventoryId") &&
+                        !!form.watch("totalQuantityCount") &&
+                        !!form.watch("reorderPoint") &&
+                        !!form.watch("alertEmail"),
                     },
                   ]}
                 />

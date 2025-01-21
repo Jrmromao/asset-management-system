@@ -24,8 +24,6 @@ import { useSupplierQuery } from "@/hooks/queries/useSupplierQuery";
 import { useAssetQuery } from "@/hooks/queries/useAssetQuery";
 import { useFormTemplatesQuery } from "@/hooks/queries/useFormTemplatesQuery";
 import { useLocationQuery } from "@/hooks/queries/useLocationQuery";
-
-import { useLocationStore } from "@/lib/stores/locationStore";
 import { useInventoryUIStore } from "@/lib/stores/useInventoryUIStore";
 import { useFormTemplateUIStore } from "@/lib/stores/useFormTemplateUIStore";
 import { useStatusLabelUIStore } from "@/lib/stores/useStatusLabelUIStore";
@@ -42,6 +40,8 @@ import {
   getRequiredFieldCount,
   getRequiredFieldsList,
 } from "@/lib/schemas/schema-utils";
+import { getStatusLocationSection } from "@/components/forms/formSections";
+import { useLocationUIStore } from "@/lib/stores/useLocationUIStore";
 
 type FormTemplate = {
   id: string;
@@ -97,7 +97,7 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
   const { onOpen: openStatus } = useStatusLabelUIStore();
   const { onOpen: openModel } = useModelUIStore();
   const { onOpen: openDepartment } = useDepartmentUIStore();
-  const { onOpen: openLocation } = useLocationStore();
+  const { onOpen: openLocation } = useLocationUIStore();
   const { onOpen: openInventory } = useInventoryUIStore();
   const { onOpen: openTemplate } = useFormTemplateUIStore();
 
@@ -124,7 +124,18 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
     },
     mode: "onChange",
   });
-
+  const statusLocationSection = getStatusLocationSection({
+    form,
+    statusLabels,
+    locations,
+    departments,
+    inventories,
+    openStatus,
+    openLocation,
+    openDepartment,
+    openInventory,
+    isLoading: isLoadingStatusLabels,
+  });
   const handleTemplateChange = (formTemplateId: string) => {
     if (!formTemplateId) {
       form.setValue("formTemplateId", "");
@@ -399,43 +410,9 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
                         {/* Assignment & Location */}
                         <FormSection title="Assignment & Location">
                           <div className="space-y-6">
-                            <SelectWithButton
-                              name="statusLabelId"
-                              form={form}
-                              isPending={isLoadingStatusLabels}
-                              label="Status"
-                              data={statusLabels}
-                              onNew={openStatus}
-                              placeholder="Select status"
-                              required
-                            />
-                            <SelectWithButton
-                              form={form}
-                              name="departmentId"
-                              label="Department"
-                              data={departments}
-                              onNew={openDepartment}
-                              placeholder="Select department"
-                              required
-                            />
-                            <SelectWithButton
-                              form={form}
-                              name="locationId"
-                              label="Location"
-                              data={locations}
-                              onNew={openLocation}
-                              placeholder="Select location"
-                              required
-                            />
-                            <SelectWithButton
-                              form={form}
-                              name="inventoryId"
-                              label="Inventory"
-                              data={inventories}
-                              onNew={openInventory}
-                              placeholder="Select inventory"
-                              required
-                            />
+                            {statusLocationSection.map((section, index) => (
+                              <SelectWithButton key={index} {...section} />
+                            ))}
                           </div>
                         </FormSection>
 

@@ -5,7 +5,6 @@ import {
   nameField,
   passwordSchema,
   phoneNumField,
-  validateUniqueField,
 } from "./schema-utils";
 
 const baseUrl = process.env.NEXT_PUBLIC_APP_URL;
@@ -117,18 +116,19 @@ export const licenseSchema = z
 
 export const accessorySchema = z
   .object({
+    categoryId: z.string().min(1, "Category is required"),
     name: z.string().min(1, "Name is required"),
     serialNumber: z.string().min(1, "Serial number is required"),
-    supplierId: z.string().min(1, "Supplier is required"),
-    locationId: z.string().min(1, "Location is required"),
     modelNumber: z.string().min(1, "Model number is required"),
-    inventoryId: z.string().min(1, "Inventory is required"),
+    statusLabelId: z.string().min(1, "Status is required"),
     departmentId: z.string().min(1, "Department is required"),
-    categoryId: z.string().min(1, "Category is required"),
-    price: z
-      .union([z.string(), z.number()])
-      .transform((value) => (typeof value === "string" ? Number(value) : value))
-      .optional(),
+    // supplierId: z.string().min(1, "Supplier is required"),
+    locationId: z.string().min(1, "Location is required"),
+    inventoryId: z.string().min(1, "Inventory is required"),
+    // price: z
+    //   .union([z.string(), z.number()])
+    //   .transform((value) => (typeof value === "string" ? Number(value) : value))
+    //   .optional(),
     totalQuantityCount: z
       .union([z.string(), z.number()])
       .transform((value) =>
@@ -139,17 +139,16 @@ export const accessorySchema = z
       .transform((value) =>
         typeof value === "string" ? Number(value) : value,
       ),
-    poNumber: z.string().optional(),
-    purchaseDate: z.date(),
-    endOfLife: z.date(),
+    // poNumber: z.string().optional(),
+    // purchaseDate: z.date(),
+    // endOfLife: z.date(),
     alertEmail: z.string().email("Invalid email"),
-    material: z.string().optional(),
-    weight: z
-      .union([z.string(), z.number()])
-      .transform((value) => (typeof value === "string" ? Number(value) : value))
-      .optional(),
-    statusLabelId: z.string().optional(),
-    notes: z.string().optional(),
+    // material: z.string().optional(),
+    // weight: z
+    //   .union([z.string(), z.number()])
+    //   .transform((value) => (typeof value === "string" ? Number(value) : value))
+    //   .optional(),
+    // notes: z.string().optional(),
   })
   .refine((data) => data.reorderPoint <= data.totalQuantityCount, {
     message: "Reorder point must be less than or equal to quantity count.",
@@ -356,22 +355,59 @@ export const assetValidationSchema = z.object({
 export const assetSchema = z.object({
   serialNumber: z
     .string()
-    .min(1, "Serial number is required")
-    .transform(
-      validateUniqueField({
-        field: "Serial number",
-        type: "serialNum",
-      }),
+    .min(1, "Serial Number is required")
+    .refine(
+      async (serialNumber) => {
+        try {
+          const response = await fetch(`${baseUrl}/api/validate/assets`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ value: serialNumber, type: "serialNumber" }),
+            credentials: "same-origin",
+            cache: "no-store",
+          });
+
+          if (!response.ok) {
+            return false;
+          }
+
+          const data = await response.json();
+          return !data.exists;
+        } catch (error) {
+          console.error("Asset serial number validation error:", error); // Fixed error message
+          return false;
+        }
+      },
+      { message: "Serial number already exists" }, // Fixed message format
     ),
   name: z
     .string()
-    .min(1, "Name is required")
-    .transform(
-      validateUniqueField({
-        field: "Name",
-        type: "name",
-      }),
+    .min(1, "Asset name is required")
+    .refine(
+      async (name) => {
+        try {
+          const response = await fetch(`${baseUrl}/api/validate/assets`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ value: name, type: "asset-name" }),
+            credentials: "same-origin",
+            cache: "no-store",
+          });
+
+          if (!response.ok) {
+            return false;
+          }
+
+          const data = await response.json();
+          return !data.exists;
+        } catch (error) {
+          console.error("Asset name validation error:", error); // Fixed error message
+          return false;
+        }
+      },
+      { message: "Asset name already exists" }, // Fixed message format
     ),
+
   modelId: z.string().min(1, "Model is required"),
   statusLabelId: z.string().min(1, "Status is required"),
   departmentId: z.string().min(1, "Department is required"),
