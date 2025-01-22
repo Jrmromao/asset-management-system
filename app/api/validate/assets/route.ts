@@ -5,38 +5,50 @@ import { auth } from "@/auth";
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const serialNumber = searchParams.get("serialNumber");
     const type = searchParams.get("type");
-
     const session = await auth();
+
     if (!session?.user.companyId) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
     // Validate type parameter
-    if (!type || !["serialNumber"].includes(type)) {
+    if (!type || !["serialNumber", "assetName"].includes(type)) {
       return NextResponse.json(
         { message: "Invalid validation type" },
         { status: 400 },
       );
     }
 
-    // Validate required parameters based on type
-    if (type === "serialNumber" && !serialNumber) {
+    const validationMap = {
+      serialNumber: {
+        value: searchParams.get("serialNumber"),
+        field: "serialNumber",
+      },
+      assetName: {
+        value: searchParams.get("assetName"),
+        field: "name",
+      },
+    };
+
+    const validationConfig = validationMap[type as keyof typeof validationMap];
+
+    if (!validationConfig.value) {
       return NextResponse.json(
-        { message: "Serial number is required" },
+        { message: `${type} is required` },
         { status: 400 },
       );
     }
-    const existingAsset = await prisma.asset.findUnique({
+
+    const existingAsset = await prisma.asset.findFirst({
       where: {
         companyId: session.user.companyId,
-        serialNumber: serialNumber!,
+        [validationConfig.field]: validationConfig.value,
       },
     });
 
     return NextResponse.json({
-      exists: !existingAsset,
+      exists: existingAsset !== null,
     });
   } catch (error) {
     console.error("Validation error:", error);

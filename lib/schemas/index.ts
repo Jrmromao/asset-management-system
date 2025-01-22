@@ -5,6 +5,7 @@ import {
   nameField,
   passwordSchema,
   phoneNumField,
+  validateUniqueField,
 } from "./schema-utils";
 
 const baseUrl = process.env.NEXT_PUBLIC_APP_URL;
@@ -347,45 +348,23 @@ export const userSchema = z.object({
   roleId: z.string().min(1, "Role is required"),
 });
 
-export const assetValidationSchema = z.object({
-  type: z.enum(["serialNum", "name"]),
-  value: z.string().min(1, "Value is required"),
-});
-
-const checkUsernameAvailability = async (
-  username: string,
-): Promise<boolean> => {
-  return fetch(`/api/check-username?username=${username}`)
-    .then((res) => res.json())
-    .then((data) => data.available);
-};
-
 export const assetSchema = z.object({
   serialNumber: z
     .string()
     .min(1, "Serial Number is required")
-    .refine(
-      async (serialNumber) => {
-        try {
-          const response = await fetch(
-            `/api/validate/assets?type=serialNumber&serialNumber=${serialNumber}`,
-            { cache: "no-store" }, // Ensure we're not caching the response
-          );
-
-          if (!response.ok) return false;
-
-          const data = await response.json();
-          // Return false if exists (meaning the serial number is taken)
-          // Return true if doesn't exist (meaning the serial number is available)
-          return !data.exists;
-        } catch (error) {
-          console.error("Asset serial number validation error:", error);
-          return false;
-        }
-      },
-      { message: "Serial number already exists", lazy: false },
-    ),
-  name: z.string().min(1, "Asset name is required"),
+    .refine(async (serialNumber) => {
+      return await validateUniqueField({
+        path: `/api/validate/assets?type=serialNumber&serialNumber=${serialNumber}`,
+      });
+    }, "Tag number already exists"),
+  name: z
+    .string()
+    .min(1, "Asset name is required")
+    .refine(async (name) => {
+      return await validateUniqueField({
+        path: `/api/validate/assets?type=assetName&assetName=${name}`,
+      });
+    }, "Tag number already exists"),
   modelId: z.string().min(1, "Model is required"),
   statusLabelId: z.string().min(1, "Status is required"),
   departmentId: z.string().min(1, "Department is required"),
@@ -395,6 +374,28 @@ export const assetSchema = z.object({
   templateValues: z.record(z.any()).optional(),
   customFields: z.array(customFieldSchema).optional(),
 });
+
+// .refine(
+//     async (serialNumber) => {
+//         try {
+//             const response = await fetch(
+//                 `/api/validate/assets?type=serialNumber&serialNumber=${serialNumber}`,
+//                 { cache: "no-store" }, // Ensure we're not caching the response
+//             );
+//
+//             if (!response.ok) return false;
+//
+//             const data = await response.json();
+//             // Return false if exists (meaning the serial number is taken)
+//             // Return true if doesn't exist (meaning the serial number is available)
+//             return !data.exists;
+//         } catch (error) {
+//             console.error("Asset serial number validation error:", error);
+//             return false;
+//         }
+//     },
+//     { message: "Serial number already exists", lazy: false },
+// ),
 
 export const createTemplateSchema = z.object({
   name: z.string().min(1, "Template name is required"),

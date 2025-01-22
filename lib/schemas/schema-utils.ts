@@ -91,30 +91,35 @@ export const passwordSchema = z
   );
 
 type ValidationOptions = {
-  field: string;
-  value: string;
-  basePath: string;
+  path: string;
 };
 
-export const validateUniqueField = async ({
-  field,
-  value,
-  basePath,
-}: ValidationOptions) => {
+// export async function validateUniqueField({ path }: { path: string }) {
+//   const response = await fetch(path);
+//   const data = await response.json();
+//   return !data.exists; // We should return true if the field is unique (doesn't exist)
+// }
+
+export async function validateUniqueField({ path }: { path: string }) {
   try {
-    const response = await fetch(`${basePath}/api/validate/${field}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ value }),
-      credentials: "same-origin",
-      cache: "no-store",
-    });
-    if (!response.ok) return false;
+    // This works in both client and server environments
+    const baseUrl =
+      process.env.NEXT_PUBLIC_APP_URL || // Custom environment variable
+      (typeof window !== "undefined" ? window.location.origin : ""); // Fallback
+
+    // Ensure we have a base URL
+    if (!baseUrl) {
+      console.error("No base URL available for validation");
+      return false;
+    }
+
+    const fullUrl = `${baseUrl}${path}`;
+
+    const response = await fetch(fullUrl);
     const data = await response.json();
     return !data.exists;
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      throw error;
-    }
+    console.error("Validation error:", error);
+    return false;
   }
-};
+}

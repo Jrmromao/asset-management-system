@@ -4,7 +4,7 @@ import { statusLabelSchema } from "@/lib/schemas";
 import { getAll, insert, remove } from "@/lib/actions/statusLabel.actions";
 import { useStatusLabelUIStore } from "@/lib/stores/useStatusLabelUIStore";
 
-export const MODEL_KEY = ["roles"] as const;
+export const MODEL_KEY = ["statusLabels"] as const;
 
 type CreateStatusLabelInput = z.infer<typeof statusLabelSchema>;
 

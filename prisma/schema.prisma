@@ -113,6 +113,7 @@ model Accessory {
   id                 String              @id @default(cuid())
   name               String
   alertEmail         String
+  serialNumber       String              @default("")
   reorderPoint       Int
   totalQuantityCount Int
   purchaseDate       DateTime
@@ -127,7 +128,7 @@ model Accessory {
   locationId         String?
   inventoryId        String?
   categoryId         String?
-  poNumber           String?             @unique
+  poNumber           String?
   weight             Decimal?
   price              Decimal?
   createdAt          DateTime            @default(now())
@@ -146,6 +147,8 @@ model Accessory {
   // PurchaseOrder      PurchaseOrder?      @relation(fields: [purchaseOrderId], references: [id])
   purchaseOrderId    String?
 
+  @@unique([poNumber, companyId])
+  @@unique([serialNumber, companyId])
   @@index([companyId])
   @@index([categoryId])
 }
@@ -446,7 +449,7 @@ model Supplier {
 model Asset {
   id                  String    @id @default(cuid())
   name                String
-  serialNumber        String    @unique
+  serialNumber        String
   material            String?
   endOfLife           DateTime?
   datePurchased       DateTime?
@@ -462,7 +465,7 @@ model Asset {
   dailyOperatingHours Int?
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
-  poNumber            String?   @unique
+  poNumber            String?
   weight              Decimal?  @db.Decimal(10, 2)
   price               Decimal?  @db.Decimal(10, 2)
   status              String    @default("Available")
@@ -485,6 +488,8 @@ model Asset {
   AssetHistory AssetHistory[]
   Co2eRecord   Co2eRecord[]
 
+  @@unique([serialNumber, companyId])
+  @@unique([poNumber, companyId])
   @@index([assigneeId])
   @@index([companyId])
   @@index([licenseId])

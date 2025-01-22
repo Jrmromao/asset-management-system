@@ -421,8 +421,6 @@ export async function insert(
   try {
     const validation = await assetSchema.safeParseAsync(values);
 
-    console.log(values);
-
     if (!validation.success) {
       return {
         error: validation.error.errors[0].message,
@@ -503,6 +501,8 @@ export async function insert(
         },
         include: assetIncludes,
       });
+
+      console.log("NEW ASSER", newAsset);
 
       // Create audit log entry
       await tx.auditLog.create({
