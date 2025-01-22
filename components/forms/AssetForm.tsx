@@ -123,6 +123,7 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
       templateValues: {},
     },
     mode: "onChange",
+    reValidateMode: "onChange", // Re-validate on change
   });
   const statusLocationSection = getStatusLocationSection({
     form,

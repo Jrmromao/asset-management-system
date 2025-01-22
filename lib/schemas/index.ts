@@ -352,6 +352,14 @@ export const assetValidationSchema = z.object({
   value: z.string().min(1, "Value is required"),
 });
 
+const checkUsernameAvailability = async (
+  username: string,
+): Promise<boolean> => {
+  return fetch(`/api/check-username?username=${username}`)
+    .then((res) => res.json())
+    .then((data) => data.available);
+};
+
 export const assetSchema = z.object({
   serialNumber: z
     .string()
@@ -359,55 +367,25 @@ export const assetSchema = z.object({
     .refine(
       async (serialNumber) => {
         try {
-          const response = await fetch(`/api/validate/assets`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ value: serialNumber, type: "serialNumber" }),
-            credentials: "same-origin",
-            cache: "no-store",
-          });
+          const response = await fetch(
+            `/api/validate/assets?type=serialNumber&serialNumber=${serialNumber}`,
+            { cache: "no-store" }, // Ensure we're not caching the response
+          );
 
-          if (!response.ok) {
-            return false;
-          }
+          if (!response.ok) return false;
 
           const data = await response.json();
+          // Return false if exists (meaning the serial number is taken)
+          // Return true if doesn't exist (meaning the serial number is available)
           return !data.exists;
         } catch (error) {
-          console.error("Asset serial number validation error:", error); // Fixed error message
+          console.error("Asset serial number validation error:", error);
           return false;
         }
       },
-      { message: "Serial number already exists" }, // Fixed message format
+      { message: "Serial number already exists", lazy: false },
     ),
-  name: z
-    .string()
-    .min(1, "Asset name is required")
-    .refine(
-      async (name) => {
-        try {
-          const response = await fetch(`/api/validate/assets`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ value: name, type: "asset-name" }),
-            credentials: "same-origin",
-            cache: "no-store",
-          });
-
-          if (!response.ok) {
-            return false;
-          }
-
-          const data = await response.json();
-          return !data.exists;
-        } catch (error) {
-          console.error("Asset name validation error:", error); // Fixed error message
-          return false;
-        }
-      },
-      { message: "Asset name already exists" }, // Fixed message format
-    ),
-
+  name: z.string().min(1, "Asset name is required"),
   modelId: z.string().min(1, "Model is required"),
   statusLabelId: z.string().min(1, "Status is required"),
   departmentId: z.string().min(1, "Department is required"),
