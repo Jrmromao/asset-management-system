@@ -22,6 +22,7 @@ import { checkin, checkout, findById } from "@/lib/actions/assets.actions";
 import DetailViewSkeleton from "@/components/shared/DetailView/DetailViewSkeleton";
 import printQRCode from "@/utils/QRCodePrinter";
 import { useRouter } from "next/navigation";
+import ItemDetailsTabs from "@/components/shared/DetailsTabs/ItemDetailsTabs";
 
 interface AssetPageProps {
   params: {
@@ -64,6 +65,7 @@ interface EnhancedAssetType {
   createdAt: Date;
   updatedAt: Date;
   assetHistory: AssetHistory[];
+  usedBy: UserItems[];
 }
 
 const UnassignModal = async () => {
@@ -78,14 +80,27 @@ const UnassignModal = async () => {
   });
 };
 
+interface LoadingStates {
+  isInitialLoading: boolean;
+  isCheckingIn: Set<string>; // Track multiple check-in operations
+  isAssigning: boolean;
+  isRefreshing: boolean;
+}
+
 export default function AssetPage({ params }: AssetPageProps) {
   const [error, setError] = useState<string | null>(null);
   const { id } = params;
+  const [loadingStates, setLoadingStates] = useState<LoadingStates>({
+    isInitialLoading: true,
+    isCheckingIn: new Set<string>(),
+    isAssigning: false,
+    isRefreshing: false,
+  });
   const { isAssignOpen, onAssignOpen, onAssignClose, unassign } =
     useAssetStore();
   const navigate = useRouter();
   const [asset, setAsset] = useState<EnhancedAssetType | undefined>();
-
+  const handleCheckIn = async (userAccessoryId: string) => {};
   useEffect(() => {
     const fetchAsset = async () => {
       if (!id) return;
@@ -96,6 +111,10 @@ export default function AssetPage({ params }: AssetPageProps) {
           const foundAsset = foundAssetResponse.data;
           const allValues =
             foundAsset?.formTemplateValues?.map((item) => item?.values) ?? [];
+
+          console.log(foundAsset?.assetHistory);
+          console.log(foundAsset?.auditLogs);
+
           setAsset({
             id: foundAsset?.id ?? "",
             name: foundAsset?.name ?? "",
@@ -133,6 +152,7 @@ export default function AssetPage({ params }: AssetPageProps) {
             assigneeId: foundAsset?.assigneeId ?? "",
             createdAt: foundAsset?.createdAt ?? new Date(),
             updatedAt: foundAsset?.updatedAt ?? new Date(),
+            usedBy: [],
           });
         }
 
@@ -340,11 +360,15 @@ export default function AssetPage({ params }: AssetPageProps) {
       />
 
       <div className="mt-5 ">
-        {/*<ItemDetailsTabs*/}
-        {/*  itemId={id}*/}
-        {/*  itemType="asset"*/}
-        {/*  auditLogs={asset?.auditLogs ?? []}*/}
-        {/* />*/}
+        <ItemDetailsTabs
+          handleCheckIn={handleCheckIn}
+          auditLogs={asset?.auditLogs ?? []}
+          itemId={id}
+          usedBy={asset?.usedBy}
+          itemType="accessory"
+          isCheckingIn={loadingStates.isCheckingIn}
+          isRefreshing={loadingStates.isRefreshing}
+        />
       </div>
     </>
   );

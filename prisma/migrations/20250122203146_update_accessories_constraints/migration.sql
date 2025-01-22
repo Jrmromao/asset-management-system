@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "Accessory" ALTER COLUMN "purchaseDate" DROP NOT NULL,
+ALTER COLUMN "endOfLife" DROP NOT NULL,
+ALTER COLUMN "material" DROP NOT NULL;

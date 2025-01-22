@@ -76,9 +76,6 @@ export async function findById(id: string): Promise<ActionResponse<Asset>> {
       return { error: "Asset not found" };
     }
 
-    console.log("ASST LOGS", auditLogs);
-    console.log(asset);
-
     return {
       data: parseStringify({
         ...asset,

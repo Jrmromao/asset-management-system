@@ -345,13 +345,13 @@ export default function Page({ params }: AssetPageProps) {
         <BreadcrumbList>
           <BreadcrumbItem>
             <BreadcrumbLink asChild>
-              <Link href="/assets">Accessories</Link>
+              <Link href="/accessories">Accessories</Link>
             </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
             <BreadcrumbLink asChild>
-              <Link href={`/assets/view/${id}`}>View</Link>
+              <Link href={`/accessories/view/${id}`}>View</Link>
             </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />

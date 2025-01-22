@@ -194,9 +194,6 @@ export const DetailView: React.FC<DetailViewProps> = ({
           <>
             <Separator className="my-6" />
             <div className="space-y-4">
-              <h4 className="text-sm font-medium text-muted-foreground">
-                Custom Fields
-              </h4>
               <CustomFormGrid formValues={customFormFields as FormValue[]} />
             </div>
           </>

@@ -90,24 +90,12 @@ export const passwordSchema = z
     },
   );
 
-type ValidationOptions = {
-  path: string;
-};
-
-// export async function validateUniqueField({ path }: { path: string }) {
-//   const response = await fetch(path);
-//   const data = await response.json();
-//   return !data.exists; // We should return true if the field is unique (doesn't exist)
-// }
-
 export async function validateUniqueField({ path }: { path: string }) {
   try {
-    // This works in both client and server environments
     const baseUrl =
-      process.env.NEXT_PUBLIC_APP_URL || // Custom environment variable
+      process.env.NEXT_PUBLIC_APP_URL ||
       (typeof window !== "undefined" ? window.location.origin : ""); // Fallback
 
-    // Ensure we have a base URL
     if (!baseUrl) {
       console.error("No base URL available for validation");
       return false;

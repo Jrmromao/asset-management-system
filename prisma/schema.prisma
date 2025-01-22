@@ -116,10 +116,10 @@ model Accessory {
   serialNumber       String              @default("")
   reorderPoint       Int
   totalQuantityCount Int
-  purchaseDate       DateTime
+  purchaseDate       DateTime?
   notes              String?
-  material           String
-  endOfLife          DateTime
+  material           String?
+  endOfLife          DateTime?
   companyId          String
   modelNumber        String?
   statusLabelId      String?
