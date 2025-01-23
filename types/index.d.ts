@@ -81,6 +81,7 @@ declare global {
     assets?: Asset[];
     licenses?: License[];
     accessories?: Accessory[];
+    userItem: UserItems[];
   }
 
   // ==================== Asset Management Types ====================

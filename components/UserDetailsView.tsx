@@ -32,6 +32,7 @@ import ActivityLog from "@/components/shared/ActivityLog/ActivityLog";
 import { userAssetColumns } from "@/components/tables/UserAssetColumns";
 import EmptyState from "@/components/EmptyState";
 import UserProfileSkeleton from "@/components/UserProfileSkeleton";
+import { DataTable } from "@/components/tables/DataTable/data-table";
 
 const fieldIcons = {
   "Email Address": Mail,
@@ -180,7 +181,7 @@ export default function UserDetailsView({
             <Monitor className="h-4 w-4" />
             Accessories
             <span className="ml-1 bg-primary text-primary-foreground rounded-full h-5 w-5 flex items-center justify-center text-xs">
-              {user?.accessories?.length || ""}
+              {user?.userItem.length || ""}
             </span>
           </TabsTrigger>
           <TabsTrigger
@@ -190,7 +191,7 @@ export default function UserDetailsView({
             <Key className="h-4 w-4" />
             Licenses
             <span className="ml-1 bg-primary text-primary-foreground rounded-full h-5 w-5 flex items-center justify-center text-xs">
-              {user?.licenses?.length || ""}
+              {user?.userItem.length || ""}
             </span>
           </TabsTrigger>
           {/*<TabsTrigger*/}
@@ -223,12 +224,15 @@ export default function UserDetailsView({
         <TabsContent value="assets" className="mt-6">
           <div className="space-y-4">
             <div className="text-muted-foreground">
-              <EmptyState type={"assets"} />
-              {/*<DataTable*/}
-              {/*  columns={columns}*/}
-              {/*  data={user?.assets || []}*/}
-              {/*  isLoading={isLoading}*/}
-              {/*/>*/}
+              {user?.assets ? (
+                <DataTable
+                  columns={columns}
+                  data={user?.assets || []}
+                  isLoading={isLoading}
+                />
+              ) : (
+                <EmptyState type={"assets"} />
+              )}
             </div>
           </div>
         </TabsContent>

@@ -1,12 +1,21 @@
 import { BarChart3, Battery, Box, Clock } from "lucide-react";
 import { StatCard } from "@/components/dashboard/StatCard";
+import { getAll } from "@/lib/actions/assets.actions";
+import { useEffect } from "react";
+import { useAssetQuery } from "@/hooks/queries/useAssetQuery";
 
 export const StatsGrid = () => {
+  const { assets } = useAssetQuery();
+
+  useEffect(() => {
+    getAll();
+  });
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
       <StatCard
         title="Total Assets"
-        mainValue={999}
+        mainValue={assets.length}
         subValue="/2000"
         subtitle="+12% vs last month"
         icon={<Box className="h-5 w-5 text-emerald-600" />}

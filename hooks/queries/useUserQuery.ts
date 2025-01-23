@@ -4,12 +4,12 @@ import { z } from "zod";
 import { userSchema } from "@/lib/schemas";
 import {
   createUser as insert,
+  findById,
   getAll,
   remove,
 } from "@/lib/actions/user.actions";
 
 export const MODEL_KEY = ["users"] as const;
-
 type CreateModelInput = z.infer<typeof userSchema>;
 
 export function useUserQuery() {
@@ -18,21 +18,16 @@ export function useUserQuery() {
   const genericQuery = createGenericQuery<User, CreateModelInput>(
     MODEL_KEY,
     {
-      getAll: async () => {
-        return await getAll();
-      },
-      insert: async (data: CreateModelInput) => {
-        return await insert(data);
-      },
-      delete: async (id: string) => {
-        return await remove(id);
-      },
+      getAll: async () => await getAll(),
+      insert: async (data: CreateModelInput) => await insert(data),
+      delete: async (id: string) => await remove(id),
+      findById: async (id: string) => await findById(id),
     },
     {
       onClose,
       successMessage: "Model created successfully",
       errorMessage: "Failed to create model",
-      staleTime: 5 * 60 * 1000, // 5 minutes
+      staleTime: 5 * 60 * 1000,
     },
   );
 
@@ -43,12 +38,14 @@ export function useUserQuery() {
     createItem: createUser,
     isCreating,
     refresh,
+    findById: queryFindById,
   } = genericQuery();
 
   return {
     users,
     isLoading,
     error,
+    findById: queryFindById,
     createUser,
     isCreating,
     refresh,

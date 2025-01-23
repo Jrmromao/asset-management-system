@@ -21,6 +21,7 @@ interface CrudActions<T, TCreateInput> {
   getAll: () => Promise<ActionResponse<T[]>>;
   insert: (data: TCreateInput) => Promise<ActionResponse<T>>;
   delete: (id: string) => Promise<ActionResponse<T>>;
+  findById?: (id: string) => Promise<ActionResponse<T>>;
 }
 
 interface UseGenericQueryResult<T, TCreateInput> {
@@ -44,6 +45,7 @@ interface UseGenericQueryResult<T, TCreateInput> {
   isCreating: boolean;
   isDeleting: boolean;
   refresh: () => Promise<void>;
+  findById?: (id: string) => Promise<T | undefined>;
 }
 
 export function createGenericQuery<T extends { id?: string }, TCreateInput>(
@@ -200,6 +202,13 @@ export function createGenericQuery<T extends { id?: string }, TCreateInput>(
       isCreating,
       isDeleting,
       refresh,
+      findById:
+        actions.findById &&
+        (async (id: string) => {
+          const result = await actions.findById!(id);
+          if (result.error) throw new Error(result.error);
+          return result.data || undefined;
+        }),
     };
   };
 }

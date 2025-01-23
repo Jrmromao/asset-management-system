@@ -6,6 +6,7 @@ import { createTemplateSchema } from "@/lib/schemas";
 import { FormTemplate } from "@/types/form";
 import { parseStringify } from "@/lib/utils";
 import { checkAuth, handleError } from "@/utils/utils";
+import { formTemplates } from "@/helpers/DefaultFormTemplates";
 
 const prisma = new PrismaClient();
 
@@ -143,5 +144,29 @@ export async function update(
     return { data: parseStringify(template) };
   } catch (error) {
     return handleError(error, "Failed to update template");
+  }
+}
+
+export async function bulkInsertTemplates(companyId: string) {
+  try {
+    const templates = await prisma.$transaction(
+      Object.entries(formTemplates).map(([name, fields]) =>
+        prisma.formTemplate.create({
+          data: {
+            name,
+            fields,
+            companyId,
+          },
+        }),
+      ),
+    );
+
+    revalidatePath("/form-templates");
+    return { success: true, data: templates };
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      return { success: false, error: error.message };
+    }
+    return { success: false, error: "An unknown error occurred" };
   }
 }

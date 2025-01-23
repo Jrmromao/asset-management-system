@@ -50,12 +50,12 @@ export const sidebarLinks = [
     visibleTo: [roles.SUPER_ADMIN],
   },
 
-  {
-    imgURL: "/icons/Admin-icon.svg",
-    route: "/admin",
-    label: "Maintenance",
-    visibleTo: [roles.ADMIN],
-  },
+  // {
+  //   imgURL: "/icons/Admin-icon.svg",
+  //   route: "/admin",
+  //   label: "Maintenance",
+  //   visibleTo: [roles.ADMIN],
+  // },
 ].sort((a, b) => {
   if (a.label === "Admin") return -1;
   if (b.label === "Admin") return 1;

@@ -6,6 +6,7 @@ import { registerSchema } from "@/lib/schemas";
 import { z } from "zod";
 import { prisma } from "@/app/db";
 import S3Service from "@/services/aws/S3";
+import { bulkInsertTemplates } from "@/lib/actions/formTemplate.actions";
 
 export const registerCompany = async (
   values: z.infer<typeof registerSchema>,
@@ -17,9 +18,6 @@ export const registerCompany = async (
       error: validation.error.issues[0].message,
     };
   }
-
-  console.log(validation);
-  console.log(validation.data);
 
   const { companyName, lastName, firstName, email, password, phoneNumber } =
     validation.data;
@@ -111,6 +109,7 @@ export const registerCompany = async (
 
     try {
       const userResult = await registerUser(userObject);
+      await bulkInsertTemplates(company.id);
 
       if ("error" in userResult) {
         // Cleanup: Delete company and S3 bucket if user registration fails
@@ -133,6 +132,8 @@ export const registerCompany = async (
       }
 
       // Step 7: Final verification
+      await bulkInsertTemplates(company.id);
+
       return {
         success: true,
         data: "Company registered successfully",

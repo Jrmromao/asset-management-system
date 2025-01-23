@@ -299,13 +299,18 @@ export async function findById(id: string): Promise<ActionResponse<User>> {
       include: {
         role: true,
         company: true,
+        userItem: {
+          include: {
+            accessory: true,
+            license: true,
+          },
+        },
         assets: {
           include: {
             model: true,
             statusLabel: true,
           },
         },
-        licenses: true,
         department: true,
       },
     });
