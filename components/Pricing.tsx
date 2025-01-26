@@ -18,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useRouter } from "next/navigation";
 
 export default function PricingTable() {
   const [assetCount, setAssetCount] = useState(100);
@@ -27,6 +28,7 @@ export default function PricingTable() {
 
   const pricePerAsset = currency === "EUR" ? "0.35" : "0.36";
   const annualDiscount = 0.1;
+  const navigate = useRouter();
 
   const calculatePrice = () => ({
     monthly: (assetCount * Number(pricePerAsset)).toFixed(2),
@@ -352,7 +354,10 @@ export default function PricingTable() {
                   </div>
                 </div>
 
-                <Button className="w-full mt-6 bg-emerald-600 hover:bg-emerald-700">
+                <Button
+                  className="w-full mt-6 bg-emerald-600 hover:bg-emerald-700"
+                  onClick={() => navigate.push(`/sign-up?assets=${assetCount}`)}
+                >
                   Get Started
                 </Button>
               </motion.div>

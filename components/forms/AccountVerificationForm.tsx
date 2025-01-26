@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useTransition } from "react";
+import React, { useEffect, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { useForm } from "react-hook-form";
 import { Form } from "@/components/ui/form";
@@ -13,6 +13,7 @@ import { resendCode, verifyAccount } from "@/lib/actions/user.actions";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import HeaderIcon from "@/components/page/HeaderIcon";
+import { registerCompany } from "@/lib/actions/company.actions";
 
 const AuthForm = () => {
   const [error, setError] = useState<string>("");
@@ -21,8 +22,7 @@ const AuthForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const searchParams = useSearchParams();
   const router = useRouter();
-  const email = searchParams.get("email");
-  // const hiddenEmail = hideEmailAddress(email || '')
+  const [email, setEmail] = useState("");
 
   const form = useForm<z.infer<typeof accountVerificationSchema>>({
     resolver: zodResolver(accountVerificationSchema),
@@ -58,6 +58,19 @@ const AuthForm = () => {
       console.error(e);
     }
   };
+
+  useEffect(() => {
+    const completeRegistration = async () => {
+      const data = JSON.parse(sessionStorage.getItem("registrationData")!);
+
+      console.log(data["email"]);
+
+      const assetCount = parseInt(sessionStorage.getItem("assetCount")!);
+      await registerCompany(data, assetCount);
+    };
+
+    completeRegistration();
+  }, []);
 
   return (
     <section className={"auth-form"}>

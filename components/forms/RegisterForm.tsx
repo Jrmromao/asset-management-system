@@ -2,19 +2,22 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { Form } from "@/components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Loader2 } from "lucide-react";
-import { registerCompany } from "@/lib/actions/company.actions";
 import CustomInput from "@/components/CustomInput";
-import { inventorySchema, registerSchema } from "@/lib/schemas";
+import { registerSchema } from "@/lib/schemas";
 import HeaderIcon from "@/components/page/HeaderIcon";
 import ReCAPTCHA from "@/components/ReCAPTCHA";
+import { createCheckoutSession } from "@/lib/actions/stripe.actions";
 
-const RegisterForm = () => {
+interface RegisterFormProps {
+  assetCount?: number;
+}
+
+const RegisterForm = ({ assetCount = 0 }: RegisterFormProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [user, setUser] = useState(null);
   const [error, setError] = useState("");
@@ -34,28 +37,43 @@ const RegisterForm = () => {
     mode: "onChange",
   });
 
-  const router = useRouter();
-
   const onSubmit = async (data: z.infer<typeof registerSchema>) => {
-    const validation = inventorySchema.safeParse(data);
-    console.log(validation);
-    console.log(validation.data);
-
     setIsLoading(true);
     try {
-      if (data) {
-        await registerCompany(data).then(() => {
-          form.reset();
-          router.push("/account-verification?email=" + data.email);
-        });
+      // 1. Create checkout session
+      const session = await createCheckoutSession({
+        email: data.email,
+        assetCount: assetCount,
+      });
+
+      // 2. Store registration data in session/localStorage
+      sessionStorage.setItem("registrationData", JSON.stringify(data));
+      sessionStorage.setItem("assetCount", assetCount.toString());
+
+      // 3. Redirect to Stripe
+      if (session.url) {
+        window.location.href = session.url;
       }
     } catch (e) {
-      console.error(e);
-      setError("Registration failed. Please try again.");
+      setError("Checkout failed. Please try again.");
     } finally {
       setIsLoading(false);
     }
   };
+
+  // const SuccessPage = () => {
+  //   useEffect(() => {
+  //     const completeRegistration = async () => {
+  //       const data = JSON.parse(sessionStorage.getItem("registrationData"));
+  //       const assetCount = parseInt(sessionStorage.getItem("assetCount"));
+  //
+  //       await registerCompany(data, assetCount);
+  //       router.push("/account-verification?email=" + data.email);
+  //     };
+  //
+  //     completeRegistration();
+  //   }, []);
+  // };
 
   return (
     <section className={"auth-form"}>

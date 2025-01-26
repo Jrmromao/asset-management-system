@@ -5,21 +5,21 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { useController } from "react-hook-form";
-import { cn } from "@/lib/utils";
 
 interface CustomSwitchInputProps {
   label: string;
   name: string;
   control: any;
+  required: boolean;
 }
 
 const CustomSwitch = ({
   control,
   name,
   label,
+  required = false,
   ...rest
 }: CustomSwitchInputProps) => {
   const {
@@ -40,7 +40,11 @@ const CustomSwitch = ({
           <FormLabel className={"form-label"}>{label}</FormLabel>
           <div className={"flex w-full flex-col"}>
             <FormControl>
-              <Switch checked={value} onCheckedChange={onChange} />
+              <Switch
+                checked={value}
+                onCheckedChange={onChange}
+                required={required}
+              />
             </FormControl>
             <FormMessage className={"form-message mt-2"} />
           </div>

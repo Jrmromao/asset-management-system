@@ -15,6 +15,7 @@ export const authRoutes: string[] = [
   "/account-verification",
   "/forgot-password",
   "/reset-password",
+  "/sign-up/success",
   "/forgot-password/confirm",
 ];
 
