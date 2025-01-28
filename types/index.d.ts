@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-vars */
-import { Company, LicenseSeat } from "@prisma/client";
+import { LicenseSeat } from "@prisma/client";
 
 declare global {
   // ==================== Base Interfaces ====================
@@ -82,6 +82,38 @@ declare global {
     licenses?: License[];
     accessories?: Accessory[];
     userItem: UserItems[];
+  }
+
+  interface Company {
+    // Primary fields
+    id: string;
+    name: string;
+    createdAt: Date;
+    updatedAt: Date;
+
+    // Relations
+    users?: User[];
+    assets?: Asset[];
+    accessories?: Accessory[];
+    categories?: Category[];
+    departments?: Department[];
+    locations?: DepartmentLocation[];
+    manufacturers?: Manufacturer[];
+    models?: Model[];
+    inventories?: Inventory[];
+    statusLabels?: StatusLabel[];
+    auditLogs?: AuditLog[];
+    kits?: Kit[];
+    suppliers?: Supplier[];
+    License?: License[];
+    FormTemplate?: FormTemplate[];
+    userItem?: UserItem[];
+    AccessoryStock?: AccessoryStock[];
+    LicenseSeat?: LicenseSeat[];
+    AssetHistory?: AssetHistory[];
+    ReportConfiguration?: ReportConfiguration[];
+    GeneratedReport?: GeneratedReport[];
+    Subscription?: Subscription[];
   }
 
   // ==================== Asset Management Types ====================
@@ -289,21 +321,6 @@ declare global {
     category?: Category;
     manufacturer?: Manufacturer;
   }
-
-  // ==================== Association Types ====================
-  // interface UserAccessory {
-  //   id: string;
-  //   userId: string;
-  //   accessoryId: string;
-  //   quantity: number;
-  //   assignedAt: Date;
-  //   returnedAt?: Date | null;
-  //   notes?: string | null;
-  //   companyId: string;
-  //   user: User;
-  //   accessory: Accessory;
-  //   company: Company;
-  // }
 
   interface UserItems {
     id: string;

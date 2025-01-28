@@ -13,6 +13,7 @@ import GoogleAnalytics from "@/components/GoogleAnalytics";
 import CookieBanner from "@/components/cookies/CookieBanner";
 import { CookiePreferences } from "@/components/cookies/CookieManager";
 import { SessionProvider } from "next-auth/react";
+import { UserProvider } from "@/components/providers/UserContext";
 
 interface ProvidersProps {
   children: ReactNode;
@@ -48,30 +49,36 @@ export default function Providers({ children }: ProvidersProps) {
   return (
     <QueryClientProvider client={queryClient}>
       <ClientProviders>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="newyork"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <Toaster richColors />
-          {showGA && process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID && (
-            <>
-              <GoogleAnalytics
-                GA_MEASUREMENT_ID={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}
-              />
-              <Analytics />
-            </>
-          )}
+        <SessionProvider>
+          <UserProvider>
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="newyork"
+              enableSystem
+              disableTransitionOnChange
+            >
+              <Toaster richColors />
+              {showGA && process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID && (
+                <>
+                  <GoogleAnalytics
+                    GA_MEASUREMENT_ID={
+                      process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID
+                    }
+                  />
+                  <Analytics />
+                </>
+              )}
 
-          <SessionProvider>{children}</SessionProvider>
-          <CookieBanner onPreferencesChange={handlePreferencesChange} />
-          <SpeedInsights />
+              {children}
+              <CookieBanner onPreferencesChange={handlePreferencesChange} />
+              <SpeedInsights />
 
-          {process.env.NODE_ENV === "development" && (
-            <ReactQueryDevtools initialIsOpen={false} />
-          )}
-        </ThemeProvider>
+              {process.env.NODE_ENV === "development" && (
+                <ReactQueryDevtools initialIsOpen={false} />
+              )}
+            </ThemeProvider>
+          </UserProvider>
+        </SessionProvider>
       </ClientProviders>
     </QueryClientProvider>
   );
