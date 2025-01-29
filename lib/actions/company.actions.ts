@@ -1,11 +1,10 @@
 "use server";
 
-import { registerUser } from "./user.actions";
-import { Prisma } from "@prisma/client";
+import { CompanyStatus, Prisma } from "@prisma/client";
 import { prisma } from "@/app/db";
 import S3Service from "@/services/aws/S3";
 import { bulkInsertTemplates } from "@/lib/actions/formTemplate.actions";
-import { createSubscription } from "@/lib/actions/subscription.actions";
+// import { createSubscription } from "@/lib/actions/subscription.actions";
 import { RegistrationData } from "@/components/providers/UserContext";
 import { parseStringify } from "@/lib/utils";
 
@@ -13,22 +12,6 @@ interface RegistrationState {
   companyId?: string;
   bucketCreated: boolean;
 }
-
-const cleanup = async (state: RegistrationState) => {
-  try {
-    if (state.bucketCreated && state.companyId) {
-      await S3Service.getInstance().deleteCompanyStorage(state.companyId);
-    }
-    if (state.companyId) {
-      await prisma.company.delete({
-        where: { id: state.companyId },
-      });
-    }
-  } catch (err) {
-    console.error("Cleanup failed:", err);
-    // Continue execution as this is already in error handling
-  }
-};
 
 const handlePrismaError = (
   error: Prisma.PrismaClientKnownRequestError,
@@ -53,44 +36,52 @@ export const insert = async (
   try {
     const result = await prisma.$transaction(
       async (tx) => {
-        // Verify role existence
+        // 1. Verify role existence first
         const role = await tx.role.findUnique({
           where: { name: "Admin" },
         });
+
         if (!role) {
           throw new Error("Admin role not found");
         }
 
-        // Create company
+        // 2. Create company
         const company = await tx.company.create({
-          data: { name: values.companyName },
+          data: {
+            name: values.companyName,
+            status: CompanyStatus.INACTIVE,
+          },
         });
+
+        // 3. Store company ID in state
         state.companyId = company.id;
 
-        // Initialize S3 storage
+        // 4. Initialize S3 storage
         const s3Service = S3Service.getInstance();
         await s3Service.initializeCompanyStorage(company.id);
         state.bucketCreated = true;
 
-        // Register admin user
-        const userResult = await registerUser({
-          email: values.email,
-          password: values.password,
-          roleId: role.id,
-          title: "Admin",
-          employeeId: role.name,
-          companyId: company.id,
-          firstName: values.firstName,
-          lastName: values.lastName,
+        // 5. Create user with explicit transaction connection
+        const userResult = await tx.user.create({
+          data: {
+            email: values.email,
+            roleId: role.id,
+            title: "Admin",
+            name: `${values.firstName} ${values.lastName}`,
+            employeeId: role.name,
+            companyId: company.id,
+            firstName: values.firstName,
+            lastName: values.lastName,
+          },
         });
 
-        if ("error" in userResult) {
-          throw new Error(userResult.error);
+        if (!userResult) {
+          throw new Error("Failed to create user");
         }
 
-        // Setup company resources
+        // 6. Setup company resources
         await Promise.all([
-          createSubscription(company.id, values.email, values.assetCount),
+          // createSubscription(company.id, values.email, values.assetCount),
           bulkInsertTemplates(company.id),
         ]);
 
@@ -107,7 +98,10 @@ export const insert = async (
       data: parseStringify(result),
     };
   } catch (error) {
-    await cleanup(state);
+    // Only attempt cleanup if we have a company ID
+    if (state.companyId) {
+      await cleanup(state);
+    }
 
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       return handlePrismaError(error);
@@ -120,6 +114,30 @@ export const insert = async (
   }
 };
 
+// Modify the cleanup function to check existence before deletion
+const cleanup = async (state: RegistrationState) => {
+  try {
+    if (state.companyId) {
+      // Check if company exists before trying to delete
+      const company = await prisma.company.findUnique({
+        where: { id: state.companyId },
+      });
+
+      if (company) {
+        await prisma.company.delete({
+          where: { id: state.companyId },
+        });
+      }
+
+      if (state.bucketCreated) {
+        const s3Service = S3Service.getInstance();
+        await s3Service.deleteCompanyStorage(state.companyId);
+      }
+    }
+  } catch (error) {
+    console.error("Cleanup failed:", error);
+  }
+};
 export const remove = async (id: string): Promise<ActionResponse<Company>> => {
   try {
     const company = await prisma.company.delete({ where: { id } });

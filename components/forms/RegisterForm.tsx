@@ -1,5 +1,5 @@
 "use client";
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { useForm } from "react-hook-form";
@@ -14,8 +14,9 @@ import ReCAPTCHA from "@/components/ReCAPTCHA";
 import { UserContext } from "@/components/providers/UserContext";
 import { useRouter } from "next/navigation";
 import { createCheckoutSession } from "@/lib/actions/stripe.actions";
-import { useRegistrationStore } from "@/lib/stores/useRegistrationStore";
 import { useCompanyQuery } from "@/hooks/queries/useCompanyQuery";
+import { useRegistrationStore } from "@/lib/stores/useRegistrationStore";
+import { CompanyStatus } from "@prisma/client";
 
 interface RegisterFormProps {
   assetCount?: number;
@@ -24,10 +25,10 @@ interface RegisterFormProps {
 const RegisterForm = ({ assetCount = 0 }: RegisterFormProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const { registrationData, setRegistrationData } = useContext(UserContext);
   const { user, setUser } = useContext(UserContext);
   const router = useRouter();
   const { isCreating, createCompany } = useCompanyQuery();
+  const { setRegistrationData, registrationData } = useRegistrationStore();
 
   const form = useForm<z.infer<typeof registerSchema>>({
     resolver: zodResolver(registerSchema),
@@ -43,53 +44,48 @@ const RegisterForm = ({ assetCount = 0 }: RegisterFormProps) => {
     },
     mode: "onChange",
   });
-
   const onSubmit = async (data: z.infer<typeof registerSchema>) => {
     setIsLoading(true);
     setError("");
 
     try {
-      // 1. Create company first
-      const companyResult = await createCompany({
+      // 1. Create company first with Promise wrapper to get the result
+      const company = await createCompany({
         email: data.email,
         firstName: data.firstName,
         lastName: data.lastName,
         companyName: data.companyName,
         assetCount,
         password: data.password,
-        status: "inactive",
+        status: CompanyStatus.INACTIVE,
       });
 
-      if (!companyResult.success || !companyResult.data) {
-        throw new Error(companyResult.error || "Failed to create company");
-      }
-
-      const company = companyResult.data;
-
       // 2. Store registration data
-      useRegistrationStore.getState().setRegistrationData({
+      setRegistrationData({
         email: data.email,
         firstName: data.firstName,
         lastName: data.lastName,
         companyName: data.companyName,
         assetCount,
-        companyId: companyResult?.id,
+        companyId: company.id,
       });
 
       // 3. Create Stripe session
-      const session = await createCheckoutSession({
+      // const sessionResult = await createCheckoutSession({
+      //   email: data.email,
+      //   assetCount,
+      //   companyId: company.id,
+      // });
+      const sessionResult = await createCheckoutSession({
         email: data.email,
-        assetCount,
-        companyId: companyResult.id,
-        metadata: {
-          companyId: companyResult.id,
-        },
+        assetCount: assetCount,
+        companyId: company.id,
       });
 
-      if (session?.url) {
-        window.location.href = session.url;
+      if (sessionResult.success && sessionResult.session?.url) {
+        window.location.href = sessionResult.session.url;
       } else {
-        throw new Error("No checkout URL received");
+        throw new Error(sessionResult.error || "No checkout URL received");
       }
     } catch (e) {
       setError(
@@ -101,37 +97,6 @@ const RegisterForm = ({ assetCount = 0 }: RegisterFormProps) => {
       setIsLoading(false);
     }
   };
-
-  // In useEffect for handling checkout
-  useEffect(() => {
-    const handleCheckout = async () => {
-      if (registrationData) {
-        try {
-          setIsLoading(true);
-          // Use the data from context directly
-          const session = await createCheckoutSession({
-            email: registrationData.email,
-            assetCount: registrationData.assetCount,
-          });
-
-          if (session?.url) {
-            window.location.href = session.url;
-          } else {
-            throw new Error("No checkout URL received");
-          }
-        } catch (e) {
-          setError(
-            e instanceof Error
-              ? e.message
-              : "Checkout failed. Please try again.",
-          );
-          setIsLoading(false);
-        }
-      }
-    };
-
-    handleCheckout();
-  }, [registrationData]);
 
   return (
     <section className="auth-form">

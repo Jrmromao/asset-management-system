@@ -8,6 +8,10 @@ import {
 import { toast } from "sonner";
 import { useCallback } from "react";
 
+interface MutationContext {
+  previousData: unknown;
+}
+
 interface UseGenericQueryOptions<T>
   extends Omit<UseQueryOptions<T[], Error>, "queryKey" | "queryFn"> {
   onClose?: () => void;
@@ -31,10 +35,10 @@ interface UseGenericQueryResult<T, TCreateInput> {
   createItem: (
     data: TCreateInput,
     callbacks?: {
-      onSuccess?: () => void;
+      onSuccess?: ((result: T) => void) | (() => void);
       onError?: (error: Error) => void;
     },
-  ) => Promise<void>;
+  ) => Promise<T>;
   deleteItem: (
     id: string,
     callbacks?: {
@@ -57,7 +61,6 @@ export function createGenericQuery<T extends { id?: string }, TCreateInput>(
     const queryClient = useQueryClient();
     const { onClose } = options;
 
-    // Main query
     const {
       data = [],
       isLoading,
@@ -73,19 +76,104 @@ export function createGenericQuery<T extends { id?: string }, TCreateInput>(
       ...options,
     });
 
+    // Define mutations first
+    const { mutate: mutateCreate, isPending: isCreating } = useMutation<
+      T,
+      Error,
+      TCreateInput,
+      MutationContext
+    >({
+      mutationFn: async (data: TCreateInput) => {
+        const result = await actions.insert(data);
+        if (result.error) throw new Error(result.error);
+        return result.data!;
+      },
+      onMutate: async (newData) => {
+        await queryClient.cancelQueries({ queryKey });
+        const previousData = queryClient.getQueryData(queryKey);
+        return { previousData };
+      },
+      onError: (err, _, context) => {
+        if (context?.previousData) {
+          queryClient.setQueryData(queryKey, context.previousData);
+        }
+        console.error(`Create error:`, err);
+        toast.error(options?.errorMessage || `Failed to create ${queryKey[0]}`);
+      },
+      onSuccess: (data) => {
+        toast.success(
+          options?.successMessage || `${queryKey[0]} created successfully`,
+        );
+        onClose?.();
+        return data;
+      },
+      onSettled: () => {
+        queryClient.invalidateQueries({ queryKey });
+      },
+    });
+
+    const { mutate: mutateDelete, isPending: isDeleting } = useMutation<
+      T,
+      Error,
+      string,
+      MutationContext
+    >({
+      mutationFn: async (id: string) => {
+        const result = await actions.delete(id);
+        if (result.error) throw new Error(result.error);
+        return result.data!;
+      },
+      onMutate: async (id) => {
+        await queryClient.cancelQueries({ queryKey });
+        const previousData = queryClient.getQueryData<T[]>(queryKey);
+        if (previousData) {
+          queryClient.setQueryData<T[]>(
+            queryKey,
+            previousData.filter((item) => item.id !== id),
+          );
+        }
+        return { previousData };
+      },
+      onError: (err, _, context) => {
+        if (context?.previousData) {
+          queryClient.setQueryData(queryKey, context.previousData);
+        }
+        console.error(`Delete error:`, err);
+        toast.error(
+          options?.deleteErrorMessage || `Failed to delete ${queryKey[0]}`,
+        );
+      },
+      onSuccess: () => {
+        toast.success(
+          options?.deleteSuccessMessage ||
+            `${queryKey[0]} deleted successfully`,
+        );
+      },
+      onSettled: () => {
+        queryClient.invalidateQueries({ queryKey });
+      },
+    });
+
+    // Then define the callbacks that use them
     const createItem = useCallback(
       async (
         data: TCreateInput,
         callbacks?: {
-          onSuccess?: () => void;
+          onSuccess?: ((result: T) => void) | (() => void);
           onError?: (error: Error) => void;
         },
-      ): Promise<void> => {
-        return new Promise<void>((resolve, reject) => {
+      ): Promise<T> => {
+        return new Promise<T>((resolve, reject) => {
           mutateCreate(data, {
-            onSuccess: () => {
-              callbacks?.onSuccess?.();
-              resolve();
+            onSuccess: (result: T) => {
+              if (callbacks?.onSuccess) {
+                if (callbacks.onSuccess.length > 0) {
+                  (callbacks.onSuccess as (result: T) => void)(result);
+                } else {
+                  (callbacks.onSuccess as () => void)();
+                }
+              }
+              resolve(result);
             },
             onError: (error) => {
               callbacks?.onError?.(error);
@@ -94,7 +182,7 @@ export function createGenericQuery<T extends { id?: string }, TCreateInput>(
           });
         });
       },
-      [],
+      [mutateCreate],
     );
 
     const deleteItem = useCallback(
@@ -118,76 +206,8 @@ export function createGenericQuery<T extends { id?: string }, TCreateInput>(
           });
         });
       },
-      [],
+      [mutateDelete],
     );
-
-    const { mutate: mutateCreate, isPending: isCreating } = useMutation({
-      mutationFn: async (data: TCreateInput) => {
-        const result = await actions.insert(data);
-        if (result.error) throw new Error(result.error);
-        return result.data;
-      },
-      onMutate: async (newData) => {
-        await queryClient.cancelQueries({ queryKey });
-        const previousData = queryClient.getQueryData(queryKey);
-        return { previousData };
-      },
-      onError: (err, _, context) => {
-        if (context?.previousData) {
-          queryClient.setQueryData(queryKey, context.previousData);
-        }
-        console.error(`Create error:`, err);
-        toast.error(options?.errorMessage || `Failed to create ${queryKey[0]}`);
-      },
-      onSuccess: () => {
-        toast.success(
-          options?.successMessage || `${queryKey[0]} created successfully`,
-        );
-        onClose?.();
-      },
-      onSettled: () => {
-        queryClient.invalidateQueries({ queryKey });
-      },
-    });
-
-    const { mutate: mutateDelete, isPending: isDeleting } = useMutation({
-      mutationFn: async (id: string) => {
-        const result = await actions.delete(id);
-        if (result.error) throw new Error(result.error);
-        return result.data;
-      },
-      onMutate: async (id) => {
-        await queryClient.cancelQueries({ queryKey });
-        const previousData = queryClient.getQueryData<T[]>(queryKey);
-
-        if (previousData) {
-          queryClient.setQueryData<T[]>(
-            queryKey,
-            previousData.filter((item) => item.id !== id),
-          );
-        }
-
-        return { previousData };
-      },
-      onError: (err, _, context) => {
-        if (context?.previousData) {
-          queryClient.setQueryData(queryKey, context.previousData);
-        }
-        console.error(`Delete error:`, err);
-        toast.error(
-          options?.deleteErrorMessage || `Failed to delete ${queryKey[0]}`,
-        );
-      },
-      onSuccess: () => {
-        toast.success(
-          options?.deleteSuccessMessage ||
-            `${queryKey[0]} deleted successfully`,
-        );
-      },
-      onSettled: () => {
-        queryClient.invalidateQueries({ queryKey });
-      },
-    });
 
     const refresh = useCallback(async (): Promise<void> => {
       await refetch();
@@ -202,13 +222,13 @@ export function createGenericQuery<T extends { id?: string }, TCreateInput>(
       isCreating,
       isDeleting,
       refresh,
-      findById:
-        actions.findById &&
-        (async (id: string) => {
-          const result = await actions.findById!(id);
-          if (result.error) throw new Error(result.error);
-          return result.data || undefined;
-        }),
+      findById: actions.findById
+        ? async (id: string) => {
+            const result = await actions.findById!(id);
+            if (result.error) throw new Error(result.error);
+            return result.data!;
+          }
+        : undefined,
     };
   };
 }

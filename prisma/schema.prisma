@@ -294,10 +294,11 @@ model Role {
 }
 
 model Company {
-  id        String   @id @default(cuid())
-  name      String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id        String        @id @default(cuid())
+  name      String        @unique
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  status    CompanyStatus @default(INACTIVE)
 
   // Relations
   users          User[]
@@ -812,8 +813,15 @@ model Invoice {
   @@index([invoiceDate])
 }
 
+// thus is the membership plan
 enum PlanType {
   FREE
   PRO
   ENTERPRISE
+}
+
+// Company status
+enum CompanyStatus {
+  ACTIVE
+  INACTIVE
 }

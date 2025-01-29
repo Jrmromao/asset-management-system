@@ -2,6 +2,12 @@
 import { LicenseSeat } from "@prisma/client";
 
 declare global {
+  // ==================== Company status  ====================
+  // enum CompanyStatus {
+  //   ACTIVE = "ACTIVE",
+  //   INACTIVE = "INACTIVE",
+  // }
+
   // ==================== Base Interfaces ====================
   interface BaseEntity {
     id: string;
