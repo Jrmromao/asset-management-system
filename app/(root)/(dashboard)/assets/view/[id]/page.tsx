@@ -155,8 +155,6 @@ export default function AssetPage({ params }: AssetPageProps) {
             usedBy: [],
           });
         }
-
-        console.log(!!foundAssetResponse?.data?.assigneeId);
       } catch (error) {
         console.error("Error fetching asset:", error);
       }

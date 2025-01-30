@@ -7,6 +7,8 @@ import { bulkInsertTemplates } from "@/lib/actions/formTemplate.actions";
 // import { createSubscription } from "@/lib/actions/subscription.actions";
 import { RegistrationData } from "@/components/providers/UserContext";
 import { parseStringify } from "@/lib/utils";
+import { createSubscription } from "@/lib/actions/subscription.actions";
+import { registerUser } from "@/lib/actions/user.actions";
 
 interface RegistrationState {
   companyId?: string;
@@ -34,7 +36,7 @@ export const insert = async (
   const state: RegistrationState = { bucketCreated: false };
 
   try {
-    const result = await prisma.$transaction(
+    const companyInsertResult = await prisma.$transaction(
       async (tx) => {
         // 1. Verify role existence first
         const role = await tx.role.findUnique({
@@ -62,28 +64,23 @@ export const insert = async (
         state.bucketCreated = true;
 
         // 5. Create user with explicit transaction connection
-        const userResult = await tx.user.create({
-          data: {
+        const userResult = await registerUser(
+          {
             email: values.email,
-            roleId: role.id,
-            title: "Admin",
-            name: `${values.firstName} ${values.lastName}`,
-            employeeId: role.name,
+            password: values.password,
             companyId: company.id,
             firstName: values.firstName,
             lastName: values.lastName,
+            title: "Admin",
+            employeeId: role.name,
+            roleId: role.id,
           },
-        });
+          tx,
+        );
 
         if (!userResult) {
           throw new Error("Failed to create user");
         }
-
-        // 6. Setup company resources
-        await Promise.all([
-          // createSubscription(company.id, values.email, values.assetCount),
-          bulkInsertTemplates(company.id),
-        ]);
 
         return company;
       },
@@ -93,9 +90,20 @@ export const insert = async (
       },
     );
 
+    // 6. Setup company resources
+    const [subscriptionResult] = await Promise.all([
+      createSubscription(
+        companyInsertResult.id,
+        values.email,
+        values.assetCount,
+      ),
+      bulkInsertTemplates(companyInsertResult.id),
+    ]);
+
     return {
       success: true,
-      data: parseStringify(result),
+      data: parseStringify(companyInsertResult),
+      redirectUrl: subscriptionResult?.url!,
     };
   } catch (error) {
     // Only attempt cleanup if we have a company ID
@@ -141,7 +149,6 @@ const cleanup = async (state: RegistrationState) => {
 export const remove = async (id: string): Promise<ActionResponse<Company>> => {
   try {
     const company = await prisma.company.delete({ where: { id } });
-    // Attempt to cleanup S3 storage
     try {
       await S3Service.getInstance().deleteCompanyStorage(id);
     } catch (s3Error) {

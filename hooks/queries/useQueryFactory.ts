@@ -35,10 +35,10 @@ interface UseGenericQueryResult<T, TCreateInput> {
   createItem: (
     data: TCreateInput,
     callbacks?: {
-      onSuccess?: ((result: T) => void) | (() => void);
+      onSuccess?: ((result: ActionResponse<T>) => void) | (() => void);
       onError?: (error: Error) => void;
     },
-  ) => Promise<T>;
+  ) => Promise<ActionResponse<T>>;
   deleteItem: (
     id: string,
     callbacks?: {
@@ -76,9 +76,8 @@ export function createGenericQuery<T extends { id?: string }, TCreateInput>(
       ...options,
     });
 
-    // Define mutations first
     const { mutate: mutateCreate, isPending: isCreating } = useMutation<
-      T,
+      ActionResponse<T>,
       Error,
       TCreateInput,
       MutationContext
@@ -86,7 +85,7 @@ export function createGenericQuery<T extends { id?: string }, TCreateInput>(
       mutationFn: async (data: TCreateInput) => {
         const result = await actions.insert(data);
         if (result.error) throw new Error(result.error);
-        return result.data!;
+        return result;
       },
       onMutate: async (newData) => {
         await queryClient.cancelQueries({ queryKey });
@@ -154,26 +153,27 @@ export function createGenericQuery<T extends { id?: string }, TCreateInput>(
       },
     });
 
-    // Then define the callbacks that use them
     const createItem = useCallback(
       async (
         data: TCreateInput,
         callbacks?: {
-          onSuccess?: ((result: T) => void) | (() => void);
+          onSuccess?: ((result: ActionResponse<T>) => void) | (() => void);
           onError?: (error: Error) => void;
         },
-      ): Promise<T> => {
-        return new Promise<T>((resolve, reject) => {
+      ): Promise<ActionResponse<T>> => {
+        return new Promise<ActionResponse<T>>((resolve, reject) => {
           mutateCreate(data, {
-            onSuccess: (result: T) => {
+            onSuccess: (response: ActionResponse<T>) => {
               if (callbacks?.onSuccess) {
                 if (callbacks.onSuccess.length > 0) {
-                  (callbacks.onSuccess as (result: T) => void)(result);
+                  (callbacks.onSuccess as (result: ActionResponse<T>) => void)(
+                    response,
+                  );
                 } else {
                   (callbacks.onSuccess as () => void)();
                 }
               }
-              resolve(result);
+              resolve(response);
             },
             onError: (error) => {
               callbacks?.onError?.(error);

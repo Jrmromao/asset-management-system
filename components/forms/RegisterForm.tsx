@@ -13,7 +13,6 @@ import HeaderIcon from "@/components/page/HeaderIcon";
 import ReCAPTCHA from "@/components/ReCAPTCHA";
 import { UserContext } from "@/components/providers/UserContext";
 import { useRouter } from "next/navigation";
-import { createCheckoutSession } from "@/lib/actions/stripe.actions";
 import { useCompanyQuery } from "@/hooks/queries/useCompanyQuery";
 import { useRegistrationStore } from "@/lib/stores/useRegistrationStore";
 import { CompanyStatus } from "@prisma/client";
@@ -22,7 +21,7 @@ interface RegisterFormProps {
   assetCount?: number;
 }
 
-const RegisterForm = ({ assetCount = 0 }: RegisterFormProps) => {
+const RegisterForm = ({ assetCount }: RegisterFormProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const { user, setUser } = useContext(UserContext);
@@ -49,44 +48,26 @@ const RegisterForm = ({ assetCount = 0 }: RegisterFormProps) => {
     setError("");
 
     try {
-      // 1. Create company first with Promise wrapper to get the result
-      const company = await createCompany({
-        email: data.email,
-        firstName: data.firstName,
-        lastName: data.lastName,
-        companyName: data.companyName,
-        assetCount,
-        password: data.password,
-        status: CompanyStatus.INACTIVE,
-      });
-
-      // 2. Store registration data
-      setRegistrationData({
-        email: data.email,
-        firstName: data.firstName,
-        lastName: data.lastName,
-        companyName: data.companyName,
-        assetCount,
-        companyId: company.id,
-      });
-
-      // 3. Create Stripe session
-      // const sessionResult = await createCheckoutSession({
-      //   email: data.email,
-      //   assetCount,
-      //   companyId: company.id,
-      // });
-      const sessionResult = await createCheckoutSession({
-        email: data.email,
-        assetCount: assetCount,
-        companyId: company.id,
-      });
-
-      if (sessionResult.success && sessionResult.session?.url) {
-        window.location.href = sessionResult.session.url;
-      } else {
-        throw new Error(sessionResult.error || "No checkout URL received");
-      }
+      await createCompany(
+        {
+          email: data.email,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          companyName: data.companyName,
+          assetCount: assetCount || 100,
+          password: data.password,
+          status: CompanyStatus.INACTIVE,
+        },
+        {
+          onSuccess: (result) => {
+            if (result.success && result.redirectUrl) {
+              window.location.href = result.redirectUrl;
+            } else {
+              throw new Error(result.error || "No checkout URL received");
+            }
+          },
+        },
+      );
     } catch (e) {
       setError(
         e instanceof Error

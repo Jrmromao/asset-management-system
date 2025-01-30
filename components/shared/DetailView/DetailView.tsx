@@ -116,7 +116,7 @@ export const DetailView: React.FC<DetailViewProps> = ({
                   status={String(getField("Status")?.value)}
                 />
               )}
-              <CarbonScoreTooltip co2Score={1} />
+              <CarbonScoreTooltip co2Score={100} />
             </div>
             <div className="flex flex-wrap gap-2">
               {["Seats", "Units"].map(

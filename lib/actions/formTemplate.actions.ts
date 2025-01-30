@@ -141,7 +141,7 @@ export async function update(
       select: { id: true },
     });
 
-    return { data: parseStringify(template) };
+    return { data: parseStringify(template), redirectUrl: "/form-templates" };
   } catch (error) {
     return handleError(error, "Failed to update template");
   }

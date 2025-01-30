@@ -8,6 +8,20 @@ declare global {
   //   INACTIVE = "INACTIVE",
   // }
 
+  type UsageRecord = {
+    id: string;
+    subscriptionId: string;
+    purchasedAssetQuota: number;
+    actualAssetCount: number;
+    timestamp: Date;
+    billingPeriodStart: Date;
+    billingPeriodEnd: Date;
+    stripeUsageRecordId: string | null;
+    pricePerAsset: Decimal;
+    totalAmount: Decimal;
+    subscription?: Subscription; // Optional since you might not always load the relation
+  };
+
   // ==================== Base Interfaces ====================
   interface BaseEntity {
     id: string;
@@ -50,6 +64,7 @@ declare global {
     error?: string;
     message?: string;
     success?: boolean;
+    redirectUrl?: string;
   };
 
   type CSVRow = Record<string, string>;

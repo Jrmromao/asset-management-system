@@ -3,123 +3,122 @@
 import { prisma } from "@/app/db";
 import Stripe from "stripe";
 
-const stripe = new Stripe(
-  "sk_test_51PifCH2N5SBY44N5QTQZWyJn8oxmCVaYkWDUWXGmr5Yp2fmlwWo4SUKtpai2tC2ku8TkJ9Y3FBrLyeMQM7ufS8pE00rJwIf2bW",
-);
+if (!process.env.STRIPE_SECRET_KEY || !process.env.STRIPE_PRICE_ID) {
+  throw new Error("Missing required Stripe environment variables");
+}
 
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: "2024-12-18.acacia",
+});
+
+// Main subscription creation function
 export const createSubscription = async (
   companyId: string,
   email: string,
   assetCount: number,
 ) => {
   try {
-    const customer = await createStripeCustomer(email, companyId);
-    const subscription = await createStripeSubscription(
-      customer.id,
-      assetCount,
-    );
-    return await createDbSubscription(
-      companyId,
-      customer.id,
-      subscription.id,
-      assetCount,
-    );
+    // Create a Stripe customer
+    const customer = await stripe.customers.create({
+      email,
+      metadata: { companyId },
+    });
+
+    // Create a checkout session
+    const session = await stripe.checkout.sessions.create({
+      customer: customer.id,
+      mode: "subscription",
+      payment_method_types: ["card"],
+      line_items: [
+        {
+          price: process.env.STRIPE_PRICE_ID,
+          quantity: assetCount, // Dynamically set asset count
+        },
+      ],
+      subscription_data: {
+        trial_period_days: 15, // Optional: Adjust as needed
+        metadata: { assetQuota: assetCount }, // Keep metadata consistent
+      },
+      metadata: { companyId, assetCount },
+      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/account-verification?email=${email}&success=true&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/pricing?canceled=true`,
+    });
+
+    return {
+      url: session.url,
+      sessionId: session.id,
+    };
   } catch (error) {
-    if (error instanceof Stripe.errors.StripeError) {
-      throw new Error(`Stripe error: ${error.message}`);
-    }
-    throw error;
+    console.error("Subscription creation error:", error);
+    throw new Error(
+      error instanceof Stripe.errors.StripeError
+        ? `Payment processing failed: ${error.message}`
+        : "Failed to create subscription",
+    );
   }
 };
 
-async function createStripeCustomer(email: string, companyId: string) {
-  return stripe.customers.create({
-    email,
-    metadata: { companyId },
+// Webhook handler for completed checkout
+export async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
+  if (!session.subscription || !session.customer) {
+    throw new Error("Invalid checkout session");
+  }
+
+  const { companyId, assetCount } = session.metadata as {
+    companyId: string;
+    assetCount: string;
+  };
+
+  return prisma.$transaction(async (tx) => {
+    // Create subscription record
+    const subscription = await tx.subscription.create({
+      data: {
+        companyId,
+        stripeCustomerId: session.customer as string,
+        stripeSubscriptionId: session.subscription as string,
+        stripePriceId: process.env.STRIPE_PRICE_ID!,
+        status: "TRIAL",
+        currentPeriodStart: new Date(),
+        currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        trialEndsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        pricePerAsset: 0.5,
+        plan: "FREE",
+        billingCycleAnchor: new Date(),
+      },
+    });
+
+    // Create usage record
+    await tx.usageRecord.create({
+      data: {
+        subscriptionId: subscription.id,
+        purchasedAssetQuota: Number(assetCount),
+        actualAssetCount: Number(assetCount),
+        billingPeriodStart: subscription.currentPeriodStart,
+        billingPeriodEnd: subscription.currentPeriodEnd,
+        pricePerAsset: subscription.pricePerAsset,
+        totalAmount: Number(subscription.pricePerAsset) * Number(assetCount),
+      },
+    });
+
+    return subscription;
   });
 }
 
-async function createStripeSubscription(
-  customerId: string,
-  assetCount: number,
-) {
-  return stripe.subscriptions.create({
-    customer: customerId,
-    items: [{ price: process.env.STRIPE_PRICE_ID }],
-    trial_period_days: 30,
-    metadata: { assetQuota: assetCount },
-  });
-}
-
-async function createDbSubscription(
-  companyId: string,
-  customerId: string,
-  stripeSubscriptionId: string,
-  assetCount: number,
-) {
-  const now = new Date();
-  const trialEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-
-  const subscription = await prisma.subscription.create({
-    data: {
-      companyId,
-      stripeCustomerId: customerId,
-      stripeSubscriptionId,
-      stripePriceId: process.env.STRIPE_PRICE_ID!,
-      status: "TRIAL",
-      billingCycleAnchor: now,
-      currentPeriodStart: now,
-      currentPeriodEnd: trialEnd,
-      pricePerAsset: 0.003,
-      plan: "FREE",
-    },
-  });
-
-  await updateUsageRecord(subscription.id, assetCount);
-  return subscription;
-}
-
-async function updateUsageRecord(
-  subscriptionId: string,
-  purchasedQuota: number,
-) {
-  const subscription = await prisma.subscription.findUnique({
-    where: { id: subscriptionId },
-    // rejectOnNotFound: true,
-  });
-
-  const { items } = await stripe.subscriptions.retrieve(
-    subscription!.stripeSubscriptionId,
-  );
-  const subscriptionItem = items.data[0];
-
-  const stripeUsage = await stripe.subscriptionItems.createUsageRecord(
-    subscriptionItem.id,
-    { quantity: purchasedQuota },
-  );
-
-  return prisma.usageRecord.create({
-    data: {
-      subscriptionId,
-      purchasedAssetQuota: purchasedQuota,
-      actualAssetCount: purchasedQuota,
-      billingPeriodStart: subscription!.currentPeriodStart,
-      billingPeriodEnd: subscription!.currentPeriodEnd,
-      stripeUsageRecordId: stripeUsage.id,
-      pricePerAsset: subscription!.pricePerAsset,
-      totalAmount: Number(subscription!.pricePerAsset) * purchasedQuota,
-    },
-  });
-}
-
+// Handle trial end
 export const handleTrialEnd = async (subscriptionId: string) => {
   const subscription = await prisma.subscription.findUnique({
     where: { stripeSubscriptionId: subscriptionId },
-    // rejectOnNotFound: true,
   });
 
-  await prisma.subscription.update({
-    where: { id: subscription!.id },
-    data: { status: "ACTIVE" },
+  if (!subscription) {
+    throw new Error(`Subscription not found: ${subscriptionId}`);
+  }
+
+  return prisma.subscription.update({
+    where: { id: subscription.id },
+    data: {
+      status: "ACTIVE",
+      updatedAt: new Date(),
+    },
   });
 };

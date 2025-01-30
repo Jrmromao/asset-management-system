@@ -12,7 +12,6 @@ import { getIpAddress } from "@/utils/getIpAddress";
 
 // Common include object for consistent asset queries
 const assetIncludes = {
-  // license: true,
   model: {
     include: {
       manufacturer: true,
@@ -50,8 +49,6 @@ export async function getAll(): Promise<ActionResponse<Asset[]>> {
 
 export async function findById(id: string): Promise<ActionResponse<Asset>> {
   try {
-    console.log("ASSET ID", id);
-
     if (!id) {
       return { error: "Asset ID is required" };
     }
