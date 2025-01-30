@@ -7,11 +7,14 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 });
 
 export async function POST(req: Request) {
+  if (!process.env.STRIPE_SECRET_KEY || !process.env.STRIPE_WEBHOOK_SECRET) {
+    console.error("Missing required environment variables");
+    return new Response("Server configuration error", { status: 500 });
+  }
+
   const body = await req.text();
   const signature = req.headers.get("stripe-signature");
 
-  console.log(body);
-  console.log(signature);
   if (!signature) {
     return new Response("Missing stripe-signature", { status: 400 });
   }
