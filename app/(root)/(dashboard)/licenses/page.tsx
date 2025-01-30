@@ -100,12 +100,6 @@ const Licenses = () => {
         percentage: availableLicenses.length,
         total: availableLicenses.length,
       },
-      {
-        title: "Maintenance Due",
-        value: 3,
-        subtitle: "Due within 30 days",
-        color: "yellow",
-      },
     ];
 
     return <StatusCards cards={cardData} />;

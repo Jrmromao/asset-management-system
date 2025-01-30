@@ -49,6 +49,12 @@ export const sidebarLinks = [
     label: "Admin",
     visibleTo: [roles.SUPER_ADMIN],
   },
+  {
+    imgURL: "/icons/settings.svg",
+    route: "/settings",
+    label: "Settings",
+    visibleTo: [roles.ADMIN, roles.SUPER_ADMIN],
+  },
 
   // {
   //   imgURL: "/icons/Admin-icon.svg",
