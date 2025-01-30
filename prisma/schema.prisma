@@ -294,10 +294,11 @@ model Role {
 }
 
 model Company {
-  id        String   @id @default(cuid())
-  name      String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id        String        @id @default(cuid())
+  name      String        @unique
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  status    CompanyStatus @default(INACTIVE)
 
   // Relations
   users          User[]
@@ -323,6 +324,7 @@ model Company {
   ReportConfiguration ReportConfiguration[]
   GeneratedReport     GeneratedReport[]
   // PurchaseOrder       PurchaseOrder[]
+  Subscription        Subscription[]
 }
 
 model Manufacturer {
@@ -728,4 +730,98 @@ model GeneratedReport {
 
   @@index([configurationId])
   @@index([companyId])
+}
+
+// Add these models to your schema
+model Subscription {
+  id                   String    @id @default(cuid())
+  companyId            String    @unique // One subscription per company
+  stripeCustomerId     String    @unique
+  stripePriceId        String
+  stripeSubscriptionId String    @unique
+  status               String // active, past_due, canceled, etc.
+  currentPeriodStart   DateTime
+  currentPeriodEnd     DateTime
+  plan                 PlanType  @default(FREE)
+  pricePerAsset        Decimal   @db.Decimal(10, 2)
+  billingCycleAnchor   DateTime
+  trialEndsAt          DateTime?
+  cancelAtPeriodEnd    Boolean   @default(false)
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  company         Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  usageRecords    UsageRecord[]
+  invoices        Invoice[]
+  billingSettings BillingSettings?
+
+  @@index([companyId])
+}
+
+model BillingSettings {
+  id                  String  @id @default(cuid())
+  subscriptionId      String  @unique
+  paymentMethodId     String?
+  billingEmail        String
+  taxId               String?
+  billingAddressLine1 String?
+  billingAddressLine2 String?
+  billingCity         String?
+  billingState        String?
+  billingZip          String?
+  billingCountry      String?
+
+  subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+}
+
+model UsageRecord {
+  id                  String   @id @default(cuid())
+  subscriptionId      String
+  purchasedAssetQuota Int // Number of assets customer paid to track
+  actualAssetCount    Int // Current number of assets being tracked
+  timestamp           DateTime @default(now())
+  billingPeriodStart  DateTime
+  billingPeriodEnd    DateTime
+  stripeUsageRecordId String?
+  pricePerAsset       Decimal  @db.Decimal(10, 2)
+  totalAmount         Decimal  @db.Decimal(10, 2)
+
+  subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@index([subscriptionId])
+  @@index([timestamp])
+}
+
+model Invoice {
+  id              String    @id @default(cuid())
+  subscriptionId  String
+  stripeInvoiceId String    @unique
+  amount          Decimal   @db.Decimal(10, 2)
+  status          String // paid, open, void
+  invoiceDate     DateTime
+  dueDate         DateTime
+  paidAt          DateTime?
+  billingPeriod   Json // Store start and end dates
+  items           Json // Store line items
+  subtotal        Decimal   @db.Decimal(10, 2)
+  tax             Decimal   @db.Decimal(10, 2)
+  total           Decimal   @db.Decimal(10, 2)
+
+  subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@index([subscriptionId])
+  @@index([invoiceDate])
+}
+
+// thus is the membership plan
+enum PlanType {
+  FREE
+  PRO
+  ENTERPRISE
+}
+
+// Company status
+enum CompanyStatus {
+  ACTIVE
+  INACTIVE
 }

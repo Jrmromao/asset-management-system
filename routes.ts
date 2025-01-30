@@ -2,7 +2,7 @@
  * An array of all the public routes accessible without authentication
  * @type {string[]}
  */
-export const publicRoutes: string[] = ["/", "/privacy-policy"];
+export const publicRoutes: string[] = ["/", "/privacy-policy", "/api/webhooks"];
 
 /**
  * An array of routes that are used for authentication
@@ -15,6 +15,7 @@ export const authRoutes: string[] = [
   "/account-verification",
   "/forgot-password",
   "/reset-password",
+  "/sign-up/success",
   "/forgot-password/confirm",
 ];
 

@@ -15,7 +15,7 @@ const nextConfig = {
 
 export default withSentryConfig(nextConfig, {
   org: "qlientel",
-  project: "javascript-nextjs",
+  project: "ecokeepr",
   silent: !process.env.CI,
   widenClientFileUpload: true,
   reactComponentAnnotation: {

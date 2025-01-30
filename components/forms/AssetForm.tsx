@@ -42,6 +42,7 @@ import {
 } from "@/lib/schemas/schema-utils";
 import { getStatusLocationSection } from "@/components/forms/formSections";
 import { useLocationUIStore } from "@/lib/stores/useLocationUIStore";
+import CustomSwitch from "@/components/CustomSwitch";
 
 type FormTemplate = {
   id: string;
@@ -170,6 +171,9 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
   const renderCustomFields = () => {
     if (!selectedTemplate?.fields?.length) return null;
 
+    // Get the power source value for conditional rendering
+    const powerSourceValue = form.watch("templateValues.powerSource");
+
     return (
       <FormSection title={`${selectedTemplate.name} Details`}>
         <div className="flex items-center gap-2">
@@ -180,6 +184,20 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {selectedTemplate.fields.map((field: CustomField) => {
+            // Check if field should be shown based on conditions
+            const shouldShowField =
+              !field.showIf ||
+              Object.entries(field.showIf).every(
+                ([dependentField, allowedValues]) => {
+                  const dependentValue = form.watch(
+                    `templateValues.${dependentField}`,
+                  );
+                  return allowedValues.includes(dependentValue);
+                },
+              );
+
+            if (!shouldShowField) return null;
+
             const fieldName = `templateValues.${field.name}`;
             const fieldValue = form.watch(`templateValues.${field.name}`);
             const isFieldValid = field.required
@@ -215,6 +233,13 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
                       })) || []
                     }
                     placeholder={`Select ${String(field.label).toLowerCase()}`}
+                  />
+                ) : field.type === "boolean" ? (
+                  <CustomSwitch
+                    name={fieldName}
+                    label={String(field.label)}
+                    control={form.control}
+                    required={field.required}
                   />
                 ) : null}
 

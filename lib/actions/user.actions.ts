@@ -55,14 +55,18 @@ export async function login(
   }
 }
 
-async function insertUser(data: RegUser, oauthId?: string) {
+async function insertUser(
+  data: RegUser,
+  oauthId?: string,
+  tx?: Prisma.TransactionClient,
+) {
   if (!data.roleId) {
     throw new Error("Role ID is required");
   }
-  console.log("USER.LOGIN::62 ", data);
+  const prismaClient = tx || prisma;
 
   try {
-    const user = await prisma.user.create({
+    return await prismaClient.user.create({
       data: {
         name: `${data.firstName} ${data.lastName}`,
         email: data.email,
@@ -75,7 +79,6 @@ async function insertUser(data: RegUser, oauthId?: string) {
         companyId: data.companyId,
       },
     });
-    return user;
   } catch (error) {
     console.error("USER.LOGIN::80 ", error);
     throw error;
@@ -129,6 +132,7 @@ export async function createUser(
 
 export async function registerUser(
   data: RegUser,
+  tx?: Prisma.TransactionClient,
 ): Promise<ActionResponse<any>> {
   try {
     const cognitoRegisterResult = await signUpUser({
@@ -141,7 +145,10 @@ export async function registerUser(
       return { error: "Cognito registration failed" };
     }
 
-    const role = await prisma.role.findUnique({
+    // Use the provided transaction client or the global prisma client
+    const prismaClient = tx || prisma;
+
+    const role = await prismaClient.role.findUnique({
       where: { name: "Admin" },
     });
 
@@ -149,7 +156,12 @@ export async function registerUser(
       return { error: "Role not found" };
     }
 
-    const user = await insertUser(data, cognitoRegisterResult.data.userId);
+    // Create user with the appropriate client
+    const user = await insertUser(
+      data,
+      cognitoRegisterResult.data.userId,
+      prismaClient,
+    );
 
     if (!user) {
       return { error: "Failed to create user in database" };
@@ -157,7 +169,10 @@ export async function registerUser(
 
     return {
       success: true,
-      data: parseStringify(cognitoRegisterResult),
+      data: parseStringify({
+        ...cognitoRegisterResult,
+        user,
+      }),
     };
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
