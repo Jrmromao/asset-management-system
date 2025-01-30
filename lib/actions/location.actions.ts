@@ -30,16 +30,6 @@ export async function remove(
       return { error: "Location not found" };
     }
 
-    // Optional: Check for related records before deletion
-    // const hasRelatedRecords = await prisma.asset.findFirst({
-    //   where: { locationId: id },
-    //   select: { id: true },
-    // });
-    //
-    // if (hasRelatedRecords) {
-    //   return { error: "Cannot delete location with associated assets" };
-    // }
-
     const location = await prisma.departmentLocation.delete({
       where: { id },
     });
@@ -93,34 +83,10 @@ export async function getAll(params?: {
     if (!session) {
       return { error: "Not authenticated" };
     }
-
-    // const where: Prisma.DepartmentLocationWhereInput = {
-    //   companyId: session.user.companyId!,
-    //   ...(params?.search && {
-    //     OR: [
-    //       {
-    //         name: {
-    //           contains: params.search,
-    //           mode: "insensitive" as Prisma.QueryMode,
-    //         },
-    //       },
-    //       {
-    //         city: {
-    //           contains: params.search,
-    //           mode: "insensitive" as Prisma.QueryMode,
-    //         },
-    //       },
-    //       {
-    //         state: {
-    //           contains: params.search,
-    //           mode: "insensitive" as Prisma.QueryMode,
-    //         },
-    //       },
-    //     ],
-    //   }),
-    // };
-
     const locations = await prisma.departmentLocation.findMany({
+      where: {
+        companyId: session.user.companyId,
+      },
       orderBy: { createdAt: "desc" },
     });
 
