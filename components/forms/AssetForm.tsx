@@ -276,11 +276,10 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
           },
           {
             onSuccess: () => {
-              toast.success("Asset created successfully");
               router.push("/assets");
             },
             onError: (error) => {
-              toast.error("Failed to create asset: " + error);
+              console.error("Error creating Asset:", error);
             },
           },
         );

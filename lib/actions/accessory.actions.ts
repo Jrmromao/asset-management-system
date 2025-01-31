@@ -6,96 +6,75 @@ import { auth } from "@/auth";
 import { z } from "zod";
 import { accessorySchema, assignmentSchema } from "@/lib/schemas";
 import { getAuditLog } from "@/lib/actions/auditLog.actions";
-import { PrismaClientKnownRequestError } from "@prisma/client/runtime/binary";
 import { revalidatePath } from "next/cache";
-import { ItemType } from "@prisma/client";
+import { ItemType, Prisma } from "@prisma/client";
+import { withAuth, withAuthNoArgs } from "@/lib/middleware/withAuth";
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000; // 1 second
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-export const insert = async (
-  values: z.infer<typeof accessorySchema>,
-): Promise<ActionResponse<Accessory>> => {
-  try {
-    const validation = accessorySchema.safeParse(values);
-    if (!validation.success) {
-      throw new Error(validation.error.errors[0].message);
-    }
+export const insert = withAuth<z.infer<typeof accessorySchema>, Accessory>(
+  async (values, session) => {
+    try {
+      const validation = accessorySchema.safeParse(values);
+      if (!validation.success) {
+        throw new Error(validation.error.errors[0].message);
+      }
 
-    const session = await auth();
+      return await prisma.$transaction(async (tx) => {
+        const accessory = await tx.accessory.create({
+          data: {
+            name: values.name,
+            alertEmail: values.alertEmail,
+            serialNumber: values.serialNumber,
+            reorderPoint: Number(values.reorderPoint),
+            totalQuantityCount: Number(values.totalQuantityCount),
+            modelNumber: values.modelNumber,
+            companyId: session.user.companyId,
+            statusLabelId: values.statusLabelId,
+            departmentId: values.departmentId,
+            locationId: values.locationId,
+            inventoryId: values.inventoryId,
+            categoryId: values.categoryId,
+          },
+        });
 
-    if (!session) {
-      return { error: "Not authenticated" };
-    }
+        await tx.accessoryStock.create({
+          data: {
+            accessoryId: accessory.id,
+            quantity: Number(values.totalQuantityCount),
+            type: "purchase",
+            companyId: session.user.companyId,
+            notes: `Initial stock purchase of ${values.totalQuantityCount} units`,
+          },
+        });
 
-    return await prisma.$transaction(async (tx) => {
-      // Create accessory
-      const accessory = await tx.accessory.create({
-        data: {
-          name: values.name,
-          alertEmail: values.alertEmail,
-          serialNumber: values.serialNumber,
-          reorderPoint: Number(values.reorderPoint),
-          totalQuantityCount: Number(values.totalQuantityCount),
-          // purchaseDate: values.purchaseDate,
-          // notes: values.notes,
-          modelNumber: values.modelNumber,
-          // material: values.material || "",
-          // endOfLife: values.endOfLife,
-          companyId: session.user.companyId,
-          statusLabelId: values.statusLabelId,
-          // supplierId: values.supplierId,
-          departmentId: values.departmentId,
-          locationId: values.locationId,
-          inventoryId: values.inventoryId,
-          categoryId: values.categoryId,
-          // poNumber: values.poNumber,
-          // weight: values.weight,
-          // price: values.price,
-        },
+        await tx.auditLog.create({
+          data: {
+            action: "ACCESSORY_CREATED",
+            entity: "ACCESSORY",
+            entityId: accessory.id,
+            userId: session.user.id || "",
+            companyId: session.user.companyId,
+            details: `Created accessory ${values.name} with initial stock of ${values.totalQuantityCount} units`,
+          },
+        });
+
+        return { data: parseStringify(accessory) };
       });
-
-      // Record initial stock
-      await tx.accessoryStock.create({
-        data: {
-          accessoryId: accessory.id,
-          quantity: Number(values.totalQuantityCount),
-          type: "purchase",
-          companyId: session.user.companyId,
-          notes: `Initial stock purchase of ${values.totalQuantityCount} units`,
-        },
-      });
-
-      // Create audit log
-      await tx.auditLog.create({
-        data: {
-          action: "ACCESSORY_CREATED",
-          entity: "ACCESSORY",
-          entityId: accessory.id,
-          userId: session.user.id || "",
-          companyId: session.user.companyId,
-          details: `Created accessory ${values.name} with initial stock of ${values.totalQuantityCount} units`,
-        },
-      });
-
+    } catch (error) {
+      console.error(error);
       return {
-        data: parseStringify(accessory),
+        error: error instanceof Error ? error.message : "Unknown error",
       };
-    });
-  } catch (error) {
-    console.error(error);
-    return { error: error instanceof Error ? error.message : "Unknown error" };
-  }
-};
-
-export const getAll = async (): Promise<ActionResponse<Accessory[]>> => {
-  try {
-    const session = await auth();
-    if (!session?.user?.companyId) {
-      return { error: "Unauthorized access" };
     }
+  },
+);
+
+export const getAll = withAuthNoArgs<Accessory[]>(async (session) => {
+  try {
     const accessories = await prisma.accessory.findMany({
       include: {
         company: true,
@@ -115,15 +94,15 @@ export const getAll = async (): Promise<ActionResponse<Accessory[]>> => {
     console.error("Error fetching accessories:", error);
     return { error: "Failed to fetch assets" };
   }
-};
+});
 
-export const findById = async (
-  id: string,
-): Promise<ActionResponse<Accessory>> => {
+export const findById = withAuth<string, Accessory>(async (id, session) => {
   try {
-    // 1. Define the query shape upfront for better type safety and reusability
     const accessoryQuery = {
-      where: { id },
+      where: {
+        id,
+        companyId: session.user.companyId,
+      },
       include: {
         company: true,
         supplier: true,
@@ -154,52 +133,67 @@ export const findById = async (
       },
     } as const;
 
-    // 2. Execute both queries in parallel for better performance
     const [accessory, auditLogsResult] = await Promise.all([
       prisma.accessory.findUnique(accessoryQuery),
-      id ? getAuditLog(id) : Promise.resolve({ success: false, data: [] }),
+      getAuditLog(id),
     ]);
+
     if (!accessory) {
       return { error: "Accessory not found" };
     }
 
-    const accessoryWithComputedFields = {
-      ...accessory,
-      auditLogs: auditLogsResult.success ? auditLogsResult.data : [],
-      userAccessories: accessory.userItems,
-      stockHistory: accessory.AccessoryStock,
-      currentAssignments: accessory.userItems,
-    };
-
     return {
-      data: parseStringify(accessoryWithComputedFields),
+      data: parseStringify({
+        ...accessory,
+        auditLogs: auditLogsResult.success ? auditLogsResult.data : [],
+        userAccessories: accessory.userItems,
+        stockHistory: accessory.AccessoryStock,
+        currentAssignments: accessory.userItems,
+      }),
     };
   } catch (error) {
     console.error("Error finding accessory:", error);
-    // 5. Add more specific error handling
-    if (error instanceof PrismaClientKnownRequestError) {
-      return {
-        error: `Database error: ${error.message}`,
-      };
-    }
-    return {
-      error: "Failed to find accessory",
-    };
+    return { error: "Failed to find accessory" };
   }
-};
+});
 
-export const remove = async (id: string) => {
+export const remove = withAuth<string, Accessory>(async (id, session) => {
   try {
     const asset = await prisma.accessory.delete({
       where: {
         id: id,
+        companyId: session.user.companyId, // Add company check for security
       },
     });
-    return parseStringify(asset);
+
+    // Add audit log for deletion
+    await prisma.auditLog.create({
+      data: {
+        action: "ACCESSORY_DELETED",
+        entity: "ACCESSORY",
+        entityId: id,
+        userId: session.user.id || "",
+        companyId: session.user.companyId,
+        details: `Deleted accessory with ID ${id}`,
+      },
+    });
+
+    return { data: parseStringify(asset) };
   } catch (error) {
-    console.log(error);
+    console.error("Error deleting accessory:", error);
+
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === "P2025") {
+        return { error: "Accessory not found" };
+      }
+      if (error.code === "P2003") {
+        return { error: "Cannot delete accessory because it is still in use" };
+      }
+    }
+
+    return { error: "Failed to delete accessory" };
   }
-};
+});
 
 export async function processAccessoryCSV(csvContent: string) {
   try {

@@ -82,25 +82,25 @@ export const licenseSchema = z
         message: "Min. copies alert is required",
       }),
     licensedEmail: z.string().email("Valid email is required"),
-    purchaseDate: z.date(),
-    renewalDate: z.date(),
+    // purchaseDate: z.date(),
+    // renewalDate: z.date(),
     statusLabelId: z.string().min(1, "Status is required"),
     alertRenewalDays: z
       .string()
       .refine((val) => !Number.isNaN(parseInt(val, 10)), {
         message: "Alert renewal days is required",
       }),
-    purchasePrice: z
-      .string()
-      .refine((val) => !Number.isNaN(parseInt(val, 10)), {
-        message: "Purchase price is required",
-      }),
-    poNumber: z.string().min(1, "PO number is required"),
+    // purchasePrice: z
+    //   .string()
+    //   .refine((val) => !Number.isNaN(parseInt(val, 10)), {
+    //     message: "Purchase price is required",
+    //   }),
+    // poNumber: z.string().min(1, "PO number is required"),
     notes: z.string().optional(),
     departmentId: z.string().min(1, "Department is required"),
     inventoryId: z.string().min(1, "Inventory is required"),
     locationId: z.string().min(1, "Location is required"),
-    supplierId: z.string().min(1, "Supplier is required"),
+    // supplierId: z.string().min(1, "Supplier is required"),
     attachments: z.array(z.any()).optional(),
   })
   .refine(
@@ -109,11 +109,11 @@ export const licenseSchema = z
       message: "License copies count must be greater than min. copies alert",
       path: ["seats"],
     },
-  )
-  .refine((data) => data.purchaseDate <= data.renewalDate, {
-    message: "Renewal date must be in the future",
-    path: ["renewalDate"],
-  });
+  );
+// .refine((data) => data.purchaseDate <= data.renewalDate, {
+//   message: "Renewal date must be in the future",
+//   path: ["renewalDate"],
+// });
 
 export const accessorySchema = z
   .object({

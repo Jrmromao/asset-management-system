@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
-import { ClockIcon, UserIcon } from "lucide-react";
+import { ClockIcon } from "lucide-react";
 import { DataTable } from "@/components/tables/DataTable/data-table";
 import { assetHistoryColumns } from "@/components/tables/AsetHistoryColumns";
 
@@ -50,20 +50,6 @@ const AssetDetailTab: React.FC<ItemDetailsTabsProps> = ({
               <ClockIcon className="h-4 w-4" />
               History
             </TabsTrigger>
-
-            {itemType !== "asset" && (
-              <TabsTrigger
-                value="used-by"
-                className={cn(
-                  "flex items-center gap-2 px-6 py-3 rounded-none border-b-2 border-transparent",
-                  "data-[state=active]:border-blue-600 data-[state=active]:text-blue-600",
-                  "hover:text-blue-600 transition-colors",
-                )}
-              >
-                <UserIcon className="h-4 w-4" />
-                <span>Used By</span>
-              </TabsTrigger>
-            )}
           </TabsList>
         </div>
 
@@ -84,21 +70,21 @@ const AssetDetailTab: React.FC<ItemDetailsTabsProps> = ({
           )}
         </TabsContent>
 
-        <TabsContent value="used-by" className="pt-4">
-          {/*{*/}
-          {/*  */}
-          {/*  (usedBy?.length | usedBy.length) > 0 ? (*/}
-          {/*  <div className="rounded-lg border bg-white mx-3 mb-6">*/}
-          {/*    <DataTable columns={usedByAccessoryColumnsMemo} data={usedBy} />*/}
-          {/*  </div>*/}
-          {/*) : (*/}
-          <div className="text-center py-12 text-gray-500">
-            <UserIcon className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-            <p className="text-lg font-medium">{`No checkout history for this ${itemType}`}</p>
-            <p className="text-sm">No activity has been recorded yet</p>
-          </div>
-          {/*)}*/}
-        </TabsContent>
+        {/*<TabsContent value="used-by" className="pt-4">*/}
+        {/*  {*/}
+        {/*    */}
+        {/*    (usedBy?.length | usedBy.length) > 0 ? (*/}
+        {/*    <div className="rounded-lg border bg-white mx-3 mb-6">*/}
+        {/*      <DataTable columns={usedByAccessoryColumnsMemo} data={usedBy} />*/}
+        {/*    </div>*/}
+        {/*  ) : (*/}
+        {/*  <div className="text-center py-12 text-gray-500">*/}
+        {/*    <UserIcon className="h-12 w-12 mx-auto mb-4 text-gray-400" />*/}
+        {/*    <p className="text-lg font-medium">{`No checkout history for this ${itemType}`}</p>*/}
+        {/*    <p className="text-sm">No activity has been recorded yet</p>*/}
+        {/*  </div>*/}
+        {/*  /!*)}*!/*/}
+        {/*</TabsContent>*/}
       </Tabs>
     </div>
   );

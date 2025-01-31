@@ -1,32 +1,50 @@
 import { BarChart3, Battery, Box, Clock } from "lucide-react";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { getAll } from "@/lib/actions/assets.actions";
-import { useEffect, useState } from "react";
-import { useAssetQuery } from "@/hooks/queries/useAssetQuery";
+import { useEffect, useMemo, useState } from "react";
 import { getAssetQuota } from "@/lib/actions/usageRecord.actions";
 
 export const StatsGrid = () => {
-  const { assets } = useAssetQuery();
+  // Group the state declarations together for better readability
   const [quota, setQuota] = useState<number>(0);
+  const [assets, setAssets] = useState<Asset[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    getAll();
-    getAssetQuota()
-      .then()
-      .then((res) => {
-        return setQuota(res?.data || 0);
-      });
-  }, []);
-
-  const assetAssigned = assets.reduce(
-    (sum, record) => sum + (record.assigneeId !== null ? 1 : 0),
-    0,
+  // Calculate assigned assets using useMemo to avoid unnecessary recalculations
+  const assetsAssigned = useMemo(
+    () => assets.reduce((sum, asset) => sum + (asset.assigneeId ? 1 : 0), 0),
+    [assets],
   );
 
-  const usageRate = !quota ? 0 : Math.floor((assetAssigned / quota) * 100);
+  // Calculate usage rate using useMemo
+  const usageRate = useMemo(
+    () => (quota > 0 ? (assetsAssigned / quota) * 100 : 0),
+    [assetsAssigned, quota],
+  );
 
-  console.log("assetAssigned", assetAssigned); // 1
-  console.log("Usage Rate", usageRate); // 0
+  // Combine API calls in a single useEffect
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
+        const [assetsResponse, quotaResponse] = await Promise.all([
+          getAll(),
+          getAssetQuota(),
+        ]);
+
+        setAssets(assetsResponse?.data || []);
+        setQuota(quotaResponse?.data || 0);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        // Handle error appropriately
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
       <StatCard

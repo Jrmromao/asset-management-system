@@ -173,11 +173,9 @@ const LicenseForm = () => {
         await createLicense(data, {
           onSuccess: () => {
             form.reset();
-            toast.success("License created successfully");
             router.push("/licenses");
           },
           onError: (error) => {
-            toast.error("Failed to create license");
             console.error("Error creating a License:", error);
           },
         });
@@ -188,9 +186,10 @@ const LicenseForm = () => {
     });
   }
 
+  //
   const progressFormSection = [
     {
-      name: "License Information",
+      name: "Basic Information",
       isValid: !!form.watch("licenseName"),
     },
     {
@@ -201,19 +200,19 @@ const LicenseForm = () => {
       name: "License Management",
       isValid: !!form.watch("seats") && !!form.watch("minSeatsAlert"),
     },
-    {
-      name: "Purchase Information",
-      isValid: !!form.watch("purchasePrice") && !!form.watch("supplierId"),
-    },
+    // {
+    //   name: "Purchase Information",
+    //   isValid: !!form.watch("purchasePrice") && !!form.watch("supplierId"),
+    // },
     {
       name: "Notifications",
       isValid:
         !!form.watch("licensedEmail") && !!form.watch("alertRenewalDays"),
     },
-    {
-      name: "Attachments",
-      isValid: !!file,
-    },
+    // {
+    //   name: "Attachments",
+    //   isValid: !!file,
+    // },
   ];
 
   return (

@@ -363,7 +363,7 @@ export default function AssetPage({ params }: AssetPageProps) {
           auditLogs={asset?.auditLogs ?? []}
           itemId={id}
           usedBy={asset?.usedBy}
-          itemType="accessory"
+          itemType="asset"
           isCheckingIn={loadingStates.isCheckingIn}
           isRefreshing={loadingStates.isRefreshing}
         />
