@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import {
-  Box,
+  BadgeCheck,
+  Boxes,
+  Building2,
   Factory,
   LucideIcon,
   MapPin,
@@ -8,6 +10,8 @@ import {
   Search,
   Settings2,
   Tags,
+  Truck,
+  Warehouse,
 } from "lucide-react";
 
 interface Tab {
@@ -18,13 +22,13 @@ interface Tab {
 }
 
 const AdminSettings = () => {
-  const [activeTab, setActiveTab] = useState<string>("categories");
+  const [activeTab, setActiveTab] = useState<string>("models");
 
   const tabs: Tab[] = [
     {
       id: "models",
       label: "Models",
-      icon: Box,
+      icon: Boxes,
       fields: ["Model Name", "Type", "Specifications", "Status"],
     },
     {
@@ -44,6 +48,30 @@ const AdminSettings = () => {
       label: "Asset Categories",
       icon: Tags,
       fields: ["Category Name", "Parent Category", "Description", "Status"],
+    },
+    {
+      id: "departments",
+      label: "Departments",
+      icon: Building2,
+      fields: ["Name", "Email", "Role", "Status"],
+    },
+    {
+      id: "suppliers",
+      label: "Suppliers",
+      icon: Truck,
+      fields: ["Supplier Name", "Contact Info", "Status"],
+    },
+    {
+      id: "status-label",
+      label: "Status Labels",
+      icon: BadgeCheck,
+      fields: ["Label Name", "Color", "Status"],
+    },
+    {
+      id: "inventories",
+      label: "Inventories",
+      icon: Warehouse,
+      fields: ["Inventory Name", "Location", "Status"],
     },
   ];
 
