@@ -2,13 +2,17 @@ import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { ArrowUpDown, ExternalLink } from "lucide-react";
 import React from "react";
+import DataTableRowActions from "@/components/tables/DataTable/DataTableRowActions";
 
 interface manufacturersColumnsProps {
-  onDelete: (value: Asset) => void;
-  onView: (value: Asset) => void;
+  onDelete: (value: Manufacturer) => void;
+  onUpdate: (value: Manufacturer) => void;
 }
 
-export const manufacturerColumns = (): ColumnDef<Manufacturer>[] => [
+export const manufacturerColumns = ({
+  onDelete,
+  onUpdate,
+}: manufacturersColumnsProps): ColumnDef<Manufacturer>[] => [
   {
     accessorKey: "name",
     header: ({ column }) => {
@@ -104,10 +108,13 @@ export const manufacturerColumns = (): ColumnDef<Manufacturer>[] => [
   },
   {
     id: "actions",
-    enableSorting: false,
     cell: ({ row }) => {
       return (
-        <div className="flex items-center justify-start gap-4 px-4">...</div>
+        <DataTableRowActions
+          row={row}
+          onDelete={onDelete}
+          onUpdate={onUpdate}
+        />
       );
     },
   },

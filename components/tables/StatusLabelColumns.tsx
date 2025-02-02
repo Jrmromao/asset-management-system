@@ -2,10 +2,11 @@ import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { ArrowUpDown, Check, X } from "lucide-react";
 import React from "react";
+import DataTableRowActions from "@/components/tables/DataTable/DataTableRowActions";
 
 interface StatusLabelColumnsProps {
   onDelete?: (value: StatusLabel) => void;
-  onEdit?: (value: StatusLabel) => void;
+  onUpdate?: (value: StatusLabel) => void;
 }
 
 const SortableHeader = ({ column, label }: { column: any; label: string }) => (
@@ -63,7 +64,7 @@ const DateCell = ({ date }: { date: string }) => (
 
 export const statusLabelColumns = ({
   onDelete,
-  onEdit,
+  onUpdate,
 }: StatusLabelColumnsProps = {}): ColumnDef<StatusLabel>[] => [
   {
     accessorKey: "name",
@@ -104,11 +105,14 @@ export const statusLabelColumns = ({
   },
   {
     id: "actions",
-    enableSorting: false,
     cell: ({ row }) => {
-      const statusLabel = row.original;
-
-      return <a>...</a>;
+      return (
+        <DataTableRowActions
+          row={row}
+          onDelete={onDelete}
+          onUpdate={onUpdate}
+        />
+      );
     },
   },
 ];

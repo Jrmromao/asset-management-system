@@ -11,14 +11,16 @@ import { toast } from "sonner";
 
 interface DataTableRowActionsProps<TData> {
   row: Row<TData>;
-  onView: (value: TData) => void;
+  onView?: (value: TData) => void;
   onDelete: (value: TData) => void;
+  onUpdate?: (value: TData) => void;
 }
 
 const DataTableRowActions = <TData,>({
   row,
   onView,
   onDelete,
+  onUpdate,
 }: DataTableRowActionsProps<TData>) => {
   const handleDelete = () => {
     Swal.fire({
@@ -47,9 +49,18 @@ const DataTableRowActions = <TData,>({
           <DropdownMenuCheckboxItem onClick={() => handleDelete()}>
             <div className={"cursor-pointer text-[#344054]"}> Delete</div>
           </DropdownMenuCheckboxItem>
-          <DropdownMenuCheckboxItem onClick={() => onView(row.original)}>
-            <div className={"cursor-pointer text-[#344054]"}>View</div>
-          </DropdownMenuCheckboxItem>
+
+          {onView && (
+            <DropdownMenuCheckboxItem onClick={() => onView(row.original)}>
+              <div className={"cursor-pointer text-[#344054]"}>View</div>
+            </DropdownMenuCheckboxItem>
+          )}
+
+          {onUpdate && (
+            <DropdownMenuCheckboxItem onClick={() => onUpdate(row.original)}>
+              <div className={"cursor-pointer text-[#344054]"}>Update</div>
+            </DropdownMenuCheckboxItem>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
     </div>

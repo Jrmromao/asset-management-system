@@ -46,12 +46,11 @@ const ModelForm = () => {
 
   const onSubmit = async (data: z.infer<typeof modelSchema>) => {
     startTransition(async () => {
-      createModel(
+      await createModel(
         {
           name: data.name,
           modelNo: data.modelNo,
           manufacturerId: data.manufacturerId,
-          categoryId: "",
         },
         {
           onSuccess: () => {

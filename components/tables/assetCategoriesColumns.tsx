@@ -2,13 +2,18 @@ import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { ArrowUpDown } from "lucide-react";
 import React from "react";
+import { FormTemplate } from "@/types/form";
+import DataTableRowActions from "@/components/tables/DataTable/DataTableRowActions";
 
 interface AssetCategoriesColumnsProps {
-  onDelete: (value: Asset) => void;
-  onView: (value: Asset) => void;
+  onDelete: (value: FormTemplate) => void;
+  onUpdate: (value: FormTemplate) => void;
 }
 
-export const assetCategoriesColumns = (): ColumnDef<FormTemplateValues>[] => [
+export const assetCategoriesColumns = ({
+  onDelete,
+  onUpdate,
+}: AssetCategoriesColumnsProps): ColumnDef<FormTemplate>[] => [
   {
     accessorKey: "name",
     header: ({ column }) => {
@@ -20,6 +25,36 @@ export const assetCategoriesColumns = (): ColumnDef<FormTemplateValues>[] => [
           Name
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
+      );
+    },
+  },
+  {
+    accessorKey: "fields",
+    header: "Fields",
+    cell: ({ row }) => {
+      return (
+        <div className="flex items-center">
+          {row.original.fields.map((field) => {
+            return (
+              <div className="mr-2" key={field.name}>
+                <div className="text-sm text-gray-600">{field.name}</div>
+                <div className="text-sm text-gray-400">{field.type}</div>
+              </div>
+            );
+          })}
+        </div>
+      );
+    },
+  },
+  {
+    id: "actions",
+    cell: ({ row }) => {
+      return (
+        <DataTableRowActions
+          row={row}
+          onDelete={onDelete}
+          onUpdate={onUpdate}
+        />
       );
     },
   },

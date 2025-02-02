@@ -4,7 +4,6 @@ import {
   Boxes,
   Building2,
   Factory,
-  Loader2,
   LucideIcon,
   MapPin,
   Tags,
@@ -13,8 +12,6 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { TableHeader } from "@/components/tables/TableHeader";
 import { DialogContainer } from "@/components/dialogs/DialogContainer";
-
-// Import all your queries and columns
 import {
   useDepartmentQuery,
   useInventoryQuery,
@@ -32,8 +29,6 @@ import {
   modelColumns,
   statusLabelColumns,
 } from "@/components/tables";
-
-// Import all your forms
 import {
   DepartmentForm,
   InventoryForm,
@@ -43,6 +38,18 @@ import {
   StatusLabelForm,
 } from "@/components/forms";
 import { DataTable } from "@/components/tables/DataTable/data-table";
+import TableSkeleton from "@/components/tables/TableSkeleton";
+import TableHeaderSkeleton from "@/components/tables/TableHeaderSkeleton";
+import {
+  useDepartmentUIStore,
+  useFormTemplateUIStore,
+  useInventoryUIStore,
+  useLocationUIStore,
+  useManufacturerUIStore,
+  useModelUIStore,
+} from "@/lib/stores";
+import FormTemplateCreator from "@/components/forms/FormTemplateCreator";
+import { useFormTemplatesQuery } from "@/hooks/queries/useFormTemplatesQuery";
 
 interface Tab {
   id: TabId;
@@ -65,46 +72,9 @@ interface ModalConfig {
   title: string;
   description: string;
   FormComponent: React.ComponentType;
+  isOpen: boolean;
+  onClose: () => void;
 }
-
-const MODAL_CONFIGS: ModalConfig[] = [
-  {
-    id: "models",
-    title: "Add Model",
-    description: "Add a new model",
-    FormComponent: ModelForm,
-  },
-  {
-    id: "manufacturers",
-    title: "Add Manufacturer",
-    description: "Add a new manufacturer",
-    FormComponent: ManufacturerForm,
-  },
-  {
-    id: "locations",
-    title: "Add Location",
-    description: "Add a new location",
-    FormComponent: LocationForm,
-  },
-  {
-    id: "departments",
-    title: "Add Department",
-    description: "Add a new department",
-    FormComponent: DepartmentForm,
-  },
-  {
-    id: "status-label",
-    title: "Add Status Label",
-    description: "Add a new status label",
-    FormComponent: StatusLabelForm,
-  },
-  {
-    id: "inventories",
-    title: "Add Inventory",
-    description: "Add a new inventory",
-    FormComponent: InventoryForm,
-  },
-];
 
 const TABS: Tab[] = [
   {
@@ -151,13 +121,113 @@ const TABS: Tab[] = [
   },
 ];
 
+function handleFilter() {
+  console.log("filter");
+}
+
 const AdminSettings = () => {
   const [activeTab, setActiveTab] = useState<TabId>("models");
   const [searchQuery, setSearchQuery] = useState("");
   const [activeModal, setActiveModal] = useState<TabId | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const {
+    onClose: closeModel,
+    isOpen: isModelOpen,
+    onOpen: onModelOpen,
+  } = useModelUIStore();
+  const {
+    onClose: closeInventory,
+    isOpen: isInventoryOpen,
+    onOpen: onInventoryOpen,
+  } = useInventoryUIStore();
 
-  // Queries
+  const {
+    isOpen: isLocationOpen,
+    onClose: closeLocation,
+    onOpen: onLocationOpen,
+  } = useLocationUIStore();
+
+  const {
+    isOpen: isManufacturerOpen,
+    onClose: closeManufacturer,
+    onOpen: onManufacturerOpen,
+  } = useManufacturerUIStore();
+
+  const {
+    isOpen: isDepartmentOpen,
+    onClose: closeDepartment,
+    onOpen: onDepartmentOpen,
+  } = useDepartmentUIStore();
+  const {
+    isOpen: isFormTemplateOpen,
+    onClose: closeFormTemplate,
+    onOpen: onFormTemplateOpen,
+  } = useFormTemplateUIStore();
+
+  const {
+    isOpen: isStatusLabelOpen,
+    onClose: closeStatusLabel,
+    onOpen: onStatusLabelOpen,
+  } = useFormTemplateUIStore();
+
+  const MODAL_CONFIGS: ModalConfig[] = [
+    {
+      id: "models",
+      title: "Add Model",
+      description: "Add a new model",
+      FormComponent: ModelForm,
+      isOpen: isModelOpen,
+      onClose: closeModel,
+    },
+    {
+      id: "manufacturers",
+      title: "Add Manufacturer",
+      description: "Add a new manufacturer",
+      FormComponent: ManufacturerForm,
+      isOpen: isManufacturerOpen,
+      onClose: closeManufacturer,
+    },
+    {
+      id: "locations",
+      title: "Add Location",
+      description: "Add a new location",
+      FormComponent: LocationForm,
+      isOpen: isLocationOpen,
+      onClose: closeLocation,
+    },
+    {
+      id: "departments",
+      title: "Add Department",
+      description: "Add a new department",
+      FormComponent: DepartmentForm,
+      isOpen: isDepartmentOpen,
+      onClose: closeDepartment,
+    },
+    {
+      id: "status-label",
+      title: "Add Status Label",
+      description: "Add a new status label",
+      FormComponent: StatusLabelForm,
+      isOpen: isStatusLabelOpen,
+      onClose: closeStatusLabel,
+    },
+    {
+      id: "inventories",
+      title: "Add Inventory",
+      description: "Add a new inventory",
+      FormComponent: InventoryForm,
+      isOpen: isInventoryOpen,
+      onClose: closeInventory,
+    },
+    {
+      id: "asset-categories",
+      title: "Add Custom Fields",
+      description: "Add a new custom form fields",
+      FormComponent: FormTemplateCreator,
+      isOpen: isFormTemplateOpen,
+      onClose: closeFormTemplate,
+    },
+  ];
   const {
     models,
     isLoading: modelsLoading,
@@ -169,31 +239,42 @@ const AdminSettings = () => {
   const { departments, isLoading: departmentsLoading } = useDepartmentQuery();
   const { statusLabels, isLoading: labelsLoading } = useStatusLabelsQuery();
   const { inventories, isLoading: inventoriesLoading } = useInventoryQuery();
+  const { formTemplates, isLoading: formTemplatesLoading } =
+    useFormTemplatesQuery();
 
-  // Memoized columns
   const columns = useMemo(
     () => ({
-      models: modelColumns(),
-      manufacturers: manufacturerColumns(),
-      locations: locationColumns(),
-      departments: departmentColumns(),
-      "status-label": statusLabelColumns(),
-      inventories: inventoryColumns(),
-      "asset-categories": assetCategoriesColumns(),
+      models: modelColumns({
+        onDelete: () => {},
+        onUpdate: () => {},
+      }),
+      manufacturers: manufacturerColumns({
+        onDelete: () => {},
+        onUpdate: () => {},
+      }),
+      locations: locationColumns({
+        onDelete: () => {},
+        onUpdate: () => {},
+      }),
+      departments: departmentColumns({
+        onDelete: () => {},
+        onUpdate: () => {},
+      }),
+      "status-label": statusLabelColumns({
+        onDelete: () => {},
+        onUpdate: () => {},
+      }),
+      inventories: inventoryColumns({
+        onDelete: () => {},
+        onUpdate: () => {},
+      }),
+      "asset-categories": assetCategoriesColumns({
+        onDelete: () => {},
+        onUpdate: () => {},
+      }),
     }),
     [],
   );
-
-  // Data mapping
-  const dataMap = {
-    models,
-    manufacturers,
-    locations,
-    departments,
-    "status-label": statusLabels,
-    inventories,
-    "asset-categories": [],
-  };
 
   const loadingMap = {
     models: modelsLoading,
@@ -202,7 +283,35 @@ const AdminSettings = () => {
     departments: departmentsLoading,
     "status-label": labelsLoading,
     inventories: inventoriesLoading,
-    "asset-categories": false,
+    "asset-categories": formTemplatesLoading,
+  };
+
+  const handleCreateNew = (activeTab: string) => {
+    switch (activeTab) {
+      case "models":
+        onModelOpen();
+        break;
+      case "manufacturers":
+        onManufacturerOpen();
+        break;
+      case "locations":
+        onLocationOpen();
+        break;
+      case "departments":
+        onDepartmentOpen();
+        break;
+      case "status-label":
+        onStatusLabelOpen();
+        break;
+      case "inventories":
+        onInventoryOpen();
+        break;
+      case "asset-categories":
+        onFormTemplateOpen();
+        break;
+      default:
+        return null;
+    }
   };
 
   const handleSearch = (value: string) => {
@@ -220,6 +329,7 @@ const AdminSettings = () => {
       setIsLoading(false);
     }
   };
+
   const renderDataTable = () => {
     switch (activeTab) {
       case "models":
@@ -250,7 +360,12 @@ const AdminSettings = () => {
         );
 
       case "asset-categories":
-        return <DataTable columns={columns["asset-categories"]} data={[]} />;
+        return (
+          <DataTable
+            columns={columns["asset-categories"]}
+            data={formTemplates || []}
+          />
+        );
 
       default:
         return null;
@@ -264,12 +379,13 @@ const AdminSettings = () => {
     <div className="min-h-screen bg-gray-50/50">
       {/* Modals */}
       {MODAL_CONFIGS.map((config) => {
-        const { id, title, description, FormComponent } = config;
+        const { id, title, description, FormComponent, isOpen, onClose } =
+          config;
         return (
           <DialogContainer
             key={id}
-            open={activeModal === id}
-            onOpenChange={() => setActiveModal(null)}
+            open={isOpen}
+            onOpenChange={onClose}
             title={title}
             description={description}
             form={<FormComponent />}
@@ -324,13 +440,6 @@ const AdminSettings = () => {
                     </p>
                   </div>
                 </div>
-
-                <TableHeader
-                  onSearch={handleSearch}
-                  onFilter={() => {}}
-                  onImport={handleImport}
-                  onCreateNew={() => setActiveModal(activeTab)}
-                />
               </div>
 
               <div className="p-6">
@@ -343,11 +452,20 @@ const AdminSettings = () => {
                 )}
 
                 {isLoadingData ? (
-                  <div className="flex justify-center items-center py-8">
-                    <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
-                  </div>
+                  <>
+                    <TableHeaderSkeleton />
+                    <TableSkeleton columns={4} rows={5} />
+                  </>
                 ) : (
-                  renderDataTable()
+                  <>
+                    <TableHeader
+                      onSearch={handleSearch}
+                      onFilter={handleFilter}
+                      onImport={handleImport}
+                      onCreateNew={() => handleCreateNew(activeTab)}
+                    />
+                    {renderDataTable()}
+                  </>
                 )}
               </div>
             </div>

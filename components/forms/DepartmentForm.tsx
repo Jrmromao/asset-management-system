@@ -53,6 +53,7 @@ const DepartmentForm = () => {
           label="Name"
           control={form.control}
           type="text"
+          required
           placeholder="Enter department name"
           disabled={isPending}
           tooltip="A unique name for this department."

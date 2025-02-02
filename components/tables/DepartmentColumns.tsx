@@ -2,13 +2,17 @@ import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { ArrowUpDown } from "lucide-react";
 import React from "react";
+import DataTableRowActions from "@/components/tables/DataTable/DataTableRowActions";
 
 interface DepartmentColumnsProps {
-  onDelete: (value: Asset) => void;
-  onView: (value: Asset) => void;
+  onDelete: (value: Department) => void;
+  onUpdate: (value: Department) => void;
 }
 
-export const departmentColumns = (): ColumnDef<Department>[] => [
+export const departmentColumns = ({
+  onDelete,
+  onUpdate,
+}: DepartmentColumnsProps): ColumnDef<Department>[] => [
   {
     accessorKey: "name",
     header: ({ column }) => {
@@ -49,11 +53,14 @@ export const departmentColumns = (): ColumnDef<Department>[] => [
   },
   {
     id: "actions",
-    enableSorting: false,
-    enableHiding: false,
-    header: () => <span>Actions</span>,
     cell: ({ row }) => {
-      return <div className="flex items-center gap-2">...</div>;
+      return (
+        <DataTableRowActions
+          row={row}
+          onDelete={onDelete}
+          onUpdate={onUpdate}
+        />
+      );
     },
   },
 ];

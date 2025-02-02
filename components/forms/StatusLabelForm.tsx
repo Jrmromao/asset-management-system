@@ -40,7 +40,7 @@ const StatusLabelForm = ({ onSuccess }: StatusLabelFormProps) => {
 
   async function onSubmit(data: FormValues) {
     startTransition(async () => {
-      createStatusLabel(
+      await createStatusLabel(
         {
           name: data.name,
           description: data.description,
@@ -86,12 +86,14 @@ const StatusLabelForm = ({ onSuccess }: StatusLabelFormProps) => {
               name="isArchived"
               label="Is Archivable"
               control={form.control}
+              required
             />
 
             <CustomSwitch
               name="allowLoan"
               label="Allow Loan"
               control={form.control}
+              required
             />
           </div>
 

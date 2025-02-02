@@ -2,13 +2,17 @@ import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { ArrowUpDown } from "lucide-react";
 import React from "react";
+import DataTableRowActions from "@/components/tables/DataTable/DataTableRowActions";
 
 interface InventoryColumnsProps {
-  onDelete: (value: Asset) => void;
-  onView: (value: Asset) => void;
+  onDelete: (value: Inventory) => void;
+  onUpdate: (value: Inventory) => void;
 }
 
-export const inventoryColumns = (): ColumnDef<Inventory>[] => [
+export const inventoryColumns = ({
+  onDelete,
+  onUpdate,
+}: InventoryColumnsProps): ColumnDef<Inventory>[] => [
   {
     accessorKey: "name",
     header: ({ column }) => {
@@ -49,10 +53,13 @@ export const inventoryColumns = (): ColumnDef<Inventory>[] => [
   },
   {
     id: "actions",
-    enableSorting: false,
     cell: ({ row }) => {
       return (
-        <div className="flex items-center justify-start gap-4 px-4">...</div>
+        <DataTableRowActions
+          row={row}
+          onDelete={onDelete}
+          onUpdate={onUpdate}
+        />
       );
     },
   },
