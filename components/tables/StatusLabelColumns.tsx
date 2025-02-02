@@ -3,16 +3,6 @@ import { Button } from "@/components/ui/button";
 import { ArrowUpDown, Check, X } from "lucide-react";
 import React from "react";
 
-interface StatusLabel {
-  id: string;
-  name: string;
-  colorCode: string;
-  description: string;
-  isArchived: boolean;
-  allowLoan: boolean;
-  createdAt: string;
-}
-
 interface StatusLabelColumnsProps {
   onDelete?: (value: StatusLabel) => void;
   onEdit?: (value: StatusLabel) => void;

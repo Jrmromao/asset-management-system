@@ -138,6 +138,7 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
     openInventory,
     isLoading: isLoadingStatusLabels,
   });
+
   const handleTemplateChange = (formTemplateId: string) => {
     if (!formTemplateId) {
       form.setValue("formTemplateId", "");

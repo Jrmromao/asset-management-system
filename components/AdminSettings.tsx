@@ -10,38 +10,154 @@ import {
   Tags,
   Warehouse,
 } from "lucide-react";
-import { useModelsQuery } from "@/hooks/queries/useModelsQuery";
-import { modelColumns } from "@/components/tables/ModelColumns";
-import { useManufacturerQuery } from "@/hooks/queries/useManufacturerQuery";
-import { useLocationQuery } from "@/hooks/queries/useLocationQuery";
-import { useDepartmentQuery } from "@/hooks/queries/useDepartmentQuery";
-import { useSupplierQuery } from "@/hooks/queries/useSupplierQuery";
-import { useStatusLabelsQuery } from "@/hooks/queries/useStatusLabelsQuery";
-import { useInventoryQuery } from "@/hooks/queries/useInventoryQuery";
-import { manufacturerColumns } from "@/components/tables/ManufacturerColumns";
-import { locationColumns } from "@/components/tables/LocationColumns";
-import { departmentColumns } from "@/components/tables/DepartmentColumns";
-import { supplierColumns } from "@/components/tables/SupplierColumns";
-import { statusLabelColumns } from "@/components/tables/StatusLabelColumns";
-import { inventoryColumns } from "@/components/tables/InventoryColumns";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { TableHeader } from "@/components/tables/TableHeader";
+import { DialogContainer } from "@/components/dialogs/DialogContainer";
+
+// Import all your queries and columns
+import {
+  useDepartmentQuery,
+  useInventoryQuery,
+  useLocationQuery,
+  useManufacturerQuery,
+  useModelsQuery,
+  useStatusLabelsQuery,
+} from "@/hooks/queries";
+import {
+  assetCategoriesColumns,
+  departmentColumns,
+  inventoryColumns,
+  locationColumns,
+  manufacturerColumns,
+  modelColumns,
+  statusLabelColumns,
+} from "@/components/tables";
+
+// Import all your forms
+import {
+  DepartmentForm,
+  InventoryForm,
+  LocationForm,
+  ManufacturerForm,
+  ModelForm,
+  StatusLabelForm,
+} from "@/components/forms";
 import { DataTable } from "@/components/tables/DataTable/data-table";
-import { useFormTemplatesQuery } from "@/hooks/queries/useFormTemplatesQuery";
-import { assetCategoriesColumns } from "@/components/tables/assetCategoriesColumns";
 
 interface Tab {
-  id: string;
+  id: TabId;
   label: string;
   icon: LucideIcon;
-  description?: string;
+  description: string;
 }
 
+type TabId =
+  | "models"
+  | "manufacturers"
+  | "locations"
+  | "departments"
+  | "status-label"
+  | "inventories"
+  | "asset-categories";
+
+interface ModalConfig {
+  id: TabId;
+  title: string;
+  description: string;
+  FormComponent: React.ComponentType;
+}
+
+const MODAL_CONFIGS: ModalConfig[] = [
+  {
+    id: "models",
+    title: "Add Model",
+    description: "Add a new model",
+    FormComponent: ModelForm,
+  },
+  {
+    id: "manufacturers",
+    title: "Add Manufacturer",
+    description: "Add a new manufacturer",
+    FormComponent: ManufacturerForm,
+  },
+  {
+    id: "locations",
+    title: "Add Location",
+    description: "Add a new location",
+    FormComponent: LocationForm,
+  },
+  {
+    id: "departments",
+    title: "Add Department",
+    description: "Add a new department",
+    FormComponent: DepartmentForm,
+  },
+  {
+    id: "status-label",
+    title: "Add Status Label",
+    description: "Add a new status label",
+    FormComponent: StatusLabelForm,
+  },
+  {
+    id: "inventories",
+    title: "Add Inventory",
+    description: "Add a new inventory",
+    FormComponent: InventoryForm,
+  },
+];
+
+const TABS: Tab[] = [
+  {
+    id: "models",
+    label: "Models",
+    icon: Boxes,
+    description: "Manage and configure your models",
+  },
+  {
+    id: "manufacturers",
+    label: "Manufacturers",
+    icon: Factory,
+    description: "Manage and configure your manufacturers",
+  },
+  {
+    id: "locations",
+    label: "Locations",
+    icon: MapPin,
+    description: "Manage and configure your locations",
+  },
+  {
+    id: "departments",
+    label: "Departments",
+    icon: Building2,
+    description: "Manage and configure your departments",
+  },
+  {
+    id: "status-label",
+    label: "Status Labels",
+    icon: BadgeCheck,
+    description: "Manage and configure your status labels",
+  },
+  {
+    id: "inventories",
+    label: "Inventories",
+    icon: Warehouse,
+    description: "Manage and configure your inventories",
+  },
+  {
+    id: "asset-categories",
+    label: "Asset Categories",
+    icon: Tags,
+    description: "Manage and configure your asset categories",
+  },
+];
+
 const AdminSettings = () => {
-  const [activeTab, setActiveTab] = useState<string>("models");
+  const [activeTab, setActiveTab] = useState<TabId>("models");
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedFilter, setSelectedFilter] = useState("all");
+  const [activeModal, setActiveModal] = useState<TabId | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Queries
   const {
     models,
     isLoading: modelsLoading,
@@ -51,71 +167,59 @@ const AdminSettings = () => {
     useManufacturerQuery();
   const { locations, isLoading: locationsLoading } = useLocationQuery();
   const { departments, isLoading: departmentsLoading } = useDepartmentQuery();
-  const { suppliers, isLoading: suppliersLoading } = useSupplierQuery();
   const { statusLabels, isLoading: labelsLoading } = useStatusLabelsQuery();
   const { inventories, isLoading: inventoriesLoading } = useInventoryQuery();
-  const { formTemplates, isLoading: formTemplatesLoading } =
-    useFormTemplatesQuery();
 
+  // Memoized columns
   const columns = useMemo(
     () => ({
       models: modelColumns(),
       manufacturers: manufacturerColumns(),
       locations: locationColumns(),
       departments: departmentColumns(),
-      suppliers: supplierColumns(),
-      statusLabels: statusLabelColumns(),
+      "status-label": statusLabelColumns(),
       inventories: inventoryColumns(),
-      assetCategories: assetCategoriesColumns(),
+      "asset-categories": assetCategoriesColumns(),
     }),
     [],
   );
 
-  const tabs: Tab[] = [
-    {
-      id: "models",
-      label: "Models",
-      icon: Boxes,
-      description: "Manage and configure your models",
-    },
-    {
-      id: "manufacturers",
-      label: "Manufacturers",
-      icon: Factory,
-      description: "Manage and configure your manufacturers",
-    },
-    {
-      id: "locations",
-      label: "Locations",
-      icon: MapPin,
-      description: "Manage and configure your locations",
-    },
-    {
-      id: "asset-categories",
-      label: "Asset Categories",
-      icon: Tags,
-      description: "Manage and configure your asset categories",
-    },
-    {
-      id: "departments",
-      label: "Departments",
-      icon: Building2,
-      description: "Manage and configure your departments",
-    },
-    {
-      id: "status-label",
-      label: "Status Labels",
-      icon: BadgeCheck,
-      description: "Manage and configure your status labels",
-    },
-    {
-      id: "inventories",
-      label: "Inventories",
-      icon: Warehouse,
-      description: "Manage and configure your inventories",
-    },
-  ];
+  // Data mapping
+  const dataMap = {
+    models,
+    manufacturers,
+    locations,
+    departments,
+    "status-label": statusLabels,
+    inventories,
+    "asset-categories": [],
+  };
 
+  const loadingMap = {
+    models: modelsLoading,
+    manufacturers: manufacturersLoading,
+    locations: locationsLoading,
+    departments: departmentsLoading,
+    "status-label": labelsLoading,
+    inventories: inventoriesLoading,
+    "asset-categories": false,
+  };
+
+  const handleSearch = (value: string) => {
+    setSearchQuery(value);
+    // Implement search logic
+  };
+
+  const handleImport = async () => {
+    setIsLoading(true);
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    } catch (error) {
+      console.error("Import failed:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
   const renderDataTable = () => {
     switch (activeTab) {
       case "models":
@@ -135,7 +239,10 @@ const AdminSettings = () => {
         );
       case "status-label":
         return (
-          <DataTable columns={columns.statusLabels} data={statusLabels || []} />
+          <DataTable
+            columns={columns["status-label"]}
+            data={statusLabels || []}
+          />
         );
       case "inventories":
         return (
@@ -143,61 +250,33 @@ const AdminSettings = () => {
         );
 
       case "asset-categories":
-        return <DataTable columns={columns.assetCategories} data={[]} />;
+        return <DataTable columns={columns["asset-categories"]} data={[]} />;
 
       default:
         return null;
     }
   };
 
-  const handleSearch = (value: string) => {
-    setSearchQuery(value);
-    // Implement search logic here
-  };
-
-  const handleFilter = (value: string) => {
-    setSelectedFilter(value);
-    // Implement filter logic here
-  };
-
-  const handleImport = async () => {
-    setIsLoading(true);
-    try {
-      // Implement import logic
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-    } catch (error) {
-      console.error("Import failed:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const getActiveData = () => {
-    const dataMap = {
-      models,
-      manufacturers,
-      locations,
-      departments,
-      suppliers,
-      "status-label": statusLabels,
-      inventories,
-    };
-    return dataMap[activeTab as keyof typeof dataMap] || [];
-  };
-
-  const isLoadingData = {
-    models: modelsLoading,
-    manufacturers: manufacturersLoading,
-    locations: locationsLoading,
-    departments: departmentsLoading,
-    suppliers: suppliersLoading,
-    "status-label": labelsLoading,
-    inventories: inventoriesLoading,
-    formTemplates: formTemplatesLoading,
-  }[activeTab];
+  const activeTabConfig = TABS.find((tab) => tab.id === activeTab);
+  const isLoadingData = loadingMap[activeTab];
 
   return (
     <div className="min-h-screen bg-gray-50/50">
+      {/* Modals */}
+      {MODAL_CONFIGS.map((config) => {
+        const { id, title, description, FormComponent } = config;
+        return (
+          <DialogContainer
+            key={id}
+            open={activeModal === id}
+            onOpenChange={() => setActiveModal(null)}
+            title={title}
+            description={description}
+            form={<FormComponent />}
+          />
+        );
+      })}
+
       <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
@@ -210,7 +289,7 @@ const AdminSettings = () => {
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Sidebar */}
           <div className="w-full lg:w-64 space-y-1 bg-white p-3 rounded-lg border border-gray-200">
-            {tabs.map((tab) => {
+            {TABS.map((tab) => {
               const Icon = tab.icon;
               return (
                 <button
@@ -238,10 +317,10 @@ const AdminSettings = () => {
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                   <div>
                     <h2 className="text-lg font-semibold text-gray-900">
-                      {tabs.find((tab) => tab.id === activeTab)?.label}
+                      {activeTabConfig?.label}
                     </h2>
                     <p className="text-sm text-gray-500">
-                      {tabs.find((tab) => tab.id === activeTab)?.description}
+                      {activeTabConfig?.description}
                     </p>
                   </div>
                 </div>
@@ -250,7 +329,7 @@ const AdminSettings = () => {
                   onSearch={handleSearch}
                   onFilter={() => {}}
                   onImport={handleImport}
-                  onCreateNew={() => {}}
+                  onCreateNew={() => setActiveModal(activeTab)}
                 />
               </div>
 
@@ -262,6 +341,7 @@ const AdminSettings = () => {
                     </AlertDescription>
                   </Alert>
                 )}
+
                 {isLoadingData ? (
                   <div className="flex justify-center items-center py-8">
                     <Loader2 className="w-8 h-8 animate-spin text-gray-400" />

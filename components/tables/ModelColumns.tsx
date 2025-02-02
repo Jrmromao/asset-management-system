@@ -51,8 +51,10 @@ export const modelColumns = (): ColumnDef<Model>[] => [
       );
     },
     cell: ({ row }) => {
-      const manufacturer = row.original;
-      return <div className="text-sm text-gray-600">{manufacturer.name}</div>;
+      const value = row.original;
+      return (
+        <div className="text-sm text-gray-600">{value.manufacturer?.name}</div>
+      );
     },
   },
   {
