@@ -17,12 +17,12 @@ export const sidebarLinks = [
     label: "Assets",
     visibleTo: [roles.ADMIN, roles.USER, roles.SUPER_ADMIN],
   },
-  {
-    imgURL: "/icons/license.svg",
-    route: "/licenses",
-    label: "Licenses",
-    visibleTo: [roles.ADMIN, roles.USER, roles.SUPER_ADMIN],
-  },
+  // {
+  //   imgURL: "/icons/license.svg",
+  //   route: "/licenses",
+  //   label: "Licenses",
+  //   visibleTo: [roles.ADMIN, roles.USER, roles.SUPER_ADMIN],
+  // },
   {
     imgURL: "/icons/monitor.svg",
     route: "/accessories",

@@ -16,7 +16,7 @@ interface itemUseByColumnsProps {
 }
 
 export const itemUseByColumns =
-  ({}: itemUseByColumnsProps): ColumnDef<UserAccessory>[] => [
+  ({}: itemUseByColumnsProps): ColumnDef<UserItems>[] => [
     {
       accessorKey: "user.employeeId",
       enableSorting: true,

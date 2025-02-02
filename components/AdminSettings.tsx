@@ -1,126 +1,200 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   BadgeCheck,
   Boxes,
   Building2,
   Factory,
+  Loader2,
   LucideIcon,
   MapPin,
-  Plus,
-  Search,
-  Settings2,
   Tags,
-  Truck,
   Warehouse,
 } from "lucide-react";
+import { useModelsQuery } from "@/hooks/queries/useModelsQuery";
+import { modelColumns } from "@/components/tables/ModelColumns";
+import { useManufacturerQuery } from "@/hooks/queries/useManufacturerQuery";
+import { useLocationQuery } from "@/hooks/queries/useLocationQuery";
+import { useDepartmentQuery } from "@/hooks/queries/useDepartmentQuery";
+import { useSupplierQuery } from "@/hooks/queries/useSupplierQuery";
+import { useStatusLabelsQuery } from "@/hooks/queries/useStatusLabelsQuery";
+import { useInventoryQuery } from "@/hooks/queries/useInventoryQuery";
+import { manufacturerColumns } from "@/components/tables/ManufacturerColumns";
+import { locationColumns } from "@/components/tables/LocationColumns";
+import { departmentColumns } from "@/components/tables/DepartmentColumns";
+import { supplierColumns } from "@/components/tables/SupplierColumns";
+import { statusLabelColumns } from "@/components/tables/StatusLabelColumns";
+import { inventoryColumns } from "@/components/tables/InventoryColumns";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { TableHeader } from "@/components/tables/TableHeader";
+import { DataTable } from "@/components/tables/DataTable/data-table";
+import { useFormTemplatesQuery } from "@/hooks/queries/useFormTemplatesQuery";
+import { assetCategoriesColumns } from "@/components/tables/assetCategoriesColumns";
 
 interface Tab {
   id: string;
   label: string;
   icon: LucideIcon;
-  fields: string[];
+  description?: string;
 }
 
 const AdminSettings = () => {
   const [activeTab, setActiveTab] = useState<string>("models");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedFilter, setSelectedFilter] = useState("all");
+  const [isLoading, setIsLoading] = useState(false);
+  const {
+    models,
+    isLoading: modelsLoading,
+    error: modelsError,
+  } = useModelsQuery();
+  const { manufacturers, isLoading: manufacturersLoading } =
+    useManufacturerQuery();
+  const { locations, isLoading: locationsLoading } = useLocationQuery();
+  const { departments, isLoading: departmentsLoading } = useDepartmentQuery();
+  const { suppliers, isLoading: suppliersLoading } = useSupplierQuery();
+  const { statusLabels, isLoading: labelsLoading } = useStatusLabelsQuery();
+  const { inventories, isLoading: inventoriesLoading } = useInventoryQuery();
+  const { formTemplates, isLoading: formTemplatesLoading } =
+    useFormTemplatesQuery();
+
+  const columns = useMemo(
+    () => ({
+      models: modelColumns(),
+      manufacturers: manufacturerColumns(),
+      locations: locationColumns(),
+      departments: departmentColumns(),
+      suppliers: supplierColumns(),
+      statusLabels: statusLabelColumns(),
+      inventories: inventoryColumns(),
+      assetCategories: assetCategoriesColumns(),
+    }),
+    [],
+  );
 
   const tabs: Tab[] = [
     {
       id: "models",
       label: "Models",
       icon: Boxes,
-      fields: ["Model Name", "Type", "Specifications", "Status"],
+      description: "Manage and configure your models",
     },
     {
       id: "manufacturers",
       label: "Manufacturers",
       icon: Factory,
-      fields: ["Name", "Contact Info", "Support Email", "Active Models"],
+      description: "Manage and configure your manufacturers",
     },
     {
       id: "locations",
       label: "Locations",
       icon: MapPin,
-      fields: ["Name", "Address", "Type", "Status"],
+      description: "Manage and configure your locations",
     },
     {
-      id: "categories",
+      id: "asset-categories",
       label: "Asset Categories",
       icon: Tags,
-      fields: ["Category Name", "Parent Category", "Description", "Status"],
+      description: "Manage and configure your asset categories",
     },
     {
       id: "departments",
       label: "Departments",
       icon: Building2,
-      fields: ["Name", "Email", "Role", "Status"],
-    },
-    {
-      id: "suppliers",
-      label: "Suppliers",
-      icon: Truck,
-      fields: ["Supplier Name", "Contact Info", "Status"],
+      description: "Manage and configure your departments",
     },
     {
       id: "status-label",
       label: "Status Labels",
       icon: BadgeCheck,
-      fields: ["Label Name", "Color", "Status"],
+      description: "Manage and configure your status labels",
     },
     {
       id: "inventories",
       label: "Inventories",
       icon: Warehouse,
-      fields: ["Inventory Name", "Location", "Status"],
+      description: "Manage and configure your inventories",
     },
   ];
 
-  const renderTable = () => {
-    const activeTabData = tabs.find((tab) => tab.id === activeTab);
-    if (!activeTabData) return null;
+  const renderDataTable = () => {
+    switch (activeTab) {
+      case "models":
+        return <DataTable columns={columns.models} data={models || []} />;
+      case "manufacturers":
+        return (
+          <DataTable
+            columns={columns.manufacturers}
+            data={manufacturers || []}
+          />
+        );
+      case "locations":
+        return <DataTable columns={columns.locations} data={locations || []} />;
+      case "departments":
+        return (
+          <DataTable columns={columns.departments} data={departments || []} />
+        );
+      case "status-label":
+        return (
+          <DataTable columns={columns.statusLabels} data={statusLabels || []} />
+        );
+      case "inventories":
+        return (
+          <DataTable columns={columns.inventories} data={inventories || []} />
+        );
 
-    return (
-      <div className="overflow-x-auto rounded-lg border border-gray-200">
-        <table className="w-full">
-          <thead>
-            <tr className="bg-gray-50">
-              {activeTabData.fields.map((field, index) => (
-                <th
-                  key={index}
-                  className="px-6 py-4 text-left text-sm font-medium text-gray-600"
-                >
-                  {field}
-                </th>
-              ))}
-              <th className="px-6 py-4 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200">
-            {[1, 2, 3].map((item) => (
-              <tr key={item} className="hover:bg-gray-50/50">
-                {activeTabData.fields.map((field, index) => (
-                  <td key={index} className="px-6 py-4 text-sm text-gray-600">
-                    {field === "Status" ? (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                        Active
-                      </span>
-                    ) : (
-                      `Sample ${field} ${item}`
-                    )}
-                  </td>
-                ))}
-                <td className="px-6 py-4 text-right">
-                  <button className="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-100 rounded">
-                    <Settings2 className="w-4 h-4" />
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    );
+      case "asset-categories":
+        return <DataTable columns={columns.assetCategories} data={[]} />;
+
+      default:
+        return null;
+    }
   };
+
+  const handleSearch = (value: string) => {
+    setSearchQuery(value);
+    // Implement search logic here
+  };
+
+  const handleFilter = (value: string) => {
+    setSelectedFilter(value);
+    // Implement filter logic here
+  };
+
+  const handleImport = async () => {
+    setIsLoading(true);
+    try {
+      // Implement import logic
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    } catch (error) {
+      console.error("Import failed:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const getActiveData = () => {
+    const dataMap = {
+      models,
+      manufacturers,
+      locations,
+      departments,
+      suppliers,
+      "status-label": statusLabels,
+      inventories,
+    };
+    return dataMap[activeTab as keyof typeof dataMap] || [];
+  };
+
+  const isLoadingData = {
+    models: modelsLoading,
+    manufacturers: manufacturersLoading,
+    locations: locationsLoading,
+    departments: departmentsLoading,
+    suppliers: suppliersLoading,
+    "status-label": labelsLoading,
+    inventories: inventoriesLoading,
+    formTemplates: formTemplatesLoading,
+  }[activeTab];
 
   return (
     <div className="min-h-screen bg-gray-50/50">
@@ -149,7 +223,9 @@ const AdminSettings = () => {
                   }`}
                 >
                   <Icon className="w-5 h-5 mr-3" />
-                  <span>{tab.label}</span>
+                  <div className="text-left">
+                    <span className="block font-medium">{tab.label}</span>
+                  </div>
                 </button>
               );
             })}
@@ -158,55 +234,41 @@ const AdminSettings = () => {
           {/* Main content */}
           <div className="flex-1">
             <div className="bg-white rounded-lg border border-gray-200">
-              <div className="p-6 border-b border-gray-200 flex justify-between items-center">
-                <h2 className="text-lg font-semibold text-gray-900">
-                  {tabs.find((tab) => tab.id === activeTab)?.label || ""}
-                </h2>
-                <button className="inline-flex items-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add New
-                </button>
+              <div className="p-6 border-b border-gray-200">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                  <div>
+                    <h2 className="text-lg font-semibold text-gray-900">
+                      {tabs.find((tab) => tab.id === activeTab)?.label}
+                    </h2>
+                    <p className="text-sm text-gray-500">
+                      {tabs.find((tab) => tab.id === activeTab)?.description}
+                    </p>
+                  </div>
+                </div>
+
+                <TableHeader
+                  onSearch={handleSearch}
+                  onFilter={() => {}}
+                  onImport={handleImport}
+                  onCreateNew={() => {}}
+                />
               </div>
 
               <div className="p-6">
-                {/* Search and filters */}
-                <div className="mb-6 flex gap-4">
-                  <div className="flex-1 relative">
-                    <Search className="w-5 h-5 absolute left-3 top-2.5 text-gray-400" />
-                    <input
-                      type="text"
-                      placeholder="Search..."
-                      className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                    />
+                {modelsError && (
+                  <Alert variant="destructive" className="mb-4">
+                    <AlertDescription>
+                      Failed to load data. Please try again later.
+                    </AlertDescription>
+                  </Alert>
+                )}
+                {isLoadingData ? (
+                  <div className="flex justify-center items-center py-8">
+                    <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
                   </div>
-                  <button className="px-4 py-2 border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50">
-                    Filters
-                  </button>
-                </div>
-
-                {/* Table */}
-                {renderTable()}
-
-                {/* Pagination */}
-                <div className="mt-6 flex items-center justify-between">
-                  <div className="text-sm text-gray-500">
-                    Showing 1 to 3 of 12 entries
-                  </div>
-                  <div className="flex gap-2">
-                    <button className="px-3 py-1 border border-gray-200 rounded-md text-sm text-gray-600 hover:bg-gray-50">
-                      Previous
-                    </button>
-                    <button className="px-3 py-1 border border-gray-200 rounded-md text-sm bg-green-50 text-green-700 font-medium">
-                      1
-                    </button>
-                    <button className="px-3 py-1 border border-gray-200 rounded-md text-sm text-gray-600 hover:bg-gray-50">
-                      2
-                    </button>
-                    <button className="px-3 py-1 border border-gray-200 rounded-md text-sm text-gray-600 hover:bg-gray-50">
-                      Next
-                    </button>
-                  </div>
-                </div>
+                ) : (
+                  renderDataTable()
+                )}
               </div>
             </div>
           </div>
