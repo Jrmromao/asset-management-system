@@ -133,6 +133,7 @@ const AdminSettings = () => {
   const [editingInventory, setEditingInventory] = useState<Inventory | null>(
     null,
   );
+  const [editingModel, setEditingModel] = useState<Model | null>(null);
 
   const {
     onClose: closeModel,
@@ -177,9 +178,17 @@ const AdminSettings = () => {
   const MODAL_CONFIGS: ModalConfig[] = [
     {
       id: "models",
-      title: "Add Model",
-      description: "Add a new model",
-      FormComponent: ModelForm,
+      title: editingModel ? "Update Model" : "Add Model",
+      description: editingModel ? "Update a existing model" : "Add a new model",
+      FormComponent: () => (
+        <ModelForm
+          initialData={editingModel || undefined}
+          onSubmitSuccess={() => {
+            closeModel();
+            setEditingModel(null);
+          }}
+        />
+      ),
       isOpen: isModelOpen,
       onClose: closeModel,
     },
@@ -215,15 +224,6 @@ const AdminSettings = () => {
       isOpen: isStatusLabelOpen,
       onClose: closeStatusLabel,
     },
-    // {
-    //   id: "inventories",
-    //   title: "Add Inventory",
-    //   description: "Add a new inventory",
-    //   FormComponent: InventoryForm,
-    //   isOpen: isInventoryOpen,
-    //   onClose: closeInventory,
-    // },
-
     {
       id: "inventories",
       title: editingInventory ? "Update Inventory" : "Add Inventory",
@@ -232,7 +232,7 @@ const AdminSettings = () => {
         : "Add a new inventory",
       FormComponent: () => (
         <InventoryForm
-          initialData={editingInventory}
+          initialData={editingInventory || undefined}
           onSubmitSuccess={() => {
             closeInventory();
             setEditingInventory(null);
@@ -273,7 +273,10 @@ const AdminSettings = () => {
     () => ({
       models: modelColumns({
         onDelete: () => {},
-        onUpdate: () => {},
+        onUpdate: (model: Model) => {
+          setEditingModel(model);
+          onModelOpen();
+        },
       }),
       manufacturers: manufacturerColumns({
         onDelete: () => {},

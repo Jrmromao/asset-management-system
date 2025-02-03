@@ -12,14 +12,12 @@ import CustomInput from "@/components/CustomInput";
 import { inventorySchema } from "@/lib/schemas";
 import { useInventoryUIStore } from "@/lib/stores/useInventoryUIStore";
 import { useInventoryQuery } from "@/hooks/queries/useInventoryQuery";
+import { FormProps } from "@/types/form";
 
 const InventoryForm = ({
   initialData,
   onSubmitSuccess,
-}: {
-  initialData?: any;
-  onSubmitSuccess: () => void;
-}) => {
+}: FormProps<Inventory>) => {
   const [isPending, startTransition] = useTransition();
   const { createInventory, updateInventory } = useInventoryQuery();
   const { onClose } = useInventoryUIStore();

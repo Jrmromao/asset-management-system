@@ -11,58 +11,75 @@ import CustomInput from "@/components/CustomInput";
 import CustomSelect from "@/components/CustomSelect";
 import { DialogContainer } from "@/components/dialogs/DialogContainer";
 import ManufacturerForm from "@/components/forms/ManufacturerForm";
-import { useManufacturerStore } from "@/lib/stores/manufacturerStore";
 import { modelSchema } from "@/lib/schemas";
 import { useModelUIStore } from "@/lib/stores/useModelUIStore";
 import { useModelsQuery } from "@/hooks/queries/useModelsQuery";
+import { FormProps } from "@/types/form";
+import { toast } from "sonner";
+import { useManufacturerQuery } from "@/hooks/queries";
+import { useManufacturerUIStore } from "@/lib/stores";
 
-const ModelForm = () => {
-  const { createModel, isCreating } = useModelsQuery();
+const ModelForm = ({ initialData, onSubmitSuccess }: FormProps<Model>) => {
+  const { createModel, isCreating, updateModel, isUpdating } = useModelsQuery();
+  const { manufacturers } = useManufacturerQuery();
   const { onClose } = useModelUIStore();
-  // Manufacturer store
   const {
-    isOpen: manufacturerIsOpen,
-    onClose: closeManufacturerModal,
+    isOpen: isManufacturerModalOpen,
     onOpen: openManufacturerModal,
-    manufacturers,
-    getAll: fetchManufacturers,
-  } = useManufacturerStore();
+    onClose: closeManufacturerModal,
+  } = useManufacturerUIStore();
 
   const form = useForm<z.infer<typeof modelSchema>>({
     resolver: zodResolver(modelSchema),
     defaultValues: {
-      name: "",
-      modelNo: "",
-      manufacturerId: "",
+      name: initialData?.name || "",
+      modelNo: initialData?.modelNo || "",
+      manufacturerId: initialData?.manufacturerId || "",
       endOfLife: undefined,
       notes: "",
     },
   });
 
-  // Fetch initial data
-  React.useEffect(() => {
-    fetchManufacturers();
-  }, [fetchManufacturers]);
-
   const onSubmit = async (data: z.infer<typeof modelSchema>) => {
     startTransition(async () => {
-      await createModel(
-        {
-          name: data.name,
-          modelNo: data.modelNo,
-          manufacturerId: data.manufacturerId,
-        },
-        {
-          onSuccess: () => {
-            form.reset();
-            onClose();
-            console.log("Successfully created model");
+      try {
+        if (initialData) {
+          await updateModel(
+            initialData.id,
+            { ...data },
+            {
+              onSuccess: () => {
+                form.reset();
+                onClose();
+                console.log("Successfully updated model");
+              },
+              onError: (error) => {
+                console.error("Error updating model:", error);
+              },
+            },
+          );
+        }
+        await createModel(
+          {
+            name: data.name,
+            modelNo: data.modelNo,
+            manufacturerId: data.manufacturerId,
           },
-          onError: (error) => {
-            console.error("Error creating model:", error);
+          {
+            onSuccess: () => {
+              form.reset();
+              onClose();
+              console.log("Successfully created model");
+            },
+            onError: (error) => {
+              console.error("Error creating model:", error);
+            },
           },
-        },
-      );
+        );
+      } catch (error) {
+        console.error("Model operation error:", error);
+        toast.error(`Failed to ${initialData ? "update" : "create"} Model`);
+      }
     });
   };
 
@@ -72,10 +89,18 @@ const ModelForm = () => {
     form.reset();
   }
 
+  if (isCreating || isUpdating) {
+    return (
+      <div className="flex items-center justify-center">
+        <Loader2 className="animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <section className="w-full">
       <DialogContainer
-        open={manufacturerIsOpen}
+        open={isManufacturerModalOpen}
         onOpenChange={closeManufacturerModal}
         title="Add Manufacturer"
         description="Add a new manufacturer to your inventory"

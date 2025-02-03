@@ -20,3 +20,8 @@ export interface FormTemplate {
   name: string;
   fields: CustomField[];
 }
+
+export interface FormProps<T> {
+  initialData?: T;
+  onSubmitSuccess?: () => void;
+}

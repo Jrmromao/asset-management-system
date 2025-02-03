@@ -231,47 +231,7 @@
 //         await prisma.$disconnect();
 //     }
 // }
-// export async function update(data: Model, id: string): Promise<ActionResponse<Model>> {
-//     try {
-//         const session = await auth();
-//         if (!session) {
-//             return {error: "Not authenticated"};
-//         }
-//
-//         // Check if model exists and belongs to company
-//         const existingModel = await prisma.model.findFirst({
-//             where: {
-//                 id,
-//                 companyId: session.user.companyId
-//             }
-//         });
-//
-//         if (!existingModel) {
-//             return {error: "Model not found"};
-//         }
-//
-//         const model = await prisma.model.update({
-//             where: {id},
-//             data: {
-//                 name: data.name,
-//                 modelNo: data.modelNo,
-//                 categoryId: data.categoryId,
-//                 manufacturerId: data.manufacturerId,
-//                 companyId: session.user.companyId
-//             }
-//         });
-//
-//         revalidatePath('/models');
-//         revalidatePath(`/models/${id}`);
-//         return {data: parseStringify(model)};
-//     } catch (error) {
-//         console.error('Update model error:', error);
-//         return {error: "Failed to update model"};
-//     } finally {
-//         await prisma.$disconnect();
-//     }
-// }
-//
+
 // export async function remove(id: string): Promise<ActionResponse<Model>> {
 //     try {
 //         const session = await auth();
@@ -548,6 +508,47 @@ export async function remove(id: string): Promise<ActionResponse<Model>> {
     };
   } catch (error) {
     return { error: "Failed to delete model" };
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+export async function update(
+  id: string,
+  data: Partial<Model>,
+): Promise<ActionResponse<Model>> {
+  try {
+    const session = await auth();
+    if (!session) {
+      return { error: "Not authenticated" };
+    }
+
+    // Check if model exists and belongs to company
+    const existingModel = await prisma.model.findFirst({
+      where: {
+        id,
+        companyId: session.user.companyId,
+      },
+    });
+
+    if (!existingModel) {
+      return { error: "Model not found" };
+    }
+
+    const model = await prisma.model.update({
+      where: { id },
+      data: {
+        name: data.name,
+        modelNo: data.modelNo,
+        manufacturerId: data.manufacturerId,
+        companyId: session.user.companyId,
+      },
+    });
+
+    return { data: parseStringify(model) };
+  } catch (error) {
+    console.error("Update model error:", error);
+    return { error: "Failed to update model" };
   } finally {
     await prisma.$disconnect();
   }
