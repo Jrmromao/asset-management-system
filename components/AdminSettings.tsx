@@ -184,9 +184,7 @@ const AdminSettings = () => {
     {
       id: "models",
       title: editingModel ? "Update Model" : "Add Model",
-      description: editingModel
-        ? "Update an existing model"
-        : "Add a new model",
+      description: editingModel ? "Update existing model" : "Add a new model",
       FormComponent: () => (
         <ModelForm
           initialData={editingModel || undefined}
@@ -203,7 +201,7 @@ const AdminSettings = () => {
       id: "manufacturers",
       title: editingManufacturer ? "Update Manufacturer" : "Add Manufacturer",
       description: editingManufacturer
-        ? "Update a existing manufacturer"
+        ? "Update existing manufacturer"
         : "Add a new manufacturer",
       FormComponent: () => (
         <ManufacturerForm
@@ -237,9 +235,19 @@ const AdminSettings = () => {
     },
     {
       id: "departments",
-      title: "Add Department",
-      description: "Add a new department",
-      FormComponent: DepartmentForm,
+      title: editingDepartment ? "Update Department" : "Add Department",
+      description: editingDepartment
+        ? "Update existing department"
+        : "Add a new department",
+      FormComponent: () => (
+        <DepartmentForm
+          initialData={editingDepartment || undefined}
+          onSubmitSuccess={() => {
+            closeDepartment();
+            setEditingDepartment(null);
+          }}
+        />
+      ),
       isOpen: isDepartmentOpen,
       onClose: closeDepartment,
     },
@@ -321,7 +329,10 @@ const AdminSettings = () => {
       }),
       departments: departmentColumns({
         onDelete: () => {},
-        onUpdate: () => {},
+        onUpdate: (department: Department) => {
+          setEditingDepartment(department);
+          onDepartmentOpen();
+        },
       }),
       "status-label": statusLabelColumns({
         onDelete: () => {},

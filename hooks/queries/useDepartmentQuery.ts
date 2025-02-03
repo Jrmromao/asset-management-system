@@ -48,6 +48,8 @@ export function useDepartmentQuery() {
     updateItem: updateDepartment,
     deleteItem: deleteDepartment,
     isCreating,
+    isUpdating,
+    isDeleting,
     refresh,
   } = genericQuery();
 
@@ -59,6 +61,8 @@ export function useDepartmentQuery() {
     createDepartment,
     deleteDepartment,
     isCreating,
+    isUpdating,
+    isDeleting,
     refresh,
   };
 }
