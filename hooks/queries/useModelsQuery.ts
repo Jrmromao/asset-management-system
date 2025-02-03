@@ -1,4 +1,4 @@
-import { getAll, insert, remove } from "@/lib/actions/model.actions";
+import { getAll, insert, remove, update } from "@/lib/actions/model.actions";
 import { useModelUIStore } from "@/lib/stores/useModelUIStore";
 import { createGenericQuery } from "@/hooks/queries/useQueryFactory";
 import { z } from "zod";
@@ -23,6 +23,9 @@ export function useModelsQuery() {
       delete: async (id: string) => {
         return await remove(id);
       },
+      update: async (id: string, data: Partial<Model>) => {
+        return await update(id, data);
+      },
     },
     {
       onClose,
@@ -38,6 +41,10 @@ export function useModelsQuery() {
     error,
     createItem: createModel,
     isCreating,
+    updateItem: updateModel,
+    isUpdating,
+    deleteItem: deleteModel,
+    isDeleting,
     refresh,
   } = genericQuery();
 
@@ -45,7 +52,11 @@ export function useModelsQuery() {
     models,
     isLoading,
     error,
+    updateModel,
     createModel,
+    deleteModel,
+    isUpdating,
+    isDeleting,
     isCreating,
     refresh,
   };

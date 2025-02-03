@@ -25,52 +25,52 @@ export const create = async (
 
     return await prisma.$transaction(async (tx) => {
       // Create license
-      const license = await tx.license.create({
-        data: {
-          name: values.licenseName,
-          seats: Number(values.seats),
-          minSeatsAlert: Number(values.minSeatsAlert),
-          licensedEmail: values.licensedEmail,
-          renewalDate: values.renewalDate,
-          purchaseDate: values.purchaseDate,
-          alertRenewalDays: Number(values.alertRenewalDays),
-          supplierId: values.supplierId,
-          poNumber: values.poNumber,
-          locationId: values.locationId,
-          departmentId: values.departmentId,
-          inventoryId: values.inventoryId,
-          statusLabelId: values.statusLabelId,
-          purchaseNotes: values.notes,
-          purchasePrice: values.purchasePrice,
-          companyId: session.user.companyId,
-        },
-      });
+      // const license = await tx.license.create({
+      //   // data: {
+      //   //   name: values.licenseName,
+      //   //   seats: Number(values.seats),
+      //   //   minSeatsAlert: Number(values.minSeatsAlert),
+      //   //   licensedEmail: values.licensedEmail,
+      //   //   renewalDate: values.renewalDate,
+      //   //   purchaseDate: values.purchaseDate,
+      //   //   alertRenewalDays: Number(values.alertRenewalDays),
+      //   //   supplierId: values.supplierId,
+      //   //   poNumber: values.poNumber,
+      //   //   locationId: values.locationId,
+      //   //   departmentId: values.departmentId,
+      //   //   inventoryId: values.inventoryId,
+      //   //   statusLabelId: values.statusLabelId,
+      //   //   purchaseNotes: values.notes,
+      //   //   purchasePrice: values.purchasePrice,
+      //   //   companyId: session.user.companyId,
+      //   // },
+      // });
 
       // Record initial seat allocation
-      await tx.licenseSeat.create({
-        data: {
-          licenseId: license.id,
-          quantity: Number(values.seats),
-          type: "purchase",
-          companyId: session.user.companyId,
-          notes: `Initial purchase of ${values.seats} seats`,
-        },
-      });
+      // await tx.licenseSeat.create({
+      //   data: {
+      //     licenseId: license.id,
+      //     quantity: Number(values.seats),
+      //     type: "purchase",
+      //     companyId: session.user.companyId,
+      //     notes: `Initial purchase of ${values.seats} seats`,
+      //   },
+      // });
 
       // Create audit log
-      await tx.auditLog.create({
-        data: {
-          action: "LICENSE_CREATED",
-          entity: "LICENSE",
-          entityId: license.id,
-          userId: session.user.id!,
-          companyId: session.user.companyId,
-          details: `Created license ${values.licenseName} with ${values.seats} seats`,
-        },
-      });
+      // await tx.auditLog.create({
+      //   data: {
+      //     action: "LICENSE_CREATED",
+      //     entity: "LICENSE",
+      //     entityId: license.id,
+      //     userId: session.user.id!,
+      //     companyId: session.user.companyId,
+      //     details: `Created license ${values.licenseName} with ${values.seats} seats`,
+      //   },
+      // });
 
       return {
-        data: parseStringify(license),
+        data: parseStringify({}),
       };
     });
   } catch (error) {

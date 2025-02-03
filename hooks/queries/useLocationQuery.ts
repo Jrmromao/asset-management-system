@@ -2,7 +2,7 @@ import { useLocationUIStore } from "@/lib/stores/useLocationUIStore";
 import { createGenericQuery } from "@/hooks/queries/useQueryFactory";
 import { z } from "zod";
 import { locationSchema } from "@/lib/schemas";
-import { getAll, insert, remove } from "@/lib/actions/location.actions";
+import { getAll, insert, remove, update } from "@/lib/actions/location.actions";
 
 export const MODEL_KEY = ["locations"] as const;
 
@@ -26,6 +26,9 @@ export function useLocationQuery() {
       delete: async (id: string) => {
         return await remove(id);
       },
+      update: async (id: string, data: Partial<DepartmentLocation>) => {
+        return await update(id, data);
+      },
     },
     {
       onClose,
@@ -40,6 +43,8 @@ export function useLocationQuery() {
     isLoading,
     error,
     createItem: createLocation,
+    updateItem: updateLocation,
+    deleteItem: deleteLocation,
     isCreating,
     refresh,
   } = genericQuery();
@@ -48,7 +53,9 @@ export function useLocationQuery() {
     locations,
     isLoading,
     error,
+    updateLocation,
     createLocation,
+    deleteLocation,
     isCreating,
     refresh,
   };

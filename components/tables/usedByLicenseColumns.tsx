@@ -13,7 +13,7 @@ interface UsedByColumnsProps {
 export const usedByLicenseColumns = ({
   onCheckIn,
   checkingInIds,
-}: UsedByColumnsProps): ColumnDef<LicenseAssignment>[] => [
+}: UsedByColumnsProps): ColumnDef<UserItems>[] => [
   {
     accessorKey: "user.name",
     header: ({ column }) => {

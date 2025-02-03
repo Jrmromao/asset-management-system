@@ -43,35 +43,39 @@ export async function insert(
   }
 }
 
-// export async function update(
-//   data: Inventory,
-// ): Promise<ActionResponse<Inventory>> {
-//   try {
-//     if (!data.id) {
-//       return { error: "ID is required for update" };
-//     }
-//
-//     // const session = await auth();
-//     // //
-//     // const updated = await prisma.inventory.update({
-//     //     where: {
-//     //         id: data.id,
-//     //         companyId: session?.user?.companyId
-//     //     }
-//     //     ,
-//     //     data: {
-//     //         ...data,
-//     //     },
-//     // });
-//
-//     return { data: parseStringify({}) };
-//   } catch (error) {
-//     console.error("Update inventory error:", error);
-//     return { error: "Failed to update inventory" };
-//   } finally {
-//     await prisma.$disconnect();
-//   }
-// }
+export async function update(
+  id: string,
+  data: Partial<Inventory>,
+): Promise<ActionResponse<Inventory>> {
+  try {
+    console.log("ID: ", id);
+    console.log("DATA: ", data);
+
+    if (!id) {
+      return { error: "ID is required for update" };
+    }
+
+    const session = await auth();
+    const updated = await prisma.inventory.update({
+      where: {
+        id,
+        companyId: session?.user?.companyId,
+      },
+      data: {
+        name: data.name,
+      },
+    });
+
+    console.log("\n\n\n ------> ", updated);
+
+    return { data: parseStringify(updated) };
+  } catch (error) {
+    console.error("Update inventory error:", error);
+    return { error: "Failed to update inventory" };
+  } finally {
+    await prisma.$disconnect();
+  }
+}
 
 export async function getAll() {
   try {

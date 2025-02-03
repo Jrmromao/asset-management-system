@@ -130,6 +130,11 @@ const AdminSettings = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeModal, setActiveModal] = useState<TabId | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [editingInventory, setEditingInventory] = useState<Inventory | null>(
+    null,
+  );
+  const [editingModel, setEditingModel] = useState<Model | null>(null);
+
   const {
     onClose: closeModel,
     isOpen: isModelOpen,
@@ -173,9 +178,17 @@ const AdminSettings = () => {
   const MODAL_CONFIGS: ModalConfig[] = [
     {
       id: "models",
-      title: "Add Model",
-      description: "Add a new model",
-      FormComponent: ModelForm,
+      title: editingModel ? "Update Model" : "Add Model",
+      description: editingModel ? "Update a existing model" : "Add a new model",
+      FormComponent: () => (
+        <ModelForm
+          initialData={editingModel || undefined}
+          onSubmitSuccess={() => {
+            closeModel();
+            setEditingModel(null);
+          }}
+        />
+      ),
       isOpen: isModelOpen,
       onClose: closeModel,
     },
@@ -213,12 +226,26 @@ const AdminSettings = () => {
     },
     {
       id: "inventories",
-      title: "Add Inventory",
-      description: "Add a new inventory",
-      FormComponent: InventoryForm,
+      title: editingInventory ? "Update Inventory" : "Add Inventory",
+      description: editingInventory
+        ? "Update existing inventory"
+        : "Add a new inventory",
+      FormComponent: () => (
+        <InventoryForm
+          initialData={editingInventory || undefined}
+          onSubmitSuccess={() => {
+            closeInventory();
+            setEditingInventory(null);
+          }}
+        />
+      ),
       isOpen: isInventoryOpen,
-      onClose: closeInventory,
+      onClose: () => {
+        closeInventory();
+        setEditingInventory(null);
+      },
     },
+
     {
       id: "asset-categories",
       title: "Add Custom Fields",
@@ -246,7 +273,10 @@ const AdminSettings = () => {
     () => ({
       models: modelColumns({
         onDelete: () => {},
-        onUpdate: () => {},
+        onUpdate: (model: Model) => {
+          setEditingModel(model);
+          onModelOpen();
+        },
       }),
       manufacturers: manufacturerColumns({
         onDelete: () => {},
@@ -266,7 +296,10 @@ const AdminSettings = () => {
       }),
       inventories: inventoryColumns({
         onDelete: () => {},
-        onUpdate: () => {},
+        onUpdate: (inventory: Inventory) => {
+          setEditingInventory(inventory);
+          onInventoryOpen();
+        },
       }),
       "asset-categories": assetCategoriesColumns({
         onDelete: () => {},

@@ -110,7 +110,7 @@ export async function findById(
 
 export async function update(
   id: string,
-  data: Pick<Department, "name">,
+  data: Partial<Department>,
 ): Promise<ActionResponse<Department>> {
   try {
     const session = await auth();

@@ -19,12 +19,21 @@ interface UseGenericQueryOptions<T>
   errorMessage?: string;
   deleteSuccessMessage?: string;
   deleteErrorMessage?: string;
+  updateSuccessMessage?: string;
+  updateErrorMessage?: string;
+}
+
+// Update payload type to handle both id and data
+interface UpdatePayload<T> {
+  id: string;
+  data: Partial<T>;
 }
 
 interface CrudActions<T, TCreateInput> {
   getAll: () => Promise<ActionResponse<T[]>>;
   insert: (data: TCreateInput) => Promise<ActionResponse<T>>;
   delete: (id: string) => Promise<ActionResponse<T>>;
+  update: (id: string, data: Partial<T>) => Promise<ActionResponse<T>>;
   findById?: (id: string) => Promise<ActionResponse<T>>;
 }
 
@@ -46,8 +55,17 @@ interface UseGenericQueryResult<T, TCreateInput> {
       onError?: (error: Error) => void;
     },
   ) => Promise<void>;
+  updateItem: (
+    id: string,
+    data: Partial<T>,
+    callbacks?: {
+      onSuccess?: () => void;
+      onError?: (error: Error) => void;
+    },
+  ) => Promise<void>;
   isCreating: boolean;
   isDeleting: boolean;
+  isUpdating: boolean;
   refresh: () => Promise<void>;
   findById?: (id: string) => Promise<T | undefined>;
 }
@@ -153,6 +171,51 @@ export function createGenericQuery<T extends { id?: string }, TCreateInput>(
       },
     });
 
+    const { mutate: mutateUpdate, isPending: isUpdating } = useMutation<
+      T,
+      Error,
+      UpdatePayload<T>,
+      MutationContext
+    >({
+      mutationFn: async ({ id, data }: UpdatePayload<T>) => {
+        const result = await actions.update(id, data);
+        if (result.error) throw new Error(result.error);
+        return result.data!;
+      },
+      onMutate: async ({ id, data }: UpdatePayload<T>) => {
+        await queryClient.cancelQueries({ queryKey });
+        const previousData = queryClient.getQueryData<T[]>(queryKey);
+        if (previousData) {
+          queryClient.setQueryData<T[]>(
+            queryKey,
+            previousData.map((item) =>
+              item.id === id ? { ...item, ...data } : item,
+            ),
+          );
+        }
+        return { previousData };
+      },
+      onError: (err, _, context) => {
+        if (context?.previousData) {
+          queryClient.setQueryData(queryKey, context.previousData);
+        }
+        console.error(`Update error:`, err);
+        toast.error(
+          options?.updateErrorMessage || `Failed to update ${queryKey[0]}`,
+        );
+      },
+      onSuccess: () => {
+        toast.success(
+          options?.updateSuccessMessage ||
+            `${queryKey[0]} updated successfully`,
+        );
+        onClose?.();
+      },
+      onSettled: () => {
+        queryClient.invalidateQueries({ queryKey });
+      },
+    });
+
     const createItem = useCallback(
       async (
         data: TCreateInput,
@@ -209,6 +272,34 @@ export function createGenericQuery<T extends { id?: string }, TCreateInput>(
       [mutateDelete],
     );
 
+    const updateItem = useCallback(
+      async (
+        id: string,
+        data: Partial<T>,
+        callbacks?: {
+          onSuccess?: () => void;
+          onError?: (error: Error) => void;
+        },
+      ): Promise<void> => {
+        return new Promise<void>((resolve, reject) => {
+          mutateUpdate(
+            { id, data },
+            {
+              onSuccess: () => {
+                callbacks?.onSuccess?.();
+                resolve();
+              },
+              onError: (error) => {
+                callbacks?.onError?.(error);
+                reject(error);
+              },
+            },
+          );
+        });
+      },
+      [mutateUpdate],
+    );
+
     const refresh = useCallback(async (): Promise<void> => {
       await refetch();
     }, [refetch]);
@@ -219,8 +310,10 @@ export function createGenericQuery<T extends { id?: string }, TCreateInput>(
       error: error as Error | null,
       createItem,
       deleteItem,
+      updateItem,
       isCreating,
       isDeleting,
+      isUpdating,
       refresh,
       findById: actions.findById
         ? async (id: string) => {

@@ -1,7 +1,12 @@
 import { createGenericQuery } from "@/hooks/queries/useQueryFactory";
 import { z } from "zod";
 import { inventorySchema } from "@/lib/schemas";
-import { getAll, insert, remove } from "@/lib/actions/inventory.actions";
+import {
+  getAll,
+  insert,
+  remove,
+  update,
+} from "@/lib/actions/inventory.actions";
 import { useInventoryUIStore } from "@/lib/stores/useInventoryUIStore";
 
 export const MODEL_KEY = ["inventories"] as const;
@@ -26,11 +31,18 @@ export function useInventoryQuery() {
       delete: async (id: string) => {
         return await remove(id);
       },
+      update: async (id: string, data: Partial<Inventory>) => {
+        return await update(id, data);
+      },
     },
     {
       onClose,
       successMessage: "Inventory created successfully",
       errorMessage: "Failed to create inventory",
+      deleteSuccessMessage: "Inventory deleted successfully",
+      deleteErrorMessage: "Failed to delete inventory",
+      updateSuccessMessage: "Inventory updated successfully",
+      updateErrorMessage: "Failed to update inventory",
       staleTime: 5 * 60 * 1000, // 5 minutes
     },
   );
@@ -40,7 +52,11 @@ export function useInventoryQuery() {
     isLoading,
     error,
     createItem: createInventory,
+    deleteItem: deleteInventory,
+    updateItem: updateInventory,
     isCreating,
+    isDeleting,
+    isUpdating,
     refresh,
   } = genericQuery();
 
@@ -49,7 +65,11 @@ export function useInventoryQuery() {
     isLoading,
     error,
     createInventory,
+    deleteInventory,
+    updateInventory,
     isCreating,
+    isDeleting,
+    isUpdating,
     refresh,
   };
 }
