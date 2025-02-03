@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/breadcrumb";
 import Link from "next/link";
 import HeaderBox from "@/components/HeaderBox";
-import { Cog } from "lucide-react";
+import { Settings } from "lucide-react";
 
 const SettingsPage = (): JSX.Element => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -33,7 +33,7 @@ const SettingsPage = (): JSX.Element => {
       <HeaderBox
         title="Settings"
         subtext="Configure your application settings and manage master data"
-        icon={<Cog className="w-4 h-4" />}
+        icon={<Settings className="w-4 h-4" />}
       />
 
       <AdminSettings />
