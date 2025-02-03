@@ -134,6 +134,8 @@ const AdminSettings = () => {
     null,
   );
   const [editingModel, setEditingModel] = useState<Model | null>(null);
+  const [editingManufacturer, setEditingManufacturer] =
+    useState<Manufacturer | null>();
 
   const {
     onClose: closeModel,
@@ -179,7 +181,9 @@ const AdminSettings = () => {
     {
       id: "models",
       title: editingModel ? "Update Model" : "Add Model",
-      description: editingModel ? "Update a existing model" : "Add a new model",
+      description: editingModel
+        ? "Update an existing model"
+        : "Add a new model",
       FormComponent: () => (
         <ModelForm
           initialData={editingModel || undefined}
@@ -194,9 +198,19 @@ const AdminSettings = () => {
     },
     {
       id: "manufacturers",
-      title: "Add Manufacturer",
-      description: "Add a new manufacturer",
-      FormComponent: ManufacturerForm,
+      title: editingManufacturer ? "Update Manufacturer" : "Add Manufacturer",
+      description: editingManufacturer
+        ? "Update a existing manufacturer"
+        : "Add a new manufacturer",
+      FormComponent: () => (
+        <ManufacturerForm
+          initialData={editingManufacturer || undefined}
+          onSubmitSuccess={() => {
+            closeManufacturer();
+            setEditingManufacturer(null);
+          }}
+        />
+      ),
       isOpen: isManufacturerOpen,
       onClose: closeManufacturer,
     },
@@ -280,7 +294,10 @@ const AdminSettings = () => {
       }),
       manufacturers: manufacturerColumns({
         onDelete: () => {},
-        onUpdate: () => {},
+        onUpdate: (manufacturer: Manufacturer) => {
+          setEditingManufacturer(manufacturer);
+          onManufacturerOpen();
+        },
       }),
       locations: locationColumns({
         onDelete: () => {},

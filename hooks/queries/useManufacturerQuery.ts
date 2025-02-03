@@ -48,6 +48,8 @@ export function useManufacturerQuery() {
     isLoading,
     error,
     createItem: createManufacturer,
+    updateItem: updateManufacturer,
+    isUpdating,
     isCreating,
     refresh,
   } = genericQuery();
@@ -57,6 +59,8 @@ export function useManufacturerQuery() {
     isLoading,
     error,
     createManufacturer,
+    updateManufacturer,
+    isUpdating,
     isCreating,
     refresh,
   };
