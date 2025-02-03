@@ -82,11 +82,32 @@ export const findById = async (id: string) => {
     await prisma.$disconnect();
   }
 };
+
 export const remove = async (id: string) => {
   try {
     const labels = await prisma.statusLabel.delete({
       where: {
         id: id,
+      },
+    });
+    return parseStringify(labels);
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+export const update = async (id: string, data: Partial<StatusLabel>) => {
+  try {
+    const labels = await prisma.statusLabel.update({
+      where: {
+        id: id,
+      },
+      data: {
+        name: data.name,
+        colorCode: data.colorCode,
+        isArchived: data.isArchived,
+        allowLoan: data.allowLoan,
+        description: data.description,
       },
     });
     return parseStringify(labels);

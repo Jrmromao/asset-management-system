@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useTransition } from "react";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -10,22 +10,27 @@ import { Loader2 } from "lucide-react";
 import CustomInput from "@/components/CustomInput";
 import { manufacturerSchema } from "@/lib/schemas";
 import { toast } from "sonner";
-import { useManufacturerStore } from "@/lib/stores/manufacturerStore";
-import { insert } from "@/lib/actions/manufacturer.actions";
-import { useTransition } from "react";
+import { FormProps } from "@/types/form";
+import { useManufacturerUIStore } from "@/lib/stores";
+import { useManufacturerQuery } from "@/hooks/queries";
 
-const ManufacturerForm = () => {
+const ManufacturerForm = ({
+  initialData,
+  onSubmitSuccess,
+}: FormProps<Manufacturer>) => {
   const [isPending, startTransition] = useTransition();
-  const { onClose, getAll } = useManufacturerStore();
+  const { createManufacturer, isCreating, updateManufacturer, isUpdating } =
+    useManufacturerQuery();
+  const { onClose } = useManufacturerUIStore();
 
   const form = useForm<z.infer<typeof manufacturerSchema>>({
     resolver: zodResolver(manufacturerSchema),
     defaultValues: {
-      name: "",
-      url: "",
-      supportUrl: "",
-      supportPhone: "",
-      supportEmail: "",
+      name: initialData?.name || "",
+      url: initialData?.url || "",
+      supportUrl: initialData?.supportUrl || "",
+      supportPhone: initialData?.supportPhone || "",
+      supportEmail: initialData?.supportEmail || "",
     },
   });
 
@@ -38,21 +43,31 @@ const ManufacturerForm = () => {
   async function onSubmit(data: z.infer<typeof manufacturerSchema>) {
     startTransition(async () => {
       try {
-        const result = await insert(data);
-
-        if (result.error) {
-          toast.error(result.error);
-          return;
+        if (initialData) {
+          await updateManufacturer(initialData.id, data, {
+            onSuccess: () => {
+              onSubmitSuccess?.();
+              onClose();
+              form.reset();
+            },
+          });
+        } else {
+          await createManufacturer(data, {
+            onSuccess: () => {
+              onClose();
+              form.reset();
+            },
+          });
         }
-        await getAll();
-        toast.success("Manufacturer created successfully");
-        onClose();
-        form.reset();
       } catch (error) {
         toast.error("Something went wrong");
         console.error(error);
       }
     });
+  }
+
+  if (isCreating || isUpdating) {
+    return <p className="text-center">Saving...</p>;
   }
 
   return (
@@ -106,7 +121,7 @@ const ManufacturerForm = () => {
                 Saving...
               </>
             ) : (
-              "Save"
+              <>{initialData ? "Update" : "Create"}</>
             )}
           </Button>
 

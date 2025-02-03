@@ -12,27 +12,47 @@ import CustomInput from "@/components/CustomInput";
 import { locationSchema } from "@/lib/schemas";
 import { useLocationUIStore } from "@/lib/stores/useLocationUIStore";
 import { useLocationQuery } from "@/hooks/queries/useLocationQuery";
+import { FormProps } from "@/types/form";
 
-const LocationForm = () => {
+const LocationForm = ({
+  initialData,
+  onSubmitSuccess,
+}: FormProps<DepartmentLocation>) => {
   const [isPending, startTransition] = useTransition();
   const { onClose } = useLocationUIStore();
-  const { createLocation } = useLocationQuery();
+  const { createLocation, isCreating, updateLocation, isUpdating } =
+    useLocationQuery();
 
   const form = useForm<z.infer<typeof locationSchema>>({
     resolver: zodResolver(locationSchema),
     defaultValues: {
-      name: "",
-      addressLine1: "",
-      addressLine2: "",
-      state: "",
-      city: "",
-      zip: "",
-      country: "",
+      name: initialData?.name || "",
+      addressLine1: initialData?.addressLine1 || "",
+      addressLine2: initialData?.addressLine2 || "",
+      state: initialData?.state || "",
+      city: initialData?.city || "",
+      zip: initialData?.zip || "",
+      country: initialData?.country || "",
     },
   });
 
   const onSubmit = async (data: z.infer<typeof locationSchema>) => {
     startTransition(async () => {
+      if (initialData) {
+        await updateLocation(initialData.id, data, {
+          onSuccess: () => {
+            toast.success("Location updated successfully");
+            onSubmitSuccess?.();
+            onClose();
+            form.reset();
+          },
+          onError: (error) => {
+            console.error("Location update error:", error);
+            toast.error("Failed to update location");
+          },
+        });
+      }
+
       await createLocation(data, {
         onSuccess: () => {
           toast.success("Location created successfully");
@@ -140,7 +160,7 @@ const LocationForm = () => {
                 Creating...
               </>
             ) : (
-              "Create Location"
+              <>{initialData ? "Update" : "Create"}</>
             )}
           </Button>
         </div>

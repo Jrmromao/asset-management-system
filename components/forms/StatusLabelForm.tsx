@@ -14,32 +14,42 @@ import CustomSwitch from "@/components/CustomSwitch";
 
 import { statusLabelSchema } from "@/lib/schemas";
 import { useStatusLabelUIStore } from "@/lib/stores/useStatusLabelUIStore";
-import { useStatusLabelsQuery } from "@/hooks/queries/useStatusLabelsQuery"; // Keep for UI state only
+import { useStatusLabelsQuery } from "@/hooks/queries/useStatusLabelsQuery";
+import { FormProps } from "@/types/form"; // Keep for UI state only
 
 type FormValues = z.infer<typeof statusLabelSchema>;
 
-interface StatusLabelFormProps {
-  onSuccess?: (statusLabelId: string) => void;
-}
-
-const StatusLabelForm = ({ onSuccess }: StatusLabelFormProps) => {
-  const { createStatusLabel, isCreating } = useStatusLabelsQuery();
+const StatusLabelForm = ({
+  initialData,
+  onSubmitSuccess,
+}: FormProps<StatusLabel>) => {
+  const { createStatusLabel, isCreating, updateStatusLabel, isUpdating } =
+    useStatusLabelsQuery();
 
   const { onClose } = useStatusLabelUIStore();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(statusLabelSchema),
     defaultValues: {
-      name: "",
-      description: "",
-      colorCode: "#000000",
-      isArchived: false,
-      allowLoan: true,
+      name: initialData?.name || "",
+      description: initialData?.description || "",
+      colorCode: initialData?.colorCode || "#000000",
+      isArchived: initialData?.isArchived || false,
+      allowLoan: initialData?.allowLoan || true,
     },
   });
 
   async function onSubmit(data: FormValues) {
     startTransition(async () => {
+      if (initialData) {
+        await updateStatusLabel(initialData.id, data, {
+          onSuccess: () => {
+            onSubmitSuccess?.();
+            onClose();
+            form.reset();
+          },
+        });
+      }
       await createStatusLabel(
         {
           name: data.name,
@@ -127,7 +137,7 @@ const StatusLabelForm = ({ onSuccess }: StatusLabelFormProps) => {
                 Creating...
               </>
             ) : (
-              "Create Status"
+              <>{initialData ? "Update" : "Create"}</>
             )}
           </Button>
         </div>

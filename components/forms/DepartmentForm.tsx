@@ -12,22 +12,40 @@ import CustomInput from "@/components/CustomInput";
 import { departmentSchema } from "@/lib/schemas";
 import { useDepartmentUIStore } from "@/lib/stores/useDepartmentUIStore";
 import { useDepartmentQuery } from "@/hooks/queries/useDepartmentQuery";
+import { FormProps } from "@/types/form";
 
-const DepartmentForm = () => {
+const DepartmentForm = ({
+  initialData,
+  onSubmitSuccess,
+}: FormProps<Department>) => {
   const [isPending, startTransition] = useTransition();
   const { onClose } = useDepartmentUIStore();
-  const { createDepartment } = useDepartmentQuery();
+  const { createDepartment, updateDepartment } = useDepartmentQuery();
 
   const form = useForm<z.infer<typeof departmentSchema>>({
     resolver: zodResolver(departmentSchema),
     defaultValues: {
-      name: "",
+      name: initialData?.name || "",
     },
   });
 
   const onSubmit = async (data: z.infer<typeof departmentSchema>) => {
     startTransition(async () => {
       try {
+        if (initialData) {
+          await updateDepartment(initialData.id, data, {
+            onSuccess: () => {
+              toast.success("Department updated successfully");
+              onSubmitSuccess?.();
+              onClose();
+              form.reset();
+            },
+            onError: (error: any) => {
+              console.error("Error updating department:", error);
+            },
+          });
+        }
+
         await createDepartment(data, {
           onSuccess: () => {
             toast.success("Department created successfully");
@@ -79,7 +97,7 @@ const DepartmentForm = () => {
                 Creating...
               </>
             ) : (
-              "Create"
+              <>{initialData ? "Update" : "Create"}</>
             )}
           </Button>
         </div>

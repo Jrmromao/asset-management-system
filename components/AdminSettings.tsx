@@ -47,9 +47,11 @@ import {
   useLocationUIStore,
   useManufacturerUIStore,
   useModelUIStore,
+  useStatusLabelUIStore,
 } from "@/lib/stores";
 import FormTemplateCreator from "@/components/forms/FormTemplateCreator";
 import { useFormTemplatesQuery } from "@/hooks/queries/useFormTemplatesQuery";
+import { FormTemplate } from "@/types/form";
 
 interface Tab {
   id: TabId;
@@ -134,7 +136,16 @@ const AdminSettings = () => {
     null,
   );
   const [editingModel, setEditingModel] = useState<Model | null>(null);
-
+  const [editingManufacturer, setEditingManufacturer] =
+    useState<Manufacturer | null>();
+  const [editingLocation, setEditingLocation] =
+    useState<DepartmentLocation | null>();
+  const [editingDepartment, setEditingDepartment] =
+    useState<Department | null>();
+  const [editingStatusLabel, setEditingStatusLabel] =
+    useState<StatusLabel | null>();
+  const [editingFormTemplate, setEditingFormTemplate] =
+    useState<FormTemplate | null>();
   const {
     onClose: closeModel,
     isOpen: isModelOpen,
@@ -173,13 +184,13 @@ const AdminSettings = () => {
     isOpen: isStatusLabelOpen,
     onClose: closeStatusLabel,
     onOpen: onStatusLabelOpen,
-  } = useFormTemplateUIStore();
+  } = useStatusLabelUIStore();
 
   const MODAL_CONFIGS: ModalConfig[] = [
     {
       id: "models",
       title: editingModel ? "Update Model" : "Add Model",
-      description: editingModel ? "Update a existing model" : "Add a new model",
+      description: editingModel ? "Update existing model" : "Add a new model",
       FormComponent: () => (
         <ModelForm
           initialData={editingModel || undefined}
@@ -194,33 +205,73 @@ const AdminSettings = () => {
     },
     {
       id: "manufacturers",
-      title: "Add Manufacturer",
-      description: "Add a new manufacturer",
-      FormComponent: ManufacturerForm,
+      title: editingManufacturer ? "Update Manufacturer" : "Add Manufacturer",
+      description: editingManufacturer
+        ? "Update existing manufacturer"
+        : "Add a new manufacturer",
+      FormComponent: () => (
+        <ManufacturerForm
+          initialData={editingManufacturer || undefined}
+          onSubmitSuccess={() => {
+            closeManufacturer();
+            setEditingManufacturer(null);
+          }}
+        />
+      ),
       isOpen: isManufacturerOpen,
       onClose: closeManufacturer,
     },
     {
       id: "locations",
-      title: "Add Location",
-      description: "Add a new location",
-      FormComponent: LocationForm,
+      title: editingLocation ? "Update Location" : "Add Location",
+      description: editingLocation
+        ? "Update existing location"
+        : "Add a new location",
+      FormComponent: () => (
+        <LocationForm
+          initialData={editingLocation || undefined}
+          onSubmitSuccess={() => {
+            closeLocation();
+            setEditingLocation(null);
+          }}
+        />
+      ),
       isOpen: isLocationOpen,
       onClose: closeLocation,
     },
     {
       id: "departments",
-      title: "Add Department",
-      description: "Add a new department",
-      FormComponent: DepartmentForm,
+      title: editingDepartment ? "Update Department" : "Add Department",
+      description: editingDepartment
+        ? "Update existing department"
+        : "Add a new department",
+      FormComponent: () => (
+        <DepartmentForm
+          initialData={editingDepartment || undefined}
+          onSubmitSuccess={() => {
+            closeDepartment();
+            setEditingDepartment(null);
+          }}
+        />
+      ),
       isOpen: isDepartmentOpen,
       onClose: closeDepartment,
     },
     {
       id: "status-label",
-      title: "Add Status Label",
-      description: "Add a new status label",
-      FormComponent: StatusLabelForm,
+      title: editingStatusLabel ? "Update Status Label" : "Add Status Label",
+      description: editingStatusLabel
+        ? "Update existing status label"
+        : "Add a new status label",
+      FormComponent: () => (
+        <StatusLabelForm
+          initialData={editingStatusLabel || undefined}
+          onSubmitSuccess={() => {
+            closeStatusLabel();
+            setEditingStatusLabel(null);
+          }}
+        />
+      ),
       isOpen: isStatusLabelOpen,
       onClose: closeStatusLabel,
     },
@@ -245,12 +296,21 @@ const AdminSettings = () => {
         setEditingInventory(null);
       },
     },
-
     {
       id: "asset-categories",
-      title: "Add Custom Fields",
-      description: "Add a new custom form fields",
-      FormComponent: FormTemplateCreator,
+      title: editingFormTemplate ? "Update Custom Fields" : "Add Custom Fields",
+      description: editingFormTemplate
+        ? "Update existing custom fields"
+        : "Add a new custom form fields",
+      FormComponent: () => (
+        <FormTemplateCreator
+          initialData={editingFormTemplate || undefined}
+          onSubmitSuccess={() => {
+            closeFormTemplate();
+            setEditingFormTemplate(null);
+          }}
+        />
+      ),
       isOpen: isFormTemplateOpen,
       onClose: closeFormTemplate,
     },
@@ -280,19 +340,31 @@ const AdminSettings = () => {
       }),
       manufacturers: manufacturerColumns({
         onDelete: () => {},
-        onUpdate: () => {},
+        onUpdate: (manufacturer: Manufacturer) => {
+          setEditingManufacturer(manufacturer);
+          onManufacturerOpen();
+        },
       }),
       locations: locationColumns({
         onDelete: () => {},
-        onUpdate: () => {},
+        onUpdate: (departmentLocation: DepartmentLocation) => {
+          setEditingLocation(departmentLocation);
+          onLocationOpen();
+        },
       }),
       departments: departmentColumns({
         onDelete: () => {},
-        onUpdate: () => {},
+        onUpdate: (department: Department) => {
+          setEditingDepartment(department);
+          onDepartmentOpen();
+        },
       }),
       "status-label": statusLabelColumns({
         onDelete: () => {},
-        onUpdate: () => {},
+        onUpdate: (statusLabel: StatusLabel) => {
+          setEditingStatusLabel(statusLabel);
+          onStatusLabelOpen();
+        },
       }),
       inventories: inventoryColumns({
         onDelete: () => {},
@@ -303,7 +375,10 @@ const AdminSettings = () => {
       }),
       "asset-categories": assetCategoriesColumns({
         onDelete: () => {},
-        onUpdate: () => {},
+        onUpdate: (formTemplate: FormTemplate) => {
+          setEditingFormTemplate(formTemplate);
+          onFormTemplateOpen();
+        },
       }),
     }),
     [],
@@ -409,7 +484,7 @@ const AdminSettings = () => {
   const isLoadingData = loadingMap[activeTab];
 
   return (
-    <div className="min-h-screen bg-gray-50/50">
+    <div className="min-h-screen w-full">
       {/* Modals */}
       {MODAL_CONFIGS.map((config) => {
         const { id, title, description, FormComponent, isOpen, onClose } =
@@ -427,14 +502,6 @@ const AdminSettings = () => {
       })}
 
       <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-2xl font-semibold text-gray-900">Settings</h1>
-          <p className="mt-1 text-gray-500">
-            Configure your application settings and manage master data
-          </p>
-        </div>
-
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Sidebar */}
           <div className="w-full lg:w-64 space-y-1 bg-white p-3 rounded-lg border border-gray-200">

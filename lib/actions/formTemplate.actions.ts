@@ -122,7 +122,7 @@ export async function remove(
 
 export async function update(
   id: string,
-  data: z.infer<typeof createTemplateSchema>,
+  data: Partial<FormTemplate>,
 ): Promise<ActionResponse<FormTemplate>> {
   try {
     const { error, companyId } = await checkAuth();
