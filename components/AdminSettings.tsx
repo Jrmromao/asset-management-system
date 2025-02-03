@@ -136,7 +136,10 @@ const AdminSettings = () => {
   const [editingModel, setEditingModel] = useState<Model | null>(null);
   const [editingManufacturer, setEditingManufacturer] =
     useState<Manufacturer | null>();
-
+  const [editingLocation, setEditingLocation] =
+    useState<DepartmentLocation | null>();
+  const [editingDepartment, setEditingDepartment] =
+    useState<Department | null>();
   const {
     onClose: closeModel,
     isOpen: isModelOpen,
@@ -216,9 +219,19 @@ const AdminSettings = () => {
     },
     {
       id: "locations",
-      title: "Add Location",
-      description: "Add a new location",
-      FormComponent: LocationForm,
+      title: editingLocation ? "Update Location" : "Add Location",
+      description: editingLocation
+        ? "Update existing location"
+        : "Add a new location",
+      FormComponent: () => (
+        <LocationForm
+          initialData={editingLocation || undefined}
+          onSubmitSuccess={() => {
+            closeLocation();
+            setEditingLocation(null);
+          }}
+        />
+      ),
       isOpen: isLocationOpen,
       onClose: closeLocation,
     },
@@ -301,7 +314,10 @@ const AdminSettings = () => {
       }),
       locations: locationColumns({
         onDelete: () => {},
-        onUpdate: () => {},
+        onUpdate: (departmentLocation: DepartmentLocation) => {
+          setEditingLocation(departmentLocation);
+          onLocationOpen();
+        },
       }),
       departments: departmentColumns({
         onDelete: () => {},

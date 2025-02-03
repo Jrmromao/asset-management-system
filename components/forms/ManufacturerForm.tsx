@@ -121,7 +121,7 @@ const ManufacturerForm = ({
                 Saving...
               </>
             ) : (
-              "Save"
+              <>{initialData ? "Update" : "Create"}</>
             )}
           </Button>
 

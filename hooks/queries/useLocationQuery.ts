@@ -46,6 +46,7 @@ export function useLocationQuery() {
     updateItem: updateLocation,
     deleteItem: deleteLocation,
     isCreating,
+    isUpdating,
     refresh,
   } = genericQuery();
 
@@ -57,6 +58,7 @@ export function useLocationQuery() {
     createLocation,
     deleteLocation,
     isCreating,
+    isUpdating,
     refresh,
   };
 }

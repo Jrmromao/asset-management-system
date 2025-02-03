@@ -184,7 +184,7 @@ const ModelForm = ({ initialData, onSubmitSuccess }: FormProps<Model>) => {
                   Saving...
                 </>
               ) : (
-                "Save"
+                <>{initialData ? "Update" : "Create"}</>
               )}
             </Button>
           </div>
