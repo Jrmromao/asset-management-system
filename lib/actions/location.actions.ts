@@ -1,6 +1,6 @@
 "use server";
 
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import { parseStringify } from "@/lib/utils";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
@@ -127,41 +127,64 @@ export async function findById(id: string): Promise<ActionResponse<Location>> {
 }
 
 export async function update(
-  data: Location,
   id: string,
-): Promise<ActionResponse<Location>> {
+  data: Partial<DepartmentLocation>,
+): Promise<ActionResponse<DepartmentLocation>> {
   try {
     const session = await auth();
-    if (!session) {
-      return { error: "Not authenticated" };
+    if (!session?.user?.companyId) {
+      return { error: "Unauthorized: No valid session or company ID" };
     }
 
-    // Check if location exists and belongs to company
-    const existingLocation = await prisma.departmentLocation.findFirst({
+    const { id: _, companyId: __, createdAt, updatedAt, ...updateData } = data;
+
+    const existingLocation = await prisma.departmentLocation.findUnique({
       where: {
         id,
         companyId: session.user.companyId,
       },
+      select: { id: true, name: true },
     });
 
     if (!existingLocation) {
-      return { error: "Location not found" };
+      return {
+        error: "Location not found or you don't have permission to update it",
+      };
     }
 
+    // Perform update with sanitized data
     const location = await prisma.departmentLocation.update({
-      where: { id },
-      data: {
-        ...data,
-        companyId: session.user.companyId, // Ensure companyId doesn't change
+      where: {
+        id,
+        companyId: session.user.companyId,
       },
+      data: updateData,
     });
 
-    revalidatePath("/locations");
-    revalidatePath(`/locations/${id}`);
-    return { data: parseStringify(location) };
+    // Batch revalidations
+    const paths = [`/locations`, `/locations/${id}`];
+    await Promise.all(paths.map((path) => revalidatePath(path)));
+
+    return {
+      data: parseStringify(location),
+      message: "Location updated successfully",
+    };
   } catch (error) {
-    console.error("Update location error:", error);
-    return { error: "Failed to update location" };
+    console.error("[Update Location Error]:", error);
+
+    // Provide more specific error messages based on error type
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === "P2002") {
+        return { error: "A location with these details already exists" };
+      }
+      if (error.code === "P2025") {
+        return { error: "Location not found" };
+      }
+    }
+
+    return {
+      error: "Failed to update location. Please try again later",
+    };
   } finally {
     await prisma.$disconnect();
   }

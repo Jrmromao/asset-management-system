@@ -1,4 +1,9 @@
-import { getAll, insert, remove } from "@/lib/actions/department.actions";
+import {
+  getAll,
+  insert,
+  remove,
+  update,
+} from "@/lib/actions/department.actions";
 import { createGenericQuery } from "@/hooks/queries/useQueryFactory";
 import { z } from "zod";
 import { departmentSchema } from "@/lib/schemas";
@@ -23,6 +28,9 @@ export function useDepartmentQuery() {
       delete: async (id: string) => {
         return await remove(id);
       },
+      update: async (id: string, data: Partial<Department>) => {
+        return await update(id, data);
+      },
     },
     {
       onClose,
@@ -37,6 +45,8 @@ export function useDepartmentQuery() {
     isLoading,
     error,
     createItem: createDepartment,
+    updateItem: updateDepartment,
+    deleteItem: deleteDepartment,
     isCreating,
     refresh,
   } = genericQuery();
@@ -45,7 +55,9 @@ export function useDepartmentQuery() {
     departments,
     isLoading,
     error,
+    updateDepartment,
     createDepartment,
+    deleteDepartment,
     isCreating,
     refresh,
   };

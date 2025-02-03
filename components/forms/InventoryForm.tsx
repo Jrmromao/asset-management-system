@@ -13,34 +13,62 @@ import { inventorySchema } from "@/lib/schemas";
 import { useInventoryUIStore } from "@/lib/stores/useInventoryUIStore";
 import { useInventoryQuery } from "@/hooks/queries/useInventoryQuery";
 
-const CategoryForm = () => {
+const InventoryForm = ({
+  initialData,
+  onSubmitSuccess,
+}: {
+  initialData?: any;
+  onSubmitSuccess: () => void;
+}) => {
   const [isPending, startTransition] = useTransition();
-  const { createInventory } = useInventoryQuery();
+  const { createInventory, updateInventory } = useInventoryQuery();
   const { onClose } = useInventoryUIStore();
 
   const form = useForm<z.infer<typeof inventorySchema>>({
     resolver: zodResolver(inventorySchema),
     defaultValues: {
-      name: "",
+      name: initialData?.name || "",
     },
   });
 
   async function onSubmit(data: z.infer<typeof inventorySchema>) {
     startTransition(async () => {
       try {
-        await createInventory(data, {
-          onSuccess: () => {
-            onClose();
-            form.reset();
-            console.log("Successfully created Inventory");
-          },
-          onError: (error) => {
-            console.error("Error creating Inventory:", error);
-          },
-        });
+        if (initialData && initialData.id) {
+          await updateInventory(
+            initialData.id,
+            { ...data },
+            {
+              onSuccess: () => {
+                onClose();
+                form.reset();
+                toast.success("Successfully updated inventory");
+                onSubmitSuccess?.();
+              },
+              onError: (error: any) => {
+                console.error("Error updating inventory:", error);
+                toast.error("Failed to update inventory");
+              },
+            },
+          );
+        } else {
+          // Create new inventory
+          await createInventory(data, {
+            onSuccess: () => {
+              onClose();
+              form.reset();
+              toast.success("Successfully created inventory");
+              onSubmitSuccess?.();
+            },
+            onError: (error) => {
+              console.error("Error creating inventory:", error);
+              toast.error("Failed to create inventory");
+            },
+          });
+        }
       } catch (error) {
-        console.error("Inventory creation error:", error);
-        toast.error("Failed to create Inventory");
+        console.error("Inventory operation error:", error);
+        toast.error(`Failed to ${initialData ? "update" : "create"} inventory`);
       }
     });
   }
@@ -75,8 +103,10 @@ const CategoryForm = () => {
             {isPending ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Creating...
+                {initialData ? "Updating..." : "Creating..."}
               </>
+            ) : initialData ? (
+              "Update"
             ) : (
               "Create"
             )}
@@ -87,4 +117,4 @@ const CategoryForm = () => {
   );
 };
 
-export default CategoryForm;
+export default InventoryForm;

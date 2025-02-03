@@ -130,6 +130,10 @@ const AdminSettings = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeModal, setActiveModal] = useState<TabId | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [editingInventory, setEditingInventory] = useState<Inventory | null>(
+    null,
+  );
+
   const {
     onClose: closeModel,
     isOpen: isModelOpen,
@@ -211,14 +215,37 @@ const AdminSettings = () => {
       isOpen: isStatusLabelOpen,
       onClose: closeStatusLabel,
     },
+    // {
+    //   id: "inventories",
+    //   title: "Add Inventory",
+    //   description: "Add a new inventory",
+    //   FormComponent: InventoryForm,
+    //   isOpen: isInventoryOpen,
+    //   onClose: closeInventory,
+    // },
+
     {
       id: "inventories",
-      title: "Add Inventory",
-      description: "Add a new inventory",
-      FormComponent: InventoryForm,
+      title: editingInventory ? "Update Inventory" : "Add Inventory",
+      description: editingInventory
+        ? "Update existing inventory"
+        : "Add a new inventory",
+      FormComponent: () => (
+        <InventoryForm
+          initialData={editingInventory}
+          onSubmitSuccess={() => {
+            closeInventory();
+            setEditingInventory(null);
+          }}
+        />
+      ),
       isOpen: isInventoryOpen,
-      onClose: closeInventory,
+      onClose: () => {
+        closeInventory();
+        setEditingInventory(null);
+      },
     },
+
     {
       id: "asset-categories",
       title: "Add Custom Fields",
@@ -266,7 +293,10 @@ const AdminSettings = () => {
       }),
       inventories: inventoryColumns({
         onDelete: () => {},
-        onUpdate: () => {},
+        onUpdate: (inventory: Inventory) => {
+          setEditingInventory(inventory);
+          onInventoryOpen();
+        },
       }),
       "asset-categories": assetCategoriesColumns({
         onDelete: () => {},

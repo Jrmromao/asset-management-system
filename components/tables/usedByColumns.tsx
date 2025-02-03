@@ -13,7 +13,7 @@ interface UsedByColumnsProps {
 export const usedByAccColumns = ({
   onCheckIn,
   checkingInIds,
-}: UsedByColumnsProps): ColumnDef<UserAccessory>[] => [
+}: UsedByColumnsProps): ColumnDef<UserItems>[] => [
   {
     accessorKey: "user.name",
     header: ({ column }) => {

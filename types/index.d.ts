@@ -303,6 +303,7 @@ declare global {
   }
 
   interface Inventory extends BaseEntity {
+    id: string;
     name: string;
     companyId?: string;
     company?: Company;

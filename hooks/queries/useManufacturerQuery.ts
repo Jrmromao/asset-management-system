@@ -1,7 +1,12 @@
 import { createGenericQuery } from "@/hooks/queries/useQueryFactory";
 import { z } from "zod";
 import { manufacturerSchema } from "@/lib/schemas";
-import { getAll, insert, remove } from "@/lib/actions/manufacturer.actions";
+import {
+  getAll,
+  insert,
+  remove,
+  update,
+} from "@/lib/actions/manufacturer.actions";
 import { useManufacturerUIStore } from "@/lib/stores/useManufacturerUIStore";
 
 export const MODEL_KEY = ["manufacturer"] as const;
@@ -25,6 +30,9 @@ export function useManufacturerQuery() {
       },
       delete: async (id: string) => {
         return await remove(id);
+      },
+      update: async (id, data: Partial<Manufacturer>) => {
+        return await update(id, data);
       },
     },
     {

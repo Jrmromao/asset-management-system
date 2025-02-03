@@ -132,7 +132,7 @@ export async function findById(
 
 export async function update(
   id: string,
-  values: z.infer<typeof manufacturerSchema>,
+  values: Partial<Manufacturer>,
 ): Promise<ActionResponse<Manufacturer>> {
   try {
     const session = await auth();
