@@ -2,7 +2,12 @@ import { useUserUIStore } from "@/lib/stores/useUserUIStore";
 import { createGenericQuery } from "@/hooks/queries/useQueryFactory";
 import { z } from "zod";
 import { createTemplateSchema } from "@/lib/schemas";
-import { getAll, insert, remove } from "@/lib/actions/formTemplate.actions";
+import {
+  getAll,
+  insert,
+  remove,
+  update,
+} from "@/lib/actions/formTemplate.actions";
 import { FormTemplate } from "@/types/form";
 
 export const MODEL_KEY = ["formTemplates"] as const;
@@ -27,11 +32,16 @@ export function useFormTemplatesQuery() {
       delete: async (id: string) => {
         return await remove(id);
       },
+      update: async (id: string, data: Partial<FormTemplate>) => {
+        return await update(id, data);
+      },
     },
     {
       onClose,
-      successMessage: "Model created successfully",
-      errorMessage: "Failed to create model",
+      successMessage: "Category created successfully",
+      errorMessage: "Failed to create category",
+      updateSuccessMessage: "Category updated successfully",
+      updateErrorMessage: "Failed to update category",
       staleTime: 5 * 60 * 1000, // 5 minutes
     },
   );
@@ -41,6 +51,8 @@ export function useFormTemplatesQuery() {
     isLoading,
     error,
     createItem: createFormTemplate,
+    updateItem: updateFormTemplate,
+    isUpdating,
     isCreating,
     refresh,
   } = genericQuery();
@@ -50,6 +62,8 @@ export function useFormTemplatesQuery() {
     isLoading,
     error,
     createFormTemplate,
+    updateFormTemplate,
+    isUpdating,
     isCreating,
     refresh,
   };

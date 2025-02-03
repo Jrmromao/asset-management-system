@@ -51,6 +51,7 @@ import {
 } from "@/lib/stores";
 import FormTemplateCreator from "@/components/forms/FormTemplateCreator";
 import { useFormTemplatesQuery } from "@/hooks/queries/useFormTemplatesQuery";
+import { FormTemplate } from "@/types/form";
 
 interface Tab {
   id: TabId;
@@ -143,6 +144,8 @@ const AdminSettings = () => {
     useState<Department | null>();
   const [editingStatusLabel, setEditingStatusLabel] =
     useState<StatusLabel | null>();
+  const [editingFormTemplate, setEditingFormTemplate] =
+    useState<FormTemplate | null>();
   const {
     onClose: closeModel,
     isOpen: isModelOpen,
@@ -293,12 +296,21 @@ const AdminSettings = () => {
         setEditingInventory(null);
       },
     },
-
     {
       id: "asset-categories",
-      title: "Add Custom Fields",
-      description: "Add a new custom form fields",
-      FormComponent: FormTemplateCreator,
+      title: editingFormTemplate ? "Update Custom Fields" : "Add Custom Fields",
+      description: editingFormTemplate
+        ? "Update existing custom fields"
+        : "Add a new custom form fields",
+      FormComponent: () => (
+        <FormTemplateCreator
+          initialData={editingFormTemplate || undefined}
+          onSubmitSuccess={() => {
+            closeFormTemplate();
+            setEditingFormTemplate(null);
+          }}
+        />
+      ),
       isOpen: isFormTemplateOpen,
       onClose: closeFormTemplate,
     },
@@ -363,7 +375,10 @@ const AdminSettings = () => {
       }),
       "asset-categories": assetCategoriesColumns({
         onDelete: () => {},
-        onUpdate: () => {},
+        onUpdate: (formTemplate: FormTemplate) => {
+          setEditingFormTemplate(formTemplate);
+          onFormTemplateOpen();
+        },
       }),
     }),
     [],
@@ -469,7 +484,7 @@ const AdminSettings = () => {
   const isLoadingData = loadingMap[activeTab];
 
   return (
-    <div className="min-h-screen bg-gray-50/50">
+    <div className="min-h-screen w-full">
       {/* Modals */}
       {MODAL_CONFIGS.map((config) => {
         const { id, title, description, FormComponent, isOpen, onClose } =
@@ -487,14 +502,6 @@ const AdminSettings = () => {
       })}
 
       <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-2xl font-semibold text-gray-900">Settings</h1>
-          <p className="mt-1 text-gray-500">
-            Configure your application settings and manage master data
-          </p>
-        </div>
-
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Sidebar */}
           <div className="w-full lg:w-64 space-y-1 bg-white p-3 rounded-lg border border-gray-200">

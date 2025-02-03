@@ -6,7 +6,7 @@ export interface CustomFieldOption {
 export interface CustomField {
   name: string;
   label: string;
-  type: "text" | "select" | "date" | "number" | "checkbox" | "boolean";
+  type: "number" | "boolean" | "text" | "select" | "date" | "checkbox";
   required: boolean;
   options?: string[];
   placeholder?: string;

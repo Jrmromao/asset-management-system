@@ -1,7 +1,7 @@
 "use client";
 import React, { useTransition } from "react";
 import { z } from "zod";
-import { useFieldArray, useForm } from "react-hook-form";
+import { useFieldArray, useForm, UseFormReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
@@ -35,17 +35,27 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { useFormTemplateUIStore } from "@/lib/stores/useFormTemplateUIStore";
 import { useFormTemplatesQuery } from "@/hooks/queries/useFormTemplatesQuery";
+import { CustomField, FormProps, FormTemplate } from "@/types/form";
 
-const fieldTypes = ["text", "number", "date", "select", "checkbox"] as const;
+const fieldTypes = [
+  "number",
+  "boolean",
+  "text",
+  "select",
+  "date",
+  "checkbox",
+] as const;
+
 type FieldType = (typeof fieldTypes)[number];
 
 const formFieldSchema = z.object({
   name: z.string().min(1, "Field name is required"),
-  type: z.enum(fieldTypes),
-  placeholder: z.string().optional(),
-  label: z.string().optional(),
-  required: z.boolean().default(false),
+  label: z.string().min(1, "Field label is required"), // Make label required
+  type: z.enum(["number", "boolean", "text", "select", "date", "checkbox"]),
+  required: z.boolean(),
   options: z.array(z.string()).optional(),
+  placeholder: z.string().optional(),
+  showIf: z.record(z.array(z.string())).optional(),
 });
 
 const formTemplateSchema = z.object({
@@ -61,13 +71,15 @@ const FIELD_TYPES = [
   { value: "number", label: "Number" },
   { value: "select", label: "Dropdown" },
   { value: "checkbox", label: "Checkbox" },
+  { value: "boolean", label: "Boolean" },
+  { value: "date", label: "Date" },
 ] as const;
 
 interface SortableFieldProps {
   id: string;
   index: number;
-  field: any;
-  form: any;
+  field: CustomField;
+  form: UseFormReturn<FormTemplateValues>;
   isPending: boolean;
   onRemove: () => void;
 }
@@ -256,18 +268,35 @@ const SortableField = ({
   );
 };
 
-const FormTemplateCreator = () => {
+const FormTemplateCreator = ({
+  initialData,
+  onSubmitSuccess,
+}: FormProps<FormTemplate>) => {
   const [isPending, startTransition] = useTransition();
 
   const form = useForm<FormTemplateValues>({
     resolver: zodResolver(formTemplateSchema),
     defaultValues: {
-      name: "",
-      fields: [],
+      name: initialData?.name || "",
+      fields: (initialData?.fields || []).map((field) => ({
+        ...field,
+        label: field.label || "", // Ensure label is present
+        required: field.required || false,
+      })),
     },
   });
+  const handleAddField = () => {
+    append({
+      name: "",
+      label: "",
+      type: "text",
+      required: false,
+      options: [],
+    });
+  };
 
-  const { createFormTemplate } = useFormTemplatesQuery();
+  const { createFormTemplate, updateFormTemplate, isCreating, isUpdating } =
+    useFormTemplatesQuery();
 
   const { onClose: closeTemplate } = useFormTemplateUIStore();
 
@@ -294,37 +323,83 @@ const FormTemplateCreator = () => {
     }
   };
 
+  type APIFieldType = "number" | "text" | "select" | "date" | "checkbox";
+
+  interface APIField {
+    name: string;
+    type: APIFieldType;
+    required: boolean;
+    label?: string;
+    options?: string[];
+    placeholder?: string;
+  }
+
+  interface APIFormTemplate {
+    name: string;
+    fields: APIField[];
+  }
+
+  // Transform function to convert boolean type to checkbox
+  const transformFieldToAPIFormat = (field: CustomField): APIField => {
+    const { type, showIf, ...rest } = field;
+
+    // Convert boolean type to checkbox for API
+    const apiType: APIFieldType =
+      type === "boolean" ? "checkbox" : (type as APIFieldType);
+
+    return {
+      ...rest,
+      type: apiType,
+    };
+  };
+
   const onSubmit = async (data: FormTemplateValues) => {
     startTransition(async () => {
       try {
-        await createFormTemplate(data, {
-          onSuccess: () => {
-            form.reset();
-            toast.success("Form template created successfully");
-            closeTemplate();
-          },
-          onError: (error) => {
-            console.error("Error creating form template:", error);
-            toast.error("Failed to create form template");
-          },
-        });
+        if (initialData && initialData.id) {
+          await updateFormTemplate(initialData.id, data, {
+            onSuccess: () => {
+              closeTemplate();
+              form.reset();
+              toast.success("Successfully updated form template");
+              onSubmitSuccess?.();
+            },
+            onError: (error: any) => {
+              console.error("Error updating form template:", error);
+              toast.error("Failed to update form template");
+            },
+          });
+        } else {
+          const apiData: APIFormTemplate = {
+            name: data.name,
+            fields: data.fields.map(transformFieldToAPIFormat),
+          };
+          await createFormTemplate(apiData, {
+            onSuccess: () => {
+              closeTemplate();
+              form.reset();
+              toast.success("Form template created successfully");
+              onSubmitSuccess?.();
+            },
+            onError: (error) => {
+              console.error("Error creating form template:", error);
+              toast.error("Failed to create form template");
+            },
+          });
+        }
       } catch (error) {
         console.error("Form template creation error:", error);
         toast.error("Failed to create form template");
       }
     });
   };
+
   return (
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className="flex flex-col h-[calc(100vh-100px)]"
+        className="flex flex-col h-[calc(100vh-160px)]"
       >
-        {/* Fixed Header */}
-        <div className="px-6 py-4 border-b">
-          <h2 className="text-xl font-semibold">Add Template</h2>
-        </div>
-
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto px-6 py-4">
           <div className="space-y-6">
@@ -344,14 +419,7 @@ const FormTemplateCreator = () => {
                   type="button"
                   variant="outline"
                   className="border-2 border-primary hover:bg-primary/10 rounded-lg"
-                  onClick={() =>
-                    append({
-                      name: "",
-                      type: "text",
-                      required: false,
-                      options: [],
-                    })
-                  }
+                  onClick={handleAddField}
                   disabled={isPending}
                 >
                   <Plus className="w-4 h-4 mr-2" />
@@ -402,10 +470,12 @@ const FormTemplateCreator = () => {
               {isPending ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Creating Template...
+                  {initialData ? "Updating..." : "Creating..."}
                 </>
+              ) : initialData ? (
+                "Update"
               ) : (
-                "Create Template"
+                "Create"
               )}
             </Button>
           </div>
