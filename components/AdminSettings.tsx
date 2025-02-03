@@ -47,6 +47,7 @@ import {
   useLocationUIStore,
   useManufacturerUIStore,
   useModelUIStore,
+  useStatusLabelUIStore,
 } from "@/lib/stores";
 import FormTemplateCreator from "@/components/forms/FormTemplateCreator";
 import { useFormTemplatesQuery } from "@/hooks/queries/useFormTemplatesQuery";
@@ -140,6 +141,8 @@ const AdminSettings = () => {
     useState<DepartmentLocation | null>();
   const [editingDepartment, setEditingDepartment] =
     useState<Department | null>();
+  const [editingStatusLabel, setEditingStatusLabel] =
+    useState<StatusLabel | null>();
   const {
     onClose: closeModel,
     isOpen: isModelOpen,
@@ -178,7 +181,7 @@ const AdminSettings = () => {
     isOpen: isStatusLabelOpen,
     onClose: closeStatusLabel,
     onOpen: onStatusLabelOpen,
-  } = useFormTemplateUIStore();
+  } = useStatusLabelUIStore();
 
   const MODAL_CONFIGS: ModalConfig[] = [
     {
@@ -253,9 +256,19 @@ const AdminSettings = () => {
     },
     {
       id: "status-label",
-      title: "Add Status Label",
-      description: "Add a new status label",
-      FormComponent: StatusLabelForm,
+      title: editingStatusLabel ? "Update Status Label" : "Add Status Label",
+      description: editingStatusLabel
+        ? "Update existing status label"
+        : "Add a new status label",
+      FormComponent: () => (
+        <StatusLabelForm
+          initialData={editingStatusLabel || undefined}
+          onSubmitSuccess={() => {
+            closeStatusLabel();
+            setEditingStatusLabel(null);
+          }}
+        />
+      ),
       isOpen: isStatusLabelOpen,
       onClose: closeStatusLabel,
     },
@@ -336,7 +349,10 @@ const AdminSettings = () => {
       }),
       "status-label": statusLabelColumns({
         onDelete: () => {},
-        onUpdate: () => {},
+        onUpdate: (statusLabel: StatusLabel) => {
+          setEditingStatusLabel(statusLabel);
+          onStatusLabelOpen();
+        },
       }),
       inventories: inventoryColumns({
         onDelete: () => {},

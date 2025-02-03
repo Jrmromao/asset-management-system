@@ -1,7 +1,12 @@
 import { createGenericQuery } from "@/hooks/queries/useQueryFactory";
 import { z } from "zod";
 import { statusLabelSchema } from "@/lib/schemas";
-import { getAll, insert, remove } from "@/lib/actions/statusLabel.actions";
+import {
+  getAll,
+  insert,
+  remove,
+  update,
+} from "@/lib/actions/statusLabel.actions";
 import { useStatusLabelUIStore } from "@/lib/stores/useStatusLabelUIStore";
 
 export const MODEL_KEY = ["statusLabels"] as const;
@@ -23,11 +28,19 @@ export function useStatusLabelsQuery() {
       delete: async (id: string) => {
         return remove(id);
       },
+      update: async (id: string, data: Partial<StatusLabel>) => {
+        return await update(id, data);
+      },
     },
     {
       onClose,
-      successMessage: "",
-      errorMessage: "",
+      successMessage: "Status label created successfully",
+      updateSuccessMessage: "Status label updated successfully",
+      deleteSuccessMessage: "Status label deleted successfully",
+      errorMessage: "Failed to create status label",
+      updateErrorMessage: "Failed to update status label",
+      deleteErrorMessage: "Failed to delete status label",
+      staleTime: 5 * 60 * 1000, // 5 minutes
     },
   );
 
@@ -36,7 +49,9 @@ export function useStatusLabelsQuery() {
     isLoading,
     error,
     createItem: createStatusLabel,
+    updateItem: updateStatusLabel,
     isCreating,
+    isUpdating,
     refresh,
   } = genericQuery();
 
@@ -45,6 +60,8 @@ export function useStatusLabelsQuery() {
     isLoading,
     error,
     createStatusLabel,
+    updateStatusLabel,
+    isUpdating,
     isCreating,
     refresh,
   };
