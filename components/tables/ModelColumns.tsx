@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowUpDown } from "lucide-react";
 import React from "react";
 import DataTableRowActions from "@/components/tables/DataTable/DataTableRowActions";
+import { BooleanCell } from "@/components/tables/customCells";
 
 interface ModelColumnsProps {
   onDelete: (value: Model) => void;
@@ -79,6 +80,11 @@ export const modelColumns = ({
       const formattedDate = value.toLocaleDateString();
       return <div>{formattedDate}</div>;
     },
+  },
+  {
+    accessorKey: "active",
+    header: "Active",
+    cell: ({ row }) => <BooleanCell value={row.getValue("active")} />,
   },
   {
     id: "actions",

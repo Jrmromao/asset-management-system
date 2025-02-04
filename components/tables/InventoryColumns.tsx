@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowUpDown } from "lucide-react";
 import React from "react";
 import DataTableRowActions from "@/components/tables/DataTable/DataTableRowActions";
+import { BooleanCell } from "@/components/tables/customCells";
 
 interface InventoryColumnsProps {
   onDelete: (value: Inventory) => void;
@@ -50,6 +51,11 @@ export const inventoryColumns = ({
         </div>
       );
     },
+  },
+  {
+    accessorKey: "active",
+    header: "Active",
+    cell: ({ row }) => <BooleanCell value={row.getValue("active")} />,
   },
   {
     id: "actions",

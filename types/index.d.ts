@@ -31,6 +31,7 @@ declare global {
 
   interface Model extends BaseEntity {
     name: string;
+    active: boolean;
     modelNo: string;
     categoryId: string;
     manufacturerId: string;
@@ -72,6 +73,7 @@ declare global {
   // ==================== Core Entity Types ====================
   interface StatusLabel extends BaseEntity {
     name: string;
+    active: boolean;
     colorCode: string;
     description: string;
     isArchived: boolean;
@@ -80,6 +82,7 @@ declare global {
 
   interface Role extends BaseEntity {
     name: string;
+    active: boolean;
     note: string;
     roleCode: number;
   }
@@ -292,11 +295,13 @@ declare global {
   // ==================== Organizational Types ====================
   interface Category extends BaseEntity {
     name: string;
+    active: boolean;
     note?: string;
   }
 
   interface Department extends BaseEntity {
     name: string;
+    active: boolean;
     note?: string;
     companyId?: string;
     company?: Company;
@@ -327,6 +332,7 @@ declare global {
 
   interface Manufacturer extends BaseEntity {
     name: string;
+    active: boolean;
     url: string;
     supportUrl: string;
     supportPhone: string;
@@ -336,6 +342,7 @@ declare global {
 
   interface Model extends BaseEntity {
     name: string;
+    active: boolean;
     modelNo: string;
     categoryId: string;
     manufacturerId: string;

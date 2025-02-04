@@ -1,34 +1,12 @@
 import { ColumnDef } from "@tanstack/react-table";
-import { Button } from "@/components/ui/button";
-import { ArrowUpDown, Check, X } from "lucide-react";
 import React from "react";
 import DataTableRowActions from "@/components/tables/DataTable/DataTableRowActions";
+import { BooleanCell, SortableHeader } from "@/components/tables/customCells";
 
 interface StatusLabelColumnsProps {
   onDelete?: (value: StatusLabel) => void;
   onUpdate?: (value: StatusLabel) => void;
 }
-
-const SortableHeader = ({ column, label }: { column: any; label: string }) => (
-  <Button
-    variant="ghost"
-    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-    className="hover:bg-transparent"
-  >
-    {label}
-    <ArrowUpDown className="ml-2 h-4 w-4" />
-  </Button>
-);
-
-const BooleanCell = ({ value }: { value: boolean }) => (
-  <div className="flex items-center">
-    {value ? (
-      <Check className="w-5 h-5 text-green-500" />
-    ) : (
-      <X className="w-5 h-5 text-red-500" />
-    )}
-  </div>
-);
 
 const ColorCell = ({
   color,
@@ -53,7 +31,7 @@ const ColorCell = ({
 );
 
 const DateCell = ({ date }: { date: string }) => (
-  <div className="text-sm text-gray-600">
+  <div className="text-sm text-gray-600 flex items-center justify-center h-full">
     {new Date(date).toLocaleDateString(undefined, {
       year: "numeric",
       month: "short",
@@ -102,6 +80,11 @@ export const statusLabelColumns = ({
       <SortableHeader column={column} label="Created Date" />
     ),
     cell: ({ row }) => <DateCell date={row.getValue("createdAt")} />,
+  },
+  {
+    accessorKey: "active",
+    header: "Active",
+    cell: ({ row }) => <BooleanCell value={row.getValue("active")} />,
   },
   {
     id: "actions",

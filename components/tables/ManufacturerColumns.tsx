@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowUpDown, ExternalLink } from "lucide-react";
 import React from "react";
 import DataTableRowActions from "@/components/tables/DataTable/DataTableRowActions";
+import { BooleanCell } from "@/components/tables/customCells";
 
 interface manufacturersColumnsProps {
   onDelete: (value: Manufacturer) => void;
@@ -105,6 +106,11 @@ export const manufacturerColumns = ({
         </div>
       );
     },
+  },
+  {
+    accessorKey: "active",
+    header: "Active",
+    cell: ({ row }) => <BooleanCell value={row.getValue("active")} />,
   },
   {
     id: "actions",

@@ -7,7 +7,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import Swal from "sweetalert2";
-import { toast } from "sonner";
 
 interface DataTableRowActionsProps<TData> {
   row: Row<TData>;
@@ -33,8 +32,10 @@ const DataTableRowActions = <TData,>({
       confirmButtonText: "Yes, delete it!",
     }).then((result) => {
       if (result.isConfirmed) {
+        console.log(row);
+
         onDelete(row.original);
-        toast.success("The item has been deleted!");
+        // toast.success("The item has been deleted!");
       }
     });
   };

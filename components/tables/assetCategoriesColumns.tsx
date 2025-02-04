@@ -4,6 +4,7 @@ import { ArrowUpDown } from "lucide-react";
 import React from "react";
 import { FormTemplate } from "@/types/form";
 import DataTableRowActions from "@/components/tables/DataTable/DataTableRowActions";
+import { BooleanCell } from "@/components/tables/customCells";
 
 interface AssetCategoriesColumnsProps {
   onDelete: (value: FormTemplate) => void;
@@ -33,18 +34,27 @@ export const assetCategoriesColumns = ({
     header: "Fields",
     cell: ({ row }) => {
       return (
-        <div className="flex items-center">
-          {row.original.fields.map((field) => {
-            return (
-              <div className="mr-2" key={field.name}>
-                <div className="text-sm text-gray-600">{field.name}</div>
-                <div className="text-sm text-gray-400">{field.type}</div>
-              </div>
-            );
-          })}
+        <div className="overflow-x-auto" style={{ maxWidth: "650px" }}>
+          {" "}
+          {/* Add a max-width as needed */}
+          <div className="flex items-center">
+            {row.original.fields.map((field) => {
+              return (
+                <div className="mr-2" key={field.name}>
+                  <div className="text-sm text-gray-600">{field.name}</div>
+                  <div className="text-sm text-gray-400">{field.type}</div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       );
     },
+  },
+  {
+    accessorKey: "active",
+    header: "Active",
+    cell: ({ row }) => <BooleanCell value={row.getValue("active")} />,
   },
   {
     id: "actions",

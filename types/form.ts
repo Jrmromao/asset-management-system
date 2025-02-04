@@ -18,6 +18,7 @@ export interface CustomField {
 export interface FormTemplate {
   id: string;
   name: string;
+  active: boolean;
   fields: CustomField[];
 }
 

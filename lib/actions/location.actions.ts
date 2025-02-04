@@ -13,29 +13,24 @@ export async function remove(
   id: string,
 ): Promise<ActionResponse<DepartmentLocation>> {
   try {
+    console.log(id);
+
     const session = await auth();
     if (!session) {
       return { error: "Not authenticated" };
     }
 
     // Check if location exists and belongs to company
-    const existingLocation = await prisma.departmentLocation.findFirst({
+    const existingLocation = await prisma.departmentLocation.delete({
       where: {
         id,
         companyId: session.user.companyId,
       },
     });
-
-    if (!existingLocation) {
-      return { error: "Location not found" };
-    }
-
-    const location = await prisma.departmentLocation.delete({
-      where: { id },
-    });
+    console.log(existingLocation);
 
     revalidatePath("/locations");
-    return { data: parseStringify(location) };
+    return { data: parseStringify(existingLocation) };
   } catch (error) {
     console.error("Delete location error:", error);
     return { error: "Failed to delete location" };
@@ -138,19 +133,19 @@ export async function update(
 
     const { id: _, companyId: __, createdAt, updatedAt, ...updateData } = data;
 
-    const existingLocation = await prisma.departmentLocation.findUnique({
-      where: {
-        id,
-        companyId: session.user.companyId,
-      },
-      select: { id: true, name: true },
-    });
-
-    if (!existingLocation) {
-      return {
-        error: "Location not found or you don't have permission to update it",
-      };
-    }
+    // const existingLocation = await prisma.departmentLocation.findUnique({
+    //   where: {
+    //     id,
+    //     companyId: session.user.companyId,
+    //   },
+    //   select: { id: true, name: true },
+    // });
+    //
+    // if (!existingLocation) {
+    //   return {
+    //     error: "Location not found or you don't have permission to update it",
+    //   };
+    // }
 
     // Perform update with sanitized data
     const location = await prisma.departmentLocation.update({

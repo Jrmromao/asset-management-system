@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowUpDown } from "lucide-react";
 import React from "react";
 import DataTableRowActions from "@/components/tables/DataTable/DataTableRowActions";
+import { BooleanCell } from "@/components/tables/customCells";
 
 interface LocationsColumnsProps {
   onDelete: (value: DepartmentLocation) => void;
@@ -83,7 +84,11 @@ export const locationColumns = ({
       );
     },
   },
-
+  {
+    accessorKey: "active",
+    header: "Active",
+    cell: ({ row }) => <BooleanCell value={row.getValue("active")} />,
+  },
   {
     id: "actions",
     cell: ({ row }) => {

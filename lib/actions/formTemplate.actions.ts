@@ -57,7 +57,6 @@ export async function getAll(): Promise<ActionResponse<FormTemplate[]>> {
       orderBy: { createdAt: "desc" },
     });
 
-    console.log("templates: ", templates);
     return { data: parseStringify(templates) };
   } catch (error) {
     return handleError(error, "Failed to fetch templates");

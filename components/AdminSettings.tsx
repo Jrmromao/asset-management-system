@@ -321,7 +321,11 @@ const AdminSettings = () => {
   } = useModelsQuery();
   const { manufacturers, isLoading: manufacturersLoading } =
     useManufacturerQuery();
-  const { locations, isLoading: locationsLoading } = useLocationQuery();
+  const {
+    locations,
+    isLoading: locationsLoading,
+    deleteLocation,
+  } = useLocationQuery();
   const { departments, isLoading: departmentsLoading } = useDepartmentQuery();
   const { statusLabels, isLoading: labelsLoading } = useStatusLabelsQuery();
   const { inventories, isLoading: inventoriesLoading } = useInventoryQuery();
@@ -345,7 +349,7 @@ const AdminSettings = () => {
         },
       }),
       locations: locationColumns({
-        onDelete: () => {},
+        onDelete: () => deleteLocation,
         onUpdate: (departmentLocation: DepartmentLocation) => {
           setEditingLocation(departmentLocation);
           onLocationOpen();

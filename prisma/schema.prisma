@@ -174,6 +174,7 @@ model FormTemplate {
   company   Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
   assets    Asset[]
   values    FormTemplateValue[]
+  active    Boolean             @default(true)
 
   @@unique([name, companyId])
   @@index([companyId])
@@ -291,6 +292,7 @@ model Role {
   updatedAt DateTime @updatedAt
   isAdctive Boolean  @default(true)
   users     User[]
+  active    Boolean  @default(true)
 }
 
 model Company {
@@ -337,9 +339,9 @@ model Manufacturer {
   companyId    String
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
-
-  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  models  Model[]
+  active       Boolean  @default(true)
+  company      Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  models       Model[]
 
   @@index([companyId])
 }
@@ -358,6 +360,7 @@ model Model {
   manufacturer   Manufacturer @relation(fields: [manufacturerId], references: [id], onDelete: Restrict)
   company        Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
   assets         Asset[]
+  active         Boolean      @default(true)
 
   @@unique([modelNo, companyId])
   // @@index([categoryId])
@@ -366,7 +369,7 @@ model Model {
 }
 
 model DepartmentLocation {
-  id           String   @id @default(cuid())
+  id           String      @id @default(cuid())
   name         String // Changed from locName for consistency
   addressLine1 String
   addressLine2 String? // Made optional
@@ -375,25 +378,25 @@ model DepartmentLocation {
   zip          String
   country      String
   companyId    String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  company   Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  Asset     Asset[]
-  Accessory Accessory[]
-  License   License[]
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  active       Boolean     @default(true)
+  company      Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  Asset        Asset[]
+  Accessory    Accessory[]
+  License      License[]
 
   @@unique([name, companyId])
   @@index([companyId])
 }
 
 model Inventory {
-  id        String   @id @default(cuid())
+  id        String      @id @default(cuid())
   name      String
   companyId String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  active    Boolean     @default(true)
   company   Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
   Asset     Asset[]
   Accessory Accessory[]
@@ -404,12 +407,12 @@ model Inventory {
 }
 
 model Department {
-  id        String   @id @default(cuid())
+  id        String      @id @default(cuid())
   name      String
   companyId String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  active    Boolean     @default(true)
   company   Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
   Asset     Asset[]
   Accessory Accessory[]
@@ -421,10 +424,10 @@ model Department {
 }
 
 model Supplier {
-  id           String   @id @default(cuid())
+  id           String      @id @default(cuid())
   name         String
   contactName  String
-  email        String   @unique
+  email        String      @unique
   phoneNum     String? // Made optional
   url          String? // Made optional
   addressLine1 String
@@ -434,15 +437,15 @@ model Supplier {
   zip          String
   country      String
   notes        String? // Made optional
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  active       Boolean     @default(true)
   // Relations
-  assets      Asset[]
-  accessories Accessory[]
-  company     Company     @relation(fields: [companyId], references: [id])
-  companyId   String
-  License     License[]
+  assets       Asset[]
+  accessories  Accessory[]
+  company      Company     @relation(fields: [companyId], references: [id])
+  companyId    String
+  License      License[]
   // PurchaseOrder PurchaseOrder[]
 
   @@unique([email, companyId]) // Updated to make email unique per company
@@ -502,13 +505,13 @@ model Asset {
 }
 
 model Category {
-  id        String   @id @default(cuid())
+  id        String      @id @default(cuid())
   name      String
   type      String
   companyId String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  active    Boolean     @default(true)
   company   Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
   // models    Model[]
   Accessory Accessory[]
@@ -518,16 +521,16 @@ model Category {
 }
 
 model StatusLabel {
-  id          String   @id @default(cuid())
+  id          String      @id @default(cuid())
   name        String
   colorCode   String
-  isArchived  Boolean  @default(false)
-  allowLoan   Boolean  @default(false)
+  isArchived  Boolean     @default(false)
+  allowLoan   Boolean     @default(false)
   description String
   companyId   String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  active      Boolean     @default(true)
   company     Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
   assets      Asset[]
   accessories Accessory[]
