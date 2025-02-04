@@ -277,12 +277,13 @@ const FormTemplateCreator = ({
   const form = useForm<FormTemplateValues>({
     resolver: zodResolver(formTemplateSchema),
     defaultValues: {
-      name: initialData?.name || "",
-      fields: (initialData?.fields || []).map((field) => ({
-        ...field,
-        label: field.label || "", // Ensure label is present
-        required: field.required || false,
-      })),
+      name: initialData?.name ?? "",
+      fields:
+        initialData?.fields?.map((field) => ({
+          ...field,
+          label: field.label ?? "",
+          required: field.required ?? false,
+        })) ?? [],
     },
   });
   const handleAddField = () => {
@@ -359,9 +360,9 @@ const FormTemplateCreator = ({
         if (initialData && initialData.id) {
           await updateFormTemplate(initialData.id, data, {
             onSuccess: () => {
-              closeTemplate();
               form.reset();
-              toast.success("Successfully updated form template");
+              closeTemplate();
+              toast.success("Successfully created form template");
               onSubmitSuccess?.();
             },
             onError: (error: any) => {

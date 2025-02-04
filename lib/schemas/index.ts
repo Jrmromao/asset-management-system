@@ -273,6 +273,7 @@ export const modelSchema = z.object({
   modelNo: z.string().min(1, "Model number is required"),
   endOfLife: z.string().optional(),
   notes: z.string().optional(),
+  active: z.boolean().default(true),
   imageUrl: z.string().optional(),
 });
 

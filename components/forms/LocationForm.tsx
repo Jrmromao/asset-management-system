@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useTransition } from "react";
+import React, { useEffect, useTransition } from "react";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -23,18 +23,52 @@ const LocationForm = ({
   const { createLocation, isCreating, updateLocation, isUpdating } =
     useLocationQuery();
 
+  const defaultValues = {
+    name: "",
+    addressLine1: "",
+    addressLine2: "",
+    state: "",
+    city: "",
+    zip: "",
+    country: "",
+  };
+
+  const emptyValues = {
+    name: "",
+    addressLine1: "",
+    addressLine2: "",
+    state: "",
+    city: "",
+    zip: "",
+    country: "",
+  };
+
   const form = useForm<z.infer<typeof locationSchema>>({
     resolver: zodResolver(locationSchema),
-    defaultValues: {
-      name: initialData?.name || "",
-      addressLine1: initialData?.addressLine1 || "",
-      addressLine2: initialData?.addressLine2 || "",
-      state: initialData?.state || "",
-      city: initialData?.city || "",
-      zip: initialData?.zip || "",
-      country: initialData?.country || "",
-    },
+    defaultValues: emptyValues,
   });
+
+  // Set form values when initialData changes or component mounts
+  useEffect(() => {
+    if (initialData) {
+      form.reset({
+        name: initialData.name,
+        addressLine1: initialData.addressLine1,
+        addressLine2: initialData.addressLine2 ?? "",
+        state: initialData.state,
+        city: initialData.city,
+        zip: initialData.zip,
+        country: initialData.country,
+      });
+    } else {
+      form.reset(emptyValues);
+    }
+  }, [initialData, form]);
+
+  const handleClose = () => {
+    form.reset(emptyValues);
+    onClose();
+  };
 
   const onSubmit = async (data: z.infer<typeof locationSchema>) => {
     startTransition(async () => {
@@ -43,7 +77,7 @@ const LocationForm = ({
           onSuccess: () => {
             toast.success("Location updated successfully");
             onSubmitSuccess?.();
-            onClose();
+            handleClose();
             form.reset();
           },
           onError: (error) => {
@@ -51,12 +85,13 @@ const LocationForm = ({
             toast.error("Failed to update location");
           },
         });
+        return;
       }
 
       await createLocation(data, {
         onSuccess: () => {
           toast.success("Location created successfully");
-          onClose();
+          handleClose();
           form.reset();
         },
         onError: (error) => {
@@ -144,10 +179,7 @@ const LocationForm = ({
           <Button
             type="button"
             variant="outline"
-            onClick={() => {
-              form.reset();
-              onClose();
-            }}
+            onClick={handleClose}
             disabled={isPending}
           >
             Cancel

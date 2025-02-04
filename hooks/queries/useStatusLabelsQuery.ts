@@ -50,7 +50,9 @@ export function useStatusLabelsQuery() {
     error,
     createItem: createStatusLabel,
     updateItem: updateStatusLabel,
+    deleteItem: deleteStatusLabel,
     isCreating,
+    isDeleting,
     isUpdating,
     refresh,
   } = genericQuery();
@@ -61,6 +63,8 @@ export function useStatusLabelsQuery() {
     error,
     createStatusLabel,
     updateStatusLabel,
+    deleteStatusLabel,
+    isDeleting,
     isUpdating,
     isCreating,
     refresh,

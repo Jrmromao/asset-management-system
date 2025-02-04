@@ -52,8 +52,10 @@ export function useFormTemplatesQuery() {
     error,
     createItem: createFormTemplate,
     updateItem: updateFormTemplate,
+    deleteItem: deleteFormTemplate,
     isUpdating,
     isCreating,
+    isDeleting,
     refresh,
   } = genericQuery();
 
@@ -63,8 +65,10 @@ export function useFormTemplatesQuery() {
     error,
     createFormTemplate,
     updateFormTemplate,
+    deleteFormTemplate,
     isUpdating,
     isCreating,
+    isDeleting,
     refresh,
   };
 }

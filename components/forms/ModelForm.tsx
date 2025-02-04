@@ -18,6 +18,7 @@ import { FormProps } from "@/types/form";
 import { toast } from "sonner";
 import { useManufacturerQuery } from "@/hooks/queries";
 import { useManufacturerUIStore } from "@/lib/stores";
+import CustomSwitch from "@/components/CustomSwitch";
 
 const ModelForm = ({ initialData, onSubmitSuccess }: FormProps<Model>) => {
   const { createModel, isCreating, updateModel, isUpdating } = useModelsQuery();
@@ -29,15 +30,18 @@ const ModelForm = ({ initialData, onSubmitSuccess }: FormProps<Model>) => {
     onClose: closeManufacturerModal,
   } = useManufacturerUIStore();
 
+  const defaultValues = {
+    name: initialData?.name ?? "",
+    modelNo: initialData?.modelNo ?? "",
+    manufacturerId: initialData?.manufacturerId ?? "",
+    active: initialData?.active ?? true,
+    endOfLife: undefined,
+    notes: "",
+  };
+
   const form = useForm<z.infer<typeof modelSchema>>({
+    defaultValues,
     resolver: zodResolver(modelSchema),
-    defaultValues: {
-      name: initialData?.name || "",
-      modelNo: initialData?.modelNo || "",
-      manufacturerId: initialData?.manufacturerId || "",
-      endOfLife: undefined,
-      notes: "",
-    },
   });
 
   const onSubmit = async (data: z.infer<typeof modelSchema>) => {
@@ -64,6 +68,7 @@ const ModelForm = ({ initialData, onSubmitSuccess }: FormProps<Model>) => {
             name: data.name,
             modelNo: data.modelNo,
             manufacturerId: data.manufacturerId,
+            active: data.active,
           },
           {
             onSuccess: () => {
@@ -154,7 +159,15 @@ const ModelForm = ({ initialData, onSubmitSuccess }: FormProps<Model>) => {
             </div>
           </div>
 
-          {/* Dates and Additional Info */}
+          <div className="space-y-4">
+            <CustomSwitch
+              label={"Is Active"}
+              name={"active"}
+              control={form.control}
+              required={false}
+            />
+          </div>
+
           <div className="space-y-4">
             <CustomInput
               name="notes"

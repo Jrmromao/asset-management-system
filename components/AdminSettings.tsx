@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import {
   BadgeCheck,
   Boxes,
@@ -185,6 +185,78 @@ const AdminSettings = () => {
     onOpen: onStatusLabelOpen,
   } = useStatusLabelUIStore();
 
+  const {
+    models,
+    isLoading: modelsLoading,
+    error: modelsError,
+    deleteModel,
+  } = useModelsQuery();
+
+  const {
+    manufacturers,
+    isLoading: manufacturersLoading,
+    deleteManufacturer,
+    isDeleting,
+  } = useManufacturerQuery();
+  const {
+    locations,
+    isLoading: locationsLoading,
+    deleteLocation,
+  } = useLocationQuery();
+  const {
+    departments,
+    isLoading: departmentsLoading,
+    deleteDepartment,
+  } = useDepartmentQuery();
+  const {
+    statusLabels,
+    isLoading: labelsLoading,
+    deleteStatusLabel,
+  } = useStatusLabelsQuery();
+  const {
+    inventories,
+    isLoading: inventoriesLoading,
+    deleteInventory,
+  } = useInventoryQuery();
+  const {
+    formTemplates,
+    isLoading: formTemplatesLoading,
+    deleteFormTemplate,
+  } = useFormTemplatesQuery();
+
+  const handleDelete = async (id: string) => {
+    switch (activeTab) {
+      case "models":
+        await deleteModel(id);
+        break;
+      case "manufacturers":
+        await deleteManufacturer(id);
+        break;
+      case "locations":
+        await deleteLocation(id);
+        break;
+      case "departments":
+        await deleteDepartment(id);
+        break;
+      case "status-label":
+        await deleteStatusLabel(id);
+        break;
+      case "inventories":
+        await deleteInventory(id);
+        break;
+      case "asset-categories":
+        await deleteFormTemplate(id);
+        break;
+      default:
+        return null;
+    }
+  };
+
+  const onDelete = useCallback(
+    (item: any) => handleDelete(item.id!),
+    [handleDelete],
+  );
+
   const MODAL_CONFIGS: ModalConfig[] = [
     {
       id: "models",
@@ -314,70 +386,53 @@ const AdminSettings = () => {
       onClose: closeFormTemplate,
     },
   ];
-  const {
-    models,
-    isLoading: modelsLoading,
-    error: modelsError,
-  } = useModelsQuery();
-  const { manufacturers, isLoading: manufacturersLoading } =
-    useManufacturerQuery();
-  const {
-    locations,
-    isLoading: locationsLoading,
-    deleteLocation,
-  } = useLocationQuery();
-  const { departments, isLoading: departmentsLoading } = useDepartmentQuery();
-  const { statusLabels, isLoading: labelsLoading } = useStatusLabelsQuery();
-  const { inventories, isLoading: inventoriesLoading } = useInventoryQuery();
-  const { formTemplates, isLoading: formTemplatesLoading } =
-    useFormTemplatesQuery();
 
   const columns = useMemo(
     () => ({
       models: modelColumns({
-        onDelete: () => {},
+        onDelete,
         onUpdate: (model: Model) => {
           setEditingModel(model);
           onModelOpen();
         },
       }),
       manufacturers: manufacturerColumns({
-        onDelete: () => {},
+        onDelete,
         onUpdate: (manufacturer: Manufacturer) => {
           setEditingManufacturer(manufacturer);
           onManufacturerOpen();
         },
       }),
       locations: locationColumns({
-        onDelete: () => deleteLocation,
+        onDelete,
         onUpdate: (departmentLocation: DepartmentLocation) => {
           setEditingLocation(departmentLocation);
           onLocationOpen();
         },
       }),
       departments: departmentColumns({
-        onDelete: () => {},
+        onDelete,
         onUpdate: (department: Department) => {
           setEditingDepartment(department);
           onDepartmentOpen();
         },
       }),
       "status-label": statusLabelColumns({
-        onDelete: () => {},
+        onDelete,
         onUpdate: (statusLabel: StatusLabel) => {
           setEditingStatusLabel(statusLabel);
           onStatusLabelOpen();
         },
       }),
       inventories: inventoryColumns({
-        onDelete: () => {},
+        onDelete,
         onUpdate: (inventory: Inventory) => {
           setEditingInventory(inventory);
           onInventoryOpen();
         },
       }),
       "asset-categories": assetCategoriesColumns({
-        onDelete: () => {},
+        onDelete,
         onUpdate: (formTemplate: FormTemplate) => {
           setEditingFormTemplate(formTemplate);
           onFormTemplateOpen();

@@ -22,11 +22,13 @@ const InventoryForm = ({
   const { createInventory, updateInventory } = useInventoryQuery();
   const { onClose } = useInventoryUIStore();
 
+  const defaultValues = {
+    name: initialData?.name ?? "",
+  };
+
   const form = useForm<z.infer<typeof inventorySchema>>({
     resolver: zodResolver(inventorySchema),
-    defaultValues: {
-      name: initialData?.name || "",
-    },
+    defaultValues,
   });
 
   async function onSubmit(data: z.infer<typeof inventorySchema>) {
@@ -88,10 +90,7 @@ const InventoryForm = ({
           <Button
             type="button"
             variant="outline"
-            onClick={() => {
-              form.reset();
-              onClose();
-            }}
+            onClick={onClose}
             disabled={isPending}
           >
             Cancel
