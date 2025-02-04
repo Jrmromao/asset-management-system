@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React from "react";
 import AdminSettings from "@/components/AdminSettings";
 import {
   Breadcrumb,
@@ -13,8 +13,6 @@ import HeaderBox from "@/components/HeaderBox";
 import { Settings } from "lucide-react";
 
 const SettingsPage = (): JSX.Element => {
-  const [searchQuery, setSearchQuery] = useState("");
-
   return (
     <div className="p-8 space-y-6">
       {/* Breadcrumb */}
@@ -29,7 +27,6 @@ const SettingsPage = (): JSX.Element => {
         </BreadcrumbList>
       </Breadcrumb>
 
-      {/*/!* Header Section *!/*/}
       <HeaderBox
         title="Settings"
         subtext="Configure your application settings and manage master data"

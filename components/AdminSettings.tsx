@@ -130,7 +130,6 @@ function handleFilter() {
 const AdminSettings = () => {
   const [activeTab, setActiveTab] = useState<TabId>("models");
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeModal, setActiveModal] = useState<TabId | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [editingInventory, setEditingInventory] = useState<Inventory | null>(
     null,
@@ -501,7 +500,7 @@ const AdminSettings = () => {
         );
       })}
 
-      <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+      <div className="w-full mx-auto py-8 px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Sidebar */}
           <div className="w-full lg:w-64 space-y-1 bg-white p-3 rounded-lg border border-gray-200">
