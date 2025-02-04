@@ -1,12 +1,7 @@
 import { create } from "zustand";
+import { StoreProps } from "@/lib/stores/store.types";
 
-interface UseSupplierUIStore {
-  isOpen: boolean;
-  onOpen: () => void;
-  onClose: () => void;
-}
-
-export const useSupplierUIStore = create<UseSupplierUIStore>((set) => ({
+export const useSupplierUIStore = create<StoreProps>((set) => ({
   isOpen: false,
   onOpen: () => set({ isOpen: true }),
   onClose: () => set({ isOpen: false }),

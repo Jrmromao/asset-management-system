@@ -1,12 +1,7 @@
 import { create } from "zustand";
+import { StoreProps } from "@/lib/stores/store.types";
 
-interface ICategoryUIStore {
-  isOpen: boolean;
-  onOpen: () => void;
-  onClose: () => void;
-}
-
-export const useCategoryUIStore = create<ICategoryUIStore>((set) => ({
+export const useCategoryUIStore = create<StoreProps>((set) => ({
   isOpen: false,
   onOpen: () => set({ isOpen: true }),
   onClose: () => set({ isOpen: false }),

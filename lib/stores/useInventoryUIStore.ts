@@ -1,12 +1,7 @@
 import { create } from "zustand";
+import { StoreProps } from "@/lib/stores/store.types";
 
-interface IInventoryUIStore {
-  isOpen: boolean;
-  onOpen: () => void;
-  onClose: () => void;
-}
-
-export const useInventoryUIStore = create<IInventoryUIStore>((set) => ({
+export const useInventoryUIStore = create<StoreProps>((set) => ({
   isOpen: false,
   onOpen: () => set({ isOpen: true }),
   onClose: () => set({ isOpen: false }),

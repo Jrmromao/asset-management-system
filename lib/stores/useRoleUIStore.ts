@@ -1,12 +1,7 @@
 import { create } from "zustand";
+import { StoreProps } from "@/lib/stores/store.types";
 
-interface IUserUIStore {
-  isOpen: boolean;
-  onOpen: () => void;
-  onClose: () => void;
-}
-
-export const useRoleUIStore = create<IUserUIStore>((set) => ({
+export const useRoleUIStore = create<StoreProps>((set) => ({
   isOpen: false,
   onOpen: () => set({ isOpen: true }),
   onClose: () => set({ isOpen: false }),

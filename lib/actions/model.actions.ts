@@ -523,23 +523,12 @@ export async function update(
       return { error: "Not authenticated" };
     }
 
-    // Check if model exists and belongs to company
-    const existingModel = await prisma.model.findFirst({
-      where: {
-        id,
-        companyId: session.user.companyId,
-      },
-    });
-
-    if (!existingModel) {
-      return { error: "Model not found" };
-    }
-
     const model = await prisma.model.update({
       where: { id },
       data: {
         name: data.name,
         modelNo: data.modelNo,
+        active: data.active,
         manufacturerId: data.manufacturerId,
         companyId: session.user.companyId,
       },
