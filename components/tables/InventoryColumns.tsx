@@ -4,16 +4,12 @@ import { ArrowUpDown } from "lucide-react";
 import React from "react";
 import DataTableRowActions from "@/components/tables/DataTable/DataTableRowActions";
 import { BooleanCell } from "@/components/tables/customCells";
-
-interface InventoryColumnsProps {
-  onDelete: (value: Inventory) => void;
-  onUpdate: (value: Inventory) => void;
-}
+import { ColumnsProps } from "@/components/tables/table.types";
 
 export const inventoryColumns = ({
   onDelete,
   onUpdate,
-}: InventoryColumnsProps): ColumnDef<Inventory>[] => [
+}: ColumnsProps<Inventory>): ColumnDef<Inventory>[] => [
   {
     accessorKey: "name",
     header: ({ column }) => {

@@ -4,16 +4,12 @@ import { ArrowUpDown, ExternalLink } from "lucide-react";
 import React from "react";
 import DataTableRowActions from "@/components/tables/DataTable/DataTableRowActions";
 import { BooleanCell } from "@/components/tables/customCells";
-
-interface manufacturersColumnsProps {
-  onDelete: (value: Manufacturer) => void;
-  onUpdate: (value: Manufacturer) => void;
-}
+import { ColumnsProps } from "@/components/tables/table.types";
 
 export const manufacturerColumns = ({
   onDelete,
   onUpdate,
-}: manufacturersColumnsProps): ColumnDef<Manufacturer>[] => [
+}: ColumnsProps<Manufacturer>): ColumnDef<Manufacturer>[] => [
   {
     accessorKey: "name",
     header: ({ column }) => {

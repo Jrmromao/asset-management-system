@@ -137,6 +137,9 @@ export function createGenericQuery<T extends { id?: string }, TCreateInput>(
     >({
       mutationFn: async (id: string) => {
         const result = await actions.delete(id);
+        console.log(result);
+        console.log(result.error);
+
         if (result.error) throw new Error(result.error);
         return result.data!;
       },

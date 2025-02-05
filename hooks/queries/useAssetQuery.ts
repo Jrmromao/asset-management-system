@@ -2,7 +2,7 @@ import { useUserUIStore } from "@/lib/stores/useUserUIStore";
 import { createGenericQuery } from "@/hooks/queries/useQueryFactory";
 import { z } from "zod";
 import { assetSchema } from "@/lib/schemas";
-import { getAll, insert, remove } from "@/lib/actions/assets.actions";
+import { getAll, insert, remove, update } from "@/lib/actions/assets.actions";
 
 export const MODEL_KEY = ["assets"] as const;
 
@@ -22,6 +22,9 @@ export function useAssetQuery() {
       },
       delete: async (id: string) => {
         return await remove(id);
+      },
+      update: async (id: string, data: Partial<Asset>) => {
+        return await update(id, data);
       },
     },
     {

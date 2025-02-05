@@ -5,16 +5,12 @@ import React from "react";
 import { FormTemplate } from "@/types/form";
 import DataTableRowActions from "@/components/tables/DataTable/DataTableRowActions";
 import { BooleanCell } from "@/components/tables/customCells";
-
-interface AssetCategoriesColumnsProps {
-  onDelete: (value: FormTemplate) => void;
-  onUpdate: (value: FormTemplate) => void;
-}
+import { ColumnsProps } from "@/components/tables/table.types";
 
 export const assetCategoriesColumns = ({
   onDelete,
   onUpdate,
-}: AssetCategoriesColumnsProps): ColumnDef<FormTemplate>[] => [
+}: ColumnsProps<FormTemplate>): ColumnDef<FormTemplate>[] => [
   {
     accessorKey: "name",
     header: ({ column }) => {

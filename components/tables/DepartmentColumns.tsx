@@ -4,16 +4,12 @@ import { ArrowUpDown } from "lucide-react";
 import React from "react";
 import DataTableRowActions from "@/components/tables/DataTable/DataTableRowActions";
 import { BooleanCell } from "@/components/tables/customCells";
-
-interface DepartmentColumnsProps {
-  onDelete: (value: Department) => void;
-  onUpdate: (value: Department) => void;
-}
+import { ColumnsProps } from "@/components/tables/table.types";
 
 export const departmentColumns = ({
   onDelete,
   onUpdate,
-}: DepartmentColumnsProps): ColumnDef<Department>[] => [
+}: ColumnsProps<Department>): ColumnDef<Department>[] => [
   {
     accessorKey: "name",
     header: ({ column }) => {

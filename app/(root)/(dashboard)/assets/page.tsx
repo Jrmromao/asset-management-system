@@ -4,7 +4,6 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useDialogStore } from "@/lib/stores/store";
 import { useRouter } from "next/navigation";
 import { assetColumns } from "@/components/tables/AssetColumns";
-import { toast } from "sonner";
 import StatusCards from "@/components/StatusCards";
 import {
   Breadcrumb,
@@ -46,17 +45,6 @@ const Assets = () => {
 
   const navigate = useRouter();
 
-  const handleDelete = async (id: string) => {
-    await deleteItem(id, {
-      onSuccess: () => {
-        toast.success("Asset deleted successfully");
-      },
-      onError: () => {
-        toast.error("Failed to delete asset");
-      },
-    });
-  };
-
   const [filteredData, setFilteredData] = useState(assets);
   const [filterDialogOpen, setFilterDialogOpen] = useState(false);
   const [filters, setFilters] = useState({
@@ -94,8 +82,8 @@ const Assets = () => {
   };
 
   const onDelete = useCallback(
-    (asset: Asset) => asset?.id && handleDelete(asset.id),
-    [handleDelete],
+    (asset: Asset) => asset?.id && deleteItem(asset.id),
+    [deleteItem],
   );
 
   const onView = useCallback(

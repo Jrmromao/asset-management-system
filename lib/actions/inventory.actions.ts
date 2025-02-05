@@ -65,9 +65,6 @@ export async function update(
         name: data.name,
       },
     });
-
-    console.log("\n\n\n ------> ", updated);
-
     return { data: parseStringify(updated) };
   } catch (error) {
     console.error("Update inventory error:", error);

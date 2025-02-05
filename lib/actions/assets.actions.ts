@@ -87,70 +87,118 @@ export async function findById(id: string): Promise<ActionResponse<Asset>> {
 
 export async function remove(id: string): Promise<ActionResponse<Asset>> {
   try {
+    console.log("DEACTIVATING ASSET ->> ", id);
+
+    const session = await auth();
+    if (!session?.user?.companyId) {
+      return { error: "Unauthorized access" };
+    }
+    const { id: userId, companyId } = session.user;
+
     if (!id) {
       return { error: "Asset ID is required" };
     }
 
-    const [asset, auditLogs] = await Promise.all([
-      prisma.asset.findFirst({
-        include: assetIncludes,
-        where: { id },
-      }),
-      prisma.auditLog.findMany({
-        where: {
-          entityId: id,
-          entity: "ASSET",
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-      }),
-    ]);
+    // First fetch the existing asset
+    const existingAsset = await prisma.asset.findFirst({
+      where: { id },
+      include: assetIncludes,
+    });
 
-    if (!asset) {
+    if (!existingAsset) {
       return { error: "Asset not found" };
     }
 
-    const computedAsset = {
-      ...asset,
-      auditLogs,
-    };
+    // Update asset and create related records in a transaction
+    const updatedAsset = await prisma.$transaction(async (prisma) => {
+      // Update the asset status
+      const asset = await prisma.asset.update({
+        where: { id },
+        data: {
+          status: "Inactive",
+        },
+        include: assetIncludes,
+      });
+
+      // Create asset history record
+      await prisma.assetHistory.create({
+        data: {
+          assetId: id,
+          type: "status_change",
+          notes: `Status changed from ${existingAsset.status} to Inactive`,
+          companyId,
+        },
+      });
+
+      // Create audit log
+      await prisma.auditLog.create({
+        data: {
+          action: "DEACTIVATE",
+          entity: "ASSET",
+          entityId: id,
+          details: `Asset ${existingAsset.name} (${existingAsset.serialNumber}) was deactivated`,
+          userId: userId!,
+          companyId,
+          dataAccessed: {
+            previousStatus: existingAsset.status,
+            newStatus: "Inactive",
+            assetName: existingAsset.name,
+            serialNumber: existingAsset.serialNumber,
+            timestamp: new Date(),
+          },
+        },
+      });
+
+      return asset;
+    });
+
+    // Fetch updated audit logs
+    const auditLogs = await prisma.auditLog.findMany({
+      where: {
+        entityId: id,
+        entity: "ASSET",
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
     return {
       data: parseStringify({
-        ...asset,
-        auditLogs: auditLogs ? auditLogs : [],
+        ...updatedAsset,
+        auditLogs: auditLogs || [],
       }),
     };
   } catch (error) {
-    console.error("Error deleting asset:", error);
+    console.error("Error deactivating asset:", error);
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       if (error.code === "P2025") {
         return { error: "Asset not found" };
       }
     }
-    return { error: "Failed to delete asset" };
+    return { error: "Failed to deactivate asset" };
   }
 }
 
 export async function update(
-  asset: Asset,
   id: string,
+  data: Partial<Asset>,
 ): Promise<ActionResponse<Asset>> {
   try {
-    if (!id || !asset) {
+    if (!id || !data) {
       return { error: "Asset ID and data are required" };
     }
 
     const updatedAsset = await prisma.asset.update({
       where: { id },
       data: {
-        name: asset.name,
-        serialNumber: asset.serialNumber,
+        name: data.name,
+        serialNumber: data.serialNumber,
         company: {
-          connect: { id: asset.companyId },
+          connect: { id: data.companyId },
         },
         statusLabel: {
-          connect: { id: asset.statusLabelId },
+          connect: { id: data.statusLabelId },
         },
       },
     });

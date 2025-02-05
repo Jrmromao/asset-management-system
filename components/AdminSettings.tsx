@@ -252,11 +252,46 @@ const AdminSettings = () => {
     }
   };
 
+  // Move handleDelete inside useCallback to ensure it has access to the current activeTab value
   const onDelete = useCallback(
-    (item: any) => handleDelete(item.id!),
-    [handleDelete],
+    async (item: any) => {
+      switch (activeTab) {
+        case "models":
+          await deleteModel(item.id);
+          break;
+        case "manufacturers":
+          await deleteManufacturer(item.id);
+          break;
+        case "locations":
+          await deleteLocation(item.id);
+          break;
+        case "departments":
+          await deleteDepartment(item.id);
+          break;
+        case "status-label":
+          await deleteStatusLabel(item.id);
+          break;
+        case "inventories":
+          await deleteInventory(item.id);
+          break;
+        case "asset-categories":
+          await deleteFormTemplate(item.id);
+          break;
+        default:
+          return null;
+      }
+    },
+    [
+      activeTab,
+      deleteModel,
+      deleteManufacturer,
+      deleteLocation,
+      deleteDepartment,
+      deleteStatusLabel,
+      deleteInventory,
+      deleteFormTemplate,
+    ],
   );
-
   const MODAL_CONFIGS: ModalConfig[] = [
     {
       id: "models",
@@ -439,7 +474,16 @@ const AdminSettings = () => {
         },
       }),
     }),
-    [],
+    [
+      onDelete,
+      onModelOpen,
+      onManufacturerOpen,
+      onLocationOpen,
+      onDepartmentOpen,
+      onStatusLabelOpen,
+      onInventoryOpen,
+      onFormTemplateOpen,
+    ],
   );
 
   const loadingMap = {

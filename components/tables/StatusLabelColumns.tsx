@@ -2,11 +2,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import React from "react";
 import DataTableRowActions from "@/components/tables/DataTable/DataTableRowActions";
 import { BooleanCell, SortableHeader } from "@/components/tables/customCells";
-
-interface StatusLabelColumnsProps {
-  onDelete?: (value: StatusLabel) => void;
-  onUpdate?: (value: StatusLabel) => void;
-}
+import { ColumnsProps } from "@/components/tables/table.types";
 
 const ColorCell = ({
   color,
@@ -43,7 +39,7 @@ const DateCell = ({ date }: { date: string }) => (
 export const statusLabelColumns = ({
   onDelete,
   onUpdate,
-}: StatusLabelColumnsProps = {}): ColumnDef<StatusLabel>[] => [
+}: ColumnsProps<StatusLabel>): ColumnDef<StatusLabel>[] => [
   {
     accessorKey: "name",
     header: ({ column }) => <SortableHeader column={column} label="Name" />,

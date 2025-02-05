@@ -40,10 +40,6 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   const [registrationData, setRegistrationData] =
     useState<RegistrationData | null>(null);
 
-  if (process.env.NODE_ENV === "development") {
-    console.log("UserProvider render:", { user, registrationData });
-  }
-
   return (
     <UserContext.Provider
       value={{
