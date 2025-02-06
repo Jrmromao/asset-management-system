@@ -12,7 +12,7 @@ interface CustomSwitchInputProps {
   label: string;
   name: string;
   control: any;
-  required: boolean;
+  required?: boolean;
 }
 
 const CustomSwitch = ({

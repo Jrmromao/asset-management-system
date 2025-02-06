@@ -173,7 +173,6 @@ declare global {
     departmentId?: string;
     statusLabelId?: string;
     inventoryId?: string;
-
     // Relations
     formTemplate?: {
       id: string;

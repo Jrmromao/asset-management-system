@@ -96,14 +96,12 @@ const StatusLabelForm = ({
               name="isArchived"
               label="Is Archivable"
               control={form.control}
-              required
             />
 
             <CustomSwitch
               name="allowLoan"
               label="Allow Loan"
               control={form.control}
-              required
             />
           </div>
 

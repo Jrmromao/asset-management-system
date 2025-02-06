@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowUpDown } from "lucide-react";
 import React from "react";
 import DataTableRowActions from "@/components/tables/DataTable/DataTableRowActions";
-import { BooleanCell } from "@/components/tables/customCells";
+import { BooleanCell } from "@/components/tables/CustomCells";
 import { ColumnsProps } from "@/components/tables/table.types";
 
 export const modelColumns = ({

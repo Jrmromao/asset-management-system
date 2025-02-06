@@ -23,6 +23,7 @@ import DetailViewSkeleton from "@/components/shared/DetailView/DetailViewSkeleto
 import printQRCode from "@/utils/QRCodePrinter";
 import { useRouter } from "next/navigation";
 import ItemDetailsTabs from "@/components/shared/DetailsTabs/ItemDetailsTabs";
+import { useAssetQuery } from "@/hooks/queries/useAssetQuery";
 
 interface AssetPageProps {
   params: {
@@ -35,6 +36,7 @@ interface EnhancedAssetType {
   name: string;
   price: number;
   serialNumber: string;
+  status: string;
   category: {
     name: string;
   };
@@ -96,6 +98,8 @@ export default function AssetPage({ params }: AssetPageProps) {
     isAssigning: false,
     isRefreshing: false,
   });
+
+  const { findItemById } = useAssetQuery();
   const { isAssignOpen, onAssignOpen, onAssignClose, unassign } =
     useAssetStore();
   const navigate = useRouter();
@@ -107,18 +111,16 @@ export default function AssetPage({ params }: AssetPageProps) {
 
       try {
         const foundAssetResponse = await findById(id);
+
         if (!foundAssetResponse.error) {
           const foundAsset = foundAssetResponse.data;
           const allValues =
             foundAsset?.formTemplateValues?.map((item) => item?.values) ?? [];
-
-          console.log(foundAsset?.assetHistory);
-          console.log(foundAsset?.auditLogs);
-
           setAsset({
             id: foundAsset?.id ?? "",
             name: foundAsset?.name ?? "",
             price: foundAsset?.price ?? 0,
+            status: foundAsset?.status ?? "",
             serialNumber: foundAsset?.serialNumber ?? "",
             co2Score: foundAsset?.co2Score ?? 0,
             category: {
@@ -205,6 +207,30 @@ export default function AssetPage({ params }: AssetPageProps) {
     }
   };
 
+  // Helper function to check if actions are allowed based on status
+  const canPerformActions = (status: string) => {
+    return status !== "Inactive";
+  };
+
+  // Handler for assignment actions
+  const handleAssignmentAction = (status: string) => {
+    if (!canPerformActions(status)) {
+      return undefined;
+    }
+    // If already has assignee, return undefined (can't assign)
+    // If no assignee, return the assign function
+    return asset?.assigneeId ? undefined : () => onAssignOpen();
+  };
+
+  // Handler for unassignment actions
+  const handleUnassignmentAction = (status: string) => {
+    if (!canPerformActions(status)) {
+      return undefined;
+    }
+    // Only allow unassign if there's an assignee
+    return asset?.assigneeId ? handleUnassign : undefined;
+  };
+
   const detailViewProps: DetailViewProps = {
     title: asset?.name ?? "Untitled Asset",
     isLoading: false,
@@ -213,12 +239,11 @@ export default function AssetPage({ params }: AssetPageProps) {
     error,
     fields: [
       { label: "Name", value: asset?.name ?? "", type: "text" },
-      { label: "Price", value: asset?.price ?? 0, type: "currency" },
       { label: "Category", value: asset?.category?.name ?? "", type: "text" },
       { label: "Model", value: asset?.model?.name ?? "", type: "text" },
       {
         label: "Status",
-        value: asset?.assignee?.name ? "On Loan" : "Available",
+        value: asset?.status,
         type: "text",
       },
       { label: "Location", value: asset?.location?.name ?? "", type: "text" },
@@ -271,8 +296,8 @@ export default function AssetPage({ params }: AssetPageProps) {
     ),
     actions: {
       onArchive: () => handleAction("archive"),
-      onAssign: asset?.assigneeId ? undefined : () => onAssignOpen(),
-      onUnassign: asset?.assigneeId ? handleUnassign : undefined,
+      onAssign: handleAssignmentAction(asset?.status!),
+      onUnassign: handleUnassignmentAction(asset?.status!),
       onDuplicate: () => handleAction("duplicate"),
       onEdit: () => handleAction("edit"),
       onPrintLabel: () => printQRCode("/qr-code/sample.png"),

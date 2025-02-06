@@ -2,7 +2,13 @@ import { useUserUIStore } from "@/lib/stores/useUserUIStore";
 import { createGenericQuery } from "@/hooks/queries/useQueryFactory";
 import { z } from "zod";
 import { assetSchema } from "@/lib/schemas";
-import { getAll, insert, remove, update } from "@/lib/actions/assets.actions";
+import {
+  findById,
+  getAll,
+  insert,
+  remove,
+  update,
+} from "@/lib/actions/assets.actions";
 
 export const MODEL_KEY = ["assets"] as const;
 
@@ -26,6 +32,9 @@ export function useAssetQuery() {
       update: async (id: string, data: Partial<Asset>) => {
         return await update(id, data);
       },
+      findById: async (id: string) => {
+        return await findById(id);
+      },
     },
     {
       onClose,
@@ -41,6 +50,7 @@ export function useAssetQuery() {
     error,
     createItem: createAsset,
     isCreating,
+    findById: findItemById,
     refresh,
     deleteItem,
   } = genericQuery();
@@ -50,6 +60,7 @@ export function useAssetQuery() {
     isLoading,
     error,
     createAsset,
+    findItemById,
     isCreating,
     refresh,
     deleteItem,

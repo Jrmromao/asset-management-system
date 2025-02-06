@@ -19,34 +19,58 @@ export default auth((req) => {
   const isAuthRoute = authRoutes.includes(nextUrl.pathname);
   const isValidationRoute = nextUrl.pathname.startsWith("/api/validate");
 
-  // Handle validation routes
   if (isValidationRoute) {
-    return; // void instead of null
+    return;
   }
 
-  // Handle API auth routes
   if (isAPIAuthRoute) {
-    return; // void instead of null
+    return;
   }
 
   // Handle auth routes (like sign-in, sign-up)
   if (isAuthRoute) {
     if (isLoggedIn) {
+      // Check if there's a callbackUrl in the search parameters
+      const callbackUrl = nextUrl.searchParams.get("callbackUrl");
+      if (callbackUrl) {
+        // Validate the callback URL to prevent open redirect vulnerabilities
+        const validatedUrl = validateCallbackUrl(callbackUrl);
+        if (validatedUrl) {
+          return Response.redirect(new URL(validatedUrl, nextUrl));
+        }
+      }
+      // If no valid callback URL, redirect to default
       return Response.redirect(new URL(DEFAULT_LOGIN_REDIRECT, nextUrl));
     }
-    return; // void instead of null
+    return;
   }
 
   // Handle protected routes
   if (!isLoggedIn && !isPublicRoute) {
     const signInUrl = new URL("/sign-in", nextUrl);
-    signInUrl.searchParams.set("callbackUrl", nextUrl.pathname);
+    // Ensure the full pathname with query parameters is captured
+    signInUrl.searchParams.set(
+      "callbackUrl",
+      nextUrl.href.replace(nextUrl.origin, ""),
+    );
     return Response.redirect(signInUrl);
   }
 
-  // Allow request to continue
   return;
-}) as any; // Temporary type assertion if needed
+}) as any;
+
+// Helper function to validate callback URLs
+function validateCallbackUrl(url: string): string | null {
+  // Basic validation - ensure the URL starts with a forward slash
+  if (!url.startsWith("/")) return null;
+
+  // Add more validation as needed, for example:
+  // - Check against allowed paths
+  // - Prevent external redirects
+  // - Sanitize the URL
+
+  return url;
+}
 
 export const config = {
   matcher: [

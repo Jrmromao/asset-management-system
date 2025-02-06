@@ -2,7 +2,7 @@
 import React, { useState, useTransition } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { Form } from "@/components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -21,9 +21,16 @@ import HeaderIcon from "@/components/page/HeaderIcon";
 
 const AuthForm = () => {
   const [error, setError] = useState<string>("");
+  const searchParams = useSearchParams();
   const [user, setUser] = useState(null);
   const [recaptchaToken, setRecaptchaToken] = useState<string>("");
   const [isPending, startTransition] = useTransition();
+  const callbackUrl = searchParams.get("callbackUrl");
+  const validCallbackUrl =
+    callbackUrl && callbackUrl.startsWith("/")
+      ? callbackUrl
+      : DEFAULT_LOGIN_REDIRECT;
+
   const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -47,7 +54,7 @@ const AuthForm = () => {
           console.error(response);
           setError(response.error);
         } else {
-          router.push(DEFAULT_LOGIN_REDIRECT);
+          router.push(validCallbackUrl);
         }
       } catch (e) {
         console.error(e);
@@ -55,13 +62,8 @@ const AuthForm = () => {
     });
   };
 
-  const handleVerify = (token: string) => {
-    setRecaptchaToken(token);
-    setError(""); // Clear any existing errors
-  };
-
   const handleSocialLogin = async (provider: "github" | "google") => {
-    await signIn(provider, { callbackUrl: DEFAULT_LOGIN_REDIRECT });
+    await signIn(provider, { callbackUrl: validCallbackUrl });
   };
   return (
     <section className={"auth-form"}>

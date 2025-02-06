@@ -1,40 +1,13 @@
 import { ColumnDef } from "@tanstack/react-table";
 import React from "react";
 import DataTableRowActions from "@/components/tables/DataTable/DataTableRowActions";
-import { BooleanCell, SortableHeader } from "@/components/tables/customCells";
+import {
+  BooleanCell,
+  ColorCell,
+  DateCell,
+  SortableHeader,
+} from "@/components/tables/CustomCells";
 import { ColumnsProps } from "@/components/tables/table.types";
-
-const ColorCell = ({
-  color,
-  description,
-}: {
-  color: string;
-  description?: string;
-}) => (
-  <div className="flex flex-col gap-1">
-    <div className="flex items-center">
-      <div
-        className="h-4 w-4 rounded-full border border-gray-200 shadow-sm mr-2"
-        style={{
-          backgroundColor: color as React.CSSProperties["backgroundColor"],
-        }}
-      />
-      {description && (
-        <span className="text-sm text-gray-500">{description}</span>
-      )}
-    </div>
-  </div>
-);
-
-const DateCell = ({ date }: { date: string }) => (
-  <div className="text-sm text-gray-600 flex items-center justify-center h-full">
-    {new Date(date).toLocaleDateString(undefined, {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    })}
-  </div>
-);
 
 export const statusLabelColumns = ({
   onDelete,
@@ -62,7 +35,7 @@ export const statusLabelColumns = ({
   },
   {
     accessorKey: "isArchived",
-    header: "Archivable",
+    header: "Achievable",
     cell: ({ row }) => <BooleanCell value={row.getValue("isArchived")} />,
   },
   {

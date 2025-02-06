@@ -33,19 +33,11 @@ const Assets = () => {
     state.onClose,
     state.isOpen,
   ]);
-
-  // const [assets, loading, fetchAssets, getAssetById, deleteAsset] =
-  //   useAssetStore((state) => [
-  //     state.assets,
-  //     state.loading,
-  //     state.getAll,
-  //     state.findById,
-  //     state.delete,
-  //   ]);
-
   const navigate = useRouter();
 
-  const [filteredData, setFilteredData] = useState(assets);
+  const [filteredData, setFilteredData] = useState(
+    assets.filter((item) => item.name === "Test"),
+  );
   const [filterDialogOpen, setFilterDialogOpen] = useState(false);
   const [filters, setFilters] = useState({
     supplier: "",
@@ -53,7 +45,8 @@ const Assets = () => {
   });
 
   useEffect(() => {
-    setFilteredData(assets);
+    const activeAssets = assets.filter((asset) => asset.status !== "Inactive");
+    setFilteredData(activeAssets);
   }, [assets]);
 
   const handleFilter = () => {
@@ -62,17 +55,22 @@ const Assets = () => {
 
   const handleSearch = (value: string) => {
     if (!value.trim()) {
-      setFilteredData(assets);
+      const activeAssets = assets.filter(
+        (asset) => asset.status !== "Inactive",
+      );
+      setFilteredData(activeAssets);
       return;
     }
 
-    const searchResults = assets.filter((item: any) =>
-      Object.entries(item).some(([key, val]) => {
-        if (typeof val === "string" || typeof val === "number") {
-          return val.toString().toLowerCase().includes(value.toLowerCase());
-        }
-        return false;
-      }),
+    const searchResults = assets.filter(
+      (item: any) =>
+        item.status !== "Inactive" &&
+        Object.entries(item).some(([key, val]) => {
+          if (typeof val === "string" || typeof val === "number") {
+            return val.toString().toLowerCase().includes(value.toLowerCase());
+          }
+          return false;
+        }),
     );
     setFilteredData(searchResults);
   };
@@ -92,7 +90,12 @@ const Assets = () => {
   );
 
   const applyFilters = () => {
-    const results = [...assets];
+    const results = assets
+      .filter((asset) => asset.status !== "Inactive") // Filter out inactive first
+      .filter((asset) => {
+        // Your other filter conditions here
+        return true; // modify based on your filters object
+      });
     setFilteredData(results);
     setFilterDialogOpen(false);
   };

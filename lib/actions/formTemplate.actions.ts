@@ -1,7 +1,6 @@
 "use server";
 import { PrismaClient } from "@prisma/client";
 import { z } from "zod";
-import { revalidatePath } from "next/cache";
 import { createTemplateSchema } from "@/lib/schemas";
 import { FormTemplate } from "@/types/form";
 import { parseStringify } from "@/lib/utils";
@@ -31,7 +30,6 @@ export async function insert(
       select: { id: true },
     });
 
-    revalidatePath("/assets/create");
     return { data: parseStringify(template) };
   } catch (error) {
     return handleError(error, "Failed to create template");
@@ -57,9 +55,14 @@ export async function getAll(): Promise<ActionResponse<FormTemplate[]>> {
       orderBy: { createdAt: "desc" },
     });
 
-    return { data: parseStringify(templates) };
+    return {
+      success: true,
+      data: parseStringify(templates),
+    };
   } catch (error) {
     return handleError(error, "Failed to fetch templates");
+  } finally {
+    await prisma.$disconnect();
   }
 }
 
@@ -160,7 +163,6 @@ export async function bulkInsertTemplates(companyId: string) {
       ),
     );
 
-    revalidatePath("/form-templates");
     return { success: true, data: templates };
   } catch (error: unknown) {
     if (error instanceof Error) {
