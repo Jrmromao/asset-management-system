@@ -1,9 +1,11 @@
 import { OpenAIConfig } from "@/config/OpenAIConfig";
 import { GeminiConfig } from "@/config/GeminiConfig";
 
-interface CO2Response {
+export interface CO2Response {
   CO2e: string;
   details: string;
+  CO2eType: string;
+  sourceOrActivity: string;
 }
 
 // Minimal interface for CO2 calculation
@@ -151,7 +153,7 @@ class CO2Calculator {
     }
 
     basePrompt +=
-      '\nProvide the answer in the following JSON format: {"CO2e": "value", "details": "short explanation"}';
+      '\nProvide the answer in the following JSON format: {"CO2e": "value", "CO2eType": "value", sourceOrActivity": "value", "details": "short explanation"}';
 
     return basePrompt;
   }

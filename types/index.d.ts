@@ -149,6 +149,19 @@ declare global {
     values: any[];
   }
 
+  interface Co2eRecord {
+    id: string;
+    assetId: string;
+    itemType: "Asset" | "Accessory";
+    userId?: string | null;
+    co2e: number;
+    co2eType: string;
+    sourceOrActivity: string;
+    createdAt: Date;
+    updatedAt: Date;
+    accessoryId?: string | null;
+  }
+
   interface Asset extends BaseEntity {
     name: string;
     poNumber: string;
@@ -162,7 +175,7 @@ declare global {
     price: number;
     energyRating?: string;
     dailyOperationHours?: number;
-    co2Score?: number;
+    Co2eRecord?: Co2eRecord[];
     status: string;
     // Optional fields
     certificateUrl?: string;

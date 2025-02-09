@@ -116,13 +116,20 @@ export default function AssetPage({ params }: AssetPageProps) {
           const foundAsset = foundAssetResponse.data;
           const allValues =
             foundAsset?.formTemplateValues?.map((item) => item?.values) ?? [];
+          let co2Score = 0;
+
+          if (foundAsset?.Co2eRecord?.[0]) {
+            co2Score = foundAsset.Co2eRecord[0].co2e;
+          }
+
           setAsset({
             id: foundAsset?.id ?? "",
             name: foundAsset?.name ?? "",
             price: foundAsset?.price ?? 0,
             status: foundAsset?.status ?? "",
             serialNumber: foundAsset?.serialNumber ?? "",
-            co2Score: foundAsset?.co2Score ?? 0,
+            co2Score: co2Score,
+
             category: {
               name: foundAsset?.formTemplate?.name ?? "-",
             },

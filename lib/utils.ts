@@ -289,42 +289,41 @@ export async function encrypt(payload: any) {
 }
 
 export const getCO2ScoreInfo = (score: number) => {
-  if (score <= 30) {
+  if (score <= 100) {
     return {
-      color: "text-emerald-700", // Light mint green background with darker green text
+      color: "text-emerald-700",
       bgColor: "bg-emerald-50",
       icon: BatteryFull,
       label: "Excellent",
-      description: "Very low carbon footprint",
+      description: "Very low carbon footprint (<100 kg CO2e)",
     };
   }
-  if (score <= 60) {
+  if (score <= 500) {
     return {
-      color: "text-green-700", // Soft green background
-      bgColor: "bg-green-500",
+      color: "text-green-700",
+      bgColor: "bg-green-50",
       icon: BatteryMedium,
       label: "Good",
-      description: "Low carbon footprint",
+      description: "Low carbon footprint (100-500 kg CO2e)",
     };
   }
-  if (score <= 90) {
+  if (score <= 1000) {
     return {
       color: "text-yellow-700",
-      bgColor: "bg-yellow-100",
+      bgColor: "bg-yellow-50",
       icon: BatteryLow,
       label: "Fair",
-      description: "Moderate carbon footprint",
+      description: "Moderate carbon footprint (500-1000 kg CO2e)",
     };
   }
   return {
-    color: "text-red-700", // Soft red background
-    bgColor: "bg-red-500",
+    color: "text-red-700",
+    bgColor: "bg-red-50",
     icon: Battery,
     label: "High",
-    description: "High carbon footprint",
+    description: "High carbon footprint (>1000 kg CO2e)",
   };
 };
-
 /**
  * Returns color and label configuration for asset availability status
  * @param value - The availability status string

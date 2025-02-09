@@ -9,6 +9,8 @@ export const BooleanCell = ({ value }: { value: boolean }) => (
     ) : (
       <X className="w-5 h-5 text-red-500" />
     )}
+
+    {value}
   </div>
 );
 

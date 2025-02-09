@@ -1,6 +1,6 @@
 "use server";
 
-import { ChatGPTResponse } from "@/services/ChatGPT/tempales";
+import { ChatGPTResponse } from "@/services/OpenAI/tempales";
 
 export const registerCompany = async (data: CompanyRegistrationProps) => {
   try {

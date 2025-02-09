@@ -574,8 +574,8 @@ model AuditLog {
 
 model Co2eRecord {
   id               String   @id @default(cuid())
-  itemId           String
-  itemType         String
+  assetId          String
+  itemType         String // Should be either "Asset" or "Accessory"
   userId           String?
   co2e             Float
   co2eType         String
@@ -583,13 +583,11 @@ model Co2eRecord {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
-  asset     Asset?     @relation(fields: [itemId], references: [id], onDelete: Cascade, map: "Co2eRecord_assetId_fkey")
-  accessory Accessory? @relation(fields: [itemId], references: [id], onDelete: Cascade, map: "Co2eRecord_accessoryId_fkey")
-  user      User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
-
-  @@index([itemId])
-  @@index([userId])
-  @@index([itemType])
+  // Only one of these will be used based on itemType
+  asset       Asset      @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  user        User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+  Accessory   Accessory? @relation(fields: [accessoryId], references: [id])
+  accessoryId String?
 }
 
 // Track accessory stock movements

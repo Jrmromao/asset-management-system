@@ -13,6 +13,7 @@ interface DataTableRowActionsProps<TData> {
   onView?: (value: TData) => void;
   onDelete?: (value: TData) => void;
   onUpdate?: (value: TData) => void;
+  onDisable?: (value: TData) => void;
   className?: string;
 }
 
@@ -21,9 +22,10 @@ const DataTableRowActions = <TData,>({
   onView,
   onDelete,
   onUpdate,
+  onDisable,
   className = "",
 }: DataTableRowActionsProps<TData>) => {
-  const handleDelete = () => {
+  const handleDisable = () => {
     Swal.fire({
       title: "Are you sure?",
       text: `This operation will deactivate the item and it wont be shown to the users.`,
@@ -31,10 +33,25 @@ const DataTableRowActions = <TData,>({
       showCancelButton: true,
       confirmButtonColor: "#3085d6",
       cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, disable it!",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        onDelete && onDelete(row.original);
+      }
+    });
+  };
+
+  const handleDelete = () => {
+    Swal.fire({
+      title: "Are you sure?",
+      text: `This operation will delete this item and it cannot be recovered. \n Deleting this may lead to unexpected results and loss of data.`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
       confirmButtonText: "Yes, delete it!",
     }).then((result) => {
       if (result.isConfirmed) {
-        console.log("row.original: ", row.original);
         onDelete && onDelete(row.original);
         // toast.success("The item has been deleted!");
       }
@@ -50,6 +67,11 @@ const DataTableRowActions = <TData,>({
         <DropdownMenuContent>
           {onDelete && (
             <DropdownMenuCheckboxItem onClick={() => handleDelete()}>
+              <div className={"cursor-pointer text-[#344054]"}> Delete</div>
+            </DropdownMenuCheckboxItem>
+          )}
+          {onDisable && (
+            <DropdownMenuCheckboxItem onClick={() => handleDisable()}>
               <div className={"cursor-pointer text-[#344054]"}> Delete</div>
             </DropdownMenuCheckboxItem>
           )}

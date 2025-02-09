@@ -51,6 +51,7 @@ export async function getAll(): Promise<ActionResponse<FormTemplate[]>> {
         name: true,
         fields: true,
         createdAt: true,
+        active: true,
       },
       orderBy: { createdAt: "desc" },
     });

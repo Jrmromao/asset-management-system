@@ -34,7 +34,7 @@ const CarbonScoreTooltip: React.FC<CarbonScoreTooltipProps> = ({
             <BatteryIcon className="w-4 h-4" />
             <span className="flex items-center gap-1">
               <Leaf className="w-3 h-3" />
-              CO₂ {co2Score}kg
+              CO₂ {co2Score.toLocaleString()} kg
             </span>
             <span className="font-medium">{scoreInfo.label}</span>
           </span>

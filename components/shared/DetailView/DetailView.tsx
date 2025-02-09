@@ -63,6 +63,7 @@ export const DetailView: React.FC<DetailViewProps> = ({
   isAssigned,
   fields,
   actions,
+  co2Score,
   qrCode,
   breadcrumbs,
   sourceData = "",
@@ -71,7 +72,6 @@ export const DetailView: React.FC<DetailViewProps> = ({
 }) => {
   const getField = (label: string) => fields.find((f) => f.label === label);
   const tagNumber = getField("Tag Number")?.value;
-
   return (
     <Card className="h-full mx-2">
       <CardHeader className="space-y-0">
@@ -116,7 +116,8 @@ export const DetailView: React.FC<DetailViewProps> = ({
                   status={String(getField("Status")?.value)}
                 />
               )}
-              <CarbonScoreTooltip co2Score={100} />
+
+              <CarbonScoreTooltip co2Score={co2Score} />
             </div>
             <div className="flex flex-wrap gap-2">
               {["Seats", "Units"].map(
