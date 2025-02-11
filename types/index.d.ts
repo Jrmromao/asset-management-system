@@ -155,6 +155,7 @@ declare global {
     itemType: "Asset" | "Accessory";
     userId?: string | null;
     co2e: number;
+    units: string;
     co2eType: string;
     sourceOrActivity: string;
     createdAt: Date;

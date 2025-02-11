@@ -577,8 +577,9 @@ model Co2eRecord {
   assetId          String
   itemType         String // Should be either "Asset" or "Accessory"
   userId           String?
-  co2e             Float
+  co2e             Decimal  @db.Decimal(15, 2)
   co2eType         String
+  units            String   @default("kg")
   sourceOrActivity String
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt

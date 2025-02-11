@@ -31,7 +31,11 @@ export interface DetailViewProps {
   fields: DetailField[];
   isAssigned?: boolean;
   isLoading?: boolean;
-  co2Score: number;
+  co2Score: {
+    co2e: number;
+    units: string;
+  };
+  units: string;
   qrCode?: string | ReactNode;
   breadcrumbs?: ReactNode;
   error?: string | null;

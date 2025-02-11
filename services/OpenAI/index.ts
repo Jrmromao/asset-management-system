@@ -6,6 +6,7 @@ export interface CO2Response {
   details: string;
   CO2eType: string;
   sourceOrActivity: string;
+  unit: string;
 }
 
 // Minimal interface for CO2 calculation

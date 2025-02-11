@@ -9,18 +9,21 @@ import { Leaf } from "lucide-react";
 import { getCO2ScoreInfo } from "@/lib/utils";
 
 interface CarbonScoreTooltipProps {
-  co2Score: number;
+  co2Score: {
+    score: number;
+    units: string;
+  };
 }
 
 const CarbonScoreTooltip: React.FC<CarbonScoreTooltipProps> = ({
   co2Score,
 }) => {
-  const scoreInfo = getCO2ScoreInfo(co2Score);
+  const scoreInfo = getCO2ScoreInfo(co2Score.score);
   const BatteryIcon = scoreInfo.icon;
 
   const getComparisonPercentage = () => {
     if (!co2Score) return "-";
-    return `${Math.round((co2Score / 75) * 100)}`;
+    return `${Math.round((co2Score.score / 75) * 100)}`;
   };
 
   return (
@@ -34,7 +37,7 @@ const CarbonScoreTooltip: React.FC<CarbonScoreTooltipProps> = ({
             <BatteryIcon className="w-4 h-4" />
             <span className="flex items-center gap-1">
               <Leaf className="w-3 h-3" />
-              CO₂ {co2Score.toLocaleString()} kg
+              CO₂ {co2Score.score.toLocaleString()} {co2Score.units}
             </span>
             <span className="font-medium">{scoreInfo.label}</span>
           </span>
@@ -44,7 +47,10 @@ const CarbonScoreTooltip: React.FC<CarbonScoreTooltipProps> = ({
             <p className="font-medium">{scoreInfo.label} Carbon Footprint</p>
             <p className="text-sm">{scoreInfo.description}</p>
             <div className="text-xs text-muted-foreground">
-              <p>• Annual CO₂ emissions: {co2Score}kg</p>
+              <p>
+                • Annual CO₂ emissions: {co2Score.score}
+                {co2Score.units}
+              </p>
               <p>• Compared to average: {getComparisonPercentage()}%</p>
               <p>• Environmental impact: {scoreInfo.label.toLowerCase()}</p>
             </div>

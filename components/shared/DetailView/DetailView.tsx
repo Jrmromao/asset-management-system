@@ -117,7 +117,12 @@ export const DetailView: React.FC<DetailViewProps> = ({
                 />
               )}
 
-              <CarbonScoreTooltip co2Score={co2Score} />
+              <CarbonScoreTooltip
+                co2Score={{
+                  score: co2Score.co2e,
+                  units: co2Score.units,
+                }}
+              />
             </div>
             <div className="flex flex-wrap gap-2">
               {["Seats", "Units"].map(

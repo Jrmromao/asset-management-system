@@ -47,7 +47,10 @@ interface EnhancedAssetType {
   assignee?: {
     name: string;
   };
-  co2Score?: number;
+  co2Score?: {
+    co2e: number;
+    units: string;
+  };
   model: {
     name: string;
   };
@@ -117,9 +120,11 @@ export default function AssetPage({ params }: AssetPageProps) {
           const allValues =
             foundAsset?.formTemplateValues?.map((item) => item?.values) ?? [];
           let co2Score = 0;
+          let units = "";
 
           if (foundAsset?.Co2eRecord?.[0]) {
             co2Score = foundAsset.Co2eRecord[0].co2e;
+            units = foundAsset.Co2eRecord[0].units;
           }
 
           setAsset({
@@ -128,7 +133,10 @@ export default function AssetPage({ params }: AssetPageProps) {
             price: foundAsset?.price ?? 0,
             status: foundAsset?.status ?? "",
             serialNumber: foundAsset?.serialNumber ?? "",
-            co2Score: co2Score,
+            co2Score: {
+              co2e: co2Score,
+              units: units,
+            },
 
             category: {
               name: foundAsset?.formTemplate?.name ?? "-",
@@ -241,7 +249,11 @@ export default function AssetPage({ params }: AssetPageProps) {
   const detailViewProps: DetailViewProps = {
     title: asset?.name ?? "Untitled Asset",
     isLoading: false,
-    co2Score: asset?.co2Score ?? 0,
+    co2Score: {
+      co2e: asset?.co2Score?.co2e ?? 0,
+      units: asset?.co2Score?.units ?? "kg",
+    },
+    units: "kgCO2e",
     isAssigned: Boolean(asset?.assigneeId),
     error,
     fields: [

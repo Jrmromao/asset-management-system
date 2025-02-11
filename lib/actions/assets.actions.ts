@@ -624,7 +624,7 @@ export async function insert(
 
     const calculator = new CO2Calculator({
       openai: {
-        apiKey: String(process.env.OPENAI_API_KEY),
+        apiKey: process.env.OPENAI_API_KEY!,
         model: "gpt-3.5-turbo",
       },
     });
@@ -691,11 +691,13 @@ export async function insert(
 
       // Save CO2 result if calculation was successful
       if (co2Result) {
+        const [co2, unit] = co2Result.CO2e.split(" ");
         await tx.co2eRecord.create({
           data: {
             itemType: "ASSET",
             assetId: newAsset.id,
-            co2e: parseFloat(co2Result.CO2e),
+            units: unit,
+            co2e: parseFloat(co2),
             co2eType: co2Result.CO2eType,
             sourceOrActivity: co2Result.sourceOrActivity,
           },
