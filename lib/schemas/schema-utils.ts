@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { debounce } from "lodash";
 
 export const isRequiredField = (field: unknown): field is z.ZodTypeAny => {
   if (!(field instanceof z.ZodType)) return false;
@@ -111,3 +112,44 @@ export async function validateUniqueField({ path }: { path: string }) {
     return false;
   }
 }
+
+const validationCache = new Map<string, boolean>();
+
+export const debouncedValidateField = debounce(
+  async ({ path }: { path: string }): Promise<boolean> => {
+    try {
+      // Check cache first
+      if (validationCache.has(path)) {
+        return validationCache.get(path)!;
+      }
+
+      const baseUrl =
+        process.env.NEXT_PUBLIC_APP_URL ||
+        (typeof window !== "undefined" ? window.location.origin : "");
+
+      if (!baseUrl) {
+        console.error("No base URL available for validation");
+        return false;
+      }
+
+      const fullUrl = `${baseUrl}${path}`;
+      const response = await fetch(fullUrl);
+      const data = await response.json();
+      const result = !data.exists;
+
+      // Cache the result
+      validationCache.set(path, result);
+
+      // Clear cache after some time
+      setTimeout(() => {
+        validationCache.delete(path);
+      }, 30000); // Cache expires after 30 seconds
+
+      return result;
+    } catch (error) {
+      console.error("Validation error:", error);
+      return false;
+    }
+  },
+  200,
+);

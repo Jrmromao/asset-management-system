@@ -172,8 +172,6 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
 }
 
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
-  console.log("Checkout session completed:", session);
-
   if (session.metadata?.companyId) {
     const subscriptionId = session.subscription as string;
 

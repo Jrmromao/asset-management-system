@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Co2eRecord" ALTER COLUMN "co2e" SET DATA TYPE DECIMAL(15,2);

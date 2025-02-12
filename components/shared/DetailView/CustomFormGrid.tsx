@@ -28,9 +28,7 @@ const CustomFormGrid = ({
   return (
     <div className="w-full space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-gray-900 px-4">
-          {title} - joao
-        </h2>
+        <h2 className="text-lg font-semibold text-gray-900 px-4">{title}</h2>
         <div className="px-4 text-sm text-gray-500">
           {formValues.length} {formValues.length === 1 ? "entry" : "entries"}
         </div>

@@ -86,7 +86,67 @@ export const assetColumns = ({
   {
     header: "CO2 Footprint",
     cell: ({ row }) => {
-      return <div>{"-"}</div>;
+      const record = row.original.Co2eRecord?.[0];
+      if (!record) return <span className="text-gray-400">-</span>;
+
+      const co2Value = record.co2e;
+      const unit = record.units;
+
+      // Function to determine impact level based on normalized value (in kg)
+      const getImpactLevel = (value: number, unit: string) => {
+        // Convert everything to kg for comparison
+        const normalizedValue = unit.toLowerCase().includes("ton")
+          ? value * 1000 // Convert tonnes/tons to kg
+          : value; // Already in kg
+
+        if (normalizedValue > 1000) {
+          return {
+            color: "bg-red-500",
+            label: "High Impact",
+          };
+        } else if (normalizedValue > 500) {
+          return {
+            color: "bg-yellow-500",
+            label: "Medium Impact",
+          };
+        }
+        return {
+          color: "bg-green-500",
+          label: "Low Impact",
+        };
+      };
+
+      const impact = getImpactLevel(co2Value, unit);
+
+      return (
+        <div className="group relative flex items-center gap-2">
+          <div className="flex flex-col">
+            <span className="font-medium">
+              {co2Value.toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
+              <span className="text-gray-500 text-sm ml-1">{unit}</span>
+            </span>
+            <div className="flex items-center gap-1 text-xs text-gray-500">
+              <div className={`w-2 h-2 rounded-full ${impact.color}`} />
+              {impact.label}
+            </div>
+          </div>
+
+          {/* Tooltip */}
+          <div className="invisible group-hover:visible absolute top-full left-0 mt-2 p-2 bg-gray-800 text-white text-xs rounded shadow-lg z-10 w-48">
+            <p className="font-medium mb-1">CO2 Footprint Details</p>
+            <p>
+              Value: {co2Value.toLocaleString()} {unit}
+            </p>
+            {record.co2eType && <p>Type: {record.co2eType}</p>}
+            {record.sourceOrActivity && (
+              <p>Source: {record.sourceOrActivity}</p>
+            )}
+          </div>
+        </div>
+      );
     },
   },
   {

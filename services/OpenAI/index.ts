@@ -2,7 +2,7 @@ import { OpenAIConfig } from "@/config/OpenAIConfig";
 import { GeminiConfig } from "@/config/GeminiConfig";
 
 export interface CO2Response {
-  CO2e: string;
+  CO2e: number;
   details: string;
   CO2eType: string;
   sourceOrActivity: string;
@@ -154,7 +154,7 @@ class CO2Calculator {
     }
 
     basePrompt +=
-      '\nProvide the answer in the following JSON format: {"CO2e": "value", "CO2eType": "value", sourceOrActivity": "value", "details": "short explanation"}';
+      '\nProvide the answer in the following JSON format: {"CO2e": number, "unit": string, "CO2eType": string, "sourceOrActivity": string, "details": string}. The CO2e value should be rounded to 2 decimal places. The unit should be either "tonnes" or "kg". The CO2eType should indicate if this is a one-time or annual emission. The sourceOrActivity should specify the main source or activity causing the emissions. The details should be as concise as possible.';
 
     return basePrompt;
   }

@@ -5,7 +5,6 @@ import {
   nameField,
   passwordSchema,
   phoneNumField,
-  validateUniqueField,
 } from "./schema-utils";
 
 const baseUrl = process.env.NEXT_PUBLIC_APP_URL;
@@ -349,23 +348,55 @@ export const userSchema = z.object({
   roleId: z.string().min(1, "Role is required"),
 });
 
+const validationResults = new Map<string, boolean>();
+
+export const validateField = async (
+  field: string,
+  value: string,
+  endpoint: string,
+) => {
+  const cacheKey = `${field}:${value}`;
+
+  try {
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
+    const response = await fetch(`${baseUrl}${endpoint}`);
+    const data = await response.json();
+
+    validationResults.set(cacheKey, !data.exists);
+    return !data.exists;
+  } catch (error) {
+    console.error(`Validation error for ${field}:`, error);
+    return false;
+  }
+};
+
+export const getValidationResult = (field: string, value: string) => {
+  return validationResults.get(`${field}:${value}`);
+};
+
 export const assetSchema = z.object({
   serialNumber: z
     .string()
     .min(1, "Serial Number is required")
-    .refine(async (serialNumber) => {
-      return await validateUniqueField({
-        path: `/api/validate/assets?type=serialNumber&serialNumber=${serialNumber}`,
-      });
-    }, "Tag number already exists"),
+    .refine(async (value) => {
+      const result = await validateField(
+        "serialNumber",
+        value,
+        `/api/validate/assets?type=serialNumber&serialNumber=${value}`,
+      );
+      return result;
+    }, "Serial number already exists"),
   name: z
     .string()
     .min(1, "Asset name is required")
-    .refine(async (name) => {
-      return await validateUniqueField({
-        path: `/api/validate/assets?type=assetName&assetName=${name}`,
-      });
-    }, "Tag number already exists"),
+    .refine(async (value) => {
+      const result = await validateField(
+        "name",
+        value,
+        `/api/validate/assets?type=assetName&assetName=${value}`,
+      );
+      return result;
+    }, "Asset name already exists"),
   modelId: z.string().min(1, "Model is required"),
   statusLabelId: z.string().min(1, "Status is required"),
   departmentId: z.string().min(1, "Department is required"),
