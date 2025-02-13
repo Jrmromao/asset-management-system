@@ -81,29 +81,29 @@ export const DetailView: React.FC<DetailViewProps> = ({
             <div className="space-y-1">
               <CardTitle className="text-2xl font-semibold flex items-center gap-2">
                 {title}
-                {tagNumber && (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 w-6 p-0"
-                          onClick={() =>
-                            navigator.clipboard.writeText(String(tagNumber))
-                          }
-                        >
-                          <ClipboardCopy className="h-4 w-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>Copy Tag Number</TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                )}
               </CardTitle>
               {tagNumber && (
                 <p className="text-sm text-muted-foreground">
-                  Tag: {tagNumber}
+                  Tag: {tagNumber}{" "}
+                  {tagNumber && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0"
+                            onClick={() =>
+                              navigator.clipboard.writeText(String(tagNumber))
+                            }
+                          >
+                            <ClipboardCopy className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Copy Tag Number</TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
                 </p>
               )}
             </div>

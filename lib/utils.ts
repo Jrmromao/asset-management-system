@@ -288,32 +288,83 @@ export async function encrypt(payload: any) {
     .sign(key);
 }
 
-export const getCO2ScoreInfo = (score: number) => {
-  if (score <= 100) {
+// export const getCO2ScoreInfo = (score: number) => {
+//   if (score <= 100) {
+//     return {
+//       color: "text-emerald-700",
+//       bgColor: "bg-emerald-50",
+//       icon: BatteryFull,
+//       label: "Excellent",
+//       description: "Very low carbon footprint (<100 kg CO2e)",
+//     };
+//   }
+//   if (score <= 500) {
+//     return {
+//       color: "text-green-700",
+//       bgColor: "bg-green-50",
+//       icon: BatteryMedium,
+//       label: "Good",
+//       description: "Low carbon footprint (100-500 kg CO2e)",
+//     };
+//   }
+//   if (score <= 1000) {
+//     return {
+//       color: "text-yellow-700",
+//       bgColor: "bg-yellow-50",
+//       icon: BatteryLow,
+//       label: "Fair",
+//       description: "Moderate carbon footprint (500-1000 kg CO2e)",
+//     };
+//   }
+//   return {
+//     color: "text-red-700",
+//     bgColor: "bg-red-50",
+//     icon: Battery,
+//     label: "High",
+//     description: "High carbon footprint (>1000 kg CO2e)",
+//   };
+// };
+
+export const getCO2ScoreInfo = (scoreInKg: number) => {
+  // Input is already in kg, just convert to tonnes for comparison
+  const scoreInTonnes = scoreInKg / 1000;
+
+  // Helper function to format the display value
+  const formatDescription = (kg: number) => {
+    if (kg < 1000) {
+      return `${kg} kg`;
+    }
+    return `${kg / 1000} tonnes`;
+  };
+
+  if (scoreInTonnes <= 1) {
+    // 0-1 tonne (0-1000 kg)
     return {
       color: "text-emerald-700",
       bgColor: "bg-emerald-50",
       icon: BatteryFull,
       label: "Excellent",
-      description: "Very low carbon footprint (<100 kg CO2e)",
+      description: `Very low carbon footprint (${formatDescription(scoreInKg)} CO2e)`,
     };
   }
-  if (score <= 500) {
+  if (scoreInTonnes <= 5) {
+    // 1-5 tonnes (1000-5000 kg)
     return {
       color: "text-green-700",
       bgColor: "bg-green-50",
       icon: BatteryMedium,
       label: "Good",
-      description: "Low carbon footprint (100-500 kg CO2e)",
+      description: `Low carbon footprint (${formatDescription(scoreInKg)} CO2e)`,
     };
   }
-  if (score <= 1000) {
+  if (scoreInTonnes <= 10) {
+    // 5-10 tonnes (5000-10000 kg)
     return {
       color: "text-yellow-700",
       bgColor: "bg-yellow-50",
       icon: BatteryLow,
       label: "Fair",
-      description: "Moderate carbon footprint (500-1000 kg CO2e)",
+      description: `Moderate carbon footprint (${formatDescription(scoreInKg)} CO2e)`,
     };
   }
   return {
@@ -321,9 +372,10 @@ export const getCO2ScoreInfo = (score: number) => {
     bgColor: "bg-red-50",
     icon: Battery,
     label: "High",
-    description: "High carbon footprint (>1000 kg CO2e)",
+    description: `High carbon footprint (${formatDescription(scoreInKg)} CO2e)`,
   };
 };
+
 /**
  * Returns color and label configuration for asset availability status
  * @param value - The availability status string
