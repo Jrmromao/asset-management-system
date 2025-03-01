@@ -51,26 +51,27 @@ const Hero = () => {
 
   const stats = [
     {
-      title: "Carbon Reduction",
-      value: "Up to 50%",
+      title: "Carbon Tracking",
+      value: "Comprehensive",
       description:
-        "Projected reduction in carbon footprint based on industry models",
+        "Tools designed to help identify carbon reduction opportunities",
     },
     {
-      title: "Cost Savings",
-      value: "Up to $1M+",
+      title: "Potential Savings",
+      value: "Case-by-case",
       description:
-        "Estimated annual savings potential for enterprise deployments",
+        "Savings potential varies based on organization size and asset portfolio",
     },
     {
-      title: "Asset Efficiency",
-      value: "Target 95%",
-      description: "Projected improvement in asset utilization rates",
+      title: "Asset Visibility",
+      value: "Complete view",
+      description: "Centralized platform for monitoring all registered assets",
     },
     {
-      title: "Compliance",
-      value: "100%",
-      description: "Built to meet current sustainability reporting standards",
+      title: "Compliance Tools",
+      value: "Supporting",
+      description:
+        "Designed with consideration for current sustainability frameworks",
     },
   ];
 
