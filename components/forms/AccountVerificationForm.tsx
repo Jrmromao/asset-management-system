@@ -31,7 +31,7 @@ const AuthForm = () => {
     resolver: zodResolver(accountVerificationSchema),
     defaultValues: {
       code: "",
-      email: email || "jrmromao+redit@gmail.com",
+      email: "",
     },
   });
 
