@@ -140,12 +140,6 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
     isLoading: isLoadingStatusLabels,
   });
 
-  useEffect(() => {
-    return () => {
-      debouncedValidateField.cancel();
-    };
-  }, []);
-
   const handleTemplateChange = (formTemplateId: string) => {
     if (!formTemplateId) {
       form.setValue("formTemplateId", "");
