@@ -36,12 +36,12 @@ export const sidebarLinks = [
     visibleTo: [roles.ADMIN],
   },
 
-  {
-    imgURL: "/icons/reports.svg",
-    route: "/reports",
-    label: "Reports",
-    visibleTo: [roles.ADMIN],
-  },
+  // {
+  //   imgURL: "/icons/reports.svg",
+  //   route: "/reports",
+  //   label: "Reports",
+  //   visibleTo: [roles.ADMIN],
+  // },
   {
     imgURL: "/icons/settings.svg",
     route: "/settings",
