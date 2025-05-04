@@ -94,6 +94,13 @@
   dependencies:
     tslib "^2.5.0"
 
+"@aws-amplify/auth@6.9.1":
+  version "6.9.1"
+  resolved "https://registry.yarnpkg.com/@aws-amplify/auth/-/auth-6.9.1.tgz#97f59116922b70c736000d80c2ce6eabbf4731c2"
+  integrity sha512-zXwaMxPGFq25XFYBRVGqnGcqf9jZ8S/HRbvw9+sajLtB+LzShiuNrpY25/DKTw37UFCB6k9xZqlCrmbSF299LA==
+  dependencies:
+    tslib "^2.5.0"
+
 "@aws-amplify/core@6.5.3":
   version "6.5.3"
   resolved "https://registry.yarnpkg.com/@aws-amplify/core/-/core-6.5.3.tgz#4132f3fff1f95b6e50b44e2f27ab899fac7c036d"
