@@ -98,18 +98,13 @@ class CO2Calculator {
   }
 
   private buildPrompt(input: CO2CalculationInput): string {
-    // Base prompt construction
+    // Enhanced prompt with example and explicit instructions
     let basePrompt = `Calculate the carbon footprint (CO2e) of a ${input.name}`;
     const details: string[] = [];
     const contexts: string[] = [];
 
-    // Add specifications
-    if (input.energyRating) {
-      details.push(`energy rating ${input.energyRating}`);
-    }
-    if (input.weight) {
-      details.push(`weighing ${input.weight}kg`);
-    }
+    if (input.energyRating) details.push(`energy rating ${input.energyRating}`);
+    if (input.weight) details.push(`weighing ${input.weight}kg`);
     if (input.material) {
       details.push(`made of ${input.material}`);
       const materialContext = this.getMaterialContext(input.material);
@@ -120,95 +115,214 @@ class CO2Calculator {
       const categoryContext = this.getCategoryContext(input.category);
       if (categoryContext) contexts.push(categoryContext);
     }
-    if (input.department) {
-      details.push(`used in ${input.department}`);
-    }
+    if (input.department) details.push(`used in ${input.department}`);
 
-    // Add usage patterns
     const usageContext = this.getUsageContext(input);
-    if (usageContext) {
-      contexts.push(usageContext);
-    }
+    if (usageContext) contexts.push(usageContext);
 
-    // Combine all details
-    if (details.length > 0) {
-      basePrompt += ` ${details.join(", ")}`;
-    }
+    if (details.length > 0) basePrompt += ` ${details.join(", ")}`;
+    if (contexts.length > 0) basePrompt += `, ${contexts.join(", ")}`;
 
-    // Add contextual information
-    if (contexts.length > 0) {
-      basePrompt += `, ${contexts.join(", ")}`;
-    }
-
-    // Add calculation guidance
-    basePrompt += ". In your calculation, please consider:";
-    basePrompt +=
-      "\n1. Manufacturing emissions (raw materials, production processes)";
-    basePrompt += "\n2. Transportation emissions (supply chain, delivery)";
-    basePrompt +=
-      "\n3. Usage phase emissions (energy consumption, maintenance)";
-    basePrompt += "\n4. End-of-life emissions (disposal, recycling potential)";
-
+    basePrompt += `. In your calculation, please consider:`;
+    basePrompt += `\n1. Manufacturing emissions (raw materials, production processes)`;
+    basePrompt += `\n2. Transportation emissions (supply chain, delivery)`;
+    basePrompt += `\n3. Usage phase emissions (energy consumption, maintenance)`;
+    basePrompt += `\n4. End-of-life emissions (disposal, recycling potential)`;
     if (input.location) {
       basePrompt += `\nPlease adjust for ${input.location} location-specific factors.`;
     }
 
-    basePrompt +=
-      '\nProvide the answer in the following JSON format: {"CO2e": number, "unit": string, "CO2eType": string, "sourceOrActivity": string, "details": string}. The CO2e value should be rounded to 2 decimal places. The unit should be either "tonnes" or "kg". The CO2eType should indicate if this is a one-time or annual emission. The sourceOrActivity should specify the main source or activity causing the emissions. The details should be as concise as possible.';
+    // Add example Q&A
+    basePrompt += `\n\nExample:`;
+    basePrompt += `\nInput: Laptop, 2kg, energy rating A, used 8h/day, 5 years, in Germany`;
+    basePrompt += `\nOutput: {"CO2e": 320, "unit": "kg", "CO2eType": "one-time", "sourceOrActivity": "manufacturing", "details": "Includes production, transport, 5 years of use, and recycling in Germany."}`;
+
+    basePrompt += `\n\nNow, for the following input:`;
+    basePrompt += `\n${input.name}, ${details.join(", ")}`;
+    basePrompt += `\nReturn only a single JSON object as shown above. Each field must be present. The details field should briefly explain the calculation steps or main factors considered.`;
 
     return basePrompt;
   }
 
-  private async callOpenAI(prompt: string): Promise<CO2Response> {
+  private validateCO2Response(data: any): data is CO2Response {
+    return (
+      typeof data === "object" &&
+      typeof data.CO2e === "number" &&
+      typeof data.unit === "string" &&
+      typeof data.CO2eType === "string" &&
+      typeof data.sourceOrActivity === "string" &&
+      typeof data.details === "string"
+    );
+  }
+
+  // Helper for fetch with timeout
+  private async fetchWithTimeout(
+    resource: RequestInfo,
+    options: RequestInit = {},
+    timeoutMs = 15000,
+  ): Promise<Response> {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const response = await fetch(resource, {
+        ...options,
+        signal: controller.signal,
+      });
+      return response;
+    } finally {
+      clearTimeout(id);
+    }
+  }
+
+  // Helper for retries with exponential backoff
+  private async retryWithBackoff<T>(
+    fn: () => Promise<T>,
+    retries = 3,
+    baseDelay = 500,
+    maxDelay = 4000,
+  ): Promise<T> {
+    let attempt = 0;
+    let lastError: any;
+    while (attempt <= retries) {
+      try {
+        return await fn();
+      } catch (err: any) {
+        lastError = err;
+        if (attempt === retries) break;
+        const delay = Math.min(baseDelay * 2 ** attempt, maxDelay);
+        await new Promise((res) => setTimeout(res, delay));
+        attempt++;
+      }
+    }
+    throw lastError;
+  }
+
+  private async callOpenAI(
+    prompt: string,
+    options?: {
+      model?: string;
+      temperature?: number;
+      maxTokens?: number;
+      timeoutMs?: number;
+      retries?: number;
+      baseDelay?: number;
+      maxDelay?: number;
+    },
+  ): Promise<CO2Response> {
     if (!this.openaiConfig) {
       throw new Error("OpenAI configuration not provided");
     }
 
-    const response = await fetch(process.env.OPENAI_API_URL!, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${this.openaiConfig.apiKey}`,
-      },
-      body: JSON.stringify({
-        model: this.openaiConfig.model || "gpt-4",
-        messages: [
-          {
-            role: "user",
-            content: prompt,
-          },
-        ],
-        max_tokens: this.openaiConfig.maxTokens || 150,
-        temperature: this.openaiConfig.temperature || 0.3,
-        response_format: { type: "json_object" },
-      }),
-    });
+    const model = options?.model || this.openaiConfig.model || "gpt-4-turbo";
+    const temperature =
+      options?.temperature ?? this.openaiConfig.temperature ?? 0.2;
+    const max_tokens = options?.maxTokens ?? this.openaiConfig.maxTokens ?? 300;
+    const timeoutMs = options?.timeoutMs ?? 15000;
+    const retries = options?.retries ?? 3;
+    const baseDelay = options?.baseDelay ?? 500;
+    const maxDelay = options?.maxDelay ?? 4000;
+
+    let response: Response;
+    try {
+      response = await this.retryWithBackoff(
+        () =>
+          this.fetchWithTimeout(
+            process.env.OPENAI_API_URL!,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${this.openaiConfig?.apiKey}`,
+              },
+              body: JSON.stringify({
+                model,
+                messages: [
+                  {
+                    role: "user",
+                    content: prompt,
+                  },
+                ],
+                max_tokens,
+                temperature,
+                response_format: { type: "json_object" },
+              }),
+            },
+            timeoutMs,
+          ),
+        retries,
+        baseDelay,
+        maxDelay,
+      );
+    } catch (err) {
+      console.error("OpenAI API network error (with retries):", err);
+      throw new Error("OpenAI API network error (with retries)");
+    }
 
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error(
+        `OpenAI API error: ${response.statusText}`,
+        "details:",
+        errorText,
+      );
       throw new Error(`OpenAI API error: ${response.statusText}`);
     }
 
-    const data = await response.json();
-
+    let data: any;
     try {
-      return JSON.parse(data.choices[0].message.content);
-    } catch (error) {
-      throw new Error("Failed to parse OpenAI response as CO2Response");
+      data = await response.json();
+    } catch (err) {
+      console.error("Failed to parse OpenAI response as JSON:", err);
+      throw new Error("Failed to parse OpenAI response as JSON");
     }
+
+    let parsed: any;
+    try {
+      if (!data?.choices || !data.choices[0]?.message?.content) {
+        throw new Error("OpenAI response missing choices/message/content");
+      }
+      parsed = JSON.parse(data.choices[0].message.content);
+    } catch (err) {
+      console.error(
+        "Failed to parse OpenAI message content as JSON:",
+        err,
+        data,
+      );
+      throw new Error("Failed to parse OpenAI message content as JSON");
+    }
+
+    if (!this.validateCO2Response(parsed)) {
+      console.error(
+        "OpenAI response does not match CO2Response schema:",
+        parsed,
+      );
+      throw new Error("OpenAI response does not match CO2Response schema");
+    }
+
+    return parsed;
   }
 
   async calculateCO2e(
     input: CO2CalculationInput,
     preferredApi: "openai" | "gemini" = "openai",
+    options?: {
+      model?: string;
+      temperature?: number;
+      maxTokens?: number;
+      timeoutMs?: number;
+      retries?: number;
+      baseDelay?: number;
+      maxDelay?: number;
+    },
   ): Promise<CO2Response> {
     const prompt = this.buildPrompt(input);
-
     try {
       if (preferredApi === "openai" && this.openaiConfig) {
-        return await this.callOpenAI(prompt);
+        return await this.callOpenAI(prompt, options);
       }
       throw new Error("No API configuration available");
     } catch (error) {
+      console.error("Failed to calculate CO2e:", error);
       throw new Error(`Failed to calculate CO2e: ${error}`);
     }
   }
