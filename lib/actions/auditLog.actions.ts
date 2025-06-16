@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/app/db";
 import { z } from "zod";
 import { headers } from "next/headers";
-import { auth } from "@/auth";
 
 // Validation schema for AuditLog
 const auditLogSchema = z.object({
@@ -31,14 +30,8 @@ const getIpAddress = () => {
  * Create a new audit log entry
  */
 
-export async function createAuditLog(data: AuditLogInput) {
+export async function createAuditLog(userId: string, data: AuditLogInput) {
   try {
-    // Validate user session
-    const session = await auth();
-    if (!session) {
-      return { error: "Not authenticated" };
-    }
-
     // Validate input data
     const validatedData = auditLogSchema.parse(data);
 
@@ -49,7 +42,7 @@ export async function createAuditLog(data: AuditLogInput) {
     const auditLog = await prisma.auditLog.create({
       data: {
         ...validatedData,
-        userId: session.user.id || "",
+        userId,
         ipAddress,
       },
     });
@@ -70,11 +63,6 @@ export async function createAuditLog(data: AuditLogInput) {
  */
 export async function getAuditLog(entityId: string) {
   try {
-    const session = await auth();
-    if (!session?.user?.companyId) {
-      return { error: "Not authenticated" };
-    }
-
     const auditLog = await prisma.auditLog.findMany({
       where: { entityId },
     });
@@ -105,11 +93,6 @@ export async function getAuditLogs(
   },
 ) {
   try {
-    const session = await auth();
-    if (!session) {
-      return { error: "Not authenticated" };
-    }
-
     // Build where clause based on filters
     const where = {
       companyId,
@@ -166,19 +149,18 @@ export async function getAuditLogs(
  * Note: In most cases, audit logs should not be updateable for integrity
  * This is included for completeness but should be used with caution
  */
-export async function updateAuditLog(id: string, data: Partial<AuditLogInput>) {
+export async function updateAuditLog(
+  id: string,
+  companyId: string,
+  data: Partial<AuditLogInput>,
+) {
   try {
-    const session = await auth();
-    if (!session) {
-      return { error: "Not authenticated" };
-    }
-
     // Verify the audit log exists and belongs to user's company
     const existingLog = await prisma.auditLog.findUnique({
       where: { id },
     });
 
-    if (!existingLog || existingLog.companyId !== session.user.companyId) {
+    if (!existingLog || existingLog.companyId !== companyId) {
       throw new Error("Unauthorized or audit log not found");
     }
 
@@ -207,19 +189,14 @@ export async function updateAuditLog(id: string, data: Partial<AuditLogInput>) {
  * Note: In most cases, audit logs should not be deletable for integrity
  * This is included for completeness but should be used with caution
  */
-export async function deleteAuditLog(id: string) {
+export async function deleteAuditLog(id: string, companyId: string) {
   try {
-    const session = await auth();
-    if (!session) {
-      return { error: "Not authenticated" };
-    }
-
     // Verify the audit log exists and belongs to user's company
     const existingLog = await prisma.auditLog.findUnique({
       where: { id },
     });
 
-    if (!existingLog || existingLog.companyId !== session.user.companyId) {
+    if (!existingLog || existingLog.companyId !== companyId) {
       throw new Error("Unauthorized or audit log not found");
     }
 
@@ -249,11 +226,6 @@ export async function exportAuditLogs(
   },
 ) {
   try {
-    const session = await auth();
-    if (!session) {
-      return { error: "Not authenticated" };
-    }
-
     // Build where clause based on filters
     const where = {
       companyId,

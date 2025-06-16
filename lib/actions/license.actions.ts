@@ -3,7 +3,6 @@ import { parseStringify } from "@/lib/utils";
 import { ItemType, PrismaClient } from "@prisma/client";
 import { z } from "zod";
 import { assignmentSchema, licenseSchema } from "@/lib/schemas";
-import { auth } from "@/auth";
 import { getAuditLog } from "@/lib/actions/auditLog.actions";
 
 const prisma = new PrismaClient();
@@ -16,12 +15,8 @@ export const create = async (
     if (!validation.success) {
       throw new Error(validation.error.errors[0].message);
     }
-    const session = await auth();
-    if (!session) {
-      return { error: "Not authenticated" };
-    }
 
-    console.log(session.user);
+    console.log(values);
 
     return await prisma.$transaction(async (tx) => {
       // Create license
@@ -81,14 +76,9 @@ export const create = async (
 
 export const getAll = async (): Promise<ActionResponse<License[]>> => {
   try {
-    const session = await auth();
-    if (!session) {
-      return { error: "Not authenticated" };
-    }
-
     const licenses = await prisma.license.findMany({
       where: {
-        companyId: session.user.companyId,
+        companyId: values.companyId,
       },
       include: {
         company: true,
@@ -218,11 +208,6 @@ export async function checkout(
       return { error: validation.error.errors[0].message };
     }
 
-    const session = await auth();
-    if (!session) {
-      return { error: "Not authenticated" };
-    }
-
     const userLicense = await prisma.$transaction(async (tx) => {
       const license = await tx.license.findUnique({
         where: { id: values.itemId },
@@ -249,7 +234,7 @@ export async function checkout(
       const assignment = await tx.userItem.create({
         data: {
           itemType: ItemType.LICENSE,
-          companyId: session.user.companyId,
+          companyId: values.companyId,
           userId: values.userId,
           licenseId: values.itemId,
           quantity: seatsRequested,
@@ -265,7 +250,7 @@ export async function checkout(
           licenseId: values.itemId,
           quantity: seatsRequested,
           type: "allocation",
-          companyId: session.user.companyId,
+          companyId: values.companyId,
           notes: `Assigned ${seatsRequested} seat(s) to user ${values.userId}`,
         },
       });
@@ -276,7 +261,7 @@ export async function checkout(
           entity: "LICENSE",
           entityId: values.itemId,
           userId: values.userId,
-          companyId: session.user.companyId,
+          companyId: values.companyId,
           details: `Assigned ${seatsRequested} seat(s) of license ${license.name}`,
         },
       });
@@ -295,11 +280,6 @@ export async function checkin(
   userLicenseId: string,
 ): Promise<ActionResponse<License>> {
   try {
-    const session = await auth();
-    if (!session) {
-      return { error: "Not authenticated" };
-    }
-
     const result = await prisma.$transaction(
       async (tx) => {
         // Get current assignment
@@ -332,7 +312,7 @@ export async function checkin(
             licenseId: currentAssignment.licenseId!,
             quantity: currentAssignment.quantity,
             type: "release",
-            companyId: session.user.companyId,
+            companyId: values.companyId,
             notes: `Released ${currentAssignment.quantity} seat(s) from user ${currentAssignment.userId}`,
           },
         });
@@ -343,8 +323,8 @@ export async function checkin(
             action: "LICENSE_CHECKIN",
             entity: "LICENSE",
             entityId: currentAssignment.licenseId,
-            userId: session.user.id || "",
-            companyId: session.user.companyId,
+            userId: values.userId,
+            companyId: values.companyId,
             details: `Released ${currentAssignment.quantity} seat(s) from user ${currentAssignment.user.name}`,
           },
         });

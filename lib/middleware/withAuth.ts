@@ -1,59 +1,38 @@
-import { auth } from "@/auth";
-import { Session } from "next-auth";
+import { cookies } from "next/headers";
+import { createServerClient } from "@supabase/ssr";
 
-type ActionFunction<T, R> = (
-  args: T,
-  session: Session,
-) => Promise<ActionResponse<R>>;
+export async function getSupabaseSession() {
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { cookies: () => cookies() },
+  );
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  return user;
+}
 
-export function withAuth<T, R>(action: ActionFunction<T, R>) {
-  return async (args: T): Promise<ActionResponse<R>> => {
-    try {
-      const session = await auth();
-
-      if (!session) {
-        return { error: "Not authenticated" } as ActionResponse<R>;
-      }
-
-      if (!session.user?.companyId) {
-        return {
-          error: "No company associated with user",
-        } as ActionResponse<R>;
-      }
-
-      return action(args, session);
-    } catch (error) {
-      console.error("Authentication error:", error);
-      return {
-        error: error instanceof Error ? error.message : "Authentication failed",
-      } as ActionResponse<R>;
+export function withAuth<TArgs extends any[], TResult>(
+  fn: (session: any, ...args: TArgs) => Promise<TResult>,
+) {
+  return async (...args: TArgs): Promise<TResult> => {
+    const session = await getSupabaseSession();
+    if (!session) {
+      throw new Error("Unauthorized: No Supabase session found");
     }
+    return fn(session, ...args);
   };
 }
 
-export function withAuthNoArgs<R>(
-  action: (session: Session) => Promise<ActionResponse<R>>,
+export function withAuthNoArgs<TResult>(
+  fn: (session: any) => Promise<TResult>,
 ) {
-  return async (): Promise<ActionResponse<R>> => {
-    try {
-      const session = await auth();
-
-      if (!session) {
-        return { error: "Not authenticated" } as ActionResponse<R>;
-      }
-
-      if (!session.user?.companyId) {
-        return {
-          error: "No company associated with user",
-        } as ActionResponse<R>;
-      }
-
-      return action(session);
-    } catch (error) {
-      console.error("Authentication error:", error);
-      return {
-        error: error instanceof Error ? error.message : "Authentication failed",
-      } as ActionResponse<R>;
+  return async (): Promise<TResult> => {
+    const session = await getSupabaseSession();
+    if (!session) {
+      throw new Error("Unauthorized: No Supabase session found");
     }
+    return fn(session);
   };
 }

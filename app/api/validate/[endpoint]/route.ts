@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/app/db";
-import { auth } from "@/auth";
 
 export async function POST(
   req: Request,
@@ -8,7 +7,7 @@ export async function POST(
 ) {
   try {
     const body = await req.json();
-    const session = await auth();
+
     // Special handling for assignment validation
     if (params.endpoint === "assignment") {
       const { userId, itemId, type } = body;
@@ -90,7 +89,6 @@ export async function POST(
       case "employeeId":
         const employeeCheck = await prisma.user.findFirst({
           where: {
-            companyId: session?.user.companyId,
             employeeId: {
               equals: value as string,
               mode: "insensitive",
@@ -121,23 +119,12 @@ export async function POST(
             },
           },
         });
-
-        // const accessorySerialNumber = await prisma.accessory.findFirst({
-        //   where: {
-        //     serialNumber: {
-        //       equals: value as string,
-        //       mode: "insensitive",
-        //     },
-        //   },
-        // });
-
         exists = assetSerialNumber !== null;
         break;
 
       case "poNumber":
         const assetPONumber = await prisma.asset.findFirst({
           where: {
-            companyId: session?.user.companyId,
             poNumber: {
               equals: value as string,
               mode: "insensitive",
@@ -147,7 +134,6 @@ export async function POST(
 
         const accessoryPONumber = await prisma.accessory.findFirst({
           where: {
-            companyId: session?.user.companyId,
             poNumber: {
               equals: value as string,
               mode: "insensitive",
@@ -157,7 +143,6 @@ export async function POST(
 
         const licensePONumber = await prisma.license.findFirst({
           where: {
-            companyId: session?.user.companyId,
             poNumber: {
               equals: value as string,
               mode: "insensitive",

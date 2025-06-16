@@ -7,6 +7,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum UserStatus {
+  INVITED
+  ACTIVE
+  DISABLED
+}
+
 model User {
   id                    String        @id @default(cuid())
   email                 String        @unique
@@ -31,6 +37,7 @@ model User {
   dataProcessingConsent Boolean       @default(false)
   marketingConsent      Boolean       @default(false)
   lastConsentUpdate     DateTime?
+  status                UserStatus    @default(INVITED)
 
   // Relations
   company    Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)

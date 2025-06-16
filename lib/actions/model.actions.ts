@@ -2,7 +2,6 @@
 
 import { Prisma } from "@prisma/client";
 import { parseStringify } from "@/lib/utils";
-import { auth } from "@/auth";
 import { z } from "zod";
 import { modelSchema } from "@/lib/schemas";
 import { prisma } from "@/app/db";
@@ -11,12 +10,6 @@ export async function insert(
   values: z.infer<typeof modelSchema>,
 ): Promise<ActionResponse<Model>> {
   try {
-    // Auth check
-    const session = await auth();
-    if (!session?.user?.companyId) {
-      return { error: "Not authenticated" };
-    }
-
     const validation = modelSchema.safeParse(values);
     if (!validation.success) {
       return { error: validation.error.errors[0].message };
@@ -25,7 +18,6 @@ export async function insert(
     const model = await prisma.model.create({
       data: {
         ...validation.data,
-        companyId: session.user.companyId,
       },
     });
 
@@ -53,13 +45,7 @@ export async function getAll(
   params?: QueryParams,
 ): Promise<ActionResponse<Model[]>> {
   try {
-    const session = await auth();
-    if (!session?.user?.companyId) {
-      return { error: "Not authenticated" };
-    }
-
     const where: Prisma.ModelWhereInput = {
-      companyId: session.user.companyId,
       ...(params?.categoryId && { categoryId: params.categoryId }),
       ...(params?.search && {
         OR: [
@@ -92,15 +78,8 @@ export async function getAllSimple(
   params?: QueryParams,
 ): Promise<ActionResponse<Model[]>> {
   try {
-    // Auth check
-    const session = await auth();
-    if (!session?.user?.companyId) {
-      return { error: "Not authenticated" };
-    }
-
     // Build query
     const where: Prisma.ModelWhereInput = {
-      companyId: session.user.companyId,
       ...(params?.categoryId && { categoryId: params.categoryId }),
       ...(params?.search && {
         OR: [
@@ -133,17 +112,10 @@ export async function getAllSimple(
 
 export async function findById(id: string): Promise<ActionResponse<Model>> {
   try {
-    // Auth check
-    const session = await auth();
-    if (!session?.user?.companyId) {
-      return { error: "Not authenticated" };
-    }
-
     // Fetch model
     const model = await prisma.model.findFirst({
       where: {
         id,
-        companyId: session.user.companyId,
       },
       include: {
         manufacturer: true,
@@ -182,17 +154,10 @@ export async function findById(id: string): Promise<ActionResponse<Model>> {
 
 export async function remove(id: string): Promise<ActionResponse<Model>> {
   try {
-    // Auth check
-    const session = await auth();
-    if (!session?.user?.companyId) {
-      return { error: "Not authenticated" };
-    }
-
     // Delete model
     await prisma.model.delete({
       where: {
         id,
-        companyId: session.user.companyId,
       },
     });
 
@@ -213,11 +178,6 @@ export async function update(
   data: Partial<Model>,
 ): Promise<ActionResponse<Model>> {
   try {
-    const session = await auth();
-    if (!session) {
-      return { error: "Not authenticated" };
-    }
-
     const model = await prisma.model.update({
       where: { id },
       data: {
@@ -225,7 +185,6 @@ export async function update(
         modelNo: data.modelNo,
         active: data.active,
         manufacturerId: data.manufacturerId,
-        companyId: session.user.companyId,
       },
     });
 

@@ -1,5 +1,3 @@
-import { auth } from "@/auth";
-
 export const getActionColor = (action: string) => {
   if (!action) return "text-gray-600"; // Safe fallback
 
@@ -57,14 +55,6 @@ export interface AssetFilter {
   type: string[];
   status: string[];
   lifecycle: string[];
-}
-
-export async function checkAuth() {
-  const session = await auth();
-  if (!session?.user?.companyId) {
-    return { error: "Unauthorized", companyId: null };
-  }
-  return { error: null, companyId: session.user.companyId };
 }
 
 export function handleError(

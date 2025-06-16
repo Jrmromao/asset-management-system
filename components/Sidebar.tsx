@@ -8,7 +8,7 @@ import { usePathname, useRouter } from "next/navigation";
 import Footer from "@/components/Footer";
 import React, { useMemo } from "react";
 import HeaderIcon from "@/components/page/HeaderIcon";
-import { useSession } from "next-auth/react"; // Remove getSession import
+import { supabase } from "@/lib/supabaseClient";
 
 interface SidebarLinkProps {
   item: {
@@ -58,13 +58,14 @@ SidebarLink.displayName = "SidebarLink";
 const Sidebar = () => {
   const pathName = usePathname();
   const router = useRouter();
-  const { data: session, status } = useSession({
-    required: false,
-    onUnauthenticated() {
-      // Handle unauthenticated state if needed
-    },
-  });
-  const userRole = session?.user?.role || "guest";
+
+  const [user, setUser] = React.useState<any>(null);
+
+  React.useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setUser(data?.user || null));
+  }, []);
+
+  const userRole = user?.user_metadata?.role || "guest";
 
   // Memoize filtered links
   const filteredLinks = useMemo(

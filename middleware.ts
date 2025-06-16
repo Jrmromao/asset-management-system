@@ -1,80 +1,55 @@
-import authConfig from "./auth.config";
-import NextAuth from "next-auth";
-import {
-  apiAuthPrefix,
-  authRoutes,
-  DEFAULT_LOGIN_REDIRECT,
-  publicRoutes,
-} from "@/routes";
+import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/utils/supabase/middleware";
 
-const { auth } = NextAuth(authConfig);
+// Define routes that don't require authentication
+const PUBLIC_ROUTES = [
+  "/sign-in",
+  "/sign-up",
+  "/forgot-password",
+  "/forgot-password/confirm",
+  "/account-verification",
+  "/api", // Allow all API routes (customize as needed)
+];
 
-export default auth((req) => {
-  const { nextUrl } = req;
-  const hostname = req.headers.get("host") || "";
+export async function middleware(request: NextRequest) {
+  const response = NextResponse.next();
+  const supabase = createClient(request, response);
 
-  const isLoggedIn = !!req.auth;
-  const isAPIAuthRoute = nextUrl.pathname.startsWith(apiAuthPrefix);
-  const isPublicRoute = publicRoutes.includes(nextUrl.pathname);
-  const isAuthRoute = authRoutes.includes(nextUrl.pathname);
-  const isValidationRoute = nextUrl.pathname.startsWith("/api/validate");
+  const pathname = request.nextUrl.pathname;
+  console.log(`[middleware] Pathname: ${pathname}`);
 
-  if (isValidationRoute) {
-    return;
+  // Always use getUser() for secure auth in middleware!
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  console.log(`[middleware] User:`, user ? user.id : null);
+
+  // Allow public routes
+  if (PUBLIC_ROUTES.some((route) => pathname.startsWith(route))) {
+    console.log(`[middleware] Public route, allowing: ${pathname}`);
+    return response;
   }
 
-  if (isAPIAuthRoute) {
-    return;
+  // If not authenticated, redirect to sign-in
+  if (!user) {
+    const signInUrl = new URL("/sign-in", request.url);
+    signInUrl.searchParams.set("callbackUrl", request.url);
+    console.log(`[middleware] Not authenticated, redirecting to: ${signInUrl}`);
+    return NextResponse.redirect(signInUrl);
   }
 
-  // Handle auth routes (like sign-in, sign-up)
-  if (isAuthRoute) {
-    if (isLoggedIn) {
-      // Check if there's a callbackUrl in the search parameters
-      const callbackUrl = nextUrl.searchParams.get("callbackUrl");
-      if (callbackUrl) {
-        // Validate the callback URL to prevent open redirect vulnerabilities
-        const validatedUrl = validateCallbackUrl(callbackUrl);
-        if (validatedUrl) {
-          return Response.redirect(new URL(validatedUrl, nextUrl));
-        }
-      }
-      // If no valid callback URL, redirect to default
-      return Response.redirect(new URL(DEFAULT_LOGIN_REDIRECT, nextUrl));
-    }
-    return;
-  }
-
-  // Handle protected routes
-  if (!isLoggedIn && !isPublicRoute) {
-    const signInUrl = new URL("/sign-in", nextUrl);
-    // Ensure the full pathname with query parameters is captured
-    signInUrl.searchParams.set(
-      "callbackUrl",
-      nextUrl.href.replace(nextUrl.origin, ""),
-    );
-    return Response.redirect(signInUrl);
-  }
-
-  return;
-}) as any;
-
-// Helper function to validate callback URLs
-function validateCallbackUrl(url: string): string | null {
-  // Basic validation - ensure the URL starts with a forward slash
-  if (!url.startsWith("/")) return null;
-
-  // Add more validation as needed, for example:
-  // - Check against allowed paths
-  // - Prevent external redirects
-  // - Sanitize the URL
-
-  return url;
+  // User is authenticated, allow request
+  console.log(`[middleware] Authenticated user, allowing: ${pathname}`);
+  return response;
 }
 
 export const config = {
   matcher: [
-    "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
-    "/(api|trpc)(.*)",
+    /*
+      Match all routes except for:
+      - static files
+      - public routes
+    */
+    "/((?!_next/static|_next/image|favicon.ico|sign-in|sign-up|forgot-password|forgot-password/confirm|account-verification|api).*)",
   ],
 };

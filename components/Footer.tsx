@@ -1,20 +1,23 @@
 "use client";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Image from "next/image";
-import { signOut, useSession } from "next-auth/react";
+import { supabase } from "@/lib/supabaseClient";
 
 const Footer = ({ type = "desktop" }: { type?: "desktop" | "mobile" }) => {
-  const { data: session, status } = useSession();
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    const getUser = async () => {
+      const { data } = await supabase.auth.getUser();
+      setUser(data?.user || null);
+    };
+    getUser();
+  }, []);
 
   // Get username with fallback
-  const username = session?.user?.name || "Guest";
-  const firstLetter = username[0] || "G";
-  const userEmail = session?.user?.email || "";
-
-  // Optional: Show loading state while session is loading
-  if (status === "loading") {
-    return <div className="footer">Loading...</div>;
-  }
+  const username = user?.user_metadata?.name || user?.email || "Guest";
+  const firstLetter =
+    typeof username === "string" && username.length > 0 ? username[0] : "G";
 
   return (
     <footer className="footer">
@@ -27,12 +30,14 @@ const Footer = ({ type = "desktop" }: { type?: "desktop" | "mobile" }) => {
         <h1 className="text-14 truncate text-gray-700 font-semibold">
           {username}
         </h1>
-        {/*<p className="text-14 truncate font-small text-gray-600">{userEmail}</p>*/}
       </div>
 
       <div
         className="footer_image"
-        onClick={() => signOut({ callbackUrl: "/sign-in" })}
+        onClick={async () => {
+          await supabase.auth.signOut();
+          window.location.href = "/sign-in";
+        }}
       >
         <Image src="/icons/logout.svg" fill alt="logout" />
       </div>

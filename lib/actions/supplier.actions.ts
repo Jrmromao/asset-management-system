@@ -1,7 +1,6 @@
 "use server";
 
 import { prisma } from "@/app/db";
-import { auth } from "@/auth";
 import { parseStringify } from "@/lib/utils";
 import { supplierSchema } from "@/lib/schemas";
 import { revalidatePath } from "next/cache";
@@ -18,12 +17,6 @@ export async function insert(
       return { error: validation.error.errors[0].message };
     }
 
-    // Check authentication
-    const session = await auth();
-    if (!session?.user?.companyId) {
-      return { error: "Unauthorized: Company ID not found" };
-    }
-
     const supplierData: Prisma.SupplierCreateInput = {
       name: validation.data.name,
       contactName: validation.data.contactName,
@@ -33,11 +26,6 @@ export async function insert(
       state: validation.data.state,
       zip: validation.data.zip,
       country: validation.data.country,
-      company: {
-        connect: {
-          id: session.user.companyId,
-        },
-      },
       ...(validation.data.phoneNum && { phoneNum: validation.data.phoneNum }),
       ...(validation.data.url && { url: validation.data.url }),
       ...(validation.data.notes && { notes: validation.data.notes }),
@@ -69,14 +57,7 @@ export async function insert(
 
 export async function getAll(): Promise<ActionResponse<Supplier[]>> {
   try {
-    const session = await auth();
-    if (!session?.user?.companyId) {
-      return { error: "Not authenticated" };
-    }
     const suppliers = await prisma.supplier.findMany({
-      where: {
-        companyId: session.user.companyId,
-      },
       orderBy: {
         createdAt: "desc",
       },
@@ -97,10 +78,6 @@ export async function getAll(): Promise<ActionResponse<Supplier[]>> {
 
 export async function getById(id: string): Promise<ActionResponse<Supplier>> {
   try {
-    const session = await auth();
-    if (!session?.user?.companyId) {
-      return { error: "Not authenticated" };
-    }
     const supplier = await prisma.supplier.findUnique({
       where: {
         id,
@@ -131,12 +108,6 @@ export async function update(
       return { error: validation.error.errors[0].message };
     }
 
-    // Check authentication
-    const session = await auth();
-    if (!session?.user?.companyId) {
-      return { error: "Unauthorized: Company ID not found" };
-    }
-
     const supplierData: Prisma.SupplierUpdateInput = {
       name: validation.data.name,
       contactName: validation.data.contactName,
@@ -146,11 +117,6 @@ export async function update(
       state: validation.data.state,
       zip: validation.data.zip,
       country: validation.data.country,
-      company: {
-        connect: {
-          id: session.user.companyId,
-        },
-      },
       ...(validation.data.phoneNum && { phoneNum: validation.data.phoneNum }),
       ...(validation.data.url && { url: validation.data.url }),
       ...(validation.data.notes && { notes: validation.data.notes }),
@@ -178,11 +144,6 @@ export async function update(
 
 export async function remove(id: string): Promise<ActionResponse<Supplier>> {
   try {
-    const session = await auth();
-    if (!session?.user?.companyId) {
-      return { error: "Unauthorized: Company ID not found" };
-    }
-
     const supplier = await prisma.supplier.delete({
       where: {
         id,

@@ -1,6 +1,3 @@
-// Import withSentryConfig at the top
-import { withSentryConfig } from "@sentry/nextjs";
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   typescript: {
@@ -9,20 +6,9 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-  domains: ["www.google.com", "www.gstatic.com"],
-  serverComponentsExternalPackages: ["winston"],
+  images: {
+    domains: ["www.google.com", "www.gstatic.com"],
+  },
 };
 
-export default withSentryConfig(nextConfig, {
-  org: "qlientel",
-  project: "ecokeepr",
-  silent: !process.env.CI,
-  widenClientFileUpload: true,
-  reactComponentAnnotation: {
-    enabled: true,
-  },
-  tunnelRoute: "/monitoring",
-  hideSourceMaps: true,
-  disableLogger: true,
-  automaticVercelMonitors: true,
-});
+export default nextConfig;

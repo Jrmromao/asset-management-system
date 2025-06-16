@@ -2,7 +2,6 @@
 
 import { Prisma } from "@prisma/client";
 import { parseStringify } from "@/lib/utils";
-import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/app/db";
 
@@ -83,7 +82,6 @@ export async function findById(
   id: string,
 ): Promise<ActionResponse<Department>> {
   try {
-    const session = await auth();
     if (!session) {
       return { error: "Not authenticated" };
     }

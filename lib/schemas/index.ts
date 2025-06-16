@@ -183,8 +183,6 @@ export const accountVerificationSchema = z.object({
 
 export const forgotPasswordConfirmSchema = z
   .object({
-    email: z.string().optional(),
-    code: z.string().min(1, "Verification Code is required"),
     newPassword: passwordSchema,
     confirmNewPassword: z.string().min(1, "Repeat password is required"),
   })

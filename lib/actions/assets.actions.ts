@@ -2,7 +2,6 @@
 
 import { prisma } from "@/app/db";
 import { parseStringify, processRecordContents, roundFloat } from "@/lib/utils";
-import { auth } from "@/auth";
 import { z } from "zod";
 import { assetSchema, assignmentSchema } from "@/lib/schemas";
 import { Prisma } from "@prisma/client";
@@ -33,11 +32,6 @@ const assetIncludes = {
 
 export async function getAll(): Promise<ActionResponse<Asset[]>> {
   try {
-    const session = await auth();
-    if (!session?.user?.companyId) {
-      return { error: "Unauthorized access" };
-    }
-
     const assets = await prisma.asset.findMany({
       include: assetIncludes,
       orderBy: { createdAt: "desc" },
@@ -607,11 +601,6 @@ async function retryWithExponentialBackoff<T>(
 export async function insert(
   values: z.infer<typeof assetSchema>,
 ): Promise<ActionResponse<Asset>> {
-  const session = await auth();
-  if (!session?.user) {
-    return { error: "Unauthorized access" };
-  }
-
   try {
     const validation = await assetSchema.safeParseAsync(values);
     if (!validation.success) {

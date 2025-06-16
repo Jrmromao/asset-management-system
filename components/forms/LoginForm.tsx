@@ -13,11 +13,10 @@ import { FaGoogle } from "react-icons/fa";
 import CustomInput from "@/components/CustomInput";
 import { loginSchema } from "@/lib/schemas";
 import { FormError } from "@/components/forms/form-error";
-import { login } from "@/lib/actions/user.actions";
-import { signIn } from "next-auth/react";
 import { DEFAULT_LOGIN_REDIRECT } from "@/routes";
 import ReCAPTCHA from "@/components/ReCAPTCHA";
 import HeaderIcon from "@/components/page/HeaderIcon";
+import { supabase } from "@/lib/supabaseClient";
 
 const AuthForm = () => {
   const [error, setError] = useState<string>("");
@@ -46,25 +45,32 @@ const AuthForm = () => {
       return;
     }
 
+    setError("");
     startTransition(async () => {
       try {
-        const response = await login(data);
+        const response = await fetch("/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: data.email,
+            password: data.password,
+          }),
+        });
 
-        if (response?.error) {
-          console.error(response);
-          setError(response.error);
+        const result = await response.json();
+
+        if (!response.ok) {
+          setError(result.error || "Invalid email or password");
         } else {
-          router.push(validCallbackUrl);
+          window.location.href = "/admin";
         }
       } catch (e) {
+        setError("Unexpected error during login");
         console.error(e);
       }
     });
   };
 
-  const handleSocialLogin = async (provider: "github" | "google") => {
-    await signIn(provider, { callbackUrl: validCallbackUrl });
-  };
   return (
     <section className={"auth-form"}>
       <header className={"flex flex-col gap-5 md:gap-8"}>
@@ -153,17 +159,6 @@ const AuthForm = () => {
                 <span className="px-2 bg-white text-gray-500">OR</span>
               </div>
             </div>
-            <CustomButton
-              className={
-                "bg-white border border-gray-300 rounded-md py-2 px-4 flex items-center hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 text-black-1 w-full"
-              }
-              size="lg"
-              variant="outline"
-              action={() => handleSocialLogin("google")}
-              value="Sign In with Google"
-              Icon={FaGoogle}
-              disabled={isPending}
-            />
           </>
           <footer className={"flex justify-center gap-1"}>
             <p>{"Don't have an account?"}</p>

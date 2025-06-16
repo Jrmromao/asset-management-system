@@ -2,7 +2,6 @@
 
 import { PrismaClient } from "@prisma/client";
 import { parseStringify } from "@/lib/utils";
-import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 
 const prisma = new PrismaClient();
@@ -14,11 +13,6 @@ type ActionReturn<T> = {
 
 export async function getAll(): Promise<ActionReturn<Role[]>> {
   try {
-    const session = await auth();
-    if (!session) {
-      return { error: "Not authenticated" };
-    }
-
     const roles = await prisma.role.findMany({
       where: {},
       orderBy: {
@@ -44,11 +38,6 @@ export async function insert(
   data: Pick<Role, "name">,
 ): Promise<ActionReturn<Role>> {
   try {
-    const session = await auth();
-    if (!session) {
-      return { error: "Not authenticated" };
-    }
-
     // Check if role with same name exists in company
     const existingRole = await prisma.role.findFirst({
       where: {
@@ -78,10 +67,6 @@ export async function insert(
 
 export async function getRoleById(id: string): Promise<ActionReturn<Role>> {
   try {
-    const session = await auth();
-    if (!session) {
-      return { error: "Not authenticated" };
-    }
     const role = await prisma.role.findFirst({
       where: {
         id,
@@ -112,10 +97,6 @@ export async function getRoleById(id: string): Promise<ActionReturn<Role>> {
 
 export async function remove(id: string): Promise<ActionReturn<Role>> {
   try {
-    const session = await auth();
-    if (!session) {
-      return { error: "Not authenticated" };
-    }
     const role = await prisma.role.delete({
       where: {
         id,

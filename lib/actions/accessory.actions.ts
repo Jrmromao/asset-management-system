@@ -2,7 +2,6 @@
 
 import { prisma } from "@/app/db";
 import { parseStringify, processRecordContents } from "@/lib/utils";
-import { auth } from "@/auth";
 import { z } from "zod";
 import { accessorySchema, assignmentSchema } from "@/lib/schemas";
 import { getAuditLog } from "@/lib/actions/auditLog.actions";
@@ -15,63 +14,61 @@ const RETRY_DELAY = 1000; // 1 second
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-export const insert = withAuth<z.infer<typeof accessorySchema>, Accessory>(
-  async (values, session) => {
-    try {
-      const validation = accessorySchema.safeParse(values);
-      if (!validation.success) {
-        throw new Error(validation.error.errors[0].message);
-      }
-
-      return await prisma.$transaction(async (tx) => {
-        const accessory = await tx.accessory.create({
-          data: {
-            name: values.name,
-            alertEmail: values.alertEmail,
-            serialNumber: values.serialNumber,
-            reorderPoint: Number(values.reorderPoint),
-            totalQuantityCount: Number(values.totalQuantityCount),
-            modelNumber: values.modelNumber,
-            companyId: session.user.companyId,
-            statusLabelId: values.statusLabelId,
-            departmentId: values.departmentId,
-            locationId: values.locationId,
-            inventoryId: values.inventoryId,
-            categoryId: values.categoryId,
-          },
-        });
-
-        await tx.accessoryStock.create({
-          data: {
-            accessoryId: accessory.id,
-            quantity: Number(values.totalQuantityCount),
-            type: "purchase",
-            companyId: session.user.companyId,
-            notes: `Initial stock purchase of ${values.totalQuantityCount} units`,
-          },
-        });
-
-        await tx.auditLog.create({
-          data: {
-            action: "ACCESSORY_CREATED",
-            entity: "ACCESSORY",
-            entityId: accessory.id,
-            userId: session.user.id || "",
-            companyId: session.user.companyId,
-            details: `Created accessory ${values.name} with initial stock of ${values.totalQuantityCount} units`,
-          },
-        });
-
-        return { data: parseStringify(accessory) };
-      });
-    } catch (error) {
-      console.error(error);
-      return {
-        error: error instanceof Error ? error.message : "Unknown error",
-      };
+export const insert = withAuth<Accessory>(async (values, session) => {
+  try {
+    const validation = accessorySchema.safeParse(values);
+    if (!validation.success) {
+      throw new Error(validation.error.errors[0].message);
     }
-  },
-);
+
+    return await prisma.$transaction(async (tx) => {
+      const accessory = await tx.accessory.create({
+        data: {
+          name: values.name,
+          alertEmail: values.alertEmail,
+          serialNumber: values.serialNumber,
+          reorderPoint: Number(values.reorderPoint),
+          totalQuantityCount: Number(values.totalQuantityCount),
+          modelNumber: values.modelNumber,
+          companyId: session.user.companyId,
+          statusLabelId: values.statusLabelId,
+          departmentId: values.departmentId,
+          locationId: values.locationId,
+          inventoryId: values.inventoryId,
+          categoryId: values.categoryId,
+        },
+      });
+
+      await tx.accessoryStock.create({
+        data: {
+          accessoryId: accessory.id,
+          quantity: Number(values.totalQuantityCount),
+          type: "purchase",
+          companyId: session.user.companyId,
+          notes: `Initial stock purchase of ${values.totalQuantityCount} units`,
+        },
+      });
+
+      await tx.auditLog.create({
+        data: {
+          action: "ACCESSORY_CREATED",
+          entity: "ACCESSORY",
+          entityId: accessory.id,
+          userId: session.user.id || "",
+          companyId: session.user.companyId,
+          details: `Created accessory ${values.name} with initial stock of ${values.totalQuantityCount} units`,
+        },
+      });
+
+      return { data: parseStringify(accessory) };
+    });
+  } catch (error) {
+    console.error(error);
+    return {
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+});
 
 export const getAll = withAuthNoArgs<Accessory[]>(async (session) => {
   try {

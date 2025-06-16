@@ -1,7 +1,6 @@
 "use server";
 
 import { prisma } from "@/app/db";
-import { auth } from "@/auth";
 import { z } from "zod";
 import { categorySchema } from "@/lib/schemas";
 import { Prisma } from "@prisma/client";
@@ -17,14 +16,6 @@ export async function insert(
       return {
         success: false,
         error: "Invalid input data",
-      };
-    }
-
-    const session = await auth();
-    if (!session?.user?.companyId) {
-      return {
-        success: false,
-        error: "Unauthorized: No valid session found",
       };
     }
 
@@ -74,13 +65,6 @@ export async function getAll(options?: {
 }): Promise<ActionResponse<StoredCategory[]>> {
   try {
     // Validate session
-    const session = await auth();
-    if (!session?.user?.companyId) {
-      return {
-        success: false,
-        error: "Unauthorized: No valid session found",
-      };
-    }
 
     // Build the where clause with proper Prisma types
     const where: Prisma.CategoryWhereInput = {
@@ -140,13 +124,6 @@ export async function getAll(options?: {
 export async function remove(id: string): Promise<ActionResponse<Category>> {
   try {
     // Validate session
-    const session = await auth();
-    if (!session?.user?.companyId) {
-      return {
-        success: false,
-        error: "Unauthorized: No valid session found",
-      };
-    }
 
     // Get the category
     const category = await prisma.category.delete({
