@@ -1,0 +1,26 @@
+# .cursor
+# Context for Cursor AI Assistant
+
+# Project: Asset Management & Carbon Footprint Tracking SaaS
+
+Purpose: Modern SaaS platform for organizations to manage assets and accurately track carbon footprint, supporting ESG compliance and sustainability goals.
+
+Main Features:
+- Asset management (CRUD, lifecycle, assignment)
+- Automated CO₂ calculations per asset
+- ESG-ready reporting and dashboards
+- Secure authentication and onboarding (Clerk)
+- File storage (AWS S3)
+- Transactional email (Resend)
+- Modern UI (Tailwind CSS, shadcn/ui)
+
+Tech Stack:
+- yarn (package manager)
+- Prisma (ORM)
+- Clerk (auth)
+- AWS RDS PostgreSQL (database)
+- Resend (email)
+- Tailwind CSS, shadcn/ui (UI)
+- AWS S3 (file storage)
+
+For full details, see docs/project-overview.md, docs/mvp-plan.md, and docs/go-to-market-strategy.md. 

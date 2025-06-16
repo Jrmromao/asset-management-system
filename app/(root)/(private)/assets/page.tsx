@@ -27,7 +27,6 @@ import { useAssetQuery } from "@/hooks/queries/useAssetQuery";
 
 const Assets = () => {
   const { isLoading, assets, deleteItem } = useAssetQuery();
-
   const [openDialog, closeDialog, isOpen] = useDialogStore((state) => [
     state.onOpen,
     state.onClose,
@@ -35,9 +34,7 @@ const Assets = () => {
   ]);
   const navigate = useRouter();
 
-  const [filteredData, setFilteredData] = useState(
-    assets.filter((item) => item.name === "Test"),
-  );
+  const [filteredData, setFilteredData] = useState<Asset[]>([]);
   const [filterDialogOpen, setFilterDialogOpen] = useState(false);
   const [filters, setFilters] = useState({
     supplier: "",
@@ -45,39 +42,49 @@ const Assets = () => {
   });
 
   useEffect(() => {
-    const activeAssets = assets.filter((asset) => asset.status !== "Inactive");
-    setFilteredData(activeAssets);
-  }, [assets]);
-
-  const handleFilter = () => {
-    setFilterDialogOpen(true);
-  };
-
-  const handleSearch = (value: string) => {
-    if (!value.trim()) {
+    if (assets.length > 0) {
       const activeAssets = assets.filter(
         (asset) => asset.status !== "Inactive",
       );
       setFilteredData(activeAssets);
-      return;
     }
+  }, [assets]);
 
-    const searchResults = assets.filter(
-      (item: any) =>
-        item.status !== "Inactive" &&
-        Object.entries(item).some(([key, val]) => {
-          if (typeof val === "string" || typeof val === "number") {
-            return val.toString().toLowerCase().includes(value.toLowerCase());
-          }
-          return false;
-        }),
-    );
-    setFilteredData(searchResults);
-  };
+  const handleFilter = useCallback(() => {
+    setFilterDialogOpen(true);
+  }, []);
 
-  const handleView = async (id: string) => {
-    navigate.push(`/assets/view/${id}`);
-  };
+  const handleSearch = useCallback(
+    (value: string) => {
+      if (!value.trim()) {
+        const activeAssets = assets.filter(
+          (asset) => asset.status !== "Inactive",
+        );
+        setFilteredData(activeAssets);
+        return;
+      }
+
+      const searchResults = assets.filter(
+        (item) =>
+          item.status !== "Inactive" &&
+          Object.entries(item).some(([key, val]) => {
+            if (typeof val === "string" || typeof val === "number") {
+              return val.toString().toLowerCase().includes(value.toLowerCase());
+            }
+            return false;
+          }),
+      );
+      setFilteredData(searchResults);
+    },
+    [assets],
+  );
+
+  const handleView = useCallback(
+    async (id: string) => {
+      navigate.push(`/assets/view/${id}`);
+    },
+    [navigate],
+  );
 
   const onDelete = useCallback(
     (asset: Asset) => asset?.id && deleteItem(asset.id),
@@ -89,33 +96,42 @@ const Assets = () => {
     [handleView],
   );
 
-  const applyFilters = () => {
+  const applyFilters = useCallback(() => {
     const results = assets
-      .filter((asset) => asset.status !== "Inactive") // Filter out inactive first
+      .filter((asset) => asset.status !== "Inactive")
       .filter((asset) => {
         // Your other filter conditions here
         return true; // modify based on your filters object
       });
     setFilteredData(results);
     setFilterDialogOpen(false);
-  };
+  }, [assets]);
 
   const columns = useMemo(
     () => assetColumns({ onDelete, onView }),
     [onDelete, onView],
   );
 
-  const availableAssets = assets.filter((asset) => {
-    return asset.statusLabel?.name.toUpperCase() === "AVAILABLE";
-  });
-  const maintenanceDue = assets.filter((asset) => {
-    const dueDate = new Date();
-    const thirtyDaysFromNow = new Date();
-    thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
-    return dueDate <= thirtyDaysFromNow;
-  }).length;
+  const availableAssets = useMemo(
+    () =>
+      assets.filter(
+        (asset) => asset.statusLabel?.name.toUpperCase() === "AVAILABLE",
+      ),
+    [assets],
+  );
 
-  const TopCards = () => {
+  const maintenanceDue = useMemo(
+    () =>
+      assets.filter((asset) => {
+        const dueDate = new Date();
+        const thirtyDaysFromNow = new Date();
+        thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+        return dueDate <= thirtyDaysFromNow;
+      }).length,
+    [assets],
+  );
+
+  const TopCards = useCallback(() => {
     const cardData = [
       {
         title: "Total Assets",
@@ -136,11 +152,10 @@ const Assets = () => {
     ];
 
     return <StatusCards cards={cardData} />;
-  };
+  }, [assets.length, availableAssets.length, maintenanceDue]);
 
   return (
     <div className="p-6 space-y-6">
-      {/* Breadcrumb */}
       <Breadcrumb className="hidden md:flex">
         <BreadcrumbList>
           <BreadcrumbItem>
@@ -152,7 +167,6 @@ const Assets = () => {
         </BreadcrumbList>
       </Breadcrumb>
 
-      {/*/!* Header Section *!/*/}
       <HeaderBox
         title="Assets"
         subtext="Manage and track your assets"
@@ -176,7 +190,6 @@ const Assets = () => {
         </>
       )}
 
-      {/*/!* Table *!/*/}
       <Card>
         <CardContent className="p-0">
           <DataTable
@@ -187,7 +200,6 @@ const Assets = () => {
         </CardContent>
       </Card>
 
-      {/*/!* Dialogs *!/*/}
       <FilterDialog
         open={filterDialogOpen}
         onOpenChange={setFilterDialogOpen}

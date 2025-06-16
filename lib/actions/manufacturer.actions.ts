@@ -23,9 +23,11 @@ export async function insert(
       return { error: validation.error.errors[0].message };
     }
 
-    console.log(values);
+    // console.log(values);
 
     const session = await auth();
+    console.log(session);
+
     if (!session) {
       return { error: "Not authenticated" };
     }

@@ -1,9 +1,7 @@
 import type { NextAuthConfig } from "next-auth";
-import Credentials from "@auth/core/providers/credentials";
-import { loginSchema } from "@/lib/schemas";
-import Google from "@auth/core/providers/google";
-import { signInUser } from "@/services/aws/Cognito";
-import { findByEmail } from "@/helpers/data";
+import Credentials from "next-auth/providers/credentials";
+import Google from "next-auth/providers/google";
+import { createClient } from "@supabase/supabase-js";
 
 export default {
   providers: [
@@ -12,37 +10,58 @@ export default {
       clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
     }),
     Credentials({
-      name: "Credentials",
+      name: "Supabase",
+      credentials: {
+        id: { label: "ID", type: "text" },
+        email: { label: "Email", type: "email" },
+        accessToken: { label: "Access Token", type: "text" },
+      },
       async authorize(credentials) {
+        if (
+          !credentials?.id ||
+          !credentials?.email ||
+          !credentials?.accessToken
+        ) {
+          return null;
+        }
+
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+        const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+        if (!supabaseUrl || !supabaseAnonKey) {
+          console.error(
+            "Supabase URL or Anon Key missing from environment variables.",
+          );
+          return null;
+        }
+
+        const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
+          global: {
+            headers: {
+              Authorization: `Bearer ${credentials.accessToken}`,
+            },
+          },
+        });
+
         try {
-          // First validate the credentials
-          const validation = loginSchema.safeParse(credentials);
-          if (!validation.success) {
-            console.log("Validation failed:", validation.error);
+          const {
+            data: { user },
+            error,
+          } = await supabaseClient.auth.getUser();
+
+          if (error || !user) {
+            console.error("Supabase auth error:", error?.message);
             return null;
           }
 
-          const { email, password } = validation.data;
-
-          // Attempt Cognito sign in
-          const cognitoResponse = await signInUser(email, password);
-
-          // Log the response for debugging
-          console.log("Cognito response:", cognitoResponse);
-
-          if (!cognitoResponse.success) {
-            console.log("Cognito auth failed:", cognitoResponse.message);
-            return null;
-          }
-          const user = await findByEmail(email);
-          if (!user) {
-            console.log("User not found in database");
-            return null;
-          }
-
-          return user;
-        } catch (error) {
-          console.error("Detailed auth error:", error);
+          return {
+            id: user.id,
+            email: user.email || "",
+            name: user.user_metadata?.full_name || user.email || "",
+            accessToken: credentials.accessToken,
+          };
+        } catch (e) {
+          console.error("Unexpected error during Supabase auth:", e);
           return null;
         }
       },
