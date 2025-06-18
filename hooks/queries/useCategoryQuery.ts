@@ -2,7 +2,7 @@ import { useUserUIStore } from "@/lib/stores/useUserUIStore";
 import { createGenericQuery } from "@/hooks/queries/useQueryFactory";
 import { z } from "zod";
 import { categorySchema } from "@/lib/schemas";
-import { getAll, insert, remove } from "@/lib/actions/category.actions";
+import { getAll, insert, remove, update } from "@/lib/actions/category.actions";
 
 export const MODEL_KEY = ["categories"] as const;
 
@@ -15,13 +15,18 @@ export function useCategoryQuery() {
     MODEL_KEY,
     {
       getAll: async () => {
-        return await getAll();
+        const result = await getAll();
+        return result as ActionResponse<Category[]>;
       },
       insert: async (data: CreateCategoryInput) => {
         return await insert(data);
       },
       delete: async (id: string) => {
-        return await remove(id);
+        const result = await remove(id);
+        return result as ActionResponse<Category>;
+      },
+      update: async (id: string, data: Partial<CreateCategoryInput>) => {
+        return await update(id, data as Category);
       },
     },
     {

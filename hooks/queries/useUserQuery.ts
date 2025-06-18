@@ -7,6 +7,7 @@ import {
   getAll,
   remove,
   findById,
+  updateUserNonAuthDetails,
 } from "@/lib/actions/user.actions";
 
 export const MODEL_KEY = ["users"] as const;
@@ -19,7 +20,14 @@ export function useUserQuery() {
     MODEL_KEY,
     {
       getAll: async () => await getAll(),
-      insert: async (data: CreateModelInput) => await insert(data),
+      insert: async (data: CreateModelInput) => {
+        const result = await insert(data);
+        return result as ActionResponse<User>;
+      },
+      update: async (id: string, data: Partial<CreateModelInput>) => {
+        const result = await updateUserNonAuthDetails(id, data);
+        return result as ActionResponse<User>;
+      },
       delete: async (id: string) => await remove(id),
       findById: async (id: string) => await findById(id),
     },

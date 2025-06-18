@@ -509,3 +509,12 @@ export const checkin = withAuth(
     };
   },
 );
+
+export const update = withAuth(
+  async (user, id: string, data: Partial<Accessory>) => {
+    return await prisma.accessory.update({
+      where: { id, companyId: user.user_metadata?.companyId },
+      data: data as Prisma.AccessoryUpdateInput,
+    });
+  },
+);

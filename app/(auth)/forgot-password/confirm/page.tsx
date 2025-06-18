@@ -9,15 +9,35 @@ const ConfirmPasswordReset = () => {
   const router = useRouter();
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) {
-        router.replace(
-          "/forgot-password?error=Auth%20session%20missing.%20Please%20use%20the%20reset%20link%20from%20your%20email.",
-        );
-      } else {
+    let timeout: NodeJS.Timeout;
+    const checkSession = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (session) {
         setSessionChecked(true);
+      } else {
+        // Listen for session changes
+        const { data: listener } = supabase.auth.onAuthStateChange(
+          (event, session) => {
+            if (session) {
+              setSessionChecked(true);
+              listener?.subscription.unsubscribe();
+              clearTimeout(timeout);
+            }
+          },
+        );
+        // Fallback: after 2 seconds, redirect if still no session
+        timeout = setTimeout(() => {
+          router.replace(
+            "/forgot-password?error=Auth%20session%20missing.%20Please%20use%20the%20reset%20link%20from%20your%20email.",
+          );
+          listener?.subscription.unsubscribe();
+        }, 2000);
       }
-    });
+    };
+    checkSession();
+    return () => clearTimeout(timeout);
   }, [router]);
 
   if (!sessionChecked) return <div>Loading...</div>;

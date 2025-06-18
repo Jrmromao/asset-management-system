@@ -37,7 +37,6 @@ import FormProgressSkeleton from "@/components/forms/FormProgressSkeleton";
 import { FormProgress } from "@/components/forms/FormProgress";
 import CustomSelect from "@/components/CustomSelect";
 import {
-  debouncedValidateField,
   getRequiredFieldCount,
   getRequiredFieldsList,
 } from "@/lib/schemas/schema-utils";

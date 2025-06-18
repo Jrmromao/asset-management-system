@@ -8,7 +8,6 @@ import { Form } from "@/components/ui/form";
 import { Loader2 } from "lucide-react";
 import { useDialogStore } from "@/lib/stores/store";
 import Dropzone from "@/components/Dropzone";
-import { processAssetsCSV } from "@/lib/actions/assets.actions";
 import { useAssetStore } from "@/lib/stores/assetStore";
 import { toast } from "sonner";
 import { processAccessoryCSV } from "@/lib/actions/accessory.actions";
@@ -59,15 +58,15 @@ const FileUploadForm = ({ dataType }: FileUploadFormProps) => {
       if (dataType === "assets") {
         console.log("ASSETS CONDITION");
 
-        const result = await processAssetsCSV(fileContent);
-        if (result.success) {
-          toast.success(result.message);
-          form.reset();
-          getAll();
-          closeDialog();
-        } else {
-          toast.error(result.message);
-        }
+        //   const result = await processAssetsCSV(fileContent);
+        //   if (result.success) {
+        //     toast.success(result.message);
+        //     form.reset();
+        //     getAll();
+        //     closeDialog();
+        //   } else {
+        //     toast.error(result.message);
+        //   }
       }
       if (dataType === "accessories") {
         const result = await processAccessoryCSV(fileContent);

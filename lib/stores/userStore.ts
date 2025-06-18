@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import produce from "immer";
-import { getAll, registerUser, remove } from "@/lib/actions/user.actions";
+import { getAll, createUser, remove } from "@/lib/actions/user.actions";
 
 interface IUserStore {
   users: User[];
@@ -24,54 +24,73 @@ export const useUserStore = create(
 
       getAll: async () => {
         set({ loading: true });
-        getAll()
-          .then((users) => {
-            set({ users: users.data, loading: false });
-          })
-          .catch((error) => {
+        try {
+          const result = await getAll();
+          if (result.success && result.data) {
+            set({ users: result.data, loading: false });
+          } else {
             set({ users: [], loading: false });
-            console.error("Error fetching users:", error);
-          });
+            console.error("Error fetching users:", result.error);
+          }
+        } catch (error) {
+          set({ users: [], loading: false });
+          console.error("Error fetching users:", error);
+        }
       },
+
       create: async (data: User) => {
         try {
-          await registerUser({
+          const result = await createUser({
             email: data.email,
-            password: "",
             firstName: data.firstName,
             lastName: data.lastName,
             companyId: data.companyId!,
             title: data.title,
             employeeId: data.employeeId,
+            roleId: data.roleId!,
           });
 
-          set(
-            produce((state) => {
-              state.users.push(data);
-            }),
-          );
+          if (result.success && result.data) {
+            set(
+              produce((state) => {
+                state.users.push(result.data);
+              }),
+            );
+          } else {
+            throw new Error(result.error || "Failed to create user");
+          }
         } catch (error) {
           console.error("Error creating user:", error);
           throw error;
         }
       },
 
-      delete: (id: string) => {
-        set(
-          produce((state) => {
-            remove(id)
-              .then(() => {
-                state.users = state.users.filter((a: User) => a.id !== id);
-              })
-              .catch((error) => console.error(error));
-          }),
-        );
+      delete: async (id: string) => {
+        try {
+          const result = await remove(id);
+          if (result.success) {
+            set(
+              produce((state) => {
+                state.users = state.users.filter(
+                  (user: User) => user.id !== id,
+                );
+              }),
+            );
+          } else {
+            throw new Error(result.error || "Failed to delete user");
+          }
+        } catch (error) {
+          console.error("Error deleting user:", error);
+          throw error;
+        }
       },
+
       findById: (id: string) => {
         const user = get().users.find((user) => user.id === id);
         if (!user) return null;
         return user;
       },
+
       isOpen: false,
       onOpen: () => set({ isOpen: true }),
       onClose: () => set({ isOpen: false }),

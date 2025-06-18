@@ -107,3 +107,20 @@ export const remove = withAuth(
     }
   },
 );
+
+export const update = withAuth(
+  async (user, id: string, data: Partial<Role>) => {
+    try {
+      const role = await prisma.role.update({
+        where: { id },
+        data,
+      });
+      return { success: true, data: parseStringify(role) };
+    } catch (error) {
+      console.error("Update role error:", error);
+      return { success: false, error: "Failed to update role" };
+    } finally {
+      await prisma.$disconnect();
+    }
+  },
+);

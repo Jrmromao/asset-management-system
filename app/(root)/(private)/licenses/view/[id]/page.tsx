@@ -216,7 +216,11 @@ export default function View({ params }: AssetPageProps) {
   const detailViewProps: DetailViewProps = {
     title: license?.name ?? "Untitled License",
     isLoading: false,
-    co2Score: license?.co2Score ?? 0,
+    co2Score:
+      typeof license?.co2Score === "number"
+        ? { co2e: license.co2Score, units: "kg" }
+        : (license?.co2Score ?? { co2e: 0, units: "kg" }),
+    units: "kg",
     isAssigned: Boolean(license?.assigneeId),
     error,
     fields: [

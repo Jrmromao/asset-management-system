@@ -2,13 +2,6 @@
 
 import { Prisma, User as PrismaUser, UserStatus } from "@prisma/client"; // Assuming User is your Prisma model
 import { parseStringify, validateEmail } from "@/lib/utils";
-// SUPABASE_ADAPTED: Remove Cognito service imports
-// import {
-//   forgetPasswordConfirm,
-//   forgetPasswordRequestCode,
-//   signUpUser,
-//   verifyCognitoAccount,
-// } from "@/services/aws/Cognito";
 import {
   accountVerificationSchema,
   forgotPasswordConfirmSchema,
@@ -21,12 +14,7 @@ import { getRoleById } from "@/lib/actions/role.actions";
 import { z } from "zod";
 import { prisma } from "@/app/db";
 import { supabase } from "@/lib/supabaseClient"; // Your client-side capable Supabase client
-import { createClient } from "@supabase/supabase-js";
 import type { User as SupabaseUserType } from "@supabase/supabase-js";
-// import type { AuthError as SupabaseAuthError, User as SupabaseUserType } from "@supabase/supabase-js";
-// You might need a server-side Supabase client for admin tasks if not passing tokens
-// import { createClient } from '@supabase/supabase-js';
-// const supabaseAdmin = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 import { withAuth } from "@/lib/middleware/withAuth";
 
 // Define your ActionResponse if not already globally typed
@@ -220,8 +208,12 @@ export async function forgotPassword(
   values: z.infer<typeof forgotPasswordSchema>,
 ): Promise<ActionResponse<void>> {
   try {
+    console.log("[ForgotPassword] Function called", { email: values.email });
     const validation = forgotPasswordSchema.safeParse(values);
     if (!validation.success) {
+      console.warn("[ForgotPassword] Invalid email address", {
+        email: values.email,
+      });
       return { success: false, error: "Invalid email address." };
     }
     const { error } = await supabase.auth.resetPasswordForEmail(
@@ -231,14 +223,19 @@ export async function forgotPassword(
       },
     );
     if (error) {
+      console.warn("[ForgotPassword] Supabase error", error.message);
       return {
         success: false,
         error:
           "If an account with this email exists, a password reset link has been sent.",
       };
     }
+    console.log("[ForgotPassword] Password reset email sent", {
+      email: validation.data.email,
+    });
     return { success: true };
   } catch (error) {
+    console.error("[ForgotPassword] Unexpected error", error);
     return {
       success: false,
       error:

@@ -2,7 +2,7 @@ import { useRoleUIStore } from "@/lib/stores/useRoleUIStore";
 import { createGenericQuery } from "@/hooks/queries/useQueryFactory";
 import { z } from "zod";
 import { roleSchema } from "@/lib/schemas";
-import { getAll, insert, remove } from "@/lib/actions/role.actions";
+import { getAll, insert, remove, update } from "@/lib/actions/role.actions";
 
 export const MODEL_KEY = ["roles"] as const;
 
@@ -22,6 +22,9 @@ export function useRoleQuery() {
       },
       delete: async (id: string) => {
         return remove(id);
+      },
+      update: async (id: string, data: Partial<CreateRoleInput>) => {
+        return await update(id, data as Role);
       },
     },
     {

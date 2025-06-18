@@ -21,19 +21,24 @@ export function useAssetQuery() {
     MODEL_KEY,
     {
       getAll: async () => {
-        return await getAll();
+        const result = await getAll();
+        return result as ActionResponse<Asset[]>;
       },
       insert: async (data: CreateAssetInput) => {
-        return await insert(data);
+        const result = await insert(data);
+        return result as ActionResponse<Asset>;
       },
       delete: async (id: string) => {
-        return await remove(id);
+        const result = await remove(id);
+        return result as ActionResponse<Asset>;
       },
       update: async (id: string, data: Partial<Asset>) => {
-        return await update(id, data);
+        const result = await update(id, data);
+        return result as unknown as ActionResponse<Asset>;
       },
       findById: async (id: string) => {
-        return await findById(id);
+        const result = await findById(id);
+        return result as ActionResponse<Asset>;
       },
     },
     {

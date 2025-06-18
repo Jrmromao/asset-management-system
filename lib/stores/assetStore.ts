@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import produce from "immer";
-import { checkin } from "@/lib/actions/assets.actions";
+// import { checkin } from "@/lib/actions/assets.actions";
 
 interface IAssetStore {
   assets: Asset[];
@@ -110,9 +110,7 @@ export const useAssetStore = create(
       },
       onAssignOpen: () => set({ isAssignOpen: true }),
       onAssignClose: () => set({ isAssignOpen: false }),
-      unassign: async (assetId: string) => {
-        await checkin(assetId);
-      },
+      unassign: async (assetId: string) => {},
       assign: (assetId: string, userId: string) => {
         set(
           produce((state) => {

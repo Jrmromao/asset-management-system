@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist, PersistOptions } from "zustand/middleware";
-import { findAll } from "@/lib/actions/category.actions";
+import { getAll } from "@/lib/actions/category.actions";
 
 // Types
 export interface Category {
@@ -62,12 +62,11 @@ export const useCategoryStore = create<CategoryStore>()(
       getAll: async (options?: CategoryFilterOptions) => {
         set({ loading: true, error: null });
         try {
-          const response: ActionResponse<StoredCategory[]> =
-            await findAll(options);
+          const response: ActionResponse<Category[]> = await getAll();
 
           if (response.success && response.data) {
             set({
-              categories: response.data,
+              categories: response.data as StoredCategory[],
               loading: false,
               error: null,
             });

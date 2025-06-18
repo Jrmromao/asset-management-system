@@ -21,6 +21,7 @@ const CustomAssetTable = ({
     id: "id",
     createdAt: "Created At",
     updatedAt: "updatedAt",
+    active: "Active",
   };
   const navigate = useRouter();
   const filteredData = filterColumns(licenses, ["id", "updatedAt"]);

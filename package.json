@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "build:verify": "yarn tsc --noEmit",
     "test-s3": "../services/test.ts",
     "build": "next build",
     "start": "next start",

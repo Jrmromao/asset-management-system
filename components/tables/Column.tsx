@@ -1,6 +1,5 @@
 import { FC, useRef } from "react";
 import { TableCell } from "@/components/ui/table";
-import { log } from "node:util";
 
 interface IProps {
   rowIndex: number;

@@ -6,6 +6,7 @@ import {
   create as insert,
   getAll,
   remove,
+  update,
 } from "@/lib/actions/license.actions";
 
 export const MODEL_KEY = ["licenses"] as const;
@@ -26,6 +27,9 @@ export function useLicenseQuery() {
       },
       delete: async (id: string) => {
         return await remove(id);
+      },
+      update: async (id: string, data: Partial<License>) => {
+        return await update(data as License, id);
       },
     },
     {

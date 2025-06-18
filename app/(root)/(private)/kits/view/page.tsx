@@ -33,7 +33,7 @@ const View = () => {
       navigate.back();
       return;
     }
-    findById(id).then((asset) => setAsset(asset.data));
+    // findById(id).then((asset) => setAsset(asset.data as unknown as Asset));
   }, [setAsset, findById]);
 
   return (

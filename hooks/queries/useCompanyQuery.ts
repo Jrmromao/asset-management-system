@@ -1,5 +1,5 @@
 import { createGenericQuery } from "@/hooks/queries/useQueryFactory";
-import { getAll, insert, remove } from "@/lib/actions/company.actions";
+import { getAll, insert, remove, update } from "@/lib/actions/company.actions";
 import { RegistrationData } from "@/components/providers/UserContext";
 
 export const MODEL_KEY = ["companies"] as const;
@@ -18,6 +18,9 @@ export function useCompanyQuery() {
       },
       delete: async (id: string) => {
         return remove(id);
+      },
+      update: async (id: string, data: Partial<Company>) => {
+        return await update(id, data.name as string);
       },
     },
     {

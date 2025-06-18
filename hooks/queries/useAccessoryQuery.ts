@@ -6,6 +6,7 @@ import {
   getAll,
   insert as insert,
   remove,
+  update,
 } from "@/lib/actions/accessory.actions";
 
 export const MODEL_KEY = ["accessories"] as const;
@@ -26,6 +27,10 @@ export function useAccessoryQuery() {
       },
       delete: async (id: string) => {
         return await remove(id);
+      },
+      update: async (id: string, data: Partial<Accessory>) => {
+        const result = await update(id, data);
+        return result as unknown as ActionResponse<Accessory>;
       },
     },
     {

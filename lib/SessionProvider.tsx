@@ -1,14 +1,39 @@
 "use client";
 
-import { SessionContextProvider } from "@supabase/auth-helpers-react";
-import { PropsWithChildren } from "react"; // add this import
+import { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import type { Session, User } from "@supabase/supabase-js";
 
-export function ClientProviders({ children }: PropsWithChildren) {
-  // add type for props
+const SessionContext = createContext<{
+  session: Session | null;
+  user: User | null;
+}>({ session: null, user: null });
+
+export function ClientProviders({ children }: { children: React.ReactNode }) {
+  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
   return (
-    <SessionContextProvider supabaseClient={supabase}>
+    <SessionContext.Provider value={{ session, user }}>
       {children}
-    </SessionContextProvider>
+    </SessionContext.Provider>
   );
 }
+
+export const useSession = () => useContext(SessionContext);

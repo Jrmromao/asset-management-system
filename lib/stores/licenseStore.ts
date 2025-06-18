@@ -6,8 +6,8 @@ import { getAll, remove, update } from "@/lib/actions/license.actions";
 interface ILicenseStore {
   licenses: License[];
   loading: boolean;
-  create: (asset: License) => void;
-  update: (id: string, updatedAsset: License) => void;
+  create: (license: License) => void;
+  update: (id: string, updatedLicense: License) => void;
   delete: (id: string) => Promise<void>;
   findById: (id: string) => License | null;
   getAll: () => void;
@@ -21,14 +21,18 @@ export const useLicenseStore = create(
 
       getAll: async () => {
         set({ loading: true });
-        getAll()
-          .then((licenses) => {
-            set({ licenses, loading: false });
-          })
-          .catch((error) => {
+        try {
+          const result = await getAll();
+          if (result.success && result.data) {
+            set({ licenses: result.data, loading: false });
+          } else {
             set({ licenses: [], loading: false });
-            console.error("Error fetching assets:", error);
-          });
+            console.error("Error fetching licenses:", result.error);
+          }
+        } catch (error) {
+          set({ licenses: [], loading: false });
+          console.error("Error fetching licenses:", error);
+        }
       },
 
       create: async (license: License) => {
@@ -41,7 +45,7 @@ export const useLicenseStore = create(
           );
           return license;
         } catch (error) {
-          console.error("Error creating asset:", error);
+          console.error("Error creating license:", error);
           throw error;
         }
       },
@@ -51,11 +55,11 @@ export const useLicenseStore = create(
           produce((state) => {
             update(updatedLicense, id)
               .then(() => {
-                const index = state.assets.findIndex(
-                  (asset: Asset) => asset.id === id,
+                const index = state.licenses.findIndex(
+                  (license: License) => license.id === id,
                 );
                 if (index !== -1) {
-                  state.assets[index] = updatedLicense;
+                  state.licenses[index] = updatedLicense;
                 }
               })
               .catch((error) => console.log(error));
@@ -76,7 +80,7 @@ export const useLicenseStore = create(
           set(
             produce((state) => {
               state.licenses = state.licenses?.filter(
-                (a: Asset) => a.id !== id,
+                (license: License) => license.id !== id,
               );
             }),
           );
@@ -85,6 +89,6 @@ export const useLicenseStore = create(
         }
       },
     }),
-    { name: "asset_store" },
+    { name: "license_store" },
   ),
 );

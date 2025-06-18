@@ -159,29 +159,26 @@ export const update = withAuth(
   },
 );
 
-export const bulkInsertTemplates = withAuth(
-  async (user): Promise<ActionResponse<FormTemplate[]>> => {
-    try {
-      const templates = await prisma.$transaction(
-        Object.entries(formTemplates).map(([name, fields]) =>
-          prisma.formTemplate.create({
-            data: {
-              name,
-              fields,
-              companyId: user.user_metadata?.companyId,
-            },
-          }),
-        ),
-      );
-
-      return {
-        success: true,
-        data: parseStringify(templates),
-      };
-    } catch (error) {
-      return handleError(error, "Failed to bulk insert templates");
-    } finally {
-      await prisma.$disconnect();
-    }
-  },
-);
+export async function bulkInsertTemplates(companyId: string) {
+  try {
+    const templates = await prisma.$transaction(
+      Object.entries(formTemplates).map(([name, fields]) =>
+        prisma.formTemplate.create({
+          data: {
+            name,
+            fields,
+            companyId,
+          },
+        }),
+      ),
+    );
+    return {
+      success: true,
+      data: parseStringify(templates),
+    };
+  } catch (error) {
+    return handleError(error, "Failed to bulk insert templates");
+  } finally {
+    await prisma.$disconnect();
+  }
+}

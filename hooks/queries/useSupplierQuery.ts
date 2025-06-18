@@ -2,7 +2,7 @@ import { useSupplierUIStore } from "@/lib/stores/useSupplierUIStore";
 import { createGenericQuery } from "@/hooks/queries/useQueryFactory";
 import { z } from "zod";
 import { supplierSchema } from "@/lib/schemas";
-import { getAll, insert, remove } from "@/lib/actions/supplier.actions";
+import { getAll, insert, remove, update } from "@/lib/actions/supplier.actions";
 
 export const MODEL_KEY = ["suppliers"] as const;
 
@@ -19,6 +19,10 @@ export function useSupplierQuery() {
       },
       insert: async (data: CreateSupplierInput) => {
         return await insert(data);
+      },
+      update: async (id: string, data: Partial<Supplier>) => {
+        const result = await update(id, data as any);
+        return result as ActionResponse<Supplier>;
       },
       delete: async (id: string) => {
         return await remove(id);

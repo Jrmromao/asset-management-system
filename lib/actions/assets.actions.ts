@@ -150,3 +150,100 @@ export const remove = withAuth(async (user, id: string) => {
     await prisma.$disconnect();
   }
 });
+
+export const update = withAuth(
+  async (user, id: string, data: Partial<Asset>) => {
+    try {
+      const asset = await prisma.asset.update({
+        where: {
+          id: id,
+          companyId: user.user_metadata?.companyId,
+        },
+        data: data as Prisma.AssetUpdateInput,
+      });
+
+      return {
+        success: true,
+        data: asset,
+      };
+    } catch (error) {
+      console.error("Error updating asset:", error);
+    }
+  },
+);
+
+export const findById = withAuth(async (user, id: string) => {
+  try {
+    const asset = await prisma.asset.findUnique({
+      where: {
+        id: id,
+        companyId: user.user_metadata?.companyId,
+      },
+    });
+
+    return {
+      success: true,
+      data: asset,
+    };
+  } catch (error) {
+    console.error("Error finding asset:", error);
+    return {
+      success: false,
+      error: "Failed to find asset",
+    };
+  } finally {
+    await prisma.$disconnect();
+  }
+});
+
+export const checkin = withAuth(async (user, id: string) => {
+  try {
+    const asset = await prisma.asset.update({
+      where: {
+        id: id,
+        companyId: user.user_metadata?.companyId,
+      },
+      data: {
+        status: "CHECKED_IN",
+      },
+    });
+    return {
+      success: true,
+      data: asset,
+    };
+  } catch (error) {
+    console.error("Error checking in asset:", error);
+    return {
+      success: false,
+      error: "Failed to check in asset",
+    };
+  } finally {
+    await prisma.$disconnect();
+  }
+});
+
+export const checkout = withAuth(async (user, id: string) => {
+  try {
+    const asset = await prisma.asset.update({
+      where: {
+        id: id,
+        companyId: user.user_metadata?.companyId,
+      },
+      data: {
+        status: "CHECKED_OUT",
+      },
+    });
+    return {
+      success: true,
+      data: asset,
+    };
+  } catch (error) {
+    console.error("Error checking out asset:", error);
+    return {
+      success: false,
+      error: "Failed to check out asset",
+    };
+  } finally {
+    await prisma.$disconnect();
+  }
+});

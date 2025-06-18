@@ -150,3 +150,30 @@ export const remove = withAuth(async (user, id: string) => {
     await prisma.$disconnect();
   }
 });
+
+export const update = withAuth(
+  async (user, id: string, data: Partial<Category>) => {
+    try {
+      const category = await prisma.category.update({
+        where: {
+          id: id,
+          companyId: user.user_metadata?.companyId,
+        },
+        data,
+      });
+
+      return {
+        success: true,
+        data: category,
+      };
+    } catch (error) {
+      console.error("Error updating category:", error);
+      return {
+        success: false,
+        error: "Failed to update category",
+      };
+    } finally {
+      await prisma.$disconnect();
+    }
+  },
+);

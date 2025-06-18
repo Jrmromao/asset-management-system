@@ -44,6 +44,7 @@ const RegisterForm = ({ assetCount }: RegisterFormProps) => {
     mode: "onChange",
   });
   const onSubmit = async (data: z.infer<typeof registerSchema>) => {
+    if (isLoading) return;
     setIsLoading(true);
     setError("");
 
@@ -63,7 +64,17 @@ const RegisterForm = ({ assetCount }: RegisterFormProps) => {
             if (result.success && result.redirectUrl) {
               window.location.href = result.redirectUrl;
             } else {
-              throw new Error(result.error || "No checkout URL received");
+              // Handle known Supabase Auth duplicate email error
+              if (
+                result.error &&
+                result.error.toLowerCase().includes("already been registered")
+              ) {
+                setError(
+                  "This email is already in use. Please use a different email or sign in.",
+                );
+              } else {
+                setError(result.error || "No checkout URL received");
+              }
             }
           },
         },

@@ -40,14 +40,17 @@ const AuthForm = () => {
 
   const router = useRouter();
   const onSubmit = async (data: z.infer<typeof loginSchema>) => {
+    console.log("[Login] Form submitted", { email: data.email });
     if (!recaptchaToken) {
       setError("Please complete the captcha");
+      console.warn("[Login] Submission blocked: missing recaptcha");
       return;
     }
 
     setError("");
     startTransition(async () => {
       try {
+        console.log("[Login] Sending login request to /api/auth/login");
         const response = await fetch("/api/auth/login", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -58,15 +61,18 @@ const AuthForm = () => {
         });
 
         const result = await response.json();
+        console.log("[Login] API response", result);
 
         if (!response.ok) {
           setError(result.error || "Invalid email or password");
+          console.warn("[Login] Login failed", result.error);
         } else {
+          console.log("[Login] Login successful, redirecting to /admin");
           window.location.href = "/admin";
         }
       } catch (e) {
         setError("Unexpected error during login");
-        console.error(e);
+        console.error("[Login] Unexpected error", e);
       }
     });
   };

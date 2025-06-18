@@ -278,7 +278,11 @@ export default function Page({ params }: AssetPageProps) {
   const detailViewProps: DetailViewProps = {
     title: accessory?.name ?? "Untitled Accessory",
     isLoading: loadingStates.isInitialLoading || loadingStates.isRefreshing,
-    co2Score: accessory?.co2Score ?? 0,
+    co2Score:
+      typeof accessory?.co2Score === "number"
+        ? { co2e: accessory.co2Score, units: "kg" }
+        : (accessory?.co2Score ?? { co2e: 0, units: "kg" }),
+    units: "kg",
     error,
     fields: [
       { label: "Name", value: accessory?.name ?? "-", type: "text" },
