@@ -61,11 +61,10 @@ async function createCompanies() {
 
 async function createRoles() {
   return await Promise.all([
-    prisma.role.create({
-      data: {
-        name: "Admin",
-        isAdctive: true,
-      },
+    prisma.role.upsert({
+      where: { name: "Admin" },
+      update: {},
+      create: { name: "Admin", isAdctive: true },
     }),
   ]);
 }
@@ -293,11 +292,26 @@ async function createLicense(
   });
 }
 
-seed()
+async function main() {
+  // Upsert the Admin role
+  console.log("Creating roles...");
+  await createRoles();
+
+  // Add other roles if needed
+  // await prisma.role.upsert({
+  //   where: { name: "User" },
+  //   update: {},
+  //   create: { name: "User" },
+  // });
+}
+
+main()
+  .then(() => {
+    console.log("Seeding complete.");
+    return prisma.$disconnect();
+  })
   .catch((e) => {
     console.error(e);
+    prisma.$disconnect();
     process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
   });

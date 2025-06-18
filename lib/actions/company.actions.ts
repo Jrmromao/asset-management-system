@@ -7,8 +7,9 @@ import { bulkInsertTemplates } from "@/lib/actions/formTemplate.actions";
 import { RegistrationData } from "@/components/providers/UserContext";
 import { parseStringify } from "@/lib/utils";
 import { createSubscription } from "@/lib/actions/subscription.actions";
-import { createUser } from "@/lib/actions/user.actions";
 import { withAuth } from "@/lib/middleware/withAuth";
+import { User } from "@prisma/client";
+import { prisma as mainPrisma } from "@/app/db";
 
 interface RegistrationState {
   companyId?: string;
@@ -54,7 +55,7 @@ const cleanup = async (state: RegistrationState) => {
   }
 };
 
-export const insert = withAuth(async (user, values: RegistrationData) => {
+export const insert = async (values: RegistrationData) => {
   const state: RegistrationState = { bucketCreated: false };
 
   try {
@@ -81,7 +82,7 @@ export const insert = withAuth(async (user, values: RegistrationData) => {
         await s3Service.initializeCompanyStorage(company.id);
         state.bucketCreated = true;
 
-        const userResult = await createUser({
+        const userResult = await createUserForRegistration({
           email: values.email,
           companyId: company.id,
           firstName: values.firstName,
@@ -133,7 +134,41 @@ export const insert = withAuth(async (user, values: RegistrationData) => {
   } finally {
     await prisma.$disconnect();
   }
-});
+};
+
+// Helper for registration user creation (no auth required)
+async function createUserForRegistration({
+  email,
+  companyId,
+  firstName,
+  lastName,
+  title,
+  employeeId,
+  roleId,
+}: {
+  email: string;
+  companyId: string;
+  firstName: string;
+  lastName: string;
+  title: string;
+  employeeId: string;
+  roleId: string;
+}): Promise<User | null> {
+  // You may want to add Supabase registration here if needed
+  return await mainPrisma.user.create({
+    data: {
+      name: `${firstName} ${lastName}`,
+      email,
+      firstName,
+      lastName,
+      employeeId,
+      title,
+      roleId,
+      companyId,
+      emailVerified: null,
+    },
+  });
+}
 
 export const remove = withAuth(async (user, id: string) => {
   try {

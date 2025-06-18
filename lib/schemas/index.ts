@@ -23,20 +23,24 @@ export const registerSchema = z
       .string()
       .min(1, "Email is required")
       .email("Invalid email format")
-      .refine(async (email) => {
-        try {
-          const response = await fetch(`${baseUrl}/api/validate/email`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email }),
-          });
-          if (!response.ok) throw new Error("Validation request failed");
-          const data = await response.json();
-          return !data.exists;
-        } catch (error) {
-          console.error("Email validation error:", error);
-        }
-      }, "Email already exists"),
+      .refine(
+        async (email) => {
+          try {
+            const response = await fetch(`${baseUrl}/api/validate/email-test`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ email, entity: "user" }),
+            });
+            if (!response.ok) throw new Error("Validation request failed");
+            const data = await response.json();
+            return !data.exists;
+          } catch (error) {
+            console.error("Email validation error:", error);
+            return false;
+          }
+        },
+        { message: "Email already exists" },
+      ),
     password: passwordSchema,
     repeatPassword: z.string().min(1, "Password is required"),
     firstName: z.string().min(1, "First name is required"),
@@ -48,21 +52,27 @@ export const registerSchema = z
     companyName: z
       .string()
       .min(1, "Company name is required")
-      .refine(async (company) => {
-        try {
-          const response = await fetch(`${baseUrl}/api/validate/company`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ company }),
-          });
-          if (!response.ok) throw new Error("Validation request failed");
-          const data = await response.json();
-          return !data.exists;
-        } catch (error) {
-          console.error("Company validation error:", error);
-          throw new Error("Company validation failed");
-        }
-      }, "Company name already exists"),
+      .refine(
+        async (companyName) => {
+          try {
+            const response = await fetch(
+              `${baseUrl}/api/validate/company-test`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ companyName }),
+              },
+            );
+            if (!response.ok) throw new Error("Validation request failed");
+            const data = await response.json();
+            return !data.exists;
+          } catch (error) {
+            console.error("Company validation error:", error);
+            return false;
+          }
+        },
+        { message: "Company name already exists" },
+      ),
   })
   .refine((data) => data.password === data.repeatPassword, {
     message: "Passwords do not match",

@@ -1,62 +1,33 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/app/db";
+import { z } from "zod";
 
-export async function POST(
-  req: Request,
-  { params }: { params: { endpoint: string } },
-) {
+const CompanySchema = z.object({
+  companyName: z.string().min(1),
+});
+
+export async function POST(req: Request) {
   try {
-    console.log(req.body);
-
-    // const { searchParams } = new URL(req.url);
-    // const entity = searchParams.get('entity');
-    // const body = await req.json();
-    // const [field, value] = Object.entries(body)[0];
-    //
-    // if (!value) {
-    //     return NextResponse.json(
-    //         { error: `${field} is required` },
-    //         { status: 400 }
-    //     );
-    // }
-    //
-    // let exists = false;
-    //
-    // switch (params.endpoint) {
-    //     case 'company':
-    //         exists = await validateCompany(field, 'jrm3r3333o3mao@gmail.com');
-    //         break;
-    //     // Add other cases as needed
-    //     default:
-    //         return NextResponse.json(
-    //             { error: "Invalid endpoint" },
-    //             { status: 400 }
-    //         );
-    // }
-
-    return NextResponse.json({ isValid: true });
+    const body = await req.json();
+    const parsed = CompanySchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Invalid input" }, { status: 400 });
+    }
+    const { companyName } = parsed.data;
+    const existingCompany = await prisma.company.findFirst({
+      where: {
+        name: {
+          equals: companyName,
+          mode: "insensitive",
+        },
+      },
+    });
+    return NextResponse.json({ exists: !!existingCompany });
   } catch (error) {
-    console.error("Validation error:", error);
+    console.error("Company validation error:", error);
     return NextResponse.json(
       { error: "Error during validation" },
       { status: 500 },
     );
   }
-}
-
-async function validateCompany(field: string, value: string): Promise<boolean> {
-  if (field !== "companyName") {
-    return false;
-  }
-
-  const existingCompany = await prisma.company.findFirst({
-    where: {
-      name: {
-        equals: value,
-        mode: "insensitive",
-      },
-    },
-  });
-
-  return !!existingCompany;
 }
