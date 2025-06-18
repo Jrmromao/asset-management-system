@@ -1,712 +1,152 @@
 "use server";
 
 import { prisma } from "@/app/db";
-import { parseStringify, processRecordContents, roundFloat } from "@/lib/utils";
 import { z } from "zod";
-import { assetSchema, assignmentSchema } from "@/lib/schemas";
+import { categorySchema } from "@/lib/schemas";
 import { Prisma } from "@prisma/client";
-import { revalidatePath } from "next/cache";
-import CO2Calculator from "../../services/OpenAI";
-import { getIpAddress } from "@/utils/getIpAddress";
+import { withAuth } from "@/lib/middleware/withAuth";
 
-// Common include object for consistent asset queries
-const assetIncludes = {
-  model: {
-    include: {
-      manufacturer: true,
-    },
-  },
-  department: true,
-  departmentLocation: true,
-  company: true,
-  statusLabel: true,
-  assignee: true,
-  formTemplateValues: true,
-  formTemplate: true,
-  AssetHistory: true,
-  Co2eRecord: {
-    orderBy: { createdAt: "asc" },
-    take: 1,
-  },
-} as const;
+export const insert = withAuth(
+  async (user, values: z.infer<typeof categorySchema>) => {
+    try {
+      const validation = categorySchema.safeParse(values);
 
-export async function getAll(): Promise<ActionResponse<Asset[]>> {
-  try {
-    const assets = await prisma.asset.findMany({
-      include: assetIncludes,
-      orderBy: { createdAt: "desc" },
-      where: { companyId: session.user.companyId },
-    });
-
-    return { data: parseStringify(assets) };
-  } catch (error) {
-    console.error("Error fetching assets:", error);
-    return { error: "Failed to fetch assets" };
-  }
-}
-
-export async function findById(id: string): Promise<ActionResponse<Asset>> {
-  try {
-    if (!id) {
-      return { error: "Asset ID is required" };
-    }
-
-    const [asset, auditLogs] = await Promise.all([
-      prisma.asset.findFirst({
-        include: {
-          ...assetIncludes,
-        },
-        where: { id },
-      }),
-      prisma.auditLog.findMany({
-        where: {
-          entityId: id,
-          entity: "ASSET",
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-      }),
-    ]);
-
-    if (!asset) {
-      return { error: "Asset not found" };
-    }
-
-    return {
-      data: parseStringify({
-        ...asset,
-        auditLogs: auditLogs ? auditLogs : [],
-      }),
-    };
-  } catch (error) {
-    console.error("Error finding asset:", error);
-    return { error: "Failed to find asset" };
-  }
-}
-
-export async function remove(id: string): Promise<ActionResponse<Asset>> {
-  try {
-    const session = await auth();
-    if (!session?.user?.companyId) {
-      return { error: "Unauthorized access" };
-    }
-    const { id: userId, companyId } = session.user;
-
-    if (!id) {
-      return { error: "Asset ID is required" };
-    }
-
-    // First fetch the existing asset
-    const existingAsset = await prisma.asset.findFirst({
-      where: { id },
-      include: assetIncludes,
-    });
-
-    if (!existingAsset) {
-      return { error: "Asset not found" };
-    }
-
-    // Update asset and create related records in a transaction
-    const updatedAsset = await prisma.$transaction(async (prisma) => {
-      // Update the asset status
-      const asset = await prisma.asset.update({
-        where: { id },
-        data: {
-          status: "Inactive",
-        },
-        include: assetIncludes,
-      });
-
-      // Create asset history record
-      await prisma.assetHistory.create({
-        data: {
-          assetId: id,
-          type: "status_change",
-          notes: `Status changed from ${existingAsset.status} to Inactive`,
-          companyId,
-        },
-      });
-
-      // Create audit log
-      await prisma.auditLog.create({
-        data: {
-          action: "DEACTIVATE",
-          entity: "ASSET",
-          entityId: id,
-          details: `Asset ${existingAsset.name} (${existingAsset.serialNumber}) was deactivated`,
-          userId: userId!,
-          companyId,
-          dataAccessed: {
-            previousStatus: existingAsset.status,
-            newStatus: "Inactive",
-            assetName: existingAsset.name,
-            serialNumber: existingAsset.serialNumber,
-            timestamp: new Date(),
-          },
-        },
-      });
-
-      return asset;
-    });
-
-    // Fetch updated audit logs
-    const auditLogs = await prisma.auditLog.findMany({
-      where: {
-        entityId: id,
-        entity: "ASSET",
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
-
-    return {
-      data: parseStringify({
-        ...updatedAsset,
-        auditLogs: auditLogs || [],
-      }),
-    };
-  } catch (error) {
-    console.error("Error deactivating asset:", error);
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === "P2025") {
-        return { error: "Asset not found" };
+      if (!validation.success) {
+        return {
+          success: false,
+          error: "Invalid input data",
+        };
       }
-    }
-    return { error: "Failed to deactivate asset" };
-  }
-}
 
-export async function update(
-  id: string,
-  data: Partial<Asset>,
-): Promise<ActionResponse<Asset>> {
-  try {
-    if (!id || !data) {
-      return { error: "Asset ID and data are required" };
-    }
+      const { name } = validation.data;
 
-    const updatedAsset = await prisma.asset.update({
-      where: { id },
-      data: {
-        name: data.name,
-        serialNumber: data.serialNumber,
-        company: {
-          connect: { id: data.companyId },
+      const category = await prisma.category.create({
+        data: {
+          name: name,
+          type: "",
+          companyId: user.user_metadata?.companyId,
         },
-        statusLabel: {
-          connect: { id: data.statusLabelId },
-        },
-      },
-    });
+      });
 
-    return { data: parseStringify(updatedAsset) };
-  } catch (error) {
-    console.error("Error updating asset:", error);
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === "P2025") {
-        return { error: "Asset not found" };
-      }
-    }
-    return { error: "Failed to update asset" };
-  }
-}
-
-export async function checkout(
-  values: z.infer<typeof assignmentSchema>,
-): Promise<ActionResponse<Asset>> {
-  try {
-    const validation = await assignmentSchema.safeParseAsync(values);
-
-    if (!validation.success) {
       return {
-        error: validation.error.errors[0].message,
+        success: true,
+        data: category,
       };
-    }
+    } catch (error) {
+      console.error("Error creating category:", error);
 
-    // Use a transaction to ensure all operations succeed or fail together
-    const result = await prisma.$transaction(async (tx) => {
-      // Update the asset
-      const updatedAsset = await tx.asset.update({
-        where: {
-          id: values.itemId,
-        },
-        data: {
-          assigneeId: values.userId,
-        },
-        include: assetIncludes,
-      });
-
-      // Create asset history record
-      await tx.assetHistory.create({
-        data: {
-          assetId: values.itemId,
-          type: "checkout",
-          notes: `Asset checked out to user ${values.userId}`,
-          companyId: updatedAsset.companyId,
-        },
-      });
-
-      // Create audit log entry
-      await tx.auditLog.create({
-        data: {
-          action: "ASSET_CHECKOUT",
-          entity: "ASSET",
-          entityId: values.itemId,
-          details: `Asset checkout completed`,
-          userId: values.userId,
-          companyId: updatedAsset.companyId,
-          dataAccessed: {
-            assetId: values.itemId,
-            assigneeId: values.userId,
-            timestamp: new Date().toISOString(),
-          },
-        },
-      });
-
-      return updatedAsset;
-    });
-
-    return {
-      data: parseStringify(result),
-    };
-  } catch (error) {
-    console.error("Error checking out asset:", error);
-
-    return {
-      error: "Failed to check out asset",
-    };
-  }
-}
-
-export async function checkin(assetId: string): Promise<ActionResponse<Asset>> {
-  try {
-    if (!assetId) {
-      return { error: "Asset ID is required" };
-    }
-
-    // Get current asset state to capture previous assignee for logging
-    const currentAsset = await prisma.asset.findUnique({
-      where: { id: assetId },
-      select: {
-        assigneeId: true,
-        companyId: true,
-      },
-    });
-
-    if (!currentAsset) {
-      return { error: "Asset not found" };
-    }
-
-    // Use transaction to ensure all operations succeed or fail together
-    const result = await prisma.$transaction(async (tx) => {
-      // Update the asset
-      const updatedAsset = await tx.asset.update({
-        where: { id: assetId },
-        data: { assigneeId: null },
-        include: assetIncludes,
-      });
-
-      // Create asset history record
-      await tx.assetHistory.create({
-        data: {
-          assetId: assetId,
-          type: "checkin",
-          notes: currentAsset.assigneeId
-            ? `Asset checked in from user ${currentAsset.assigneeId}`
-            : "Asset checked in",
-          companyId: currentAsset.companyId,
-        },
-      });
-
-      // Create audit log entry
-      await tx.auditLog.create({
-        data: {
-          action: "ASSET_CHECKIN",
-          entity: "ASSET",
-          entityId: assetId,
-          details: currentAsset.assigneeId
-            ? `Asset ${assetId} checked in from user ${currentAsset.assigneeId}`
-            : `Asset ${assetId} check-in processed`,
-          userId: currentAsset.assigneeId || "SYSTEM",
-          companyId: currentAsset.companyId,
-          dataAccessed: {
-            assetId: assetId,
-            previousAssignee: currentAsset.assigneeId,
-            timestamp: new Date().toISOString(),
-          },
-        },
-      });
-
-      return updatedAsset;
-    });
-
-    return { data: parseStringify(result) };
-  } catch (error) {
-    console.error("Error checking in asset:", error);
-    return { error: "Failed to check in asset" };
-  }
-}
-
-export async function processAssetsCSV(csvContent: string) {
-  try {
-    const data = processRecordContents(csvContent);
-    const session = await auth();
-    // Save to database using transaction
-    await prisma.$transaction(async (tx) => {
-      const records = [];
-
-      for (const item of data) {
-        const model = await tx.model.findFirst({
-          where: {
-            name: item["model"],
-          },
-        });
-        const statusLabel = await tx.statusLabel.findFirst({
-          where: {
-            name: item["statusLabel"],
-          },
-        });
-        const supplier = await tx.supplier.findFirst({
-          where: {
-            name: item["supplier"],
-          },
-        });
-
-        if (!model || !statusLabel || !supplier) {
-          continue;
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === "P2002") {
+          return {
+            success: false,
+            error: "A category with this name already exists",
+          };
         }
-        if (!session) {
-          throw new Error("User not authenticated.");
-        }
-
-        const record = await tx.asset.create({
-          data: {
-            name: item["name"],
-            weight: roundFloat(Number(item["weight"]), 2),
-            serialNumber: item["serialNum"],
-            material: item["material"],
-            modelId: model?.id,
-            endOfLife: new Date(item["endOfLife"]),
-            statusLabelId: statusLabel?.id,
-            supplierId: supplier?.id,
-            poNumber: item["poNumber"],
-            price: roundFloat(Number(item["price"]), 2),
-            companyId: session?.user?.companyId,
-            energyRating: item["energyRatting"],
-            dailyOperatingHours: Number(item["dailyOperatingHours"]),
-            formTemplateId: item["formTemplateId"] || null,
-          },
-        });
-        records.push(record);
       }
 
-      return records;
-    });
+      return {
+        success: false,
+        error: "Failed to create category",
+      };
+    } finally {
+      await prisma.$disconnect();
+    }
+  },
+);
 
-    revalidatePath("/assets");
+export const getAll = withAuth(
+  async (
+    user,
+    options?: {
+      orderBy?: "name" | "createdAt";
+      order?: "asc" | "desc";
+      search?: string;
+    },
+  ) => {
+    try {
+      const where: Prisma.CategoryWhereInput = {
+        companyId: user.user_metadata?.companyId,
+        ...(options?.search
+          ? {
+              OR: [
+                {
+                  name: {
+                    contains: options.search,
+                    mode: "insensitive",
+                  },
+                },
+                {
+                  type: {
+                    contains: options.search,
+                    mode: "insensitive",
+                  },
+                },
+              ],
+            }
+          : {}),
+      };
+
+      const orderBy: Prisma.CategoryOrderByWithRelationInput = options?.orderBy
+        ? { [options.orderBy]: options.order || "asc" }
+        : { name: "asc" };
+
+      const categories = await prisma.category.findMany({
+        where,
+        orderBy,
+        select: {
+          id: true,
+          name: true,
+          type: true,
+          companyId: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+
+      return {
+        success: true,
+        data: categories,
+      };
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+      return {
+        success: false,
+        error: "Failed to fetch categories",
+      };
+    } finally {
+      await prisma.$disconnect();
+    }
+  },
+);
+
+export const remove = withAuth(async (user, id: string) => {
+  try {
+    const category = await prisma.category.delete({
+      where: {
+        id: id,
+        companyId: user.user_metadata?.companyId,
+      },
+      select: {
+        id: true,
+        name: true,
+        type: true,
+        companyId: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
 
     return {
       success: true,
-      message: `Successfully processed ${data.length} records`,
-      data: data,
+      data: category,
     };
   } catch (error) {
-    console.error("Error processing CSV:", error);
+    console.error("Error removing category:", error);
     return {
       success: false,
-      message:
-        error instanceof Error ? error.message : "Failed to process CSV file",
+      error: "Failed to remove category",
     };
-  }
-}
-
-const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
-async function retryWithExponentialBackoff<T>(
-  operation: () => Promise<T>,
-  retryCount = 1,
-  initialDelay = 1000,
-  maxDelay = 10000,
-): Promise<T> {
-  let currentTry = 0;
-  let delay = initialDelay;
-
-  while (true) {
-    try {
-      return await operation();
-    } catch (error) {
-      currentTry++;
-      if (currentTry >= retryCount) {
-        throw error;
-      }
-      delay = Math.min(delay * 2, maxDelay);
-      console.log(
-        `Retry attempt ${currentTry} for CO2 calculation. Waiting ${delay}ms...`,
-      );
-      await wait(delay);
-    }
-  }
-}
-
-// export async function insert(
-//   values: z.infer<typeof assetSchema>,
-// ): Promise<ActionResponse<Asset>> {
-//   const session = await auth();
-//   if (!session?.user) {
-//     return { error: "Unauthorized access" };
-//   }
-//
-//   try {
-//     const validation = await assetSchema.safeParseAsync(values);
-//
-//     if (!validation.success) {
-//       return {
-//         error: validation.error.errors[0].message,
-//       };
-//     }
-//
-//     const calculator = new CO2Calculator({
-//       openai: {
-//         apiKey:
-//           "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",
-//         model: "gpt-3.5-turbo",
-//       },
-//     });
-//
-//     console.log("-----VALUES: ", values);
-//
-//     const co2Input: CO2CalculationInput = {
-//       name: values.name,
-//       // // Add model information if available
-//       // ...(values.model?.name && {
-//       //   name: `${values.name} ${values.model.name}`,
-//       // }),
-//       // ...(values.category?.name && { category: values.category.name }),
-//       // // Energy and operation details
-//       // ...(values.energyRating && { energyRating: values.energyRating }),
-//       // ...(values.dailyOperatingHours && {
-//       //   dailyOperationHours: Number(values.dailyOperatingHours),
-//       // }),
-//       // // Physical properties
-//       // ...(values.weight && { weight: Number(values.weight) }),
-//       // ...(values.material && { material: values.material }),
-//       // // Location and department
-//       // ...(values.departmentLocation?.name && {
-//       //   location: values.departmentLocation.name,
-//       // }),
-//       // ...(values.department?.name && {
-//       //   department: values.department.name,
-//       // }),
-//       // Financial information
-//       // price: values.price,
-//       // Lifecycle information
-//       // ...(values.endOfLife &&
-//       //   values.purchaseDate && {
-//       //     expectedLifespan: Math.ceil(
-//       //       (values.endOfLife.getTime() - values.purchaseDate.getTime()) /
-//       //         (1000 * 60 * 60 * 24 * 365),
-//       //     ),
-//       //   }),
-//     };
-//
-//     try {
-//       const co2Result = await retryWithExponentialBackoff(
-//         async () => await calculator.calculateCO2e(co2Input),
-//         3, // 3 retry attempts
-//         3000, // Start with 1-second delay
-//         10000, // Max delay of 10 seconds
-//       );
-//
-//       // co2Score = parseFloat(co2Result.CO2e);
-//       console.log(
-//         `\n\nSuccessfully calculated CO2 score: ${JSON.stringify(co2Result)}`,
-//       );
-//     } catch (error) {
-//       console.error("Failed to calculate CO2 score after retries:", error);
-//       // Continue with asset creation {}|:"?Pprisma migrate dev --namebn|:"?{even if CO2 calculation fails
-//     }
-//
-//     const result = await prisma.$transaction(async (tx) => {
-//       const newAsset = await tx.asset.create({
-//         data: {
-//           name: values.name,
-//           serialNumber: values.serialNumber,
-//           modelId: values.modelId,
-//           statusLabelId: values.statusLabelId,
-//           companyId: session.user.companyId,
-//           locationId: values.locationId,
-//           departmentId: values.departmentId,
-//           inventoryId: values.inventoryId,
-//           formTemplateId: values.formTemplateId || null,
-//         },
-//         include: assetIncludes,
-//       });
-//
-//       // Create audit log entry
-//       await tx.auditLog.create({
-//         data: {
-//           action: "ASSET_CREATED",
-//           entity: "ASSET",
-//           entityId: newAsset.id,
-//           userId: session.user.id || "",
-//           companyId: session.user.companyId,
-//           details: `Created asset ${values.name} with serial number ${values.serialNumber}`,
-//           ipAddress: getIpAddress(),
-//         },
-//       });
-//
-//       if (values.formTemplateId && values.templateValues) {
-//         await tx.formTemplateValue.createMany({
-//           data: {
-//             assetId: newAsset.id,
-//             templateId: values.formTemplateId!,
-//             values: values.templateValues,
-//           },
-//         });
-//       }
-//
-//       if (co2Input) {
-//         await tx.co2eRecord.create({
-//           data: {
-//             itemType: "ASSET",
-//             itemId: newAsset.id,
-//             co2e: co2Result.CO2e,
-//           },
-//         });
-//       }
-//
-//       return newAsset;
-//     });
-//
-//     if (!result) {
-//       return { error: "Failed to create asset" };
-//     }
-//
-//     return { data: parseStringify(result) };
-//   } catch (error) {
-//     console.error("Error creating asset:", error);
-//     if (error instanceof Prisma.PrismaClientKnownRequestError) {
-//       if (error.code === "P2002") {
-//         return { error: "Serial number already exists" };
-//       }
-//     }
-//     return { error: "Failed to create asset" };
-//   }
-// }
-
-// Create a new Prisma instance for this operation
-
-export async function insert(
-  values: z.infer<typeof assetSchema>,
-): Promise<ActionResponse<Asset>> {
-  try {
-    const validation = await assetSchema.safeParseAsync(values);
-    if (!validation.success) {
-      return { error: validation.error.errors[0].message };
-    }
-
-    // Prepare the asset data
-    const assetData = {
-      name: values.name,
-      serialNumber: values.serialNumber,
-      modelId: values.modelId,
-      statusLabelId: values.statusLabelId,
-      companyId: session.user.companyId,
-      locationId: values.locationId,
-      departmentId: values.departmentId,
-      inventoryId: values.inventoryId,
-      formTemplateId: values.formTemplateId || null,
-    };
-
-    // Execute everything in a single transaction with shorter operations
-    const result = await prisma.$transaction(
-      async (tx) => {
-        // 1. Create the asset
-        const newAsset = await tx.asset.create({
-          data: assetData,
-          include: assetIncludes,
-        });
-
-        // 2. Create the audit log
-        await tx.auditLog.create({
-          data: {
-            action: "ASSET_CREATED",
-            entity: "ASSET",
-            entityId: newAsset.id,
-            userId: session.user.id || "",
-            companyId: session.user.companyId,
-            details: `Created asset ${values.name} with serial number ${values.serialNumber}`,
-            ipAddress: getIpAddress(),
-          },
-        });
-
-        // 3. Create template values if needed
-        if (values.formTemplateId && values.templateValues) {
-          await tx.formTemplateValue.create({
-            data: {
-              assetId: newAsset.id,
-              templateId: values.formTemplateId,
-              values: values.templateValues,
-            },
-          });
-        }
-
-        return newAsset;
-      },
-      {
-        maxWait: 5000, // 5s maximum wait time
-        timeout: 10000, // 10s timeout
-        isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted, // Less strict isolation level
-      },
-    );
-
-    // Handle CO2 calculation separately after the transaction
-    if (result) {
-      try {
-        const calculator = new CO2Calculator({
-          openai: {
-            apiKey: process.env.OPENAI_API_KEY!,
-            model: "gpt-3.5-turbo",
-          },
-        });
-
-        const co2Result = await calculator.calculateCO2e({ name: values.name });
-
-        console.log("\n\n\nCO2 calculation result:", co2Result);
-        console.log("\n\n\n");
-        if (co2Result) {
-          console.log(co2Result.CO2e, "========", typeof co2Result.CO2e);
-
-          await prisma.co2eRecord.create({
-            data: {
-              itemType: "ASSET",
-              assetId: result.id,
-              units: co2Result.unit,
-              co2e: co2Result.CO2e,
-              co2eType: co2Result.CO2eType,
-              sourceOrActivity: co2Result.sourceOrActivity,
-            },
-          });
-        }
-      } catch (error) {
-        console.error("CO2 calculation failed:", error);
-        // Continue without CO2 data
-      }
-    }
-
-    return { data: parseStringify(result) };
-  } catch (error) {
-    console.error("Error in insert operation:", error);
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === "P2002") {
-        return { error: "Serial number already exists" };
-      }
-    }
-    return { error: "Failed to create asset" };
   } finally {
-    // Clean up Prisma connection
     await prisma.$disconnect();
   }
-}
+});

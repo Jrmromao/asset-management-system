@@ -1,12 +1,6 @@
 import { createGenericQuery } from "@/hooks/queries/useQueryFactory";
 import { z } from "zod";
 import { inventorySchema } from "@/lib/schemas";
-import {
-  getAll,
-  insert,
-  remove,
-  update,
-} from "@/lib/actions/inventory.actions";
 import { useInventoryUIStore } from "@/lib/stores/useInventoryUIStore";
 
 export const MODEL_KEY = ["inventories"] as const;
@@ -23,16 +17,30 @@ export function useInventoryQuery() {
     MODEL_KEY,
     {
       getAll: async () => {
-        return await getAll();
+        const res = await fetch("/api/inventory");
+        return await res.json();
       },
       insert: async (data: CreateInventorySchemaInput) => {
-        return await insert(data);
+        const res = await fetch("/api/inventory", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        });
+        return await res.json();
       },
       delete: async (id: string) => {
-        return await remove(id);
+        const res = await fetch(`/api/inventory?id=${id}`, {
+          method: "DELETE",
+        });
+        return await res.json();
       },
       update: async (id: string, data: Partial<Inventory>) => {
-        return await update(id, data);
+        const res = await fetch(`/api/inventory?id=${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        });
+        return await res.json();
       },
     },
     {

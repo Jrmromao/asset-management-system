@@ -8,15 +8,22 @@ if (!process.env.STRIPE_SECRET_KEY || !process.env.STRIPE_PRICE_ID) {
 }
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2024-12-18.acacia",
+  apiVersion: "2025-02-24.acacia",
 });
+
+interface SubscriptionResponse {
+  success: boolean;
+  url?: string;
+  sessionId?: string;
+  error?: string;
+}
 
 // Main subscription creation function
 export const createSubscription = async (
   companyId: string,
   email: string,
   assetCount: number,
-) => {
+): Promise<SubscriptionResponse> => {
   try {
     // Create a Stripe customer
     const customer = await stripe.customers.create({
@@ -45,16 +52,19 @@ export const createSubscription = async (
     });
 
     return {
-      url: session.url,
+      success: true,
+      url: session.url ?? "",
       sessionId: session.id,
     };
   } catch (error) {
     console.error("Subscription creation error:", error);
-    throw new Error(
-      error instanceof Stripe.errors.StripeError
-        ? `Payment processing failed: ${error.message}`
-        : "Failed to create subscription",
-    );
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to create subscription",
+    };
   }
 };
 
@@ -106,19 +116,24 @@ export async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
 
 // Handle trial end
 export const handleTrialEnd = async (subscriptionId: string) => {
-  const subscription = await prisma.subscription.findUnique({
-    where: { stripeSubscriptionId: subscriptionId },
-  });
+  try {
+    const subscription = await prisma.subscription.findUnique({
+      where: { stripeSubscriptionId: subscriptionId },
+    });
 
-  if (!subscription) {
-    throw new Error(`Subscription not found: ${subscriptionId}`);
+    if (!subscription) {
+      throw new Error(`Subscription not found: ${subscriptionId}`);
+    }
+
+    return await prisma.subscription.update({
+      where: { id: subscription.id },
+      data: {
+        status: "ACTIVE",
+        updatedAt: new Date(),
+      },
+    });
+  } catch (error) {
+    console.error("Error handling trial end:", error);
+    throw error;
   }
-
-  return prisma.subscription.update({
-    where: { id: subscription.id },
-    data: {
-      status: "ACTIVE",
-      updatedAt: new Date(),
-    },
-  });
 };

@@ -4,132 +4,127 @@ import { prisma } from "@/app/db";
 import { z } from "zod";
 import { categorySchema } from "@/lib/schemas";
 import { Prisma } from "@prisma/client";
+import { withAuth } from "@/lib/middleware/withAuth";
 
-export async function insert(
-  values: z.infer<typeof categorySchema>,
-): Promise<ActionResponse<Category>> {
-  try {
-    // Validate input against schema
-    const validation = categorySchema.safeParse(values);
+export const insert = withAuth(
+  async (user, values: z.infer<typeof categorySchema>) => {
+    try {
+      const validation = categorySchema.safeParse(values);
 
-    if (!validation.success) {
-      return {
-        success: false,
-        error: "Invalid input data",
-      };
-    }
-
-    const { name } = validation.data;
-
-    await prisma.category.create({
-      data: {
-        name: name,
-        type: "",
-        company: {
-          connect: {
-            id: session.user.companyId,
-          },
-        },
-      },
-    });
-
-    // revalidatePath('/assets/create');
-
-    return {
-      success: true,
-    };
-  } catch (error) {
-    console.error("Error creating category:", error);
-
-    // Handle specific database errors
-    if (error instanceof Error) {
-      if (error.message.includes("Unique constraint")) {
+      if (!validation.success) {
         return {
           success: false,
-          error: "A category with this name already exists",
+          error: "Invalid input data",
         };
       }
+
+      const { name } = validation.data;
+
+      const category = await prisma.category.create({
+        data: {
+          name: name,
+          type: "",
+          companyId: user.user_metadata?.companyId,
+        },
+      });
+
+      return {
+        success: true,
+        data: category,
+      };
+    } catch (error) {
+      console.error("Error creating category:", error);
+
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === "P2002") {
+          return {
+            success: false,
+            error: "A category with this name already exists",
+          };
+        }
+      }
+
+      return {
+        success: false,
+        error: "Failed to create category",
+      };
+    } finally {
+      await prisma.$disconnect();
     }
+  },
+);
 
-    return {
-      success: false,
-      error: "Failed to create category",
-    };
-  }
-}
-
-export async function getAll(options?: {
-  orderBy?: "name" | "createdAt";
-  order?: "asc" | "desc";
-  search?: string;
-}): Promise<ActionResponse<StoredCategory[]>> {
-  try {
-    // Validate session
-
-    // Build the where clause with proper Prisma types
-    const where: Prisma.CategoryWhereInput = {
-      companyId: session.user.companyId,
-      ...(options?.search
-        ? {
-            OR: [
-              {
-                name: {
-                  contains: options.search,
-                  mode: "insensitive",
+export const getAll = withAuth(
+  async (
+    user,
+    options?: {
+      orderBy?: "name" | "createdAt";
+      order?: "asc" | "desc";
+      search?: string;
+    },
+  ) => {
+    try {
+      const where: Prisma.CategoryWhereInput = {
+        companyId: user.user_metadata?.companyId,
+        ...(options?.search
+          ? {
+              OR: [
+                {
+                  name: {
+                    contains: options.search,
+                    mode: "insensitive",
+                  },
                 },
-              },
-              {
-                type: {
-                  contains: options.search,
-                  mode: "insensitive",
+                {
+                  type: {
+                    contains: options.search,
+                    mode: "insensitive",
+                  },
                 },
-              },
-            ],
-          }
-        : {}),
-    };
+              ],
+            }
+          : {}),
+      };
 
-    // Build the orderBy with proper Prisma types
-    const orderBy: Prisma.CategoryOrderByWithRelationInput = options?.orderBy
-      ? { [options.orderBy]: options.order || "asc" }
-      : { name: "asc" };
+      const orderBy: Prisma.CategoryOrderByWithRelationInput = options?.orderBy
+        ? { [options.orderBy]: options.order || "asc" }
+        : { name: "asc" };
 
-    // Get the categories
-    const categories = await prisma.category.findMany({
-      where,
-      orderBy,
-      select: {
-        id: true,
-        name: true,
-        type: true,
-        companyId: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-    });
+      const categories = await prisma.category.findMany({
+        where,
+        orderBy,
+        select: {
+          id: true,
+          name: true,
+          type: true,
+          companyId: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
 
-    return {
-      success: true,
-      data: categories,
-    };
-  } catch (error) {
-    console.error("Error fetching categories:", error);
-    return {
-      success: false,
-      error: "Failed to fetch categories",
-    };
-  }
-}
+      return {
+        success: true,
+        data: categories,
+      };
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+      return {
+        success: false,
+        error: "Failed to fetch categories",
+      };
+    } finally {
+      await prisma.$disconnect();
+    }
+  },
+);
 
-export async function remove(id: string): Promise<ActionResponse<Category>> {
+export const remove = withAuth(async (user, id: string) => {
   try {
-    // Validate session
-
-    // Get the category
     const category = await prisma.category.delete({
       where: {
         id: id,
-        companyId: session.user.companyId,
+        companyId: user.user_metadata?.companyId,
       },
       select: {
         id: true,
@@ -151,5 +146,7 @@ export async function remove(id: string): Promise<ActionResponse<Category>> {
       success: false,
       error: "Failed to remove category",
     };
+  } finally {
+    await prisma.$disconnect();
   }
-}
+});

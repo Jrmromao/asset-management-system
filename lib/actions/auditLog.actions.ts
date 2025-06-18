@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/app/db";
 import { z } from "zod";
 import { headers } from "next/headers";
+import { withAuth } from "@/lib/middleware/withAuth";
 
 // Validation schema for AuditLog
 const auditLogSchema = z.object({
@@ -14,7 +15,7 @@ const auditLogSchema = z.object({
   companyId: z.string().min(1, "Company ID is required"),
   licenseId: z.string().optional(),
   accessoryId: z.string().optional(),
-  dataAccessed: z.any().optional(), // JSON data
+  dataAccessed: z.any().optional(),
 });
 
 type AuditLogInput = z.infer<typeof auditLogSchema>;
@@ -26,181 +27,176 @@ const getIpAddress = () => {
   return xForwardedFor?.split(",")[0] || "unknown";
 };
 
-/**
- * Create a new audit log entry
- */
-
-export async function createAuditLog(userId: string, data: AuditLogInput) {
+export const createAuditLog = withAuth(async (user, data: AuditLogInput) => {
   try {
-    // Validate input data
     const validatedData = auditLogSchema.parse(data);
-
-    // Get IP address
     const ipAddress = getIpAddress();
 
-    // Create audit log
     const auditLog = await prisma.auditLog.create({
       data: {
         ...validatedData,
-        userId,
+        userId: user.id,
         ipAddress,
+        companyId: user.user_metadata?.companyId,
       },
     });
 
     revalidatePath("/audit-logs");
-    return { success: true, data: auditLog };
+    return {
+      success: true,
+      data: auditLog,
+    };
   } catch (error) {
     console.error("Error creating audit log:", error);
     if (error instanceof z.ZodError) {
-      return { success: false, error: error.errors };
+      return { error: error.errors[0].message };
     }
-    return { success: false, error: "Failed to create audit log" };
+    return { error: "Failed to create audit log" };
+  } finally {
+    await prisma.$disconnect();
   }
-}
+});
 
-/**
- * Get a single audit log by ID
- */
-export async function getAuditLog(entityId: string) {
+export const getAuditLog = withAuth(async (user, entityId: string) => {
   try {
     const auditLog = await prisma.auditLog.findMany({
-      where: { entityId },
+      where: {
+        entityId,
+        companyId: user.user_metadata?.companyId,
+      },
     });
 
     if (!auditLog) {
-      throw new Error("Audit log not found");
+      return { error: "Audit log not found" };
     }
-
-    return { success: true, data: auditLog };
-  } catch (error) {
-    console.error("Error fetching audit log:", error);
-    return { success: false, error: "Failed to fetch audit log" };
-  }
-}
-
-/**
- * Get all audit logs for a company with pagination
- */
-export async function getAuditLogs(
-  companyId: string,
-  page = 1,
-  limit = 10,
-  filters?: {
-    action?: string;
-    entity?: string;
-    startDate?: Date;
-    endDate?: Date;
-  },
-) {
-  try {
-    // Build where clause based on filters
-    const where = {
-      companyId,
-      ...(filters?.action && { action: filters.action }),
-      ...(filters?.entity && { entity: filters.entity }),
-      ...(filters?.startDate &&
-        filters?.endDate && {
-          createdAt: {
-            gte: filters.startDate,
-            lte: filters.endDate,
-          },
-        }),
-    };
-
-    // Get total count for pagination
-    const total = await prisma.auditLog.count({ where });
-
-    // Get paginated results
-    const auditLogs = await prisma.auditLog.findMany({
-      where,
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-      skip: (page - 1) * limit,
-      take: limit,
-    });
 
     return {
       success: true,
-      data: auditLogs,
-      pagination: {
-        total,
-        pages: Math.ceil(total / limit),
-        current: page,
-      },
+      data: auditLog,
     };
   } catch (error) {
-    console.error("Error fetching audit logs:", error);
-    return { success: false, error: "Failed to fetch audit logs" };
+    console.error("Error fetching audit log:", error);
+    return { error: "Failed to fetch audit log" };
+  } finally {
+    await prisma.$disconnect();
   }
-}
+});
 
-/**
- * Update an audit log entry
- * Note: In most cases, audit logs should not be updateable for integrity
- * This is included for completeness but should be used with caution
- */
-export async function updateAuditLog(
-  id: string,
-  companyId: string,
-  data: Partial<AuditLogInput>,
-) {
+export const getAuditLogs = withAuth(
+  async (
+    user,
+    page = 1,
+    limit = 10,
+    filters?: {
+      action?: string;
+      entity?: string;
+      startDate?: Date;
+      endDate?: Date;
+    },
+  ) => {
+    try {
+      const where = {
+        companyId: user.user_metadata?.companyId,
+        ...(filters?.action && { action: filters.action }),
+        ...(filters?.entity && { entity: filters.entity }),
+        ...(filters?.startDate &&
+          filters?.endDate && {
+            createdAt: {
+              gte: filters.startDate,
+              lte: filters.endDate,
+            },
+          }),
+      };
+
+      const total = await prisma.auditLog.count({ where });
+
+      const auditLogs = await prisma.auditLog.findMany({
+        where,
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+        skip: (page - 1) * limit,
+        take: limit,
+      });
+
+      return {
+        success: true,
+        data: auditLogs,
+        pagination: {
+          total,
+          pages: Math.ceil(total / limit),
+          current: page,
+        },
+      };
+    } catch (error) {
+      console.error("Error fetching audit logs:", error);
+      return { error: "Failed to fetch audit logs" };
+    } finally {
+      await prisma.$disconnect();
+    }
+  },
+);
+
+export const updateAuditLog = withAuth(
+  async (user, id: string, data: Partial<AuditLogInput>) => {
+    try {
+      const existingLog = await prisma.auditLog.findUnique({
+        where: {
+          id,
+          companyId: user.user_metadata?.companyId,
+        },
+      });
+
+      if (!existingLog) {
+        return { error: "Audit log not found" };
+      }
+
+      const validatedData = auditLogSchema.partial().parse(data);
+
+      const updatedLog = await prisma.auditLog.update({
+        where: { id },
+        data: validatedData,
+      });
+
+      revalidatePath("/audit-logs");
+      return {
+        success: true,
+        data: updatedLog,
+      };
+    } catch (error) {
+      console.error("Error updating audit log:", error);
+      if (error instanceof z.ZodError) {
+        return { error: error.errors[0].message };
+      }
+      return { error: "Failed to update audit log" };
+    } finally {
+      await prisma.$disconnect();
+    }
+  },
+);
+
+export const deleteAuditLog = withAuth(async (user, id: string) => {
   try {
-    // Verify the audit log exists and belongs to user's company
     const existingLog = await prisma.auditLog.findUnique({
-      where: { id },
+      where: {
+        id,
+        companyId: user.user_metadata?.companyId,
+      },
     });
 
-    if (!existingLog || existingLog.companyId !== companyId) {
-      throw new Error("Unauthorized or audit log not found");
+    if (!existingLog) {
+      return { error: "Audit log not found" };
     }
 
-    // Validate update data
-    const validatedData = auditLogSchema.partial().parse(data);
-
-    // Update audit log
-    const updatedLog = await prisma.auditLog.update({
-      where: { id },
-      data: validatedData,
-    });
-
-    revalidatePath("/audit-logs");
-    return { success: true, data: updatedLog };
-  } catch (error) {
-    console.error("Error updating audit log:", error);
-    if (error instanceof z.ZodError) {
-      return { success: false, error: error.errors };
-    }
-    return { success: false, error: "Failed to update audit log" };
-  }
-}
-
-/**
- * Delete an audit log entry
- * Note: In most cases, audit logs should not be deletable for integrity
- * This is included for completeness but should be used with caution
- */
-export async function deleteAuditLog(id: string, companyId: string) {
-  try {
-    // Verify the audit log exists and belongs to user's company
-    const existingLog = await prisma.auditLog.findUnique({
-      where: { id },
-    });
-
-    if (!existingLog || existingLog.companyId !== companyId) {
-      throw new Error("Unauthorized or audit log not found");
-    }
-
-    // Delete audit log
     await prisma.auditLog.delete({
       where: { id },
     });
@@ -209,69 +205,72 @@ export async function deleteAuditLog(id: string, companyId: string) {
     return { success: true };
   } catch (error) {
     console.error("Error deleting audit log:", error);
-    return { success: false, error: "Failed to delete audit log" };
+    return { error: "Failed to delete audit log" };
+  } finally {
+    await prisma.$disconnect();
   }
-}
+});
 
-/**
- * Export audit logs to CSV
- */
-export async function exportAuditLogs(
-  companyId: string,
-  filters?: {
-    action?: string;
-    entity?: string;
-    startDate?: Date;
-    endDate?: Date;
-  },
-) {
-  try {
-    // Build where clause based on filters
-    const where = {
-      companyId,
-      ...(filters?.action && { action: filters.action }),
-      ...(filters?.entity && { entity: filters.entity }),
-      ...(filters?.startDate &&
-        filters?.endDate && {
-          createdAt: {
-            gte: filters.startDate,
-            lte: filters.endDate,
-          },
-        }),
-    };
+export const exportAuditLogs = withAuth(
+  async (
+    user,
+    filters?: {
+      action?: string;
+      entity?: string;
+      startDate?: Date;
+      endDate?: Date;
+    },
+  ) => {
+    try {
+      const where = {
+        companyId: user.user_metadata?.companyId,
+        ...(filters?.action && { action: filters.action }),
+        ...(filters?.entity && { entity: filters.entity }),
+        ...(filters?.startDate &&
+          filters?.endDate && {
+            createdAt: {
+              gte: filters.startDate,
+              lte: filters.endDate,
+            },
+          }),
+      };
 
-    // Get all audit logs for export
-    const auditLogs = await prisma.auditLog.findMany({
-      where,
-      include: {
-        user: {
-          select: {
-            name: true,
-            email: true,
+      const auditLogs = await prisma.auditLog.findMany({
+        where,
+        include: {
+          user: {
+            select: {
+              name: true,
+              email: true,
+            },
           },
         },
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
 
-    // Transform data for CSV format
-    const csvData = auditLogs.map((log) => ({
-      id: log.id,
-      action: log.action,
-      entity: log.entity,
-      entityId: log.entityId || "",
-      details: log.details || "",
-      userName: log.user.name,
-      userEmail: log.user.email,
-      createdAt: log.createdAt.toISOString(),
-      ipAddress: log.ipAddress || "",
-    }));
+      const csvData = auditLogs.map((log) => ({
+        id: log.id,
+        action: log.action,
+        entity: log.entity,
+        entityId: log.entityId || "",
+        details: log.details || "",
+        userName: log.user.name,
+        userEmail: log.user.email,
+        createdAt: log.createdAt.toISOString(),
+        ipAddress: log.ipAddress || "",
+      }));
 
-    return { success: true, data: csvData };
-  } catch (error) {
-    console.error("Error exporting audit logs:", error);
-    return { success: false, error: "Failed to export audit logs" };
-  }
-}
+      return {
+        success: true,
+        data: csvData,
+      };
+    } catch (error) {
+      console.error("Error exporting audit logs:", error);
+      return { error: "Failed to export audit logs" };
+    } finally {
+      await prisma.$disconnect();
+    }
+  },
+);

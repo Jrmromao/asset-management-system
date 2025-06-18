@@ -3,149 +3,128 @@ import { parseStringify } from "@/lib/utils";
 import { prisma } from "@/app/db";
 import { z } from "zod";
 import { statusLabelSchema } from "@/lib/schemas";
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
+import { withAuth } from "@/lib/middleware/withAuth";
 
 // lib/actions/statusLabel.actions.ts
-export const insert = async (
-  values: z.infer<typeof statusLabelSchema>,
-): Promise<ActionResponse<StatusLabel>> => {
-  try {
-    const validation = await statusLabelSchema.safeParseAsync(values);
-
-    if (!validation.success) {
-      return {
-        error: validation.error.errors[0].message,
-      };
+export const insert = withAuth(
+  async (
+    user,
+    values: z.infer<typeof statusLabelSchema>,
+  ): Promise<ActionResponse<StatusLabel>> => {
+    try {
+      const validation = await statusLabelSchema.safeParseAsync(values);
+      if (!validation.success) {
+        return { success: false, error: validation.error.errors[0].message };
+      }
+      const data = validation.data;
+      const result = await prisma.statusLabel.create({
+        data: {
+          name: data.name,
+          colorCode: data.colorCode || "#000000",
+          isArchived: data.isArchived,
+          allowLoan: data.allowLoan,
+          description: data.description,
+          companyId: user.user_metadata?.companyId,
+        },
+      });
+      return { success: true, data: parseStringify(result) };
+    } catch (error) {
+      console.error("Error creating status label:", error);
+      return { success: false, error: "Failed to create status label" };
+    } finally {
+      await prisma.$disconnect();
     }
+  },
+);
 
-    const data = validation.data;
-    const cookieStore = cookies();
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          get(name: string) {
-            return cookieStore.get(name)?.value;
-          },
-          set(name: string, value: string, options: any) {
-            cookieStore.set({ name, value, ...options });
-          },
-          remove(name: string, options: any) {
-            cookieStore.set({ name, value: "", ...options });
-          },
+export const getAll = withAuth(
+  async (user): Promise<ActionResponse<StatusLabel[]>> => {
+    try {
+      const labels = await prisma.statusLabel.findMany({
+        orderBy: {
+          createdAt: "desc",
         },
-      },
-    );
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-
-    const result = await prisma.statusLabel.create({
-      data: {
-        name: data.name,
-        colorCode: data.colorCode || "#000000",
-        isArchived: data.isArchived,
-        allowLoan: data.allowLoan,
-        description: data.description,
-        companyId: session?.user?.user_metadata?.companyId,
-      },
-    });
-
-    return { data: parseStringify(result) };
-  } catch (error) {
-    console.error("Error creating status label:", error);
-    throw error;
-  }
-};
-
-export const getAll = async (): Promise<ActionResponse<StatusLabel[]>> => {
-  try {
-    const cookieStore = cookies();
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          get(name: string) {
-            return cookieStore.get(name)?.value;
-          },
-          set(name: string, value: string, options: any) {
-            cookieStore.set({ name, value, ...options });
-          },
-          remove(name: string, options: any) {
-            cookieStore.set({ name, value: "", ...options });
-          },
+        where: {
+          companyId: user.user_metadata?.companyId,
         },
-      },
-    );
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
+      });
+      return { success: true, data: parseStringify(labels) };
+    } catch (error) {
+      console.error("Error in getAll:", error);
+      return { success: false, error: "Failed to fetch status labels" };
+    } finally {
+      await prisma.$disconnect();
+    }
+  },
+);
 
-    const labels = await prisma.statusLabel.findMany({
-      orderBy: {
-        createdAt: "desc",
-      },
-      where: {
-        companyId: session?.user?.user_metadata?.companyId,
-      },
-    });
+export const findById = withAuth(
+  async (user, id: string): Promise<ActionResponse<StatusLabel>> => {
+    try {
+      const label = await prisma.statusLabel.findFirst({
+        where: {
+          id: id,
+          companyId: user.user_metadata?.companyId,
+        },
+      });
+      if (!label) {
+        return { success: false, error: "Status label not found" };
+      }
+      return { success: true, data: parseStringify(label) };
+    } catch (error) {
+      console.error(error);
+      return { success: false, error: "Failed to fetch status label" };
+    } finally {
+      await prisma.$disconnect();
+    }
+  },
+);
 
-    return { data: parseStringify(labels) };
-  } catch (error) {
-    console.error("Error in getAll:", error);
-    throw error;
-  } finally {
-    await prisma.$disconnect();
-  }
-};
+export const remove = withAuth(
+  async (user, id: string): Promise<ActionResponse<StatusLabel>> => {
+    try {
+      const label = await prisma.statusLabel.delete({
+        where: {
+          id: id,
+          companyId: user.user_metadata?.companyId,
+        },
+      });
+      return { success: true, data: parseStringify(label) };
+    } catch (error) {
+      console.error(error);
+      return { success: false, error: "Failed to delete status label" };
+    } finally {
+      await prisma.$disconnect();
+    }
+  },
+);
 
-export const findById = async (id: string) => {
-  try {
-    const labels = await prisma.statusLabel.findFirst({
-      where: {
-        id: id,
-      },
-    });
-    return parseStringify(labels);
-  } catch (error) {
-    console.log(error);
-  } finally {
-    await prisma.$disconnect();
-  }
-};
-
-export const remove = async (id: string) => {
-  try {
-    const labels = await prisma.statusLabel.delete({
-      where: {
-        id: id,
-      },
-    });
-    return parseStringify(labels);
-  } catch (error) {
-    console.log(error);
-  }
-};
-
-export const update = async (id: string, data: Partial<StatusLabel>) => {
-  try {
-    const labels = await prisma.statusLabel.update({
-      where: {
-        id: id,
-      },
-      data: {
-        name: data.name,
-        colorCode: data.colorCode,
-        isArchived: data.isArchived,
-        allowLoan: data.allowLoan,
-        description: data.description,
-      },
-    });
-    return parseStringify(labels);
-  } catch (error) {
-    console.log(error);
-  }
-};
+export const update = withAuth(
+  async (
+    user,
+    id: string,
+    data: Partial<StatusLabel>,
+  ): Promise<ActionResponse<StatusLabel>> => {
+    try {
+      const label = await prisma.statusLabel.update({
+        where: {
+          id: id,
+          companyId: user.user_metadata?.companyId,
+        },
+        data: {
+          name: data.name,
+          colorCode: data.colorCode,
+          isArchived: data.isArchived,
+          allowLoan: data.allowLoan,
+          description: data.description,
+        },
+      });
+      return { success: true, data: parseStringify(label) };
+    } catch (error) {
+      console.error(error);
+      return { success: false, error: "Failed to update status label" };
+    } finally {
+      await prisma.$disconnect();
+    }
+  },
+);

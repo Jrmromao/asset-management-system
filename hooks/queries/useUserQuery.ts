@@ -4,9 +4,9 @@ import { z } from "zod";
 import { userSchema } from "@/lib/schemas";
 import {
   createUser as insert,
-  findById,
   getAll,
   remove,
+  findById,
 } from "@/lib/actions/user.actions";
 
 export const MODEL_KEY = ["users"] as const;

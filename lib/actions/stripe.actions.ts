@@ -2,13 +2,14 @@
 
 import Stripe from "stripe";
 
-const stripe = new Stripe(
-  process.env.STRIPE_SECRET_KEY ||
-    "sk_test_51PifCH2N5SBY44N5QTQZWyJn8oxmCVaYkWDUWXGmr5Yp2fmlwWo4SUKtpai2tC2ku8TkJ9Y3FBrLyeMQM7ufS8pE00rJwIf2bW",
-  {
-    apiVersion: "2024-12-18.acacia",
-  },
-);
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+if (!stripeSecretKey) {
+  throw new Error("STRIPE_SECRET_KEY environment variable is not set.");
+}
+
+const stripe = new Stripe(stripeSecretKey, {
+  apiVersion: "2025-02-24.acacia",
+});
 
 interface CheckoutSessionResponse {
   success: boolean;
@@ -17,8 +18,8 @@ interface CheckoutSessionResponse {
 }
 
 export async function createCheckoutSession({
-  email = "jrmromao@gmail.com",
-  assetCount = 200,
+  email,
+  assetCount,
   companyId,
 }: {
   email: string;
@@ -32,7 +33,7 @@ export async function createCheckoutSession({
       line_items: [
         {
           price: "price_1QlZyQ2N5SBY44N5l2hElB14", // Verify this price ID
-          quantity: 1000,
+          quantity: assetCount,
           adjustable_quantity: {
             enabled: true,
             minimum: 100,
@@ -43,7 +44,7 @@ export async function createCheckoutSession({
       subscription_data: {
         trial_period_days: 30,
         metadata: {
-          assetCount: assetCount.toString(), // Convert to string for metadata
+          assetCount: assetCount.toString(),
           companyId,
         },
       },
@@ -59,22 +60,12 @@ export async function createCheckoutSession({
     return { success: true, session };
   } catch (error) {
     console.error("Error creating checkout session:", error);
-    throw error;
-
-    // Check for specific Stripe errors
-    // if (error instanceof Stripe.errors.StripeError) {
-    //   return {
-    //     success: false,
-    //     error: error.message,
-    //   };
-    // }
-
-    // return {
-    //   success: false,
-    //   error:
-    //     error instanceof Error
-    //       ? error.message
-    //       : "Failed to create checkout session",
-    // };
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to create checkout session",
+    };
   }
 }

@@ -7,360 +7,125 @@ import { accessorySchema, assignmentSchema } from "@/lib/schemas";
 import { getAuditLog } from "@/lib/actions/auditLog.actions";
 import { revalidatePath } from "next/cache";
 import { ItemType, Prisma } from "@prisma/client";
-import { withAuth, withAuthNoArgs } from "@/lib/middleware/withAuth";
+import { withAuth } from "@/lib/middleware/withAuth";
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000; // 1 second
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-export const insert = withAuth<Accessory>(async (values, session) => {
-  try {
-    const validation = accessorySchema.safeParse(values);
-    if (!validation.success) {
-      throw new Error(validation.error.errors[0].message);
-    }
-
-    return await prisma.$transaction(async (tx) => {
-      const accessory = await tx.accessory.create({
-        data: {
-          name: values.name,
-          alertEmail: values.alertEmail,
-          serialNumber: values.serialNumber,
-          reorderPoint: Number(values.reorderPoint),
-          totalQuantityCount: Number(values.totalQuantityCount),
-          modelNumber: values.modelNumber,
-          companyId: session.user.companyId,
-          statusLabelId: values.statusLabelId,
-          departmentId: values.departmentId,
-          locationId: values.locationId,
-          inventoryId: values.inventoryId,
-          categoryId: values.categoryId,
-        },
-      });
-
-      await tx.accessoryStock.create({
-        data: {
-          accessoryId: accessory.id,
-          quantity: Number(values.totalQuantityCount),
-          type: "purchase",
-          companyId: session.user.companyId,
-          notes: `Initial stock purchase of ${values.totalQuantityCount} units`,
-        },
-      });
-
-      await tx.auditLog.create({
-        data: {
-          action: "ACCESSORY_CREATED",
-          entity: "ACCESSORY",
-          entityId: accessory.id,
-          userId: session.user.id || "",
-          companyId: session.user.companyId,
-          details: `Created accessory ${values.name} with initial stock of ${values.totalQuantityCount} units`,
-        },
-      });
-
-      return { data: parseStringify(accessory) };
-    });
-  } catch (error) {
-    console.error(error);
-    return {
-      error: error instanceof Error ? error.message : "Unknown error",
-    };
-  }
-});
-
-export const getAll = withAuthNoArgs<Accessory[]>(async (session) => {
-  try {
-    const accessories = await prisma.accessory.findMany({
-      include: {
-        company: true,
-        supplier: true,
-        inventory: true,
-        statusLabel: true,
-      },
-      where: {
-        companyId: session.user.companyId,
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
-    return { data: parseStringify(accessories) };
-  } catch (error) {
-    console.error("Error fetching accessories:", error);
-    return { error: "Failed to fetch assets" };
-  }
-});
-
-export const findById = withAuth<string, Accessory>(async (id, session) => {
-  try {
-    const accessoryQuery = {
-      where: {
-        id,
-        companyId: session.user.companyId,
-      },
-      include: {
-        company: true,
-        supplier: true,
-        inventory: true,
-        statusLabel: true,
-        department: true,
-        category: true,
-        departmentLocation: true,
-        userItems: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-                title: true,
-                employeeId: true,
-                active: true,
-              },
-            },
-          },
-        },
-        AccessoryStock: {
-          orderBy: {
-            date: "desc",
-          },
-        },
-      },
-    } as const;
-
-    const [accessory, auditLogsResult] = await Promise.all([
-      prisma.accessory.findUnique(accessoryQuery),
-      getAuditLog(id),
-    ]);
-
-    if (!accessory) {
-      return { error: "Accessory not found" };
-    }
-
-    return {
-      data: parseStringify({
-        ...accessory,
-        auditLogs: auditLogsResult.success ? auditLogsResult.data : [],
-        userAccessories: accessory.userItems,
-        stockHistory: accessory.AccessoryStock,
-        currentAssignments: accessory.userItems,
-      }),
-    };
-  } catch (error) {
-    console.error("Error finding accessory:", error);
-    return { error: "Failed to find accessory" };
-  }
-});
-
-export const remove = withAuth<string, Accessory>(async (id, session) => {
-  try {
-    const asset = await prisma.accessory.delete({
-      where: {
-        id: id,
-        companyId: session.user.companyId, // Add company check for security
-      },
-    });
-
-    // Add audit log for deletion
-    await prisma.auditLog.create({
-      data: {
-        action: "ACCESSORY_DELETED",
-        entity: "ACCESSORY",
-        entityId: id,
-        userId: session.user.id || "",
-        companyId: session.user.companyId,
-        details: `Deleted accessory with ID ${id}`,
-      },
-    });
-
-    return { data: parseStringify(asset) };
-  } catch (error) {
-    console.error("Error deleting accessory:", error);
-
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === "P2025") {
-        return { error: "Accessory not found" };
+export const insert = withAuth(
+  async (
+    user,
+    values: z.infer<typeof accessorySchema>,
+  ): Promise<ActionResponse<Accessory>> => {
+    try {
+      const validation = accessorySchema.safeParse(values);
+      if (!validation.success) {
+        throw new Error(validation.error.errors[0].message);
       }
-      if (error.code === "P2003") {
-        return { error: "Cannot delete accessory because it is still in use" };
-      }
-    }
 
-    return { error: "Failed to delete accessory" };
-  }
-});
-
-export async function processAccessoryCSV(csvContent: string) {
-  try {
-    const data = processRecordContents(csvContent);
-    const session = await auth();
-
-    if (!session?.user?.companyId) {
-      throw new Error("User session or company ID is invalid.");
-    }
-
-    // const companyId = session.user.companyId;
-    const companyId = "bf40528b-ae07-4531-a801-ede53fb31f04";
-
-    const records = await prisma.$transaction(async (tx) => {
-      const recordPromises = data.map(async (item) => {
-        // Fetch associations
-        const [statusLabel, supplier, location, department, inventory] =
-          await Promise.all([
-            tx.statusLabel.findFirst({ where: { name: item["statusLabel"] } }),
-            tx.supplier.findFirst({ where: { name: item["supplier"] } }),
-            tx.departmentLocation.findFirst({
-              where: { name: item["location"] },
-            }),
-            tx.department.findFirst({ where: { name: item["department"] } }),
-            tx.inventory.findFirst({ where: { name: item["inventory"] } }),
-          ]);
-
-        // // Validate required associations
-        if (!statusLabel || !supplier) {
-          console.warn(
-            `Skipping record: Missing required associations for model="${item["model"]}", statusLabel="${item["statusLabel"]}", supplier="${item["supplier"]}"`,
-          );
-          return null;
-        }
-
-        // Create accessory record
-        return tx.accessory.create({
+      return await prisma.$transaction(async (tx) => {
+        const accessory = await tx.accessory.create({
           data: {
-            name: item["name"],
-            purchaseDate: item["purchaseDate"],
-            endOfLife: item["endOfLife"],
-            alertEmail: item["alertEmail"],
-            modelNumber: item["modelNumber"],
-            statusLabelId: statusLabel?.id,
-            departmentId: department?.id || null,
-            locationId: location?.id || null,
-            price: parseFloat(item["price"]) || 0,
-            companyId,
-            reorderPoint: Number(item["reorderPoint"]) || 0,
-            totalQuantityCount: Number(item["totalQuantityCount"]) || 0,
-            material: item["material"],
-            weight: item["weight"],
-            supplierId: supplier?.id,
-            inventoryId: inventory?.id || null,
-            poNumber: item["poNumber"],
-            notes: item["notes"],
+            name: values.name,
+            alertEmail: values.alertEmail,
+            serialNumber: values.serialNumber,
+            reorderPoint: Number(values.reorderPoint),
+            totalQuantityCount: Number(values.totalQuantityCount),
+            modelNumber: values.modelNumber,
+            companyId: user.user_metadata?.companyId,
+            statusLabelId: values.statusLabelId,
+            departmentId: values.departmentId,
+            locationId: values.locationId,
+            inventoryId: values.inventoryId,
+            categoryId: values.categoryId,
           },
         });
+
+        await tx.accessoryStock.create({
+          data: {
+            accessoryId: accessory.id,
+            quantity: Number(values.totalQuantityCount),
+            type: "purchase",
+            companyId: user.user_metadata?.companyId,
+            notes: `Initial stock purchase of ${values.totalQuantityCount} units`,
+          },
+        });
+
+        await tx.auditLog.create({
+          data: {
+            action: "ACCESSORY_CREATED",
+            entity: "ACCESSORY",
+            entityId: accessory.id,
+            userId: user.id,
+            companyId: user.user_metadata?.companyId,
+            details: `Created accessory ${values.name} with initial stock of ${values.totalQuantityCount} units`,
+          },
+        });
+
+        return {
+          success: true,
+          data: parseStringify(accessory),
+        };
       });
-
-      // Revalidate the necessary path
-      revalidatePath("/accessories");
-
-      // Resolve and filter out null results
-      return (await Promise.all(recordPromises)).filter(Boolean);
-    });
-
-    // Revalidate the necessary path
-    revalidatePath("/assets");
-
-    return {
-      success: true,
-      message: `Successfully processed ${records.length} records`,
-      data: records,
-    };
-  } catch (error) {
-    console.error("Error processing CSV:", error);
-    return {
-      success: false,
-      message:
-        error instanceof Error ? error.message : "Failed to process CSV file",
-    };
-  }
-}
-
-export async function checkout(
-  values: z.infer<typeof assignmentSchema>,
-): Promise<ActionResponse<Accessory>> {
-  try {
-    try {
-      await assignmentSchema.parseAsync(values);
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return { error: error.errors[0].message };
-      }
-      return { error: "Validation failed" };
+      console.error(error);
+      return {
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
+    } finally {
+      await prisma.$disconnect();
     }
+  },
+);
 
-    const session = await auth();
-    if (!session) {
-      return { error: "Not authenticated" };
+export const getAll = withAuth(
+  async (user): Promise<ActionResponse<Accessory[]>> => {
+    try {
+      const accessories = await prisma.accessory.findMany({
+        include: {
+          company: true,
+          supplier: true,
+          inventory: true,
+          statusLabel: true,
+        },
+        where: {
+          companyId: user.user_metadata?.companyId,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
+      return {
+        success: true,
+        data: parseStringify(accessories),
+      };
+    } catch (error) {
+      console.error("Error fetching accessories:", error);
+      return { error: "Failed to fetch accessories" };
+    } finally {
+      await prisma.$disconnect();
     }
+  },
+);
 
-    return await prisma.$transaction(async (tx) => {
-      // Get current accessory state
-      const accessory = await tx.accessory.findUnique({
-        where: { id: values.itemId },
+export const findById = withAuth(
+  async (user, id: string): Promise<ActionResponse<Accessory>> => {
+    try {
+      const accessoryQuery = {
+        where: {
+          id,
+          companyId: user.user_metadata?.companyId,
+        },
         include: {
-          userItems: true,
-        },
-      });
-
-      if (!accessory) {
-        throw new Error("Accessory not found");
-      }
-
-      // Calculate available quantity
-      // Calculate available quantity
-      const assignedQuantity = accessory.userItems.reduce(
-        (sum, assignment) => sum + assignment.quantity,
-        0,
-      );
-      const availableQuantity = accessory.totalQuantityCount - assignedQuantity;
-      // Check if we have enough quantity to assign
-      const requestedQuantity = 1; // Default to 1 if not specified
-      if (availableQuantity < requestedQuantity) {
-        throw new Error(
-          `Not enough quantity available. Requested: ${requestedQuantity}, Available: ${availableQuantity}`,
-        );
-      }
-
-      // Create user accessory assignment
-      await tx.userItem.create({
-        data: {
-          itemType: ItemType.ACCESSORY,
-          userId: values.userId,
-          accessoryId: values.itemId,
-          quantity: requestedQuantity,
-          companyId: session.user.companyId,
-          notes: "Assigned by user",
-        },
-      });
-
-      // Record stock movement
-      await tx.accessoryStock.create({
-        data: {
-          accessoryId: values.itemId,
-          quantity: -requestedQuantity,
-          type: "assignment",
-          companyId: session.user.companyId,
-          notes: `Assigned ${requestedQuantity} units to user ${values.userId}`,
-        },
-      });
-
-      // Create audit log
-      await tx.auditLog.create({
-        data: {
-          action: "ACCESSORY_CHECKOUT",
-          entity: "ACCESSORY",
-          entityId: values.itemId,
-          userId: session.user.id || "",
-          companyId: session.user.companyId,
-          details: `Assigned ${requestedQuantity} units to user ${values.userId}`,
-        },
-      });
-
-      // Get updated accessory with assignments
-      const updatedAccessory = await tx.accessory.findUnique({
-        where: { id: values.itemId },
-        include: {
+          company: true,
+          supplier: true,
+          inventory: true,
+          statusLabel: true,
+          department: true,
+          category: true,
+          departmentLocation: true,
           userItems: {
             include: {
               user: {
@@ -368,146 +133,379 @@ export async function checkout(
                   id: true,
                   name: true,
                   email: true,
+                  title: true,
+                  employeeId: true,
+                  active: true,
                 },
               },
             },
           },
+          AccessoryStock: {
+            orderBy: {
+              date: "desc",
+            },
+          },
+        },
+      } as const;
+
+      const [accessory, auditLogsResult] = await Promise.all([
+        prisma.accessory.findUnique(accessoryQuery),
+        getAuditLog(id),
+      ]);
+
+      if (!accessory) {
+        return { error: "Accessory not found" };
+      }
+
+      return {
+        success: true,
+        data: parseStringify({
+          ...accessory,
+          auditLogs: auditLogsResult.success ? auditLogsResult.data : [],
+          userAccessories: accessory.userItems,
+          stockHistory: accessory.AccessoryStock,
+          currentAssignments: accessory.userItems,
+        }),
+      };
+    } catch (error) {
+      console.error("Error finding accessory:", error);
+      return { error: "Failed to find accessory" };
+    } finally {
+      await prisma.$disconnect();
+    }
+  },
+);
+
+export const remove = withAuth(
+  async (user, id: string): Promise<ActionResponse<Accessory>> => {
+    try {
+      const asset = await prisma.accessory.delete({
+        where: {
+          id,
+          companyId: user.user_metadata?.companyId,
+        },
+      });
+
+      await prisma.auditLog.create({
+        data: {
+          action: "ACCESSORY_DELETED",
+          entity: "ACCESSORY",
+          entityId: id,
+          userId: user.id,
+          companyId: user.user_metadata?.companyId,
+          details: `Deleted accessory with ID ${id}`,
         },
       });
 
       return {
-        data: parseStringify(updatedAccessory),
+        success: true,
+        data: parseStringify(asset),
       };
-    });
-  } catch (error) {
-    console.error("Error assigning Accessory:", error);
-    return {
-      error:
-        error instanceof Error ? error.message : "Failed to assign Accessory",
-    };
-  }
-}
+    } catch (error) {
+      console.error("Error deleting accessory:", error);
 
-export async function checkin(
-  userAccessoryId: string,
-): Promise<ActionResponse<Accessory>> {
-  let retries = 0;
-
-  while (retries < MAX_RETRIES) {
-    try {
-      const session = await auth();
-      if (!session) {
-        return { error: "Not authenticated" };
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === "P2025") {
+          return { error: "Accessory not found" };
+        }
+        if (error.code === "P2003") {
+          return {
+            error: "Cannot delete accessory because it is still in use",
+          };
+        }
       }
 
-      // Start a new prisma client for each attempt
-      const result = await prisma.$transaction(
-        async (tx) => {
-          // Get current assignment
-          const currentAssignment = await tx.userItem.findFirst({
-            where: {
-              id: userAccessoryId,
-            },
-          });
+      return { error: "Failed to delete accessory" };
+    } finally {
+      await prisma.$disconnect();
+    }
+  },
+);
 
-          if (!currentAssignment) {
-            throw new Error(
-              "No active assignment found for this user and accessory",
+export const processAccessoryCSV = withAuth(
+  async (user, csvContent: string): Promise<ActionResponse<Accessory[]>> => {
+    try {
+      const data = processRecordContents(csvContent);
+      const companyId = user.user_metadata?.companyId;
+
+      const records = await prisma.$transaction(async (tx) => {
+        const recordPromises = data.map(async (item) => {
+          const [statusLabel, supplier, location, department, inventory] =
+            await Promise.all([
+              tx.statusLabel.findFirst({
+                where: { name: item["statusLabel"] },
+              }),
+              tx.supplier.findFirst({ where: { name: item["supplier"] } }),
+              tx.departmentLocation.findFirst({
+                where: { name: item["location"] },
+              }),
+              tx.department.findFirst({ where: { name: item["department"] } }),
+              tx.inventory.findFirst({ where: { name: item["inventory"] } }),
+            ]);
+
+          if (!statusLabel || !supplier) {
+            console.warn(
+              `Skipping record: Missing required associations for model="${item["model"]}", statusLabel="${item["statusLabel"]}", supplier="${item["supplier"]}"`,
             );
+            return null;
           }
 
-          // Delete the assignment
-          await tx.userItem.delete({
-            where: {
-              id: currentAssignment.id,
-            },
-          });
-
-          // Record stock return in AccessoryStock
-          await tx.accessoryStock.create({
+          return tx.accessory.create({
             data: {
-              accessoryId: currentAssignment.accessoryId!,
-              quantity: currentAssignment.quantity,
-              type: "return",
-              companyId: session.user.companyId,
-              notes: `Returned ${currentAssignment.quantity} units from user ${currentAssignment.userId}`,
+              name: item["name"],
+              purchaseDate: item["purchaseDate"],
+              endOfLife: item["endOfLife"],
+              alertEmail: item["alertEmail"],
+              modelNumber: item["modelNumber"],
+              statusLabelId: statusLabel?.id,
+              departmentId: department?.id || null,
+              locationId: location?.id || null,
+              price: parseFloat(item["price"]) || 0,
+              companyId,
+              reorderPoint: Number(item["reorderPoint"]) || 0,
+              totalQuantityCount: Number(item["totalQuantityCount"]) || 0,
+              material: item["material"],
+              weight: item["weight"],
+              supplierId: supplier?.id,
+              inventoryId: inventory?.id || null,
+              poNumber: item["poNumber"],
+              notes: item["notes"],
             },
           });
+        });
 
-          // Create audit log
-          await tx.auditLog.create({
-            data: {
-              action: "ACCESSORY_CHECKIN",
-              entity: "ACCESSORY",
-              entityId: currentAssignment.accessoryId,
-              userId: session.user.id || "",
-              companyId: session.user.companyId,
-              details: `Unassigned ${currentAssignment.quantity} units from user ${currentAssignment.userId}`,
-            },
-          });
+        revalidatePath("/accessories");
+        return (await Promise.all(recordPromises)).filter(Boolean);
+      });
 
-          // Get updated accessory with current assignments
-          const updatedAccessory = await tx.accessory.findUnique({
-            where: { id: currentAssignment.accessoryId! },
-            include: {
-              userItems: {
-                include: {
-                  user: {
-                    select: {
-                      id: true,
-                      name: true,
-                      email: true,
-                    },
-                  },
-                },
-              },
-              AccessoryStock: {
-                orderBy: {
-                  date: "desc",
-                },
-                take: 5,
-              },
-            },
-          });
-
-          return updatedAccessory;
-        },
-        {
-          maxWait: 5000, // 5 seconds max wait
-          timeout: 10000, // 10 seconds timeout
-        },
-      );
+      revalidatePath("/assets");
 
       return {
         success: true,
-        data: parseStringify(result),
+        message: `Successfully processed ${records.length} records`,
+        data: parseStringify(records),
       };
     } catch (error) {
-      console.error(`Attempt ${retries + 1} failed:`, error);
-
-      // If it's not the transaction error, throw immediately
-      if (
-        !(error instanceof Error) ||
-        !error.message.includes("Transaction not found")
-      ) {
-        throw error;
-      }
-
-      retries++;
-
-      // If we've exhausted retries, throw the error
-      if (retries === MAX_RETRIES) {
-        console.error("All retries failed");
-        throw error;
-      }
-
-      // Wait before retrying
-      await sleep(RETRY_DELAY * retries);
+      console.error("Error processing CSV:", error);
+      return {
+        error:
+          error instanceof Error ? error.message : "Failed to process CSV file",
+      };
+    } finally {
+      await prisma.$disconnect();
     }
-  }
+  },
+);
 
-  // This should never be reached due to the throw in the loop
-  return {
-    error: "Failed to complete check-in after all retries",
-  };
-}
+export const checkout = withAuth(
+  async (
+    user,
+    values: z.infer<typeof assignmentSchema>,
+  ): Promise<ActionResponse<Accessory>> => {
+    try {
+      const validation = assignmentSchema.safeParse(values);
+      if (!validation.success) {
+        return { error: validation.error.errors[0].message };
+      }
+
+      return await prisma.$transaction(async (tx) => {
+        const accessory = await tx.accessory.findUnique({
+          where: { id: values.itemId },
+          include: {
+            userItems: true,
+          },
+        });
+
+        if (!accessory) {
+          throw new Error("Accessory not found");
+        }
+
+        const assignedQuantity = accessory.userItems.reduce(
+          (sum, assignment) => sum + assignment.quantity,
+          0,
+        );
+        const availableQuantity =
+          accessory.totalQuantityCount - assignedQuantity;
+        const requestedQuantity = 1;
+
+        if (availableQuantity < requestedQuantity) {
+          throw new Error(
+            `Not enough quantity available. Requested: ${requestedQuantity}, Available: ${availableQuantity}`,
+          );
+        }
+
+        await tx.userItem.create({
+          data: {
+            itemType: ItemType.ACCESSORY,
+            userId: values.userId,
+            accessoryId: values.itemId,
+            quantity: requestedQuantity,
+            companyId: user.user_metadata?.companyId,
+            notes: "Assigned by user",
+          },
+        });
+
+        await tx.accessoryStock.create({
+          data: {
+            accessoryId: values.itemId,
+            quantity: -requestedQuantity,
+            type: "assignment",
+            companyId: user.user_metadata?.companyId,
+            notes: `Assigned ${requestedQuantity} units to user ${values.userId}`,
+          },
+        });
+
+        await tx.auditLog.create({
+          data: {
+            action: "ACCESSORY_CHECKOUT",
+            entity: "ACCESSORY",
+            entityId: values.itemId,
+            userId: user.id,
+            companyId: user.user_metadata?.companyId,
+            details: `Assigned ${requestedQuantity} units to user ${values.userId}`,
+          },
+        });
+
+        const updatedAccessory = await tx.accessory.findUnique({
+          where: { id: values.itemId },
+          include: {
+            userItems: {
+              include: {
+                user: {
+                  select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                  },
+                },
+              },
+            },
+          },
+        });
+
+        return {
+          success: true,
+          data: parseStringify(updatedAccessory),
+        };
+      });
+    } catch (error) {
+      console.error("Error assigning Accessory:", error);
+      return {
+        error:
+          error instanceof Error ? error.message : "Failed to assign Accessory",
+      };
+    } finally {
+      await prisma.$disconnect();
+    }
+  },
+);
+
+export const checkin = withAuth(
+  async (user, userAccessoryId: string): Promise<ActionResponse<Accessory>> => {
+    let retries = 0;
+
+    while (retries < MAX_RETRIES) {
+      try {
+        const result = await prisma.$transaction(
+          async (tx) => {
+            const currentAssignment = await tx.userItem.findFirst({
+              where: {
+                id: userAccessoryId,
+                companyId: user.user_metadata?.companyId,
+              },
+            });
+
+            if (!currentAssignment) {
+              throw new Error(
+                "No active assignment found for this user and accessory",
+              );
+            }
+
+            await tx.userItem.delete({
+              where: {
+                id: currentAssignment.id,
+              },
+            });
+
+            await tx.accessoryStock.create({
+              data: {
+                accessoryId: currentAssignment.accessoryId!,
+                quantity: currentAssignment.quantity,
+                type: "return",
+                companyId: user.user_metadata?.companyId,
+                notes: `Returned ${currentAssignment.quantity} units from user ${currentAssignment.userId}`,
+              },
+            });
+
+            await tx.auditLog.create({
+              data: {
+                action: "ACCESSORY_CHECKIN",
+                entity: "ACCESSORY",
+                entityId: currentAssignment.accessoryId,
+                userId: user.id,
+                companyId: user.user_metadata?.companyId,
+                details: `Unassigned ${currentAssignment.quantity} units from user ${currentAssignment.userId}`,
+              },
+            });
+
+            const updatedAccessory = await tx.accessory.findUnique({
+              where: { id: currentAssignment.accessoryId! },
+              include: {
+                userItems: {
+                  include: {
+                    user: {
+                      select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                      },
+                    },
+                  },
+                },
+                AccessoryStock: {
+                  orderBy: {
+                    date: "desc",
+                  },
+                  take: 5,
+                },
+              },
+            });
+
+            return updatedAccessory;
+          },
+          {
+            maxWait: 5000,
+            timeout: 10000,
+          },
+        );
+
+        return {
+          success: true,
+          data: parseStringify(result),
+        };
+      } catch (error) {
+        console.error(`Attempt ${retries + 1} failed:`, error);
+
+        if (
+          !(error instanceof Error) ||
+          !error.message.includes("Transaction not found")
+        ) {
+          throw error;
+        }
+
+        retries++;
+
+        if (retries === MAX_RETRIES) {
+          console.error("All retries failed");
+          throw error;
+        }
+
+        await sleep(RETRY_DELAY * retries);
+      }
+    }
+
+    return {
+      error: "Failed to complete check-in after all retries",
+    };
+  },
+);
