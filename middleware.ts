@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
+import { createServerSupabaseClient } from "@/utils/supabase/server";
 
 // Define routes that don't require authentication
 const PUBLIC_ROUTES = [
@@ -56,8 +56,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // For all other routes, require authentication
-  const res = NextResponse.next();
-  const supabase = createMiddlewareClient({ req: request, res });
+  const supabase = createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
@@ -67,7 +66,21 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(signInUrl);
   }
 
-  return res;
+  // Check for admin routes
+  if (pathname.startsWith('/admin')) {
+    const { data } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+
+    if (!data || data.role !== 'admin') {
+      // Redirect non-admin users to dashboard
+      return NextResponse.redirect(new URL('/dashboard', request.url));
+    }
+  }
+
+  return NextResponse.next();
 }
 
 export const config = {

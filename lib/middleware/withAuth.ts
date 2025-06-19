@@ -31,7 +31,7 @@ export function withAuth<TArgs extends any[], TResult>(
 ) {
   return async (...args: TArgs): Promise<TResult> => {
     const user = await getSupabaseSession();
-    console.log("User:", user);
+    // console.log("User:", user);
     if (!user) {
       throw new Error("Unauthorized: No Supabase session found");
     }
