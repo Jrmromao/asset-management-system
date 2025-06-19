@@ -1,147 +1,149 @@
 "use client";
 
-import React, { startTransition } from "react";
+import React, { useCallback, useState } from "react";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 import CustomInput from "@/components/CustomInput";
 import CustomColorPicker from "@/components/CustomColorPicker";
 import CustomSwitch from "@/components/CustomSwitch";
 
 import { statusLabelSchema } from "@/lib/schemas";
-import { useStatusLabelUIStore } from "@/lib/stores/useStatusLabelUIStore";
 import { useStatusLabelsQuery } from "@/hooks/queries/useStatusLabelsQuery";
-import { FormProps } from "@/types/form"; // Keep for UI state only
 
 type FormValues = z.infer<typeof statusLabelSchema>;
 
-const StatusLabelForm = ({
-  initialData,
-  onSubmitSuccess,
-}: FormProps<StatusLabel>) => {
-  const { createStatusLabel, isCreating, updateStatusLabel, isUpdating } =
-    useStatusLabelsQuery();
+interface StatusLabelFormProps {
+  initialData?: any;
+  onClose: () => void;
+  onSubmitSuccess?: () => void;
+}
 
-  const { onClose } = useStatusLabelUIStore();
+export default function StatusLabelForm({
+  initialData,
+  onClose,
+  onSubmitSuccess,
+}: StatusLabelFormProps) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { createStatusLabel, updateStatusLabel } = useStatusLabelsQuery();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(statusLabelSchema),
     defaultValues: {
-      name: initialData?.name || "",
-      description: initialData?.description || "",
-      colorCode: initialData?.colorCode || "#000000",
-      isArchived: initialData?.isArchived || false,
-      allowLoan: initialData?.allowLoan || true,
+      name: initialData?.name ?? "",
+      description: initialData?.description ?? "",
+      colorCode: initialData?.colorCode ?? "#000000",
+      isArchived: initialData?.isArchived ?? false,
+      allowLoan: initialData?.allowLoan ?? true,
     },
   });
 
-  async function onSubmit(data: FormValues) {
-    startTransition(async () => {
-      if (initialData) {
-        await updateStatusLabel(initialData.id, data, {
-          onSuccess: () => {
-            onSubmitSuccess?.();
-            onClose();
-            form.reset();
-          },
-        });
-      }
-      await createStatusLabel(
-        {
+  const handleSubmit = useCallback(
+    async (data: FormValues) => {
+      try {
+        setIsSubmitting(true);
+        const formData = {
           name: data.name,
           description: data.description,
-          colorCode: data.colorCode ?? "", // Ensure a default value for colorCode
+          colorCode: data.colorCode ?? "#000000",
           isArchived: data.isArchived ?? false,
           allowLoan: data.allowLoan ?? true,
-        },
-        {
-          onSuccess: () => {
-            form.reset();
-            onClose();
-            console.log("Successfully created status label");
-          },
-          onError: (error) => {
-            console.error("Error creating status label:", error);
-          },
-        },
-      );
-    });
-  }
+        };
+
+        if (initialData) {
+          const result = await updateStatusLabel(initialData.id, formData, {
+            onSuccess: () => {
+              form.reset();
+              onSubmitSuccess?.();
+              onClose();
+            },
+            onError: (error: Error) => {
+              toast.error(error.message);
+            },
+          });
+          if (!result.success) {
+            toast.error(result.error || "Failed to update status label");
+          }
+        } else {
+          const result = await createStatusLabel(formData, {
+            onSuccess: () => {
+              form.reset();
+              onSubmitSuccess?.();
+              onClose();
+            },
+            onError: (error: Error) => {
+              toast.error(error.message);
+            },
+          });
+          if (!result.success) {
+            toast.error(result.error || "Failed to create status label");
+          }
+        }
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : "An error occurred";
+        toast.error(message);
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [createStatusLabel, updateStatusLabel, initialData, form, onClose, onSubmitSuccess]
+  );
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <div className="space-y-4">
-          <CustomInput
-            name="name"
-            label="Name"
-            control={form.control}
-            placeholder="eg. Available"
-          />
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+        <CustomInput
+          control={form.control}
+          name="name"
+          label="Name"
+          placeholder="Enter status label name"
+        />
 
-          <CustomInput
-            type="textarea"
-            name="description"
-            label="Description"
-            control={form.control}
-            placeholder="eg. Asset is available for use"
-          />
+        <CustomInput
+          control={form.control}
+          name="description"
+          label="Description"
+          placeholder="Enter status label description"
+        />
 
-          <div className="grid grid-cols-2 gap-4">
-            <CustomSwitch
-              name="isArchived"
-              label="Is Archivable"
-              control={form.control}
-            />
+        <CustomColorPicker
+          control={form.control}
+          name="colorCode"
+          label="Color"
+        />
 
-            <CustomSwitch
-              name="allowLoan"
-              label="Allow Loan"
-              control={form.control}
-            />
-          </div>
+        <CustomSwitch
+          control={form.control}
+          name="isArchived"
+          label="Archived"
+        />
 
-          <CustomColorPicker
-            name="colorCode"
-            label="Status Color"
-            control={form.control}
-          />
-        </div>
+        <CustomSwitch
+          control={form.control}
+          name="allowLoan"
+          label="Allow Loan"
+        />
 
-        <div className="flex justify-end gap-4 pt-4">
+        <div className="flex justify-end space-x-2">
           <Button
             type="button"
             variant="outline"
-            onClick={() => {
-              form.reset();
-              onClose();
-            }}
-            disabled={isCreating}
+            onClick={onClose}
+            disabled={isSubmitting}
           >
             Cancel
           </Button>
-
-          <Button
-            type="submit"
-            disabled={isCreating || !form.formState.isValid}
-          >
-            {isCreating ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Creating...
-              </>
-            ) : (
-              <>{initialData ? "Update" : "Create"}</>
-            )}
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {initialData ? "Update" : "Create"}
           </Button>
         </div>
       </form>
     </Form>
   );
-};
-
-export default StatusLabelForm;
+}

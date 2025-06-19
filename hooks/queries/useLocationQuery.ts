@@ -2,32 +2,35 @@ import { useLocationUIStore } from "@/lib/stores/useLocationUIStore";
 import { createGenericQuery } from "@/hooks/queries/useQueryFactory";
 import { z } from "zod";
 import { locationSchema } from "@/lib/schemas";
-import { getAll, insert, remove, update } from "@/lib/actions/location.actions";
+import {
+  getAllLocations,
+  createLocation,
+  deleteLocation,
+  updateLocation,
+} from "@/lib/actions/location.actions";
 
 export const MODEL_KEY = ["locations"] as const;
 
 type CreateLocationInput = z.infer<typeof locationSchema>;
+type GenericQueryType = ReturnType<typeof createGenericQuery<DepartmentLocation, CreateLocationInput>>;
 
 export function useLocationQuery() {
   const { onClose } = useLocationUIStore();
 
-  const genericQuery = createGenericQuery<
-    DepartmentLocation,
-    CreateLocationInput
-  >(
+  const genericQuery: GenericQueryType = createGenericQuery<DepartmentLocation, CreateLocationInput>(
     MODEL_KEY,
     {
       getAll: async () => {
-        return await getAll();
+        return await getAllLocations();
       },
       insert: async (data: CreateLocationInput) => {
-        return await insert(data);
+        return await createLocation(data);
       },
       delete: async (id: string) => {
-        return await remove(id);
+        return await deleteLocation(id);
       },
-      update: async (id: string, data: Partial<DepartmentLocation>) => {
-        return await update(id, data);
+      update: async (id: string, data: CreateLocationInput) => {
+        return await updateLocation(id, data as any);
       },
     },
     {

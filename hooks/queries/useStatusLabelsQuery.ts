@@ -2,34 +2,35 @@ import { createGenericQuery } from "@/hooks/queries/useQueryFactory";
 import { z } from "zod";
 import { statusLabelSchema } from "@/lib/schemas";
 import {
-  getAll,
-  insert,
-  remove,
-  update,
+  getAllStatusLabels,
+  createStatusLabel,
+  deleteStatusLabel,
+  updateStatusLabel,
 } from "@/lib/actions/statusLabel.actions";
 import { useStatusLabelUIStore } from "@/lib/stores/useStatusLabelUIStore";
 
 export const MODEL_KEY = ["statusLabels"] as const;
 
 type CreateStatusLabelInput = z.infer<typeof statusLabelSchema>;
+type GenericQueryType = ReturnType<typeof createGenericQuery<StatusLabel, CreateStatusLabelInput>>;
 
 export function useStatusLabelsQuery() {
   const { onClose } = useStatusLabelUIStore();
 
-  const genericQuery = createGenericQuery<StatusLabel, CreateStatusLabelInput>(
+  const genericQuery: GenericQueryType = createGenericQuery<StatusLabel, CreateStatusLabelInput>(
     MODEL_KEY,
     {
       getAll: async () => {
-        return await getAll();
+        return await getAllStatusLabels();
       },
       insert: async (data: CreateStatusLabelInput) => {
-        return await insert(data);
+        return await createStatusLabel(data);
       },
       delete: async (id: string) => {
-        return remove(id);
+        return deleteStatusLabel(id);
       },
-      update: async (id: string, data: Partial<StatusLabel>) => {
-        return await update(id, data);
+      update: async (id: string, data: CreateStatusLabelInput) => {
+        return await updateStatusLabel(id, data as any);
       },
     },
     {

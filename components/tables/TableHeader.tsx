@@ -1,75 +1,132 @@
+import React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Filter, Import, Plus, Search, Download } from "lucide-react";
-import React from "react";
+import { Cross2Icon, PlusCircledIcon, ReloadIcon, DownloadIcon, UploadIcon } from "@radix-ui/react-icons";
+import { Table } from "@tanstack/react-table";
+import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
 
-interface TableHeaderProps {
-  onSearch?: (value: string) => void;
-  onFilter?: () => void;
+interface DataTableHeaderProps<TData> {
+  table: Table<TData>;
+  title?: string;
+  addNewText?: string;
+  onAddNew?: () => void;
+  onRefresh?: () => void;
   onImport?: () => void;
   onExport?: () => void;
-  onCreateNew?: () => void;
+  isLoading?: boolean;
+  filterPlaceholder?: string;
+  className?: string;
+  hideAddButton?: boolean;
 }
 
-export const TableHeader = ({
-  onSearch,
-  onFilter,
+export function DataTableHeader<TData>({
+  table,
+  title,
+  addNewText = "Add New",
+  onAddNew,
+  onRefresh,
   onImport,
   onExport,
-  onCreateNew,
-}: TableHeaderProps) => {
+  isLoading,
+  filterPlaceholder = "Filter...",
+  className,
+  hideAddButton = false,
+}: DataTableHeaderProps<TData>) {
+  const globalFilter = table.getColumn("globalFilter")?.getFilterValue() as string;
+  
   return (
-    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-      <div className="flex items-center gap-4">
-        {onSearch && (
-          <div className="relative w-64">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search"
-              className="pl-8"
-              onChange={(e) => onSearch(e.target.value)}
-            />
-          </div>
+    <motion.div
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className={cn("flex flex-col space-y-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0", 
+        className
+      )}
+    >
+      <div className="flex items-center space-x-2">
+        {title && (
+          <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
         )}
-        {onFilter && (
+        {onRefresh && (
           <Button
-            variant="outline"
+            variant="ghost"
             size="icon"
-            onClick={onFilter}
-            className="shrink-0"
+            onClick={onRefresh}
+            disabled={isLoading}
+            className="h-8 w-8"
           >
-            <Filter className="h-4 w-4" />
+            <ReloadIcon className={cn("h-4 w-4", isLoading && "animate-spin")} />
           </Button>
         )}
       </div>
-      <div className="flex items-center gap-2">
-        {onExport && (
-          <Button
-            variant="outline"
-            onClick={onExport}
-            className="flex items-center gap-2"
-          >
-            <Download className="h-4 w-4" />
-            Export
-          </Button>
-        )}
-        {onImport && (
-          <Button
-            variant="outline"
-            onClick={onImport}
-            className="flex items-center gap-2"
-          >
-            <Import className="h-4 w-4" />
-            Import
-          </Button>
-        )}
-        {onCreateNew && (
-          <Button onClick={onCreateNew} className="flex items-center gap-2">
-            <Plus className="h-4 w-4" />
-            Create New
-          </Button>
-        )}
+      
+      <div className="flex items-center justify-between">
+        <div className="flex flex-1 items-center space-x-2">
+          <Input
+            placeholder={filterPlaceholder ?? "Filter..."}
+            value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
+            onChange={(event) =>
+              table.getColumn("name")?.setFilterValue(event.target.value)
+            }
+            className="h-9 w-[150px] lg:w-[250px] dark:bg-gray-800 dark:border-gray-700 dark:placeholder-gray-400"
+          />
+          {Boolean(table.getColumn("name")?.getFilterValue()) && (
+            <Button
+              variant="ghost"
+              onClick={() => table.getColumn("name")?.setFilterValue("")}
+              className="h-9 px-2 lg:px-3 dark:hover:bg-gray-800"
+            >
+              <Cross2Icon className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+        <div className="flex items-center space-x-2">
+          {!hideAddButton && (
+            <Button
+              variant="outline"
+              className="h-9 dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700"
+              onClick={onAddNew}
+              disabled={isLoading}
+            >
+              <PlusCircledIcon className="mr-2 h-4 w-4" />
+              {addNewText}
+            </Button>
+          )}
+          {onImport && (
+            <Button
+              variant="outline"
+              className="h-9 dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700"
+              onClick={onImport}
+              disabled={isLoading}
+            >
+              <UploadIcon className="mr-2 h-4 w-4" />
+              Import
+            </Button>
+          )}
+          {onExport && (
+            <Button
+              variant="outline"
+              className="h-9 dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700"
+              onClick={onExport}
+              disabled={isLoading}
+            >
+              <DownloadIcon className="mr-2 h-4 w-4" />
+              Export
+            </Button>
+          )}
+          {onRefresh && (
+            <Button
+              variant="outline"
+              className="h-9 px-2 lg:px-3 dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700"
+              onClick={onRefresh}
+              disabled={isLoading}
+            >
+              <ReloadIcon className={cn("h-4 w-4", { "animate-spin": isLoading })} />
+            </Button>
+          )}
+        </div>
       </div>
-    </div>
+    </motion.div>
   );
-};
+}

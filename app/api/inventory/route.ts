@@ -1,14 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
-  insert,
-  getAll,
-  update,
-  remove,
+  createInventory,
+  getAllInventories,
+  updateInventory,
+  deleteInventory,
 } from "@/lib/actions/inventory.actions";
+import { cookies } from "next/headers";
+
+const getSession = () => {
+  const cookieStore = cookies();
+  return {
+    accessToken: cookieStore.get('sb-access-token')?.value,
+    refreshToken: cookieStore.get('sb-refresh-token')?.value
+  };
+};
 
 export async function GET(request: NextRequest) {
   try {
-    const result = await getAll();
+    const session = getSession();
+    const result = await getAllInventories();
 
     if (!result.success) {
       return NextResponse.json({ error: result.error }, { status: 400 });
@@ -26,7 +36,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const result = await insert(body);
+    const result = await createInventory(body);
     if (!result.success) {
       return NextResponse.json({ error: result.error }, { status: 400 });
     }
@@ -48,7 +58,7 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "ID is required" }, { status: 400 });
     }
     const body = await request.json();
-    const result = await update(id, body);
+    const result = await updateInventory(id, body);
     if (!result.success) {
       return NextResponse.json({ error: result.error }, { status: 400 });
     }
@@ -69,7 +79,7 @@ export async function DELETE(request: NextRequest) {
     if (!id) {
       return NextResponse.json({ error: "ID is required" }, { status: 400 });
     }
-    const result = await remove(id);
+    const result = await deleteInventory(id);
     if (!result.success) {
       return NextResponse.json({ error: result.error }, { status: 400 });
     }

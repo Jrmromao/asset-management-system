@@ -7,6 +7,7 @@ import { Prisma, Asset } from "@prisma/client";
 import { withAuth } from "@/lib/middleware/withAuth";
 import { revalidatePath } from "next/cache";
 import { parseStringify } from "@/lib/utils";
+import { cookies } from 'next/headers';
 
 export type CreateAssetInput = {
   name: string;
@@ -29,6 +30,14 @@ type AuthResponse<T> = {
 async function findUserByOauthId(oauthId: string) {
   return prisma.user.findFirst({ where: { oauthId } });
 }
+
+const getSession = () => {
+  const cookieStore = cookies();
+  return {
+    accessToken: cookieStore.get('sb-access-token')?.value,
+    refreshToken: cookieStore.get('sb-refresh-token')?.value
+  };
+};
 
 export const create = withAuth(async (user, data: CreateAssetInput): Promise<AuthResponse<Asset>> => {
   try {
@@ -66,6 +75,12 @@ export const create = withAuth(async (user, data: CreateAssetInput): Promise<Aut
   }
 });
 
+// Wrap the create function to handle session
+export async function createAsset(data: CreateAssetInput): Promise<AuthResponse<Asset>> {
+  const session = getSession();
+  return create(session, data);
+}
+
 export const getAll = withAuth(async (user): Promise<AuthResponse<Asset[]>> => {
   try {
     const assets = await prisma.asset.findMany({
@@ -93,6 +108,12 @@ export const getAll = withAuth(async (user): Promise<AuthResponse<Asset[]>> => {
     await prisma.$disconnect();
   }
 });
+
+// Wrap the getAll function to handle session
+export async function getAllAssets(): Promise<AuthResponse<Asset[]>> {
+  const session = getSession();
+  return getAll(session);
+}
 
 export const getAssetById = withAuth(async (user, id: string): Promise<AuthResponse<Asset>> => {
   try {
@@ -123,6 +144,12 @@ export const getAssetById = withAuth(async (user, id: string): Promise<AuthRespo
   }
 });
 
+// Wrap the getAssetById function to handle session
+export async function getAsset(id: string): Promise<AuthResponse<Asset>> {
+  const session = getSession();
+  return getAssetById(session, id);
+}
+
 export const remove = withAuth(async (user, id: string): Promise<AuthResponse<Asset>> => {
   try {
     const asset = await prisma.asset.delete({
@@ -140,6 +167,12 @@ export const remove = withAuth(async (user, id: string): Promise<AuthResponse<As
     await prisma.$disconnect();
   }
 });
+
+// Wrap the remove function to handle session
+export async function removeAsset(id: string): Promise<AuthResponse<Asset>> {
+  const session = getSession();
+  return remove(session, id);
+}
 
 export const update = withAuth(async (user, id: string, data: CreateAssetInput): Promise<AuthResponse<Asset>> => {
   try {
@@ -199,434 +232,274 @@ export const update = withAuth(async (user, id: string, data: CreateAssetInput):
       },
     });
 
-    // Handle form template values update
-    if (data.formTemplateId && data.templateValues) {
-      // Delete existing template values
-      await prisma.formTemplateValue.deleteMany({
-        where: { assetId: id }
-      });
-
-      // Create new template values
-      const templateValues = Object.entries(data.templateValues).map(
-        ([key, value]) => ({
-          assetId: asset.id,
-          templateId: data.formTemplateId!,
-          values: { [key]: value },
-        })
-      );
-
-      if (templateValues.length > 0) {
-        await prisma.formTemplateValue.createMany({
-          data: templateValues,
-        });
-      }
-    }
-
-    // Create audit log
-    try {
-      const dbUser = await findUserByOauthId(user.id);
-      if (dbUser) {
-        await prisma.auditLog.create({
-          data: {
-            action: "ASSET_UPDATED",
-            entity: "Asset",
-            entityId: asset.id,
-            userId: dbUser.id,
-            companyId: dbUser.companyId,
-            details: `Updated asset ${data.name}`,
-          },
-        });
-      } else {
-        console.warn("No matching app user found for audit log. Skipping audit log creation.");
-      }
-    } catch (e) {
-      console.error("Failed to create audit log:", e);
-    }
-
-    return {
-      success: true,
-      data: asset,
-    };
+    revalidatePath("/assets");
+    return { success: true, data: parseStringify(asset) };
   } catch (error) {
-    console.error("Error updating asset:", error);
-    return {
-      success: false,
-      error: "Failed to update asset",
-    };
+    console.error("Update asset error:", error);
+    return { success: false, error: "Failed to update asset" };
   } finally {
     await prisma.$disconnect();
   }
 });
 
-export const findById = withAuth(async (user, id: string) => {
+// Wrap the update function to handle session
+export async function updateAsset(id: string, data: CreateAssetInput): Promise<AuthResponse<Asset>> {
+  const session = getSession();
+  return update(session, id, data);
+}
+
+export const findById = withAuth(async (user, id: string): Promise<AuthResponse<Asset>> => {
   try {
-    // Disconnect any existing connections
-    await prisma.$disconnect();
-    
-    console.log('Finding asset with id:', id);
-    console.log('User company ID:', user.user_metadata?.companyId);
-    console.log('Timestamp:', new Date().toISOString());
-    
-    // Create a new connection
-    await prisma.$connect();
-    
     const asset = await prisma.asset.findFirst({
       where: {
-        id: id,
+        id,
         companyId: user.user_metadata?.companyId,
-        AND: {
-          updatedAt: {
-            lte: new Date()
-          }
-        }
       },
       include: {
-        assignee: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
         model: true,
+        assignee: true,
+        supplier: true,
+        departmentLocation: true,
         statusLabel: true,
         department: true,
+        inventory: true,
+      },
+    });
+    if (!asset) {
+      return { success: false, error: "Asset not found" };
+    }
+    return { success: true, data: parseStringify(asset) };
+  } catch (error) {
+    console.error("Find asset error:", error);
+    return { success: false, error: "Failed to find asset" };
+  } finally {
+    await prisma.$disconnect();
+  }
+});
+
+// Wrap the findById function to handle session
+export async function findAssetById(id: string): Promise<AuthResponse<Asset>> {
+  const session = getSession();
+  return findById(session, id);
+}
+
+export const checkin = withAuth(async (user, id: string): Promise<AuthResponse<Asset>> => {
+  try {
+    const asset = await prisma.asset.update({
+      where: { id },
+      data: {
+        assigneeId: null,
+      },
+      include: {
+        model: true,
+        assignee: true,
+        supplier: true,
         departmentLocation: true,
-        formTemplate: {
-          include: {
-            values: true,
-          },
-        },
-        formTemplateValues: true,
-        AssetHistory: true,
-        Co2eRecord: true,
+        statusLabel: true,
+        department: true,
+        inventory: true,
       },
     });
-
-    // Fetch audit logs separately since they're not directly related to Asset
-    const auditLogs = await prisma.auditLog.findMany({
-      where: {
-        entityId: id,
-        entity: 'Asset',
-        companyId: user.user_metadata?.companyId,
-      },
-      orderBy: {
-        createdAt: 'desc'
-      }
-    });
-
-    console.log('Found audit logs:', auditLogs.length);
-
-    return {
-      success: true,
-      data: asset ? {
-        ...asset,
-        auditLogs,
-      } : null,
-    };
+    revalidatePath("/assets");
+    return { success: true, data: parseStringify(asset) };
   } catch (error) {
-    console.error("Error finding asset:", error);
-    return {
-      success: false,
-      error: "Failed to find asset",
-    };
+    console.error("Checkin asset error:", error);
+    return { success: false, error: "Failed to check in asset" };
   } finally {
     await prisma.$disconnect();
   }
 });
 
-export const checkin = withAuth(async (user, id: string) => {
+// Wrap the checkin function to handle session
+export async function checkinAsset(id: string): Promise<AuthResponse<Asset>> {
+  const session = getSession();
+  return checkin(session, id);
+}
+
+export const checkout = withAuth(async (user, id: string, assigneeId: string): Promise<AuthResponse<Asset>> => {
   try {
     const asset = await prisma.asset.update({
-      where: {
-        id: id,
-        companyId: user.user_metadata?.companyId,
-      },
+      where: { id },
       data: {
-        status: "CHECKED_IN",
+        assigneeId,
+      },
+      include: {
+        model: true,
+        assignee: true,
+        supplier: true,
+        departmentLocation: true,
+        statusLabel: true,
+        department: true,
+        inventory: true,
       },
     });
-    return {
-      success: true,
-      data: asset,
-    };
+    revalidatePath("/assets");
+    return { success: true, data: parseStringify(asset) };
   } catch (error) {
-    console.error("Error checking in asset:", error);
-    return {
-      success: false,
-      error: "Failed to check in asset",
-    };
+    console.error("Checkout asset error:", error);
+    return { success: false, error: "Failed to check out asset" };
   } finally {
     await prisma.$disconnect();
   }
 });
 
-export const checkout = withAuth(async (user, id: string) => {
-  try {
-    const asset = await prisma.asset.update({
-      where: {
-        id: id,
-        companyId: user.user_metadata?.companyId,
-      },
-      data: {
-        status: "CHECKED_OUT",
-      },
-    });
-    return {
-      success: true,
-      data: asset,
-    };
-  } catch (error) {
-    console.error("Error checking out asset:", error);
-    return {
-      success: false,
-      error: "Failed to check out asset",
-    };
-  } finally {
-    await prisma.$disconnect();
-  }
-});
+// Wrap the checkout function to handle session
+export async function checkoutAsset(id: string, assigneeId: string): Promise<AuthResponse<Asset>> {
+  const session = getSession();
+  return checkout(session, id, assigneeId);
+}
 
-export const processAssetsCSV = withAuth(async (user, csvContent: string) => {
-  const lines = csvContent.split('\n');
-  if (lines.length < 2) {
-    return {
-      success: false,
-      message: "CSV file is empty or invalid",
-    };
-  }
-
+export const processAssetsCSV = withAuth(async (user, csvContent: string): Promise<AuthResponse<{ success: boolean; message: string }>> => {
   try {
-    // Parse headers
-    const headers = lines[0].split(',').map(h => h.trim());
-    const requiredHeaders = ['name', 'serialNumber', 'modelId', 'statusLabelId', 'departmentId', 'inventoryId', 'locationId'];
+    // Process CSV content
+    const rows = csvContent.split('\n').map(row => row.split(','));
+    const headers = rows[0];
+    const data = rows.slice(1);
+
+    // Validate headers
+    const requiredHeaders = ['name', 'serialNumber', 'modelId', 'statusLabelId'];
     const missingHeaders = requiredHeaders.filter(h => !headers.includes(h));
-
     if (missingHeaders.length > 0) {
       return {
         success: false,
-        message: `Missing required columns: ${missingHeaders.join(', ')}`,
+        error: `Missing required headers: ${missingHeaders.join(', ')}`,
       };
     }
 
-    // Process each line
-    const assets: CreateAssetInput[] = [];
-    for (let i = 1; i < lines.length; i++) {
-      if (!lines[i].trim()) continue;
+    // Process each row
+    for (const row of data) {
+      const assetData = headers.reduce((acc, header, index) => {
+        acc[header.trim()] = row[index]?.trim();
+        return acc;
+      }, {} as Record<string, string>);
 
-      const values = lines[i].split(',').map(v => v.trim());
-      const asset: CreateAssetInput = {
-        name: values[headers.indexOf('name')],
-        serialNumber: values[headers.indexOf('serialNumber')],
-        modelId: values[headers.indexOf('modelId')],
-        statusLabelId: values[headers.indexOf('statusLabelId')],
-        departmentId: values[headers.indexOf('departmentId')],
-        inventoryId: values[headers.indexOf('inventoryId')],
-        locationId: values[headers.indexOf('locationId')],
-        formTemplateId: values[headers.indexOf('formTemplateId')] || "",
-        templateValues: {}
-      };
-
-      // Add template values if they exist
-      if (asset.formTemplateId && headers.includes('templateValues')) {
-        try {
-          const templateValuesStr = values[headers.indexOf('templateValues')];
-          asset.templateValues = JSON.parse(templateValuesStr);
-        } catch (e) {
-          console.error(`Error parsing template values for row ${i + 1}:`, e);
-        }
+      // Validate required fields
+      const validation = assetSchema.safeParse(assetData);
+      if (!validation.success) {
+        continue;
       }
 
-      assets.push(asset);
+      await prisma.asset.create({
+        data: {
+          ...validation.data,
+          companyId: user.user_metadata?.companyId,
+        },
+      });
     }
 
-    // Validate and insert assets
-    let successCount = 0;
-    let errorCount = 0;
-    const errors: string[] = [];
+    revalidatePath("/assets");
+    return {
+      success: true,
+      data: { success: true, message: "CSV processed successfully" },
+    };
+  } catch (error) {
+    console.error("Process CSV error:", error);
+    return {
+      success: false,
+      error: "Failed to process CSV file",
+    };
+  } finally {
+    await prisma.$disconnect();
+  }
+});
 
-    for (const asset of assets) {
-      try {
-        const validationResult = assetSchema.safeParse(asset);
-        if (!validationResult.success) {
-          errorCount++;
-          errors.push(`Validation failed for asset ${asset.name}: ${validationResult.error.message}`);
-          continue;
-        }
+// Wrap the processAssetsCSV function to handle session
+export async function processAssetCSV(csvContent: string): Promise<AuthResponse<{ success: boolean; message: string }>> {
+  const session = getSession();
+  return processAssetsCSV(session, csvContent);
+}
 
-        const result = await create(asset);
-        if (result.success) {
-          successCount++;
-        } else {
-          errorCount++;
-          errors.push(`Failed to insert asset ${asset.name}: ${result.error}`);
-        }
-      } catch (error) {
-        errorCount++;
-        errors.push(`Error processing asset ${asset.name}: ${error}`);
-      }
-    }
+export const generateAssetCSVTemplate = withAuth(async (user): Promise<AuthResponse<string>> => {
+  try {
+    const headers = [
+      'name',
+      'serialNumber',
+      'modelId',
+      'statusLabelId',
+      'departmentId',
+      'inventoryId',
+      'locationId',
+    ];
 
     return {
       success: true,
-      message: `Successfully imported ${successCount} assets. Failed to import ${errorCount} assets.${errors.length > 0 ? '\nErrors:\n' + errors.join('\n') : ''}`,
+      data: headers.join(','),
     };
   } catch (error) {
-    console.error('Error processing CSV:', error);
+    console.error("Generate CSV template error:", error);
     return {
       success: false,
-      message: 'Failed to process CSV file: ' + (error instanceof Error ? error.message : String(error)),
+      error: "Failed to generate CSV template",
     };
   }
 });
 
-export const generateAssetCSVTemplate = () => {
-  const headers = [
-    'name',
-    'serialNumber',
-    'modelId',
-    'statusLabelId',
-    'departmentId',
-    'inventoryId',
-    'locationId',
-    'formTemplateId',
-    'templateValues'
-  ];
+// Wrap the generateAssetCSVTemplate function to handle session
+export async function generateCSVTemplate(): Promise<AuthResponse<string>> {
+  const session = getSession();
+  return generateAssetCSVTemplate(session);
+}
 
-  const sampleRow = [
-    'Sample Asset',
-    'SN123456',
-    'model-id',
-    'status-label-id',
-    'department-id',
-    'inventory-id',
-    'location-id',
-    'form-template-id',
-    '{"field1": "value1", "field2": "value2"}'
-  ];
-
-  return `${headers.join(',')}\n${sampleRow.join(',')}`;
-};
-
-export const exportToCSV = withAuth(async (user) => {
+export const exportToCSV = withAuth(async (user): Promise<AuthResponse<string>> => {
   try {
     const assets = await prisma.asset.findMany({
       where: {
         companyId: user.user_metadata?.companyId,
       },
-      select: {
-        name: true,
-        serialNumber: true,
-        model: {
-          select: {
-            name: true,
-          }
-        },
-        statusLabel: {
-          select: {
-            name: true,
-          }
-        },
-        department: {
-          select: {
-            name: true,
-          }
-        },
-        departmentLocation: {
-          select: {
-            name: true,
-          }
-        },
-        inventory: {
-          select: {
-            name: true,
-          }
-        },
-        datePurchased: true,
-        price: true,
-        poNumber: true,
-        supplier: {
-          select: {
-            name: true,
-          }
-        },
-        formTemplate: {
-          select: {
-            name: true,
-          }
-        },
-        formTemplateValues: {
-          select: {
-            values: true,
-          }
-        },
-        assignee: {
-          select: {
-            name: true,
-          }
-        },
-        energyRating: true,
-        dailyOperatingHours: true,
-        weight: true,
+      include: {
+        model: true,
+        assignee: true,
+        supplier: true,
+        departmentLocation: true,
+        statusLabel: true,
+        department: true,
+        inventory: true,
       },
     });
 
-    // Convert assets to CSV format
     const headers = [
-      'Name',
-      'Serial Number',
-      'Model',
-      'Status',
-      'Department',
-      'Location',
-      'Inventory',
-      'Purchase Date',
-      'Purchase Price',
-      'PO Number',
-      'Supplier',
-      'Form Template',
-      'Template Values',
-      'Assigned To',
-      'Energy Rating',
-      'Daily Operating Hours',
-      'Weight (kg)'
+      'name',
+      'serialNumber',
+      'modelId',
+      'statusLabelId',
+      'departmentId',
+      'inventoryId',
+      'locationId',
     ];
 
     const rows = assets.map(asset => [
       asset.name,
       asset.serialNumber,
-      asset.model?.name || '',
-      asset.statusLabel?.name || '',
-      asset.department?.name || '',
-      asset.departmentLocation?.name || '',
-      asset.inventory?.name || '',
-      asset.datePurchased ? new Date(asset.datePurchased).toISOString().split('T')[0] : '',
-      asset.price?.toString() || '',
-      asset.poNumber || '',
-      asset.supplier?.name || '',
-      asset.formTemplate?.name || '',
-      JSON.stringify(asset.formTemplateValues?.[0]?.values || {}),
-      asset.assignee?.name || '',
-      asset.energyRating || '',
-      asset.dailyOperatingHours?.toString() || '',
-      asset.weight?.toString() || ''
+      asset.modelId,
+      asset.statusLabelId,
+      asset.departmentId,
+      asset.inventoryId,
+      asset.departmentLocationId,
     ]);
 
-    // Convert to CSV string
     const csvContent = [
       headers.join(','),
-      ...rows.map(row => row.map(cell => `"${cell?.replace(/"/g, '""') || ''}"`.trim()).join(','))
+      ...rows.map(row => row.join(','))
     ].join('\n');
 
     return {
       success: true,
-      data: csvContent
+      data: csvContent,
     };
   } catch (error) {
-    console.error("[EXPORT_ASSETS_TO_CSV]", error);
+    console.error("Export to CSV error:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Failed to export assets"
+      error: "Failed to export assets to CSV",
     };
+  } finally {
+    await prisma.$disconnect();
   }
 });
+
+// Wrap the exportToCSV function to handle session
+export async function exportAssetsToCSV(): Promise<AuthResponse<string>> {
+  const session = getSession();
+  return exportToCSV(session);
+}
 

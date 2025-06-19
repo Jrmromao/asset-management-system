@@ -1,18 +1,14 @@
-import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { createClient } from '@/utils/supabase/server';
 import { DashboardHeader } from "@/components/dashboard/Header";
 import { StatsGrid } from "@/components/dashboard/StatsGrid";
 import { AssetOverview } from "@/components/dashboard/AssetOverview";
 import { MaintenanceScheduleCard } from "@/components/dashboard/MaintenanceSchedule";
-import { createServerSupabaseClient } from '@/utils/supabase/server';
 
 export default async function DashboardPage() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user) {
-    redirect('/sign-in');
-  }
 
   return (
     <div className="p-8 space-y-6">

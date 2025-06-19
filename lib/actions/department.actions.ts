@@ -5,22 +5,37 @@ import { parseStringify } from "@/lib/utils";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/app/db";
 import { withAuth } from "@/lib/middleware/withAuth";
+import { cookies } from "next/headers";
+import { z } from "zod";
+import { departmentSchema } from "@/lib/schemas";
 
-type AuthResponse<T> = {
+type ActionResponse<T> = {
   data?: T;
   error?: string;
   success: boolean;
 };
 
+const getSession = () => {
+  const cookieStore = cookies();
+  return {
+    accessToken: cookieStore.get('sb-access-token')?.value,
+    refreshToken: cookieStore.get('sb-refresh-token')?.value
+  };
+};
+
 export const insert = withAuth(
   async (
     user,
-    data: Pick<Department, "name">,
-  ): Promise<AuthResponse<Department>> => {
+    data: z.infer<typeof departmentSchema>,
+  ): Promise<ActionResponse<Department>> => {
     try {
+      const validation = departmentSchema.safeParse(data);
+      if (!validation.success) {
+        return { success: false, error: validation.error.errors[0].message };
+      }
       const department = await prisma.department.create({
         data: {
-          ...data,
+          ...validation.data,
           companyId: user.user_metadata?.companyId,
         },
       });
@@ -33,22 +48,28 @@ export const insert = withAuth(
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === "P2002") {
-          return { error: "Department name already exists in your company" };
+          return { success: false, error: "Department name already exists in your company" };
         }
       }
       console.error("Create department error:", error);
-      return { error: "Failed to create department" };
+      return { success: false, error: "Failed to create department" };
     } finally {
       await prisma.$disconnect();
     }
   },
 );
 
+// Wrapper function for client-side use
+export async function createDepartment(data: z.infer<typeof departmentSchema>): Promise<ActionResponse<Department>> {
+  const session = getSession();
+  return insert(session, data);
+}
+
 export const getAll = withAuth(
   async (
     user,
     params?: { search?: string },
-  ): Promise<AuthResponse<Department[]>> => {
+  ): Promise<ActionResponse<Department[]>> => {
     try {
       const where: Prisma.DepartmentWhereInput = {
         companyId: user.user_metadata?.companyId,
@@ -73,15 +94,21 @@ export const getAll = withAuth(
       };
     } catch (error) {
       console.error("Get departments error:", error);
-      return { error: "Failed to fetch departments" };
+      return { success: false, error: "Failed to fetch departments" };
     } finally {
       await prisma.$disconnect();
     }
   },
 );
 
+// Wrapper function for client-side use
+export async function getAllDepartments(params?: { search?: string }): Promise<ActionResponse<Department[]>> {
+  const session = getSession();
+  return getAll(session, params);
+}
+
 export const findById = withAuth(
-  async (user, id: string): Promise<AuthResponse<Department>> => {
+  async (user, id: string): Promise<ActionResponse<Department>> => {
     try {
       const department = await prisma.department.findFirst({
         where: {
@@ -91,7 +118,7 @@ export const findById = withAuth(
       });
 
       if (!department) {
-        return { error: "Department not found" };
+        return { success: false, error: "Department not found" };
       }
 
       return {
@@ -100,19 +127,25 @@ export const findById = withAuth(
       };
     } catch (error) {
       console.error("Find department error:", error);
-      return { error: "Failed to fetch department" };
+      return { success: false, error: "Failed to fetch department" };
     } finally {
       await prisma.$disconnect();
     }
   },
 );
 
+// Wrapper function for client-side use
+export async function getDepartment(id: string): Promise<ActionResponse<Department>> {
+  const session = getSession();
+  return findById(session, id);
+}
+
 export const update = withAuth(
   async (
     user,
     id: string,
     data: Partial<Department>,
-  ): Promise<AuthResponse<Department>> => {
+  ): Promise<ActionResponse<Department>> => {
     try {
       const department = await prisma.department.update({
         where: {
@@ -133,22 +166,28 @@ export const update = withAuth(
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === "P2002") {
-          return { error: "Department name already exists in your company" };
+          return { success: false, error: "Department name already exists in your company" };
         }
         if (error.code === "P2025") {
-          return { error: "Department not found" };
+          return { success: false, error: "Department not found" };
         }
       }
       console.error("Update department error:", error);
-      return { error: "Failed to update department" };
+      return { success: false, error: "Failed to update department" };
     } finally {
       await prisma.$disconnect();
     }
   },
 );
 
+// Wrapper function for client-side use
+export async function updateDepartment(id: string, data: Partial<Department>): Promise<ActionResponse<Department>> {
+  const session = getSession();
+  return update(session, id, data);
+}
+
 export const remove = withAuth(
-  async (user, id: string): Promise<AuthResponse<Department>> => {
+  async (user, id: string): Promise<ActionResponse<Department>> => {
     try {
       const department = await prisma.department.delete({
         where: {
@@ -165,13 +204,19 @@ export const remove = withAuth(
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === "P2025") {
-          return { error: "Department not found" };
+          return { success: false, error: "Department not found" };
         }
       }
       console.error("Delete department error:", error);
-      return { error: "Failed to delete department" };
+      return { success: false, error: "Failed to delete department" };
     } finally {
       await prisma.$disconnect();
     }
   },
 );
+
+// Wrapper function for client-side use
+export async function deleteDepartment(id: string): Promise<ActionResponse<Department>> {
+  const session = getSession();
+  return remove(session, id);
+}

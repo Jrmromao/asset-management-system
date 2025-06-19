@@ -11,6 +11,7 @@ import { withAuth } from "@/lib/middleware/withAuth";
 import { User } from "@prisma/client";
 import { prisma as mainPrisma } from "@/app/db";
 import { supabaseAdmin } from "@/lib/supabaseAdminClient";
+import { cookies } from "next/headers";
 
 interface RegistrationState {
   companyId?: string;
@@ -56,110 +57,108 @@ const cleanup = async (state: RegistrationState) => {
   }
 };
 
-export const insert = async (values: RegistrationData) => {
-  const state: RegistrationState = { bucketCreated: false };
-  console.log("values", values);
+type ActionResponse<T> = {
+  data?: T;
+  error?: string;
+  success: boolean;
+};
 
-  let company;
-  let adminRole;
-  try {
-    // 1. Create company and role in a transaction (DB only)
-    const result = await prisma.$transaction(async (tx) => {
-      let role = await tx.role.findUnique({ where: { name: "Admin" } });
-      if (!role) {
-        role = await tx.role.create({
-          data: { name: "Admin", isAdctive: true },
-        });
-      }
-      adminRole = role;
-      company = await tx.company.create({
+const getSession = () => {
+  const cookieStore = cookies();
+  return {
+    accessToken: cookieStore.get('sb-access-token')?.value,
+    refreshToken: cookieStore.get('sb-refresh-token')?.value
+  };
+};
+
+export const getAll = withAuth(
+  async (user): Promise<ActionResponse<Company[]>> => {
+    try {
+      const companies = await prisma.company.findMany();
+      return { success: true, data: companies };
+    } catch (error) {
+      console.error("Get companies error:", error);
+      return { success: false, error: "Failed to fetch companies" };
+    } finally {
+      await prisma.$disconnect();
+    }
+  }
+);
+
+// Wrapper function for client-side use
+export async function getAllCompanies(): Promise<ActionResponse<Company[]>> {
+  const session = getSession();
+  return getAll(session);
+}
+
+export const insert = withAuth(
+  async (user, data: RegistrationData): Promise<ActionResponse<Company>> => {
+    try {
+      const company = await prisma.company.create({
         data: {
-          name: values.companyName,
-          status: CompanyStatus.INACTIVE,
+          name: data.companyName,
         },
       });
-      return { company, adminRole };
-    });
-    company = result.company;
-    adminRole = result.adminRole;
-    state.companyId = company.id;
-  } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      console.error("Prisma error:", error.code, error.message, error.meta);
-      return handlePrismaError(error);
+      return { success: true, data: company };
+    } catch (error) {
+      console.error("Create company error:", error);
+      return { success: false, error: "Failed to create company" };
+    } finally {
+      await prisma.$disconnect();
     }
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Registration failed",
-    };
-  } finally {
-    await prisma.$disconnect();
   }
+);
 
-  // 2. Initialize S3 storage (outside transaction)
-  try {
-    const s3Service = S3Service.getInstance();
-    await s3Service.initializeCompanyStorage(company.id);
-    state.bucketCreated = true;
-  } catch (s3Error) {
-    // Rollback company if S3 fails
-    await cleanup(state);
-    return {
-      success: false,
-      error: "Failed to initialize company storage. Please try again.",
-    };
-  }
+// Wrapper function for client-side use
+export async function createCompany(data: RegistrationData): Promise<ActionResponse<Company>> {
+  const session = getSession();
+  return insert(session, data);
+}
 
-  // 3. Create user in Supabase Auth (outside transaction)
-  let userResult;
-  try {
-    userResult = await createUserForRegistration({
-      email: values.email,
-      companyId: company.id,
-      firstName: values.firstName,
-      lastName: values.lastName,
-      title: "Admin",
-      employeeId: adminRole.name,
-      roleId: adminRole.id,
-      password: values.password,
-    });
-  } catch (userError) {
-    // Rollback company and S3 if user creation fails
-    await cleanup(state);
-    return {
-      success: false,
-      error:
-        userError instanceof Error
-          ? userError.message
-          : "User registration failed",
-    };
+export const update = withAuth(
+  async (user, id: string, name: string): Promise<ActionResponse<Company>> => {
+    try {
+      const company = await prisma.company.update({
+        where: { id },
+        data: { name },
+      });
+      return { success: true, data: company };
+    } catch (error) {
+      console.error("Update company error:", error);
+      return { success: false, error: "Failed to update company" };
+    } finally {
+      await prisma.$disconnect();
+    }
   }
+);
 
-  // 4. Post-registration actions (subscription, templates)
-  try {
-    const [subscriptionResult] = await Promise.all([
-      createSubscription(company.id, values.email, values.assetCount),
-      bulkInsertTemplates(company.id),
-    ]);
-    return {
-      success: true,
-      data: parseStringify(company),
-      redirectUrl: subscriptionResult?.url!,
-    };
-  } catch (postError) {
-    // Optionally: log and inform user, but do not rollback company/user for non-critical failures
-    console.error("Post-registration error:", postError);
-    return {
-      success: true,
-      data: parseStringify(company),
-      redirectUrl: undefined,
-      warning:
-        "Registration succeeded, but some setup steps failed. Please contact support if you experience issues.",
-    };
-  } finally {
-    await prisma.$disconnect();
+// Wrapper function for client-side use
+export async function updateCompany(id: string, name: string): Promise<ActionResponse<Company>> {
+  const session = getSession();
+  return update(session, id, name);
+}
+
+export const remove = withAuth(
+  async (user, id: string): Promise<ActionResponse<Company>> => {
+    try {
+      const company = await prisma.company.delete({
+        where: { id },
+      });
+      return { success: true, data: company };
+    } catch (error) {
+      console.error("Delete company error:", error);
+      return { success: false, error: "Failed to delete company" };
+    } finally {
+      await prisma.$disconnect();
+    }
   }
-};
+);
+
+// Wrapper function for client-side use
+export async function deleteCompany(id: string): Promise<ActionResponse<Company>> {
+  const session = getSession();
+  return remove(session, id);
+}
 
 // Helper for registration user creation (no auth required)
 async function createUserForRegistration({
@@ -235,83 +234,3 @@ async function createUserForRegistration({
     throw error;
   }
 }
-
-export const remove = withAuth(async (user, id: string) => {
-  try {
-    const company = await prisma.company.delete({
-      where: {
-        id: user.user_metadata?.companyId,
-      },
-    });
-
-    try {
-      await S3Service.getInstance().deleteCompanyStorage(id);
-    } catch (s3Error) {
-      console.error("S3 cleanup failed:", s3Error);
-    }
-
-    return {
-      success: true,
-      data: parseStringify(company),
-    };
-  } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      return handlePrismaError(error);
-    }
-    return {
-      success: false,
-      error: "Failed to delete company",
-    };
-  } finally {
-    await prisma.$disconnect();
-  }
-});
-
-export const update = withAuth(async (user, id: string, name: string) => {
-  try {
-    const company = await prisma.company.update({
-      where: {
-        id: user.user_metadata?.companyId,
-      },
-      data: { name },
-    });
-
-    return {
-      success: true,
-      data: parseStringify(company),
-    };
-  } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      return handlePrismaError(error);
-    }
-    return {
-      success: false,
-      error: "Failed to update company",
-    };
-  } finally {
-    await prisma.$disconnect();
-  }
-});
-
-export const getAll = withAuth(async (user) => {
-  try {
-    const companies = await prisma.company.findMany({
-      where: {
-        // Only return companies the user has access to
-        id: user.user_metadata?.companyId,
-      },
-    });
-
-    return {
-      success: true,
-      data: parseStringify(companies),
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error: "Failed to fetch companies",
-    };
-  } finally {
-    await prisma.$disconnect();
-  }
-});

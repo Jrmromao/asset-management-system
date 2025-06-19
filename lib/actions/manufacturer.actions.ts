@@ -7,12 +7,85 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/app/db";
 import { withAuth } from "@/lib/middleware/withAuth";
+import { cookies } from "next/headers";
 
 type ActionResponse<T> = {
   data?: T;
   error?: string;
-  success?: boolean;
+  success: boolean;
 };
+
+// Client-side wrapper functions
+export async function getAllManufacturers(params?: { search?: string }) {
+  const cookieStore = cookies();
+  const session = {
+    accessToken: cookieStore.get("sb-access-token")?.value,
+    refreshToken: cookieStore.get("sb-refresh-token")?.value,
+  };
+  return await getAll(session, params);
+}
+
+export async function createManufacturer(data: z.infer<typeof manufacturerSchema>) {
+  const cookieStore = cookies();
+  const session = {
+    accessToken: cookieStore.get("sb-access-token")?.value,
+    refreshToken: cookieStore.get("sb-refresh-token")?.value,
+  };
+  return await insert(session, data);
+}
+
+export async function updateManufacturer(id: string, data: Partial<z.infer<typeof manufacturerSchema>>) {
+  const cookieStore = cookies();
+  const session = {
+    accessToken: cookieStore.get("sb-access-token")?.value,
+    refreshToken: cookieStore.get("sb-refresh-token")?.value,
+  };
+  return await update(session, id, data);
+}
+
+export async function deleteManufacturer(id: string) {
+  const cookieStore = cookies();
+  const session = {
+    accessToken: cookieStore.get("sb-access-token")?.value,
+    refreshToken: cookieStore.get("sb-refresh-token")?.value,
+  };
+  return await remove(session, id);
+}
+
+// Server actions with auth
+export const getAll = withAuth(
+  async (
+    user,
+    params?: { search?: string },
+  ): Promise<ActionResponse<Manufacturer[]>> => {
+    try {
+      const where: Prisma.ManufacturerWhereInput = {
+        companyId: user.user_metadata?.companyId,
+        ...(params?.search && {
+          OR: [
+            { name: { contains: params.search, mode: "insensitive" } },
+            { supportEmail: { contains: params.search, mode: "insensitive" } },
+          ],
+        }),
+      };
+      const manufacturers = await prisma.manufacturer.findMany({
+        where,
+        include: {
+          _count: {
+            select: { models: true },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+      });
+      return { success: true, data: parseStringify(manufacturers) };
+    } catch (error) {
+      console.error("Get manufacturers error:", error);
+      return { success: false, error: "Failed to fetch manufacturers" };
+    } finally {
+      await prisma.$disconnect();
+    }
+  },
+);
 
 export const insert = withAuth(
   async (
@@ -45,40 +118,6 @@ export const insert = withAuth(
       }
       console.error("Create manufacturer error:", error);
       return { success: false, error: "Failed to create manufacturer" };
-    } finally {
-      await prisma.$disconnect();
-    }
-  },
-);
-
-export const getAll = withAuth(
-  async (
-    user,
-    params?: { search?: string },
-  ): Promise<ActionResponse<Manufacturer[]>> => {
-    try {
-      const where: Prisma.ManufacturerWhereInput = {
-        companyId: user.user_metadata?.companyId,
-        ...(params?.search && {
-          OR: [
-            { name: { contains: params.search, mode: "insensitive" } },
-            { supportEmail: { contains: params.search, mode: "insensitive" } },
-          ],
-        }),
-      };
-      const manufacturers = await prisma.manufacturer.findMany({
-        where,
-        include: {
-          _count: {
-            select: { models: true },
-          },
-        },
-        orderBy: { createdAt: "desc" },
-      });
-      return { success: true, data: parseStringify(manufacturers) };
-    } catch (error) {
-      console.error("Get manufacturers error:", error);
-      return { success: false, error: "Failed to fetch manufacturers" };
     } finally {
       await prisma.$disconnect();
     }
@@ -120,10 +159,10 @@ export const update = withAuth(
   async (
     user,
     id: string,
-    values: Partial<Manufacturer>,
+    values: Partial<z.infer<typeof manufacturerSchema>>,
   ): Promise<ActionResponse<Manufacturer>> => {
     try {
-      const validation = manufacturerSchema.safeParse(values);
+      const validation = manufacturerSchema.partial().safeParse(values);
       if (!validation.success) {
         return { success: false, error: validation.error.errors[0].message };
       }
@@ -203,7 +242,7 @@ export const remove = withAuth(
 );
 
 export const isManufacturerNameUnique = withAuth(
-  async (user, name: string, excludeId?: string): Promise<boolean> => {
+  async (user, name: string, excludeId?: string): Promise<ActionResponse<boolean>> => {
     try {
       const manufacturer = await prisma.manufacturer.findFirst({
         where: {
@@ -213,10 +252,10 @@ export const isManufacturerNameUnique = withAuth(
         },
         select: { id: true },
       });
-      return !manufacturer;
+      return { success: true, data: !manufacturer };
     } catch (error) {
       console.error("Check manufacturer name error:", error);
-      return false;
+      return { success: false, error: "Failed to check manufacturer name" };
     } finally {
       await prisma.$disconnect();
     }

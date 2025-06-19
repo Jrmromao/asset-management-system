@@ -1,20 +1,53 @@
 import React from "react";
+import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
 
-type HeaderBoxProps = {
+interface HeaderBoxProps {
   title: string;
-  subtext: string;
+  subtitle?: string;
   icon?: React.ReactNode;
-};
+  className?: string;
+  actions?: React.ReactNode;
+}
 
-const HeaderBox = ({ title, subtext, icon }: HeaderBoxProps) => {
+const HeaderBox: React.FC<HeaderBoxProps> = ({
+  title,
+  subtitle,
+  icon,
+  className,
+  actions,
+}) => {
   return (
-    <div className="flex flex-col space-y-2">
-      <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
-      <div className="flex items-center space-x-2 text-muted-foreground">
-        {icon}
-        <span>{subtext}</span>
+    <motion.div
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+      className={cn(
+        "mb-6 rounded-lg border bg-card p-6 shadow-sm transition-all hover:shadow-md dark:bg-card/95",
+        className
+      )}
+    >
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-4">
+          {icon && (
+            <div className="rounded-full bg-primary/10 p-2 text-primary dark:bg-primary/20">
+              {icon}
+            </div>
+          )}
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
+            {subtitle && (
+              <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
+            )}
+          </div>
+        </div>
+        {actions && (
+          <div className="flex items-center space-x-2">
+            {actions}
+          </div>
+        )}
       </div>
-    </div>
+    </motion.div>
   );
 };
 

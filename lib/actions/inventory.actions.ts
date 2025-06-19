@@ -1,3 +1,5 @@
+"use server";
+
 import { withAuth } from "@/lib/middleware/withAuth";
 import { parseStringify } from "../utils";
 import { inventorySchema } from "../schemas";
@@ -5,6 +7,7 @@ import { z } from "zod";
 import type { Inventory } from "@prisma/client";
 import { prisma } from "@/app/db";
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 
 // Add a local ActionResponse type if not present
 export type ActionResponse<T = any> = {
@@ -26,6 +29,14 @@ interface PaginationParams {
   sortBy?: "name" | "createdAt" | "purchaseDate";
   sortOrder?: "asc" | "desc";
 }
+
+const getSession = () => {
+  const cookieStore = cookies();
+  return {
+    accessToken: cookieStore.get('sb-access-token')?.value,
+    refreshToken: cookieStore.get('sb-refresh-token')?.value
+  };
+};
 
 export const insert = withAuth(
   async (
@@ -53,6 +64,12 @@ export const insert = withAuth(
     }
   },
 );
+
+// Wrapper function for client-side use
+export async function createInventory(values: z.infer<typeof inventorySchema>): Promise<AuthResponse<Inventory>> {
+  const session = getSession();
+  return insert(session, values);
+}
 
 export const update = withAuth(
   async (
@@ -84,6 +101,12 @@ export const update = withAuth(
   },
 );
 
+// Wrapper function for client-side use
+export async function updateInventory(id: string, data: Partial<Inventory>): Promise<AuthResponse<Inventory>> {
+  const session = getSession();
+  return update(session, id, data);
+}
+
 export const getAll = withAuth(async (user): Promise<AuthResponse<Inventory[]>> => {
   try {
     const inventories = await prisma.inventory.findMany({
@@ -103,8 +126,14 @@ export const getAll = withAuth(async (user): Promise<AuthResponse<Inventory[]>> 
   }
 });
 
+// Wrapper function for client-side use
+export async function getAllInventories(): Promise<AuthResponse<Inventory[]>> {
+  const session = getSession();
+  return getAll(session);
+}
+
 export const getAllPaginated = withAuth(
-  async (user, params?: PaginationParams) => {
+  async (user, params?: PaginationParams): Promise<AuthResponse<Inventory[]>> => {
     try {
       if (!user.user_metadata?.companyId) {
         return { success: false, error: "Not authenticated" };
@@ -132,6 +161,12 @@ export const getAllPaginated = withAuth(
   },
 );
 
+// Wrapper function for client-side use
+export async function getPaginatedInventories(params?: PaginationParams): Promise<AuthResponse<Inventory[]>> {
+  const session = getSession();
+  return getAllPaginated(session, params);
+}
+
 export const getInventoryById = withAuth(async (user, id: string): Promise<AuthResponse<Inventory>> => {
   try {
     const inventory = await prisma.inventory.findFirst({
@@ -151,6 +186,12 @@ export const getInventoryById = withAuth(async (user, id: string): Promise<AuthR
     await prisma.$disconnect();
   }
 });
+
+// Wrapper function for client-side use
+export async function getInventory(id: string): Promise<AuthResponse<Inventory>> {
+  const session = getSession();
+  return getInventoryById(session, id);
+}
 
 export const remove = withAuth(
   async (user, id: string): Promise<AuthResponse<Inventory>> => {
@@ -183,3 +224,9 @@ export const remove = withAuth(
     }
   },
 );
+
+// Wrapper function for client-side use
+export async function deleteInventory(id: string): Promise<AuthResponse<Inventory>> {
+  const session = getSession();
+  return remove(session, id);
+}

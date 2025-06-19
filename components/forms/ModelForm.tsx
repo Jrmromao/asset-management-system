@@ -50,7 +50,14 @@ const ModelForm = ({ initialData, onSubmitSuccess }: FormProps<Model>) => {
         if (initialData) {
           await updateModel(
             initialData.id,
-            { ...data },
+            {
+              name: data.name,
+              modelNo: data.modelNo,
+              manufacturerId: data.manufacturerId,
+              active: data.active,
+              endOfLife: data.endOfLife,
+              notes: data.notes,
+            },
             {
               onSuccess: () => {
                 form.reset();
@@ -62,25 +69,28 @@ const ModelForm = ({ initialData, onSubmitSuccess }: FormProps<Model>) => {
               },
             },
           );
+        } else {
+          await createModel(
+            {
+              name: data.name,
+              modelNo: data.modelNo,
+              manufacturerId: data.manufacturerId,
+              active: data.active,
+              endOfLife: data.endOfLife,
+              notes: data.notes,
+            },
+            {
+              onSuccess: () => {
+                onClose();
+                form.reset();
+                console.log("Successfully created model");
+              },
+              onError: (error) => {
+                console.error("Error creating model:", error);
+              },
+            },
+          );
         }
-        await createModel(
-          {
-            name: data.name,
-            modelNo: data.modelNo,
-            manufacturerId: data.manufacturerId,
-            active: data.active,
-          },
-          {
-            onSuccess: () => {
-              form.reset();
-              onClose();
-              console.log("Successfully created model");
-            },
-            onError: (error) => {
-              console.error("Error creating model:", error);
-            },
-          },
-        );
       } catch (error) {
         console.error("Model operation error:", error);
         toast.error(`Failed to ${initialData ? "update" : "create"} Model`);

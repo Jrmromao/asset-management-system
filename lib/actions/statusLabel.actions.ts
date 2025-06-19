@@ -4,6 +4,21 @@ import { prisma } from "@/app/db";
 import { z } from "zod";
 import { statusLabelSchema } from "@/lib/schemas";
 import { withAuth } from "@/lib/middleware/withAuth";
+import { cookies } from "next/headers";
+
+type ActionResponse<T> = {
+  data?: T;
+  error?: string;
+  success: boolean;
+};
+
+const getSession = () => {
+  const cookieStore = cookies();
+  return {
+    accessToken: cookieStore.get('sb-access-token')?.value,
+    refreshToken: cookieStore.get('sb-refresh-token')?.value
+  };
+};
 
 // lib/actions/statusLabel.actions.ts
 export const insert = withAuth(
@@ -37,6 +52,15 @@ export const insert = withAuth(
   },
 );
 
+// Wrapper function for client-side use
+export async function createStatusLabel(values: z.infer<typeof statusLabelSchema>): Promise<ActionResponse<StatusLabel>> {
+  const session = getSession();
+
+  console.log("session", session);
+  console.log("values", values);
+  return insert(session, values);
+}
+
 export const getAll = withAuth(
   async (user): Promise<ActionResponse<StatusLabel[]>> => {
     try {
@@ -57,6 +81,12 @@ export const getAll = withAuth(
     }
   },
 );
+
+// Wrapper function for client-side use
+export async function getAllStatusLabels(): Promise<ActionResponse<StatusLabel[]>> {
+  const session = getSession();
+  return getAll(session);
+}
 
 export const findById = withAuth(
   async (user, id: string): Promise<ActionResponse<StatusLabel>> => {
@@ -80,6 +110,12 @@ export const findById = withAuth(
   },
 );
 
+// Wrapper function for client-side use
+export async function getStatusLabel(id: string): Promise<ActionResponse<StatusLabel>> {
+  const session = getSession();
+  return findById(session, id);
+}
+
 export const remove = withAuth(
   async (user, id: string): Promise<ActionResponse<StatusLabel>> => {
     try {
@@ -98,6 +134,12 @@ export const remove = withAuth(
     }
   },
 );
+
+// Wrapper function for client-side use
+export async function deleteStatusLabel(id: string): Promise<ActionResponse<StatusLabel>> {
+  const session = getSession();
+  return remove(session, id);
+}
 
 export const update = withAuth(
   async (
@@ -128,3 +170,9 @@ export const update = withAuth(
     }
   },
 );
+
+// Wrapper function for client-side use
+export async function updateStatusLabel(id: string, data: Partial<StatusLabel>): Promise<ActionResponse<StatusLabel>> {
+  const session = getSession();
+  return update(session, id, data);
+}

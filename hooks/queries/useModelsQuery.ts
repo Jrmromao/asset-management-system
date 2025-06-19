@@ -1,30 +1,36 @@
-import { getAll, insert, remove, update } from "@/lib/actions/model.actions";
-import { useModelUIStore } from "@/lib/stores/useModelUIStore";
 import { createGenericQuery } from "@/hooks/queries/useQueryFactory";
 import { z } from "zod";
 import { modelSchema } from "@/lib/schemas";
+import {
+  getAllModels,
+  createModel,
+  deleteModel,
+  updateModel,
+} from "@/lib/actions/model.actions";
+import { useModelUIStore } from "@/lib/stores/useModelUIStore";
 
 export const MODEL_KEY = ["models"] as const;
 
 type CreateModelInput = z.infer<typeof modelSchema>;
+type GenericQueryType = ReturnType<typeof createGenericQuery<Model, CreateModelInput>>;
 
 export function useModelsQuery() {
   const { onClose } = useModelUIStore();
 
-  const genericQuery = createGenericQuery<Model, CreateModelInput>(
+  const genericQuery: GenericQueryType = createGenericQuery<Model, CreateModelInput>(
     MODEL_KEY,
     {
       getAll: async () => {
-        return await getAll();
+        return await getAllModels({});
       },
       insert: async (data: CreateModelInput) => {
-        return await insert(data);
+        return await createModel(data);
       },
       delete: async (id: string) => {
-        return await remove(id);
+        return await deleteModel(id);
       },
-      update: async (id: string, data: Partial<Model>) => {
-        return await update(id, data);
+      update: async (id: string, data: CreateModelInput) => {
+        return await updateModel(id, data as any);
       },
     },
     {
@@ -40,11 +46,10 @@ export function useModelsQuery() {
     isLoading,
     error,
     createItem: createModel,
-    isCreating,
     updateItem: updateModel,
-    isUpdating,
     deleteItem: deleteModel,
-    isDeleting,
+    isCreating,
+    isUpdating,
     refresh,
   } = genericQuery();
 
@@ -52,12 +57,11 @@ export function useModelsQuery() {
     models,
     isLoading,
     error,
-    updateModel,
     createModel,
+    updateModel,
     deleteModel,
-    isUpdating,
-    isDeleting,
     isCreating,
+    isUpdating,
     refresh,
   };
 }

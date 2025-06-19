@@ -1,16 +1,9 @@
 import { NextResponse } from "next/server";
-import { createServerSupabaseClient } from "@/utils/supabase/server";
-import { getAll, insert } from "@/lib/actions/assets.actions";
+import { cookies } from "next/headers";
+import { getAllAssets, createAsset } from "@/lib/actions/assets.actions";
 
 export async function GET(request: Request) {
   try {
-    const supabase = createServerSupabaseClient();
-    const { data: { user }, error } = await supabase.auth.getUser();
-
-    if (error || !user) {
-      return new NextResponse("Unauthorized", { status: 401 });
-    }
-
     const { searchParams } = new URL(request.url);
     const options = {
       orderBy: searchParams.get('orderBy') as "name" | "createdAt" | undefined,
@@ -18,7 +11,7 @@ export async function GET(request: Request) {
       search: searchParams.get('search') || undefined
     };
 
-    const result = await getAll(options);
+    const result = await getAllAssets();
     return NextResponse.json(result);
   } catch (error) {
     console.error("[ASSETS_GET]", error);
@@ -28,15 +21,8 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const supabase = createServerSupabaseClient();
-    const { data: { user }, error } = await supabase.auth.getUser();
-
-    if (error || !user) {
-      return new NextResponse("Unauthorized", { status: 401 });
-    }
-
     const body = await request.json();
-    const result = await insert(body);
+    const result = await createAsset(body);
     return NextResponse.json(result);
   } catch (error) {
     console.error("[ASSETS_POST]", error);

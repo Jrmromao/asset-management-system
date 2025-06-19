@@ -1,6 +1,5 @@
-import { createServerSupabaseClient } from "@/utils/supabase/server";
+import { createClient } from '@supabase/supabase-js';
 import { prisma } from "@/app/db";
-import { cookies } from "next/headers";
 
 interface AuthResponse<T> {
   success: boolean;
@@ -8,35 +7,49 @@ interface AuthResponse<T> {
   error?: string;
 }
 
+// Create a Supabase client with the provided session
+const createSupabaseClient = (accessToken?: string, refreshToken?: string) => {
+  const client = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+        detectSessionInUrl: false
+      }
+    }
+  );
+
+  if (accessToken && refreshToken) {
+    client.auth.setSession({
+      access_token: accessToken,
+      refresh_token: refreshToken
+    });
+  }
+
+  return client;
+};
+
 export function withAuth<T, Args extends any[]>(
   handler: (user: any, ...args: Args) => Promise<AuthResponse<T>>
 ) {
-  return async (...args: Args): Promise<AuthResponse<T>> => {
+  return async (session: { accessToken?: string; refreshToken?: string } | null, ...args: Args): Promise<AuthResponse<T>> => {
     try {
-      let supabase;
-      try {
-        supabase = createServerSupabaseClient();
-      } catch (error) {
+      if (!session?.accessToken || !session?.refreshToken) {
         return {
           success: false,
           error: "No active session found",
         };
       }
 
+      const supabase = createSupabaseClient(session.accessToken, session.refreshToken);
       const { data: { user }, error } = await supabase.auth.getUser();
 
-      if (error) {
-        console.error("[AUTH_ERROR]", error);
+      if (error || !user) {
         return {
           success: false,
-          error: "Session expired or invalid",
-        };
-      }
-
-      if (!user) {
-        return {
-          success: false,
-          error: "No user found",
+          error: error?.message || "No active session found",
         };
       }
 

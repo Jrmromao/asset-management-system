@@ -1,12 +1,12 @@
-import {
-  getAll,
-  insert,
-  remove,
-  update,
-} from "@/lib/actions/department.actions";
 import { createGenericQuery } from "@/hooks/queries/useQueryFactory";
 import { z } from "zod";
 import { departmentSchema } from "@/lib/schemas";
+import {
+  getAllDepartments,
+  createDepartment,
+  deleteDepartment,
+  updateDepartment,
+} from "@/lib/actions/department.actions";
 import { useDepartmentUIStore } from "@/lib/stores/useDepartmentUIStore";
 
 export const MODEL_KEY = ["departments"] as const;
@@ -20,22 +20,26 @@ export function useDepartmentQuery() {
     MODEL_KEY,
     {
       getAll: async () => {
-        return await getAll();
+        return await getAllDepartments();
       },
       insert: async (data: CreateDepartmentInput) => {
-        return await insert(data);
+        return await createDepartment(data);
       },
       delete: async (id: string) => {
-        return await remove(id);
+        return await deleteDepartment(id);
       },
       update: async (id: string, data: Partial<Department>) => {
-        return await update(id, data);
+        return await updateDepartment(id, data);
       },
     },
     {
       onClose,
-      successMessage: "Departments created successfully",
-      errorMessage: "Failed to create departments",
+      successMessage: "Department created successfully",
+      updateSuccessMessage: "Department updated successfully",
+      deleteSuccessMessage: "Department deleted successfully",
+      errorMessage: "Failed to create department",
+      updateErrorMessage: "Failed to update department",
+      deleteErrorMessage: "Failed to delete department",
       staleTime: 5 * 60 * 1000, // 5 minutes
     },
   );
@@ -48,8 +52,8 @@ export function useDepartmentQuery() {
     updateItem: updateDepartment,
     deleteItem: deleteDepartment,
     isCreating,
-    isUpdating,
     isDeleting,
+    isUpdating,
     refresh,
   } = genericQuery();
 
@@ -57,12 +61,12 @@ export function useDepartmentQuery() {
     departments,
     isLoading,
     error,
-    updateDepartment,
     createDepartment,
+    updateDepartment,
     deleteDepartment,
     isCreating,
-    isUpdating,
     isDeleting,
+    isUpdating,
     refresh,
   };
 }

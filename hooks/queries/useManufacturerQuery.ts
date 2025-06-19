@@ -1,46 +1,55 @@
-import { createGenericQuery } from "@/hooks/queries/useQueryFactory";
+import { createGenericQuery, CrudActions } from "@/hooks/queries/useQueryFactory";
 import { z } from "zod";
 import { manufacturerSchema } from "@/lib/schemas";
 import {
-  getAll,
-  insert,
-  remove,
-  update,
+  getAllManufacturers,
+  createManufacturer,
+  deleteManufacturer,
+  updateManufacturer,
 } from "@/lib/actions/manufacturer.actions";
 import { useManufacturerUIStore } from "@/lib/stores/useManufacturerUIStore";
+import { cookies } from "next/headers";
 
-export const MODEL_KEY = ["manufacturer"] as const;
+export const MANUFACTURER_KEY = ["manufacturer"] as const;
 
 type CreateManufacturerInput = z.infer<typeof manufacturerSchema>;
+type ActionResponse<T> = {
+  data?: T;
+  error?: string;
+  success: boolean;
+};
+
+const manufacturerActions: CrudActions<
+  Manufacturer,
+  CreateManufacturerInput,
+  Partial<CreateManufacturerInput>
+> = {
+  getAll: getAllManufacturers,
+  insert: createManufacturer,
+  delete: deleteManufacturer,
+  update: updateManufacturer,
+};
 
 export function useManufacturerQuery() {
   const { onClose } = useManufacturerUIStore();
 
   const genericQuery = createGenericQuery<
     Manufacturer,
-    CreateManufacturerInput
+    CreateManufacturerInput,
+    Partial<CreateManufacturerInput>
   >(
-    MODEL_KEY,
-    {
-      getAll: async () => {
-        return await getAll();
-      },
-      insert: async (data: CreateManufacturerInput) => {
-        return await insert(data);
-      },
-      delete: async (id: string) => {
-        return await remove(id);
-      },
-      update: async (id, data: Partial<Manufacturer>) => {
-        return await update(id, data);
-      },
-    },
+    MANUFACTURER_KEY,
+    manufacturerActions,
     {
       onClose,
-      successMessage: "Manufacturer created successfully",
-      errorMessage: "Failed to create manufacturer",
+      successMessage: "Operation completed successfully",
+      errorMessage: "Operation failed",
+      updateSuccessMessage: "Manufacturer updated successfully",
+      updateErrorMessage: "Failed to update manufacturer",
+      deleteSuccessMessage: "Manufacturer deleted successfully",
+      deleteErrorMessage: "Failed to delete manufacturer",
       staleTime: 5 * 60 * 1000, // 5 minutes
-    },
+    }
   );
 
   const {

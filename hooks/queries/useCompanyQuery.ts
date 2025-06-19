@@ -1,26 +1,33 @@
 import { createGenericQuery } from "@/hooks/queries/useQueryFactory";
-import { getAll, insert, remove, update } from "@/lib/actions/company.actions";
+import {
+  getAllCompanies,
+  createCompany,
+  deleteCompany,
+  updateCompany,
+} from "@/lib/actions/company.actions";
 import { RegistrationData } from "@/components/providers/UserContext";
 
 export const MODEL_KEY = ["companies"] as const;
 
 type CreateRoleInput = RegistrationData;
+type UpdateCompanyInput = { name: string };
+type GenericQueryType = ReturnType<typeof createGenericQuery<Company, CreateRoleInput, UpdateCompanyInput>>;
 
 export function useCompanyQuery() {
-  const genericQuery = createGenericQuery<Company, CreateRoleInput>(
+  const genericQuery: GenericQueryType = createGenericQuery<Company, CreateRoleInput, UpdateCompanyInput>(
     MODEL_KEY,
     {
       getAll: async () => {
-        return await getAll();
+        return await getAllCompanies();
       },
       insert: async (data: CreateRoleInput) => {
-        return await insert(data);
+        return await createCompany(data);
       },
       delete: async (id: string) => {
-        return remove(id);
+        return await deleteCompany(id);
       },
-      update: async (id: string, data: Partial<Company>) => {
-        return await update(id, data.name as string);
+      update: async (id: string, data: UpdateCompanyInput) => {
+        return await updateCompany(id, data.name);
       },
     },
     {

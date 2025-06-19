@@ -8,11 +8,27 @@ import { getAuditLog } from "@/lib/actions/auditLog.actions";
 import { revalidatePath } from "next/cache";
 import { ItemType, Prisma } from "@prisma/client";
 import { withAuth } from "@/lib/middleware/withAuth";
+import { cookies } from "next/headers";
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000; // 1 second
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+export type ActionResponse<T> = {
+  data?: T;
+  error?: string;
+  success: boolean;
+  message?: string;
+};
+
+const getSession = () => {
+  const cookieStore = cookies();
+  return {
+    accessToken: cookieStore.get('sb-access-token')?.value,
+    refreshToken: cookieStore.get('sb-refresh-token')?.value
+  };
+};
 
 export const insert = withAuth(
   async (
@@ -22,10 +38,10 @@ export const insert = withAuth(
     try {
       const validation = accessorySchema.safeParse(values);
       if (!validation.success) {
-        throw new Error(validation.error.errors[0].message);
+        return { success: false, error: validation.error.errors[0].message };
       }
 
-      return await prisma.$transaction(async (tx) => {
+      const result = await prisma.$transaction(async (tx) => {
         const accessory = await tx.accessory.create({
           data: {
             name: values.name,
@@ -64,14 +80,17 @@ export const insert = withAuth(
           },
         });
 
-        return {
-          success: true,
-          data: parseStringify(accessory),
-        };
+        return accessory;
       });
+
+      return {
+        success: true,
+        data: parseStringify(result),
+      };
     } catch (error) {
       console.error(error);
       return {
+        success: false,
         error: error instanceof Error ? error.message : "Unknown error",
       };
     } finally {
@@ -79,6 +98,12 @@ export const insert = withAuth(
     }
   },
 );
+
+// Wrapper function for client-side use
+export async function createAccessory(values: z.infer<typeof accessorySchema>): Promise<ActionResponse<Accessory>> {
+  const session = getSession();
+  return insert(session, values);
+}
 
 export const getAll = withAuth(
   async (user): Promise<ActionResponse<Accessory[]>> => {
@@ -103,12 +128,18 @@ export const getAll = withAuth(
       };
     } catch (error) {
       console.error("Error fetching accessories:", error);
-      return { error: "Failed to fetch accessories" };
+      return { success: false, error: "Failed to fetch accessories" };
     } finally {
       await prisma.$disconnect();
     }
   },
 );
+
+// Wrapper function for client-side use
+export async function getAllAccessories(): Promise<ActionResponse<Accessory[]>> {
+  const session = getSession();
+  return getAll(session);
+}
 
 export const findById = withAuth(
   async (user, id: string): Promise<ActionResponse<Accessory>> => {
@@ -148,13 +179,20 @@ export const findById = withAuth(
         },
       } as const;
 
+      // Get the original session from cookies since we're in a server action
+      const cookieStore = cookies();
+      const session = {
+        accessToken: cookieStore.get('sb-access-token')?.value,
+        refreshToken: cookieStore.get('sb-refresh-token')?.value
+      };
+
       const [accessory, auditLogsResult] = await Promise.all([
         prisma.accessory.findUnique(accessoryQuery),
-        getAuditLog(id),
+        getAuditLog(session, id),
       ]);
 
       if (!accessory) {
-        return { error: "Accessory not found" };
+        return { success: false, error: "Accessory not found" };
       }
 
       return {
@@ -169,12 +207,18 @@ export const findById = withAuth(
       };
     } catch (error) {
       console.error("Error finding accessory:", error);
-      return { error: "Failed to find accessory" };
+      return { success: false, error: "Failed to find accessory" };
     } finally {
       await prisma.$disconnect();
     }
   },
 );
+
+// Wrapper function for client-side use
+export async function getAccessory(id: string): Promise<ActionResponse<Accessory>> {
+  const session = getSession();
+  return findById(session, id);
+}
 
 export const remove = withAuth(
   async (user, id: string): Promise<ActionResponse<Accessory>> => {
@@ -206,21 +250,63 @@ export const remove = withAuth(
 
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === "P2025") {
-          return { error: "Accessory not found" };
+          return { success: false, error: "Accessory not found" };
         }
         if (error.code === "P2003") {
           return {
+            success: false,
             error: "Cannot delete accessory because it is still in use",
           };
         }
       }
 
-      return { error: "Failed to delete accessory" };
+      return { success: false, error: "Failed to delete accessory" };
     } finally {
       await prisma.$disconnect();
     }
   },
 );
+
+// Wrapper function for client-side use
+export async function deleteAccessory(id: string): Promise<ActionResponse<Accessory>> {
+  const session = getSession();
+  return remove(session, id);
+}
+
+export const update = withAuth(
+  async (
+    user,
+    id: string,
+    data: Partial<Accessory>,
+  ): Promise<ActionResponse<Accessory>> => {
+    try {
+      const accessory = await prisma.accessory.update({
+        where: { id, companyId: user.user_metadata?.companyId },
+        data: data as Prisma.AccessoryUpdateInput,
+      });
+      return {
+        success: true,
+        data: parseStringify(accessory),
+      };
+    } catch (error) {
+      console.error("Error updating accessory:", error);
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === "P2025") {
+          return { success: false, error: "Accessory not found" };
+        }
+      }
+      return { success: false, error: "Failed to update accessory" };
+    } finally {
+      await prisma.$disconnect();
+    }
+  },
+);
+
+// Wrapper function for client-side use
+export async function updateAccessory(id: string, data: Partial<Accessory>): Promise<ActionResponse<Accessory>> {
+  const session = getSession();
+  return update(session, id, data);
+}
 
 export const processAccessoryCSV = withAuth(
   async (user, csvContent: string): Promise<ActionResponse<Accessory[]>> => {
@@ -288,14 +374,20 @@ export const processAccessoryCSV = withAuth(
     } catch (error) {
       console.error("Error processing CSV:", error);
       return {
-        error:
-          error instanceof Error ? error.message : "Failed to process CSV file",
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to process CSV file",
       };
     } finally {
       await prisma.$disconnect();
     }
   },
 );
+
+// Wrapper function for client-side use
+export async function processAccessoriesCSV(csvContent: string): Promise<ActionResponse<Accessory[]>> {
+  const session = getSession();
+  return processAccessoryCSV(session, csvContent);
+}
 
 export const checkout = withAuth(
   async (
@@ -305,10 +397,10 @@ export const checkout = withAuth(
     try {
       const validation = assignmentSchema.safeParse(values);
       if (!validation.success) {
-        return { error: validation.error.errors[0].message };
+        return { success: false, error: validation.error.errors[0].message };
       }
 
-      return await prisma.$transaction(async (tx) => {
+      const result = await prisma.$transaction(async (tx) => {
         const accessory = await tx.accessory.findUnique({
           where: { id: values.itemId },
           include: {
@@ -383,22 +475,30 @@ export const checkout = withAuth(
           },
         });
 
-        return {
-          success: true,
-          data: parseStringify(updatedAccessory),
-        };
+        return updatedAccessory;
       });
+
+      return {
+        success: true,
+        data: parseStringify(result),
+      };
     } catch (error) {
       console.error("Error assigning Accessory:", error);
       return {
-        error:
-          error instanceof Error ? error.message : "Failed to assign Accessory",
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to assign Accessory",
       };
     } finally {
       await prisma.$disconnect();
     }
   },
 );
+
+// Wrapper function for client-side use
+export async function checkoutAccessory(values: z.infer<typeof assignmentSchema>): Promise<ActionResponse<Accessory>> {
+  const session = getSession();
+  return checkout(session, values);
+}
 
 export const checkin = withAuth(
   async (user, userAccessoryId: string): Promise<ActionResponse<Accessory>> => {
@@ -505,16 +605,14 @@ export const checkin = withAuth(
     }
 
     return {
+      success: false,
       error: "Failed to complete check-in after all retries",
     };
   },
 );
 
-export const update = withAuth(
-  async (user, id: string, data: Partial<Accessory>) => {
-    return await prisma.accessory.update({
-      where: { id, companyId: user.user_metadata?.companyId },
-      data: data as Prisma.AccessoryUpdateInput,
-    });
-  },
-);
+// Wrapper function for client-side use
+export async function checkinAccessory(userAccessoryId: string): Promise<ActionResponse<Accessory>> {
+  const session = getSession();
+  return checkin(session, userAccessoryId);
+}

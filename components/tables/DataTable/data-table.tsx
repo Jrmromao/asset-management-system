@@ -90,7 +90,7 @@ export function DataTable<TData, TValue>({
   return (
     <div className="w-full">
       {/* Desktop View */}
-      <div className="hidden md:block rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+      <div className="hidden md:block rounded-lg border border-slate-200 dark:border-gray-700 shadow-sm overflow-hidden">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -98,7 +98,7 @@ export function DataTable<TData, TValue>({
                 {headerGroup.headers.map((header) => (
                   <TableHead
                     key={header.id}
-                    className="h-11 px-6 text-xs font-medium text-slate-600 bg-slate-100 border-b border-slate-200"
+                    className="h-11 px-6 text-xs font-medium text-slate-600 dark:text-gray-300 bg-slate-100 dark:bg-gray-800 border-b border-slate-200 dark:border-gray-700"
                   >
                     {!header.isPlaceholder &&
                       flexRender(
@@ -110,17 +110,17 @@ export function DataTable<TData, TValue>({
               </TableRow>
             ))}
           </TableHeader>
-          <TableBody className="bg-white">
+          <TableBody className="bg-white dark:bg-gray-900">
             {hasRows ? (
               rows.map((row) => (
                 <TableRow
                   key={row.id}
-                  className="hover:bg-slate-50/80 border-b border-slate-100 last:border-none"
+                  className="hover:bg-slate-50/80 dark:hover:bg-gray-800/50 border-b border-slate-100 dark:border-gray-800 last:border-none"
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell
                       key={cell.id}
-                      className="px-6 py-3 text-sm text-slate-700"
+                      className="px-6 py-3 text-sm text-slate-700 dark:text-gray-300"
                     >
                       {flexRender(
                         cell.column.columnDef.cell,
@@ -134,7 +134,7 @@ export function DataTable<TData, TValue>({
               <TableRow>
                 <TableCell
                   colSpan={columns.length}
-                  className="h-24 text-center text-sm text-slate-600"
+                  className="h-24 text-center text-sm text-slate-600 dark:text-gray-400"
                 >
                   No results.
                 </TableCell>
@@ -148,7 +148,7 @@ export function DataTable<TData, TValue>({
       <div className="md:hidden space-y-4">
         {hasRows ? (
           rows.map((row) => (
-            <Card key={row.id} className="p-4 bg-white shadow-sm">
+            <Card key={row.id} className="p-4 bg-white dark:bg-gray-900 shadow-sm">
               <div className="space-y-3">
                 {row.getVisibleCells().map((cell) => {
                   const header = cell.column.columnDef.header as string;
@@ -157,10 +157,10 @@ export function DataTable<TData, TValue>({
                       key={cell.id}
                       className="flex justify-between items-center gap-2"
                     >
-                      <span className="text-xs font-medium text-slate-600">
+                      <span className="text-xs font-medium text-slate-600 dark:text-gray-400">
                         {header}
                       </span>
-                      <span className="text-sm text-slate-700 text-right">
+                      <span className="text-sm text-slate-700 dark:text-gray-300 text-right">
                         {flexRender(
                           cell.column.columnDef.cell,
                           cell.getContext(),
@@ -173,21 +173,21 @@ export function DataTable<TData, TValue>({
             </Card>
           ))
         ) : (
-          <div className="text-center text-sm text-slate-600 py-8">
+          <div className="text-center text-sm text-slate-600 dark:text-gray-400 py-8">
             No results.
           </div>
         )}
       </div>
 
       <div className="flex flex-col md:flex-row md:items-center justify-between py-4 px-2 gap-4">
-        <div className="flex flex-col md:flex-row md:items-center gap-4 text-sm text-slate-600">
+        <div className="flex flex-col md:flex-row md:items-center gap-4 text-sm text-slate-600 dark:text-gray-400">
           <div className="flex items-center gap-2">
             <span>Rows per page</span>
             <Select
               value={pageSize.toString()}
               onValueChange={(value) => table.setPageSize(Number(value))}
             >
-              <SelectTrigger className="h-8 w-16 border-slate-200">
+              <SelectTrigger className="h-8 w-16 border-slate-200 dark:border-gray-700 dark:bg-gray-800">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -210,7 +210,7 @@ export function DataTable<TData, TValue>({
             size="sm"
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
-            className="h-8 border-slate-200 text-slate-600 hover:bg-slate-50"
+            className="h-8 border-slate-200 dark:border-gray-700 text-slate-600 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-gray-800"
           >
             Previous
           </Button>
@@ -219,7 +219,7 @@ export function DataTable<TData, TValue>({
             size="sm"
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
-            className="h-8 border-slate-200 text-slate-600 hover:bg-slate-50"
+            className="h-8 border-slate-200 dark:border-gray-700 text-slate-600 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-gray-800"
           >
             Next
           </Button>

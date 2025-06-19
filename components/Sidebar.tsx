@@ -9,11 +9,16 @@ import Footer from "@/components/Footer";
 import React, { useMemo } from "react";
 import HeaderIcon from "@/components/page/HeaderIcon";
 import { supabase } from "@/lib/supabaseClient";
+import { User } from "@supabase/supabase-js";
 
 type Role = typeof roles[keyof typeof roles];
 
 interface UserMetadata {
   role: Role;
+}
+
+interface UserWithMetadata extends User {
+  user_metadata: UserMetadata;
 }
 
 interface SidebarLinkProps {
@@ -37,20 +42,28 @@ const SidebarLink = React.memo(
       <Link
         href={item.route}
         id={item.label}
-        className={cn("sidebar-link", { "bg-green-600": isActive })}
+        className={cn("sidebar-link", { 
+          "bg-green-600": isActive,
+          "dark:hover:bg-gray-800": !isActive,
+          "dark:text-gray-300": !isActive
+        })}
       >
         <div className="relative size-6">
           <Image
             src={item.imgURL}
             alt={item.label}
             fill
-            className={cn({ "brightness-[3] invert-0": isActive })}
+            className={cn({ 
+              "brightness-[3] invert-0": isActive,
+              "dark:invert": !isActive 
+            })}
             priority={true}
           />
         </div>
         <p
           className={cn("sidebar-label", {
             "!text-white": isActive,
+            "dark:text-gray-300": !isActive
           })}
         >
           {item.label}
@@ -66,13 +79,13 @@ const Sidebar = () => {
   const pathName = usePathname();
   const router = useRouter();
 
-  const [user, setUser] = React.useState<{ user_metadata: UserMetadata } | null>(null);
+  const [user, setUser] = React.useState<UserWithMetadata | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
 
   React.useEffect(() => {
     supabase.auth.getUser()
       .then(({ data }) => {
-        setUser(data?.user || null);
+        setUser(data?.user as UserWithMetadata || null);
         setIsLoading(false);
       })
       .catch(() => setIsLoading(false));
@@ -107,7 +120,7 @@ const Sidebar = () => {
   }
 
   return (
-    <section className={cn("sidebar", { "2xl:hidden": false })}>
+    <section className={cn("sidebar dark:bg-gray-900 dark:border-gray-800", { "2xl:hidden": false })}>
       <nav className="flex flex-col gap-4">
         <div className="mb-4">
           <HeaderIcon />

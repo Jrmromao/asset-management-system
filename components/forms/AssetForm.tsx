@@ -315,6 +315,7 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
                       field.placeholder ||
                       `Enter ${String(field.label).toLowerCase()}`
                     }
+                    className="dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 dark:placeholder-gray-400"
                   />
                 ) : field.type === "select" ? (
                   <CustomSelect
@@ -479,8 +480,8 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
               ) : (
                 <>
                   <div className="col-span-12 lg:col-span-8 space-y-6">
-                    <Card className={"bg-white"}>
-                      <CardContent className="divide-y divide-slate-100">
+                    <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                      <CardContent className="divide-y divide-slate-100 dark:divide-gray-700">
                         {/* Asset Category */}
                         <FormSection title="Asset Category">
                           <SelectWithButton
@@ -503,6 +504,7 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
                             label="Asset Title"
                             control={form.control}
                             placeholder="Enter asset name"
+                            className="dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 dark:placeholder-gray-400"
                           />
 
                           <CustomInput
@@ -511,6 +513,7 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
                             label="Serial Number"
                             control={form.control}
                             placeholder="Enter tag number"
+                            className="dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 dark:placeholder-gray-400"
                           />
 
                           <SelectWithButton
