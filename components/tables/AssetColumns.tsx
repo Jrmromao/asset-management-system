@@ -184,7 +184,7 @@ export const assetColumns = ({
           className={"hover:underline"}
           value={row.original.name}
           navigateTo={`/assets/view/${row.original.id}`}
-          />
+        />
       );
     },
   },

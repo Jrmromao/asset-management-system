@@ -18,8 +18,8 @@ type ActionResponse<T> = {
 const getSession = () => {
   const cookieStore = cookies();
   return {
-    accessToken: cookieStore.get('sb-access-token')?.value,
-    refreshToken: cookieStore.get('sb-refresh-token')?.value
+    accessToken: cookieStore.get("sb-access-token")?.value,
+    refreshToken: cookieStore.get("sb-refresh-token")?.value,
   };
 };
 
@@ -51,7 +51,9 @@ export const insert = withAuth(
 );
 
 // Wrapper function for client-side use
-export async function createLocation(values: z.infer<typeof locationSchema>): Promise<ActionResponse<DepartmentLocation>> {
+export async function createLocation(
+  values: z.infer<typeof locationSchema>,
+): Promise<ActionResponse<DepartmentLocation>> {
   const session = getSession();
   return insert(session, values);
 }
@@ -79,7 +81,9 @@ export const getAll = withAuth(
 );
 
 // Wrapper function for client-side use
-export async function getAllLocations(params?: { search?: string }): Promise<ActionResponse<DepartmentLocation[]>> {
+export async function getAllLocations(params?: {
+  search?: string;
+}): Promise<ActionResponse<DepartmentLocation[]>> {
   const session = getSession();
   return getAll(session, params);
 }
@@ -107,7 +111,9 @@ export const findById = withAuth(
 );
 
 // Wrapper function for client-side use
-export async function getLocation(id: string): Promise<ActionResponse<DepartmentLocation>> {
+export async function getLocation(
+  id: string,
+): Promise<ActionResponse<DepartmentLocation>> {
   const session = getSession();
   return findById(session, id);
 }
@@ -133,7 +139,9 @@ export const remove = withAuth(
 );
 
 // Wrapper function for client-side use
-export async function deleteLocation(id: string): Promise<ActionResponse<DepartmentLocation>> {
+export async function deleteLocation(
+  id: string,
+): Promise<ActionResponse<DepartmentLocation>> {
   const session = getSession();
   return remove(session, id);
 }

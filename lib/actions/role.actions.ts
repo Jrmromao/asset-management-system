@@ -17,9 +17,9 @@ export const getAll = withAuth(async (user): Promise<AuthResponse<Role[]>> => {
       where: {
         users: {
           some: {
-            companyId: user.user_metadata?.companyId
-          }
-        }
+            companyId: user.user_metadata?.companyId,
+          },
+        },
       },
       orderBy: {
         name: "asc",
@@ -115,7 +115,11 @@ export const remove = withAuth(
 );
 
 export const update = withAuth(
-  async (user, id: string, data: Partial<Role>): Promise<AuthResponse<Role>> => {
+  async (
+    user,
+    id: string,
+    data: Partial<Role>,
+  ): Promise<AuthResponse<Role>> => {
     try {
       const role = await prisma.role.update({
         where: { id },

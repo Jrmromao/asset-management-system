@@ -13,6 +13,7 @@ interface CustomSwitchInputProps {
   name: string;
   control: any;
   required?: boolean;
+  disabled?: boolean;
 }
 
 const CustomSwitch = ({
@@ -20,7 +21,7 @@ const CustomSwitch = ({
   name,
   label,
   required = false,
-  ...rest
+  disabled = false,
 }: CustomSwitchInputProps) => {
   const {
     field: { onChange, value },
@@ -44,6 +45,7 @@ const CustomSwitch = ({
                 checked={value}
                 onCheckedChange={onChange}
                 required={required}
+                disabled={disabled}
               />
             </FormControl>
             <FormMessage className={"form-message mt-2"} />

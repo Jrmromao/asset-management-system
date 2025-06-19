@@ -9,6 +9,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "lint:fix": "next lint --fix",
     "startLocalDb": "docker run --rm --name eco-keepr -p 5432:5432 -d -e POSTGRES_PASSWORD=mysecretpassword postgres:14",
     "prepare": "husky",
     "lint-staged": "lint-staged",

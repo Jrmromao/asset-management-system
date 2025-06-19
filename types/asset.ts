@@ -1,17 +1,61 @@
-import type { Asset, User, Model, StatusLabel, Department, DepartmentLocation, FormTemplate, FormTemplateValue, AssetHistory, Co2eRecord } from "@prisma/client";
+import type {
+  Asset as PrismaAsset,
+  User,
+  Model,
+  StatusLabel,
+  Department,
+  DepartmentLocation,
+  FormTemplate,
+  FormTemplateValue,
+  AssetHistory,
+  Co2eRecord,
+} from "@prisma/client";
 import { PrismaAuditLog, SimpleAuditLog } from "./audit";
 
+export type Asset = PrismaAsset & {
+  model?: {
+    id: string;
+    name: string;
+  } | null;
+  assignee?: {
+    id: string;
+    name: string;
+    email: string;
+  } | null;
+  supplier?: {
+    id: string;
+    name: string;
+  } | null;
+  departmentLocation?: {
+    id: string;
+    name: string;
+  } | null;
+  statusLabel?: {
+    id: string;
+    name: string;
+  } | null;
+  department?: {
+    id: string;
+    name: string;
+  } | null;
+  inventory?: {
+    id: string;
+    name: string;
+  } | null;
+};
+
 export type AssetWithRelations = Asset & {
-  assignee: Pick<User, "id" | "name"> | null;
-  model: Model | null;
-  statusLabel: StatusLabel | null;
-  department: Department | null;
-  departmentLocation: DepartmentLocation | null;
-  formTemplate: (FormTemplate & { values: FormTemplateValue[] }) | null;
-  formTemplateValues: FormTemplateValue[];
-  auditLogs: PrismaAuditLog[];
-  AssetHistory: AssetHistory[];
-  Co2eRecord: Co2eRecord[];
+  user?: User;
+  model?: Model;
+  statusLabel?: StatusLabel;
+  department?: Department;
+  departmentLocation?: DepartmentLocation;
+  formTemplate?: FormTemplate;
+  formTemplateValues?: FormTemplateValue[];
+  history?: AssetHistory[];
+  co2eRecords?: Co2eRecord[];
+  auditLogs?: PrismaAuditLog[];
+  simpleAuditLogs?: SimpleAuditLog[];
 };
 
 export interface EnhancedAssetType {
@@ -54,4 +98,10 @@ export interface EnhancedAssetType {
   updatedAt: Date;
   AssetHistory: AssetHistory[];
   usedBy: any[];
-} 
+}
+
+export type AssetResponse = {
+  success: boolean;
+  data: Asset[];
+  error?: string;
+};

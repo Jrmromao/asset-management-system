@@ -6,9 +6,15 @@ interface CustomColorInputProps {
   label: string;
   name: string;
   control: any;
+  disabled?: boolean;
 }
 
-const CustomColorPicker = ({ control, name, label }: CustomColorInputProps) => {
+const CustomColorPicker = ({
+  control,
+  name,
+  label,
+  disabled,
+}: CustomColorInputProps) => {
   const {
     field: { onChange, value },
     fieldState: { error },
@@ -27,7 +33,11 @@ const CustomColorPicker = ({ control, name, label }: CustomColorInputProps) => {
           <FormLabel>{label}</FormLabel>
           <div className={"flex w-full flex-col"}>
             <FormControl>
-              <HexColorPicker color={value} onChange={onChange} />
+              <HexColorPicker
+                color={value}
+                onChange={onChange}
+                disabled={disabled}
+              />
             </FormControl>
           </div>
         </div>

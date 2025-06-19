@@ -10,8 +10,8 @@ import { cookies } from "next/headers";
 const getSession = () => {
   const cookieStore = cookies();
   return {
-    accessToken: cookieStore.get('sb-access-token')?.value,
-    refreshToken: cookieStore.get('sb-refresh-token')?.value
+    accessToken: cookieStore.get("sb-access-token")?.value,
+    refreshToken: cookieStore.get("sb-refresh-token")?.value,
   };
 };
 

@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState, useTransition } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useTransition,
+} from "react";
 import { useDialogStore } from "@/lib/stores/store";
 import { useRouter } from "next/navigation";
 import { assetColumns } from "@/components/tables/AssetColumns";
@@ -50,9 +56,9 @@ interface Asset {
   name: string;
   serialNumber?: string;
   status?: string;
-  model?: { name: string };
-  statusLabel?: { name: string };
-  endOfLife?: Date;
+  model?: { id: string; name: string } | null;
+  statusLabel?: { id: string; name: string } | null;
+  endOfLife?: Date | null;
   updatedAt: Date;
   Co2eRecord?: Array<{
     co2e: number;
@@ -92,10 +98,16 @@ const searchAssets = (assets: Asset[], searchTerm: string): Asset[] => {
   if (!searchTerm.trim()) return assets;
 
   const searchLower = searchTerm.toLowerCase();
-  const searchableFields = ['name', 'serialNumber', 'status', 'model.name', 'statusLabel.name'];
+  const searchableFields = [
+    "name",
+    "serialNumber",
+    "status",
+    "model.name",
+    "statusLabel.name",
+  ];
 
-  return assets.filter(asset => {
-    return searchableFields.some(field => {
+  return assets.filter((asset) => {
+    return searchableFields.some((field) => {
       const value = getNestedValue(asset, field);
       return value && value.toString().toLowerCase().includes(searchLower);
     });
@@ -104,16 +116,18 @@ const searchAssets = (assets: Asset[], searchTerm: string): Asset[] => {
 
 // Helper function to get nested object values
 const getNestedValue = (obj: any, path: string): any => {
-  return path.split('.').reduce((current, key) => current?.[key], obj);
+  return path.split(".").reduce((current, key) => current?.[key], obj);
 };
 
 // Memoized active assets filter
 const getActiveAssets = (assets: Asset[]): Asset[] => {
-  return assets.filter(asset => asset.status !== ACTIVE_STATUS);
+  return assets.filter((asset) => asset.status !== ACTIVE_STATUS);
 };
 
 const Assets = () => {
-  const { isLoading, assets, deleteItem } = useAssetQuery();
+  const { isLoading, data, deleteItem } = useAssetQuery();
+  const assets = data?.data || [];
+
   const [openDialog, closeDialog, isOpen] = useDialogStore((state) => [
     state.onOpen,
     state.onClose,
@@ -131,23 +145,32 @@ const Assets = () => {
   });
 
   // Event handlers
-  const handleView = useCallback((id: string) => {
-    startTransition(() => {
-      navigate.push(`/assets/view/${id}`);
-    });
-  }, [navigate]);
+  const handleView = useCallback(
+    (id: string) => {
+      startTransition(() => {
+        navigate.push(`/assets/view/${id}`);
+      });
+    },
+    [navigate],
+  );
 
-  const onDelete = useCallback((asset: Asset) => {
-    if (asset?.id) {
-      deleteItem(asset.id);
-    }
-  }, [deleteItem]);
+  const onDelete = useCallback(
+    (asset: Asset) => {
+      if (asset?.id) {
+        deleteItem(asset.id);
+      }
+    },
+    [deleteItem],
+  );
 
-  const onView = useCallback((asset: Asset) => {
-    if (asset?.id) {
-      handleView(asset.id);
-    }
-  }, [handleView]);
+  const onView = useCallback(
+    (asset: Asset) => {
+      if (asset?.id) {
+        handleView(asset.id);
+      }
+    },
+    [handleView],
+  );
 
   const handleCreateNew = useCallback(() => {
     startTransition(() => {
@@ -180,24 +203,25 @@ const Assets = () => {
 
   // Memoized computed values
   const activeAssets = useMemo(() => getActiveAssets(assets), [assets]);
-  
+
   const filteredData = useMemo(() => {
     const searchFiltered = searchAssets(activeAssets, debouncedSearchTerm);
     return searchFiltered;
   }, [activeAssets, debouncedSearchTerm]);
 
   const availableAssets = useMemo(
-    () => activeAssets.filter(
-      (asset) => asset.statusLabel?.name.toUpperCase() === "AVAILABLE"
-    ),
-    [activeAssets]
+    () =>
+      activeAssets.filter(
+        (asset) => asset.statusLabel?.name.toUpperCase() === "AVAILABLE",
+      ),
+    [activeAssets],
   );
 
   const maintenanceDue = useMemo(() => {
     const now = new Date();
     const thresholdDate = new Date();
     thresholdDate.setDate(thresholdDate.getDate() + MAINTENANCE_DAYS_THRESHOLD);
-    
+
     return activeAssets.filter((asset) => {
       const maintenanceDate = asset.endOfLife || asset.updatedAt;
       return maintenanceDate && new Date(maintenanceDate) <= thresholdDate;
@@ -226,57 +250,60 @@ const Assets = () => {
   // Optimized export function with better error handling
   const handleExport = useCallback(async () => {
     try {
-      const response = await fetch('/api/assets/export', {
-        method: 'POST',
+      const response = await fetch("/api/assets/export", {
+        method: "POST",
       });
-      
+
       if (!response.ok) {
         throw new Error(`Export failed: ${response.statusText}`);
       }
 
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
-      a.download = `assets-${new Date().toISOString().split('T')[0]}.csv`;
-      
-      a.style.display = 'none';
+      a.download = `assets-${new Date().toISOString().split("T")[0]}.csv`;
+
+      a.style.display = "none";
       document.body.appendChild(a);
       a.click();
-      
+
       setTimeout(() => {
         document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
       }, 100);
-      
-      toast.success('Assets exported successfully');
+
+      toast.success("Assets exported successfully");
     } catch (error) {
-      console.error('Error exporting assets:', error);
-      toast.error('Failed to export assets');
+      console.error("Error exporting assets:", error);
+      toast.error("Failed to export assets");
     }
   }, []);
 
   // Memoized card data
-  const cardData = useMemo(() => [
-    {
-      title: "Total Assets",
-      value: assets.length,
-      color: "info" as const
-    },
-    {
-      title: "Available Assets",
-      value: availableAssets.length,
-      percentage: (availableAssets.length / assets.length) * 100,
-      total: assets.length,
-      color: "success" as const
-    },
-    {
-      title: "Maintenance Due",
-      value: maintenanceDue,
-      subtitle: "Due within 30 days",
-      color: "warning" as const
-    },
-  ], [assets.length, availableAssets.length, maintenanceDue]);
+  const cardData = useMemo(
+    () => [
+      {
+        title: "Total Assets",
+        value: assets.length,
+        color: "info" as const,
+      },
+      {
+        title: "Available Assets",
+        value: availableAssets.length,
+        percentage: (availableAssets.length / assets.length) * 100,
+        total: assets.length,
+        color: "success" as const,
+      },
+      {
+        title: "Maintenance Due",
+        value: maintenanceDue,
+        subtitle: "Due within 30 days",
+        color: "warning" as const,
+      },
+    ],
+    [assets.length, availableAssets.length, maintenanceDue],
+  );
 
   // Loading state
   if (isLoading) {
@@ -301,14 +328,10 @@ const Assets = () => {
 
         <StatusCardPlaceholder />
         <TableHeaderSkeleton />
-        
+
         <Card className="dark:bg-gray-800 border-gray-200 dark:border-gray-700">
           <CardContent className="p-0">
-            <DataTable
-              columns={columns}
-              data={[]}
-              isLoading={true}
-            />
+            <DataTable columns={columns} data={[]} isLoading={true} />
           </CardContent>
         </Card>
       </div>
@@ -335,7 +358,7 @@ const Assets = () => {
       />
 
       <StatusCards cards={cardData} columns={3} />
-      
+
       <DataTableHeader
         table={table}
         title="Asset List"
@@ -366,7 +389,7 @@ const Assets = () => {
         onApplyFilters={applyFilters}
         title="Filter Assets"
       />
-      
+
       <DialogContainer
         open={isOpen}
         onOpenChange={closeDialog}

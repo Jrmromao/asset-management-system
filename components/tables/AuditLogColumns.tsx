@@ -83,7 +83,11 @@ export const auditLogColumns = (): ColumnDef<SimpleAuditLog>[] => [
     },
     cell: ({ row }) => {
       const data = row.original;
-      const dataAccessed = data.dataAccessed as { assetId?: string; previousAssignee?: string; [key: string]: any };
+      const dataAccessed = data.dataAccessed as {
+        assetId?: string;
+        previousAssignee?: string;
+        [key: string]: any;
+      };
       return (
         <div className="space-y-1 p-2">
           <div className="text-sm text-gray-600">{data.details}</div>

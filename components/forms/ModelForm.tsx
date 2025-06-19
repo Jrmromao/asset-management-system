@@ -48,7 +48,7 @@ const ModelForm = ({ initialData, onSubmitSuccess }: FormProps<Model>) => {
     startTransition(async () => {
       try {
         if (initialData) {
-          await updateModel(
+          const response = await updateModel(
             initialData.id,
             {
               name: data.name,
@@ -62,15 +62,20 @@ const ModelForm = ({ initialData, onSubmitSuccess }: FormProps<Model>) => {
               onSuccess: () => {
                 form.reset();
                 onClose();
-                console.log("Successfully updated model");
+                toast.success("Model updated successfully");
+                onSubmitSuccess?.();
               },
               onError: (error) => {
-                console.error("Error updating model:", error);
+                toast.error(error.message || "Failed to update model");
               },
             },
           );
+
+          if (!response.success) {
+            toast.error(response.error || "Failed to update model");
+          }
         } else {
-          await createModel(
+          const response = await createModel(
             {
               name: data.name,
               modelNo: data.modelNo,
@@ -83,13 +88,18 @@ const ModelForm = ({ initialData, onSubmitSuccess }: FormProps<Model>) => {
               onSuccess: () => {
                 onClose();
                 form.reset();
-                console.log("Successfully created model");
+                toast.success("Model created successfully");
+                onSubmitSuccess?.();
               },
               onError: (error) => {
-                console.error("Error creating model:", error);
+                toast.error(error.message || "Failed to create model");
               },
             },
           );
+
+          if (!response.success) {
+            toast.error(response.error || "Failed to create model");
+          }
         }
       } catch (error) {
         console.error("Model operation error:", error);

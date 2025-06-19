@@ -25,8 +25,8 @@ export type ActionResponse<T> = {
 const getSession = () => {
   const cookieStore = cookies();
   return {
-    accessToken: cookieStore.get('sb-access-token')?.value,
-    refreshToken: cookieStore.get('sb-refresh-token')?.value
+    accessToken: cookieStore.get("sb-access-token")?.value,
+    refreshToken: cookieStore.get("sb-refresh-token")?.value,
   };
 };
 
@@ -100,7 +100,9 @@ export const insert = withAuth(
 );
 
 // Wrapper function for client-side use
-export async function createAccessory(values: z.infer<typeof accessorySchema>): Promise<ActionResponse<Accessory>> {
+export async function createAccessory(
+  values: z.infer<typeof accessorySchema>,
+): Promise<ActionResponse<Accessory>> {
   const session = getSession();
   return insert(session, values);
 }
@@ -136,7 +138,9 @@ export const getAll = withAuth(
 );
 
 // Wrapper function for client-side use
-export async function getAllAccessories(): Promise<ActionResponse<Accessory[]>> {
+export async function getAllAccessories(): Promise<
+  ActionResponse<Accessory[]>
+> {
   const session = getSession();
   return getAll(session);
 }
@@ -182,8 +186,8 @@ export const findById = withAuth(
       // Get the original session from cookies since we're in a server action
       const cookieStore = cookies();
       const session = {
-        accessToken: cookieStore.get('sb-access-token')?.value,
-        refreshToken: cookieStore.get('sb-refresh-token')?.value
+        accessToken: cookieStore.get("sb-access-token")?.value,
+        refreshToken: cookieStore.get("sb-refresh-token")?.value,
       };
 
       const [accessory, auditLogsResult] = await Promise.all([
@@ -215,7 +219,9 @@ export const findById = withAuth(
 );
 
 // Wrapper function for client-side use
-export async function getAccessory(id: string): Promise<ActionResponse<Accessory>> {
+export async function getAccessory(
+  id: string,
+): Promise<ActionResponse<Accessory>> {
   const session = getSession();
   return findById(session, id);
 }
@@ -268,7 +274,9 @@ export const remove = withAuth(
 );
 
 // Wrapper function for client-side use
-export async function deleteAccessory(id: string): Promise<ActionResponse<Accessory>> {
+export async function deleteAccessory(
+  id: string,
+): Promise<ActionResponse<Accessory>> {
   const session = getSession();
   return remove(session, id);
 }
@@ -303,7 +311,10 @@ export const update = withAuth(
 );
 
 // Wrapper function for client-side use
-export async function updateAccessory(id: string, data: Partial<Accessory>): Promise<ActionResponse<Accessory>> {
+export async function updateAccessory(
+  id: string,
+  data: Partial<Accessory>,
+): Promise<ActionResponse<Accessory>> {
   const session = getSession();
   return update(session, id, data);
 }
@@ -375,7 +386,8 @@ export const processAccessoryCSV = withAuth(
       console.error("Error processing CSV:", error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : "Failed to process CSV file",
+        error:
+          error instanceof Error ? error.message : "Failed to process CSV file",
       };
     } finally {
       await prisma.$disconnect();
@@ -384,7 +396,9 @@ export const processAccessoryCSV = withAuth(
 );
 
 // Wrapper function for client-side use
-export async function processAccessoriesCSV(csvContent: string): Promise<ActionResponse<Accessory[]>> {
+export async function processAccessoriesCSV(
+  csvContent: string,
+): Promise<ActionResponse<Accessory[]>> {
   const session = getSession();
   return processAccessoryCSV(session, csvContent);
 }
@@ -486,7 +500,8 @@ export const checkout = withAuth(
       console.error("Error assigning Accessory:", error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : "Failed to assign Accessory",
+        error:
+          error instanceof Error ? error.message : "Failed to assign Accessory",
       };
     } finally {
       await prisma.$disconnect();
@@ -495,7 +510,9 @@ export const checkout = withAuth(
 );
 
 // Wrapper function for client-side use
-export async function checkoutAccessory(values: z.infer<typeof assignmentSchema>): Promise<ActionResponse<Accessory>> {
+export async function checkoutAccessory(
+  values: z.infer<typeof assignmentSchema>,
+): Promise<ActionResponse<Accessory>> {
   const session = getSession();
   return checkout(session, values);
 }
@@ -612,7 +629,9 @@ export const checkin = withAuth(
 );
 
 // Wrapper function for client-side use
-export async function checkinAccessory(userAccessoryId: string): Promise<ActionResponse<Accessory>> {
+export async function checkinAccessory(
+  userAccessoryId: string,
+): Promise<ActionResponse<Accessory>> {
   const session = getSession();
   return checkin(session, userAccessoryId);
 }

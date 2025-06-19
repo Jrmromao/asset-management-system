@@ -33,14 +33,17 @@ async function validateRequest(supabaseUser: any) {
 export async function GET(request: Request, { params }: RouteParams) {
   try {
     const supabase = createServerSupabaseClient();
-    const { data: { user }, error } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
 
     if (error || !user) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
     const validation = await validateRequest(user);
-    if ('error' in validation) {
+    if ("error" in validation) {
       return new NextResponse(validation.error, { status: validation.status });
     }
 
@@ -65,14 +68,17 @@ export async function GET(request: Request, { params }: RouteParams) {
 export async function DELETE(request: Request, { params }: RouteParams) {
   try {
     const supabase = createServerSupabaseClient();
-    const { data: { user }, error } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
 
     if (error || !user) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
     const validation = await validateRequest(user);
-    if ('error' in validation) {
+    if ("error" in validation) {
       return new NextResponse(validation.error, { status: validation.status });
     }
 
@@ -97,14 +103,17 @@ export async function DELETE(request: Request, { params }: RouteParams) {
 export async function PUT(request: Request, { params }: RouteParams) {
   try {
     const supabase = createServerSupabaseClient();
-    const { data: { user }, error } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
 
     if (error || !user) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
     const validation = await validateRequest(user);
-    if ('error' in validation) {
+    if ("error" in validation) {
       return new NextResponse(validation.error, { status: validation.status });
     }
 
@@ -119,7 +128,7 @@ export async function PUT(request: Request, { params }: RouteParams) {
     }
 
     const body = await request.json();
-    
+
     // Prevent changing company ID to a different company
     if (body.companyId && body.companyId !== validation.companyId) {
       return new NextResponse("Cannot change user's company", { status: 400 });
@@ -134,4 +143,4 @@ export async function PUT(request: Request, { params }: RouteParams) {
     console.error("[USER_UPDATE]", error);
     return new NextResponse("Internal Error", { status: 500 });
   }
-} 
+}

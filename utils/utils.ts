@@ -66,3 +66,11 @@ export function handleError(
     error: error instanceof Error ? error.message : defaultMessage,
   };
 }
+
+export interface APIResponse<T> {
+  data?: T[];
+  success?: boolean;
+  message?: string;
+  error?: string;
+  redirectUrl?: string;
+}

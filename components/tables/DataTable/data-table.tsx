@@ -57,8 +57,8 @@ export function DataTable<TData, TValue>({
       setIsMobile(window.innerWidth < 768);
     };
 
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   const table = useReactTable({
@@ -148,7 +148,10 @@ export function DataTable<TData, TValue>({
       <div className="md:hidden space-y-4">
         {hasRows ? (
           rows.map((row) => (
-            <Card key={row.id} className="p-4 bg-white dark:bg-gray-900 shadow-sm">
+            <Card
+              key={row.id}
+              className="p-4 bg-white dark:bg-gray-900 shadow-sm"
+            >
               <div className="space-y-3">
                 {row.getVisibleCells().map((cell) => {
                   const header = cell.column.columnDef.header as string;

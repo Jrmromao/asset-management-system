@@ -5,7 +5,10 @@ import { processAssetsCSV } from "@/lib/actions/assets.actions";
 export async function POST(request: Request) {
   try {
     const supabase = createServerSupabaseClient();
-    const { data: { user }, error } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
 
     if (error || !user) {
       return new NextResponse("Unauthorized", { status: 401 });
@@ -19,10 +22,10 @@ export async function POST(request: Request) {
     }
 
     const result = await processAssetsCSV(fileContent);
-    
+
     return NextResponse.json(result);
   } catch (error) {
     console.error("[ASSETS_IMPORT]", error);
     return new NextResponse("Internal Error", { status: 500 });
   }
-} 
+}

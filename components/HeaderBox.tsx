@@ -24,7 +24,7 @@ const HeaderBox: React.FC<HeaderBoxProps> = ({
       transition={{ duration: 0.4 }}
       className={cn(
         "mb-6 rounded-lg border bg-card p-6 shadow-sm transition-all hover:shadow-md dark:bg-card/95",
-        className
+        className,
       )}
     >
       <div className="flex items-center justify-between">
@@ -42,9 +42,7 @@ const HeaderBox: React.FC<HeaderBoxProps> = ({
           </div>
         </div>
         {actions && (
-          <div className="flex items-center space-x-2">
-            {actions}
-          </div>
+          <div className="flex items-center space-x-2">{actions}</div>
         )}
       </div>
     </motion.div>

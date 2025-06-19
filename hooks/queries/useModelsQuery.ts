@@ -3,41 +3,62 @@ import { z } from "zod";
 import { modelSchema } from "@/lib/schemas";
 import {
   getAllModels,
-  createModel,
-  deleteModel,
-  updateModel,
+  createModel as createModelAction,
+  deleteModel as deleteModelAction,
+  updateModel as updateModelAction,
 } from "@/lib/actions/model.actions";
 import { useModelUIStore } from "@/lib/stores/useModelUIStore";
+import type { Model, Manufacturer } from "@prisma/client";
 
 export const MODEL_KEY = ["models"] as const;
 
 type CreateModelInput = z.infer<typeof modelSchema>;
-type GenericQueryType = ReturnType<typeof createGenericQuery<Model, CreateModelInput>>;
+type UpdateModelInput = Partial<CreateModelInput>;
+type ActionResponse<T> = { data?: T; error?: string; success: boolean };
+
+interface ModelWithRelations extends Model {
+  manufacturer?: Pick<Manufacturer, "name"> | null;
+}
+
+type CrudActions = {
+  getAll: () => Promise<ActionResponse<ModelWithRelations[]>>;
+  insert: (
+    data: CreateModelInput,
+  ) => Promise<ActionResponse<ModelWithRelations>>;
+  delete: (id: string) => Promise<ActionResponse<ModelWithRelations>>;
+  update: (
+    id: string,
+    data: UpdateModelInput,
+  ) => Promise<ActionResponse<ModelWithRelations>>;
+};
+
+const modelActions: CrudActions = {
+  getAll: () =>
+    getAllModels({}) as Promise<ActionResponse<ModelWithRelations[]>>,
+
+  insert: (data: CreateModelInput) =>
+    createModelAction(data) as Promise<ActionResponse<ModelWithRelations>>,
+
+  delete: (id: string) =>
+    deleteModelAction(id) as Promise<ActionResponse<ModelWithRelations>>,
+
+  update: (id: string, data: UpdateModelInput) =>
+    updateModelAction(id, data) as Promise<ActionResponse<ModelWithRelations>>,
+};
 
 export function useModelsQuery() {
   const { onClose } = useModelUIStore();
 
-  const genericQuery: GenericQueryType = createGenericQuery<Model, CreateModelInput>(
+  const genericQuery = createGenericQuery<ModelWithRelations, CreateModelInput>(
     MODEL_KEY,
-    {
-      getAll: async () => {
-        return await getAllModels({});
-      },
-      insert: async (data: CreateModelInput) => {
-        return await createModel(data);
-      },
-      delete: async (id: string) => {
-        return await deleteModel(id);
-      },
-      update: async (id: string, data: CreateModelInput) => {
-        return await updateModel(id, data as any);
-      },
-    },
+    modelActions,
     {
       onClose,
-      successMessage: "Model created successfully",
-      errorMessage: "Failed to create model",
-      staleTime: 5 * 60 * 1000, // 5 minutes
+      successMessage: "Operation completed successfully",
+      errorMessage: "Operation failed",
+      staleTime: 5 * 60 * 1000,
+      retry: 1,
+      retryDelay: 1000,
     },
   );
 

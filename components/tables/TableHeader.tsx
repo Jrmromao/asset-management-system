@@ -1,7 +1,13 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Cross2Icon, PlusCircledIcon, ReloadIcon, DownloadIcon, UploadIcon } from "@radix-ui/react-icons";
+import {
+  Cross2Icon,
+  PlusCircledIcon,
+  ReloadIcon,
+  DownloadIcon,
+  UploadIcon,
+} from "@radix-ui/react-icons";
 import { Table } from "@tanstack/react-table";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
@@ -33,15 +39,18 @@ export function DataTableHeader<TData>({
   className,
   hideAddButton = false,
 }: DataTableHeaderProps<TData>) {
-  const globalFilter = table.getColumn("globalFilter")?.getFilterValue() as string;
-  
+  const globalFilter = table
+    .getColumn("globalFilter")
+    ?.getFilterValue() as string;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className={cn("flex flex-col space-y-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0", 
-        className
+      className={cn(
+        "flex flex-col space-y-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0",
+        className,
       )}
     >
       <div className="flex items-center space-x-2">
@@ -56,11 +65,13 @@ export function DataTableHeader<TData>({
             disabled={isLoading}
             className="h-8 w-8"
           >
-            <ReloadIcon className={cn("h-4 w-4", isLoading && "animate-spin")} />
+            <ReloadIcon
+              className={cn("h-4 w-4", isLoading && "animate-spin")}
+            />
           </Button>
         )}
       </div>
-      
+
       <div className="flex items-center justify-between">
         <div className="flex flex-1 items-center space-x-2">
           <Input
@@ -122,7 +133,9 @@ export function DataTableHeader<TData>({
               onClick={onRefresh}
               disabled={isLoading}
             >
-              <ReloadIcon className={cn("h-4 w-4", { "animate-spin": isLoading })} />
+              <ReloadIcon
+                className={cn("h-4 w-4", { "animate-spin": isLoading })}
+              />
             </Button>
           )}
         </div>

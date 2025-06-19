@@ -8,6 +8,7 @@ import { handleError } from "@/utils/utils";
 import { formTemplates } from "@/helpers/DefaultFormTemplates";
 import { withAuth } from "@/lib/middleware/withAuth";
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 
 const prisma = new PrismaClient();
 
@@ -17,42 +18,47 @@ type AuthResponse<T> = {
   success: boolean;
 };
 
-export const insert = withAuth(
-  async (
-    user,
-    data: z.infer<typeof createTemplateSchema>,
-  ): Promise<AuthResponse<FormTemplate>> => {
-    try {
-      const validatedData = createTemplateSchema.parse(data);
-      const template = await prisma.formTemplate.create({
-        data: {
-          name: validatedData.name,
-          fields: validatedData.fields,
-          companyId: user.user_metadata?.companyId,
-        },
-        select: { id: true },
-      });
+export type TCreateInput = z.infer<typeof createTemplateSchema>;
 
-      revalidatePath("/form-templates");
-      return {
-        success: true,
-        data: parseStringify(template),
-      };
-    } catch (error) {
-      console.error("Create form template error:", error);
-      return { success: false, error: "Failed to create form template" };
-    } finally {
-      await prisma.$disconnect();
-    }
-  },
-);
+const getSession = () => {
+  const cookieStore = cookies();
+  return {
+    accessToken: cookieStore.get("sb-access-token")?.value,
+    refreshToken: cookieStore.get("sb-refresh-token")?.value,
+  };
+};
 
-export const getAll = withAuth(
-  async (user): Promise<AuthResponse<FormTemplate[]>> => {
+export const insert = async (
+  data: TCreateInput,
+): Promise<AuthResponse<FormTemplate>> => {
+  const session = getSession();
+  return withAuth(
+    async (user, data: TCreateInput): Promise<AuthResponse<FormTemplate>> => {
+      try {
+        const validatedData = createTemplateSchema.parse(data);
+        const result = await prisma.formTemplate.create({
+          data: {
+            name: validatedData.name,
+            fields: validatedData.fields,
+            companyId: user.user_metadata.companyId,
+          },
+        });
+        return { success: true, data: result };
+      } catch (error) {
+        console.error("Error creating form template:", error);
+        return { success: false, error: "Failed to create form template" };
+      }
+    },
+  )(session, data);
+};
+
+export const getAll = async (): Promise<AuthResponse<FormTemplate[]>> => {
+  const session = getSession();
+  return withAuth(async (user): Promise<AuthResponse<FormTemplate[]>> => {
     try {
       const templates = await prisma.formTemplate.findMany({
         where: {
-          companyId: user.user_metadata?.companyId,
+          companyId: user.user_metadata.companyId,
         },
         orderBy: {
           name: "asc",
@@ -62,11 +68,9 @@ export const getAll = withAuth(
     } catch (error) {
       console.error("Get form templates error:", error);
       return { success: false, error: "Failed to fetch form templates" };
-    } finally {
-      await prisma.$disconnect();
     }
-  },
-);
+  })(session);
+};
 
 export const getFormTemplateById = withAuth(
   async (user, id: string): Promise<AuthResponse<FormTemplate>> => {

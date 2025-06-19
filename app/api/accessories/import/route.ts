@@ -5,7 +5,10 @@ import { processAccessoryCSV } from "@/lib/actions/accessory.actions";
 export async function POST(request: Request) {
   try {
     const supabase = createServerSupabaseClient();
-    const { data: { user }, error } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
 
     if (error || !user) {
       return new NextResponse("Unauthorized", { status: 401 });
@@ -19,10 +22,10 @@ export async function POST(request: Request) {
     }
 
     const result = await processAccessoryCSV(user, fileContent);
-    
+
     return NextResponse.json(result);
   } catch (error) {
     console.error("[ACCESSORIES_IMPORT]", error);
     return new NextResponse("Internal Error", { status: 500 });
   }
-} 
+}

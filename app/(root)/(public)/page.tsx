@@ -76,7 +76,9 @@ const LandingPage = () => {
               </Button>
             ) : (
               <>
-                <Button variant="ghost" onClick={() => router.push("/sign-in")}>Login</Button>
+                <Button variant="ghost" onClick={() => router.push("/sign-in")}>
+                  Login
+                </Button>
                 <Button
                   className="bg-green-600 hover:bg-green-700"
                   onClick={() => router.push("/sign-up")}

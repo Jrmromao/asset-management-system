@@ -41,7 +41,7 @@ export const ProgressIndicator = ({
                 "px-3 py-1 text-xs font-semibold rounded-full transition-colors duration-300",
                 form.formState.isValid
                   ? "bg-emerald-50 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
-                  : "bg-amber-50 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800"
+                  : "bg-amber-50 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800",
               )}
             >
               {form.formState.isValid
@@ -63,8 +63,8 @@ export const ProgressIndicator = ({
               percentage === 100
                 ? "bg-emerald-500 dark:bg-emerald-400"
                 : percentage >= 50
-                ? "bg-blue-500 dark:bg-blue-400"
-                : "bg-amber-500 dark:bg-amber-400"
+                  ? "bg-blue-500 dark:bg-blue-400"
+                  : "bg-amber-500 dark:bg-amber-400",
             )}
             style={{
               width: `${Math.max(0, Math.min(100, percentage))}%`,

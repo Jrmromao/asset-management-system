@@ -1,12 +1,15 @@
-import { createServerSupabaseClient } from "@/utils/supabase/server";
+import { createClient } from "@/utils/supabase/server";
 
 export const authOptions = {
   providers: [],
   callbacks: {
     async session({ session }: any) {
       try {
-        const supabase = createServerSupabaseClient();
-        const { data: { user }, error } = await supabase.auth.getUser();
+        const supabase = await createClient();
+        const {
+          data: { user },
+          error,
+        } = await supabase.auth.getUser();
 
         if (error || !user) {
           return session;
@@ -30,7 +33,7 @@ export const authOptions = {
           return false;
         }
 
-        const supabase = createServerSupabaseClient();
+        const supabase = await createClient();
         const { data: profile, error } = await supabase
           .from("profiles")
           .select("*")
@@ -62,4 +65,4 @@ export const authOptions = {
       }
     },
   },
-}; 
+};

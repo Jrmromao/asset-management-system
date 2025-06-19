@@ -28,7 +28,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.variable} ${ibmPlexSerif.variable}`} suppressHydrationWarning>
+      <body
+        className={`${inter.variable} ${ibmPlexSerif.variable}`}
+        suppressHydrationWarning
+      >
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

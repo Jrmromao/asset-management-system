@@ -66,7 +66,10 @@ const AuthForm = () => {
           setError(result.error || "Invalid email or password");
           console.warn("[Login] Login failed", result.error);
         } else {
-          console.log("[Login] Login successful, redirecting to", validCallbackUrl);
+          console.log(
+            "[Login] Login successful, redirecting to",
+            validCallbackUrl,
+          );
           router.push(validCallbackUrl);
         }
       } catch (e) {

@@ -40,21 +40,27 @@ const StatusCards: React.FC<StatusCardsProps> = ({ cards, columns = 4 }) => {
   const getTrendIcon = (trend?: string) => {
     switch (trend) {
       case "up":
-        return <TrendingUp className="h-4 w-4 text-green-500 dark:text-green-400" />;
+        return (
+          <TrendingUp className="h-4 w-4 text-green-500 dark:text-green-400" />
+        );
       case "down":
-        return <TrendingDown className="h-4 w-4 text-red-500 dark:text-red-400" />;
+        return (
+          <TrendingDown className="h-4 w-4 text-red-500 dark:text-red-400" />
+        );
       default:
         return <Minus className="h-4 w-4 text-gray-500 dark:text-gray-400" />;
     }
   };
 
   return (
-    <div className={cn("grid gap-4", {
-      "grid-cols-1": columns === 1,
-      "grid-cols-2": columns === 2,
-      "grid-cols-3": columns === 3,
-      "grid-cols-1 md:grid-cols-2 lg:grid-cols-4": columns === 4,
-    })}>
+    <div
+      className={cn("grid gap-4", {
+        "grid-cols-1": columns === 1,
+        "grid-cols-2": columns === 2,
+        "grid-cols-3": columns === 3,
+        "grid-cols-1 md:grid-cols-2 lg:grid-cols-4": columns === 4,
+      })}
+    >
       {cards.map((card, index) => (
         <motion.div
           key={card.title}
@@ -82,40 +88,53 @@ const StatusCards: React.FC<StatusCardsProps> = ({ cards, columns = 4 }) => {
                   </div>
                 </div>
                 {card.icon && (
-                  <div className={cn("rounded-full p-2", getColorClass(card.color))}>
+                  <div
+                    className={cn(
+                      "rounded-full p-2",
+                      getColorClass(card.color),
+                    )}
+                  >
                     {card.icon}
                   </div>
                 )}
               </div>
-              
+
               <div className="mt-auto">
                 {(card.trend || card.subtitle) && (
                   <div className="mt-4 flex items-center space-x-2 text-sm">
                     {card.trend && (
                       <div className="flex items-center">
                         {getTrendIcon(card.trend)}
-                        <span className={cn("ml-1", {
-                          "text-green-600 dark:text-green-400": card.trend === "up",
-                          "text-red-600 dark:text-red-400": card.trend === "down",
-                          "text-gray-600 dark:text-gray-400": card.trend === "neutral"
-                        })}>
+                        <span
+                          className={cn("ml-1", {
+                            "text-green-600 dark:text-green-400":
+                              card.trend === "up",
+                            "text-red-600 dark:text-red-400":
+                              card.trend === "down",
+                            "text-gray-600 dark:text-gray-400":
+                              card.trend === "neutral",
+                          })}
+                        >
                           {card.trendValue}
                         </span>
                       </div>
                     )}
                     {card.subtitle && (
-                      <span className="text-muted-foreground dark:text-gray-400">{card.subtitle}</span>
+                      <span className="text-muted-foreground dark:text-gray-400">
+                        {card.subtitle}
+                      </span>
                     )}
                   </div>
                 )}
-                
+
                 {card.percentage !== undefined && (
                   <div className="mt-3 h-1.5 w-full rounded-full bg-gray-200 dark:bg-gray-700">
                     <div
                       className={cn("h-1.5 rounded-full transition-all", {
                         "bg-green-500 dark:bg-green-400": card.percentage > 66,
-                        "bg-yellow-500 dark:bg-yellow-400": card.percentage > 33 && card.percentage <= 66,
-                        "bg-red-500 dark:bg-red-400": card.percentage <= 33
+                        "bg-yellow-500 dark:bg-yellow-400":
+                          card.percentage > 33 && card.percentage <= 66,
+                        "bg-red-500 dark:bg-red-400": card.percentage <= 33,
                       })}
                       style={{ width: `${card.percentage}%` }}
                     />

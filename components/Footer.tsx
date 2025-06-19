@@ -6,12 +6,12 @@ import { User } from "@supabase/supabase-js";
 
 const formatUsername = (user: User | null): string => {
   if (!user) return "Guest";
-  
+
   // First try to get the user's name from metadata
   if (user.user_metadata?.name) {
     return user.user_metadata.name;
   }
-  
+
   // If no name, clean up the email
   if (user.email) {
     // Remove everything after +
@@ -21,10 +21,10 @@ const formatUsername = (user: User | null): string => {
     // Convert to title case and replace dots/underscores with spaces
     return localPart
       .split(/[._]/)
-      .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
       .join(" ");
   }
-  
+
   return "Guest";
 };
 

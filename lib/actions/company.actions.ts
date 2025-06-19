@@ -66,8 +66,8 @@ type ActionResponse<T> = {
 const getSession = () => {
   const cookieStore = cookies();
   return {
-    accessToken: cookieStore.get('sb-access-token')?.value,
-    refreshToken: cookieStore.get('sb-refresh-token')?.value
+    accessToken: cookieStore.get("sb-access-token")?.value,
+    refreshToken: cookieStore.get("sb-refresh-token")?.value,
   };
 };
 
@@ -82,7 +82,7 @@ export const getAll = withAuth(
     } finally {
       await prisma.$disconnect();
     }
-  }
+  },
 );
 
 // Wrapper function for client-side use
@@ -106,11 +106,13 @@ export const insert = withAuth(
     } finally {
       await prisma.$disconnect();
     }
-  }
+  },
 );
 
 // Wrapper function for client-side use
-export async function createCompany(data: RegistrationData): Promise<ActionResponse<Company>> {
+export async function createCompany(
+  data: RegistrationData,
+): Promise<ActionResponse<Company>> {
   const session = getSession();
   return insert(session, data);
 }
@@ -129,11 +131,14 @@ export const update = withAuth(
     } finally {
       await prisma.$disconnect();
     }
-  }
+  },
 );
 
 // Wrapper function for client-side use
-export async function updateCompany(id: string, name: string): Promise<ActionResponse<Company>> {
+export async function updateCompany(
+  id: string,
+  name: string,
+): Promise<ActionResponse<Company>> {
   const session = getSession();
   return update(session, id, name);
 }
@@ -151,11 +156,13 @@ export const remove = withAuth(
     } finally {
       await prisma.$disconnect();
     }
-  }
+  },
 );
 
 // Wrapper function for client-side use
-export async function deleteCompany(id: string): Promise<ActionResponse<Company>> {
+export async function deleteCompany(
+  id: string,
+): Promise<ActionResponse<Company>> {
   const session = getSession();
   return remove(session, id);
 }
@@ -194,17 +201,18 @@ async function createUserForRegistration({
   }
 
   // 2. Create the user in Supabase Auth with metadata
-  const { data: authUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
-    email,
-    password,
-    email_confirm: true,
-    user_metadata: {
-      firstName,
-      lastName,
-      companyId,
-      role: "Admin",
-    },
-  });
+  const { data: authUser, error: createError } =
+    await supabaseAdmin.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+      user_metadata: {
+        firstName,
+        lastName,
+        companyId,
+        role: "Admin",
+      },
+    });
 
   if (createError || !authUser.user) {
     throw new Error("Failed to create auth user: " + createError?.message);

@@ -1,31 +1,79 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { getAllAssets, createAsset } from "@/lib/actions/assets.actions";
+import { createClient } from "@/utils/supabase/server";
+import { revalidatePath } from "next/cache";
+import { z } from "zod";
+import { getAll } from "@/lib/actions/assets.actions";
 
-export async function GET(request: Request) {
+const assetSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  description: z.string().optional(),
+  // Add other asset fields as needed
+});
+
+export async function GET() {
   try {
-    const { searchParams } = new URL(request.url);
-    const options = {
-      orderBy: searchParams.get('orderBy') as "name" | "createdAt" | undefined,
-      order: searchParams.get('order') as "asc" | "desc" | undefined,
-      search: searchParams.get('search') || undefined
-    };
+    const supabase = await createClient();
 
-    const result = await getAllAssets();
-    return NextResponse.json(result);
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const assets = await getAll({
+      accessToken: session.access_token,
+      refreshToken: session.refresh_token,
+      user: session.user,
+    });
+
+    return NextResponse.json({ data: assets });
   } catch (error) {
-    console.error("[ASSETS_GET]", error);
-    return new NextResponse("Internal Error", { status: 500 });
+    console.error("Error fetching assets:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch assets" },
+      { status: 500 },
+    );
   }
 }
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const result = await createAsset(body);
-    return NextResponse.json(result);
+    const supabase = await createClient();
+
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const json = await request.json();
+    const validatedData = assetSchema.safeParse(json);
+
+    if (!validatedData.success) {
+      return NextResponse.json(
+        { error: validatedData.error.flatten().fieldErrors },
+        { status: 400 },
+      );
+    }
+
+    const { data, error } = await supabase
+      .from("assets")
+      .insert([{ ...validatedData.data, user_id: session.user.id }])
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // Revalidate the assets list
+    revalidatePath("/assets");
+
+    return NextResponse.json({ data });
   } catch (error) {
-    console.error("[ASSETS_POST]", error);
-    return new NextResponse("Internal Error", { status: 500 });
+    console.error("Error creating asset:", error);
+    return NextResponse.json(
+      { error: "Failed to create asset" },
+      { status: 500 },
+    );
   }
-} 
+}

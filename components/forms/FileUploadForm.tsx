@@ -11,7 +11,10 @@ import Dropzone from "@/components/Dropzone";
 import { useAssetStore } from "@/lib/stores/assetStore";
 import { toast } from "sonner";
 import { processAccessoryCSV } from "@/lib/actions/accessory.actions";
-import { processAssetsCSV, generateAssetCSVTemplate } from "@/lib/actions/assets.actions";
+import {
+  processAssetsCSV,
+  generateAssetCSVTemplate,
+} from "@/lib/actions/assets.actions";
 import { supabase } from "@/lib/supabaseClient";
 
 interface FileUploadFormProps {
@@ -55,7 +58,9 @@ const FileUploadForm = ({ dataType }: FileUploadFormProps) => {
     }
     setIsLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) {
         toast.error("You must be logged in to upload files.");
         return;
@@ -65,9 +70,9 @@ const FileUploadForm = ({ dataType }: FileUploadFormProps) => {
 
       // Send the file content to the server endpoint
       const response = await fetch(`/api/${dataType}/import`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ fileContent }),
       });
@@ -80,7 +85,7 @@ const FileUploadForm = ({ dataType }: FileUploadFormProps) => {
         getAll();
         closeDialog();
       } else {
-        toast.error(result.message || 'Failed to process the file');
+        toast.error(result.message || "Failed to process the file");
       }
     } catch (e) {
       console.error(e);
@@ -104,21 +109,21 @@ const FileUploadForm = ({ dataType }: FileUploadFormProps) => {
   };
 
   const handleDownloadTemplate = () => {
-    let template = '';
-    if (dataType === 'assets') {
+    let template = "";
+    if (dataType === "assets") {
       template = generateAssetCSVTemplate();
     }
     // Add other data types here
 
     if (!template) {
-      toast.error('Template not available for this data type');
+      toast.error("Template not available for this data type");
       return;
     }
 
     // Create and download the file
-    const blob = new Blob([template], { type: 'text/csv' });
+    const blob = new Blob([template], { type: "text/csv" });
     const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
     a.download = `${dataType}-template.csv`;
     document.body.appendChild(a);

@@ -1,11 +1,11 @@
-import { createServerClient, type CookieOptions } from '@supabase/ssr';
-import { redirect } from 'next/navigation';
-import { cookies } from 'next/headers';
-import LandingPage from './(root)/(public)/page';
+import { createServerClient, type CookieOptions } from "@supabase/ssr";
+import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
+import LandingPage from "./(root)/(public)/page";
 
 export default async function Page() {
   const cookieStore = cookies();
-  
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -20,7 +20,7 @@ export default async function Page() {
             const { maxAge, ...cookieOptions } = options;
             cookieStore.set(name, value, {
               ...cookieOptions,
-              maxAge: maxAge ?? undefined
+              maxAge: maxAge ?? undefined,
             });
           } catch (error) {
             // The `set` method was called from a Server Component.
@@ -31,9 +31,9 @@ export default async function Page() {
         remove(name: string, options: CookieOptions) {
           try {
             const { maxAge, ...cookieOptions } = options;
-            cookieStore.set(name, '', {
+            cookieStore.set(name, "", {
               ...cookieOptions,
-              maxAge: 0
+              maxAge: 0,
             });
           } catch (error) {
             // The `delete` method was called from a Server Component.
@@ -44,12 +44,14 @@ export default async function Page() {
       },
     },
   );
-  
-  const { data: { user } } = await supabase.auth.getUser();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   if (!user) {
     return <LandingPage />;
   }
 
-  return redirect('/dashboard');
-} 
+  return redirect("/admin");
+}

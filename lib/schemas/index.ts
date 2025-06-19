@@ -422,11 +422,12 @@ export const createTemplateSchema = z.object({
   fields: z.array(
     z.object({
       name: z.string().min(1, "Field name is required"),
-      type: z.enum(["text", "number", "date", "select", "checkbox"]),
-      placeholder: z.string().optional(),
-      label: z.string().optional(),
+      label: z.string().min(1, "Field label is required"),
+      type: z.enum(["number", "boolean", "text", "select", "date", "checkbox"]),
       required: z.boolean().default(false),
       options: z.array(z.string()).optional(),
+      placeholder: z.string().optional(),
+      showIf: z.record(z.array(z.string())).optional(),
     }),
   ),
 });

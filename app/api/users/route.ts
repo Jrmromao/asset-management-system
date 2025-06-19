@@ -6,7 +6,10 @@ import { prisma } from "@/app/db";
 export async function GET() {
   try {
     const supabase = createServerSupabaseClient();
-    const { data: { user }, error } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
 
     if (error || !user) {
       return new NextResponse("Unauthorized", { status: 401 });
@@ -14,7 +17,9 @@ export async function GET() {
 
     const companyId = user.user_metadata?.companyId;
     if (!companyId) {
-      return new NextResponse("No company associated with your account", { status: 400 });
+      return new NextResponse("No company associated with your account", {
+        status: 400,
+      });
     }
 
     // Verify company exists
@@ -23,7 +28,9 @@ export async function GET() {
     });
 
     if (!company) {
-      return new NextResponse("Invalid company ID or company not found", { status: 400 });
+      return new NextResponse("Invalid company ID or company not found", {
+        status: 400,
+      });
     }
 
     const users = await prisma.user.findMany({
@@ -49,7 +56,10 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const supabase = createServerSupabaseClient();
-    const { data: { user }, error } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
 
     if (error || !user) {
       return new NextResponse("Unauthorized", { status: 401 });
@@ -57,7 +67,9 @@ export async function POST(request: Request) {
 
     const companyId = user.user_metadata?.companyId;
     if (!companyId) {
-      return new NextResponse("No company associated with your account", { status: 400 });
+      return new NextResponse("No company associated with your account", {
+        status: 400,
+      });
     }
 
     // Verify company exists
@@ -66,7 +78,9 @@ export async function POST(request: Request) {
     });
 
     if (!company) {
-      return new NextResponse("Invalid company ID or company not found", { status: 400 });
+      return new NextResponse("Invalid company ID or company not found", {
+        status: 400,
+      });
     }
 
     const body = await request.json();
@@ -76,8 +90,8 @@ export async function POST(request: Request) {
     });
 
     if (!result.success) {
-      return new NextResponse(result.error || "Failed to create user", { 
-        status: result.error?.includes("company") ? 400 : 500 
+      return new NextResponse(result.error || "Failed to create user", {
+        status: result.error?.includes("company") ? 400 : 500,
       });
     }
 
@@ -86,4 +100,4 @@ export async function POST(request: Request) {
     console.error("[USERS_POST]", error);
     return new NextResponse("Internal Error", { status: 500 });
   }
-} 
+}

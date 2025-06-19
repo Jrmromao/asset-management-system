@@ -11,7 +11,10 @@ interface RouteParams {
 export async function PATCH(request: Request, { params }: RouteParams) {
   try {
     const supabase = createServerSupabaseClient();
-    const { data: { user }, error } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
 
     if (error || !user) {
       return new NextResponse("Unauthorized", { status: 401 });
@@ -29,7 +32,10 @@ export async function PATCH(request: Request, { params }: RouteParams) {
 export async function DELETE(request: Request, { params }: RouteParams) {
   try {
     const supabase = createServerSupabaseClient();
-    const { data: { user }, error } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
 
     if (error || !user) {
       return new NextResponse("Unauthorized", { status: 401 });
@@ -41,4 +47,4 @@ export async function DELETE(request: Request, { params }: RouteParams) {
     console.error("[ROLE_DELETE]", error);
     return new NextResponse("Internal Error", { status: 500 });
   }
-} 
+}

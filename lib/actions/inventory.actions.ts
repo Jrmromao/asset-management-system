@@ -33,8 +33,8 @@ interface PaginationParams {
 const getSession = () => {
   const cookieStore = cookies();
   return {
-    accessToken: cookieStore.get('sb-access-token')?.value,
-    refreshToken: cookieStore.get('sb-refresh-token')?.value
+    accessToken: cookieStore.get("sb-access-token")?.value,
+    refreshToken: cookieStore.get("sb-refresh-token")?.value,
   };
 };
 
@@ -66,7 +66,9 @@ export const insert = withAuth(
 );
 
 // Wrapper function for client-side use
-export async function createInventory(values: z.infer<typeof inventorySchema>): Promise<AuthResponse<Inventory>> {
+export async function createInventory(
+  values: z.infer<typeof inventorySchema>,
+): Promise<AuthResponse<Inventory>> {
   const session = getSession();
   return insert(session, values);
 }
@@ -102,29 +104,34 @@ export const update = withAuth(
 );
 
 // Wrapper function for client-side use
-export async function updateInventory(id: string, data: Partial<Inventory>): Promise<AuthResponse<Inventory>> {
+export async function updateInventory(
+  id: string,
+  data: Partial<Inventory>,
+): Promise<AuthResponse<Inventory>> {
   const session = getSession();
   return update(session, id, data);
 }
 
-export const getAll = withAuth(async (user): Promise<AuthResponse<Inventory[]>> => {
-  try {
-    const inventories = await prisma.inventory.findMany({
-      where: {
-        companyId: user.user_metadata?.companyId,
-      },
-      orderBy: {
-        name: "asc",
-      },
-    });
-    return { success: true, data: parseStringify(inventories) };
-  } catch (error) {
-    console.error("Get inventories error:", error);
-    return { success: false, error: "Failed to fetch inventories" };
-  } finally {
-    await prisma.$disconnect();
-  }
-});
+export const getAll = withAuth(
+  async (user): Promise<AuthResponse<Inventory[]>> => {
+    try {
+      const inventories = await prisma.inventory.findMany({
+        where: {
+          companyId: user.user_metadata?.companyId,
+        },
+        orderBy: {
+          name: "asc",
+        },
+      });
+      return { success: true, data: parseStringify(inventories) };
+    } catch (error) {
+      console.error("Get inventories error:", error);
+      return { success: false, error: "Failed to fetch inventories" };
+    } finally {
+      await prisma.$disconnect();
+    }
+  },
+);
 
 // Wrapper function for client-side use
 export async function getAllInventories(): Promise<AuthResponse<Inventory[]>> {
@@ -133,7 +140,10 @@ export async function getAllInventories(): Promise<AuthResponse<Inventory[]>> {
 }
 
 export const getAllPaginated = withAuth(
-  async (user, params?: PaginationParams): Promise<AuthResponse<Inventory[]>> => {
+  async (
+    user,
+    params?: PaginationParams,
+  ): Promise<AuthResponse<Inventory[]>> => {
     try {
       if (!user.user_metadata?.companyId) {
         return { success: false, error: "Not authenticated" };
@@ -162,33 +172,39 @@ export const getAllPaginated = withAuth(
 );
 
 // Wrapper function for client-side use
-export async function getPaginatedInventories(params?: PaginationParams): Promise<AuthResponse<Inventory[]>> {
+export async function getPaginatedInventories(
+  params?: PaginationParams,
+): Promise<AuthResponse<Inventory[]>> {
   const session = getSession();
   return getAllPaginated(session, params);
 }
 
-export const getInventoryById = withAuth(async (user, id: string): Promise<AuthResponse<Inventory>> => {
-  try {
-    const inventory = await prisma.inventory.findFirst({
-      where: {
-        id,
-        companyId: user.user_metadata?.companyId,
-      },
-    });
-    if (!inventory) {
-      return { success: false, error: "Inventory not found" };
+export const getInventoryById = withAuth(
+  async (user, id: string): Promise<AuthResponse<Inventory>> => {
+    try {
+      const inventory = await prisma.inventory.findFirst({
+        where: {
+          id,
+          companyId: user.user_metadata?.companyId,
+        },
+      });
+      if (!inventory) {
+        return { success: false, error: "Inventory not found" };
+      }
+      return { success: true, data: parseStringify(inventory) };
+    } catch (error) {
+      console.error("Get inventory error:", error);
+      return { success: false, error: "Failed to fetch inventory" };
+    } finally {
+      await prisma.$disconnect();
     }
-    return { success: true, data: parseStringify(inventory) };
-  } catch (error) {
-    console.error("Get inventory error:", error);
-    return { success: false, error: "Failed to fetch inventory" };
-  } finally {
-    await prisma.$disconnect();
-  }
-});
+  },
+);
 
 // Wrapper function for client-side use
-export async function getInventory(id: string): Promise<AuthResponse<Inventory>> {
+export async function getInventory(
+  id: string,
+): Promise<AuthResponse<Inventory>> {
   const session = getSession();
   return getInventoryById(session, id);
 }
@@ -226,7 +242,9 @@ export const remove = withAuth(
 );
 
 // Wrapper function for client-side use
-export async function deleteInventory(id: string): Promise<AuthResponse<Inventory>> {
+export async function deleteInventory(
+  id: string,
+): Promise<AuthResponse<Inventory>> {
   const session = getSession();
   return remove(session, id);
 }

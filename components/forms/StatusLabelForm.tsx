@@ -15,11 +15,12 @@ import CustomSwitch from "@/components/CustomSwitch";
 
 import { statusLabelSchema } from "@/lib/schemas";
 import { useStatusLabelsQuery } from "@/hooks/queries/useStatusLabelsQuery";
+import type { StatusLabel } from "@prisma/client";
 
 type FormValues = z.infer<typeof statusLabelSchema>;
 
 interface StatusLabelFormProps {
-  initialData?: any;
+  initialData?: StatusLabel;
   onClose: () => void;
   onSubmitSuccess?: () => void;
 }
@@ -56,42 +57,46 @@ export default function StatusLabelForm({
         };
 
         if (initialData) {
-          const result = await updateStatusLabel(initialData.id, formData, {
+          await updateStatusLabel(initialData.id, formData, {
             onSuccess: () => {
               form.reset();
               onSubmitSuccess?.();
               onClose();
+              toast.success("Status label updated successfully");
             },
             onError: (error: Error) => {
-              toast.error(error.message);
+              toast.error(error.message || "Failed to update status label");
             },
           });
-          if (!result.success) {
-            toast.error(result.error || "Failed to update status label");
-          }
         } else {
-          const result = await createStatusLabel(formData, {
+          await createStatusLabel(formData, {
             onSuccess: () => {
               form.reset();
               onSubmitSuccess?.();
               onClose();
+              toast.success("Status label created successfully");
             },
             onError: (error: Error) => {
-              toast.error(error.message);
+              toast.error(error.message || "Failed to create status label");
             },
           });
-          if (!result.success) {
-            toast.error(result.error || "Failed to create status label");
-          }
         }
       } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : "An error occurred";
+        const message =
+          error instanceof Error ? error.message : "An error occurred";
         toast.error(message);
       } finally {
         setIsSubmitting(false);
       }
     },
-    [createStatusLabel, updateStatusLabel, initialData, form, onClose, onSubmitSuccess]
+    [
+      createStatusLabel,
+      updateStatusLabel,
+      initialData,
+      form,
+      onClose,
+      onSubmitSuccess,
+    ],
   );
 
   return (
@@ -102,6 +107,7 @@ export default function StatusLabelForm({
           name="name"
           label="Name"
           placeholder="Enter status label name"
+          disabled={isSubmitting}
         />
 
         <CustomInput
@@ -109,24 +115,28 @@ export default function StatusLabelForm({
           name="description"
           label="Description"
           placeholder="Enter status label description"
+          disabled={isSubmitting}
         />
 
         <CustomColorPicker
           control={form.control}
           name="colorCode"
           label="Color"
+          disabled={isSubmitting}
         />
 
         <CustomSwitch
           control={form.control}
           name="isArchived"
           label="Archived"
+          disabled={isSubmitting}
         />
 
         <CustomSwitch
           control={form.control}
           name="allowLoan"
           label="Allow Loan"
+          disabled={isSubmitting}
         />
 
         <div className="flex justify-end space-x-2">

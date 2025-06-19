@@ -5,12 +5,12 @@ import { usePathname } from "next/navigation";
 
 export default function NotFound() {
   const pathname = usePathname();
-  
+
   // Helper function to get suggestions based on the current path
   const getSuggestions = (path: string) => {
-    if (path.includes('assetes')) return '/assets/';
-    if (path.includes('accessorys')) return '/accessories/';
-    if (path.includes('licence')) return '/license/';
+    if (path.includes("assetes")) return "/assets/";
+    if (path.includes("accessorys")) return "/accessories/";
+    if (path.includes("licence")) return "/license/";
     return null;
   };
 
@@ -20,8 +20,10 @@ export default function NotFound() {
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
       <h1 className="text-5xl font-bold text-red-600 mb-4">404</h1>
       <h2 className="text-2xl font-semibold mb-2">Page Not Found</h2>
-      <p className="mb-4 text-gray-700">Sorry, the page you are looking for does not exist or has been moved.</p>
-      
+      <p className="mb-4 text-gray-700">
+        Sorry, the page you are looking for does not exist or has been moved.
+      </p>
+
       {suggestion && (
         <div className="mb-6 text-center">
           <p className="text-gray-600">Did you mean to visit:</p>
@@ -32,7 +34,7 @@ export default function NotFound() {
       )}
 
       <div className="flex gap-4">
-        <button 
+        <button
           onClick={() => window.history.back()}
           className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
         >
@@ -50,4 +52,4 @@ export default function NotFound() {
       </div>
     </div>
   );
-} 
+}

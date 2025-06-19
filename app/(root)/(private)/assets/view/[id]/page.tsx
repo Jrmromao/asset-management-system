@@ -25,7 +25,18 @@ import printQRCode from "@/utils/QRCodePrinter";
 import { useRouter } from "next/navigation";
 import ItemDetailsTabs from "@/components/shared/DetailsTabs/ItemDetailsTabs";
 import { Decimal } from "@prisma/client/runtime/library";
-import type { Asset, User, Model, StatusLabel, Department, DepartmentLocation, FormTemplate, FormTemplateValue, AssetHistory, Co2eRecord } from "@prisma/client";
+import type {
+  Asset,
+  User,
+  Model,
+  StatusLabel,
+  Department,
+  DepartmentLocation,
+  FormTemplate,
+  FormTemplateValue,
+  AssetHistory,
+  Co2eRecord,
+} from "@prisma/client";
 import { JsonValue } from "@prisma/client/runtime/library";
 import { AssetWithRelations, EnhancedAssetType } from "@/types/asset";
 
@@ -98,9 +109,9 @@ export default function AssetPage({ params }: AssetPageProps) {
   useEffect(() => {
     // Add no-cache headers
     const headers = new Headers();
-    headers.append('Cache-Control', 'no-cache, no-store, must-revalidate');
-    headers.append('Pragma', 'no-cache');
-    headers.append('Expires', '0');
+    headers.append("Cache-Control", "no-cache, no-store, must-revalidate");
+    headers.append("Pragma", "no-cache");
+    headers.append("Expires", "0");
   }, []);
 
   useEffect(() => {
@@ -110,29 +121,32 @@ export default function AssetPage({ params }: AssetPageProps) {
       try {
         const response = await fetch(`/api/assets/${id}`);
         if (!response.ok) {
-          throw new Error('Failed to fetch asset');
+          throw new Error("Failed to fetch asset");
         }
         const foundAssetResponse = await response.json();
         console.log(foundAssetResponse);
 
         if (foundAssetResponse.success) {
           if (!foundAssetResponse.data) {
-            setError("Asset not found. Please make sure the asset exists and you have permission to view it.");
+            setError(
+              "Asset not found. Please make sure the asset exists and you have permission to view it.",
+            );
             setLoadingStates((prev) => ({ ...prev, isInitialLoading: false }));
             return;
           }
 
-          const foundAsset = foundAssetResponse.data as unknown as AssetWithRelations;
-          
+          const foundAsset =
+            foundAssetResponse.data as unknown as AssetWithRelations;
+
           const allValues =
             foundAsset?.formTemplateValues?.map((item) => item?.values) ?? [];
           let co2Score = 0;
           let units = "";
 
-                      if (foundAsset?.Co2eRecord?.[0]) {
-              co2Score = Number(foundAsset.Co2eRecord[0].co2e);
-              units = foundAsset.Co2eRecord[0].units;
-            }
+          if (foundAsset?.co2eRecords?.[0]) {
+            co2Score = Number(foundAsset.co2eRecords[0].co2e);
+            units = foundAsset.co2eRecords[0].units;
+          }
 
           setAsset({
             id: foundAsset?.id ?? "",
@@ -143,36 +157,51 @@ export default function AssetPage({ params }: AssetPageProps) {
             category: {
               name: foundAsset?.model?.name ?? "",
             },
-            statusLabel: foundAsset?.statusLabel ? {
-              name: foundAsset.statusLabel.name,
-              colorCode: foundAsset.statusLabel.colorCode,
-            } : null,
-            assignee: foundAsset?.assignee ? {
-              name: foundAsset.assignee.name,
-            } : undefined,
-                          co2Score: foundAsset?.Co2eRecord?.[0] ? {
-                co2e: Number(foundAsset.Co2eRecord[0].co2e),
-                units: foundAsset.Co2eRecord[0].units,
-              } : undefined,
-            model: foundAsset?.model ? {
-              name: foundAsset.model.name,
-            } : null,
-            location: foundAsset?.departmentLocation ? {
-              name: foundAsset.departmentLocation.name,
-            } : null,
-            department: foundAsset?.department ? {
-              name: foundAsset.department.name,
-            } : null, 
-            formTemplate: foundAsset?.formTemplate ? {
-              id: foundAsset.formTemplate.id,
-              name: foundAsset.formTemplate.name,
-              values: allValues ?? [],
-            } : null,
-            AssetHistory: foundAsset?.AssetHistory ?? [],
-            auditLogs: foundAsset?.auditLogs?.map(log => ({
-              ...log,
-              dataAccessed: log.dataAccessed as AuditLogDataAccessed | null
-            })) ?? [],
+            statusLabel: foundAsset?.statusLabel
+              ? {
+                  name: foundAsset.statusLabel.name,
+                  colorCode: foundAsset.statusLabel.colorCode,
+                }
+              : null,
+            assignee: foundAsset?.user
+              ? {
+                  name: foundAsset.user.name,
+                }
+              : undefined,
+            co2Score: foundAsset?.co2eRecords?.[0]
+              ? {
+                  co2e: Number(foundAsset.co2eRecords[0].co2e),
+                  units: foundAsset.co2eRecords[0].units,
+                }
+              : undefined,
+            model: foundAsset?.model
+              ? {
+                  name: foundAsset.model.name,
+                }
+              : null,
+            location: foundAsset?.departmentLocation
+              ? {
+                  name: foundAsset.departmentLocation.name,
+                }
+              : null,
+            department: foundAsset?.department
+              ? {
+                  name: foundAsset.department.name,
+                }
+              : null,
+            formTemplate: foundAsset?.formTemplate
+              ? {
+                  id: foundAsset.formTemplate.id,
+                  name: foundAsset.formTemplate.name,
+                  values: allValues ?? [],
+                }
+              : null,
+            AssetHistory: foundAsset?.history ?? [],
+            auditLogs:
+              foundAsset?.auditLogs?.map((log) => ({
+                ...log,
+                dataAccessed: log.dataAccessed as AuditLogDataAccessed | null,
+              })) ?? [],
             assigneeId: foundAsset?.assigneeId ?? "",
             createdAt: foundAsset?.createdAt ?? new Date(),
             updatedAt: foundAsset?.updatedAt ?? new Date(),
@@ -189,7 +218,6 @@ export default function AssetPage({ params }: AssetPageProps) {
 
     fetchAsset();
   }, [id]);
-
 
   const handleUnassign = async (e?: React.MouseEvent) => {
     e?.preventDefault();
@@ -211,18 +239,18 @@ export default function AssetPage({ params }: AssetPageProps) {
         );
 
         const checkinResponse = await fetch(`/api/assets/${asset.id}/checkin`, {
-          method: 'POST'
+          method: "POST",
         });
         if (!checkinResponse.ok) {
-          throw new Error('Failed to checkin asset');
+          throw new Error("Failed to checkin asset");
         }
 
         const freshResponse = await fetch(`/api/assets/${asset.id}`);
         if (!freshResponse.ok) {
-          throw new Error('Failed to fetch updated asset');
+          throw new Error("Failed to fetch updated asset");
         }
         const freshData = await freshResponse.json();
-        
+
         if (!freshData.error && freshData.data) {
           const freshAsset = freshData.data as unknown as AssetWithRelations;
           setAsset((prev) => {
@@ -230,11 +258,12 @@ export default function AssetPage({ params }: AssetPageProps) {
 
             return {
               ...prev,
-              auditLogs: freshAsset?.auditLogs?.map(log => ({
-                ...log,
-                company: undefined,
-                user: undefined
-              })) ?? [],
+              auditLogs:
+                freshAsset?.auditLogs?.map((log) => ({
+                  ...log,
+                  company: undefined,
+                  user: undefined,
+                })) ?? [],
               assigneeId: undefined,
               assignee: undefined,
             };
@@ -367,11 +396,14 @@ export default function AssetPage({ params }: AssetPageProps) {
             itemId={asset?.id!}
             type="asset"
             assignAction={async (data) => {
-              const response = await fetch(`/api/assets/${data.itemId}/checkout`, {
-                method: 'POST'
-              });
+              const response = await fetch(
+                `/api/assets/${data.itemId}/checkout`,
+                {
+                  method: "POST",
+                },
+              );
               if (!response.ok) {
-                throw new Error('Failed to checkout asset');
+                throw new Error("Failed to checkout asset");
               }
               const result = await response.json();
               return { error: result.error };
@@ -394,22 +426,24 @@ export default function AssetPage({ params }: AssetPageProps) {
               try {
                 const freshResponse = await fetch(`/api/assets/${asset?.id}`);
                 if (!freshResponse.ok) {
-                  throw new Error('Failed to fetch updated asset');
+                  throw new Error("Failed to fetch updated asset");
                 }
                 const freshData = await freshResponse.json();
-                
+
                 if (!freshData.error && freshData.data) {
-                  const freshAsset = freshData.data as unknown as AssetWithRelations;
+                  const freshAsset =
+                    freshData.data as unknown as AssetWithRelations;
                   setAsset((prev) => {
                     if (!prev) return undefined;
 
                     return {
                       ...prev,
-                      auditLogs: freshAsset?.auditLogs?.map(log => ({
-                        ...log,
-                        company: undefined,
-                        user: undefined
-                      })) ?? [],
+                      auditLogs:
+                        freshAsset?.auditLogs?.map((log) => ({
+                          ...log,
+                          company: undefined,
+                          user: undefined,
+                        })) ?? [],
                       assigneeId: prev.assigneeId,
                       assignee: prev.assignee,
                     };

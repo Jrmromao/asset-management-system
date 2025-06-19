@@ -19,7 +19,10 @@ const Create = () => {
         <BreadcrumbList>
           <BreadcrumbItem>
             <BreadcrumbLink asChild>
-              <Link href="/assets" className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white">
+              <Link
+                href="/assets"
+                className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white"
+              >
                 Assets
               </Link>
             </BreadcrumbLink>
@@ -27,7 +30,10 @@ const Create = () => {
           <BreadcrumbSeparator className="text-slate-400 dark:text-gray-600" />
           <BreadcrumbItem>
             <BreadcrumbLink asChild>
-              <Link href={`/assets/create`} className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white">
+              <Link
+                href={`/assets/create`}
+                className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white"
+              >
                 Create
               </Link>
             </BreadcrumbLink>

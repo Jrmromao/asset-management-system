@@ -25,7 +25,9 @@ export async function getAllManufacturers(params?: { search?: string }) {
   return await getAll(session, params);
 }
 
-export async function createManufacturer(data: z.infer<typeof manufacturerSchema>) {
+export async function createManufacturer(
+  data: z.infer<typeof manufacturerSchema>,
+) {
   const cookieStore = cookies();
   const session = {
     accessToken: cookieStore.get("sb-access-token")?.value,
@@ -34,7 +36,10 @@ export async function createManufacturer(data: z.infer<typeof manufacturerSchema
   return await insert(session, data);
 }
 
-export async function updateManufacturer(id: string, data: Partial<z.infer<typeof manufacturerSchema>>) {
+export async function updateManufacturer(
+  id: string,
+  data: Partial<z.infer<typeof manufacturerSchema>>,
+) {
   const cookieStore = cookies();
   const session = {
     accessToken: cookieStore.get("sb-access-token")?.value,
@@ -242,7 +247,11 @@ export const remove = withAuth(
 );
 
 export const isManufacturerNameUnique = withAuth(
-  async (user, name: string, excludeId?: string): Promise<ActionResponse<boolean>> => {
+  async (
+    user,
+    name: string,
+    excludeId?: string,
+  ): Promise<ActionResponse<boolean>> => {
     try {
       const manufacturer = await prisma.manufacturer.findFirst({
         where: {

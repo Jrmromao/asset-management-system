@@ -18,8 +18,8 @@ type ActionResponse<T> = {
 const getSession = () => {
   const cookieStore = cookies();
   return {
-    accessToken: cookieStore.get('sb-access-token')?.value,
-    refreshToken: cookieStore.get('sb-refresh-token')?.value
+    accessToken: cookieStore.get("sb-access-token")?.value,
+    refreshToken: cookieStore.get("sb-refresh-token")?.value,
   };
 };
 
@@ -48,7 +48,10 @@ export const insert = withAuth(
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === "P2002") {
-          return { success: false, error: "Department name already exists in your company" };
+          return {
+            success: false,
+            error: "Department name already exists in your company",
+          };
         }
       }
       console.error("Create department error:", error);
@@ -60,7 +63,9 @@ export const insert = withAuth(
 );
 
 // Wrapper function for client-side use
-export async function createDepartment(data: z.infer<typeof departmentSchema>): Promise<ActionResponse<Department>> {
+export async function createDepartment(
+  data: z.infer<typeof departmentSchema>,
+): Promise<ActionResponse<Department>> {
   const session = getSession();
   return insert(session, data);
 }
@@ -102,7 +107,9 @@ export const getAll = withAuth(
 );
 
 // Wrapper function for client-side use
-export async function getAllDepartments(params?: { search?: string }): Promise<ActionResponse<Department[]>> {
+export async function getAllDepartments(params?: {
+  search?: string;
+}): Promise<ActionResponse<Department[]>> {
   const session = getSession();
   return getAll(session, params);
 }
@@ -135,7 +142,9 @@ export const findById = withAuth(
 );
 
 // Wrapper function for client-side use
-export async function getDepartment(id: string): Promise<ActionResponse<Department>> {
+export async function getDepartment(
+  id: string,
+): Promise<ActionResponse<Department>> {
   const session = getSession();
   return findById(session, id);
 }
@@ -166,7 +175,10 @@ export const update = withAuth(
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === "P2002") {
-          return { success: false, error: "Department name already exists in your company" };
+          return {
+            success: false,
+            error: "Department name already exists in your company",
+          };
         }
         if (error.code === "P2025") {
           return { success: false, error: "Department not found" };
@@ -181,7 +193,10 @@ export const update = withAuth(
 );
 
 // Wrapper function for client-side use
-export async function updateDepartment(id: string, data: Partial<Department>): Promise<ActionResponse<Department>> {
+export async function updateDepartment(
+  id: string,
+  data: Partial<Department>,
+): Promise<ActionResponse<Department>> {
   const session = getSession();
   return update(session, id, data);
 }
@@ -216,7 +231,9 @@ export const remove = withAuth(
 );
 
 // Wrapper function for client-side use
-export async function deleteDepartment(id: string): Promise<ActionResponse<Department>> {
+export async function deleteDepartment(
+  id: string,
+): Promise<ActionResponse<Department>> {
   const session = getSession();
   return remove(session, id);
 }

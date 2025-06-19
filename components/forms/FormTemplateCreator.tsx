@@ -36,23 +36,17 @@ import { CSS } from "@dnd-kit/utilities";
 import { useFormTemplateUIStore } from "@/lib/stores/useFormTemplateUIStore";
 import { useFormTemplatesQuery } from "@/hooks/queries/useFormTemplatesQuery";
 import { CustomField, FormProps, FormTemplate } from "@/types/form";
+import { createTemplateSchema } from "@/lib/schemas";
 
-const fieldTypes = [
-  "number",
-  "boolean",
-  "text",
-  "select",
-  "date",
-  "checkbox",
-] as const;
+const fieldTypes = ["number", "text", "select", "date", "checkbox"] as const;
 
 type FieldType = (typeof fieldTypes)[number];
 
 const formFieldSchema = z.object({
   name: z.string().min(1, "Field name is required"),
-  label: z.string().min(1, "Field label is required"), // Make label required
-  type: z.enum(["number", "boolean", "text", "select", "date", "checkbox"]),
-  required: z.boolean(),
+  label: z.string().min(1, "Field label is required"),
+  type: z.enum(["number", "text", "select", "date", "checkbox"]),
+  required: z.boolean().default(false),
   options: z.array(z.string()).optional(),
   placeholder: z.string().optional(),
   showIf: z.record(z.array(z.string())).optional(),
@@ -63,7 +57,7 @@ const formTemplateSchema = z.object({
   fields: z.array(formFieldSchema),
 });
 
-type FormTemplateValues = z.infer<typeof formTemplateSchema>;
+type FormTemplateValues = z.infer<typeof createTemplateSchema>;
 type FormFieldValues = z.infer<typeof formFieldSchema>;
 
 const FIELD_TYPES = [
@@ -71,7 +65,6 @@ const FIELD_TYPES = [
   { value: "number", label: "Number" },
   { value: "select", label: "Dropdown" },
   { value: "checkbox", label: "Checkbox" },
-  { value: "boolean", label: "Boolean" },
   { value: "date", label: "Date" },
 ] as const;
 
@@ -275,7 +268,7 @@ const FormTemplateCreator = ({
   const [isPending, startTransition] = useTransition();
 
   const form = useForm<FormTemplateValues>({
-    resolver: zodResolver(formTemplateSchema),
+    resolver: zodResolver(createTemplateSchema),
     defaultValues: {
       name: initialData?.name ?? "",
       fields:
@@ -330,9 +323,10 @@ const FormTemplateCreator = ({
     name: string;
     type: APIFieldType;
     required: boolean;
-    label?: string;
+    label: string;
     options?: string[];
     placeholder?: string;
+    showIf?: Record<string, string[]>;
   }
 
   interface APIFormTemplate {
@@ -340,29 +334,30 @@ const FormTemplateCreator = ({
     fields: APIField[];
   }
 
-  // Transform function to convert boolean type to checkbox
+  // Transform function to convert field to API format
   const transformFieldToAPIFormat = (field: CustomField): APIField => {
     const { type, showIf, ...rest } = field;
-
-    // Convert boolean type to checkbox for API
-    const apiType: APIFieldType =
-      type === "boolean" ? "checkbox" : (type as APIFieldType);
-
     return {
       ...rest,
-      type: apiType,
+      type: type as APIFieldType,
+      label: field.label || field.name, // Ensure label is always a string
     };
   };
 
   const onSubmit = async (data: FormTemplateValues) => {
     startTransition(async () => {
       try {
+        const transformedData = {
+          ...data,
+          fields: data.fields.map(transformFieldToAPIFormat),
+        };
+
         if (initialData && initialData.id) {
-          await updateFormTemplate(initialData.id, data, {
+          await updateFormTemplate(initialData.id, transformedData as any, {
             onSuccess: () => {
               form.reset();
               closeTemplate();
-              toast.success("Successfully created form template");
+              toast.success("Successfully updated form template");
               onSubmitSuccess?.();
             },
             onError: (error: any) => {
@@ -371,11 +366,7 @@ const FormTemplateCreator = ({
             },
           });
         } else {
-          const apiData: APIFormTemplate = {
-            name: data.name,
-            fields: data.fields.map(transformFieldToAPIFormat),
-          };
-          await createFormTemplate(apiData, {
+          await createFormTemplate(transformedData, {
             onSuccess: () => {
               closeTemplate();
               form.reset();

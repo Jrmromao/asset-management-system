@@ -15,8 +15,8 @@ type ActionResponse<T> = {
 const getSession = () => {
   const cookieStore = cookies();
   return {
-    accessToken: cookieStore.get('sb-access-token')?.value,
-    refreshToken: cookieStore.get('sb-refresh-token')?.value
+    accessToken: cookieStore.get("sb-access-token")?.value,
+    refreshToken: cookieStore.get("sb-refresh-token")?.value,
   };
 };
 
@@ -53,7 +53,9 @@ export const insert = withAuth(
 );
 
 // Wrapper function for client-side use
-export async function createStatusLabel(values: z.infer<typeof statusLabelSchema>): Promise<ActionResponse<StatusLabel>> {
+export async function createStatusLabel(
+  values: z.infer<typeof statusLabelSchema>,
+): Promise<ActionResponse<StatusLabel>> {
   const session = getSession();
 
   console.log("session", session);
@@ -83,7 +85,9 @@ export const getAll = withAuth(
 );
 
 // Wrapper function for client-side use
-export async function getAllStatusLabels(): Promise<ActionResponse<StatusLabel[]>> {
+export async function getAllStatusLabels(p0: {}): Promise<
+  ActionResponse<StatusLabel[]>
+> {
   const session = getSession();
   return getAll(session);
 }
@@ -111,7 +115,9 @@ export const findById = withAuth(
 );
 
 // Wrapper function for client-side use
-export async function getStatusLabel(id: string): Promise<ActionResponse<StatusLabel>> {
+export async function getStatusLabel(
+  id: string,
+): Promise<ActionResponse<StatusLabel>> {
   const session = getSession();
   return findById(session, id);
 }
@@ -136,7 +142,9 @@ export const remove = withAuth(
 );
 
 // Wrapper function for client-side use
-export async function deleteStatusLabel(id: string): Promise<ActionResponse<StatusLabel>> {
+export async function deleteStatusLabel(
+  id: string,
+): Promise<ActionResponse<StatusLabel>> {
   const session = getSession();
   return remove(session, id);
 }
@@ -172,7 +180,10 @@ export const update = withAuth(
 );
 
 // Wrapper function for client-side use
-export async function updateStatusLabel(id: string, data: Partial<StatusLabel>): Promise<ActionResponse<StatusLabel>> {
+export async function updateStatusLabel(
+  id: string,
+  data: Partial<StatusLabel>,
+): Promise<ActionResponse<StatusLabel>> {
   const session = getSession();
   return update(session, id, data);
 }
