@@ -39,6 +39,7 @@ import type {
 } from "@prisma/client";
 import { JsonValue } from "@prisma/client/runtime/library";
 import { AssetWithRelations, EnhancedAssetType } from "@/types/asset";
+import { useAssetQuery } from "@/hooks/queries/useAssetQuery";
 
 interface AssetResponse {
   success: boolean;
@@ -104,6 +105,15 @@ export default function AssetPage({ params }: AssetPageProps) {
   const navigate = useRouter();
   const [asset, setAsset] = useState<EnhancedAssetType | undefined>();
 
+  const { findById, isLoading } = useAssetQuery()();
+  if (!findById) throw new Error("findById function is not available");
+
+  type AssetResponse = {
+    success: boolean;
+    data: Asset[] | null;
+    error?: string;
+  };
+
   const handleCheckIn = async (userAccessoryId: string) => {};
 
   useEffect(() => {
@@ -119,95 +129,81 @@ export default function AssetPage({ params }: AssetPageProps) {
       if (!id) return;
 
       try {
-        const response = await fetch(`/api/assets/${id}`);
-        if (!response.ok) {
-          throw new Error("Failed to fetch asset");
+        const foundAsset = (await findById(
+          id,
+        )) as unknown as AssetWithRelations;
+        console.log(foundAsset);
+
+        if (!foundAsset) {
+          setError(
+            "Asset not found. Please make sure the asset exists and you have permission to view it.",
+          );
+          setLoadingStates((prev) => ({ ...prev, isInitialLoading: false }));
+          return;
         }
-        const foundAssetResponse = await response.json();
-        console.log(foundAssetResponse);
 
-        if (foundAssetResponse.success) {
-          if (!foundAssetResponse.data) {
-            setError(
-              "Asset not found. Please make sure the asset exists and you have permission to view it.",
-            );
-            setLoadingStates((prev) => ({ ...prev, isInitialLoading: false }));
-            return;
-          }
+        const allValues =
+          foundAsset?.formTemplateValues?.map((item) => item?.values) ?? [];
 
-          const foundAsset =
-            foundAssetResponse.data as unknown as AssetWithRelations;
-
-          const allValues =
-            foundAsset?.formTemplateValues?.map((item) => item?.values) ?? [];
-          let co2Score = 0;
-          let units = "";
-
-          if (foundAsset?.co2eRecords?.[0]) {
-            co2Score = Number(foundAsset.co2eRecords[0].co2e);
-            units = foundAsset.co2eRecords[0].units;
-          }
-
-          setAsset({
-            id: foundAsset?.id ?? "",
-            name: foundAsset?.name ?? "",
-            price: foundAsset?.price ? Number(foundAsset.price) : 0,
-            serialNumber: foundAsset?.serialNumber ?? "",
-            status: foundAsset?.status ?? "",
-            category: {
-              name: foundAsset?.model?.name ?? "",
-            },
-            statusLabel: foundAsset?.statusLabel
-              ? {
-                  name: foundAsset.statusLabel.name,
-                  colorCode: foundAsset.statusLabel.colorCode,
-                }
-              : null,
-            assignee: foundAsset?.user
-              ? {
-                  name: foundAsset.user.name,
-                }
-              : undefined,
-            co2Score: foundAsset?.co2eRecords?.[0]
-              ? {
-                  co2e: Number(foundAsset.co2eRecords[0].co2e),
-                  units: foundAsset.co2eRecords[0].units,
-                }
-              : undefined,
-            model: foundAsset?.model
-              ? {
-                  name: foundAsset.model.name,
-                }
-              : null,
-            location: foundAsset?.departmentLocation
-              ? {
-                  name: foundAsset.departmentLocation.name,
-                }
-              : null,
-            department: foundAsset?.department
-              ? {
-                  name: foundAsset.department.name,
-                }
-              : null,
-            formTemplate: foundAsset?.formTemplate
-              ? {
-                  id: foundAsset.formTemplate.id,
-                  name: foundAsset.formTemplate.name,
-                  values: allValues ?? [],
-                }
-              : null,
-            AssetHistory: foundAsset?.history ?? [],
-            auditLogs:
-              foundAsset?.auditLogs?.map((log) => ({
-                ...log,
-                dataAccessed: log.dataAccessed as AuditLogDataAccessed | null,
-              })) ?? [],
-            assigneeId: foundAsset?.assigneeId ?? "",
-            createdAt: foundAsset?.createdAt ?? new Date(),
-            updatedAt: foundAsset?.updatedAt ?? new Date(),
-            usedBy: [],
-          });
-        }
+        setAsset({
+          id: foundAsset?.id ?? "",
+          name: foundAsset?.name ?? "",
+          price: foundAsset?.price ? Number(foundAsset.price) : 0,
+          serialNumber: foundAsset?.serialNumber ?? "",
+          status: foundAsset?.status ?? "",
+          category: {
+            name: foundAsset?.model?.name ?? "",
+          },
+          statusLabel: foundAsset?.statusLabel
+            ? {
+                name: foundAsset.statusLabel.name,
+                colorCode: foundAsset.statusLabel.colorCode,
+              }
+            : null,
+          assignee: foundAsset?.user
+            ? {
+                name: foundAsset.user.name,
+              }
+            : undefined,
+          co2Score: foundAsset?.co2eRecords?.[0]
+            ? {
+                co2e: Number(foundAsset.co2eRecords[0].co2e),
+                units: foundAsset.co2eRecords[0].units,
+              }
+            : undefined,
+          model: foundAsset?.model
+            ? {
+                name: foundAsset.model.name,
+              }
+            : null,
+          location: foundAsset?.departmentLocation
+            ? {
+                name: foundAsset.departmentLocation.name,
+              }
+            : null,
+          department: foundAsset?.department
+            ? {
+                name: foundAsset.department.name,
+              }
+            : null,
+          formTemplate: foundAsset?.formTemplate
+            ? {
+                id: foundAsset.formTemplate.id,
+                name: foundAsset.formTemplate.name,
+                values: allValues ?? [],
+              }
+            : null,
+          AssetHistory: foundAsset?.history ?? [],
+          auditLogs:
+            foundAsset?.auditLogs?.map((log) => ({
+              ...log,
+              dataAccessed: log.dataAccessed as AuditLogDataAccessed | null,
+            })) ?? [],
+          assigneeId: foundAsset?.assigneeId ?? "",
+          createdAt: foundAsset?.createdAt ?? new Date(),
+          updatedAt: foundAsset?.updatedAt ?? new Date(),
+          usedBy: [],
+        });
       } catch (error) {
         console.error("Error fetching asset:", error);
         setError("Failed to load asset details");
@@ -217,6 +213,7 @@ export default function AssetPage({ params }: AssetPageProps) {
     };
 
     fetchAsset();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const handleUnassign = async (e?: React.MouseEvent) => {

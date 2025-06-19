@@ -4,6 +4,7 @@ import {
   createAsset,
   removeAsset,
   updateAsset,
+  findAssetById,
   type CreateAssetInput,
 } from "@/lib/actions/assets.actions";
 import { useAssetUIStore } from "@/lib/stores";
@@ -47,6 +48,14 @@ export function useAssetQuery() {
       },
       update: async (id, data) => {
         const response = await updateAsset(id, data);
+        return {
+          success: response.success,
+          data: response.data[0],
+          error: response.error,
+        };
+      },
+      findById: async (id) => {
+        const response = await findAssetById(id);
         return {
           success: response.success,
           data: response.data[0],

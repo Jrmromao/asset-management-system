@@ -69,12 +69,20 @@ interface UseGenericQueryResult<T, TCreateInput, TUpdateInput = TCreateInput> {
   findById?: (id: string) => Promise<T | undefined>;
 }
 
-export function createGenericQuery<T extends { id?: string }, TCreateInput, TUpdateInput = TCreateInput>(
+export function createGenericQuery<
+  T extends { id?: string },
+  TCreateInput,
+  TUpdateInput = TCreateInput,
+>(
   queryKey: QueryKey,
   actions: CrudActions<T, TCreateInput, TUpdateInput>,
   options: UseGenericQueryOptions<T> = {},
 ): () => UseGenericQueryResult<T, TCreateInput, TUpdateInput> {
-  return function useGenericQuery(): UseGenericQueryResult<T, TCreateInput, TUpdateInput> {
+  return function useGenericQuery(): UseGenericQueryResult<
+    T,
+    TCreateInput,
+    TUpdateInput
+  > {
     const queryClient = useQueryClient();
     const { onClose } = options;
 
@@ -189,7 +197,7 @@ export function createGenericQuery<T extends { id?: string }, TCreateInput, TUpd
           queryClient.setQueryData<T[]>(
             queryKey,
             previousData.map((item) =>
-              item.id === id ? { ...item, ...data } as T : item,
+              item.id === id ? ({ ...item, ...data } as T) : item,
             ),
           );
         }
@@ -200,11 +208,14 @@ export function createGenericQuery<T extends { id?: string }, TCreateInput, TUpd
           queryClient.setQueryData(queryKey, context.previousData);
         }
         console.error(`Update error:`, err);
-        toast.error(options?.updateErrorMessage || `Failed to update ${queryKey[0]}`);
+        toast.error(
+          options?.updateErrorMessage || `Failed to update ${queryKey[0]}`,
+        );
       },
       onSuccess: () => {
         toast.success(
-          options?.updateSuccessMessage || `${queryKey[0]} updated successfully`,
+          options?.updateSuccessMessage ||
+            `${queryKey[0]} updated successfully`,
         );
         onClose?.();
       },
