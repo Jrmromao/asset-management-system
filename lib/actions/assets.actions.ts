@@ -2,14 +2,18 @@
 
 import { prisma } from "@/app/db";
 import { z } from "zod";
-import { categorySchema } from "@/lib/schemas";
+import { categorySchema, assetSchema } from "@/lib/schemas";
 import { Prisma } from "@prisma/client";
 import { withAuth } from "@/lib/middleware/withAuth";
 
+async function findUserByOauthId(oauthId: string) {
+  return prisma.user.findFirst({ where: { oauthId } });
+}
+
 export const insert = withAuth(
-  async (user, values: z.infer<typeof categorySchema>) => {
+  async (user, values: z.infer<typeof assetSchema>) => {
     try {
-      const validation = categorySchema.safeParse(values);
+      const validation = await assetSchema.safeParseAsync(values);
 
       if (!validation.success) {
         return {
@@ -18,35 +22,78 @@ export const insert = withAuth(
         };
       }
 
-      const { name } = validation.data;
-
-      const category = await prisma.category.create({
+      const asset = await prisma.asset.create({
         data: {
-          name: name,
-          type: "",
+          name: validation.data.name,
+          serialNumber: validation.data.serialNumber,
+          modelId: validation.data.modelId,
+          statusLabelId: validation.data.statusLabelId,
+          departmentId: validation.data.departmentId,
+          inventoryId: validation.data.inventoryId,
+          locationId: validation.data.locationId,
+          formTemplateId: validation.data.formTemplateId || null,
           companyId: user.user_metadata?.companyId,
+          status: "Available",
         },
       });
 
+      // If form template values are provided, create them
+      if (validation.data.formTemplateId && validation.data.templateValues) {
+        const templateValues = Object.entries(validation.data.templateValues).map(
+          ([key, value]) => ({
+            assetId: asset.id,
+            templateId: validation.data.formTemplateId!,
+            values: { [key]: value },
+          })
+        );
+
+        if (templateValues.length > 0) {
+          await prisma.formTemplateValue.createMany({
+            data: templateValues,
+          });
+        }
+      }
+
+      // Create audit log
+      try {
+        const dbUser = await findUserByOauthId(user.id);
+        if (dbUser) {
+          await prisma.auditLog.create({
+            data: {
+              action: "ASSET_CREATED",
+              entity: "Asset",
+              entityId: asset.id,
+              userId: dbUser.id,
+              companyId: dbUser.companyId,
+              details: `Created asset ${validation.data.name} with serial number ${validation.data.serialNumber}`,
+            },
+          });
+        } else {
+          console.warn("No matching app user found for audit log. Skipping audit log creation.");
+        }
+      } catch (e) {
+        console.error("Failed to create audit log:", e);
+      }
+
       return {
         success: true,
-        data: category,
+        data: asset,
       };
     } catch (error) {
-      console.error("Error creating category:", error);
+      console.error("Error creating asset:", error);
 
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === "P2002") {
           return {
             success: false,
-            error: "A category with this name already exists",
+            error: "An asset with this serial number or name already exists",
           };
         }
       }
 
       return {
         success: false,
-        error: "Failed to create category",
+        error: "Failed to create asset",
       };
     } finally {
       await prisma.$disconnect();
@@ -174,16 +221,70 @@ export const update = withAuth(
 
 export const findById = withAuth(async (user, id: string) => {
   try {
-    const asset = await prisma.asset.findUnique({
+    // Disconnect any existing connections
+    await prisma.$disconnect();
+    
+    console.log('Finding asset with id:', id);
+    console.log('User company ID:', user.user_metadata?.companyId);
+    console.log('Timestamp:', new Date().toISOString());
+    
+    // Create a new connection
+    await prisma.$connect();
+    
+    const asset = await prisma.asset.findFirst({
       where: {
         id: id,
         companyId: user.user_metadata?.companyId,
+        AND: {
+          updatedAt: {
+            lte: new Date()
+          }
+        }
+      },
+      include: {
+        assignee: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        model: true,
+        statusLabel: true,
+        department: true,
+        departmentLocation: true,
+        formTemplate: {
+          include: {
+            values: true,
+          },
+        },
+        formTemplateValues: true,
+        AssetHistory: true,
+        Co2eRecord: true,
       },
     });
 
+    console.log('Found asset:', asset);
+
+    // Fetch audit logs separately since they're not directly related to Asset
+    const auditLogs = await prisma.auditLog.findMany({
+      where: {
+        entityId: id,
+        entity: 'Asset',
+        companyId: user.user_metadata?.companyId,
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+
+    console.log('Found audit logs:', auditLogs.length);
+
     return {
       success: true,
-      data: asset,
+      data: asset ? {
+        ...asset,
+        auditLogs,
+      } : null,
     };
   } catch (error) {
     console.error("Error finding asset:", error);

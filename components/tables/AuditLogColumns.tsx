@@ -5,8 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Activity, ArrowUpDown, Clock, Info, User } from "lucide-react";
 import { formatDateTime } from "@/lib/utils";
 import { getActionColor } from "@/components/shared/DetailsTabs/action-colors";
+import { SimpleAuditLog } from "@/types/audit";
 
-export const auditLogColumns = (): ColumnDef<AuditLog>[] => [
+interface AuditLogDataAccessed {
+  assetId?: string;
+  previousAssignee?: string;
+  [key: string]: any;
+}
+
+export const auditLogColumns = (): ColumnDef<SimpleAuditLog>[] => [
   {
     id: "createdAt",
     accessorFn: (row) => new Date(row.createdAt).getTime(),
@@ -76,20 +83,23 @@ export const auditLogColumns = (): ColumnDef<AuditLog>[] => [
     },
     cell: ({ row }) => {
       const data = row.original;
+      const dataAccessed = data.dataAccessed as { assetId?: string; previousAssignee?: string; [key: string]: any };
       return (
         <div className="space-y-1 p-2">
           <div className="text-sm text-gray-600">{data.details}</div>
-          {data.dataAccessed && (
+          {dataAccessed && (
             <div className="text-xs text-gray-500 space-y-0.5">
-              <div>
-                <span className="font-medium">Item ID: </span>
-                <span className="font-mono">{data.dataAccessed.assetId}</span>
-              </div>
-              {data.dataAccessed.previousAssignee && (
+              {dataAccessed.assetId && (
+                <div>
+                  <span className="font-medium">Item ID: </span>
+                  <span className="font-mono">{dataAccessed.assetId}</span>
+                </div>
+              )}
+              {dataAccessed.previousAssignee && (
                 <div>
                   <span className="font-medium">Previous Assignee: </span>
                   <span className="font-mono">
-                    {data.dataAccessed.previousAssignee}
+                    {dataAccessed.previousAssignee}
                   </span>
                 </div>
               )}

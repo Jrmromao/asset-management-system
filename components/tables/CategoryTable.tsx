@@ -56,7 +56,20 @@ const CustomAssetTable = ({
                 {createdAt.dateTime}
               </TableCell>
 
-              <TableCell className="pl-2 pr-10 capitalize min-w-24"></TableCell>
+              <TableCell className="pl-2 pr-10 capitalize min-w-24">
+                <button
+                  className="mr-2 text-blue-600 hover:underline"
+                  onClick={() => navigate.push(`/assets/view/${category.id}`)}
+                >
+                  View
+                </button>
+                <button
+                  className="text-red-600 hover:underline"
+                  onClick={() => deleteCategory(category.id)}
+                >
+                  Delete
+                </button>
+              </TableCell>
             </TableRow>
           );
         })}

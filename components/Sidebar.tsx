@@ -1,6 +1,6 @@
 "use client";
 
-import { sidebarLinks } from "@/constants";
+import { sidebarLinks, roles } from "@/constants";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import Link from "next/link";
@@ -10,15 +10,21 @@ import React, { useMemo } from "react";
 import HeaderIcon from "@/components/page/HeaderIcon";
 import { supabase } from "@/lib/supabaseClient";
 
+type Role = typeof roles[keyof typeof roles];
+
+interface UserMetadata {
+  role: Role;
+}
+
 interface SidebarLinkProps {
   item: {
     route: string;
     label: string;
     imgURL: string;
-    visibleTo: string[];
+    visibleTo: Role[];
   };
   isActive: boolean;
-  userRole: string;
+  userRole: Role;
 }
 
 const SidebarLink = React.memo(
@@ -55,36 +61,44 @@ const SidebarLink = React.memo(
 );
 
 SidebarLink.displayName = "SidebarLink";
+
 const Sidebar = () => {
   const pathName = usePathname();
   const router = useRouter();
 
-  const [user, setUser] = React.useState<any>(null);
+  const [user, setUser] = React.useState<{ user_metadata: UserMetadata } | null>(null);
+  const [isLoading, setIsLoading] = React.useState(true);
 
   React.useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setUser(data?.user || null));
+    supabase.auth.getUser()
+      .then(({ data }) => {
+        setUser(data?.user || null);
+        setIsLoading(false);
+      })
+      .catch(() => setIsLoading(false));
   }, []);
 
-  const userRole = user?.user_metadata?.role || "guest";
+  const userRole = user?.user_metadata?.role || roles.USER;
 
   // Memoize filtered links
   const filteredLinks = useMemo(
     () =>
-      sidebarLinks.map((item) => ({
-        ...item,
-        isActive:
-          pathName === item.route || pathName.startsWith(`${item.route}/`),
-      })),
-    [pathName],
+      sidebarLinks
+        .filter((item) => item.visibleTo.includes(userRole))
+        .map((item) => ({
+          ...item,
+          isActive: pathName === item.route || pathName.startsWith(`${item.route}/`),
+        })),
+    [pathName, userRole],
   );
 
   // Show loading state while session is loading
-  if (status === "loading") {
+  if (isLoading) {
     return (
       <section className={cn("sidebar", { "2xl:hidden": false })}>
         <div className="animate-pulse">
           <div className="h-10 bg-gray-200 rounded mb-4" />
-          {sidebarLinks.map((_, i) => (
+          {[1, 2, 3, 4].map((i) => (
             <div key={i} className="h-12 bg-gray-200 rounded mb-2" />
           ))}
         </div>

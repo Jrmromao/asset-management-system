@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import produce from "immer";
-import { getAll, createUser, remove } from "@/lib/actions/user.actions";
+import { createUser, getAll, remove } from "@/lib/actions/user.actions";
 
 interface IUserStore {
   users: User[];

@@ -5,11 +5,12 @@ import { ClockIcon, UserIcon } from "lucide-react";
 import { DataTable } from "@/components/tables/DataTable/data-table";
 import { auditLogColumns } from "@/components/tables/AuditLogColumns";
 import { usedByAccColumns } from "@/components/tables/usedByColumns";
+import { SimpleAuditLog } from "@/types/audit";
 
 interface ItemDetailsTabsProps {
   itemId: string;
   itemType: "asset" | "accessory" | "license" | "component";
-  auditLogs: AuditLog[];
+  auditLogs: SimpleAuditLog[];
   usedBy?: UserItems[];
   isCheckingIn: Set<string>;
   isRefreshing: boolean;

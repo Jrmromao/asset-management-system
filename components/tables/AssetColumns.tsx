@@ -182,9 +182,9 @@ export const assetColumns = ({
       return (
         <LinkTableCell
           className={"hover:underline"}
-          value={value?.name}
+          value={row.original.name}
           navigateTo={`/assets/view/${row.original.id}`}
-        />
+          />
       );
     },
   },
