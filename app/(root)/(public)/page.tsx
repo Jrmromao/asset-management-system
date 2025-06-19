@@ -5,15 +5,23 @@ import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import PricingTable from "@/components/Pricing";
 import HeaderIcon from "@/components/page/HeaderIcon";
-import React from "react";
+import React, { useContext, useEffect } from "react";
 import Footer from "@/components/page/Footer";
 import DevelopmentBanner from "@/components/DevelopmentBanner";
 import { Features } from "@/components/page/Features";
 import Industries from "@/components/page/Industries";
 import Hero from "@/components/page/Hero";
+import { UserContext } from "@/components/providers/UserContext";
 
 const LandingPage = () => {
   const router = useRouter();
+  const { user } = useContext(UserContext);
+
+  useEffect(() => {
+    if (user) {
+      router.replace("/admin");
+    }
+  }, [user, router]);
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
@@ -59,15 +67,24 @@ const LandingPage = () => {
             </nav>
           </div>
           <div className="flex items-center gap-4">
-            <Button variant="ghost" onClick={() => router.push("/sign-in")}>
-              Login
-            </Button>
-            <Button
-              className="bg-green-600 hover:bg-green-700"
-              onClick={() => router.push("/sign-up")}
-            >
-              Free trial
-            </Button>
+            {user ? (
+              <Button
+                className="bg-green-600 hover:bg-green-700"
+                onClick={() => router.push("/dashboard")}
+              >
+                Go to App
+              </Button>
+            ) : (
+              <>
+                <Button variant="ghost" onClick={() => router.push("/sign-in")}>Login</Button>
+                <Button
+                  className="bg-green-600 hover:bg-green-700"
+                  onClick={() => router.push("/sign-up")}
+                >
+                  Free trial
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </header>

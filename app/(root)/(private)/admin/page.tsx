@@ -1,12 +1,18 @@
-"use client";
-import { useState } from "react";
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 import { DashboardHeader } from "@/components/dashboard/Header";
 import { StatsGrid } from "@/components/dashboard/StatsGrid";
 import { AssetOverview } from "@/components/dashboard/AssetOverview";
 import { MaintenanceScheduleCard } from "@/components/dashboard/MaintenanceSchedule";
 
-const DashboardPage = (): JSX.Element => {
-  const [searchQuery, setSearchQuery] = useState("");
+export default async function DashboardPage() {
+  const supabase = createServerComponentClient({ cookies });
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect('/sign-in');
+  }
 
   return (
     <div className="p-8 space-y-6">
@@ -38,6 +44,4 @@ const DashboardPage = (): JSX.Element => {
       </div>
     </div>
   );
-};
-
-export default DashboardPage;
+}
