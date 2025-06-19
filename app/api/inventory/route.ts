@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
       error: authError,
     } = await supabase.auth.getUser();
 
-    console.log("User metadata:", user?.user_metadata);
+    // console.log("User metadata:", user?.user_metadata);
 
     if (authError || !user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

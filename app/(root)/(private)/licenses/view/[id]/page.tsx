@@ -359,7 +359,7 @@ export default function View({ params }: AssetPageProps) {
         }
       />
       <div className="mt-5">
-        <ItemDetailsTabs
+        {/* <ItemDetailsTabs
           handleCheckIn={handleCheckIn}
           auditLogs={license?.auditLogs ?? []}
           itemId={id}
@@ -367,7 +367,7 @@ export default function View({ params }: AssetPageProps) {
           itemType="license"
           isCheckingIn={loadingStates.isCheckingIn}
           isRefreshing={loadingStates.isRefreshing}
-        />
+        /> */}
       </div>
     </>
   );

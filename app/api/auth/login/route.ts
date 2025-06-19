@@ -1,13 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/utils/supabase/middleware";
+import { createClient } from '@supabase/supabase-js';
+import { cookies } from 'next/headers';
 
 export async function POST(request: NextRequest) {
   console.log("[API][Login] Received login request");
   const body = await request.json();
   const { email, password } = body;
   console.log("[API][Login] Attempting login for email:", email);
-  const response = NextResponse.next();
-  const supabase = createClient(request, response);
+  
+  const cookieStore = cookies();
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      auth: {
+        autoRefreshToken: true,
+        persistSession: true,
+      }
+    }
+  );
 
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
@@ -21,19 +32,27 @@ export async function POST(request: NextRequest) {
       "Error:",
       error.message,
     );
-  } else {
-    console.log("[API][Login] Login successful for", email);
+    return NextResponse.json({ error: error.message }, { status: 401 });
   }
 
-  // Create the JSON response
-  const jsonResponse = error
-    ? NextResponse.json({ error: error.message }, { status: 401 })
-    : NextResponse.json({ success: true });
+  console.log("[API][Login] Login successful for", email);
+  
+  const response = NextResponse.json({ success: true });
+  
+  // Set auth cookies
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session) {
+    response.cookies.set('sb-access-token', session.access_token, {
+      path: '/',
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+    });
+    response.cookies.set('sb-refresh-token', session.refresh_token, {
+      path: '/',
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+    });
+  }
 
-  // Copy cookies from the original response to the JSON response
-  response.cookies.getAll().forEach((cookie) => {
-    jsonResponse.cookies.set(cookie);
-  });
-
-  return jsonResponse;
+  return response;
 }

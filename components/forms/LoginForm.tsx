@@ -16,7 +16,6 @@ import { FormError } from "@/components/forms/form-error";
 import { DEFAULT_LOGIN_REDIRECT } from "@/routes";
 import ReCAPTCHA from "@/components/ReCAPTCHA";
 import HeaderIcon from "@/components/page/HeaderIcon";
-import { supabase } from "@/lib/supabaseClient";
 
 const AuthForm = () => {
   const [error, setError] = useState<string>("");
@@ -24,6 +23,7 @@ const AuthForm = () => {
   const [user, setUser] = useState(null);
   const [recaptchaToken, setRecaptchaToken] = useState<string>("");
   const [isPending, startTransition] = useTransition();
+  const router = useRouter();
   const callbackUrl = searchParams.get("callbackUrl");
   const validCallbackUrl =
     callbackUrl && callbackUrl.startsWith("/")
@@ -38,7 +38,6 @@ const AuthForm = () => {
     },
   });
 
-  const router = useRouter();
   const onSubmit = async (data: z.infer<typeof loginSchema>) => {
     console.log("[Login] Form submitted", { email: data.email });
     if (!recaptchaToken) {
@@ -67,8 +66,8 @@ const AuthForm = () => {
           setError(result.error || "Invalid email or password");
           console.warn("[Login] Login failed", result.error);
         } else {
-          console.log("[Login] Login successful, redirecting to /admin");
-          window.location.href = "/admin";
+          console.log("[Login] Login successful, redirecting to", validCallbackUrl);
+          router.push(validCallbackUrl);
         }
       } catch (e) {
         setError("Unexpected error during login");
@@ -84,7 +83,7 @@ const AuthForm = () => {
 
         <div className={"flex flex-col gap-1 md:gap-3"}>
           <h1 className={"text-24 lg:text-36 font-semibold text-gray-900"}>
-            {/*{user ? 'Link Account' : type === 'sign-in' ? 'Sign In' : 'Sign Up'}*/}
+            Sign In
             <p className={"text-16 font-normal text-gray-600"}>
               {user ? "Link your account" : "Please enter your details"}
             </p>
@@ -92,7 +91,7 @@ const AuthForm = () => {
         </div>
       </header>
       {user ? (
-        <div className={"flex flex-col gap-4"}>Joao Filipe Romão</div>
+        <div className={"flex flex-col gap-4"}>Joao Filipe Romão</div>
       ) : (
         <>
           <Form {...form}>

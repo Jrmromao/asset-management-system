@@ -28,8 +28,21 @@ export function useLicenseQuery() {
       delete: async (id: string) => {
         return await remove(id);
       },
-      update: async (id: string, data: Partial<License>) => {
-        return await update(data as License, id);
+      update: async (id: string, data: CreateLicenseInput) => {
+        // Map schema fields to License type fields and convert types
+        const updateData: Partial<License> = {
+          name: data.licenseName,
+          licensedEmail: data.licensedEmail,
+          statusLabelId: data.statusLabelId,
+          departmentId: data.departmentId,
+          locationId: data.locationId,
+          inventoryId: data.inventoryId,
+          seats: parseInt(data.seats),
+          minSeatsAlert: parseInt(data.minSeatsAlert),
+          alertRenewalDays: parseInt(data.alertRenewalDays),
+          purchaseNotes: data.notes
+        };
+        return await update(updateData as License, id);
       },
     },
     {

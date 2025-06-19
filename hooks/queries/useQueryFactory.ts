@@ -23,21 +23,20 @@ interface UseGenericQueryOptions<T>
   updateErrorMessage?: string;
 }
 
-// Update payload type to handle both id and data
-interface UpdatePayload<T> {
-  id: string;
-  data: Partial<T>;
-}
-
-interface CrudActions<T, TCreateInput> {
+export interface CrudActions<T, TCreateInput, TUpdateInput = TCreateInput> {
   getAll: () => Promise<ActionResponse<T[]>>;
   insert: (data: TCreateInput) => Promise<ActionResponse<T>>;
-  delete: (id: string) => Promise<ActionResponse<T>>;
-  update: (id: string, data: Partial<T>) => Promise<ActionResponse<T>>;
+  update: (id: string, data: TUpdateInput) => Promise<ActionResponse<T>>;
+  delete?: (id: string) => Promise<ActionResponse<T>>;
   findById?: (id: string) => Promise<ActionResponse<T>>;
 }
 
-interface UseGenericQueryResult<T, TCreateInput> {
+interface UpdatePayload<T, TUpdateInput = T> {
+  id: string;
+  data: TUpdateInput;
+}
+
+interface UseGenericQueryResult<T, TCreateInput, TUpdateInput = TCreateInput> {
   items: T[];
   isLoading: boolean;
   error: Error | null;
@@ -54,15 +53,15 @@ interface UseGenericQueryResult<T, TCreateInput> {
       onSuccess?: () => void;
       onError?: (error: Error) => void;
     },
-  ) => Promise<void>;
+  ) => Promise<ActionResponse<T>>;
   updateItem: (
     id: string,
-    data: Partial<T>,
+    data: TUpdateInput,
     callbacks?: {
       onSuccess?: () => void;
       onError?: (error: Error) => void;
     },
-  ) => Promise<void>;
+  ) => Promise<ActionResponse<T>>;
   isCreating: boolean;
   isDeleting: boolean;
   isUpdating: boolean;
@@ -70,12 +69,12 @@ interface UseGenericQueryResult<T, TCreateInput> {
   findById?: (id: string) => Promise<T | undefined>;
 }
 
-export function createGenericQuery<T extends { id?: string }, TCreateInput>(
+export function createGenericQuery<T extends { id?: string }, TCreateInput, TUpdateInput = TCreateInput>(
   queryKey: QueryKey,
-  actions: CrudActions<T, TCreateInput>,
+  actions: CrudActions<T, TCreateInput, TUpdateInput>,
   options: UseGenericQueryOptions<T> = {},
-): () => UseGenericQueryResult<T, TCreateInput> {
-  return function useGenericQuery(): UseGenericQueryResult<T, TCreateInput> {
+): () => UseGenericQueryResult<T, TCreateInput, TUpdateInput> {
+  return function useGenericQuery(): UseGenericQueryResult<T, TCreateInput, TUpdateInput> {
     const queryClient = useQueryClient();
     const { onClose } = options;
 
@@ -130,18 +129,18 @@ export function createGenericQuery<T extends { id?: string }, TCreateInput>(
     });
 
     const { mutate: mutateDelete, isPending: isDeleting } = useMutation<
-      T,
+      ActionResponse<T>,
       Error,
       string,
       MutationContext
     >({
       mutationFn: async (id: string) => {
+        if (!actions.delete) {
+          throw new Error("Delete action not implemented");
+        }
         const result = await actions.delete(id);
-        console.log(result);
-        console.log(result.error);
-
         if (result.error) throw new Error(result.error);
-        return result.data!;
+        return result;
       },
       onMutate: async (id) => {
         await queryClient.cancelQueries({ queryKey });
@@ -159,15 +158,13 @@ export function createGenericQuery<T extends { id?: string }, TCreateInput>(
           queryClient.setQueryData(queryKey, context.previousData);
         }
         console.error(`Delete error:`, err);
-        toast.error(
-          options?.deleteErrorMessage || `Failed to delete ${queryKey[0]}`,
-        );
+        toast.error(options?.errorMessage || `Failed to delete ${queryKey[0]}`);
       },
       onSuccess: () => {
         toast.success(
-          options?.deleteSuccessMessage ||
-            `${queryKey[0]} deleted successfully`,
+          options?.successMessage || `${queryKey[0]} deleted successfully`,
         );
+        onClose?.();
       },
       onSettled: () => {
         queryClient.invalidateQueries({ queryKey });
@@ -175,24 +172,24 @@ export function createGenericQuery<T extends { id?: string }, TCreateInput>(
     });
 
     const { mutate: mutateUpdate, isPending: isUpdating } = useMutation<
-      T,
+      ActionResponse<T>,
       Error,
-      UpdatePayload<T>,
+      UpdatePayload<T, TUpdateInput>,
       MutationContext
     >({
-      mutationFn: async ({ id, data }: UpdatePayload<T>) => {
+      mutationFn: async ({ id, data }: UpdatePayload<T, TUpdateInput>) => {
         const result = await actions.update(id, data);
         if (result.error) throw new Error(result.error);
-        return result.data!;
+        return result;
       },
-      onMutate: async ({ id, data }: UpdatePayload<T>) => {
+      onMutate: async ({ id, data }: UpdatePayload<T, TUpdateInput>) => {
         await queryClient.cancelQueries({ queryKey });
         const previousData = queryClient.getQueryData<T[]>(queryKey);
         if (previousData) {
           queryClient.setQueryData<T[]>(
             queryKey,
             previousData.map((item) =>
-              item.id === id ? { ...item, ...data } : item,
+              item.id === id ? { ...item, ...data } as T : item,
             ),
           );
         }
@@ -203,14 +200,11 @@ export function createGenericQuery<T extends { id?: string }, TCreateInput>(
           queryClient.setQueryData(queryKey, context.previousData);
         }
         console.error(`Update error:`, err);
-        toast.error(
-          options?.updateErrorMessage || `Failed to update ${queryKey[0]}`,
-        );
+        toast.error(options?.updateErrorMessage || `Failed to update ${queryKey[0]}`);
       },
       onSuccess: () => {
         toast.success(
-          options?.updateSuccessMessage ||
-            `${queryKey[0]} updated successfully`,
+          options?.updateSuccessMessage || `${queryKey[0]} updated successfully`,
         );
         onClose?.();
       },
@@ -252,18 +246,18 @@ export function createGenericQuery<T extends { id?: string }, TCreateInput>(
     );
 
     const deleteItem = useCallback(
-      async (
+      (
         id: string,
         callbacks?: {
           onSuccess?: () => void;
           onError?: (error: Error) => void;
         },
-      ): Promise<void> => {
-        return new Promise<void>((resolve, reject) => {
+      ): Promise<ActionResponse<T>> => {
+        return new Promise<ActionResponse<T>>((resolve, reject) => {
           mutateDelete(id, {
-            onSuccess: () => {
+            onSuccess: (result) => {
               callbacks?.onSuccess?.();
-              resolve();
+              resolve(result);
             },
             onError: (error) => {
               callbacks?.onError?.(error);
@@ -276,21 +270,21 @@ export function createGenericQuery<T extends { id?: string }, TCreateInput>(
     );
 
     const updateItem = useCallback(
-      async (
+      (
         id: string,
-        data: Partial<T>,
+        data: TUpdateInput,
         callbacks?: {
           onSuccess?: () => void;
           onError?: (error: Error) => void;
         },
-      ): Promise<void> => {
-        return new Promise<void>((resolve, reject) => {
+      ): Promise<ActionResponse<T>> => {
+        return new Promise<ActionResponse<T>>((resolve, reject) => {
           mutateUpdate(
             { id, data },
             {
-              onSuccess: () => {
+              onSuccess: (result) => {
                 callbacks?.onSuccess?.();
-                resolve();
+                resolve(result);
               },
               onError: (error) => {
                 callbacks?.onError?.(error);

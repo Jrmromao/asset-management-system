@@ -12,12 +12,18 @@ import {
 
 export const MODEL_KEY = ["assets"] as const;
 
-type CreateAssetInput = z.infer<typeof assetSchema>;
+export type CreateAssetInput = z.infer<typeof assetSchema>;
+
+export interface ActionResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: string;
+}
 
 export function useAssetQuery() {
   const { onClose } = useUserUIStore();
 
-  const genericQuery = createGenericQuery<Asset, CreateAssetInput>(
+  const genericQuery = createGenericQuery<Asset, CreateAssetInput, CreateAssetInput>(
     MODEL_KEY,
     {
       getAll: async () => {
@@ -32,9 +38,9 @@ export function useAssetQuery() {
         const result = await remove(id);
         return result as ActionResponse<Asset>;
       },
-      update: async (id: string, data: Partial<Asset>) => {
+      update: async (id: string, data: CreateAssetInput) => {
         const result = await update(id, data);
-        return result as unknown as ActionResponse<Asset>;
+        return result as ActionResponse<Asset>;
       },
       findById: async (id: string) => {
         const result = await findById(id);
@@ -45,6 +51,8 @@ export function useAssetQuery() {
       onClose,
       successMessage: "Asset created successfully",
       errorMessage: "Failed to create asset",
+      updateSuccessMessage: "Asset updated successfully",
+      updateErrorMessage: "Failed to update asset",
       staleTime: 5 * 60 * 1000, // 5 minutes
     },
   );
@@ -54,7 +62,9 @@ export function useAssetQuery() {
     isLoading,
     error,
     createItem: createAsset,
+    updateItem: updateAsset,
     isCreating,
+    isUpdating,
     findById: findItemById,
     refresh,
     deleteItem,
@@ -65,8 +75,10 @@ export function useAssetQuery() {
     isLoading,
     error,
     createAsset,
+    updateAsset,
     findItemById,
     isCreating,
+    isUpdating,
     refresh,
     deleteItem,
   };

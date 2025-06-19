@@ -1,3 +1,4 @@
+"use client";
 import { BarChart3, Battery, Box, Clock } from "lucide-react";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { getAll } from "@/lib/actions/assets.actions";

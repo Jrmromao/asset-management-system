@@ -5,12 +5,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
-import { Loader2 } from "lucide-react";
+import { Loader2, Download } from "lucide-react";
 import { useDialogStore } from "@/lib/stores/store";
 import Dropzone from "@/components/Dropzone";
 import { useAssetStore } from "@/lib/stores/assetStore";
 import { toast } from "sonner";
 import { processAccessoryCSV } from "@/lib/actions/accessory.actions";
+import { processAssetsCSV, generateAssetCSVTemplate } from "@/lib/actions/assets.actions";
 
 interface FileUploadFormProps {
   dataType: string;
@@ -56,17 +57,15 @@ const FileUploadForm = ({ dataType }: FileUploadFormProps) => {
       const fileContent = await readFileContent(file);
 
       if (dataType === "assets") {
-        console.log("ASSETS CONDITION");
-
-        //   const result = await processAssetsCSV(fileContent);
-        //   if (result.success) {
-        //     toast.success(result.message);
-        //     form.reset();
-        //     getAll();
-        //     closeDialog();
-        //   } else {
-        //     toast.error(result.message);
-        //   }
+        const result = await processAssetsCSV(fileContent);
+        if (result.success) {
+          toast.success(result.message);
+          form.reset();
+          getAll();
+          closeDialog();
+        } else {
+          toast.error(result.message);
+        }
       }
       if (dataType === "accessories") {
         const result = await processAccessoryCSV(fileContent);
@@ -100,8 +99,43 @@ const FileUploadForm = ({ dataType }: FileUploadFormProps) => {
     setFile(csvFile);
   };
 
+  const handleDownloadTemplate = () => {
+    let template = '';
+    if (dataType === 'assets') {
+      template = generateAssetCSVTemplate();
+    }
+    // Add other data types here
+
+    if (!template) {
+      toast.error('Template not available for this data type');
+      return;
+    }
+
+    // Create and download the file
+    const blob = new Blob([template], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${dataType}-template.csv`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  };
+
   return (
     <section className={""}>
+      <div className="flex justify-end mb-4">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleDownloadTemplate}
+          className="flex items-center gap-2"
+        >
+          <Download className="w-4 h-4" />
+          Download Template
+        </Button>
+      </div>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <Dropzone

@@ -5,6 +5,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Form } from "@/components/ui/form";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { z } from "zod";
+import { Asset } from "@prisma/client";
+import { useAssetQuery, type ActionResponse, type CreateAssetInput } from "@/hooks/queries/useAssetQuery";
+import type { CustomField } from "@/types/form";
 
 // Components
 import CustomInput from "@/components/CustomInput";
@@ -12,8 +16,6 @@ import { SelectWithButton } from "@/components/SelectWithButton";
 
 // Schema and types
 import { assetSchema } from "@/lib/schemas";
-import type { z } from "zod";
-import type { CustomField } from "@/types/form";
 
 // Hooks and stores
 import { useStatusLabelsQuery } from "@/hooks/queries/useStatusLabelsQuery";
@@ -21,7 +23,6 @@ import { useModelsQuery } from "@/hooks/queries/useModelsQuery";
 import { useDepartmentQuery } from "@/hooks/queries/useDepartmentQuery";
 import { useInventoryQuery } from "@/hooks/queries/useInventoryQuery";
 import { useSupplierQuery } from "@/hooks/queries/useSupplierQuery";
-import { useAssetQuery } from "@/hooks/queries/useAssetQuery";
 import { useFormTemplatesQuery } from "@/hooks/queries/useFormTemplatesQuery";
 import { useLocationQuery } from "@/hooks/queries/useLocationQuery";
 import { useInventoryUIStore } from "@/lib/stores/useInventoryUIStore";
@@ -50,7 +51,13 @@ type FormTemplate = {
   fields: CustomField[];
 };
 
-type AssetFormValues = z.infer<typeof assetSchema>;
+type AssetFormValues = z.infer<typeof assetSchema> & {
+  templateValues: Record<string, any>;
+};
+
+interface FormTemplateValue {
+  values: Record<string, any>;
+}
 
 interface AssetFormProps {
   id?: string;
@@ -82,6 +89,7 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
       isValid: false,
     },
   ]);
+  const [isDataLoaded, setIsDataLoaded] = useState(false);
 
   // Queries
   const { statusLabels, isLoading: isLoadingStatusLabels } =
@@ -89,7 +97,7 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
   const { departments } = useDepartmentQuery();
   const { inventories } = useInventoryQuery();
   const { suppliers } = useSupplierQuery();
-  const { createAsset } = useAssetQuery();
+  const { createAsset, updateAsset, findItemById, isUpdating } = useAssetQuery();
   const { models } = useModelsQuery();
   const { formTemplates } = useFormTemplatesQuery();
   const { locations } = useLocationQuery();
@@ -103,29 +111,91 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
   const { onOpen: openTemplate } = useFormTemplateUIStore();
 
   const form = useForm<AssetFormValues>({
-    resolver: zodResolver(assetSchema),
+    resolver: async (data, context, options) => {
+      // Skip unique validation for name and serialNumber when updating
+      if (isUpdate) {
+        // Create a modified schema without unique checks
+        const updateSchema = z.object({
+          serialNumber: z.string().min(1, "Serial Number is required"),
+          name: z.string().min(1, "Asset name is required"),
+          modelId: z.string().min(1, "Model is required"),
+          statusLabelId: z.string().min(1, "Status is required"),
+          departmentId: z.string().min(1, "Department is required"),
+          inventoryId: z.string().min(1, "Inventory is required"),
+          locationId: z.string().min(1, "Location is required"),
+          formTemplateId: z.string(),
+          templateValues: z.record(z.any()).optional(),
+          customFields: z.array(z.any()).optional(),
+        });
+        return zodResolver(updateSchema)(data, context, options);
+      }
+      // Use original schema with unique checks for create
+      return zodResolver(assetSchema)(data, context, options);
+    },
     defaultValues: {
-      // name: "",
-      // serialNumber: "",
-      // modelId: "",
-      // price: 0,
+      name: "",
+      serialNumber: "",
+      modelId: "",
       statusLabelId: "",
       departmentId: "",
       inventoryId: "",
       locationId: "",
-      // supplierId: "",
-      // poNumber: "",
-      // weight: 0,
-      // material: "",
-      // energyRating: "",
-      // licenseId: "",
-      // dailyOperatingHours: "",
       formTemplateId: "",
       templateValues: {},
     },
     mode: "onChange",
-    reValidateMode: "onChange", // Re-validate on change
+    reValidateMode: "onChange",
   });
+
+  // Load existing asset data for updates
+  useEffect(() => {
+    if (!isUpdate || !id || isDataLoaded || !findItemById) return;
+
+    const loadAssetData = async () => {
+      try {
+        const asset = await findItemById(id);
+        
+        if (asset) {
+          // Combine all template values into a single object
+          const combinedTemplateValues = asset.formTemplateValues?.reduce((acc, curr) => {
+            return { ...acc, ...curr.values };
+          }, {});
+
+          // Set form values
+          form.reset({
+            name: asset.name || "",
+            serialNumber: asset.serialNumber || "",
+            modelId: asset.modelId || "",
+            statusLabelId: asset.statusLabelId || "",
+            departmentId: asset.departmentId || "",
+            inventoryId: asset.inventoryId || "",
+            locationId: asset.locationId || "",
+            formTemplateId: asset.formTemplate?.id || "",
+            templateValues: combinedTemplateValues || {},
+          });
+
+          // Set selected template if exists and validate fields
+          if (asset.formTemplate?.id && formTemplates) {
+            const template = formTemplates.find(t => t.id === asset.formTemplate?.id);
+            if (template) {
+              setSelectedTemplate(template);
+              // Validate the fields after setting the template
+              setTimeout(() => {
+                validateTemplateFields();
+              }, 0);
+            }
+          }
+          setIsDataLoaded(true);
+        }
+      } catch (error) {
+        console.error("Error loading asset data:", error);
+        toast.error("Failed to load asset data");
+      }
+    };
+
+    loadAssetData();
+  }, [isUpdate, id, isDataLoaded, findItemById, form, formTemplates]);
+
   const statusLocationSection = getStatusLocationSection({
     form,
     statusLabels,
@@ -144,7 +214,7 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
       form.setValue("formTemplateId", "");
       form.setValue("templateValues", {});
       setSelectedTemplate(null);
-      setSpecialFieldsValid(false); // Add this line
+      setSpecialFieldsValid(false);
       return;
     }
 
@@ -157,23 +227,56 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
     form.setValue("formTemplateId", formTemplateId);
     setSelectedTemplate(template);
 
-    const emptyValues = template.fields.reduce(
-      (acc, field) => ({
-        ...acc,
-        [field.name]: "",
-      }),
-      {},
-    );
+    // Initialize template values with default values based on field type
+    const initialValues = template.fields.reduce<Record<string, any>>((acc, field) => {
+      // Keep existing value if it exists and the field type hasn't changed
+      const existingValue = form.getValues(`templateValues.${field.name}`);
+      const shouldKeepValue = existingValue !== undefined && 
+        ((typeof existingValue === 'number' && field.type === 'number') ||
+         (typeof existingValue === 'boolean' && (field.type === 'boolean' || field.type === 'checkbox')) ||
+         (typeof existingValue === 'string' && (field.type === 'text' || field.type === 'select' || field.type === 'date')));
 
-    form.setValue("templateValues", emptyValues);
-    setSpecialFieldsValid(false); // Add this line
+      if (shouldKeepValue) {
+        acc[field.name] = existingValue;
+        return acc;
+      }
+
+      // Otherwise set default value based on type
+      let defaultValue;
+      switch (field.type) {
+        case 'number':
+          defaultValue = '';
+          break;
+        case 'boolean':
+          defaultValue = false;
+          break;
+        case 'select':
+          defaultValue = field.options?.[0] || '';
+          break;
+        case 'date':
+          defaultValue = '';
+          break;
+        case 'checkbox':
+          defaultValue = false;
+          break;
+        default:
+          defaultValue = '';
+      }
+      acc[field.name] = defaultValue;
+      return acc;
+    }, {});
+
+    // Set the template values and trigger form validation
+    form.setValue("templateValues", initialValues, { shouldValidate: true, shouldDirty: true });
+    
+    // Validate fields after a short delay to ensure the form has updated
+    setTimeout(() => {
+      validateTemplateFields();
+    }, 0);
   };
 
   const renderCustomFields = () => {
     if (!selectedTemplate?.fields?.length) return null;
-
-    // Get the power source value for conditional rendering
-    const powerSourceValue = form.watch("templateValues.powerSource");
 
     return (
       <FormSection title={`${selectedTemplate.name} Details`}>
@@ -190,22 +293,14 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
               !field.showIf ||
               Object.entries(field.showIf).every(
                 ([dependentField, allowedValues]) => {
-                  const dependentValue = form.watch(
-                    `templateValues.${dependentField}`,
-                  );
-                  return allowedValues.includes(dependentValue);
+                  const dependentValue = form.watch(`templateValues.${dependentField}` as const);
+                  return Array.isArray(allowedValues) && allowedValues.includes(dependentValue);
                 },
               );
 
             if (!shouldShowField) return null;
 
-            const fieldName = `templateValues.${field.name}`;
-            const fieldValue = form.watch(`templateValues.${field.name}`);
-            const isFieldValid = field.required
-              ? field.type === "number"
-                ? !isNaN(Number(fieldValue)) && fieldValue !== ""
-                : !!fieldValue && fieldValue !== ""
-              : true;
+            const fieldName = `templateValues.${field.name}` as const;
 
             return (
               <div key={field.name} className="relative">
@@ -243,14 +338,6 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
                     required={field.required}
                   />
                 ) : null}
-
-                {field.required && (
-                  <span
-                    className={`absolute -top-1 right-0 text-xs ${
-                      isFieldValid ? "text-green-600" : "text-red-600"
-                    }`}
-                  ></span>
-                )}
               </div>
             );
           })}
@@ -262,28 +349,32 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
   const onSubmit = (data: AssetFormValues) => {
     startTransition(async () => {
       try {
-        await createAsset(
-          {
-            ...data,
-            // purchaseDate: data.purchaseDate,
-            // endOfLife: data.endOfLife,
-            // weight: data.weight,
-            ...(data.formTemplateId
-              ? {
-                  formTemplateId: data.formTemplateId,
-                  templateValues: data.templateValues,
-                }
-              : {}),
-          },
-          {
-            onSuccess: () => {
-              router.push("/assets");
-            },
-            onError: (error) => {
-              console.error("Error creating Asset:", error);
-            },
-          },
-        );
+        const assetData: CreateAssetInput = {
+          name: data.name,
+          serialNumber: data.serialNumber,
+          modelId: data.modelId,
+          statusLabelId: data.statusLabelId,
+          departmentId: data.departmentId,
+          inventoryId: data.inventoryId,
+          locationId: data.locationId,
+          formTemplateId: data.formTemplateId,
+          templateValues: data.templateValues || {}
+        };
+
+        const result = isUpdate && id 
+          ? await updateAsset(id, assetData)
+          : await createAsset(assetData);
+
+        if (result?.success) {
+          router.push("/assets");
+        } else {
+          // Handle validation errors from server
+          if (result?.error?.includes("already exists")) {
+            toast.error(result.error);
+          } else {
+            toast.error(isUpdate ? "Failed to update asset" : "Failed to create asset");
+          }
+        }
       } catch (error) {
         toast.error("An unexpected error occurred");
         console.error(error);
@@ -383,7 +474,7 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <div className="max-w-[1200px] mx-auto px-4 py-6">
             <div className="grid grid-cols-12 gap-6">
-              {isPending ? (
+              {isPending || isUpdating ? (
                 <MainFormSkeleton />
               ) : (
                 <>
@@ -399,7 +490,7 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
                             onNew={openTemplate}
                             placeholder="Select a template"
                             form={form}
-                            isPending={isPending}
+                            isPending={isPending || isUpdating}
                             onChange={handleTemplateChange}
                           />
                         </FormSection>
@@ -450,7 +541,7 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
                 </>
               )}
 
-              {isPending ? (
+              {isPending || isUpdating ? (
                 <FormProgressSkeleton />
               ) : (
                 <FormProgress sections={formSections} />
@@ -459,7 +550,7 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
           </div>
 
           {/* Footer */}
-          <ActionFooter form={form} isPending={isPending} router={router} />
+          <ActionFooter form={form} isPending={isPending || isUpdating} router={router} />
         </form>
       </Form>
     </FormContainer>

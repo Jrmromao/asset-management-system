@@ -1,3 +1,4 @@
+"use client";
 import { ChevronRight, Laptop, Monitor, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AssetTypeCard } from "@/components/dashboard/AssetTypeCard";

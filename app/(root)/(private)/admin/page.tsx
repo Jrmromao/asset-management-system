@@ -1,13 +1,13 @@
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { DashboardHeader } from "@/components/dashboard/Header";
 import { StatsGrid } from "@/components/dashboard/StatsGrid";
 import { AssetOverview } from "@/components/dashboard/AssetOverview";
 import { MaintenanceScheduleCard } from "@/components/dashboard/MaintenanceSchedule";
+import { createServerSupabaseClient } from '@/utils/supabase/server';
 
 export default async function DashboardPage() {
-  const supabase = createServerComponentClient({ cookies });
+  const supabase = createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {

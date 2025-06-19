@@ -27,11 +27,11 @@ export async function GET(request: NextRequest) {
 
     const validationConfig = validationMap[type as keyof typeof validationMap];
 
-    if (!validationConfig.value) {
-      return NextResponse.json(
-        { message: `${type} is required` },
-        { status: 400 },
-      );
+    // If value is empty or just whitespace, return success without checking database
+    if (!validationConfig.value?.trim()) {
+      return NextResponse.json({
+        exists: false,
+      });
     }
 
     const existingAsset = await prisma.asset.findFirst({

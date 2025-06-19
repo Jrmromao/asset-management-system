@@ -387,6 +387,7 @@ export const assetSchema = z.object({
     .string()
     .min(1, "Serial Number is required")
     .refine(async (value) => {
+      if (!value.trim()) return true;
       const result = await validateField(
         "serialNumber",
         value,
@@ -398,6 +399,7 @@ export const assetSchema = z.object({
     .string()
     .min(1, "Asset name is required")
     .refine(async (value) => {
+      if (!value.trim()) return true;
       const result = await validateField(
         "name",
         value,
@@ -412,30 +414,8 @@ export const assetSchema = z.object({
   locationId: z.string().min(1, "Location is required"),
   formTemplateId: z.string(),
   templateValues: z.record(z.any()).optional(),
-  customFields: z.array(customFieldSchema).optional(),
+  customFields: z.array(z.any()).optional(),
 });
-
-// .refine(
-//     async (serialNumber) => {
-//         try {
-//             const response = await fetch(
-//                 `/api/validate/assets?type=serialNumber&serialNumber=${serialNumber}`,
-//                 { cache: "no-store" }, // Ensure we're not caching the response
-//             );
-//
-//             if (!response.ok) return false;
-//
-//             const data = await response.json();
-//             // Return false if exists (meaning the serial number is taken)
-//             // Return true if doesn't exist (meaning the serial number is available)
-//             return !data.exists;
-//         } catch (error) {
-//             console.error("Asset serial number validation error:", error);
-//             return false;
-//         }
-//     },
-//     { message: "Serial number already exists", lazy: false },
-// ),
 
 export const createTemplateSchema = z.object({
   name: z.string().min(1, "Template name is required"),

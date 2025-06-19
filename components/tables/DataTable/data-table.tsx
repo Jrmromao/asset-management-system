@@ -48,19 +48,17 @@ export function DataTable<TData, TValue>({
     pageIndex: 0,
     pageSize: 10,
   });
-  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
+    setIsMobile(window.innerWidth < 768);
+
     const handleResize = () => {
-      const mobile = window.innerWidth < 768;
-      setIsMobile((prevState) => {
-        if (prevState !== mobile) return mobile;
-        return prevState;
-      });
+      setIsMobile(window.innerWidth < 768);
     };
 
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   const table = useReactTable({
