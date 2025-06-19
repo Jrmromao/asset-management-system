@@ -320,40 +320,114 @@ export const updateUserNonAuthDetails = withAuth(
   },
 );
 
-// Get all users for the authenticated user's company
-export const getAll = withAuth(async (user) => {
+type AuthResponse<T> = {
+  data?: T;
+  error?: string;
+  success: boolean;
+};
+
+export const getAll = withAuth(async (user): Promise<AuthResponse<User[]>> => {
   try {
     const users = await prisma.user.findMany({
-      where: { companyId: user.user_metadata?.companyId },
-      orderBy: { createdAt: "desc" },
+      where: {
+        companyId: user.user_metadata?.companyId,
+      },
+      orderBy: {
+        name: "asc",
+      },
+      include: {
+        role: true,
+      },
     });
     return { success: true, data: parseStringify(users) };
   } catch (error) {
+    console.error("Get users error:", error);
     return { success: false, error: "Failed to fetch users" };
+  } finally {
+    await prisma.$disconnect();
   }
 });
 
-// Find a user by id for the authenticated user's company
-export const findById = withAuth(async (user, id: string) => {
+export const getUserById = withAuth(async (user, id: string): Promise<AuthResponse<User>> => {
   try {
-    const found = await prisma.user.findFirst({
-      where: { id, companyId: user.user_metadata?.companyId },
+    const foundUser = await prisma.user.findFirst({
+      where: {
+        id,
+        companyId: user.user_metadata?.companyId,
+      },
+      include: {
+        role: true,
+      },
     });
-    if (!found) return { success: false, error: "User not found" };
-    return { success: true, data: parseStringify(found) };
+    if (!foundUser) {
+      return { success: false, error: "User not found" };
+    }
+    return { success: true, data: parseStringify(foundUser) };
   } catch (error) {
+    console.error("Get user error:", error);
     return { success: false, error: "Failed to fetch user" };
+  } finally {
+    await prisma.$disconnect();
   }
 });
 
-// Remove a user by id for the authenticated user's company
-export const remove = withAuth(async (user, id: string) => {
+export const insert = withAuth(async (user, data: UserCreateInput): Promise<AuthResponse<User>> => {
   try {
-    const deleted = await prisma.user.delete({
-      where: { id, companyId: user.user_metadata?.companyId },
+    const newUser = await prisma.user.create({
+      data: {
+        ...data,
+        companyId: user.user_metadata?.companyId,
+      },
+      include: {
+        role: true,
+      },
     });
-    return { success: true, data: parseStringify(deleted) };
+    revalidatePath("/users");
+    return { success: true, data: parseStringify(newUser) };
   } catch (error) {
+    console.error("Create user error:", error);
+    return { success: false, error: "Failed to create user" };
+  } finally {
+    await prisma.$disconnect();
+  }
+});
+
+export const update = withAuth(async (user, id: string, data: UserUpdateInput): Promise<AuthResponse<User>> => {
+  try {
+    const updatedUser = await prisma.user.update({
+      where: { 
+        id,
+        companyId: user.user_metadata?.companyId,
+      },
+      data,
+      include: {
+        role: true,
+      },
+    });
+    revalidatePath("/users");
+    return { success: true, data: parseStringify(updatedUser) };
+  } catch (error) {
+    console.error("Update user error:", error);
+    return { success: false, error: "Failed to update user" };
+  } finally {
+    await prisma.$disconnect();
+  }
+});
+
+export const remove = withAuth(async (user, id: string): Promise<AuthResponse<User>> => {
+  try {
+    const deletedUser = await prisma.user.delete({
+      where: { 
+        id,
+        companyId: user.user_metadata?.companyId,
+      },
+    });
+    revalidatePath("/users");
+    return { success: true, data: parseStringify(deletedUser) };
+  } catch (error) {
+    console.error("Delete user error:", error);
     return { success: false, error: "Failed to delete user" };
+  } finally {
+    await prisma.$disconnect();
   }
 });

@@ -12,6 +12,7 @@ import { useAssetStore } from "@/lib/stores/assetStore";
 import { toast } from "sonner";
 import { processAccessoryCSV } from "@/lib/actions/accessory.actions";
 import { processAssetsCSV, generateAssetCSVTemplate } from "@/lib/actions/assets.actions";
+import { supabase } from "@/lib/supabaseClient";
 
 interface FileUploadFormProps {
   dataType: string;
@@ -54,29 +55,32 @@ const FileUploadForm = ({ dataType }: FileUploadFormProps) => {
     }
     setIsLoading(true);
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("You must be logged in to upload files.");
+        return;
+      }
+
       const fileContent = await readFileContent(file);
 
-      if (dataType === "assets") {
-        const result = await processAssetsCSV(fileContent);
-        if (result.success) {
-          toast.success(result.message);
-          form.reset();
-          getAll();
-          closeDialog();
-        } else {
-          toast.error(result.message);
-        }
-      }
-      if (dataType === "accessories") {
-        const result = await processAccessoryCSV(fileContent);
-        if (result.success) {
-          toast.success(result.message);
-          form.reset();
-          getAll();
-          closeDialog();
-        } else {
-          toast.error(result.message);
-        }
+      // Send the file content to the server endpoint
+      const response = await fetch(`/api/${dataType}/import`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ fileContent }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        toast.success(result.message);
+        form.reset();
+        getAll();
+        closeDialog();
+      } else {
+        toast.error(result.message || 'Failed to process the file');
       }
     } catch (e) {
       console.error(e);

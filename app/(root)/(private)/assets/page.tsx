@@ -24,6 +24,7 @@ import FileUploadForm from "@/components/forms/FileUploadForm";
 import { Card, CardContent } from "@/components/ui/card";
 import { DataTable } from "@/components/tables/DataTable/data-table";
 import { useAssetQuery } from "@/hooks/queries/useAssetQuery";
+import { toast } from "sonner";
 
 const Assets = () => {
   const { isLoading, assets, deleteItem } = useAssetQuery();
@@ -154,6 +155,31 @@ const Assets = () => {
     return <StatusCards cards={cardData} />;
   }, [assets.length, availableAssets.length, maintenanceDue]);
 
+  const handleExport = useCallback(async () => {
+    try {
+      const response = await fetch('/api/assets/export', {
+        method: 'POST',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to export assets');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `assets-${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Error exporting assets:', error);
+      toast.error('Failed to export assets');
+    }
+  }, []);
+
   return (
     <div className="p-6 space-y-6">
       <Breadcrumb className="hidden md:flex">
@@ -185,6 +211,7 @@ const Assets = () => {
             onSearch={handleSearch}
             onFilter={handleFilter}
             onImport={() => openDialog()}
+            onExport={handleExport}
             onCreateNew={() => navigate.push("/assets/create")}
           />
         </>

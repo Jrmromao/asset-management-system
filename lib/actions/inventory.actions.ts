@@ -4,12 +4,19 @@ import { inventorySchema } from "../schemas";
 import { z } from "zod";
 import type { Inventory } from "@prisma/client";
 import { prisma } from "@/app/db";
+import { revalidatePath } from "next/cache";
 
 // Add a local ActionResponse type if not present
 export type ActionResponse<T = any> = {
   success?: boolean;
   data?: T;
   error?: string;
+};
+
+type AuthResponse<T> = {
+  data?: T;
+  error?: string;
+  success: boolean;
 };
 
 interface PaginationParams {
@@ -24,22 +31,19 @@ export const insert = withAuth(
   async (
     user,
     values: z.infer<typeof inventorySchema>,
-  ): Promise<ActionResponse<Inventory>> => {
+  ): Promise<AuthResponse<Inventory>> => {
     try {
       const validation = inventorySchema.safeParse(values);
       if (!validation.success) {
-        return { error: validation.error.errors[0].message };
+        return { success: false, error: validation.error.errors[0].message };
       }
       const inventory = await prisma.inventory.create({
         data: {
           ...validation.data,
-          company: {
-            connect: {
-              id: user.user_metadata?.companyId,
-            },
-          },
+          companyId: user.user_metadata?.companyId,
         },
       });
+      revalidatePath("/inventories");
       return { success: true, data: parseStringify(inventory) };
     } catch (error) {
       console.error("Create inventory error:", error);
@@ -55,7 +59,7 @@ export const update = withAuth(
     user,
     id: string,
     data: Partial<Inventory>,
-  ): Promise<ActionResponse<Inventory>> => {
+  ): Promise<AuthResponse<Inventory>> => {
     try {
       if (!id) {
         return { success: false, error: "ID is required for update" };
@@ -69,6 +73,7 @@ export const update = withAuth(
           name: data.name,
         },
       });
+      revalidatePath("/inventories");
       return { success: true, data: parseStringify(updated) };
     } catch (error) {
       console.error("Update inventory error:", error);
@@ -79,29 +84,20 @@ export const update = withAuth(
   },
 );
 
-export const getAll = withAuth(async (user) => {
+export const getAll = withAuth(async (user): Promise<AuthResponse<Inventory[]>> => {
   try {
-    if (!user.user_metadata?.companyId) {
-      return { success: false, error: "Not authenticated" };
-    }
     const inventories = await prisma.inventory.findMany({
       where: {
-        companyId: user.user_metadata.companyId,
+        companyId: user.user_metadata?.companyId,
       },
       orderBy: {
-        createdAt: "desc",
+        name: "asc",
       },
     });
-    return {
-      success: true,
-      data: parseStringify(inventories),
-    };
+    return { success: true, data: parseStringify(inventories) };
   } catch (error) {
     console.error("Get inventories error:", error);
-    return {
-      success: false,
-      error: "Failed to fetch inventories",
-    };
+    return { success: false, error: "Failed to fetch inventories" };
   } finally {
     await prisma.$disconnect();
   }
@@ -136,30 +132,28 @@ export const getAllPaginated = withAuth(
   },
 );
 
-export const findById = withAuth(
-  async (user, id: string): Promise<ActionResponse<Inventory>> => {
-    try {
-      const inventory = await prisma.inventory.findFirst({
-        where: {
-          id: id,
-          companyId: user.user_metadata?.companyId,
-        },
-      });
-      if (!inventory) {
-        return { success: false, error: "Inventory not found" };
-      }
-      return { success: true, data: parseStringify(inventory) };
-    } catch (error) {
-      console.error("Get inventory error:", error);
-      return { success: false, error: "Failed to fetch inventory" };
-    } finally {
-      await prisma.$disconnect();
+export const getInventoryById = withAuth(async (user, id: string): Promise<AuthResponse<Inventory>> => {
+  try {
+    const inventory = await prisma.inventory.findFirst({
+      where: {
+        id,
+        companyId: user.user_metadata?.companyId,
+      },
+    });
+    if (!inventory) {
+      return { success: false, error: "Inventory not found" };
     }
-  },
-);
+    return { success: true, data: parseStringify(inventory) };
+  } catch (error) {
+    console.error("Get inventory error:", error);
+    return { success: false, error: "Failed to fetch inventory" };
+  } finally {
+    await prisma.$disconnect();
+  }
+});
 
 export const remove = withAuth(
-  async (user, id: string): Promise<ActionResponse<Inventory>> => {
+  async (user, id: string): Promise<AuthResponse<Inventory>> => {
     try {
       // Check if inventory is in use
       const inUse = await prisma.asset.findFirst({
@@ -179,6 +173,7 @@ export const remove = withAuth(
           companyId: user.user_metadata?.companyId,
         },
       });
+      revalidatePath("/inventories");
       return { success: true, data: parseStringify(inventory) };
     } catch (error) {
       console.error("Delete inventory error:", error);

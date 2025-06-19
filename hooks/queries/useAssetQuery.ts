@@ -2,13 +2,6 @@ import { useUserUIStore } from "@/lib/stores/useUserUIStore";
 import { createGenericQuery } from "@/hooks/queries/useQueryFactory";
 import { z } from "zod";
 import { assetSchema } from "@/lib/schemas";
-import {
-  findById,
-  getAll,
-  insert,
-  remove,
-  update,
-} from "@/lib/actions/assets.actions";
 
 export const MODEL_KEY = ["assets"] as const;
 
@@ -27,24 +20,49 @@ export function useAssetQuery() {
     MODEL_KEY,
     {
       getAll: async () => {
-        const result = await getAll();
-        return result as ActionResponse<Asset[]>;
+        const response = await fetch('/api/assets');
+        if (!response.ok) {
+          throw new Error('Failed to fetch assets');
+        }
+        return response.json();
       },
       insert: async (data: CreateAssetInput) => {
-        const result = await insert(data);
-        return result as ActionResponse<Asset>;
+        const response = await fetch('/api/assets', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+        if (!response.ok) {
+          throw new Error('Failed to create asset');
+        }
+        return response.json();
       },
       delete: async (id: string) => {
-        const result = await remove(id);
-        return result as ActionResponse<Asset>;
+        const response = await fetch(`/api/assets/${id}`, {
+          method: 'DELETE',
+        });
+        if (!response.ok) {
+          throw new Error('Failed to delete asset');
+        }
+        return response.json();
       },
       update: async (id: string, data: CreateAssetInput) => {
-        const result = await update(id, data);
-        return result as ActionResponse<Asset>;
+        const response = await fetch(`/api/assets/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+        if (!response.ok) {
+          throw new Error('Failed to update asset');
+        }
+        return response.json();
       },
       findById: async (id: string) => {
-        const result = await findById(id);
-        return result as ActionResponse<Asset>;
+        const response = await fetch(`/api/assets/${id}`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch asset');
+        }
+        return response.json();
       },
     },
     {

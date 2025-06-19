@@ -6,11 +6,17 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/app/db";
 import { withAuth } from "@/lib/middleware/withAuth";
 
+type AuthResponse<T> = {
+  data?: T;
+  error?: string;
+  success: boolean;
+};
+
 export const insert = withAuth(
   async (
     user,
     data: Pick<Department, "name">,
-  ): Promise<ActionResponse<Department>> => {
+  ): Promise<AuthResponse<Department>> => {
     try {
       const department = await prisma.department.create({
         data: {
@@ -42,7 +48,7 @@ export const getAll = withAuth(
   async (
     user,
     params?: { search?: string },
-  ): Promise<ActionResponse<Department[]>> => {
+  ): Promise<AuthResponse<Department[]>> => {
     try {
       const where: Prisma.DepartmentWhereInput = {
         companyId: user.user_metadata?.companyId,
@@ -75,7 +81,7 @@ export const getAll = withAuth(
 );
 
 export const findById = withAuth(
-  async (user, id: string): Promise<ActionResponse<Department>> => {
+  async (user, id: string): Promise<AuthResponse<Department>> => {
     try {
       const department = await prisma.department.findFirst({
         where: {
@@ -106,7 +112,7 @@ export const update = withAuth(
     user,
     id: string,
     data: Partial<Department>,
-  ): Promise<ActionResponse<Department>> => {
+  ): Promise<AuthResponse<Department>> => {
     try {
       const department = await prisma.department.update({
         where: {
@@ -142,7 +148,7 @@ export const update = withAuth(
 );
 
 export const remove = withAuth(
-  async (user, id: string): Promise<ActionResponse<Department>> => {
+  async (user, id: string): Promise<AuthResponse<Department>> => {
     try {
       const department = await prisma.department.delete({
         where: {

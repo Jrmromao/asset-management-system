@@ -18,7 +18,15 @@ export function useInventoryQuery() {
     {
       getAll: async () => {
         const res = await fetch("/api/inventory");
-        return await res.json();
+        if (!res.ok) {
+          const error = await res.json();
+          throw new Error(error.error || "Failed to fetch inventories");
+        }
+        const data = await res.json();
+        if (!data.success) {
+          throw new Error(data.error || "Failed to fetch inventories");
+        }
+        return data.data;
       },
       insert: async (data: CreateInventorySchemaInput) => {
         const res = await fetch("/api/inventory", {
@@ -26,13 +34,29 @@ export function useInventoryQuery() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(data),
         });
-        return await res.json();
+        if (!res.ok) {
+          const error = await res.json();
+          throw new Error(error.error || "Failed to create inventory");
+        }
+        const result = await res.json();
+        if (!result.success) {
+          throw new Error(result.error || "Failed to create inventory");
+        }
+        return result.data;
       },
       delete: async (id: string) => {
         const res = await fetch(`/api/inventory?id=${id}`, {
           method: "DELETE",
         });
-        return await res.json();
+        if (!res.ok) {
+          const error = await res.json();
+          throw new Error(error.error || "Failed to delete inventory");
+        }
+        const result = await res.json();
+        if (!result.success) {
+          throw new Error(result.error || "Failed to delete inventory");
+        }
+        return result.data;
       },
       update: async (id: string, data: Partial<Inventory>) => {
         const res = await fetch(`/api/inventory?id=${id}`, {
@@ -40,7 +64,15 @@ export function useInventoryQuery() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(data),
         });
-        return await res.json();
+        if (!res.ok) {
+          const error = await res.json();
+          throw new Error(error.error || "Failed to update inventory");
+        }
+        const result = await res.json();
+        if (!result.success) {
+          throw new Error(result.error || "Failed to update inventory");
+        }
+        return result.data;
       },
     },
     {

@@ -5,16 +5,22 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/app/db";
 import { withAuth } from "@/lib/middleware/withAuth";
 
-type ActionReturn<T> = {
+type AuthResponse<T> = {
   data?: T;
   error?: string;
-  success?: boolean;
+  success: boolean;
 };
 
-export const getAll = withAuth(async (user): Promise<ActionReturn<Role[]>> => {
+export const getAll = withAuth(async (user): Promise<AuthResponse<Role[]>> => {
   try {
     const roles = await prisma.role.findMany({
-      where: {},
+      where: {
+        users: {
+          some: {
+            companyId: user.user_metadata?.companyId
+          }
+        }
+      },
       orderBy: {
         name: "asc",
       },
@@ -34,7 +40,7 @@ export const getAll = withAuth(async (user): Promise<ActionReturn<Role[]>> => {
 });
 
 export const insert = withAuth(
-  async (user, data: Pick<Role, "name">): Promise<ActionReturn<Role>> => {
+  async (user, data: Pick<Role, "name">): Promise<AuthResponse<Role>> => {
     try {
       const existingRole = await prisma.role.findFirst({
         where: {
@@ -61,7 +67,7 @@ export const insert = withAuth(
 );
 
 export const getRoleById = withAuth(
-  async (user, id: string): Promise<ActionReturn<Role>> => {
+  async (user, id: string): Promise<AuthResponse<Role>> => {
     try {
       const role = await prisma.role.findFirst({
         where: {
@@ -91,7 +97,7 @@ export const getRoleById = withAuth(
 );
 
 export const remove = withAuth(
-  async (user, id: string): Promise<ActionReturn<Role>> => {
+  async (user, id: string): Promise<AuthResponse<Role>> => {
     try {
       const role = await prisma.role.delete({
         where: {
@@ -109,7 +115,7 @@ export const remove = withAuth(
 );
 
 export const update = withAuth(
-  async (user, id: string, data: Partial<Role>) => {
+  async (user, id: string, data: Partial<Role>): Promise<AuthResponse<Role>> => {
     try {
       const role = await prisma.role.update({
         where: { id },

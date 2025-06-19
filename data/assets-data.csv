@@ -1,10 +1,4 @@
-name,model,endOfLife,serialNum,statusLabel,material,supplier,poNumber,price
-MacBook 2,M3 Pro,2027-11-30 00:00:00.000,1MK1143,Available,Aluminium,Jack,JK00443,2370.00
-MacBook 2,M3 Air,2025-11-30 00:00:00.000,1MK3943,Available,Aluminium,Jack,JK00543,2320.00
-MacBook 2,M3 Air,2025-11-30 00:00:00.000,1MK3843,Available,Aluminium,Jack,JK00643,2320.00
-MacBook 2,M3 Pro,2026-11-30 00:00:00.000,3MK0743,Available,Aluminium,Jack,JK00743,2300.20
-MacBook 2,M3 Air,2027-11-30 00:00:00.000,3MK0643,Available,Aluminium,Jack,JK00843,2300.50
-MacBook 2,M3 Pro,2027-11-30 00:00:00.000,3MK0543,Available,Aluminium,Jack,JK00943,2390.50
-MacBook 2,M3 Pro,2027-11-30 00:00:00.000,3MK1443,Available,Aluminium,Jack,JK01043,2370.50
-MacBook 2,M3 Air,2025-11-30 00:00:00.000,3MK3343,Available,Aluminium,Jack,JK01143,2320.60
-MacBook 2,M3 Air,2025-11-30 00:00:00.000,3MK3243,Available,Aluminium,Jack,JK01243,2320.30
+name,serialNumber,modelId,statusLabelId,departmentId,inventoryId,locationId,formTemplateId,templateValues,purchaseDate,purchasePrice,poNumber
+MacBook Pro 16",MBP2024001,model_mbp16,status_available,dept_it,inv_main,loc_hq,template_laptop,{"ram":"32GB","storage":"1TB"},2024-03-14,2499.99,PO2024001
+Dell XPS 15,XPS2024001,model_xps15,status_available,dept_eng,inv_main,loc_hq,template_laptop,{"ram":"16GB","storage":"512GB"},2024-03-14,1899.99,PO2024002
+iPhone 15 Pro,IP15P2024001,model_iphone15p,status_inuse,dept_sales,inv_mobile,loc_branch1,template_mobile,{"storage":"256GB","color":"black"},2024-03-14,999.99,PO2024003

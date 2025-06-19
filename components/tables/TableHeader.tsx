@@ -1,58 +1,75 @@
 import { Button } from "@/components/ui/button";
-import { Filter, Import, Plus, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Filter, Import, Plus, Search, Download } from "lucide-react";
 import React from "react";
 
 interface TableHeaderProps {
-  onSearch: (value: string) => void;
-  onFilter: () => void;
-  onImport: () => void;
-  onCreateNew: () => void;
+  onSearch?: (value: string) => void;
+  onFilter?: () => void;
+  onImport?: () => void;
+  onExport?: () => void;
+  onCreateNew?: () => void;
 }
 
-export function TableHeader({
+export const TableHeader = ({
   onSearch,
   onFilter,
   onImport,
+  onExport,
   onCreateNew,
-}: TableHeaderProps) {
+}: TableHeaderProps) => {
   return (
-    <div className="space-y-4 mb-6">
-      <div className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
-        <div className="relative w-full sm:w-[300px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <input
-            placeholder="Search..."
-            className="h-10 w-full rounded-md border border-gray-200 pl-10 pr-4 text-sm shadow-sm focus:border-gray-300 focus:ring-0"
-            onChange={(e) => onSearch(e.target.value)}
-          />
-        </div>
-
-        <div className="flex flex-col space-y-2 sm:flex-row sm:items-center sm:space-y-0 sm:space-x-3">
+    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <div className="flex items-center gap-4">
+        {onSearch && (
+          <div className="relative w-64">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search"
+              className="pl-8"
+              onChange={(e) => onSearch(e.target.value)}
+            />
+          </div>
+        )}
+        {onFilter && (
           <Button
             variant="outline"
+            size="icon"
             onClick={onFilter}
-            className="h-10 w-full sm:w-auto px-4 shadow-sm border-gray-200 hover:bg-gray-50"
+            className="shrink-0"
           >
-            <Filter className="h-4 w-4 mr-2" />
-            Filter
+            <Filter className="h-4 w-4" />
           </Button>
+        )}
+      </div>
+      <div className="flex items-center gap-2">
+        {onExport && (
+          <Button
+            variant="outline"
+            onClick={onExport}
+            className="flex items-center gap-2"
+          >
+            <Download className="h-4 w-4" />
+            Export
+          </Button>
+        )}
+        {onImport && (
           <Button
             variant="outline"
             onClick={onImport}
-            className="h-10 w-full sm:w-auto px-4 shadow-sm border-gray-200 hover:bg-gray-50"
+            className="flex items-center gap-2"
           >
-            <Import className="w-4 h-4 mr-2" />
+            <Import className="h-4 w-4" />
             Import
           </Button>
-          <Button
-            onClick={onCreateNew}
-            className="h-10 w-full sm:w-auto px-4 shadow-sm bg-emerald-600 hover:bg-emerald-700 text-white"
-          >
-            <Plus className="w-4 h-4 mr-2" />
+        )}
+        {onCreateNew && (
+          <Button onClick={onCreateNew} className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
             Create New
           </Button>
-        </div>
+        )}
       </div>
     </div>
   );
-}
+};

@@ -193,43 +193,47 @@ async function createUserForRegistration({
       "A user with this email address has already been registered",
     );
   }
-  console.log("[createUserForRegistration] Creating user in Supabase Auth:", {
+
+  // 2. Create the user in Supabase Auth with metadata
+  const { data: authUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
     email,
-    companyId,
-    firstName,
-    lastName,
-    title,
-    employeeId,
-    roleId,
+    password,
+    email_confirm: true,
+    user_metadata: {
+      firstName,
+      lastName,
+      companyId,
+      role: "Admin",
+    },
   });
-  // 2. Create user in Supabase Auth with metadata
-  const { data: createdUser, error } =
-    await supabaseAdmin.auth.admin.createUser({
-      email,
-      password,
-      user_metadata: {
-        firstName,
-        lastName,
-        companyId,
-        roleId,
-        title,
+
+  if (createError || !authUser.user) {
+    throw new Error("Failed to create auth user: " + createError?.message);
+  }
+
+  // 3. Create the user in the database
+  try {
+    const user = await prisma.user.create({
+      data: {
+        name: `${firstName} ${lastName}`,
+        email,
+        firstName: String(firstName),
+        lastName: String(lastName),
         employeeId,
+        title,
+        oauthId: authUser.user.id,
+        roleId,
+        companyId,
+        emailVerified: new Date(),
       },
     });
-  if (error || !createdUser.user) {
-    console.error(
-      "[createUserForRegistration] Supabase registration failed:",
-      error?.message,
-    );
-    // Throw a real error so the caller can handle it
-    throw new Error(error?.message || "Supabase registration failed");
+
+    return { user, authUser };
+  } catch (error) {
+    // If database creation fails, clean up the auth user
+    await supabaseAdmin.auth.admin.deleteUser(authUser.user.id);
+    throw error;
   }
-  console.log(
-    "[createUserForRegistration] User created in Supabase Auth:",
-    createdUser.user.id,
-  );
-  // 2. Do NOT create the user in your DB here! The webhook will handle it.
-  return createdUser.user;
 }
 
 export const remove = withAuth(async (user, id: string) => {

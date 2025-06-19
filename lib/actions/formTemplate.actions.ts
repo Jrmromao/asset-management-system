@@ -1,21 +1,27 @@
 "use server";
 
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, FormTemplate } from "@prisma/client";
 import { z } from "zod";
 import { createTemplateSchema } from "@/lib/schemas";
-import { FormTemplate } from "@/types/form";
 import { parseStringify } from "@/lib/utils";
 import { handleError } from "@/utils/utils";
 import { formTemplates } from "@/helpers/DefaultFormTemplates";
 import { withAuth } from "@/lib/middleware/withAuth";
+import { revalidatePath } from "next/cache";
 
 const prisma = new PrismaClient();
+
+type AuthResponse<T> = {
+  data?: T;
+  error?: string;
+  success: boolean;
+};
 
 export const insert = withAuth(
   async (
     user,
     data: z.infer<typeof createTemplateSchema>,
-  ): Promise<ActionResponse<FormTemplate>> => {
+  ): Promise<AuthResponse<FormTemplate>> => {
     try {
       const validatedData = createTemplateSchema.parse(data);
       const template = await prisma.formTemplate.create({
@@ -27,12 +33,14 @@ export const insert = withAuth(
         select: { id: true },
       });
 
+      revalidatePath("/form-templates");
       return {
         success: true,
         data: parseStringify(template),
       };
     } catch (error) {
-      return handleError(error, "Failed to create template");
+      console.error("Create form template error:", error);
+      return { success: false, error: "Failed to create form template" };
     } finally {
       await prisma.$disconnect();
     }
@@ -40,64 +48,42 @@ export const insert = withAuth(
 );
 
 export const getAll = withAuth(
-  async (user): Promise<ActionResponse<FormTemplate[]>> => {
+  async (user): Promise<AuthResponse<FormTemplate[]>> => {
     try {
       const templates = await prisma.formTemplate.findMany({
-        where: { companyId: user.user_metadata?.companyId },
-        select: {
-          id: true,
-          name: true,
-          fields: true,
-          createdAt: true,
-          active: true,
+        where: {
+          companyId: user.user_metadata?.companyId,
         },
-        orderBy: { createdAt: "desc" },
+        orderBy: {
+          name: "asc",
+        },
       });
-
-      return {
-        success: true,
-        data: parseStringify(templates),
-      };
+      return { success: true, data: parseStringify(templates) };
     } catch (error) {
-      return handleError(error, "Failed to fetch templates");
+      console.error("Get form templates error:", error);
+      return { success: false, error: "Failed to fetch form templates" };
     } finally {
       await prisma.$disconnect();
     }
   },
 );
 
-export const findById = withAuth(
-  async (user, id: string): Promise<ActionResponse<FormTemplate>> => {
+export const getFormTemplateById = withAuth(
+  async (user, id: string): Promise<AuthResponse<FormTemplate>> => {
     try {
       const template = await prisma.formTemplate.findFirst({
         where: {
           id,
           companyId: user.user_metadata?.companyId,
         },
-        select: {
-          id: true,
-          name: true,
-          fields: true,
-          values: {
-            select: {
-              id: true,
-              values: true,
-              assetId: true,
-            },
-          },
-        },
       });
-
       if (!template) {
-        return { error: "Template not found" };
+        return { success: false, error: "Form template not found" };
       }
-
-      return {
-        success: true,
-        data: parseStringify(template),
-      };
+      return { success: true, data: parseStringify(template) };
     } catch (error) {
-      return handleError(error, "Failed to fetch template");
+      console.error("Get form template error:", error);
+      return { success: false, error: "Failed to fetch form template" };
     } finally {
       await prisma.$disconnect();
     }
@@ -105,21 +91,22 @@ export const findById = withAuth(
 );
 
 export const remove = withAuth(
-  async (user, id: string): Promise<ActionResponse<FormTemplate>> => {
+  async (user, id: string): Promise<AuthResponse<FormTemplate>> => {
     try {
-      const template = await prisma.formTemplate.deleteMany({
+      const template = await prisma.formTemplate.delete({
         where: {
           id,
           companyId: user.user_metadata?.companyId,
         },
       });
-
+      revalidatePath("/form-templates");
       return {
         success: true,
         data: parseStringify(template),
       };
     } catch (error) {
-      return handleError(error, "Failed to delete template");
+      console.error("Delete form template error:", error);
+      return { success: false, error: "Failed to delete form template" };
     } finally {
       await prisma.$disconnect();
     }
@@ -131,7 +118,7 @@ export const update = withAuth(
     user,
     id: string,
     data: Partial<FormTemplate>,
-  ): Promise<ActionResponse<FormTemplate>> => {
+  ): Promise<AuthResponse<FormTemplate>> => {
     try {
       const validatedData = createTemplateSchema.parse(data);
       const template = await prisma.formTemplate.update({
@@ -146,13 +133,14 @@ export const update = withAuth(
         select: { id: true },
       });
 
+      revalidatePath("/form-templates");
       return {
         success: true,
         data: parseStringify(template),
-        redirectUrl: "/form-templates",
       };
     } catch (error) {
-      return handleError(error, "Failed to update template");
+      console.error("Update form template error:", error);
+      return { success: false, error: "Failed to update form template" };
     } finally {
       await prisma.$disconnect();
     }

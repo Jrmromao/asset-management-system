@@ -2,13 +2,6 @@ import { useUserUIStore } from "@/lib/stores/useUserUIStore";
 import { createGenericQuery } from "@/hooks/queries/useQueryFactory";
 import { z } from "zod";
 import { userSchema } from "@/lib/schemas";
-import {
-  createUser as insert,
-  getAll,
-  remove,
-  findById,
-  updateUserNonAuthDetails,
-} from "@/lib/actions/user.actions";
 
 export const MODEL_KEY = ["users"] as const;
 type CreateModelInput = z.infer<typeof userSchema>;
@@ -19,22 +12,56 @@ export function useUserQuery() {
   const genericQuery = createGenericQuery<User, CreateModelInput>(
     MODEL_KEY,
     {
-      getAll: async () => await getAll(),
+      getAll: async () => {
+        const response = await fetch('/api/users');
+        if (!response.ok) {
+          throw new Error('Failed to fetch users');
+        }
+        return response.json();
+      },
       insert: async (data: CreateModelInput) => {
-        const result = await insert(data);
-        return result as ActionResponse<User>;
+        const response = await fetch('/api/users', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+        if (!response.ok) {
+          throw new Error('Failed to create user');
+        }
+        return response.json();
       },
       update: async (id: string, data: Partial<CreateModelInput>) => {
-        const result = await updateUserNonAuthDetails(id, data);
-        return result as ActionResponse<User>;
+        const response = await fetch(`/api/users/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+        if (!response.ok) {
+          throw new Error('Failed to update user');
+        }
+        return response.json();
       },
-      delete: async (id: string) => await remove(id),
-      findById: async (id: string) => await findById(id),
+      delete: async (id: string) => {
+        const response = await fetch(`/api/users/${id}`, {
+          method: 'DELETE',
+        });
+        if (!response.ok) {
+          throw new Error('Failed to delete user');
+        }
+        return response.json();
+      },
+      findById: async (id: string) => {
+        const response = await fetch(`/api/users/${id}`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch user');
+        }
+        return response.json();
+      },
     },
     {
       onClose,
-      successMessage: "Model created successfully",
-      errorMessage: "Failed to create model",
+      successMessage: "User created successfully",
+      errorMessage: "Failed to create user",
       staleTime: 5 * 60 * 1000,
     },
   );

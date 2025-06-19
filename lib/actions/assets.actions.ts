@@ -3,9 +3,10 @@
 import { prisma } from "@/app/db";
 import { z } from "zod";
 import { categorySchema, assetSchema } from "@/lib/schemas";
-import { Prisma } from "@prisma/client";
+import { Prisma, Asset } from "@prisma/client";
 import { withAuth } from "@/lib/middleware/withAuth";
-import { Asset } from "@prisma/client";
+import { revalidatePath } from "next/cache";
+import { parseStringify } from "@/lib/utils";
 
 export type CreateAssetInput = {
   name: string;
@@ -19,326 +20,243 @@ export type CreateAssetInput = {
   templateValues?: Record<string, any>;
 };
 
+type AuthResponse<T> = {
+  data?: T;
+  error?: string;
+  success: boolean;
+};
+
 async function findUserByOauthId(oauthId: string) {
   return prisma.user.findFirst({ where: { oauthId } });
 }
 
-export const insert = withAuth(
-  async (user, values: z.infer<typeof assetSchema>) => {
-    try {
-      const validation = await assetSchema.safeParseAsync(values);
-
-      if (!validation.success) {
-        return {
-          success: false,
-          error: "Invalid input data",
-        };
-      }
-
-      const asset = await prisma.asset.create({
-        data: {
-          name: validation.data.name,
-          serialNumber: validation.data.serialNumber,
-          modelId: validation.data.modelId,
-          statusLabelId: validation.data.statusLabelId,
-          departmentId: validation.data.departmentId,
-          inventoryId: validation.data.inventoryId,
-          locationId: validation.data.locationId,
-          formTemplateId: validation.data.formTemplateId || null,
-          companyId: user.user_metadata?.companyId,
-          status: "Available",
-        },
-      });
-
-      // If form template values are provided, create them
-      if (validation.data.formTemplateId && validation.data.templateValues) {
-        const templateValues = Object.entries(validation.data.templateValues).map(
-          ([key, value]) => ({
-            assetId: asset.id,
-            templateId: validation.data.formTemplateId!,
-            values: { [key]: value },
-          })
-        );
-
-        if (templateValues.length > 0) {
-          await prisma.formTemplateValue.createMany({
-            data: templateValues,
-          });
-        }
-      }
-
-      // Create audit log
-      try {
-        const dbUser = await findUserByOauthId(user.id);
-        if (dbUser) {
-          await prisma.auditLog.create({
-            data: {
-              action: "ASSET_CREATED",
-              entity: "Asset",
-              entityId: asset.id,
-              userId: dbUser.id,
-              companyId: dbUser.companyId,
-              details: `Created asset ${validation.data.name} with serial number ${validation.data.serialNumber}`,
-            },
-          });
-        } else {
-          console.warn("No matching app user found for audit log. Skipping audit log creation.");
-        }
-      } catch (e) {
-        console.error("Failed to create audit log:", e);
-      }
-
-      return {
-        success: true,
-        data: asset,
-      };
-    } catch (error) {
-      console.error("Error creating asset:", error);
-
-      if (error instanceof Prisma.PrismaClientKnownRequestError) {
-        if (error.code === "P2002") {
-          return {
-            success: false,
-            error: "An asset with this serial number or name already exists",
-          };
-        }
-      }
-
-      return {
-        success: false,
-        error: "Failed to create asset",
-      };
-    } finally {
-      await prisma.$disconnect();
-    }
-  },
-);
-
-export const getAll = withAuth(
-  async (
-    user,
-    options?: {
-      orderBy?: "name" | "createdAt";
-      order?: "asc" | "desc";
-      search?: string;
-    },
-  ) => {
-    try {
-      const where: Prisma.AssetWhereInput = {
-        companyId: user.user_metadata?.companyId,
-        ...(options?.search
-          ? {
-              OR: [
-                {
-                  name: {
-                    contains: options.search,
-                    mode: "insensitive",
-                  },
-                },
-                {
-                  serialNumber: {
-                    contains: options.search,
-                    mode: "insensitive",
-                  },
-                },
-              ],
-            }
-          : {}),
-      };
-
-      const orderBy: Prisma.AssetOrderByWithRelationInput = options?.orderBy
-        ? { [options.orderBy]: options.order || "asc" }
-        : { name: "asc" };
-
-      const assets = await prisma.asset.findMany({
-        where,
-        orderBy,
-        include: {
-          assignee: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
-          model: true,
-          statusLabel: true,
-          department: true,
-          departmentLocation: true,
-          formTemplate: {
-            include: {
-              values: true,
-            },
-          },
-          formTemplateValues: true,
-          AssetHistory: true,
-          Co2eRecord: true,
-        },
-      });
-
-      return {
-        success: true,
-        data: assets,
-      };
-    } catch (error) {
-      console.error("Error fetching assets:", error);
-      return {
-        success: false,
-        error: "Failed to fetch assets",
-      };
-    } finally {
-      await prisma.$disconnect();
-    }
-  },
-);
-
-export const remove = withAuth(async (user, id: string) => {
+export const create = withAuth(async (user, data: CreateAssetInput): Promise<AuthResponse<Asset>> => {
   try {
-    const category = await prisma.category.delete({
-      where: {
-        id: id,
+    const validation = assetSchema.safeParse(data);
+    if (!validation.success) {
+      return {
+        success: false,
+        error: validation.error.errors[0].message,
+      };
+    }
+
+    const asset = await prisma.asset.create({
+      data: {
+        ...validation.data,
         companyId: user.user_metadata?.companyId,
       },
-      select: {
-        id: true,
-        name: true,
-        type: true,
-        companyId: true,
-        createdAt: true,
-        updatedAt: true,
+      include: {
+        model: true,
+        assignee: true,
+        supplier: true,
+        departmentLocation: true,
+        statusLabel: true,
+        department: true,
+        inventory: true,
       },
     });
 
-    return {
-      success: true,
-      data: category,
-    };
+    revalidatePath("/assets");
+    return { success: true, data: parseStringify(asset) };
   } catch (error) {
-    console.error("Error removing category:", error);
-    return {
-      success: false,
-      error: "Failed to remove category",
-    };
+    console.error("Create asset error:", error);
+    return { success: false, error: "Failed to create asset" };
   } finally {
     await prisma.$disconnect();
   }
 });
 
-export const update = withAuth(
-  async (user, id: string, values: z.infer<typeof assetSchema>) => {
-    try {
-      // Skip unique validation for updates
-      const existingAsset = await prisma.asset.findUnique({
-        where: { id },
-        select: { id: true, name: true, serialNumber: true }
-      });
+export const getAll = withAuth(async (user): Promise<AuthResponse<Asset[]>> => {
+  try {
+    const assets = await prisma.asset.findMany({
+      where: {
+        companyId: user.user_metadata?.companyId,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      include: {
+        model: true,
+        assignee: true,
+        supplier: true,
+        departmentLocation: true,
+        statusLabel: true,
+        department: true,
+        inventory: true,
+      },
+    });
+    return { success: true, data: parseStringify(assets) };
+  } catch (error) {
+    console.error("Get assets error:", error);
+    return { success: false, error: "Failed to fetch assets" };
+  } finally {
+    await prisma.$disconnect();
+  }
+});
 
-      if (!existingAsset) {
-        return {
-          success: false,
-          error: "Asset not found",
-        };
-      }
+export const getAssetById = withAuth(async (user, id: string): Promise<AuthResponse<Asset>> => {
+  try {
+    const asset = await prisma.asset.findFirst({
+      where: {
+        id,
+        companyId: user.user_metadata?.companyId,
+      },
+      include: {
+        model: true,
+        assignee: true,
+        supplier: true,
+        departmentLocation: true,
+        statusLabel: true,
+        department: true,
+        inventory: true,
+      },
+    });
+    if (!asset) {
+      return { success: false, error: "Asset not found" };
+    }
+    return { success: true, data: parseStringify(asset) };
+  } catch (error) {
+    console.error("Get asset error:", error);
+    return { success: false, error: "Failed to fetch asset" };
+  } finally {
+    await prisma.$disconnect();
+  }
+});
 
-      // Only validate uniqueness if the value has changed
-      if (values.name !== existingAsset.name || values.serialNumber !== existingAsset.serialNumber) {
-        const duplicateCheck = await prisma.asset.findFirst({
-          where: {
-            OR: [
-              {
-                name: values.name,
-                id: { not: id },
-                companyId: user.user_metadata?.companyId
-              },
-              {
-                serialNumber: values.serialNumber,
-                id: { not: id },
-                companyId: user.user_metadata?.companyId
-              }
-            ]
-          }
-        });
+export const remove = withAuth(async (user, id: string): Promise<AuthResponse<Asset>> => {
+  try {
+    const asset = await prisma.asset.delete({
+      where: { 
+        id,
+        companyId: user.user_metadata?.companyId,
+      },
+    });
+    revalidatePath("/assets");
+    return { success: true, data: parseStringify(asset) };
+  } catch (error) {
+    console.error("Delete asset error:", error);
+    return { success: false, error: "Failed to delete asset" };
+  } finally {
+    await prisma.$disconnect();
+  }
+});
 
-        if (duplicateCheck) {
-          return {
-            success: false,
-            error: "An asset with this name or serial number already exists",
-          };
-        }
-      }
+export const update = withAuth(async (user, id: string, data: CreateAssetInput): Promise<AuthResponse<Asset>> => {
+  try {
+    // Skip unique validation for updates
+    const existingAsset = await prisma.asset.findUnique({
+      where: { id },
+      select: { id: true, name: true, serialNumber: true }
+    });
 
-      const asset = await prisma.asset.update({
-        where: { id },
-        data: {
-          name: values.name,
-          serialNumber: values.serialNumber,
-          modelId: values.modelId,
-          statusLabelId: values.statusLabelId,
-          departmentId: values.departmentId,
-          inventoryId: values.inventoryId,
-          locationId: values.locationId,
-          formTemplateId: values.formTemplateId || null,
-        },
-      });
-
-      // Handle form template values update
-      if (values.formTemplateId && values.templateValues) {
-        // Delete existing template values
-        await prisma.formTemplateValue.deleteMany({
-          where: { assetId: id }
-        });
-
-        // Create new template values
-        const templateValues = Object.entries(values.templateValues).map(
-          ([key, value]) => ({
-            assetId: asset.id,
-            templateId: values.formTemplateId!,
-            values: { [key]: value },
-          })
-        );
-
-        if (templateValues.length > 0) {
-          await prisma.formTemplateValue.createMany({
-            data: templateValues,
-          });
-        }
-      }
-
-      // Create audit log
-      try {
-        const dbUser = await findUserByOauthId(user.id);
-        if (dbUser) {
-          await prisma.auditLog.create({
-            data: {
-              action: "ASSET_UPDATED",
-              entity: "Asset",
-              entityId: asset.id,
-              userId: dbUser.id,
-              companyId: dbUser.companyId,
-              details: `Updated asset ${values.name}`,
-            },
-          });
-        } else {
-          console.warn("No matching app user found for audit log. Skipping audit log creation.");
-        }
-      } catch (e) {
-        console.error("Failed to create audit log:", e);
-      }
-
-      return {
-        success: true,
-        data: asset,
-      };
-    } catch (error) {
-      console.error("Error updating asset:", error);
+    if (!existingAsset) {
       return {
         success: false,
-        error: "Failed to update asset",
+        error: "Asset not found",
       };
-    } finally {
-      await prisma.$disconnect();
     }
-  },
-);
+
+    // Only validate uniqueness if the value has changed
+    if (data.name !== existingAsset.name || data.serialNumber !== existingAsset.serialNumber) {
+      const duplicateCheck = await prisma.asset.findFirst({
+        where: {
+          OR: [
+            {
+              name: data.name,
+              id: { not: id },
+              companyId: user.user_metadata?.companyId
+            },
+            {
+              serialNumber: data.serialNumber,
+              id: { not: id },
+              companyId: user.user_metadata?.companyId
+            }
+          ]
+        }
+      });
+
+      if (duplicateCheck) {
+        return {
+          success: false,
+          error: "An asset with this name or serial number already exists",
+        };
+      }
+    }
+
+    const asset = await prisma.asset.update({
+      where: { id },
+      data: {
+        ...data,
+      },
+      include: {
+        model: true,
+        assignee: true,
+        supplier: true,
+        departmentLocation: true,
+        statusLabel: true,
+        department: true,
+        inventory: true,
+      },
+    });
+
+    // Handle form template values update
+    if (data.formTemplateId && data.templateValues) {
+      // Delete existing template values
+      await prisma.formTemplateValue.deleteMany({
+        where: { assetId: id }
+      });
+
+      // Create new template values
+      const templateValues = Object.entries(data.templateValues).map(
+        ([key, value]) => ({
+          assetId: asset.id,
+          templateId: data.formTemplateId!,
+          values: { [key]: value },
+        })
+      );
+
+      if (templateValues.length > 0) {
+        await prisma.formTemplateValue.createMany({
+          data: templateValues,
+        });
+      }
+    }
+
+    // Create audit log
+    try {
+      const dbUser = await findUserByOauthId(user.id);
+      if (dbUser) {
+        await prisma.auditLog.create({
+          data: {
+            action: "ASSET_UPDATED",
+            entity: "Asset",
+            entityId: asset.id,
+            userId: dbUser.id,
+            companyId: dbUser.companyId,
+            details: `Updated asset ${data.name}`,
+          },
+        });
+      } else {
+        console.warn("No matching app user found for audit log. Skipping audit log creation.");
+      }
+    } catch (e) {
+      console.error("Failed to create audit log:", e);
+    }
+
+    return {
+      success: true,
+      data: asset,
+    };
+  } catch (error) {
+    console.error("Error updating asset:", error);
+    return {
+      success: false,
+      error: "Failed to update asset",
+    };
+  } finally {
+    await prisma.$disconnect();
+  }
+});
 
 export const findById = withAuth(async (user, id: string) => {
   try {
@@ -535,7 +453,7 @@ export const processAssetsCSV = withAuth(async (user, csvContent: string) => {
           continue;
         }
 
-        const result = await insert(asset);
+        const result = await create(asset);
         if (result.success) {
           successCount++;
         } else {
@@ -588,3 +506,127 @@ export const generateAssetCSVTemplate = () => {
 
   return `${headers.join(',')}\n${sampleRow.join(',')}`;
 };
+
+export const exportToCSV = withAuth(async (user) => {
+  try {
+    const assets = await prisma.asset.findMany({
+      where: {
+        companyId: user.user_metadata?.companyId,
+      },
+      select: {
+        name: true,
+        serialNumber: true,
+        model: {
+          select: {
+            name: true,
+          }
+        },
+        statusLabel: {
+          select: {
+            name: true,
+          }
+        },
+        department: {
+          select: {
+            name: true,
+          }
+        },
+        departmentLocation: {
+          select: {
+            name: true,
+          }
+        },
+        inventory: {
+          select: {
+            name: true,
+          }
+        },
+        datePurchased: true,
+        price: true,
+        poNumber: true,
+        supplier: {
+          select: {
+            name: true,
+          }
+        },
+        formTemplate: {
+          select: {
+            name: true,
+          }
+        },
+        formTemplateValues: {
+          select: {
+            values: true,
+          }
+        },
+        assignee: {
+          select: {
+            name: true,
+          }
+        },
+        energyRating: true,
+        dailyOperatingHours: true,
+        weight: true,
+      },
+    });
+
+    // Convert assets to CSV format
+    const headers = [
+      'Name',
+      'Serial Number',
+      'Model',
+      'Status',
+      'Department',
+      'Location',
+      'Inventory',
+      'Purchase Date',
+      'Purchase Price',
+      'PO Number',
+      'Supplier',
+      'Form Template',
+      'Template Values',
+      'Assigned To',
+      'Energy Rating',
+      'Daily Operating Hours',
+      'Weight (kg)'
+    ];
+
+    const rows = assets.map(asset => [
+      asset.name,
+      asset.serialNumber,
+      asset.model?.name || '',
+      asset.statusLabel?.name || '',
+      asset.department?.name || '',
+      asset.departmentLocation?.name || '',
+      asset.inventory?.name || '',
+      asset.datePurchased ? new Date(asset.datePurchased).toISOString().split('T')[0] : '',
+      asset.price?.toString() || '',
+      asset.poNumber || '',
+      asset.supplier?.name || '',
+      asset.formTemplate?.name || '',
+      JSON.stringify(asset.formTemplateValues?.[0]?.values || {}),
+      asset.assignee?.name || '',
+      asset.energyRating || '',
+      asset.dailyOperatingHours?.toString() || '',
+      asset.weight?.toString() || ''
+    ]);
+
+    // Convert to CSV string
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${cell?.replace(/"/g, '""') || ''}"`.trim()).join(','))
+    ].join('\n');
+
+    return {
+      success: true,
+      data: csvContent
+    };
+  } catch (error) {
+    console.error("[EXPORT_ASSETS_TO_CSV]", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to export assets"
+    };
+  }
+});
+

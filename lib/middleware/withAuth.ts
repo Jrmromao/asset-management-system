@@ -1,52 +1,100 @@
+import { createServerSupabaseClient } from "@/utils/supabase/server";
+import { prisma } from "@/app/db";
 import { cookies } from "next/headers";
-import { createServerClient } from "@supabase/ssr";
-import { User as SupabaseUser } from "@supabase/supabase-js";
 
-export async function getSupabaseSession() {
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return cookies().get(name)?.value;
-        },
-        set(name: string, value: string, options: any) {
-          cookies().set({ name, value, ...options });
-        },
-        remove(name: string, options: any) {
-          cookies().set({ name, value: "", ...options });
-        },
-      },
-    },
-  );
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  return user;
+interface AuthResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: string;
 }
 
-export function withAuth<TArgs extends any[], TResult>(
-  fn: (user: SupabaseUser, ...args: TArgs) => Promise<TResult>,
+export function withAuth<T, Args extends any[]>(
+  handler: (user: any, ...args: Args) => Promise<AuthResponse<T>>
 ) {
-  return async (...args: TArgs): Promise<TResult> => {
-    const user = await getSupabaseSession();
-    // console.log("User:", user);
-    if (!user) {
-      throw new Error("Unauthorized: No Supabase session found");
-    }
-    return fn(user, ...args);
-  };
-}
+  return async (...args: Args): Promise<AuthResponse<T>> => {
+    try {
+      let supabase;
+      try {
+        supabase = createServerSupabaseClient();
+      } catch (error) {
+        return {
+          success: false,
+          error: "No active session found",
+        };
+      }
 
-export function withAuthNoArgs<TResult>(
-  fn: (user: SupabaseUser) => Promise<TResult>,
-) {
-  return async (): Promise<TResult> => {
-    const user = await getSupabaseSession();
-    if (!user) {
-      throw new Error("Unauthorized: No Supabase session found");
+      const { data: { user }, error } = await supabase.auth.getUser();
+
+      if (error) {
+        console.error("[AUTH_ERROR]", error);
+        return {
+          success: false,
+          error: "Session expired or invalid",
+        };
+      }
+
+      if (!user) {
+        return {
+          success: false,
+          error: "No user found",
+        };
+      }
+
+      // Check for company ID in user metadata
+      const companyId = user.user_metadata?.companyId;
+      if (!companyId) {
+        return {
+          success: false,
+          error: "No company associated with your account",
+        };
+      }
+
+      // Verify company exists and is active
+      const company = await prisma.company.findUnique({
+        where: { id: companyId },
+      });
+
+      if (!company) {
+        return {
+          success: false,
+          error: "Invalid company ID or company not found",
+        };
+      }
+
+      // Get the user's database record with role
+      const dbUser = await prisma.user.findFirst({
+        where: {
+          oauthId: user.id,
+          companyId: companyId,
+        },
+        include: {
+          role: true,
+        },
+      });
+
+      if (!dbUser) {
+        return {
+          success: false,
+          error: "User not found in database",
+        };
+      }
+
+      // Add user info to the request
+      const enhancedUser = {
+        ...user,
+        dbUser,
+        company,
+      };
+
+      return handler(enhancedUser, ...args);
+    } catch (error) {
+      console.error("[AUTH_MIDDLEWARE_ERROR]", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Authentication failed",
+      };
+    } finally {
+      await prisma.$disconnect();
     }
-    return fn(user);
   };
 }

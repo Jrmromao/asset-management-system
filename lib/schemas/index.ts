@@ -290,7 +290,7 @@ export const locationSchema = z.object({
 });
 
 export const inventorySchema = z.object({
-  ...nameField("Inventory"),
+  name: z.string().min(1, "Name is required"),
 });
 
 export const departmentSchema = z.object({

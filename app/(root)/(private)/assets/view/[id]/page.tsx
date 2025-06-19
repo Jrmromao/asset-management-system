@@ -108,7 +108,11 @@ export default function AssetPage({ params }: AssetPageProps) {
       if (!id) return;
 
       try {
-        const foundAssetResponse = await findById(id);
+        const response = await fetch(`/api/assets/${id}`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch asset');
+        }
+        const foundAssetResponse = await response.json();
         console.log(foundAssetResponse);
 
         if (foundAssetResponse.success) {
@@ -206,8 +210,19 @@ export default function AssetPage({ params }: AssetPageProps) {
             : undefined,
         );
 
-        await checkin(asset.id);
-        const freshData = await findById(asset.id);
+        const checkinResponse = await fetch(`/api/assets/${asset.id}/checkin`, {
+          method: 'POST'
+        });
+        if (!checkinResponse.ok) {
+          throw new Error('Failed to checkin asset');
+        }
+
+        const freshResponse = await fetch(`/api/assets/${asset.id}`);
+        if (!freshResponse.ok) {
+          throw new Error('Failed to fetch updated asset');
+        }
+        const freshData = await freshResponse.json();
+        
         if (!freshData.error && freshData.data) {
           const freshAsset = freshData.data as unknown as AssetWithRelations;
           setAsset((prev) => {
@@ -352,7 +367,13 @@ export default function AssetPage({ params }: AssetPageProps) {
             itemId={asset?.id!}
             type="asset"
             assignAction={async (data) => {
-              const result = await checkout(data.itemId);
+              const response = await fetch(`/api/assets/${data.itemId}/checkout`, {
+                method: 'POST'
+              });
+              if (!response.ok) {
+                throw new Error('Failed to checkout asset');
+              }
+              const result = await response.json();
               return { error: result.error };
             }}
             onOptimisticUpdate={(userData) => {
@@ -371,7 +392,12 @@ export default function AssetPage({ params }: AssetPageProps) {
               onAssignClose();
 
               try {
-                const freshData = await findById(asset?.id!);
+                const freshResponse = await fetch(`/api/assets/${asset?.id}`);
+                if (!freshResponse.ok) {
+                  throw new Error('Failed to fetch updated asset');
+                }
+                const freshData = await freshResponse.json();
+                
                 if (!freshData.error && freshData.data) {
                   const freshAsset = freshData.data as unknown as AssetWithRelations;
                   setAsset((prev) => {

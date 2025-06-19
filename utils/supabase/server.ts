@@ -6,9 +6,8 @@ export const createServerSupabaseClient = () => {
   const accessToken = cookieStore.get('sb-access-token')?.value
   const refreshToken = cookieStore.get('sb-refresh-token')?.value
 
-  const headers: Record<string, string> = {}
-  if (accessToken) {
-    headers.Authorization = `Bearer ${accessToken}`
+  if (!accessToken || !refreshToken) {
+    throw new Error('No session found')
   }
 
   return createClient(
@@ -16,13 +15,14 @@ export const createServerSupabaseClient = () => {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       auth: {
-        autoRefreshToken: true,
-        persistSession: true,
-        detectSessionInUrl: false,
-        flowType: 'pkce'
+        autoRefreshToken: false,
+        persistSession: false,
+        detectSessionInUrl: false
       },
       global: {
-        headers
+        headers: {
+          Authorization: `Bearer ${accessToken}`
+        }
       }
     }
   )
