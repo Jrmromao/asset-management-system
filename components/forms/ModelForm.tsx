@@ -22,7 +22,7 @@ import CustomSwitch from "@/components/CustomSwitch";
 
 const ModelForm = ({ initialData, onSubmitSuccess }: FormProps<Model>) => {
   const { createModel, isCreating, updateModel, isUpdating } = useModelsQuery();
-  const { manufacturers } = useManufacturerQuery();
+  const { manufacturers, isLoading: isLoadingManufacturers } = useManufacturerQuery();
   const { onClose } = useModelUIStore();
   const {
     isOpen: isManufacturerModalOpen,
@@ -45,64 +45,105 @@ const ModelForm = ({ initialData, onSubmitSuccess }: FormProps<Model>) => {
   });
 
   const onSubmit = async (data: z.infer<typeof modelSchema>) => {
+    // TODO: Remove all debug logging before production deployment
+    console.log("=== Model Form Submission Debug Logs ===");
+    console.log("Form Data:", data);
+
+    if (!data.manufacturerId) {
+      toast.error("Please select a manufacturer");
+      return;
+    }
+
     startTransition(async () => {
       try {
+        const modelData = {
+          name: data.name,
+          modelNo: data.modelNo,
+          manufacturerId: data.manufacturerId,
+          active: data.active ?? true,
+          endOfLife: data.endOfLife,
+          notes: data.notes,
+          imageUrl: data.imageUrl,
+        };
+
+        // TODO: Remove debug logging
+        console.log("Processed Model Data:", {
+          ...modelData,
+          endOfLife: modelData.endOfLife?.toISOString(),
+        });
+
         if (initialData) {
-          const response = await updateModel(
-            initialData.id,
-            {
-              name: data.name,
-              modelNo: data.modelNo,
-              manufacturerId: data.manufacturerId,
-              active: data.active,
-              endOfLife: data.endOfLife,
-              notes: data.notes,
+          // TODO: Remove debug logging
+          console.log("Updating existing model:", initialData.id);
+
+          const response = await updateModel(initialData.id, modelData, {
+            onSuccess: () => {
+              // TODO: Remove debug logging
+              console.log("Model update succeeded");
+              form.reset();
+              onClose();
+              toast.success("Model updated successfully");
+              onSubmitSuccess?.();
             },
-            {
-              onSuccess: () => {
-                form.reset();
-                onClose();
-                toast.success("Model updated successfully");
-                onSubmitSuccess?.();
-              },
-              onError: (error) => {
-                toast.error(error.message || "Failed to update model");
-              },
+            onError: (error) => {
+              // TODO: Remove debug logging
+              console.error("Model update error:", {
+                error,
+                modelData,
+                initialData,
+              });
+              toast.error(error.message || "Failed to update model");
             },
-          );
+          });
 
           if (!response.success) {
+            // TODO: Remove debug logging
+            console.error("Model update failed:", {
+              error: response.error,
+              modelData,
+              initialData,
+            });
             toast.error(response.error || "Failed to update model");
           }
         } else {
-          const response = await createModel(
-            {
-              name: data.name,
-              modelNo: data.modelNo,
-              manufacturerId: data.manufacturerId,
-              active: data.active,
-              endOfLife: data.endOfLife,
-              notes: data.notes,
+          // TODO: Remove debug logging
+          console.log("Creating new model");
+
+          const response = await createModel(modelData, {
+            onSuccess: () => {
+              // TODO: Remove debug logging
+              console.log("Model creation succeeded");
+              onClose();
+              form.reset();
+              toast.success("Model created successfully");
+              onSubmitSuccess?.();
             },
-            {
-              onSuccess: () => {
-                onClose();
-                form.reset();
-                toast.success("Model created successfully");
-                onSubmitSuccess?.();
-              },
-              onError: (error) => {
-                toast.error(error.message || "Failed to create model");
-              },
+            onError: (error) => {
+              // TODO: Remove debug logging
+              console.error("Model creation error:", {
+                error,
+                modelData,
+              });
+              toast.error(error.message || "Failed to create model");
             },
-          );
+          });
 
           if (!response.success) {
+            // TODO: Remove debug logging
+            console.error("Model creation failed:", {
+              error: response.error,
+              modelData,
+            });
             toast.error(response.error || "Failed to create model");
           }
         }
       } catch (error) {
-        console.error("Model operation error:", error);
+        // TODO: Remove debug logging
+        console.error("Model operation error:", {
+          error,
+          isUpdate: !!initialData,
+          modelData: data,
+        });
         toast.error(`Failed to ${initialData ? "update" : "create"} Model`);
       }
     });
@@ -143,6 +184,7 @@ const ModelForm = ({ initialData, onSubmitSuccess }: FormProps<Model>) => {
               control={form.control}
               placeholder="Enter model name"
               tooltip="The display name for this model"
+              required
             />
 
             <CustomInput
@@ -151,6 +193,7 @@ const ModelForm = ({ initialData, onSubmitSuccess }: FormProps<Model>) => {
               control={form.control}
               placeholder="Enter model number"
               tooltip="Unique identifier for this model"
+              required
             />
           </div>
 
@@ -162,9 +205,15 @@ const ModelForm = ({ initialData, onSubmitSuccess }: FormProps<Model>) => {
                   control={form.control}
                   name="manufacturerId"
                   label="Manufacturer"
-                  placeholder="Select manufacturer"
-                  data={manufacturers}
+                  placeholder={
+                    isLoadingManufacturers
+                      ? "Loading manufacturers..."
+                      : "Select manufacturer"
+                  }
+                  data={manufacturers || []}
                   value={form.watch("manufacturerId")}
+                  isLoading={isLoadingManufacturers}
+                  required
                 />
               </div>
               <Button
@@ -172,6 +221,7 @@ const ModelForm = ({ initialData, onSubmitSuccess }: FormProps<Model>) => {
                 variant="outline"
                 className="self-end h-10"
                 onClick={() => openManufacturerModal()}
+                disabled={isLoadingManufacturers}
               >
                 <Plus className="h-4 w-4 mr-1" />
                 New
@@ -210,7 +260,11 @@ const ModelForm = ({ initialData, onSubmitSuccess }: FormProps<Model>) => {
               Cancel
             </Button>
 
-            <Button type="submit" className="w-24" disabled={isCreating}>
+            <Button
+              type="submit"
+              className="w-24"
+              disabled={isCreating || isLoadingManufacturers}
+            >
               {isCreating ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />

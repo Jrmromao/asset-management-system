@@ -268,20 +268,30 @@ export const assignmentSchema = z
 
 export const manufacturerSchema = z.object({
   ...nameField("Manufacturer"),
-  url: z.string().url({ message: "Invalid URL" }),
-  supportUrl: z.string().min(1, "Support URL is required"),
+  url: z
+    .string()
+    .min(1, "URL is required")
+    .url({ message: "Please enter a valid URL" }),
+  supportUrl: z
+    .string()
+    .min(1, "Support URL is required")
+    .url({ message: "Please enter a valid URL" }),
   supportPhone: z.string().optional(),
-  supportEmail: z.string().optional(),
+  supportEmail: z
+    .string()
+    .email({ message: "Please enter a valid email" })
+    .optional(),
 });
 
 export const modelSchema = z.object({
-  name: z.string().min(1, "Location name is required"),
-  manufacturerId: z.string().min(1, "Manufacturer is required"),
+  name: z.string().min(1, "Model name is required"),
   modelNo: z.string().min(1, "Model number is required"),
-  endOfLife: z.string().optional(),
-  notes: z.string().optional(),
+  manufacturerId: z.string().min(1, "Manufacturer is required"),
   active: z.boolean().default(true),
+  endOfLife: z.date().optional(),
+  notes: z.string().optional(),
   imageUrl: z.string().optional(),
+  companyId: z.string().optional(),
 });
 
 export const locationSchema = z.object({

@@ -43,6 +43,7 @@ const ManufacturerForm = ({
   async function onSubmit(data: z.infer<typeof manufacturerSchema>) {
     startTransition(async () => {
       try {
+        console.log("Form data being submitted:", data);
         if (initialData) {
           await updateManufacturer(initialData.id, data, {
             onSuccess: () => {
@@ -60,8 +61,8 @@ const ManufacturerForm = ({
           });
         }
       } catch (error) {
+        console.error("Form submission error:", error);
         toast.error("Something went wrong");
-        console.error(error);
       }
     });
   }
@@ -79,26 +80,29 @@ const ManufacturerForm = ({
           label="Name"
           placeholder="Enter manufacturer name"
           control={form.control}
+          required
         />
 
         <CustomInput
-          type="text"
+          type="url"
           name="url"
           label="URL"
           placeholder="Enter manufacturer URL"
           control={form.control}
+          required
         />
 
         <CustomInput
-          type="text"
+          type="url"
           name="supportUrl"
           label="Support URL"
           placeholder="Enter support URL"
           control={form.control}
+          required
         />
 
         <CustomInput
-          type="text"
+          type="tel"
           name="supportPhone"
           label="Support Phone"
           placeholder="Enter support phone"

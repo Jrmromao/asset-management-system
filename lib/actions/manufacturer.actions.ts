@@ -10,7 +10,7 @@ import { withAuth } from "@/lib/middleware/withAuth";
 import { cookies } from "next/headers";
 
 type ActionResponse<T> = {
-  data?: T;
+  data: T | undefined;
   error?: string;
   success: boolean;
 };
@@ -22,7 +22,7 @@ export async function getAllManufacturers(params?: { search?: string }) {
     accessToken: cookieStore.get("sb-access-token")?.value,
     refreshToken: cookieStore.get("sb-refresh-token")?.value,
   };
-  return await getAll(session, params);
+  return await getAll();
 }
 
 export async function createManufacturer(
@@ -33,7 +33,7 @@ export async function createManufacturer(
     accessToken: cookieStore.get("sb-access-token")?.value,
     refreshToken: cookieStore.get("sb-refresh-token")?.value,
   };
-  return await insert(session, data);
+  return await insert(data);
 }
 
 export async function updateManufacturer(
@@ -45,7 +45,7 @@ export async function updateManufacturer(
     accessToken: cookieStore.get("sb-access-token")?.value,
     refreshToken: cookieStore.get("sb-refresh-token")?.value,
   };
-  return await update(session, id, data);
+  return await update(id, data);
 }
 
 export async function deleteManufacturer(id: string) {
@@ -54,7 +54,7 @@ export async function deleteManufacturer(id: string) {
     accessToken: cookieStore.get("sb-access-token")?.value,
     refreshToken: cookieStore.get("sb-refresh-token")?.value,
   };
-  return await remove(session, id);
+  return await remove(id);
 }
 
 // Server actions with auth
@@ -84,10 +84,11 @@ export const getAll = withAuth(
       });
       return { success: true, data: parseStringify(manufacturers) };
     } catch (error) {
-      console.error("Get manufacturers error:", error);
-      return { success: false, error: "Failed to fetch manufacturers" };
-    } finally {
-      await prisma.$disconnect();
+      return {
+        success: false,
+        error: "Failed to fetch manufacturers",
+        data: [],
+      };
     }
   },
 );
@@ -100,7 +101,11 @@ export const insert = withAuth(
     try {
       const validation = manufacturerSchema.safeParse(values);
       if (!validation.success) {
-        return { success: false, error: validation.error.errors[0].message };
+        return {
+          success: false,
+          error: validation.error.errors[0].message,
+          data: undefined,
+        };
       }
       const manufacturer = await prisma.manufacturer.create({
         data: {
@@ -118,13 +123,15 @@ export const insert = withAuth(
           return {
             success: false,
             error: "A manufacturer with this name already exists",
+            data: undefined,
           };
         }
       }
-      console.error("Create manufacturer error:", error);
-      return { success: false, error: "Failed to create manufacturer" };
-    } finally {
-      await prisma.$disconnect();
+      return {
+        success: false,
+        error: "Failed to create manufacturer",
+        data: undefined,
+      };
     }
   },
 );
@@ -148,12 +155,19 @@ export const findById = withAuth(
         },
       });
       if (!manufacturer) {
-        return { success: false, error: "Manufacturer not found" };
+        return {
+          success: false,
+          error: "Manufacturer not found",
+          data: undefined,
+        };
       }
       return { success: true, data: parseStringify(manufacturer) };
     } catch (error) {
-      console.error("Find manufacturer error:", error);
-      return { success: false, error: "Failed to fetch manufacturer" };
+      return {
+        success: false,
+        error: "Failed to fetch manufacturer",
+        data: undefined,
+      };
     } finally {
       await prisma.$disconnect();
     }
@@ -169,7 +183,11 @@ export const update = withAuth(
     try {
       const validation = manufacturerSchema.partial().safeParse(values);
       if (!validation.success) {
-        return { success: false, error: validation.error.errors[0].message };
+        return {
+          success: false,
+          error: validation.error.errors[0].message,
+          data: undefined,
+        };
       }
       const existingManufacturer = await prisma.manufacturer.findFirst({
         where: {
@@ -178,7 +196,11 @@ export const update = withAuth(
         },
       });
       if (!existingManufacturer) {
-        return { success: false, error: "Manufacturer not found" };
+        return {
+          success: false,
+          error: "Manufacturer not found",
+          data: undefined,
+        };
       }
       const manufacturer = await prisma.manufacturer.update({
         where: { id },
@@ -197,11 +219,15 @@ export const update = withAuth(
           return {
             success: false,
             error: "A manufacturer with this name already exists",
+            data: undefined,
           };
         }
       }
-      console.error("Update manufacturer error:", error);
-      return { success: false, error: "Failed to update manufacturer" };
+      return {
+        success: false,
+        error: "Failed to update manufacturer",
+        data: undefined,
+      };
     } finally {
       await prisma.$disconnect();
     }
@@ -224,12 +250,17 @@ export const remove = withAuth(
         },
       });
       if (!existingManufacturer) {
-        return { success: false, error: "Manufacturer not found" };
+        return {
+          success: false,
+          error: "Manufacturer not found",
+          data: undefined,
+        };
       }
       if (existingManufacturer.models.length > 0) {
         return {
           success: false,
           error: "Cannot delete manufacturer with associated models",
+          data: undefined,
         };
       }
       const manufacturer = await prisma.manufacturer.delete({
@@ -238,10 +269,11 @@ export const remove = withAuth(
       revalidatePath("/manufacturers");
       return { success: true, data: parseStringify(manufacturer) };
     } catch (error) {
-      console.error("Delete manufacturer error:", error);
-      return { success: false, error: "Failed to delete manufacturer" };
-    } finally {
-      await prisma.$disconnect();
+      return {
+        success: false,
+        error: "Failed to delete manufacturer",
+        data: undefined,
+      };
     }
   },
 );
@@ -263,10 +295,11 @@ export const isManufacturerNameUnique = withAuth(
       });
       return { success: true, data: !manufacturer };
     } catch (error) {
-      console.error("Check manufacturer name error:", error);
-      return { success: false, error: "Failed to check manufacturer name" };
-    } finally {
-      await prisma.$disconnect();
+      return {
+        success: false,
+        error: "Failed to check manufacturer name",
+        data: false,
+      };
     }
   },
 );

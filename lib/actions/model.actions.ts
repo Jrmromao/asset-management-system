@@ -5,7 +5,7 @@ import { parseStringify } from "@/lib/utils";
 import { z } from "zod";
 import { modelSchema } from "@/lib/schemas";
 import { prisma } from "@/app/db";
-import { withAuth } from "@/lib/middleware/withAuth";
+import { withAuth, AuthResponse } from "@/lib/middleware/withAuth";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 
@@ -27,15 +27,28 @@ export const insert = withAuth(
   async (
     user,
     values: z.infer<typeof modelSchema>,
-  ): Promise<ActionResponse<Model>> => {
+  ): Promise<AuthResponse<Model>> => {
     if (!user?.user_metadata?.companyId) {
-      return { error: "Company ID not found", success: false };
+      return {
+        error: "Company ID not found",
+        success: false,
+        data: null as unknown as Model,
+      };
     }
 
     try {
-      const validation = modelSchema.safeParse(values);
+      const dataToValidate = {
+        ...values,
+        companyId: user.user_metadata.companyId,
+      };
+
+      const validation = modelSchema.safeParse(dataToValidate);
       if (!validation.success) {
-        return { error: validation.error.errors[0].message, success: false };
+        return {
+          error: validation.error.errors[0].message,
+          success: false,
+          data: null as unknown as Model,
+        };
       }
 
       const model = await prisma.model.create({
@@ -46,7 +59,11 @@ export const insert = withAuth(
       });
 
       if (!model) {
-        return { error: "Failed to create model", success: false };
+        return {
+          error: "Failed to create model",
+          success: false,
+          data: null as unknown as Model,
+        };
       }
 
       revalidatePath("/models");
@@ -61,11 +78,20 @@ export const insert = withAuth(
           return {
             error: "A model with this number already exists",
             success: false,
+            data: null as unknown as Model,
           };
         }
-        return { error: `Database error: ${error.code}`, success: false };
+        return {
+          error: `Database error: ${error.code}`,
+          success: false,
+          data: null as unknown as Model,
+        };
       }
-      return { error: "Failed to create model", success: false };
+      return {
+        error: "Failed to create model",
+        success: false,
+        data: null as unknown as Model,
+      };
     } finally {
       await prisma.$disconnect();
     }
@@ -75,18 +101,22 @@ export const insert = withAuth(
 // Wrapper function for client-side use
 export async function createModel(
   values: z.infer<typeof modelSchema>,
-): Promise<ActionResponse<Model>> {
+): Promise<AuthResponse<Model>> {
   const session = getSession();
-  return insert(session, values);
+  return insert(values);
 }
 
 export const getAll = withAuth(
   async (
     user,
     params?: { search?: string },
-  ): Promise<ActionResponse<Model[]>> => {
+  ): Promise<AuthResponse<Model[]>> => {
     if (!user?.user_metadata?.companyId) {
-      return { error: "Company ID not found", success: false };
+      return {
+        error: "Company ID not found",
+        success: false,
+        data: [],
+      };
     }
 
     try {
@@ -114,7 +144,11 @@ export const getAll = withAuth(
       };
     } catch (error) {
       console.error("Fetch models error:", error);
-      return { error: "Failed to fetch models", success: false };
+      return {
+        error: "Failed to fetch models",
+        success: false,
+        data: [],
+      };
     } finally {
       await prisma.$disconnect();
     }
@@ -124,13 +158,13 @@ export const getAll = withAuth(
 // Wrapper function for client-side use
 export async function getAllModels(params?: {
   search?: string;
-}): Promise<ActionResponse<Model[]>> {
+}): Promise<AuthResponse<Model[]>> {
   const session = getSession();
-  return getAll(session, params);
+  return getAll(params);
 }
 
 export const remove = withAuth(
-  async (user, id: string): Promise<ActionResponse<Model>> => {
+  async (user, id: string): Promise<AuthResponse<Model>> => {
     try {
       await prisma.model.delete({
         where: {
@@ -142,10 +176,14 @@ export const remove = withAuth(
       revalidatePath("/models");
       return {
         success: true,
-        data: parseStringify({ id }),
+        data: parseStringify({ id } as Model),
       };
     } catch (error) {
-      return { error: "Failed to delete model", success: false };
+      return {
+        error: "Failed to delete model",
+        success: false,
+        data: null as unknown as Model,
+      };
     } finally {
       await prisma.$disconnect();
     }
@@ -153,9 +191,9 @@ export const remove = withAuth(
 );
 
 // Wrapper function for client-side use
-export async function deleteModel(id: string): Promise<ActionResponse<Model>> {
+export async function deleteModel(id: string): Promise<AuthResponse<Model>> {
   const session = getSession();
-  return remove(session, id);
+  return remove(id);
 }
 
 export const update = withAuth(
@@ -163,9 +201,13 @@ export const update = withAuth(
     user,
     id: string,
     data: Partial<z.infer<typeof modelSchema>>,
-  ): Promise<ActionResponse<Model>> => {
+  ): Promise<AuthResponse<Model>> => {
     if (!user?.user_metadata?.companyId) {
-      return { error: "Company ID not found", success: false };
+      return {
+        error: "Company ID not found",
+        success: false,
+        data: null as unknown as Model,
+      };
     }
 
     try {
@@ -178,7 +220,11 @@ export const update = withAuth(
       });
 
       if (!model) {
-        return { error: "Model not found", success: false };
+        return {
+          error: "Model not found",
+          success: false,
+          data: null as unknown as Model,
+        };
       }
 
       revalidatePath("/models");
@@ -193,14 +239,27 @@ export const update = withAuth(
           return {
             error: "A model with this number already exists",
             success: false,
+            data: null as unknown as Model,
           };
         }
         if (error.code === "P2025") {
-          return { error: "Model not found", success: false };
+          return {
+            error: "Model not found",
+            success: false,
+            data: null as unknown as Model,
+          };
         }
-        return { error: `Database error: ${error.code}`, success: false };
+        return {
+          error: `Database error: ${error.code}`,
+          success: false,
+          data: null as unknown as Model,
+        };
       }
-      return { error: "Failed to update model", success: false };
+      return {
+        error: "Failed to update model",
+        success: false,
+        data: null as unknown as Model,
+      };
     } finally {
       await prisma.$disconnect();
     }
@@ -211,7 +270,7 @@ export const update = withAuth(
 export async function updateModel(
   id: string,
   data: Partial<z.infer<typeof modelSchema>>,
-): Promise<ActionResponse<Model>> {
+): Promise<AuthResponse<Model>> {
   const session = getSession();
-  return update(session, id, data);
+  return update(id, data);
 }
