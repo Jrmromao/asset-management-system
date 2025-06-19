@@ -7,15 +7,9 @@ import {
   type CreateAssetInput,
 } from "@/lib/actions/assets.actions";
 import { useAssetUIStore } from "@/lib/stores";
-import type { Asset, AssetResponse } from "@/types/asset";
+import type { Asset } from "@/types/asset";
 
 export const MODEL_KEY = ["assets"] as const;
-
-type ActionResponse<T> = {
-  success: boolean;
-  data: T;
-  error?: string;
-};
 
 export function useAssetQuery() {
   const { onClose } = useAssetUIStore();

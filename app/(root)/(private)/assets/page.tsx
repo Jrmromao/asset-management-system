@@ -125,8 +125,12 @@ const getActiveAssets = (assets: Asset[]): Asset[] => {
 };
 
 const Assets = () => {
-  const { isLoading, data, deleteItem } = useAssetQuery();
-  const assets = data?.data || [];
+  const {
+    isLoading,
+    items: assets,
+    deleteItem,
+    createItem,
+  } = useAssetQuery()();
 
   const [openDialog, closeDialog, isOpen] = useDialogStore((state) => [
     state.onOpen,
