@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
-import { getAll, insert, remove, update } from "@/lib/actions/role.actions";
+import { getAll, insert } from "@/lib/actions/role.actions";
+
+export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   try {

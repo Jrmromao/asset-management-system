@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/app/db";
 import { z } from "zod";
 
+export const dynamic = "force-dynamic";
+
 const CompanySchema = z.object({
   companyName: z.string().min(1),
 });

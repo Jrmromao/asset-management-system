@@ -1,6 +1,8 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/app/db";
 
+export const dynamic = "force-dynamic";
+
 const SUPABASE_WEBHOOK_SECRET = process.env.SUPABASE_WEBHOOK_SECRET;
 
 export async function POST(req: NextRequest) {

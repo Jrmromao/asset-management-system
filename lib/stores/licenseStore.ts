@@ -1,7 +1,8 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import produce from "immer";
-import { getAll, remove, update } from "@/lib/actions/license.actions";
+import { produce } from "immer";
+import { getAll as fetch, remove, update } from "@/lib/actions/license.actions";
+import { License } from "../../types/license";
 
 interface ILicenseStore {
   licenses: License[];
@@ -10,11 +11,13 @@ interface ILicenseStore {
   update: (id: string, updatedLicense: License) => void;
   delete: (id: string) => Promise<void>;
   findById: (id: string) => License | null;
-  getAll: () => void;
+  getAll: () => Promise<void>;
 }
 
+type LicenseStore = ILicenseStore;
+
 export const useLicenseStore = create(
-  persist<ILicenseStore>(
+  persist<LicenseStore>(
     (set, get) => ({
       licenses: [],
       loading: false,
@@ -22,9 +25,9 @@ export const useLicenseStore = create(
       getAll: async () => {
         set({ loading: true });
         try {
-          const result = await getAll();
+          const result = await fetch();
           if (result.success && result.data) {
-            set({ licenses: result.data, loading: false });
+            set({ licenses: result.data as License[], loading: false });
           } else {
             set({ licenses: [], loading: false });
             console.error("Error fetching licenses:", result.error);

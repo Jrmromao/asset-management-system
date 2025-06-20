@@ -5,11 +5,8 @@ import { prisma } from "@/app/db";
 import S3Service from "@/services/aws/S3";
 import { bulkInsertTemplates } from "@/lib/actions/formTemplate.actions";
 import { RegistrationData } from "@/components/providers/UserContext";
-import { parseStringify } from "@/lib/utils";
 import { createSubscription } from "@/lib/actions/subscription.actions";
 import { AuthResponse, withAuth } from "@/lib/middleware/withAuth";
-import { User } from "@prisma/client";
-import { prisma as mainPrisma } from "@/app/db";
 import { supabaseAdmin } from "@/lib/supabaseAdminClient";
 import { cookies } from "next/headers";
 

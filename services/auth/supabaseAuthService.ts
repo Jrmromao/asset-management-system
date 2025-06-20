@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabaseClient";
+import { createClient } from "@/utils/supabase/client";
 import { User } from "@supabase/supabase-js";
 
 interface AuthUserMetadata {
@@ -19,21 +19,16 @@ interface AuthResponse<T> {
   error: Error | null;
 }
 
-export class SupabaseAuthService {
-  private static instance: SupabaseAuthService;
+class SupabaseAuthService {
+  private supabase = createClient();
 
-  private constructor() {}
-
-  public static getInstance(): SupabaseAuthService {
-    if (!SupabaseAuthService.instance) {
-      SupabaseAuthService.instance = new SupabaseAuthService();
-    }
-    return SupabaseAuthService.instance;
-  }
-
-  async createUser({ email, password, metadata }: CreateAuthUserParams): Promise<AuthResponse<User>> {
+  async createUser({
+    email,
+    password,
+    metadata,
+  }: CreateAuthUserParams): Promise<AuthResponse<User>> {
     try {
-      const { data, error } = await supabase.auth.signUp({
+      const { data, error } = await this.supabase.auth.signUp({
         email,
         password,
         options: {
@@ -59,7 +54,7 @@ export class SupabaseAuthService {
 
   async resendVerificationEmail(email: string): Promise<AuthResponse<void>> {
     try {
-      const { error } = await supabase.auth.resend({
+      const { error } = await this.supabase.auth.resend({
         type: "signup",
         email: email,
       });
@@ -82,7 +77,7 @@ export class SupabaseAuthService {
 
   async signIn(email: string, password: string): Promise<AuthResponse<User>> {
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await this.supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -104,4 +99,4 @@ export class SupabaseAuthService {
   }
 }
 
-export const authService = SupabaseAuthService.getInstance(); 
+export const authService = new SupabaseAuthService(); 

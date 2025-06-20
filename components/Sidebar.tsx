@@ -8,7 +8,7 @@ import { usePathname, useRouter } from "next/navigation";
 import Footer from "@/components/Footer";
 import React, { useMemo } from "react";
 import HeaderIcon from "@/components/page/HeaderIcon";
-import { supabase } from "@/lib/supabaseClient";
+import { useSession } from "@/lib/SessionProvider";
 import { User } from "@supabase/supabase-js";
 
 type Role = (typeof roles)[keyof typeof roles];
@@ -78,21 +78,11 @@ SidebarLink.displayName = "SidebarLink";
 const Sidebar = () => {
   const pathName = usePathname();
   const router = useRouter();
+  const { user, session } = useSession();
+  const isLoading = !session;
 
-  const [user, setUser] = React.useState<UserWithMetadata | null>(null);
-  const [isLoading, setIsLoading] = React.useState(true);
-
-  React.useEffect(() => {
-    supabase.auth
-      .getUser()
-      .then(({ data }) => {
-        setUser((data?.user as UserWithMetadata) || null);
-        setIsLoading(false);
-      })
-      .catch(() => setIsLoading(false));
-  }, []);
-
-  const userRole = user?.user_metadata?.role || roles.USER;
+  const userRole =
+    (user as UserWithMetadata)?.user_metadata?.role || roles.USER;
 
   // Memoize filtered links
   const filteredLinks = useMemo(

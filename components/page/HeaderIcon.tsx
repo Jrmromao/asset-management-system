@@ -1,16 +1,12 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React from "react";
 import Link from "next/link";
 import { Leaf } from "lucide-react";
 import { APP_NAME } from "@/constants";
-import { supabase } from "@/lib/supabaseClient";
+import { useSession } from "@/lib/SessionProvider";
 
 const HeaderIcon = () => {
-  const [user, setUser] = useState<any>(null);
-
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setUser(data?.user || null));
-  }, []);
+  const { user } = useSession();
 
   return (
     <Link

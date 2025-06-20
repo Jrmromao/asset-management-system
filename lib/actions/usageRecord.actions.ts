@@ -4,7 +4,7 @@ import { prisma } from "@/app/db";
 import Stripe from "stripe";
 
 import { parseStringify } from "@/lib/utils";
-import { supabase } from "../supabaseClient";
+import { createClient } from "@/utils/supabase/server";
 
 if (!process.env.STRIPE_SECRET_KEY || !process.env.STRIPE_PRICE_ID) {
   throw new Error("Missing required Stripe environment variables");
@@ -14,7 +14,14 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-02-24.acacia",
 });
 
+interface ActionResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: string;
+}
+
 export const getAssetQuota = async (): Promise<ActionResponse<number>> => {
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -32,7 +39,7 @@ export const getAssetQuota = async (): Promise<ActionResponse<number>> => {
 
   const quota = await prisma.subscription.findUnique({
     where: {
-      companyId: "session.user.companyId",
+      companyId: companyId,
     },
     include: {
       usageRecords: {

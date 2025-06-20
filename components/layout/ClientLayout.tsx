@@ -1,78 +1,49 @@
-// components/providers/Providers.tsx
 "use client";
 
+import React from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import { SessionProvider } from "@/lib/SessionProvider";
 import { ThemeProvider } from "@/components/providers/theme-provider";
-import { supabase } from "@/lib/supabaseClient";
-import { type ReactNode, useState } from "react";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "sonner";
 import { SpeedInsights } from "@vercel/speed-insights/next";
-import { Analytics } from "@vercel/analytics/react";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
 import CookieBanner from "@/components/cookies/CookieBanner";
-import { CookiePreferences } from "@/components/cookies/CookieManager";
-import { UserProvider } from "@/components/providers/UserContext";
 
-interface ProvidersProps {
-  children: ReactNode;
-}
+const ClientLayout = ({ children }: { children: React.ReactNode }) => {
+  const [queryClient] = React.useState(() => new QueryClient());
+  const [showGA, setShowGA] = React.useState<boolean>(false);
 
-export default function Providers({ children }: ProvidersProps) {
-  const [queryClient] = useState(
-    () =>
-      new QueryClient({
-        defaultOptions: {
-          queries: {
-            staleTime: 5 * 60 * 1000,
-            gcTime: 10 * 60 * 1000,
-            retry: 1,
-            refetchOnMount: true,
-            refetchOnWindowFocus: false,
-            refetchOnReconnect: true,
-          },
-          mutations: {
-            retry: 1,
-            networkMode: "always",
-          },
-        },
-      }),
-  );
-
-  const [showGA, setShowGA] = useState<boolean>(false);
-
-  const handlePreferencesChange = (preferences: CookiePreferences) => {
+  const handlePreferencesChange = (preferences: any) => {
     setShowGA(preferences.analytics);
   };
 
   return (
     <QueryClientProvider client={queryClient}>
-      <UserProvider>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="newyork"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <Toaster richColors />
-          {showGA && process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID && (
-            <>
+      <TooltipProvider>
+        <SessionProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <Toaster richColors />
+            {showGA && process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID && (
               <GoogleAnalytics
                 GA_MEASUREMENT_ID={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}
               />
-              <Analytics />
-            </>
-          )}
-
-          {children}
-          <CookieBanner onPreferencesChange={handlePreferencesChange} />
-          <SpeedInsights />
-
-          {process.env.NODE_ENV === "development" && (
-            <ReactQueryDevtools initialIsOpen={false} />
-          )}
-        </ThemeProvider>
-      </UserProvider>
+            )}
+            {children}
+            <CookieBanner onPreferencesChange={handlePreferencesChange} />
+            <SpeedInsights />
+          </ThemeProvider>
+        </SessionProvider>
+      </TooltipProvider>
+      <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
   );
-}
+};
+
+export default ClientLayout;

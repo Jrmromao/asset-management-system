@@ -1,9 +1,8 @@
 "use server";
 
 import { prisma } from "@/app/db";
-import { z } from "zod";
-import { categorySchema, assetSchema } from "@/lib/schemas";
-import { Asset, AssetResponse } from "@/types/asset";
+import { assetSchema } from "@/lib/schemas";
+import { AssetResponse } from "@/types/asset";
 import { withAuth } from "@/lib/middleware/withAuth";
 import type { AuthResponse } from "@/lib/middleware/withAuth";
 import type { SupabaseUser } from "@/lib/middleware/withAuth";

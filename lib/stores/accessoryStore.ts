@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import produce from "immer";
+import { produce } from "immer";
 import { getAll as fetch, remove } from "@/lib/actions/accessory.actions";
 
 interface AccessoryState {
@@ -34,7 +34,7 @@ export const useAccessoryStore = create(
         set({ loading: true });
         fetch()
           .then((response) => {
-            set({ accessories: response.data, loading: false });
+            set({ accessories: response.data as Accessory[], loading: false });
           })
           .catch((error) => {
             set({ accessories: [], loading: false });

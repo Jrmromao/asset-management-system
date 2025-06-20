@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useTransition, useEffect, useState } from "react";
+import { useTransition } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -8,14 +8,13 @@ import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useDialogStore } from "@/lib/stores/store";
-import { supabase } from "@/lib/supabaseClient";
+import { useSession } from "@/lib/SessionProvider";
 
 import CustomInput from "@/components/CustomInput";
 import CustomSelect from "@/components/CustomSelect";
 import { userSchema } from "@/lib/schemas";
 import { useUserQuery } from "@/hooks/queries/useUserQuery";
 import { useRoleQuery } from "@/hooks/queries/useRoleQuery";
-import { createUser } from "@/lib/actions/user.actions";
 
 type UserFormValues = z.infer<typeof userSchema>;
 
@@ -28,17 +27,9 @@ const UserForm = ({ id, isUpdate = false }: UserFormProps) => {
   const [isPending, startTransition] = useTransition();
   const { roles } = useRoleQuery();
   const [closeDialog] = useDialogStore((state) => [state.onClose]);
+  const { user } = useSession();
 
   const { createUser, isCreating } = useUserQuery();
-
-  // Add state for companyId
-  const [companyId, setCompanyId] = useState<string | null>(null);
-
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setCompanyId(user?.user_metadata?.companyId ?? null);
-    });
-  }, []);
 
   const form = useForm<UserFormValues>({
     resolver: zodResolver(userSchema),
@@ -56,6 +47,7 @@ const UserForm = ({ id, isUpdate = false }: UserFormProps) => {
   async function onSubmit(data: UserFormValues) {
     startTransition(async () => {
       try {
+        const companyId = user?.user_metadata?.companyId;
         if (!companyId) {
           toast.error("No company associated with your account.");
           return;

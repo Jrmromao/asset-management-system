@@ -17,8 +17,9 @@ type ActionResponse<T> = {
   success: boolean;
 };
 
-const getSession = () => {
-  const cookieStore = cookies();
+const getSession = async () => {
+  const cookieStore = await cookies();
+
   return {
     accessToken: cookieStore.get("sb-access-token")?.value,
     refreshToken: cookieStore.get("sb-refresh-token")?.value,

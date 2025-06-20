@@ -1,8 +1,9 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React from "react";
 import Image from "next/image";
-import { supabase } from "@/lib/supabaseClient";
+import { createClient } from "@/utils/supabase/client";
 import { User } from "@supabase/supabase-js";
+import { useSession } from "@/lib/SessionProvider";
 
 const formatUsername = (user: User | null): string => {
   if (!user) return "Guest";
@@ -29,15 +30,8 @@ const formatUsername = (user: User | null): string => {
 };
 
 const Footer = ({ type = "desktop" }: { type?: "desktop" | "mobile" }) => {
-  const [user, setUser] = useState<User | null>(null);
-
-  useEffect(() => {
-    const getUser = async () => {
-      const { data } = await supabase.auth.getUser();
-      setUser(data?.user || null);
-    };
-    getUser();
-  }, []);
+  const supabase = createClient();
+  const { user } = useSession();
 
   const username = formatUsername(user);
   const firstLetter = username.charAt(0).toUpperCase();

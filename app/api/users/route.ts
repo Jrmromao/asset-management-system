@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAll, createUser } from "@/lib/actions/user.actions";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(req: NextRequest) {
   try {
     const users = await getAll();

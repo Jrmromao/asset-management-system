@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getAll } from "@/lib/actions/assets.actions";
 
+export const dynamic = "force-dynamic";
+
 const assetSchema = z.object({
   name: z.string().min(1, "Name is required"),
   description: z.string().optional(),
@@ -20,11 +22,7 @@ export async function GET() {
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    const assets = await getAll({
-      accessToken: session.access_token,
-      refreshToken: session.refresh_token,
-      user: session.user,
-    });
+    const assets = await getAll();
 
     return NextResponse.json({ data: assets });
   } catch (error) {

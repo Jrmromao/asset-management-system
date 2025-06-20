@@ -209,15 +209,6 @@ export const remove = withAuth(
   },
 );
 
-// Client-side wrappers
-const getSession = () => {
-  const cookieStore = cookies();
-  return {
-    accessToken: cookieStore.get("sb-access-token")?.value,
-    refreshToken: cookieStore.get("sb-refresh-token")?.value,
-  };
-};
-
 export async function createSupplier(values: z.infer<typeof supplierSchema>) {
   return insert(values);
 }

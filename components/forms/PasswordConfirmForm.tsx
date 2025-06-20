@@ -12,8 +12,8 @@ import { FormError } from "@/components/forms/form-error";
 import { useRouter } from "next/navigation";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { toast } from "sonner";
-import { supabase } from "@/lib/supabaseClient";
 import HeaderIcon from "@/components/page/HeaderIcon";
+import { resetPassword } from "@/lib/actions/user.actions";
 
 const PasswordConfirmForm = () => {
   const [error, setError] = useState<string>("");
@@ -33,15 +33,12 @@ const PasswordConfirmForm = () => {
   ) => {
     startTransition(async () => {
       try {
-        const { newPassword } = data;
-        const { error } = await supabase.auth.updateUser({
-          password: newPassword,
-        });
-        if (!error) {
+        const result = await resetPassword(data);
+        if (result.success) {
           toast.message("Password reset successful, please log in!");
           router.push("/sign-in");
         } else {
-          setError(error.message || "Password reset failed");
+          setError(result.error || "Password reset failed");
         }
       } catch (e) {
         setError("Unexpected error during password reset");

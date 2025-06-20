@@ -3,8 +3,7 @@
     "lib": [
       "dom",
       "dom.iterable",
-      "esnext",
-      "es6"
+      "esnext"
     ],
     "allowJs": true,
     "skipLibCheck": true,
@@ -27,7 +26,7 @@
         "./*"
       ]
     },
-    "target": "ES2017"
+    "target": "es5"
   },
   "include": [
     "next-env.d.ts",

@@ -1,7 +1,12 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import produce from "immer";
-import { createUser, getAll, remove } from "@/lib/actions/user.actions";
+import { produce } from "immer";
+import {
+  createUser,
+  getAll as fetch,
+  remove,
+} from "@/lib/actions/user.actions";
+import { User } from "@/types/user";
 
 interface IUserStore {
   users: User[];
@@ -25,7 +30,7 @@ export const useUserStore = create(
       getAll: async () => {
         set({ loading: true });
         try {
-          const result = await getAll();
+          const result = await fetch();
           if (result.success && result.data) {
             set({ users: result.data, loading: false });
           } else {
@@ -45,8 +50,8 @@ export const useUserStore = create(
             firstName: data.firstName,
             lastName: data.lastName,
             companyId: data.companyId!,
-            title: data.title,
-            employeeId: data.employeeId,
+            title: data.title || "",
+            employeeId: data.employeeId || "",
             roleId: data.roleId!,
           });
 

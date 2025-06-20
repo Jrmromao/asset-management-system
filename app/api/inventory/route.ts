@@ -7,8 +7,10 @@ import {
 } from "@/lib/actions/inventory.actions";
 import { cookies } from "next/headers";
 
-const getSession = () => {
-  const cookieStore = cookies();
+export const dynamic = "force-dynamic";
+
+const getSession = async () => {
+  const cookieStore = await cookies();
   return {
     accessToken: cookieStore.get("sb-access-token")?.value,
     refreshToken: cookieStore.get("sb-refresh-token")?.value,
@@ -17,7 +19,7 @@ const getSession = () => {
 
 export async function GET(request: NextRequest) {
   try {
-    const session = getSession();
+    const session = await getSession();
     const result = await getAllInventories();
 
     if (!result.success) {

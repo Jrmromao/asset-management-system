@@ -1,6 +1,8 @@
 import Stripe from "stripe";
 import { prisma } from "@/app/db";
-import { CompanyStatus, PlanType } from "@prisma/client";
+import { CompanyStatus } from "@prisma/client";
+
+export const dynamic = "force-dynamic";
 
 // Validate required environment variables
 const requiredEnvVars = {

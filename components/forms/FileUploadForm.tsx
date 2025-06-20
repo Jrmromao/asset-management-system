@@ -10,12 +10,8 @@ import { useDialogStore } from "@/lib/stores/store";
 import Dropzone from "@/components/Dropzone";
 import { useAssetStore } from "@/lib/stores/assetStore";
 import { toast } from "sonner";
-import { processAccessoryCSV } from "@/lib/actions/accessory.actions";
-import {
-  processAssetsCSV,
-  generateAssetCSVTemplate,
-} from "@/lib/actions/assets.actions";
-import { supabase } from "@/lib/supabaseClient";
+import { generateAssetCSVTemplate } from "@/lib/actions/assets.actions";
+import { useSession } from "@/lib/SessionProvider";
 
 interface FileUploadFormProps {
   dataType: string;
@@ -26,6 +22,7 @@ const FileUploadForm = ({ dataType }: FileUploadFormProps) => {
   const [closeDialog] = useDialogStore((state) => [state.onClose]);
   const [file, setFile] = useState<File | null>(null);
   const { getAll } = useAssetStore();
+  const { user } = useSession();
   const schema = z.object({
     file: z.any(),
   });
@@ -58,9 +55,6 @@ const FileUploadForm = ({ dataType }: FileUploadFormProps) => {
     }
     setIsLoading(true);
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
       if (!user) {
         toast.error("You must be logged in to upload files.");
         return;
@@ -108,10 +102,13 @@ const FileUploadForm = ({ dataType }: FileUploadFormProps) => {
     setFile(csvFile);
   };
 
-  const handleDownloadTemplate = () => {
+  const handleDownloadTemplate = async () => {
     let template = "";
     if (dataType === "assets") {
-      template = generateAssetCSVTemplate();
+      const result = await generateAssetCSVTemplate();
+      if (result.success) {
+        template = result.data || "";
+      }
     }
     // Add other data types here
 
