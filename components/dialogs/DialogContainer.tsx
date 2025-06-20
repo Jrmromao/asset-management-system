@@ -27,7 +27,6 @@ export function DialogContainer({
     <div className={"asset-dialog"}>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-[725px]">
-          <Progress value={4} />
           <DialogHeader>
             <DialogTitle>{title}</DialogTitle>
             <DialogDescription className="text-gray-500 text-sm">

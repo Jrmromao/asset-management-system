@@ -313,7 +313,7 @@ export const update = withAuth(
     try {
       const existingAsset = await prisma.asset.findUnique({
         where: { id },
-        select: { id: true, name: true, serialNumber: true },
+        include: { values: true },
       });
 
       if (!existingAsset) {
@@ -329,9 +329,28 @@ export const update = withAuth(
         };
       }
 
+      const { templateValues, ...assetData } = validation.data;
+
       const asset = await prisma.asset.update({
         where: { id },
-        data: validation.data,
+        data: {
+          ...assetData,
+          values: {
+            deleteMany: {
+              assetId: id,
+            },
+            create: templateValues
+              ? [
+                  {
+                    values: templateValues,
+                    formTemplate: {
+                      connect: { id: assetData.formTemplateId },
+                    },
+                  },
+                ]
+              : [],
+          },
+        },
         include: {
           model: true,
           user: true,
@@ -340,6 +359,7 @@ export const update = withAuth(
           statusLabel: true,
           department: true,
           inventory: true,
+          values: true,
         },
       });
 

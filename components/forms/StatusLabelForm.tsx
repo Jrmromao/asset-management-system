@@ -1,13 +1,21 @@
 "use client";
 
-import React, { useCallback, useState } from "react";
+import React, { useCallback } from "react";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
-import { Form } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import type { StatusLabel } from "@prisma/client";
 
 import CustomInput from "@/components/CustomInput";
 import CustomColorPicker from "@/components/CustomColorPicker";
@@ -15,23 +23,23 @@ import CustomSwitch from "@/components/CustomSwitch";
 
 import { statusLabelSchema } from "@/lib/schemas";
 import { useStatusLabelsQuery } from "@/hooks/queries/useStatusLabelsQuery";
-import type { StatusLabel } from "@prisma/client";
+import { useStatusLabelUIStore } from "@/lib/stores/useStatusLabelUIStore";
+import { useRealTimeValidation } from "@/hooks/useRealTimeValidation";
 
 type FormValues = z.infer<typeof statusLabelSchema>;
 
 interface StatusLabelFormProps {
   initialData?: StatusLabel;
-  onClose: () => void;
   onSubmitSuccess?: () => void;
 }
 
 export default function StatusLabelForm({
   initialData,
-  onClose,
   onSubmitSuccess,
 }: StatusLabelFormProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const { createStatusLabel, updateStatusLabel } = useStatusLabelsQuery();
+  const { onClose } = useStatusLabelUIStore();
+  const { createStatusLabel, updateStatusLabel, isCreating, isUpdating } =
+    useStatusLabelsQuery();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(statusLabelSchema),
@@ -44,70 +52,74 @@ export default function StatusLabelForm({
     },
   });
 
+  const watchedName = form.watch("name");
+  const {
+    isValid: isNameUnique,
+    message: nameErrorMessage,
+    isChecking: isNameChecking,
+  } = useRealTimeValidation({
+    endpoint: "status-label",
+    field: "Name",
+    value: watchedName,
+    excludeId: initialData?.id,
+  });
+
+  const isLoading = isCreating || isUpdating;
+
   const handleSubmit = useCallback(
     async (data: FormValues) => {
       try {
-        setIsSubmitting(true);
-        const formData = {
-          name: data.name,
-          description: data.description,
-          colorCode: data.colorCode ?? "#000000",
-          isArchived: data.isArchived ?? false,
-          allowLoan: data.allowLoan ?? true,
-        };
-
         if (initialData) {
-          await updateStatusLabel(initialData.id, formData, {
-            onSuccess: () => {
-              form.reset();
-              onSubmitSuccess?.();
-              onClose();
-              toast.success("Status label updated successfully");
-            },
-            onError: (error: Error) => {
-              toast.error(error.message || "Failed to update status label");
-            },
-          });
+          await updateStatusLabel(initialData.id, data);
+          toast.success("Status label updated");
         } else {
-          await createStatusLabel(formData, {
-            onSuccess: () => {
-              form.reset();
-              onSubmitSuccess?.();
-              onClose();
-              toast.success("Status label created successfully");
-            },
-            onError: (error: Error) => {
-              toast.error(error.message || "Failed to create status label");
-            },
-          });
+          await createStatusLabel(data);
+          toast.success("Status label created");
         }
-      } catch (error: unknown) {
-        const message =
-          error instanceof Error ? error.message : "An error occurred";
-        toast.error(message);
-      } finally {
-        setIsSubmitting(false);
+        onSubmitSuccess?.();
+        onClose();
+      } catch (error) {
+        toast.error("An error occurred. Please try again.");
       }
     },
     [
-      createStatusLabel,
-      updateStatusLabel,
       initialData,
-      form,
-      onClose,
+      updateStatusLabel,
+      createStatusLabel,
       onSubmitSuccess,
+      onClose,
     ],
   );
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-        <CustomInput
+        <FormField
           control={form.control}
           name="name"
-          label="Name"
-          placeholder="Enter status label name"
-          disabled={isSubmitting}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Name</FormLabel>
+              <FormControl>
+                <CustomInput
+                  {...field}
+                  control={form.control}
+                  placeholder="Enter status label name"
+                  disabled={isLoading}
+                  required
+                />
+              </FormControl>
+              {isNameChecking && (
+                <p className="text-sm text-gray-500">Checking...</p>
+              )}
+              {!isNameUnique && (
+                <p className="text-sm font-medium text-destructive">
+                  {nameErrorMessage}
+                </p>
+              )}
+              <FormMessage />
+            </FormItem>
+          )}
         />
 
         <CustomInput
@@ -115,42 +127,52 @@ export default function StatusLabelForm({
           name="description"
           label="Description"
           placeholder="Enter status label description"
-          disabled={isSubmitting}
+          disabled={isLoading}
         />
 
         <CustomColorPicker
           control={form.control}
           name="colorCode"
           label="Color"
-          disabled={isSubmitting}
+          disabled={isLoading}
+          required
         />
 
         <CustomSwitch
           control={form.control}
           name="isArchived"
           label="Archived"
-          disabled={isSubmitting}
+          disabled={isLoading}
         />
 
         <CustomSwitch
           control={form.control}
           name="allowLoan"
           label="Allow Loan"
-          disabled={isSubmitting}
+          disabled={isLoading}
         />
 
-        <div className="flex justify-end space-x-2">
+        <div className="flex justify-end space-x-2 pt-4">
           <Button
             type="button"
             variant="outline"
             onClick={onClose}
-            disabled={isSubmitting}
+            disabled={isLoading}
           >
             Cancel
           </Button>
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {initialData ? "Update" : "Create"}
+          <Button
+            type="submit"
+            disabled={isLoading || isNameChecking || !isNameUnique}
+          >
+            {isLoading || isNameChecking ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : null}
+            {isNameChecking
+              ? "Validating..."
+              : initialData
+                ? "Update"
+                : "Create"}
           </Button>
         </div>
       </form>

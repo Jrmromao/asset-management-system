@@ -140,6 +140,17 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
     mode: "onSubmit",
   });
 
+  // Fetch purchase orders on mount
+  useEffect(() => {
+    const fetchPurchaseOrders = async () => {
+      const response = await getPurchaseOrders();
+      if (response.success && response.data) {
+        setPurchaseOrders(response.data);
+      }
+    };
+    fetchPurchaseOrders();
+  }, []);
+
   // Load existing asset data for updates
   useEffect(() => {
     if (!isUpdate || !id || isDataLoaded || !assets) return;
@@ -393,9 +404,14 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
         inventoryId: data.inventoryId,
         locationId: data.locationId,
         formTemplateId: data.formTemplateId,
-        purchaseOrderId: data.purchaseOrderId,
+        purchaseOrderId: data.purchaseOrderId || undefined,
         templateValues: data.templateValues || {},
       };
+
+      // If purchaseOrderId is an empty string, convert it to null
+      if (assetData.purchaseOrderId === "") {
+        assetData.purchaseOrderId = undefined;
+      }
 
       console.log("[FORM_SUBMIT] Submitting asset data:", assetData);
 

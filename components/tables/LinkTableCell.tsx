@@ -45,24 +45,17 @@ const CustomTableCell = ({
   };
 
   return (
-    <>
-      <TableCell
-        className={`min-w-32 pl-2 pr-10 ${label?.colorCode ? `underline decoration-[${label?.colorCode}]` : ""}`}
-        onClick={() => navigate.push(navigateTo || "#")}
+    <div
+      className={`flex min-w-32 cursor-pointer ${label?.colorCode ? `underline decoration-[${label?.colorCode}]` : ""}`}
+      onClick={() => navigate.push(navigateTo || "#")}
+    >
+      <div className={`w-9/12 ${value ? className : ""}`}>{value || "-"}</div>
+      <div
+        className={`w-3/12 ${label?.colorCode ? `underline decoration-[${label?.colorCode}]` : ""}`}
       >
-        <div className="flex">
-          <div className={`w-9/12 ${value ? className : ""}`}>
-            {" "}
-            {value ? value : "-"}
-          </div>
-          <div
-            className={`w-3/12 ${label?.colorCode ? `underline decoration-[${label?.colorCode}]` : ``}`}
-          >
-            {label ? InfoPopover(label?.description, label?.colorCode) : null}
-          </div>
-        </div>
-      </TableCell>
-    </>
+        {label ? InfoPopover(label?.description, label?.colorCode) : null}
+      </div>
+    </div>
   );
 };
 

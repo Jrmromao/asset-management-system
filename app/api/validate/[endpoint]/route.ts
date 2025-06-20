@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/app/db";
+import { withAuth } from "@/lib/middleware/withAuth";
 
 export async function POST(
   req: Request,
@@ -8,166 +9,136 @@ export async function POST(
   try {
     const body = await req.json();
 
-    // Special handling for assignment validation
     if (params.endpoint === "assignment") {
-      const { userId, itemId, type } = body;
+      const { accessoryId, licenseId } = body;
+      const whereClause: any = {};
 
-      if (!userId || !itemId || !type) {
+      if (accessoryId) {
+        whereClause.accessoryId = accessoryId;
+      }
+      if (licenseId) {
+        whereClause.licenseId = licenseId;
+      }
+
+      const existingAssignment = await prisma.userItem.findFirst({
+        where: whereClause,
+      });
+
+      const exists = existingAssignment !== null;
+      return NextResponse.json({ exists });
+    }
+
+    if (params.endpoint === "asset-tag") {
+      const { assetTag, excludeId } = body;
+      const whereClause: any = {
+        assetTag: {
+          equals: assetTag,
+          mode: "insensitive",
+        },
+      };
+
+      if (excludeId) {
+        whereClause.id = { not: excludeId };
+      }
+
+      const existingAsset = await prisma.asset.findFirst({
+        where: whereClause,
+      });
+
+      const exists = existingAsset !== null;
+      return NextResponse.json({ exists });
+    }
+
+    // Special handling for status label validation
+    if (params.endpoint === "status-label") {
+      const { name, excludeId } = body;
+
+      if (!name) {
         return NextResponse.json(
-          { error: "userId, itemId, and type are required" },
+          { error: "name is required" },
           { status: 400 },
         );
       }
 
-      let exists = false;
+      // Define the handler function
+      const validateStatusLabel = withAuth(async (user: any) => {
+        if (!user.user_metadata?.companyId) {
+          return {
+            success: false,
+            error: "User not associated with company",
+            data: null,
+          };
+        }
 
-      switch (type) {
-        case "accessory":
-          const existingAccessory = await prisma.userItem.findFirst({
-            where: {
-              AND: [{ userId: userId }, { accessoryId: itemId }],
-            },
-          });
-          exists = existingAccessory !== null;
-          break;
+        const whereClause: any = {
+          name: {
+            equals: name.trim(),
+            mode: "insensitive",
+          },
+          companyId: user.user_metadata.companyId,
+        };
 
-        case "license":
-          const existingLicense = await prisma.userItem.findFirst({
-            where: {
-              AND: [{ userId: userId }, { licenseId: itemId }],
-            },
-          });
-          exists = existingLicense !== null;
-          break;
-        case "asset":
-          const existingAsset = await prisma.asset.findFirst({
-            where: {
-              AND: [{ assigneeId: userId }, { id: itemId }],
-            },
-          });
+        // Exclude current item if updating
+        if (excludeId) {
+          whereClause.id = { not: excludeId };
+        }
 
-          console.log(existingAsset);
+        const existingStatusLabel = await prisma.statusLabel.findFirst({
+          where: whereClause,
+        });
 
-          exists = existingAsset !== null;
-          break;
+        return {
+          success: true,
+          data: {
+            exists: existingStatusLabel !== null,
+          },
+        };
+      });
 
-        default:
-          return NextResponse.json(
-            { error: "Invalid assignment type" },
-            { status: 400 },
-          );
+      // Call the wrapped function
+      const authResult = await validateStatusLabel();
+
+      if (!authResult.success) {
+        return NextResponse.json({ error: authResult.error }, { status: 401 });
       }
 
-      return NextResponse.json({ exists });
+      // We can safely assume data is not null here because success is true
+      return NextResponse.json({ exists: authResult.data!.exists });
     }
 
     // Original validation logic for other endpoints
     const [field, value] = Object.entries(body)[0];
 
     if (!value) {
-      return NextResponse.json(
-        { error: `${field} is required` },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: `${field} is required` });
     }
 
-    let exists = false;
-
-    switch (params.endpoint) {
-      case "company":
-        const company = await prisma.company.findFirst({
-          where: {
-            name: {
-              equals: value as string,
-              mode: "insensitive",
-            },
-          },
-        });
-        exists = company !== null;
-        break;
-
-      case "employeeId":
-        const employeeCheck = await prisma.user.findFirst({
-          where: {
-            employeeId: {
-              equals: value as string,
-              mode: "insensitive",
-            },
-          },
-        });
-        exists = employeeCheck !== null;
-        break;
-
-      case "email":
-        const user = await prisma.user.findFirst({
-          where: {
-            email: {
-              equals: value as string,
-              mode: "insensitive",
-            },
-          },
-        });
-        exists = user !== null;
-        break;
-
-      case "serialNum":
-        const assetSerialNumber = await prisma.asset.findFirst({
-          where: {
-            serialNumber: {
-              equals: value as string,
-              mode: "insensitive",
-            },
-          },
-        });
-        exists = assetSerialNumber !== null;
-        break;
-
-      case "poNumber":
-        const assetPONumber = await prisma.asset.findFirst({
-          where: {
-            poNumber: {
-              equals: value as string,
-              mode: "insensitive",
-            },
-          },
-        });
-
-        const accessoryPONumber = await prisma.accessory.findFirst({
-          where: {
-            poNumber: {
-              equals: value as string,
-              mode: "insensitive",
-            },
-          },
-        });
-
-        const licensePONumber = await prisma.license.findFirst({
-          where: {
-            poNumber: {
-              equals: value as string,
-              mode: "insensitive",
-            },
-          },
-        });
-
-        exists =
-          assetPONumber !== null ||
-          accessoryPONumber !== null ||
-          licensePONumber !== null;
-        break;
-
-      default:
-        return NextResponse.json(
-          { error: "Invalid endpoint" },
-          { status: 400 },
-        );
+    const modelName = params.endpoint as keyof typeof prisma;
+    if (!modelName || !prisma[modelName]) {
+      return NextResponse.json({ error: "Invalid endpoint" });
     }
 
-    return NextResponse.json({ exists });
+    const model = prisma[modelName] as any;
+
+    const whereClause: any = {
+      [field]: {
+        equals: value,
+        mode: "insensitive",
+      },
+    };
+
+    if (body.excludeId) {
+      whereClause.id = { not: body.excludeId };
+    }
+
+    const record = await model.findFirst({
+      where: whereClause,
+    });
+
+    return NextResponse.json({ exists: record !== null });
   } catch (error) {
-    console.error("Validation error:", error);
     return NextResponse.json(
-      { error: "Error during validation" },
+      { error: "Internal Server Error" },
       { status: 500 },
     );
   }

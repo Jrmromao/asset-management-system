@@ -128,7 +128,6 @@ export function createGenericQuery<
         toast.success(
           options?.successMessage || `${queryKey[0]} created successfully`,
         );
-        onClose?.();
         return data;
       },
       onSettled: () => {
@@ -172,7 +171,6 @@ export function createGenericQuery<
         toast.success(
           options?.successMessage || `${queryKey[0]} deleted successfully`,
         );
-        onClose?.();
       },
       onSettled: () => {
         queryClient.invalidateQueries({ queryKey });
@@ -217,7 +215,6 @@ export function createGenericQuery<
           options?.updateSuccessMessage ||
             `${queryKey[0]} updated successfully`,
         );
-        onClose?.();
       },
       onSettled: () => {
         queryClient.invalidateQueries({ queryKey });

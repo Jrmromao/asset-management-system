@@ -13,38 +13,26 @@ import type { StatusLabel } from "@prisma/client";
 export const MODEL_KEY = ["statusLabels"] as const;
 
 type CreateStatusLabelInput = z.infer<typeof statusLabelSchema>;
-type UpdateStatusLabelInput = Partial<CreateStatusLabelInput>;
-type ActionResponse<T> = { data?: T; error?: string; success: boolean };
-
-type CrudActions = {
-  getAll: () => Promise<ActionResponse<StatusLabel[]>>;
-  insert: (
-    data: CreateStatusLabelInput,
-  ) => Promise<ActionResponse<StatusLabel>>;
-  delete: (id: string) => Promise<ActionResponse<StatusLabel>>;
-  update: (
-    id: string,
-    data: UpdateStatusLabelInput,
-  ) => Promise<ActionResponse<StatusLabel>>;
-};
-
-const statusLabelActions: CrudActions = {
-  getAll: () =>
-    getAllStatusLabels({}) as Promise<ActionResponse<StatusLabel[]>>,
-  insert: (data: CreateStatusLabelInput) =>
-    createStatusLabelAction(data) as Promise<ActionResponse<StatusLabel>>,
-  delete: (id: string) =>
-    deleteStatusLabelAction(id) as Promise<ActionResponse<StatusLabel>>,
-  update: (id: string, data: UpdateStatusLabelInput) =>
-    updateStatusLabelAction(id, data) as Promise<ActionResponse<StatusLabel>>,
-};
 
 export function useStatusLabelsQuery() {
   const { onClose } = useStatusLabelUIStore();
 
   const genericQuery = createGenericQuery<StatusLabel, CreateStatusLabelInput>(
     MODEL_KEY,
-    statusLabelActions,
+    {
+      getAll: async () => {
+        return await getAllStatusLabels();
+      },
+      insert: async (data: CreateStatusLabelInput) => {
+        return await createStatusLabelAction(data);
+      },
+      delete: async (id: string) => {
+        return await deleteStatusLabelAction(id);
+      },
+      update: async (id: string, data: CreateStatusLabelInput) => {
+        return await updateStatusLabelAction(id, data);
+      },
+    },
     {
       onClose,
       successMessage: "Status label created successfully",
@@ -77,9 +65,9 @@ export function useStatusLabelsQuery() {
     createStatusLabel,
     updateStatusLabel,
     deleteStatusLabel,
+    isCreating,
     isDeleting,
     isUpdating,
-    isCreating,
     refresh,
   };
 }

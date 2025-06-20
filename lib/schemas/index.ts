@@ -188,7 +188,7 @@ export const forgotPasswordSchema = z.object({
 
 export const statusLabelSchema = z.object({
   ...nameField("Status Label"),
-  description: z.string().min(1, "Description is required"),
+  description: z.string().optional(),
   colorCode: z.string().optional(),
   isArchived: z.boolean().optional(),
   allowLoan: z.boolean().optional(),
@@ -273,7 +273,7 @@ export const modelSchema = z.object({
 });
 
 export const locationSchema = z.object({
-  ...nameField("Location"),
+  ...nameField("Location name"),
   ...addressFields,
 });
 

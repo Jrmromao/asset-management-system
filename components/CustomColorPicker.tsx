@@ -1,12 +1,13 @@
 import { useController } from "react-hook-form";
 import { HexColorPicker } from "react-colorful";
-import { FormControl, FormField, FormLabel, FormMessage } from "./ui/form";
+import { FormControl, FormField, FormLabel } from "./ui/form";
 
 interface CustomColorInputProps {
   label: string;
   name: string;
   control: any;
   disabled?: boolean;
+  required?: boolean;
 }
 
 const CustomColorPicker = ({
@@ -14,30 +15,31 @@ const CustomColorPicker = ({
   name,
   label,
   disabled,
+  required,
 }: CustomColorInputProps) => {
   const {
     field: { onChange, value },
-    fieldState: { error },
   } = useController({
     name,
     control,
-    defaultValue: "#rrggbb", // Default initial color
+    defaultValue: "#rrggbb",
   });
 
   return (
     <FormField
       control={control}
       name={name}
-      render={({ field }) => (
+      render={() => (
         <div className={"form-item"}>
-          <FormLabel>{label}</FormLabel>
+          <FormLabel>
+            {label}
+            {required && <span className="text-destructive"> *</span>}
+          </FormLabel>
           <div className={"flex w-full flex-col"}>
             <FormControl>
-              <HexColorPicker
-                color={value}
-                onChange={onChange}
-                disabled={disabled}
-              />
+              <div className={disabled ? "pointer-events-none opacity-50" : ""}>
+                <HexColorPicker color={value} onChange={onChange} />
+              </div>
             </FormControl>
           </div>
         </div>
