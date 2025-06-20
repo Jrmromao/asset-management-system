@@ -363,27 +363,29 @@ const Assets = () => {
 
       <StatusCards cards={cardData} columns={3} />
 
-      <DataTableHeader
-        table={table}
-        title="Asset List"
-        addNewText="Add Asset"
-        onAddNew={handleCreateNew}
-        onRefresh={() => table.resetColumnFilters()}
-        onImport={handleImport}
-        onExport={handleExport}
-        isLoading={isLoading || isPending}
-        filterPlaceholder="Search assets..."
-      />
+      <div className="space-y-4">
+        <DataTableHeader
+          table={table}
+          addNewText="Add Asset"
+          onAddNew={handleCreateNew}
+          onImport={handleImport}
+          onExport={handleExport}
+          isLoading={isLoading || isPending}
+          filterPlaceholder="Search assets..."
+          className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm"
+          showFilter={false}
+        />
 
-      <Card className="dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-        <CardContent className="p-0">
-          <DataTable
-            columns={columns}
-            data={filteredData}
-            isLoading={isLoading || isPending}
-          />
-        </CardContent>
-      </Card>
+        <Card className="dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+          <CardContent className="p-0">
+            <DataTable
+              columns={columns}
+              data={filteredData}
+              isLoading={isLoading || isPending}
+            />
+          </CardContent>
+        </Card>
+      </div>
 
       <FilterDialog
         open={filterDialogOpen}

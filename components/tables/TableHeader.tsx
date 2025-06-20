@@ -47,7 +47,6 @@ export function DataTableHeader<TData>({
   title,
   addNewText = "Add New",
   onAddNew,
-  onRefresh,
   onImport,
   onExport,
   isLoading,
@@ -63,10 +62,6 @@ export function DataTableHeader<TData>({
   showAddNew = true,
   children,
 }: DataTableHeaderProps<TData>) {
-  const globalFilter = table
-    .getColumn("globalFilter")
-    ?.getFilterValue() as string;
-
   return (
     <motion.div
       initial={{ opacity: 0, y: -20 }}
@@ -74,30 +69,19 @@ export function DataTableHeader<TData>({
       transition={{ duration: 0.5 }}
       className={cn("mb-4", className)}
     >
-      <div className="flex items-center justify-between">
-        <div className="flex flex-1 items-center space-x-2">
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-1 items-center space-x-3">
           {title && (
             <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
           )}
-          {onRefresh && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onRefresh}
-              disabled={isLoading}
-              className="h-8 w-8"
-            >
-              <ReloadIcon
-                className={cn("h-4 w-4", isLoading && "animate-spin")}
-              />
-            </Button>
-          )}
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-3">
           {showSearch && (
             <Input
               placeholder={searchPlaceholder}
-              value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
+              value={
+                (table.getColumn("name")?.getFilterValue() as string) ?? ""
+              }
               onChange={(event) =>
                 table.getColumn("name")?.setFilterValue(event.target.value)
               }
@@ -115,7 +99,7 @@ export function DataTableHeader<TData>({
             </Button>
           )}
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-3">
           {showAddNew && (
             <Button
               variant="outline"
@@ -149,23 +133,11 @@ export function DataTableHeader<TData>({
               Export
             </Button>
           )}
-          {onRefresh && (
-            <Button
-              variant="outline"
-              className="h-9 px-2 lg:px-3 dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700"
-              onClick={onRefresh}
-              disabled={isLoading}
-            >
-              <ReloadIcon
-                className={cn("h-4 w-4", { "animate-spin": isLoading })}
-              />
-            </Button>
-          )}
         </div>
       </div>
 
       {showFilter && (
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-3 mt-4">
           <Select onValueChange={onFilter}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Filter by..." />
