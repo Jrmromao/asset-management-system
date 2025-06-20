@@ -10,7 +10,7 @@ import { useCallback } from "react";
 
 interface MutationContext {
   previousData: unknown;
-} 
+}
 
 interface UseGenericQueryOptions<T>
   extends Omit<UseQueryOptions<T[], Error>, "queryKey" | "queryFn"> {

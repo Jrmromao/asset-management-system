@@ -4,39 +4,46 @@ import { z } from "zod";
 import { locationSchema } from "@/lib/schemas";
 import {
   getAllLocations,
-  createLocation,
-  deleteLocation,
-  updateLocation,
+  createLocation as createLocationAction,
+  deleteLocation as deleteLocationAction,
+  updateLocation as updateLocationAction,
 } from "@/lib/actions/location.actions";
 
 export const MODEL_KEY = ["locations"] as const;
 
 type CreateLocationInput = z.infer<typeof locationSchema>;
-type GenericQueryType = ReturnType<typeof createGenericQuery<DepartmentLocation, CreateLocationInput>>;
 
 export function useLocationQuery() {
   const { onClose } = useLocationUIStore();
 
-  const genericQuery: GenericQueryType = createGenericQuery<DepartmentLocation, CreateLocationInput>(
+  const genericQuery = createGenericQuery<
+    DepartmentLocation,
+    CreateLocationInput,
+    CreateLocationInput
+  >(
     MODEL_KEY,
     {
       getAll: async () => {
         return await getAllLocations();
       },
       insert: async (data: CreateLocationInput) => {
-        return await createLocation(data);
+        return await createLocationAction(data);
       },
       delete: async (id: string) => {
-        return await deleteLocation(id);
+        return await deleteLocationAction(id);
       },
       update: async (id: string, data: CreateLocationInput) => {
-        return await updateLocation(id, data as any);
+        return await updateLocationAction(id, data);
       },
     },
     {
       onClose,
       successMessage: "Location created successfully",
+      updateSuccessMessage: "Location updated successfully",
+      deleteSuccessMessage: "Location deleted successfully",
       errorMessage: "Failed to create location",
+      updateErrorMessage: "Failed to update location",
+      deleteErrorMessage: "Failed to delete location",
       staleTime: 5 * 60 * 1000, // 5 minutes
     },
   );

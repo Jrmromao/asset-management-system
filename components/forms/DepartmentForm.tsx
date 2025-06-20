@@ -20,7 +20,8 @@ const DepartmentForm = ({
 }: FormProps<Department>) => {
   const [isPending, startTransition] = useTransition();
   const { onClose } = useDepartmentUIStore();
-  const { createDepartment, updateDepartment } = useDepartmentQuery();
+  const { createDepartment, updateDepartment, isCreating, isUpdating } =
+    useDepartmentQuery();
 
   const form = useForm<z.infer<typeof departmentSchema>>({
     resolver: zodResolver(departmentSchema),
@@ -38,30 +39,37 @@ const DepartmentForm = ({
               toast.success("Department updated successfully");
               onSubmitSuccess?.();
               onClose();
-              form.reset();
             },
             onError: (error: any) => {
               console.error("Error updating department:", error);
+              toast.error("Failed to update department");
+            },
+          });
+        } else {
+          await createDepartment(data, {
+            onSuccess: () => {
+              toast.success("Department created successfully");
+              onSubmitSuccess?.();
+              onClose();
+            },
+            onError: (error: any) => {
+              console.error("Error creating department:", error);
+              toast.error("Failed to create department");
             },
           });
         }
-
-        await createDepartment(data, {
-          onSuccess: () => {
-            toast.success("Department created successfully");
-            onClose();
-            form.reset();
-          },
-          onError: (error: any) => {
-            console.error("Error creating department:", error);
-          },
-        });
       } catch (error) {
-        console.error("Department creation error:", error);
-        toast.error("Failed to create department");
+        console.error("Department operation error:", error);
+        toast.error(
+          initialData
+            ? "Failed to update department"
+            : "Failed to create department",
+        );
       }
     });
   };
+
+  const isLoading = isPending || isCreating || isUpdating;
 
   return (
     <Form {...form}>
@@ -73,7 +81,7 @@ const DepartmentForm = ({
           type="text"
           required
           placeholder="Enter department name"
-          disabled={isPending}
+          disabled={isLoading}
           tooltip="A unique name for this department."
         />
 
@@ -85,16 +93,16 @@ const DepartmentForm = ({
               form.reset();
               onClose();
             }}
-            disabled={isPending}
+            disabled={isLoading}
           >
             Cancel
           </Button>
 
-          <Button type="submit" disabled={isPending} className="min-w-[120px]">
-            {isPending ? (
+          <Button type="submit" disabled={isLoading} className="min-w-[120px]">
+            {isLoading ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Creating...
+                {initialData ? "Updating..." : "Creating..."}
               </>
             ) : (
               <>{initialData ? "Update" : "Create"}</>

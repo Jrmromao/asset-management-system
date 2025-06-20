@@ -26,14 +26,22 @@ export const insert = withAuth(
     try {
       const validation = departmentSchema.safeParse(data);
       if (!validation.success) {
-        return { success: false, data: null as any, error: validation.error.errors[0].message };
+        return {
+          success: false,
+          data: null as any,
+          error: validation.error.errors[0].message,
+        };
       }
-      
+
       // Check if user has a companyId
       if (!user.user_metadata?.companyId) {
-        return { success: false, data: null as any, error: "User is not associated with a company" };
+        return {
+          success: false,
+          data: null as any,
+          error: "User is not associated with a company",
+        };
       }
-      
+
       const department = await prisma.department.create({
         data: {
           ...validation.data,
@@ -41,7 +49,7 @@ export const insert = withAuth(
         },
       });
 
-      revalidatePath("/assets/create");
+      revalidatePath("/departments");
       return {
         success: true,
         data: parseStringify(department),
@@ -57,7 +65,11 @@ export const insert = withAuth(
         }
       }
       console.error("Create department error:", error);
-      return { success: false, data: null as any, error: "Failed to create department" };
+      return {
+        success: false,
+        data: null as any,
+        error: "Failed to create department",
+      };
     } finally {
       await prisma.$disconnect();
     }
@@ -80,9 +92,13 @@ export const getAll = withAuth(
     try {
       // Check if user has a companyId
       if (!user.user_metadata?.companyId) {
-        return { success: false, data: null as any, error: "User is not associated with a company" };
+        return {
+          success: false,
+          data: null as any,
+          error: "User is not associated with a company",
+        };
       }
-      
+
       const where: Prisma.DepartmentWhereInput = {
         companyId: user.user_metadata.companyId,
         ...(params?.search && {
@@ -106,7 +122,11 @@ export const getAll = withAuth(
       };
     } catch (error) {
       console.error("Get departments error:", error);
-      return { success: false, data: null as any, error: "Failed to fetch departments" };
+      return {
+        success: false,
+        data: null as any,
+        error: "Failed to fetch departments",
+      };
     } finally {
       await prisma.$disconnect();
     }
@@ -126,9 +146,13 @@ export const findById = withAuth(
     try {
       // Check if user has a companyId
       if (!user.user_metadata?.companyId) {
-        return { success: false, data: null as any, error: "User is not associated with a company" };
+        return {
+          success: false,
+          data: null as any,
+          error: "User is not associated with a company",
+        };
       }
-      
+
       const department = await prisma.department.findFirst({
         where: {
           id,
@@ -137,7 +161,11 @@ export const findById = withAuth(
       });
 
       if (!department) {
-        return { success: false, data: null as any, error: "Department not found" };
+        return {
+          success: false,
+          data: null as any,
+          error: "Department not found",
+        };
       }
 
       return {
@@ -146,7 +174,11 @@ export const findById = withAuth(
       };
     } catch (error) {
       console.error("Find department error:", error);
-      return { success: false, data: null as any, error: "Failed to fetch department" };
+      return {
+        success: false,
+        data: null as any,
+        error: "Failed to fetch department",
+      };
     } finally {
       await prisma.$disconnect();
     }
@@ -165,14 +197,18 @@ export const update = withAuth(
   async (
     user,
     id: string,
-    data: Partial<Department>,
+    data: z.infer<typeof departmentSchema>,
   ): Promise<AuthResponse<Department>> => {
     try {
       // Check if user has a companyId
       if (!user.user_metadata?.companyId) {
-        return { success: false, data: null as any, error: "User is not associated with a company" };
+        return {
+          success: false,
+          data: null as any,
+          error: "User is not associated with a company",
+        };
       }
-      
+
       const department = await prisma.department.update({
         where: {
           id,
@@ -199,11 +235,19 @@ export const update = withAuth(
           };
         }
         if (error.code === "P2025") {
-          return { success: false, data: null as any, error: "Department not found" };
+          return {
+            success: false,
+            data: null as any,
+            error: "Department not found",
+          };
         }
       }
       console.error("Update department error:", error);
-      return { success: false, data: null as any, error: "Failed to update department" };
+      return {
+        success: false,
+        data: null as any,
+        error: "Failed to update department",
+      };
     } finally {
       await prisma.$disconnect();
     }
@@ -213,7 +257,7 @@ export const update = withAuth(
 // Wrapper function for client-side use
 export async function updateDepartment(
   id: string,
-  data: Partial<Department>,
+  data: z.infer<typeof departmentSchema>,
 ): Promise<AuthResponse<Department>> {
   const session = getSession();
   return update(id, data);
@@ -224,9 +268,13 @@ export const remove = withAuth(
     try {
       // Check if user has a companyId
       if (!user.user_metadata?.companyId) {
-        return { success: false, data: null as any, error: "User is not associated with a company" };
+        return {
+          success: false,
+          data: null as any,
+          error: "User is not associated with a company",
+        };
       }
-      
+
       const department = await prisma.department.delete({
         where: {
           id,
@@ -242,11 +290,19 @@ export const remove = withAuth(
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === "P2025") {
-          return { success: false, data: null as any, error: "Department not found" };
+          return {
+            success: false,
+            data: null as any,
+            error: "Department not found",
+          };
         }
       }
       console.error("Delete department error:", error);
-      return { success: false, data: null as any, error: "Failed to delete department" };
+      return {
+        success: false,
+        data: null as any,
+        error: "Failed to delete department",
+      };
     } finally {
       await prisma.$disconnect();
     }

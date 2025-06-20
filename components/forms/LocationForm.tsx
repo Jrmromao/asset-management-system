@@ -23,16 +23,6 @@ const LocationForm = ({
   const { createLocation, isCreating, updateLocation, isUpdating } =
     useLocationQuery();
 
-  const defaultValues = {
-    name: "",
-    addressLine1: "",
-    addressLine2: "",
-    state: "",
-    city: "",
-    zip: "",
-    country: "",
-  };
-
   const emptyValues = {
     name: "",
     addressLine1: "",
@@ -72,35 +62,45 @@ const LocationForm = ({
 
   const onSubmit = async (data: z.infer<typeof locationSchema>) => {
     startTransition(async () => {
-      if (initialData) {
-        await updateLocation(initialData.id, data, {
-          onSuccess: () => {
-            toast.success("Location updated successfully");
-            onSubmitSuccess?.();
-            handleClose();
-            form.reset();
-          },
-          onError: (error) => {
-            console.error("Location update error:", error);
-            toast.error("Failed to update location");
-          },
-        });
-        return;
+      try {
+        if (initialData) {
+          await updateLocation(initialData.id, data, {
+            onSuccess: () => {
+              toast.success("Location updated successfully");
+              onSubmitSuccess?.();
+              handleClose();
+            },
+            onError: (error: any) => {
+              console.error("Location update error:", error);
+              toast.error("Failed to update location");
+            },
+          });
+        } else {
+          await createLocation(data, {
+            onSuccess: () => {
+              toast.success("Location created successfully");
+              onSubmitSuccess?.();
+              handleClose();
+            },
+            onError: (error: any) => {
+              console.error("Location creation error:", error);
+              toast.error("Failed to create location");
+            },
+          });
+        }
+      } catch (error) {
+        console.error("Location operation error:", error);
+        toast.error(
+          initialData
+            ? "Failed to update location"
+            : "Failed to create location",
+        );
       }
-
-      await createLocation(data, {
-        onSuccess: () => {
-          toast.success("Location created successfully");
-          handleClose();
-          form.reset();
-        },
-        onError: (error) => {
-          console.error("Location creation error:", error);
-          toast.error("Failed to create location");
-        },
-      });
     });
   };
+
+  const isLoading = isPending || isCreating || isUpdating;
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -110,7 +110,7 @@ const LocationForm = ({
           control={form.control}
           type="text"
           placeholder="Enter location name"
-          disabled={isPending}
+          disabled={isLoading}
           required={true}
           tooltip="A unique name for this location"
         />
@@ -121,7 +121,7 @@ const LocationForm = ({
             control={form.control}
             type="text"
             placeholder="Enter street address"
-            disabled={isPending}
+            disabled={isLoading}
             required={true}
           />
 
@@ -131,7 +131,7 @@ const LocationForm = ({
             control={form.control}
             type="text"
             placeholder="Apartment, suite, unit, etc. (optional)"
-            disabled={isPending}
+            disabled={isLoading}
           />
 
           <CustomInput
@@ -140,7 +140,7 @@ const LocationForm = ({
             control={form.control}
             type="text"
             placeholder="Enter city"
-            disabled={isPending}
+            disabled={isLoading}
             required={true}
           />
 
@@ -150,7 +150,7 @@ const LocationForm = ({
             control={form.control}
             type="text"
             placeholder="Enter state or province"
-            disabled={isPending}
+            disabled={isLoading}
             required={true}
           />
 
@@ -160,7 +160,7 @@ const LocationForm = ({
             control={form.control}
             type="text"
             placeholder="Enter postal code"
-            disabled={isPending}
+            disabled={isLoading}
             required={true}
           />
 
@@ -170,7 +170,7 @@ const LocationForm = ({
             control={form.control}
             type="text"
             placeholder="Enter country"
-            disabled={isPending}
+            disabled={isLoading}
             required={true}
           />
         </div>
@@ -180,16 +180,16 @@ const LocationForm = ({
             type="button"
             variant="outline"
             onClick={handleClose}
-            disabled={isPending}
+            disabled={isLoading}
           >
             Cancel
           </Button>
 
-          <Button type="submit" disabled={isPending} className="min-w-[120px]">
-            {isPending ? (
+          <Button type="submit" disabled={isLoading} className="min-w-[120px]">
+            {isLoading ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Creating...
+                {initialData ? "Updating..." : "Creating..."}
               </>
             ) : (
               <>{initialData ? "Update" : "Create"}</>

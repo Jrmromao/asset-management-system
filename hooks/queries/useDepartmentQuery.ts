@@ -3,9 +3,9 @@ import { z } from "zod";
 import { departmentSchema } from "@/lib/schemas";
 import {
   getAllDepartments,
-  createDepartment,
-  deleteDepartment,
-  updateDepartment,
+  createDepartment as createDepartmentAction,
+  deleteDepartment as deleteDepartmentAction,
+  updateDepartment as updateDepartmentAction,
 } from "@/lib/actions/department.actions";
 import { useDepartmentUIStore } from "@/lib/stores/useDepartmentUIStore";
 
@@ -16,20 +16,20 @@ type CreateDepartmentInput = z.infer<typeof departmentSchema>;
 export function useDepartmentQuery() {
   const { onClose } = useDepartmentUIStore();
 
-  const genericQuery: ReturnType<typeof createGenericQuery<Department, CreateDepartmentInput>> = createGenericQuery<Department, CreateDepartmentInput>(
+  const genericQuery = createGenericQuery<Department, CreateDepartmentInput>(
     MODEL_KEY,
     {
       getAll: async () => {
         return await getAllDepartments();
       },
       insert: async (data: CreateDepartmentInput) => {
-        return await createDepartment(data);
+        return await createDepartmentAction(data);
       },
       delete: async (id: string) => {
-        return await deleteDepartment(id);
+        return await deleteDepartmentAction(id);
       },
       update: async (id: string, data: CreateDepartmentInput) => {
-        return await updateDepartment(id, data);
+        return await updateDepartmentAction(id, data);
       },
     },
     {

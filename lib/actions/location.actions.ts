@@ -26,25 +26,49 @@ export const insert = withAuth(
     try {
       const validation = locationSchema.safeParse(values);
       if (!validation.success) {
-        return { success: false, data: null as any, error: validation.error.errors[0].message };
+        return {
+          success: false,
+          data: null as any,
+          error: validation.error.errors[0].message,
+        };
       }
-      
+
       // Check if user has a companyId
       if (!user.user_metadata?.companyId) {
-        return { success: false, data: null as any, error: "User is not associated with a company" };
+        return {
+          success: false,
+          data: null as any,
+          error: "User is not associated with a company",
+        };
       }
-      
+
       const location = await prisma.departmentLocation.create({
         data: {
           ...validation.data,
           companyId: user.user_metadata.companyId,
         },
       });
-      revalidatePath("/assets/create");
+
+      // Fix: Revalidate correct paths
+      revalidatePath("/locations");
       return { success: true, data: parseStringify(location) };
     } catch (error) {
+      // Add duplicate handling like update action
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === "P2002") {
+          return {
+            success: false,
+            data: null as any,
+            error: "A location with this name already exists in your company",
+          };
+        }
+      }
       console.error("Create location error:", error);
-      return { success: false, data: null as any, error: "Failed to create location" };
+      return {
+        success: false,
+        data: null as any,
+        error: "Failed to create location",
+      };
     } finally {
       await prisma.$disconnect();
     }
@@ -67,9 +91,13 @@ export const getAll = withAuth(
     try {
       // Check if user has a companyId
       if (!user.user_metadata?.companyId) {
-        return { success: false, data: null as any, error: "User is not associated with a company" };
+        return {
+          success: false,
+          data: null as any,
+          error: "User is not associated with a company",
+        };
       }
-      
+
       const locations = await prisma.departmentLocation.findMany({
         where: {
           companyId: user.user_metadata.companyId,
@@ -79,7 +107,11 @@ export const getAll = withAuth(
       return { success: true, data: parseStringify(locations) };
     } catch (error) {
       console.error("Get locations error:", error);
-      return { success: false, data: null as any, error: "Failed to fetch locations" };
+      return {
+        success: false,
+        data: null as any,
+        error: "Failed to fetch locations",
+      };
     } finally {
       await prisma.$disconnect();
     }
@@ -99,9 +131,13 @@ export const findById = withAuth(
     try {
       // Check if user has a companyId
       if (!user.user_metadata?.companyId) {
-        return { success: false, data: null as any, error: "User is not associated with a company" };
+        return {
+          success: false,
+          data: null as any,
+          error: "User is not associated with a company",
+        };
       }
-      
+
       const location = await prisma.departmentLocation.findFirst({
         where: {
           id,
@@ -109,12 +145,20 @@ export const findById = withAuth(
         },
       });
       if (!location) {
-        return { success: false, data: null as any, error: "Location not found" };
+        return {
+          success: false,
+          data: null as any,
+          error: "Location not found",
+        };
       }
       return { success: true, data: parseStringify(location) };
     } catch (error) {
       console.error("Find location error:", error);
-      return { success: false, data: null as any, error: "Failed to fetch location" };
+      return {
+        success: false,
+        data: null as any,
+        error: "Failed to fetch location",
+      };
     } finally {
       await prisma.$disconnect();
     }
@@ -134,9 +178,13 @@ export const remove = withAuth(
     try {
       // Check if user has a companyId
       if (!user.user_metadata?.companyId) {
-        return { success: false, data: null as any, error: "User is not associated with a company" };
+        return {
+          success: false,
+          data: null as any,
+          error: "User is not associated with a company",
+        };
       }
-      
+
       const existingLocation = await prisma.departmentLocation.delete({
         where: {
           id,
@@ -147,7 +195,11 @@ export const remove = withAuth(
       return { success: true, data: parseStringify(existingLocation) };
     } catch (error) {
       console.error("Delete location error:", error);
-      return { success: false, data: null as any, error: "Failed to delete location" };
+      return {
+        success: false,
+        data: null as any,
+        error: "Failed to delete location",
+      };
     } finally {
       await prisma.$disconnect();
     }
@@ -168,14 +220,18 @@ export const update = withAuth(
   async (
     user,
     id: string,
-    data: Partial<CreateLocationInput>,
+    data: z.infer<typeof locationSchema>,
   ): Promise<AuthResponse<DepartmentLocation>> => {
     try {
       // Check if user has a companyId
       if (!user.user_metadata?.companyId) {
-        return { success: false, data: null as any, error: "User is not associated with a company" };
+        return {
+          success: false,
+          data: null as any,
+          error: "User is not associated with a company",
+        };
       }
-      
+
       const location = await prisma.departmentLocation.update({
         where: {
           id,
@@ -221,7 +277,7 @@ export const update = withAuth(
 // Wrapper function for client-side use
 export async function updateLocation(
   id: string,
-  data: Partial<CreateLocationInput>,
+  data: z.infer<typeof locationSchema>,
 ): Promise<AuthResponse<DepartmentLocation>> {
   const session = getSession();
   return update(id, data);
