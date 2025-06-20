@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createServerSupabaseClient } from "@/utils/supabase/server";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { checkin } from "@/lib/actions/assets.actions";
 
 export async function POST(
@@ -7,7 +7,7 @@ export async function POST(
   { params }: { params: { id: string } },
 ) {
   try {
-    const supabase = createServerSupabaseClient();
+    const supabase = createSupabaseServerClient();
     const {
       data: { user },
       error,

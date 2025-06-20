@@ -1,7 +1,11 @@
+"use client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock, Leaf } from "lucide-react";
+import { useEffect, useState } from "react";
+import { getMaintenanceSchedule } from "@/lib/actions/inventory.actions";
+import { ScheduleMaintenanceDialog } from "@/components/dialogs/ScheduleMaintenanceDialog";
 
 interface MaintenanceItemProps {
   asset: string;
@@ -51,6 +55,27 @@ const MaintenanceItem = ({
 };
 
 export const MaintenanceScheduleCard = () => {
+  const [schedule, setSchedule] = useState<MaintenanceItemProps[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
+        const response = await getMaintenanceSchedule();
+        if (response.success) {
+          setSchedule(response.data);
+        }
+      } catch (error) {
+        console.error("Error fetching maintenance schedule:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
   return (
     <Card className="border-none shadow-sm">
       <CardHeader>
@@ -58,36 +83,24 @@ export const MaintenanceScheduleCard = () => {
           <CardTitle className="text-sm font-medium">
             Maintenance Schedule
           </CardTitle>
-          <Button variant="outline" size="sm">
-            <Calendar className="h-4 w-4 mr-2" />
-            Schedule New
-          </Button>
+          <ScheduleMaintenanceDialog>
+            <Button variant="outline" size="sm">
+              <Calendar className="h-4 w-4 mr-2" />
+              Schedule New
+            </Button>
+          </ScheduleMaintenanceDialog>
         </div>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          <MaintenanceItem
-            asset="Laptop XPS-15"
-            type="Routine Check"
-            dueDate="Tomorrow"
-            priority="high"
-            impact={25}
-          />
-          <MaintenanceItem
-            asset="Monitor U2719D"
-            type="Calibration"
-            dueDate="Next Week"
-            priority="medium"
-            impact={15}
-          />
-          <MaintenanceItem
-            asset="Mobile Device"
-            type="Battery Check"
-            dueDate="2 Weeks"
-            priority="low"
-            impact={10}
-          />
-        </div>
+        {isLoading ? (
+          <p>Loading...</p>
+        ) : (
+          <div className="space-y-4">
+            {schedule.map((item) => (
+              <MaintenanceItem key={item.asset} {...item} />
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   );

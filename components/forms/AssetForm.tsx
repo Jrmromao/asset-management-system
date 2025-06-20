@@ -46,6 +46,10 @@ import {
 import { getStatusLocationSection } from "@/components/forms/formSections";
 import { useLocationUIStore } from "@/lib/stores/useLocationUIStore";
 import CustomSwitch from "@/components/CustomSwitch";
+import { getPurchaseOrders } from "@/lib/actions/purchaseOrder.actions";
+import { PurchaseOrder } from "@prisma/client";
+import { usePurchaseOrderUIStore } from "@/lib/stores/usePurchaseOrderUIStore";
+import { PurchaseOrderDialog } from "../dialogs/PurchaseOrderDialog";
 
 type FormTemplate = {
   id: string;
@@ -69,6 +73,7 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
   const [selectedTemplate, setSelectedTemplate] = useState<FormTemplate | null>(
     null,
   );
+  const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([]);
   const [formSections, setFormSections] = useState([
     {
       name: "Asset Category",
@@ -116,6 +121,7 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
   const { onOpen: openLocation } = useLocationUIStore();
   const { onOpen: openInventory } = useInventoryUIStore();
   const { onOpen: openTemplate } = useFormTemplateUIStore();
+  const { onOpen: openPurchaseOrder } = usePurchaseOrderUIStore();
 
   const form = useForm<AssetFormValues>({
     resolver: zodResolver(assetSchema),
@@ -129,6 +135,7 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
       locationId: "",
       formTemplateId: "",
       templateValues: {},
+      purchaseOrderId: "",
     },
     mode: "onSubmit",
   });
@@ -152,6 +159,7 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
             inventoryId: asset.inventoryId || "",
             locationId: asset.departmentLocation?.id || "",
             formTemplateId: asset.formTemplateId || "",
+            purchaseOrderId: asset.purchaseOrderId || "",
             templateValues: {},
           });
 
@@ -385,6 +393,7 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
         inventoryId: data.inventoryId,
         locationId: data.locationId,
         formTemplateId: data.formTemplateId,
+        purchaseOrderId: data.purchaseOrderId,
         templateValues: data.templateValues || {},
       };
 
@@ -506,6 +515,7 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <div className="max-w-[1200px] mx-auto px-4 py-6">
+            <PurchaseOrderDialog />
             <div className="grid grid-cols-12 gap-6">
               {isUpdating ? (
                 <MainFormSkeleton />
@@ -556,6 +566,18 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
                             onNew={openModel}
                             placeholder="Select model"
                             required
+                          />
+
+                          <SelectWithButton
+                            name="purchaseOrderId"
+                            form={form}
+                            label="Purchase Order"
+                            data={purchaseOrders.map((po) => ({
+                              id: po.id,
+                              name: po.poNumber,
+                            }))}
+                            onNew={openPurchaseOrder}
+                            placeholder="Select a PO"
                           />
                         </FormSection>
 

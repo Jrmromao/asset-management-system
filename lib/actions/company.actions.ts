@@ -7,7 +7,7 @@ import { bulkInsertTemplates } from "@/lib/actions/formTemplate.actions";
 import { RegistrationData } from "@/components/providers/UserContext";
 import { parseStringify } from "@/lib/utils";
 import { createSubscription } from "@/lib/actions/subscription.actions";
-import { withAuth } from "@/lib/middleware/withAuth";
+import { AuthResponse, withAuth } from "@/lib/middleware/withAuth";
 import { User } from "@prisma/client";
 import { prisma as mainPrisma } from "@/app/db";
 import { supabaseAdmin } from "@/lib/supabaseAdminClient";
@@ -72,13 +72,17 @@ const getSession = () => {
 };
 
 export const getAll = withAuth(
-  async (user): Promise<ActionResponse<Company[]>> => {
+  async (user): Promise<AuthResponse<Company[]>> => {
     try {
       const companies = await prisma.company.findMany();
       return { success: true, data: companies };
     } catch (error) {
       console.error("Get companies error:", error);
-      return { success: false, error: "Failed to fetch companies" };
+      return {
+        success: false,
+        data: null as any,
+        error: "Failed to fetch companies",
+      };
     } finally {
       await prisma.$disconnect();
     }
@@ -88,37 +92,11 @@ export const getAll = withAuth(
 // Wrapper function for client-side use
 export async function getAllCompanies(): Promise<ActionResponse<Company[]>> {
   const session = getSession();
-  return getAll(session);
-}
-
-export const insert = withAuth(
-  async (user, data: RegistrationData): Promise<ActionResponse<Company>> => {
-    try {
-      const company = await prisma.company.create({
-        data: {
-          name: data.companyName,
-        },
-      });
-      return { success: true, data: company };
-    } catch (error) {
-      console.error("Create company error:", error);
-      return { success: false, error: "Failed to create company" };
-    } finally {
-      await prisma.$disconnect();
-    }
-  },
-);
-
-// Wrapper function for client-side use
-export async function createCompany(
-  data: RegistrationData,
-): Promise<ActionResponse<Company>> {
-  const session = getSession();
-  return insert(session, data);
+  return getAll();
 }
 
 export const update = withAuth(
-  async (user, id: string, name: string): Promise<ActionResponse<Company>> => {
+  async (user, id: string, name: string): Promise<AuthResponse<Company>> => {
     try {
       const company = await prisma.company.update({
         where: { id },
@@ -127,7 +105,11 @@ export const update = withAuth(
       return { success: true, data: company };
     } catch (error) {
       console.error("Update company error:", error);
-      return { success: false, error: "Failed to update company" };
+      return {
+        success: false,
+        data: null as any,
+        error: "Failed to update company",
+      };
     } finally {
       await prisma.$disconnect();
     }
@@ -140,11 +122,11 @@ export async function updateCompany(
   name: string,
 ): Promise<ActionResponse<Company>> {
   const session = getSession();
-  return update(session, id, name);
+  return update(id, name);
 }
 
 export const remove = withAuth(
-  async (user, id: string): Promise<ActionResponse<Company>> => {
+  async (user, id: string): Promise<AuthResponse<Company>> => {
     try {
       const company = await prisma.company.delete({
         where: { id },
@@ -152,7 +134,11 @@ export const remove = withAuth(
       return { success: true, data: company };
     } catch (error) {
       console.error("Delete company error:", error);
-      return { success: false, error: "Failed to delete company" };
+      return {
+        success: false,
+        data: null as any,
+        error: "Failed to delete company",
+      };
     } finally {
       await prisma.$disconnect();
     }
@@ -164,7 +150,79 @@ export async function deleteCompany(
   id: string,
 ): Promise<ActionResponse<Company>> {
   const session = getSession();
-  return remove(session, id);
+  return remove(id);
+}
+
+export async function registerCompany(
+  data: RegistrationData,
+): Promise<{ success: boolean; redirectUrl?: string; error?: string }> {
+  const state: RegistrationState = { bucketCreated: false };
+  let company;
+
+  try {
+    // 1. Create company
+    company = await prisma.company.create({
+      data: {
+        name: data.companyName,
+        status: data.status as CompanyStatus,
+        primaryContactEmail: data.primaryContactEmail,
+      },
+    });
+    state.companyId = company.id;
+
+    // 2. Create an Admin role
+    const adminRole = await prisma.role.create({
+      data: {
+        name: "Admin",
+        companyId: company.id,
+      },
+    });
+
+    // 3. Create the user
+    await createUserForRegistration({
+      email: data.email,
+      companyId: company.id,
+      roleId: adminRole.id,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      password: data.password,
+      title: "Administrator",
+      employeeId: "001",
+    });
+
+    // 4. Create Stripe Subscription
+    const subscriptionResponse = await createSubscription(
+      company.id,
+      data.email,
+      data.assetCount || 100,
+    );
+    if (!subscriptionResponse.success || !subscriptionResponse.url) {
+      throw new Error(
+        subscriptionResponse.error || "Failed to create subscription",
+      );
+    }
+
+    // 5. Initialize S3 Storage
+    const s3Service = S3Service.getInstance();
+    await s3Service.initializeCompanyStorage(company.id);
+    state.bucketCreated = true;
+
+    // 6. Bulk Insert Templates
+    await bulkInsertTemplates(company.id);
+
+    return { success: true, redirectUrl: subscriptionResponse.url };
+  } catch (error) {
+    await cleanup(state);
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "An unknown error occurred during registration",
+    };
+  } finally {
+    await prisma.$disconnect();
+  }
 }
 
 // Helper for registration user creation (no auth required)

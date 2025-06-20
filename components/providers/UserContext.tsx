@@ -18,6 +18,7 @@ export interface RegistrationData {
   assetCount: number;
   password: string;
   status: string;
+  primaryContactEmail: string;
 }
 
 interface UserContextType {

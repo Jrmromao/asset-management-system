@@ -1,15 +1,15 @@
-import { redirect } from "next/navigation";
-import { createClient } from "@/utils/supabase/server";
+import { redirect } from 'next/navigation';
+import { createClient } from '@/utils/supabase/server';
 import { DashboardHeader } from "@/components/dashboard/Header";
 import { StatsGrid } from "@/components/dashboard/StatsGrid";
 import { AssetOverview } from "@/components/dashboard/AssetOverview";
 import { MaintenanceScheduleCard } from "@/components/dashboard/MaintenanceSchedule";
+import { ESGReportingCard } from "@/components/dashboard/ESGReportingCard";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
+
 
   return (
     <div className="p-8 space-y-6">
@@ -26,6 +26,7 @@ export default async function DashboardPage() {
 
         <div className="space-y-6">
           <MaintenanceScheduleCard />
+          <ESGReportingCard />
           {/*<QuickActions />*/}
 
           {/*<div className="space-y-2">*/}

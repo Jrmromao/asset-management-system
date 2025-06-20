@@ -4,11 +4,15 @@ import { StatCard } from "@/components/dashboard/StatCard";
 import { getAll } from "@/lib/actions/assets.actions";
 import { useEffect, useMemo, useState } from "react";
 import { getAssetQuota } from "@/lib/actions/usageRecord.actions";
+import { getMaintenanceDueCount } from "@/lib/actions/inventory.actions";
+import { getTotalCo2Savings } from "@/lib/actions/co2.actions";
 
 export const StatsGrid = () => {
   // Group the state declarations together for better readability
   const [quota, setQuota] = useState<number>(0);
   const [assets, setAssets] = useState<Asset[]>([]);
+  const [maintenanceDue, setMaintenanceDue] = useState<number>(0);
+  const [co2Savings, setCo2Savings] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
 
   // Calculate assigned assets using useMemo to avoid unnecessary recalculations
@@ -28,13 +32,17 @@ export const StatsGrid = () => {
     const fetchData = async () => {
       try {
         setIsLoading(true);
-        const [assetsResponse, quotaResponse] = await Promise.all([
+        const [assetsResponse, quotaResponse, maintenanceDueResponse, co2SavingsResponse] = await Promise.all([
           getAll(),
           getAssetQuota(),
+          getMaintenanceDueCount(),
+          getTotalCo2Savings(),
         ]);
 
         // setAssets(assetsResponse?.data || ([] as Asset[]));
         setQuota(quotaResponse?.data || 0);
+        setMaintenanceDue(maintenanceDueResponse?.data || 0);
+        setCo2Savings(co2SavingsResponse?.data || 0);
       } catch (error) {
         console.error("Error fetching data:", error);
         // Handle error appropriately
@@ -64,14 +72,14 @@ export const StatsGrid = () => {
       />
       <StatCard
         title="Maintenance Due"
-        mainValue={5}
+        mainValue={maintenanceDue}
         subValue="assets"
         subtitle="Action Required"
         icon={<Clock className="h-5 w-5 text-amber-600" />}
       />
       <StatCard
         title="CO₂ Savings"
-        mainValue={12.5}
+        mainValue={co2Savings}
         subValue="tons"
         subtitle="+2.4 this month"
         icon={<Battery className="h-5 w-5 text-emerald-600" />}

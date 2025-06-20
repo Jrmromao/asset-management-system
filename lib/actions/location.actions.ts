@@ -6,14 +6,9 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { locationSchema } from "@/lib/schemas";
 import { prisma } from "@/app/db";
-import { withAuth } from "@/lib/middleware/withAuth";
+import { withAuth, type AuthResponse } from "@/lib/middleware/withAuth";
 import { cookies } from "next/headers";
-
-type ActionResponse<T> = {
-  data?: T;
-  error?: string;
-  success: boolean;
-};
+import type { DepartmentLocation } from "@prisma/client";
 
 const getSession = () => {
   const cookieStore = cookies();
@@ -27,23 +22,29 @@ export const insert = withAuth(
   async (
     user,
     values: z.infer<typeof locationSchema>,
-  ): Promise<ActionResponse<DepartmentLocation>> => {
+  ): Promise<AuthResponse<DepartmentLocation>> => {
     try {
       const validation = locationSchema.safeParse(values);
       if (!validation.success) {
-        return { success: false, error: validation.error.errors[0].message };
+        return { success: false, data: null as any, error: validation.error.errors[0].message };
       }
+      
+      // Check if user has a companyId
+      if (!user.user_metadata?.companyId) {
+        return { success: false, data: null as any, error: "User is not associated with a company" };
+      }
+      
       const location = await prisma.departmentLocation.create({
         data: {
           ...validation.data,
-          companyId: user.user_metadata?.companyId!,
+          companyId: user.user_metadata.companyId,
         },
       });
       revalidatePath("/assets/create");
       return { success: true, data: parseStringify(location) };
     } catch (error) {
       console.error("Create location error:", error);
-      return { success: false, error: "Failed to create location" };
+      return { success: false, data: null as any, error: "Failed to create location" };
     } finally {
       await prisma.$disconnect();
     }
@@ -53,27 +54,32 @@ export const insert = withAuth(
 // Wrapper function for client-side use
 export async function createLocation(
   values: z.infer<typeof locationSchema>,
-): Promise<ActionResponse<DepartmentLocation>> {
+): Promise<AuthResponse<DepartmentLocation>> {
   const session = getSession();
-  return insert(session, values);
+  return insert(values);
 }
 
 export const getAll = withAuth(
   async (
     user,
     params?: { search?: string },
-  ): Promise<ActionResponse<DepartmentLocation[]>> => {
+  ): Promise<AuthResponse<DepartmentLocation[]>> => {
     try {
+      // Check if user has a companyId
+      if (!user.user_metadata?.companyId) {
+        return { success: false, data: null as any, error: "User is not associated with a company" };
+      }
+      
       const locations = await prisma.departmentLocation.findMany({
         where: {
-          companyId: user.user_metadata?.companyId,
+          companyId: user.user_metadata.companyId,
         },
         orderBy: { createdAt: "desc" },
       });
       return { success: true, data: parseStringify(locations) };
     } catch (error) {
       console.error("Get locations error:", error);
-      return { success: false, error: "Failed to fetch locations" };
+      return { success: false, data: null as any, error: "Failed to fetch locations" };
     } finally {
       await prisma.$disconnect();
     }
@@ -83,27 +89,32 @@ export const getAll = withAuth(
 // Wrapper function for client-side use
 export async function getAllLocations(params?: {
   search?: string;
-}): Promise<ActionResponse<DepartmentLocation[]>> {
+}): Promise<AuthResponse<DepartmentLocation[]>> {
   const session = getSession();
-  return getAll(session, params);
+  return getAll(params);
 }
 
 export const findById = withAuth(
-  async (user, id: string): Promise<ActionResponse<DepartmentLocation>> => {
+  async (user, id: string): Promise<AuthResponse<DepartmentLocation>> => {
     try {
+      // Check if user has a companyId
+      if (!user.user_metadata?.companyId) {
+        return { success: false, data: null as any, error: "User is not associated with a company" };
+      }
+      
       const location = await prisma.departmentLocation.findFirst({
         where: {
           id,
-          companyId: user.user_metadata?.companyId,
+          companyId: user.user_metadata.companyId,
         },
       });
       if (!location) {
-        return { success: false, error: "Location not found" };
+        return { success: false, data: null as any, error: "Location not found" };
       }
       return { success: true, data: parseStringify(location) };
     } catch (error) {
       console.error("Find location error:", error);
-      return { success: false, error: "Failed to fetch location" };
+      return { success: false, data: null as any, error: "Failed to fetch location" };
     } finally {
       await prisma.$disconnect();
     }
@@ -113,25 +124,30 @@ export const findById = withAuth(
 // Wrapper function for client-side use
 export async function getLocation(
   id: string,
-): Promise<ActionResponse<DepartmentLocation>> {
+): Promise<AuthResponse<DepartmentLocation>> {
   const session = getSession();
-  return findById(session, id);
+  return findById(id);
 }
 
 export const remove = withAuth(
-  async (user, id: string): Promise<ActionResponse<DepartmentLocation>> => {
+  async (user, id: string): Promise<AuthResponse<DepartmentLocation>> => {
     try {
+      // Check if user has a companyId
+      if (!user.user_metadata?.companyId) {
+        return { success: false, data: null as any, error: "User is not associated with a company" };
+      }
+      
       const existingLocation = await prisma.departmentLocation.delete({
         where: {
           id,
-          companyId: user.user_metadata?.companyId,
+          companyId: user.user_metadata.companyId,
         },
       });
       revalidatePath("/locations");
       return { success: true, data: parseStringify(existingLocation) };
     } catch (error) {
       console.error("Delete location error:", error);
-      return { success: false, error: "Failed to delete location" };
+      return { success: false, data: null as any, error: "Failed to delete location" };
     } finally {
       await prisma.$disconnect();
     }
@@ -141,9 +157,9 @@ export const remove = withAuth(
 // Wrapper function for client-side use
 export async function deleteLocation(
   id: string,
-): Promise<ActionResponse<DepartmentLocation>> {
+): Promise<AuthResponse<DepartmentLocation>> {
   const session = getSession();
-  return remove(session, id);
+  return remove(id);
 }
 
 type CreateLocationInput = z.infer<typeof locationSchema>;
@@ -153,12 +169,17 @@ export const update = withAuth(
     user,
     id: string,
     data: Partial<CreateLocationInput>,
-  ): Promise<ActionResponse<DepartmentLocation>> => {
+  ): Promise<AuthResponse<DepartmentLocation>> => {
     try {
+      // Check if user has a companyId
+      if (!user.user_metadata?.companyId) {
+        return { success: false, data: null as any, error: "User is not associated with a company" };
+      }
+      
       const location = await prisma.departmentLocation.update({
         where: {
           id,
-          companyId: user.user_metadata?.companyId,
+          companyId: user.user_metadata.companyId,
         },
         data,
       });
@@ -174,18 +195,21 @@ export const update = withAuth(
         if (error.code === "P2002") {
           return {
             success: false,
+            data: null as any,
             error: "A location with these details already exists",
           };
         }
         if (error.code === "P2025") {
           return {
             success: false,
+            data: null as any,
             error: "Location not found",
           };
         }
       }
       return {
         success: false,
+        data: null as any,
         error: "Failed to update location. Please try again later",
       };
     } finally {
@@ -198,7 +222,7 @@ export const update = withAuth(
 export async function updateLocation(
   id: string,
   data: Partial<CreateLocationInput>,
-): Promise<ActionResponse<DepartmentLocation>> {
+): Promise<AuthResponse<DepartmentLocation>> {
   const session = getSession();
-  return update(session, id, data);
+  return update(id, data);
 }

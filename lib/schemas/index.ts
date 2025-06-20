@@ -44,35 +44,13 @@ export const registerSchema = z
     password: passwordSchema,
     repeatPassword: z.string().min(1, "Password is required"),
     firstName: z.string().min(1, "First name is required"),
-    lastName: z.string().min(1, "Last name is required"),
-    phoneNumber: phoneNumField,
-    recaptchaToken: z
-      .string()
-      .min(1, "Please complete the captcha verification"),
+    lastName: z.string().min(2, "Last name must be at least 2 characters long"),
+    phoneNumber: z.string().optional(),
     companyName: z
       .string()
-      .min(1, "Company name is required")
-      .refine(
-        async (companyName) => {
-          try {
-            const response = await fetch(
-              `${baseUrl}/api/validate/company-test`,
-              {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ companyName }),
-              },
-            );
-            if (!response.ok) throw new Error("Validation request failed");
-            const data = await response.json();
-            return !data.exists;
-          } catch (error) {
-            console.error("Company validation error:", error);
-            return false;
-          }
-        },
-        { message: "Company name already exists" },
-      ),
+      .min(2, "Company name must be at least 2 characters long"),
+    recaptchaToken: z.string().nonempty("Please complete the reCAPTCHA"),
+    primaryContactEmail: z.string().email("Invalid email address"),
   })
   .refine((data) => data.password === data.repeatPassword, {
     message: "Passwords do not match",
@@ -127,7 +105,7 @@ export const licenseSchema = z
 export const accessorySchema = z
   .object({
     categoryId: z.string().min(1, "Category is required"),
-    name: z.string().min(1, "Name is required"),
+    name: z.string().min(2, "Name must be at least 2 characters long"),
     serialNumber: z.string().min(1, "Serial number is required"),
     modelNumber: z.string().min(1, "Model number is required"),
     statusLabelId: z.string().min(1, "Status is required"),
@@ -422,9 +400,10 @@ export const assetSchema = z.object({
   departmentId: z.string().min(1, "Department is required"),
   inventoryId: z.string().min(1, "Inventory is required"),
   locationId: z.string().min(1, "Location is required"),
-  formTemplateId: z.string(),
+  formTemplateId: z.string().min(1, "Category template is required"),
   templateValues: z.record(z.any()).optional(),
   customFields: z.array(z.any()).optional(),
+  purchaseOrderId: z.string().optional(),
 });
 
 export const createTemplateSchema = z.object({

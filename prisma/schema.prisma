@@ -40,16 +40,17 @@ model User {
   status                UserStatus    @default(INVITED)
 
   // Relations
-  company    Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  role       Role         @relation(fields: [roleId], references: [id], onDelete: Restrict)
-  department Department?  @relation(fields: [departmentId], references: [id], onDelete: SetNull)
-  assets     Asset[]      @relation("assignedToUser")
-  auditLogs  AuditLog[]
-  accounts   Account[]
-  userKits   UserKit[]
+  company     Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  role        Role          @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  department  Department?   @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  assets      Asset[]       @relation("assignedToUser")
+  auditLogs   AuditLog[]
+  accounts    Account[]
+  userKits    UserKit[]
   // licenses      UserLicense[]
-  userItem   UserItem[]
-  Co2eRecord Co2eRecord[]
+  userItem    UserItem[]
+  Co2eRecord  Co2eRecord[]
+  Maintenance Maintenance[]
 
   @@unique([employeeId, companyId])
   @@index([companyId])
@@ -86,35 +87,42 @@ model License {
   department         Department?         @relation(fields: [departmentId], references: [id], onDelete: SetNull)
   departmentLocation DepartmentLocation? @relation(fields: [locationId], references: [id], onDelete: SetNull)
   inventory          Inventory?          @relation(fields: [inventoryId], references: [id], onDelete: SetNull)
-  userItems          UserItem[]
-
-  LicenseSeat     LicenseSeat[]
-  Asset           Asset[]
-  // PurchaseOrder   PurchaseOrder? @relation(fields: [purchaseOrderId], references: [id])
-  purchaseOrderId String?
+  userItems          UserItem[]          @relation("LicenseToUserItem")
+  LicenseSeat        LicenseSeat[]
+  Asset              Asset[]
+  PurchaseOrder      PurchaseOrder?      @relation(fields: [purchaseOrderId], references: [id])
+  purchaseOrderId    String?
+  Manufacturer       Manufacturer?       @relation(fields: [manufacturerId], references: [id])
+  manufacturerId     String?
 }
 
-// model PurchaseOrder {
-//   id           String   @id @default(cuid())
-//   poNumber     String   @unique
-//   companyId    String
-//   supplierId   String?
-//   purchaseDate DateTime
-//   status       String // e.g., "draft", "submitted", "approved", "received"
-//   notes        String?
-//   totalAmount  Decimal  @db.Decimal(10, 2)
-//   createdAt    DateTime @default(now())
-//   updatedAt    DateTime @updatedAt
-//
-//   // Relations
-//   company     Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
-//   supplier    Supplier?   @relation(fields: [supplierId], references: [id], onDelete: SetNull)
-//   licenses    License[]
-//   accessories Accessory[]
-//
-//   @@index([companyId])
-//   @@index([supplierId])
-// }
+model PurchaseOrder {
+  id             String        @id @default(cuid())
+  poNumber       String        @unique
+  companyId      String
+  supplierId     String?
+  purchaseDate   DateTime
+  status         String        // e.g., "draft", "submitted", "approved", "received"
+  notes          String?
+  documentUrl    String?
+  totalAmount    Decimal       @db.Decimal(10, 2)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  assets         Asset[]
+
+  // Relations
+  company        Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  supplier       Supplier?       @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  licenses       License[]
+  accessories    Accessory[]
+  Manufacturer   Manufacturer?   @relation(fields: [manufacturerId], references: [id])
+  manufacturerId String?
+
+  @@index([companyId])
+  @@index([supplierId])
+}
+
+
 
 model Accessory {
   id                 String              @id @default(cuid())
@@ -140,19 +148,21 @@ model Accessory {
   price              Decimal?
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
+  
+  // Relations
   company            Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  // co2eRecords Co2eRecord[]
   statusLabel        StatusLabel?        @relation(fields: [statusLabelId], references: [id], onDelete: SetNull)
   supplier           Supplier?           @relation(fields: [supplierId], references: [id], onDelete: SetNull)
   department         Department?         @relation(fields: [departmentId], references: [id], onDelete: SetNull)
   departmentLocation DepartmentLocation? @relation(fields: [locationId], references: [id], onDelete: SetNull)
   inventory          Inventory?          @relation(fields: [inventoryId], references: [id], onDelete: SetNull)
-  userItems          UserItem[]
+  category           Category?           @relation(fields: [categoryId], references: [id])
+  PurchaseOrder      PurchaseOrder?      @relation(fields: [purchaseOrderId], references: [id])
+  purchaseOrderId    String?
+  userItems          UserItem[]          @relation("AccessoryToUserItem")
   AccessoryStock     AccessoryStock[]
   Co2eRecord         Co2eRecord[]
-  category           Category?           @relation(fields: [categoryId], references: [id])
-  // PurchaseOrder      PurchaseOrder?      @relation(fields: [purchaseOrderId], references: [id])
-  purchaseOrderId    String?
+
 
   @@unique([poNumber, companyId])
   @@unique([serialNumber, companyId])
@@ -240,29 +250,21 @@ model FormTemplateValue {
 // }
 
 model UserItem {
-  id          String    @id @default(cuid())
-  userId      String
-  itemType    ItemType
-  licenseId   String?
-  accessoryId String?
-  quantity    Int       @default(1)
-  assignedAt  DateTime  @default(now())
-  revokedAt   DateTime?
-  returnedAt  DateTime?
-  notes       String?
-  companyId   String
+  id        String   @id @default(cuid())
+  userId    String
+  itemId    String
+  itemType  ItemType
+  companyId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  // Relations
-  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  license   License?   @relation(fields: [licenseId], references: [id], onDelete: Cascade)
-  accessory Accessory? @relation(fields: [accessoryId], references: [id], onDelete: Cascade)
+  user      User       @relation(fields: [userId], references: [id])
   company   Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  license   License?   @relation("LicenseToUserItem", fields: [itemId], references: [id], map: "license_to_user_item")
+  accessory Accessory? @relation("AccessoryToUserItem", fields: [itemId], references: [id], map: "accessory_to_user_item")
 
-  @@unique([userId, licenseId])
-  @@unique([userId, accessoryId])
+  @@unique([userId, itemId, itemType])
   @@index([userId])
-  @@index([licenseId])
-  @@index([accessoryId])
   @@index([companyId])
 }
 
@@ -293,47 +295,79 @@ model Account {
 }
 
 model Role {
-  id        String   @id @default(cuid())
-  name      String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  isAdctive Boolean  @default(true)
-  users     User[]
-  active    Boolean  @default(true)
+  id          String   @id @default(cuid())
+  name        String
+  active      Boolean  @default(true)
+  companyId   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  users       User[]
+  isDefault   Boolean  @default(false)
+  isAdmin     Boolean  @default(false)
+  permissions Json?
+
+  @@unique([name, companyId])
+  @@index([companyId])
 }
 
 model Company {
-  id        String        @id @default(cuid())
-  name      String        @unique
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
-  status    CompanyStatus @default(INACTIVE)
+  id                    String   @id @default(cuid())
+  name                  String
+  address               String?
+  country               String?
+  industry              String?
+  subdomain             String?
+  logoUrl               String?
+  website               String?
+  notes                 String?
+  supportContact        String?
+  gdprCompliant         Boolean  @default(false)
+  dataRetentionPolicy   String?
+  disasterRecoveryPlan  String?
+  securityContact       String?
+  primaryContactEmail   String   @unique
+  primaryContactName    String?
+  primaryContactPhone   String?
+  billingContactEmail   String?
+  billingContactName    String?
+  billingContactPhone   String?
+  technicalContactEmail String?
+  technicalContactName  String?
+  technicalContactPhone String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  status                String   @default("ACTIVE")
+  active                Boolean  @default(true)
 
   // Relations
-  users          User[]
-  assets         Asset[]
-  accessories    Accessory[]
-  categories     Category[]
-  departments    Department[]
-  locations      DepartmentLocation[]
-  manufacturers  Manufacturer[]
-  models         Model[]
-  inventories    Inventory[]
-  statusLabels   StatusLabel[]
-  auditLogs      AuditLog[]
-  kits           Kit[]
-  suppliers      Supplier[] // Add this relation
-  License        License[]
-  FormTemplate   FormTemplate[]
-  userItem       UserItem[]
-  AccessoryStock AccessoryStock[]
-  LicenseSeat    LicenseSeat[]
-  AssetHistory   AssetHistory[]
-
+  users               User[]
+  roles               Role[]
+  departments         Department[]
+  locations           DepartmentLocation[]
+  inventories         Inventory[]
+  statusLabels        StatusLabel[]
+  suppliers           Supplier[]
+  assets              Asset[]
+  categories          Category[]
+  manufacturers       Manufacturer[]
+  models              Model[]
+  formTemplates       FormTemplate[]
+  auditLogs           AuditLog[]
+  accessories         Accessory[]
+  License             License[]
+  AccessoryStock      AccessoryStock[]
+  LicenseSeat         LicenseSeat[]
+  AssetHistory        AssetHistory[]
+  Kit                 Kit[]
   ReportConfiguration ReportConfiguration[]
   GeneratedReport     GeneratedReport[]
-  // PurchaseOrder       PurchaseOrder[]
-  Subscription        Subscription[]
+  Subscription        Subscription?
+  flowRules           FlowRule[]
+  userItems           UserItem[]
+  purchaseOrders      PurchaseOrder[]
+
+  @@unique([name])
 }
 
 model Manufacturer {
@@ -341,14 +375,19 @@ model Manufacturer {
   name         String   @unique
   url          String
   supportUrl   String   @unique
-  supportPhone String? // Made optional
-  supportEmail String? // Made optional
+  supportPhone String?
+  supportEmail String?
   companyId    String
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   active       Boolean  @default(true)
-  company      Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  models       Model[]
+
+  // Relations
+  company       Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  models        Model[]
+  License       License[]
+  PurchaseOrder PurchaseOrder[]
+  Maintenance   Maintenance[]
 
   @@index([companyId])
 }
@@ -431,117 +470,122 @@ model Department {
 }
 
 model Supplier {
-  id           String      @id @default(cuid())
-  name         String
-  contactName  String
-  email        String      @unique
-  phoneNum     String? // Made optional
-  url          String? // Made optional
-  addressLine1 String
-  addressLine2 String? // Made optional
-  city         String
-  state        String
-  zip          String
-  country      String
-  notes        String? // Made optional
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
-  active       Boolean     @default(true)
+  id            String          @id @default(cuid())
+  name          String
+  contactName   String
+  email         String          @unique
+  phoneNum      String? // Made optional
+  url           String? // Made optional
+  addressLine1  String
+  addressLine2  String? // Made optional
+  city          String
+  state         String
+  zip           String
+  country       String
+  notes         String? // Made optional
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  active        Boolean         @default(true)
   // Relations
-  assets       Asset[]
-  accessories  Accessory[]
-  company      Company     @relation(fields: [companyId], references: [id])
-  companyId    String
-  License      License[]
-  // PurchaseOrder PurchaseOrder[]
+  assets        Asset[]
+  accessories   Accessory[]
+  company       Company         @relation(fields: [companyId], references: [id])
+  companyId     String
+  License       License[]
+  PurchaseOrder PurchaseOrder[]
+  Maintenance   Maintenance[]
 
   @@unique([email, companyId]) // Updated to make email unique per company
 }
 
 model Asset {
-  id                  String    @id @default(cuid())
-  name                String
-  serialNumber        String
-  material            String?
-  endOfLife           DateTime?
-  datePurchased       DateTime?
-  assigneeId          String?
-  statusLabelId       String?
-  locationId          String?
-  inventoryId         String?
-  companyId           String
-  supplierId          String?
-  departmentId        String?
-  modelId             String?
-  energyRating        String?
-  dailyOperatingHours Int?
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
-  poNumber            String?
-  weight              Decimal?  @db.Decimal(10, 2)
-  price               Decimal?  @db.Decimal(10, 2)
-  status              String    @default("Available")
-  assignee            User?     @relation("assignedToUser", fields: [assigneeId], references: [id], onDelete: SetNull)
-  company             Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
-
-  model              Model?              @relation(fields: [modelId], references: [id], onDelete: SetNull)
+  id                 String              @id @default(cuid())
+  name               String
+  serialNumber       String              @unique
+  notes              String?
+  reorderPoint       Int?
+  purchaseDate       DateTime
+  endOfLife          DateTime?
+  companyId          String
+  modelId            String
+  statusLabelId      String?
+  supplierId         String?
+  departmentId       String?
+  locationId         String?
+  inventoryId        String?
+  categoryId         String?
+  formTemplateId     String?
+  userId             String?
+  assignedTo         String?
+  warrantyEndDate    DateTime?
+  depreciationRate   Decimal?
+  purchasePrice      Decimal?
+  currentValue       Decimal?
+  lastMaintenance    DateTime?
+  nextMaintenance    DateTime?
+  metadata           Json?
+  active             Boolean             @default(true)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  company            Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  model              Model               @relation(fields: [modelId], references: [id])
   statusLabel        StatusLabel?        @relation(fields: [statusLabelId], references: [id], onDelete: SetNull)
   supplier           Supplier?           @relation(fields: [supplierId], references: [id], onDelete: SetNull)
   department         Department?         @relation(fields: [departmentId], references: [id], onDelete: SetNull)
   departmentLocation DepartmentLocation? @relation(fields: [locationId], references: [id], onDelete: SetNull)
   inventory          Inventory?          @relation(fields: [inventoryId], references: [id], onDelete: SetNull)
-  formTemplateId     String?
+  category           Category?           @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   formTemplate       FormTemplate?       @relation(fields: [formTemplateId], references: [id], onDelete: SetNull)
-  formTemplateValues FormTemplateValue[] // Changed from FormTemplateValue to formTemplateValues
+  user               User?               @relation("assignedToUser", fields: [userId], references: [id], onDelete: SetNull)
+  co2eRecords        Co2eRecord[]
+  values             FormTemplateValue[]
+  transactions       Transaction[]
+  assetHistory       AssetHistory[]
+  Maintenance        Maintenance[]
+  License            License?            @relation(fields: [licenseId], references: [id])
+  licenseId          String?
+  flowExecutions     FlowExecution[]
+  purchaseOrder      PurchaseOrder?      @relation(fields: [purchaseOrderId], references: [id])
+  purchaseOrderId    String?
 
-  transactions Transaction[]
-  licenseId    String?
-  License      License?       @relation(fields: [licenseId], references: [id])
-  AssetHistory AssetHistory[]
-  Co2eRecord   Co2eRecord[]
-
-  @@unique([serialNumber, companyId])
-  @@unique([poNumber, companyId])
-  @@index([assigneeId])
+  @@unique([name, companyId])
   @@index([companyId])
-  @@index([licenseId])
-  @@index([statusLabelId])
-  @@index([supplierId])
   @@index([modelId])
-  @@index([formTemplateId])
+  @@index([userId])
 }
 
 model Category {
-  id        String      @id @default(cuid())
-  name      String
-  type      String
-  companyId String
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
-  active    Boolean     @default(true)
-  company   Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  // models    Model[]
-  Accessory Accessory[]
+  id          String      @id @default(cuid())
+  name        String
+  description String?
+  companyId   String
+  active      Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  company     Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  accessories Accessory[]
+  assets      Asset[]
 
   @@unique([name, companyId])
   @@index([companyId])
 }
 
 model StatusLabel {
-  id          String      @id @default(cuid())
+  id          String        @id @default(cuid())
   name        String
   colorCode   String
-  isArchived  Boolean     @default(false)
-  allowLoan   Boolean     @default(false)
+  isArchived  Boolean       @default(false)
+  allowLoan   Boolean       @default(false)
   description String
   companyId   String
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  active      Boolean     @default(true)
-  company     Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  active      Boolean       @default(true)
+  company     Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
   assets      Asset[]
   accessories Accessory[]
   License     License[]
+  Maintenance Maintenance[]
 
   @@unique([name, companyId])
   @@index([companyId])
@@ -592,10 +636,12 @@ model Co2eRecord {
   updatedAt        DateTime @updatedAt
 
   // Only one of these will be used based on itemType
-  asset       Asset      @relation(fields: [assetId], references: [id], onDelete: Cascade)
-  user        User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
-  Accessory   Accessory? @relation(fields: [accessoryId], references: [id])
-  accessoryId String?
+  asset         Asset        @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  user          User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  Accessory     Accessory?   @relation(fields: [accessoryId], references: [id])
+  accessoryId   String?
+  Maintenance   Maintenance? @relation(fields: [maintenanceId], references: [id])
+  maintenanceId String?
 }
 
 // Track accessory stock movements
@@ -833,4 +879,112 @@ enum PlanType {
 enum CompanyStatus {
   ACTIVE
   INACTIVE
+}
+
+model Maintenance {
+  id             String    @id @default(cuid())
+  assetId        String
+  statusLabelId  String
+  technicianId   String?
+  supplierId     String?
+  title          String
+  notes          String?
+  startDate      DateTime
+  completionDate DateTime?
+  cost           Decimal?  @db.Decimal(10, 2)
+  totalCost      Decimal?  @db.Decimal(10, 2)
+  isWarranty     Boolean   @default(false)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  asset          Asset           @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  statusLabel    StatusLabel     @relation(fields: [statusLabelId], references: [id])
+  technician     User?           @relation(fields: [technicianId], references: [id])
+  supplier       Supplier?       @relation(fields: [supplierId], references: [id])
+  co2eRecords    Co2eRecord[] // Relation to CO2e records
+  flowExecutions FlowExecution[]
+  Manufacturer   Manufacturer?   @relation(fields: [manufacturerId], references: [id])
+  manufacturerId String?
+
+  @@index([assetId])
+  @@index([statusLabelId])
+  @@index([technicianId])
+}
+
+// Flow Rules System
+model FlowRule {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  trigger     String // 'status_change', 'creation', 'completion', 'approval'
+  priority    Int      @default(100)
+  isActive    Boolean  @default(true)
+  companyId   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  company    Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  conditions FlowCondition[]
+  actions    FlowAction[]
+  executions FlowExecution[]
+
+  @@unique([name, companyId])
+  @@index([companyId])
+  @@index([trigger])
+  @@index([isActive])
+}
+
+model FlowCondition {
+  id              String  @id @default(cuid())
+  flowRuleId      String
+  field           String // e.g., 'maintenance.priority', 'asset.category.name'
+  operator        String // 'equals', 'not_equals', 'contains', 'greater_than', 'less_than', 'in', 'not_in'
+  value           String // JSON string for complex values
+  logicalOperator String? @default("AND") // 'AND', 'OR' - for chaining conditions
+  order           Int     @default(0) // Order of conditions within the rule
+
+  // Relations
+  flowRule FlowRule @relation(fields: [flowRuleId], references: [id], onDelete: Cascade)
+
+  @@index([flowRuleId])
+  @@index([order])
+}
+
+model FlowAction {
+  id         String @id @default(cuid())
+  flowRuleId String
+  type       String // 'update_status', 'send_notification', 'update_asset', 'create_record', 'send_email', 'calculate_cost'
+  parameters Json // Action-specific parameters
+  order      Int    @default(0) // Order of actions within the rule
+
+  // Relations
+  flowRule FlowRule @relation(fields: [flowRuleId], references: [id], onDelete: Cascade)
+
+  @@index([flowRuleId])
+  @@index([order])
+}
+
+model FlowExecution {
+  id            String   @id @default(cuid())
+  flowRuleId    String
+  maintenanceId String?
+  assetId       String?
+  trigger       String
+  context       Json // Snapshot of context when rule was executed
+  results       Json // Results of action executions
+  executedAt    DateTime @default(now())
+  success       Boolean  @default(true)
+  errorMessage  String?
+
+  // Relations
+  flowRule    FlowRule     @relation(fields: [flowRuleId], references: [id], onDelete: Cascade)
+  maintenance Maintenance? @relation(fields: [maintenanceId], references: [id], onDelete: SetNull)
+  asset       Asset?       @relation(fields: [assetId], references: [id], onDelete: SetNull)
+
+  @@index([flowRuleId])
+  @@index([maintenanceId])
+  @@index([assetId])
+  @@index([executedAt])
+  @@index([success])
 }

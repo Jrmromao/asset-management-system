@@ -4,16 +4,11 @@ import { Prisma } from "@prisma/client";
 import { parseStringify } from "@/lib/utils";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/app/db";
-import { withAuth } from "@/lib/middleware/withAuth";
+import { withAuth, type AuthResponse } from "@/lib/middleware/withAuth";
 import { cookies } from "next/headers";
 import { z } from "zod";
 import { departmentSchema } from "@/lib/schemas";
-
-type ActionResponse<T> = {
-  data?: T;
-  error?: string;
-  success: boolean;
-};
+import type { Department } from "@prisma/client";
 
 const getSession = () => {
   const cookieStore = cookies();
@@ -27,16 +22,22 @@ export const insert = withAuth(
   async (
     user,
     data: z.infer<typeof departmentSchema>,
-  ): Promise<ActionResponse<Department>> => {
+  ): Promise<AuthResponse<Department>> => {
     try {
       const validation = departmentSchema.safeParse(data);
       if (!validation.success) {
-        return { success: false, error: validation.error.errors[0].message };
+        return { success: false, data: null as any, error: validation.error.errors[0].message };
       }
+      
+      // Check if user has a companyId
+      if (!user.user_metadata?.companyId) {
+        return { success: false, data: null as any, error: "User is not associated with a company" };
+      }
+      
       const department = await prisma.department.create({
         data: {
           ...validation.data,
-          companyId: user.user_metadata?.companyId,
+          companyId: user.user_metadata.companyId,
         },
       });
 
@@ -50,12 +51,13 @@ export const insert = withAuth(
         if (error.code === "P2002") {
           return {
             success: false,
+            data: null as any,
             error: "Department name already exists in your company",
           };
         }
       }
       console.error("Create department error:", error);
-      return { success: false, error: "Failed to create department" };
+      return { success: false, data: null as any, error: "Failed to create department" };
     } finally {
       await prisma.$disconnect();
     }
@@ -65,19 +67,24 @@ export const insert = withAuth(
 // Wrapper function for client-side use
 export async function createDepartment(
   data: z.infer<typeof departmentSchema>,
-): Promise<ActionResponse<Department>> {
+): Promise<AuthResponse<Department>> {
   const session = getSession();
-  return insert(session, data);
+  return insert(data);
 }
 
 export const getAll = withAuth(
   async (
     user,
     params?: { search?: string },
-  ): Promise<ActionResponse<Department[]>> => {
+  ): Promise<AuthResponse<Department[]>> => {
     try {
+      // Check if user has a companyId
+      if (!user.user_metadata?.companyId) {
+        return { success: false, data: null as any, error: "User is not associated with a company" };
+      }
+      
       const where: Prisma.DepartmentWhereInput = {
-        companyId: user.user_metadata?.companyId,
+        companyId: user.user_metadata.companyId,
         ...(params?.search && {
           name: {
             contains: params.search,
@@ -99,7 +106,7 @@ export const getAll = withAuth(
       };
     } catch (error) {
       console.error("Get departments error:", error);
-      return { success: false, error: "Failed to fetch departments" };
+      return { success: false, data: null as any, error: "Failed to fetch departments" };
     } finally {
       await prisma.$disconnect();
     }
@@ -109,23 +116,28 @@ export const getAll = withAuth(
 // Wrapper function for client-side use
 export async function getAllDepartments(params?: {
   search?: string;
-}): Promise<ActionResponse<Department[]>> {
+}): Promise<AuthResponse<Department[]>> {
   const session = getSession();
-  return getAll(session, params);
+  return getAll(params);
 }
 
 export const findById = withAuth(
-  async (user, id: string): Promise<ActionResponse<Department>> => {
+  async (user, id: string): Promise<AuthResponse<Department>> => {
     try {
+      // Check if user has a companyId
+      if (!user.user_metadata?.companyId) {
+        return { success: false, data: null as any, error: "User is not associated with a company" };
+      }
+      
       const department = await prisma.department.findFirst({
         where: {
           id,
-          companyId: user.user_metadata?.companyId,
+          companyId: user.user_metadata.companyId,
         },
       });
 
       if (!department) {
-        return { success: false, error: "Department not found" };
+        return { success: false, data: null as any, error: "Department not found" };
       }
 
       return {
@@ -134,7 +146,7 @@ export const findById = withAuth(
       };
     } catch (error) {
       console.error("Find department error:", error);
-      return { success: false, error: "Failed to fetch department" };
+      return { success: false, data: null as any, error: "Failed to fetch department" };
     } finally {
       await prisma.$disconnect();
     }
@@ -144,9 +156,9 @@ export const findById = withAuth(
 // Wrapper function for client-side use
 export async function getDepartment(
   id: string,
-): Promise<ActionResponse<Department>> {
+): Promise<AuthResponse<Department>> {
   const session = getSession();
-  return findById(session, id);
+  return findById(id);
 }
 
 export const update = withAuth(
@@ -154,12 +166,17 @@ export const update = withAuth(
     user,
     id: string,
     data: Partial<Department>,
-  ): Promise<ActionResponse<Department>> => {
+  ): Promise<AuthResponse<Department>> => {
     try {
+      // Check if user has a companyId
+      if (!user.user_metadata?.companyId) {
+        return { success: false, data: null as any, error: "User is not associated with a company" };
+      }
+      
       const department = await prisma.department.update({
         where: {
           id,
-          companyId: user.user_metadata?.companyId,
+          companyId: user.user_metadata.companyId,
         },
         data: {
           name: data.name,
@@ -177,15 +194,16 @@ export const update = withAuth(
         if (error.code === "P2002") {
           return {
             success: false,
+            data: null as any,
             error: "Department name already exists in your company",
           };
         }
         if (error.code === "P2025") {
-          return { success: false, error: "Department not found" };
+          return { success: false, data: null as any, error: "Department not found" };
         }
       }
       console.error("Update department error:", error);
-      return { success: false, error: "Failed to update department" };
+      return { success: false, data: null as any, error: "Failed to update department" };
     } finally {
       await prisma.$disconnect();
     }
@@ -196,18 +214,23 @@ export const update = withAuth(
 export async function updateDepartment(
   id: string,
   data: Partial<Department>,
-): Promise<ActionResponse<Department>> {
+): Promise<AuthResponse<Department>> {
   const session = getSession();
-  return update(session, id, data);
+  return update(id, data);
 }
 
 export const remove = withAuth(
-  async (user, id: string): Promise<ActionResponse<Department>> => {
+  async (user, id: string): Promise<AuthResponse<Department>> => {
     try {
+      // Check if user has a companyId
+      if (!user.user_metadata?.companyId) {
+        return { success: false, data: null as any, error: "User is not associated with a company" };
+      }
+      
       const department = await prisma.department.delete({
         where: {
           id,
-          companyId: user.user_metadata?.companyId,
+          companyId: user.user_metadata.companyId,
         },
       });
 
@@ -219,11 +242,11 @@ export const remove = withAuth(
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === "P2025") {
-          return { success: false, error: "Department not found" };
+          return { success: false, data: null as any, error: "Department not found" };
         }
       }
       console.error("Delete department error:", error);
-      return { success: false, error: "Failed to delete department" };
+      return { success: false, data: null as any, error: "Failed to delete department" };
     } finally {
       await prisma.$disconnect();
     }
@@ -233,7 +256,7 @@ export const remove = withAuth(
 // Wrapper function for client-side use
 export async function deleteDepartment(
   id: string,
-): Promise<ActionResponse<Department>> {
+): Promise<AuthResponse<Department>> {
   const session = getSession();
-  return remove(session, id);
+  return remove(id);
 }

@@ -103,7 +103,14 @@ export function formatAmount(amount: number): string {
   return formatter.format(amount);
 }
 
-export const parseStringify = (value: any) => JSON.parse(JSON.stringify(value));
+export const parseStringify = (value: any) => {
+  try {
+    return JSON.parse(JSON.stringify(value));
+  } catch (error) {
+    console.error("Error parsing stringify:", error);
+    return null;
+  }
+};
 
 export const removeSpecialCharacters = (value: string) => {
   return value.replace(/[^\w\s]/gi, "");
@@ -388,3 +395,19 @@ export function sumUnitsAssigned(assignments: UserItems[]): number {
 // function sumQuantities(assignments: UserAccessory[]): number {
 //   return assignments.reduce((sum, item) => sum + item.quantity, 0);
 // }
+
+export const handleError = (error: unknown) => {
+  console.error(error);
+  if (error instanceof Error) {
+    return {
+      success: false,
+      error: error.message,
+      data: null,
+    };
+  }
+  return {
+    success: false,
+    error: "An unknown error occurred.",
+    data: null,
+  };
+};

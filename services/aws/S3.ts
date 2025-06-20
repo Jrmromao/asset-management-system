@@ -21,7 +21,7 @@ import https from "https";
 class S3Service {
   private static instance: S3Service;
   private s3Client: S3Client;
-  private readonly mainBucketName: string;
+  public readonly mainBucketName: string;
   private readonly env: string;
 
   private constructor() {

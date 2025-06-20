@@ -5,7 +5,7 @@ import { parseStringify } from "@/lib/utils";
 import { supplierSchema } from "@/lib/schemas";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { Prisma } from "@prisma/client";
+import { Prisma, Supplier } from "@prisma/client";
 import { withAuth } from "@/lib/middleware/withAuth";
 import { cookies } from "next/headers";
 
@@ -26,7 +26,11 @@ export const insert = withAuth(
       // Validate input
       const validation = await supplierSchema.safeParseAsync(values);
       if (!validation.success) {
-        return { success: false, data: undefined, error: validation.error.errors[0].message };
+        return {
+          success: false,
+          data: undefined,
+          error: validation.error.errors[0].message,
+        };
       }
 
       const supplierData: Prisma.SupplierCreateInput = {
@@ -65,7 +69,11 @@ export const insert = withAuth(
           };
         }
       }
-      return { success: false, data: undefined, error: "Failed to create supplier" };
+      return {
+        success: false,
+        data: undefined,
+        error: "Failed to create supplier",
+      };
     } finally {
       await prisma.$disconnect();
     }
@@ -88,7 +96,11 @@ export const getAll = withAuth(
       return { success: true, data: parseStringify(suppliers) };
     } catch (error) {
       console.error("Failed to fetch suppliers:", error);
-      return { success: false, data: undefined, error: "Failed to fetch suppliers" };
+      return {
+        success: false,
+        data: undefined,
+        error: "Failed to fetch suppliers",
+      };
     } finally {
       await prisma.$disconnect();
     }
@@ -108,7 +120,11 @@ export const getById = withAuth(
       return { success: true, data: parseStringify(supplier) };
     } catch (error) {
       console.error("Failed to fetch supplier:", error);
-      return { success: false, data: undefined, error: "Failed to fetch supplier" };
+      return {
+        success: false,
+        data: undefined,
+        error: "Failed to fetch supplier",
+      };
     } finally {
       await prisma.$disconnect();
     }
@@ -160,7 +176,11 @@ export const update = withAuth(
       return { success: true, data: parseStringify(supplier) };
     } catch (error) {
       console.error("Failed to update supplier:", error);
-      return { success: false, data: undefined, error: "Failed to update supplier" };
+      return {
+        success: false,
+        data: undefined,
+        error: "Failed to update supplier",
+      };
     } finally {
       await prisma.$disconnect();
     }
@@ -178,7 +198,11 @@ export const remove = withAuth(
       return { success: true, data: parseStringify(supplier) };
     } catch (error) {
       console.error("Failed to delete supplier:", error);
-      return { success: false, data: undefined, error: "Failed to delete supplier" };
+      return {
+        success: false,
+        data: undefined,
+        error: "Failed to delete supplier",
+      };
     } finally {
       await prisma.$disconnect();
     }
@@ -206,7 +230,10 @@ export async function getSupplierById(id: string) {
   return getById(id);
 }
 
-export async function updateSupplier(id: string, values: z.infer<typeof supplierSchema>) {
+export async function updateSupplier(
+  id: string,
+  values: z.infer<typeof supplierSchema>,
+) {
   return update(id, values);
 }
 

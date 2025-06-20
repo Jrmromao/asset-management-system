@@ -3,9 +3,50 @@ import { ChevronRight, Laptop, Monitor, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AssetTypeCard } from "@/components/dashboard/AssetTypeCard";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { getAssetOverview } from "@/lib/actions/assets.actions";
+
+interface AssetOverviewData {
+  name: string;
+  count: number;
+}
 
 export const AssetOverview = () => {
   const navigate = useRouter();
+  const [overviewData, setOverviewData] = useState<AssetOverviewData[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
+        const response = await getAssetOverview();
+        if (response.success) {
+          setOverviewData(response.data);
+        }
+      } catch (error) {
+        console.error("Error fetching asset overview:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const getIconForAsset = (assetName: string) => {
+    if (assetName.toLowerCase().includes("laptop")) {
+      return <Laptop className="h-4 w-4" />;
+    }
+    if (assetName.toLowerCase().includes("monitor")) {
+      return <Monitor className="h-4 w-4" />;
+    }
+    if (assetName.toLowerCase().includes("mobile")) {
+      return <Smartphone className="h-4 w-4" />;
+    }
+    return <Laptop className="h-4 w-4" />;
+  };
+
   return (
     <>
       <div className="flex items-center justify-between">
@@ -20,27 +61,20 @@ export const AssetOverview = () => {
         </Button>
       </div>
 
-      <AssetTypeCard
-        icon={<Laptop className="h-4 w-4" />}
-        name="Laptops"
-        devices={150}
-        usage={92}
-        status="Healthy"
-      />
-      <AssetTypeCard
-        icon={<Monitor className="h-4 w-4" />}
-        name="Monitors"
-        devices={200}
-        usage={88}
-        status="Warning"
-      />
-      <AssetTypeCard
-        icon={<Smartphone className="h-4 w-4" />}
-        name="Mobile Devices"
-        devices={75}
-        usage={65}
-        status="Critical"
-      />
+      {isLoading ? (
+        <p>Loading...</p>
+      ) : (
+        overviewData.map((asset) => (
+          <AssetTypeCard
+            key={asset.name}
+            icon={getIconForAsset(asset.name)}
+            name={asset.name}
+            devices={asset.count}
+            usage={0} // You might want to calculate or fetch this
+            status="Healthy" // You might want to determine this based on data
+          />
+        ))
+      )}
     </>
   );
 };

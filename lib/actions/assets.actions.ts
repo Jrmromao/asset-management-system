@@ -32,6 +32,7 @@ export type CreateAssetInput = {
   locationId: string;
   formTemplateId: string;
   templateValues?: Record<string, any>;
+  purchaseOrderId?: string;
 };
 
 const getSession = () => {
@@ -74,15 +75,16 @@ export const create = withAuth(
 
       const asset = await prisma.asset.create({
         data: {
+          purchaseDate: new Date(),
           ...assetData,
           companyId: user.user_metadata.companyId,
           // Add nested creation for form template values if they exist
-          formTemplateValues: templateValues
+          values: templateValues
             ? {
                 create: [
                   {
                     values: templateValues,
-                    templateId: assetData.formTemplateId,
+                    formTemplate: { connect: { id: assetData.formTemplateId } },
                   },
                 ],
               }
@@ -90,13 +92,13 @@ export const create = withAuth(
         },
         include: {
           model: true,
-          assignee: true,
+          user: true,
           supplier: true,
           departmentLocation: true,
           statusLabel: true,
           department: true,
           inventory: true,
-          formTemplateValues: true,
+          values: true,
         },
       });
 
@@ -137,7 +139,7 @@ export const getAll = withAuth(async (user): Promise<AssetResponse> => {
       },
       include: {
         model: true,
-        assignee: true,
+        user: true,
         supplier: true,
         departmentLocation: true,
         statusLabel: true,
@@ -169,6 +171,52 @@ export async function getAllAssets(): Promise<AssetResponse> {
   };
 }
 
+export const getAssetOverview = withAuth(async (user) => {
+  try {
+    const assetCounts = await prisma.asset.groupBy({
+      by: ["modelId"],
+      where: {
+        companyId: user.user_metadata?.companyId,
+      },
+      _count: {
+        modelId: true,
+      },
+    });
+
+    const modelIds = assetCounts
+      .map((ac) => ac.modelId)
+      .filter((id): id is string => !!id);
+
+    const models = await prisma.model.findMany({
+      where: {
+        id: {
+          in: modelIds,
+        },
+      },
+    });
+
+    const modelMap = new Map(models.map((m) => [m.id, m.name]));
+
+    const overview = assetCounts.map((ac) => ({
+      name: ac.modelId
+        ? modelMap.get(ac.modelId) || "Unknown Model"
+        : "Unknown Model",
+      count: ac._count.modelId,
+    }));
+
+    return { success: true, data: parseStringify(overview) };
+  } catch (error) {
+    console.error("Get asset overview error:", error);
+    return {
+      success: false,
+      data: [],
+      error: "Failed to fetch asset overview",
+    };
+  } finally {
+    await prisma.$disconnect();
+  }
+});
+
 export const getAssetById = withAuth(
   async (user, id: string): Promise<AssetResponse> => {
     try {
@@ -179,7 +227,7 @@ export const getAssetById = withAuth(
         },
         include: {
           model: true,
-          assignee: true,
+          user: true,
           supplier: true,
           departmentLocation: true,
           statusLabel: true,
@@ -274,7 +322,7 @@ export const update = withAuth(
         data: validation.data,
         include: {
           model: true,
-          assignee: true,
+          user: true,
           supplier: true,
           departmentLocation: true,
           statusLabel: true,
@@ -321,7 +369,7 @@ export const findById = withAuth(
         },
         include: {
           model: true,
-          assignee: true,
+          user: true,
           supplier: true,
           departmentLocation: true,
           statusLabel: true,
@@ -362,11 +410,11 @@ export const checkin = withAuth(
       const asset = await prisma.asset.update({
         where: { id },
         data: {
-          assigneeId: null,
+          userId: null,
         },
         include: {
           model: true,
-          assignee: true,
+          user: true,
           supplier: true,
           departmentLocation: true,
           statusLabel: true,
@@ -400,7 +448,7 @@ export async function checkinAsset(id: string): Promise<AssetResponse> {
 }
 
 export const checkout = withAuth(
-  async (user, id: string, assigneeId: string): Promise<AssetResponse> => {
+  async (user, id: string, userId: string): Promise<AssetResponse> => {
     try {
       const asset = await prisma.asset.update({
         where: {
@@ -408,12 +456,11 @@ export const checkout = withAuth(
           companyId: user.user_metadata?.companyId,
         },
         data: {
-          assigneeId,
-          status: "CHECKED_OUT",
+          userId,
         },
         include: {
           model: true,
-          assignee: true,
+          user: true,
           supplier: true,
           departmentLocation: true,
           statusLabel: true,
@@ -429,7 +476,7 @@ export const checkout = withAuth(
       };
     } catch (error) {
       console.error("Checkout asset error:", error);
-      return { success: false, data: [], error: "Failed to check out asset" };
+      return { success: false, data: [], error: "Failed to checkout asset" };
     } finally {
       await prisma.$disconnect();
     }
@@ -438,10 +485,10 @@ export const checkout = withAuth(
 
 export async function checkoutAsset(
   id: string,
-  assigneeId: string,
+  userId: string,
 ): Promise<AssetResponse> {
   const session = getSession();
-  const response = await checkout(id, assigneeId);
+  const response = await checkout(id, userId);
   return {
     success: response.success,
     data: response.data || [],
@@ -553,7 +600,7 @@ export const exportToCSV = withAuth(async (user): Promise<TemplateResponse> => {
       where: { companyId: user.user_metadata.companyId },
       include: {
         model: true,
-        assignee: true,
+        user: true,
         supplier: true,
         departmentLocation: true,
         statusLabel: true,
