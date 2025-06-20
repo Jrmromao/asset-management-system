@@ -2,7 +2,12 @@ import { useSupplierUIStore } from "@/lib/stores/useSupplierUIStore";
 import { createGenericQuery } from "@/hooks/queries/useQueryFactory";
 import { z } from "zod";
 import { supplierSchema } from "@/lib/schemas";
-import { getAll, insert, remove, update } from "@/lib/actions/supplier.actions";
+import {
+  createSupplier,
+  deleteSupplier,
+  getAllSuppliers,
+  updateSupplier,
+} from "@/lib/actions/supplier.actions";
 
 export const MODEL_KEY = ["suppliers"] as const;
 
@@ -11,21 +16,21 @@ type CreateSupplierInput = z.infer<typeof supplierSchema>;
 export function useSupplierQuery() {
   const { onClose } = useSupplierUIStore();
 
-  const genericQuery = createGenericQuery<Supplier, CreateSupplierInput>(
+  const genericQuery: ReturnType<typeof createGenericQuery<Supplier, CreateSupplierInput>> = createGenericQuery<Supplier, CreateSupplierInput>(
     MODEL_KEY,
     {
       getAll: async () => {
-        return await getAll();
+        return await getAllSuppliers();
       },
       insert: async (data: CreateSupplierInput) => {
-        return await insert(data);
+        return await createSupplier(data);
       },
       update: async (id: string, data: Partial<Supplier>) => {
-        const result = await update(id, data as any);
+        const result = await updateSupplier(id, data as any);
         return result as ActionResponse<Supplier>;
       },
       delete: async (id: string) => {
-        return await remove(id);
+        return await deleteSupplier(id);
       },
     },
     {

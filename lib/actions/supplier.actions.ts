@@ -7,25 +7,26 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { withAuth } from "@/lib/middleware/withAuth";
+import { cookies } from "next/headers";
 
 // Standardized response type
-interface SupplierActionResponse<T> {
+export type ActionResponse<T> = {
   success: boolean;
-  data?: T;
+  data: T | undefined;
   error?: string;
-}
+};
 
 // Insert a new supplier
 export const insert = withAuth(
   async (
     user,
     values: z.infer<typeof supplierSchema>,
-  ): Promise<SupplierActionResponse<Supplier>> => {
+  ): Promise<ActionResponse<Supplier>> => {
     try {
       // Validate input
       const validation = await supplierSchema.safeParseAsync(values);
       if (!validation.success) {
-        return { success: false, error: validation.error.errors[0].message };
+        return { success: false, data: undefined, error: validation.error.errors[0].message };
       }
 
       const supplierData: Prisma.SupplierCreateInput = {
@@ -59,11 +60,12 @@ export const insert = withAuth(
         if (error.code === "P2002") {
           return {
             success: false,
+            data: undefined,
             error: "A supplier with these details already exists",
           };
         }
       }
-      return { success: false, error: "Failed to create supplier" };
+      return { success: false, data: undefined, error: "Failed to create supplier" };
     } finally {
       await prisma.$disconnect();
     }
@@ -72,7 +74,7 @@ export const insert = withAuth(
 
 // Get all suppliers
 export const getAll = withAuth(
-  async (user): Promise<SupplierActionResponse<Supplier[]>> => {
+  async (user): Promise<ActionResponse<Supplier[]>> => {
     try {
       const suppliers = await prisma.supplier.findMany({
         where: { companyId: user.user_metadata?.companyId },
@@ -81,12 +83,12 @@ export const getAll = withAuth(
         },
       });
       if (!suppliers || suppliers.length === 0) {
-        return { success: false, error: "No suppliers found" };
+        return { success: false, data: undefined, error: "No suppliers found" };
       }
       return { success: true, data: parseStringify(suppliers) };
     } catch (error) {
       console.error("Failed to fetch suppliers:", error);
-      return { success: false, error: "Failed to fetch suppliers" };
+      return { success: false, data: undefined, error: "Failed to fetch suppliers" };
     } finally {
       await prisma.$disconnect();
     }
@@ -95,18 +97,18 @@ export const getAll = withAuth(
 
 // Get supplier by ID
 export const getById = withAuth(
-  async (user, id: string): Promise<SupplierActionResponse<Supplier>> => {
+  async (user, id: string): Promise<ActionResponse<Supplier>> => {
     try {
       const supplier = await prisma.supplier.findUnique({
         where: { id, companyId: user.user_metadata?.companyId },
       });
       if (!supplier) {
-        return { success: false, error: "Supplier not found" };
+        return { success: false, data: undefined, error: "Supplier not found" };
       }
       return { success: true, data: parseStringify(supplier) };
     } catch (error) {
       console.error("Failed to fetch supplier:", error);
-      return { success: false, error: "Failed to fetch supplier" };
+      return { success: false, data: undefined, error: "Failed to fetch supplier" };
     } finally {
       await prisma.$disconnect();
     }
@@ -119,12 +121,16 @@ export const update = withAuth(
     user,
     id: string,
     values: z.infer<typeof supplierSchema>,
-  ): Promise<SupplierActionResponse<Supplier>> => {
+  ): Promise<ActionResponse<Supplier>> => {
     try {
       // Validate input
       const validation = await supplierSchema.safeParseAsync(values);
       if (!validation.success) {
-        return { success: false, error: validation.error.errors[0].message };
+        return {
+          success: false,
+          data: undefined,
+          error: validation.error.errors[0].message,
+        };
       }
 
       const supplierData: Prisma.SupplierUpdateInput = {
@@ -154,7 +160,7 @@ export const update = withAuth(
       return { success: true, data: parseStringify(supplier) };
     } catch (error) {
       console.error("Failed to update supplier:", error);
-      return { success: false, error: "Failed to update supplier" };
+      return { success: false, data: undefined, error: "Failed to update supplier" };
     } finally {
       await prisma.$disconnect();
     }
@@ -163,7 +169,7 @@ export const update = withAuth(
 
 // Remove supplier
 export const remove = withAuth(
-  async (user, id: string): Promise<SupplierActionResponse<Supplier>> => {
+  async (user, id: string): Promise<ActionResponse<Supplier>> => {
     try {
       const supplier = await prisma.supplier.delete({
         where: { id, companyId: user.user_metadata?.companyId },
@@ -172,9 +178,38 @@ export const remove = withAuth(
       return { success: true, data: parseStringify(supplier) };
     } catch (error) {
       console.error("Failed to delete supplier:", error);
-      return { success: false, error: "Failed to delete supplier" };
+      return { success: false, data: undefined, error: "Failed to delete supplier" };
     } finally {
       await prisma.$disconnect();
     }
   },
 );
+
+// Client-side wrappers
+const getSession = () => {
+  const cookieStore = cookies();
+  return {
+    accessToken: cookieStore.get("sb-access-token")?.value,
+    refreshToken: cookieStore.get("sb-refresh-token")?.value,
+  };
+};
+
+export async function createSupplier(values: z.infer<typeof supplierSchema>) {
+  return insert(values);
+}
+
+export async function getAllSuppliers() {
+  return getAll();
+}
+
+export async function getSupplierById(id: string) {
+  return getById(id);
+}
+
+export async function updateSupplier(id: string, values: z.infer<typeof supplierSchema>) {
+  return update(id, values);
+}
+
+export async function deleteSupplier(id: string) {
+  return remove(id);
+}

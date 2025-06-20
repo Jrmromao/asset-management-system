@@ -16,7 +16,7 @@ type CreateDepartmentInput = z.infer<typeof departmentSchema>;
 export function useDepartmentQuery() {
   const { onClose } = useDepartmentUIStore();
 
-  const genericQuery = createGenericQuery<Department, CreateDepartmentInput>(
+  const genericQuery: ReturnType<typeof createGenericQuery<Department, CreateDepartmentInput>> = createGenericQuery<Department, CreateDepartmentInput>(
     MODEL_KEY,
     {
       getAll: async () => {
@@ -28,7 +28,7 @@ export function useDepartmentQuery() {
       delete: async (id: string) => {
         return await deleteDepartment(id);
       },
-      update: async (id: string, data: Partial<Department>) => {
+      update: async (id: string, data: CreateDepartmentInput) => {
         return await updateDepartment(id, data);
       },
     },
