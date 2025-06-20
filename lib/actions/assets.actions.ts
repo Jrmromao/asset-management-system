@@ -10,6 +10,7 @@ import { revalidatePath } from "next/cache";
 import { parseStringify } from "@/lib/utils";
 import { cookies } from "next/headers";
 import { checkAssetLimit } from "@/lib/services/usage.service";
+import { calculateAssetCo2, createCo2eRecord } from "@/lib/services/ai.service";
 
 type CSVResponse = {
   success: boolean;
@@ -113,6 +114,24 @@ export const create = withAuth(
           values: true,
         },
       });
+
+      // Calculate and store CO2e record
+      if (asset.model) {
+        const co2eResponse = await calculateAssetCo2(
+          asset.name,
+          asset.model.manufacturer.name,
+          asset.model.name,
+        );
+
+        if (co2eResponse.success) {
+          await createCo2eRecord(asset.id, co2eResponse.data);
+        } else {
+          console.error(
+            "Failed to calculate CO2e for asset:",
+            co2eResponse.error,
+          );
+        }
+      }
 
       console.log("[CREATE_ASSET] Created asset:", asset);
 

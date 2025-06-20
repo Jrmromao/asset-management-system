@@ -414,9 +414,9 @@
 
     /* Sidebar */
     .sidebar {
-        @apply sticky left-0 top-0 flex h-screen w-fit flex-col justify-between 
-               border-r border-gray-200 bg-white pt-8 max-md:hidden z-10 
-               sm:p-4 xl:p-6 2xl:w-[290px] transition-colors duration-200;
+        @apply sticky left-0 top-0 flex h-screen flex-col justify-between 
+               border-r border-gray-200 bg-white pt-8 z-10 
+               sm:p-4 xl:p-6 transition-colors duration-200;
     }
 
     /* Sidebar - Dark Mode */
@@ -435,7 +435,7 @@
 
     .sidebar-label {
         @apply text-16 font-medium text-gray-700 dark:text-gray-200 
-               max-xl:hidden transition-colors duration-200;
+               transition-colors duration-200;
     }
 
     /* Enhanced hover effects for better UX */
@@ -860,9 +860,9 @@
 
     /* Sidebar */
     .sidebar {
-        @apply sticky left-0 top-0 flex h-screen w-fit flex-col justify-between 
-               border-r border-gray-200 bg-white pt-8 max-md:hidden z-10 
-               sm:p-4 xl:p-6 2xl:w-[290px] transition-colors duration-200;
+        @apply sticky left-0 top-0 flex h-screen flex-col justify-between 
+               border-r border-gray-200 bg-white pt-8 z-10 
+               sm:p-4 xl:p-6 transition-colors duration-200;
     }
 
     /* Sidebar - Dark Mode */
@@ -875,34 +875,25 @@
     }
 
     .sidebar-link {
-        @apply flex gap-3 items-center py-1 md:p-3 2xl:p-4 rounded-lg 
-               justify-center xl:justify-start xl:gap-4 transition-all duration-200;
+        @apply flex items-center gap-4 rounded-lg p-3;
     }
 
     .sidebar-label {
-        @apply text-16 font-medium text-gray-700 dark:text-gray-200 
-               max-xl:hidden transition-colors duration-200;
+        @apply font-medium;
     }
 
-    /* Enhanced hover effects for better UX */
-    .sidebar-link:hover {
-        @apply transform scale-[1.02];
+    .sidebar-animation {
+        @apply transition-all duration-300 ease-in-out;
     }
 
-    /* Focus states for accessibility */
-    .sidebar-link:focus-visible {
-        @apply outline-none ring-2 ring-emerald-500 ring-offset-2 ring-offset-white 
-               dark:ring-offset-gray-900;
-    }
-
-    /* Active state enhancements */
-    .sidebar-link[aria-current="page"] {
-        @apply shadow-lg shadow-emerald-600/25;
-    }
-
-    /* Loading state improvements */
-    .sidebar .animate-pulse > div {
-        @apply bg-gray-200 dark:bg-gray-700;
+    .toggle-button {
+        @apply absolute top-1/2 -right-4 transform -translate-y-1/2
+        w-8 h-8 rounded-full bg-white border border-gray-200
+        flex items-center justify-center
+        transition-all duration-200
+        hover:border-blue-500 hover:border-2
+        focus:outline-none focus:ring-2 focus:ring-blue-500
+        shadow-sm z-50;
     }
 }
 

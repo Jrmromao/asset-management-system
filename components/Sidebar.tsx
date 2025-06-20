@@ -6,10 +6,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Footer from "@/components/Footer";
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import HeaderIcon from "@/components/page/HeaderIcon";
 import { useSession } from "@/lib/SessionProvider";
 import { User } from "@supabase/supabase-js";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 type Role = (typeof roles)[keyof typeof roles];
 
@@ -30,11 +31,11 @@ interface SidebarLinkProps {
   };
   isActive: boolean;
   userRole: Role;
+  isCollapsed: boolean;
 }
 
 const SidebarLink = React.memo(
-  ({ item, isActive, userRole }: SidebarLinkProps) => {
-    // Early return if user doesn't have access
+  ({ item, isActive, userRole, isCollapsed }: SidebarLinkProps) => {
     if (!item.visibleTo.includes(userRole)) {
       return null;
     }
@@ -43,13 +44,12 @@ const SidebarLink = React.memo(
       <Link
         href={item.route}
         id={`sidebar-link-${item.label.toLowerCase().replace(/\s+/g, "-")}`}
-        className={cn("sidebar-link transition-colors duration-200", {
+        className={cn("sidebar-link", {
           "bg-green-600 text-white": isActive,
           "hover:bg-gray-100 dark:hover:bg-gray-800": !isActive,
-          "text-gray-700 dark:text-gray-300": !isActive,
+          "justify-center": isCollapsed,
         })}
         aria-current={isActive ? "page" : undefined}
-        aria-label={`Navigate to ${item.label}`}
       >
         <div className="relative size-6 flex-shrink-0">
           <Image
@@ -58,15 +58,14 @@ const SidebarLink = React.memo(
             fill
             className={cn("object-contain", {
               "brightness-[3] invert-0": isActive,
-              "dark:invert": !isActive,
             })}
-            priority={true}
+            priority
           />
         </div>
         <p
           className={cn("sidebar-label", {
-            "!text-white": isActive,
-            "dark:text-gray-300": !isActive,
+            "text-white": isActive,
+            hidden: isCollapsed,
           })}
         >
           {item.label}
@@ -81,24 +80,19 @@ SidebarLink.displayName = "SidebarLink";
 const Sidebar = () => {
   const pathName = usePathname();
   const { user, session } = useSession();
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const isLoading = !session;
 
-  // Safely extract user role with fallback
   const userRole = useMemo(() => {
     if (!user) return roles.USER;
-
     const userWithMetadata = user as UserWithMetadata;
     const role = userWithMetadata?.user_metadata?.role;
-
-    // Validate that the role exists in our roles object
     if (role && Object.values(roles).includes(role)) {
       return role;
     }
-
     return roles.USER;
   }, [user]);
 
-  // Memoize filtered links to prevent unnecessary re-renders
   const filteredLinks = useMemo(
     () =>
       sidebarLinks
@@ -111,7 +105,10 @@ const Sidebar = () => {
     [pathName, userRole],
   );
 
-  // Show loading state while session is loading
+  const toggleSidebar = () => {
+    setIsCollapsed(!isCollapsed);
+  };
+
   if (isLoading) {
     return (
       <section
@@ -130,14 +127,22 @@ const Sidebar = () => {
 
   return (
     <section
-      className={cn("sidebar dark:bg-gray-900 dark:border-gray-800", {
-        "2xl:hidden": false,
+      className={cn("sidebar sidebar-animation", {
+        "w-20": isCollapsed,
+        "w-[290px]": !isCollapsed,
       })}
       aria-label="Main navigation"
     >
+      <button
+        onClick={toggleSidebar}
+        className="toggle-button"
+        aria-label="Toggle sidebar"
+      >
+        {isCollapsed ? <ChevronRight /> : <ChevronLeft />}
+      </button>
       <nav className="flex flex-col gap-4" role="navigation">
         <div className="mb-4">
-          <HeaderIcon />
+          <HeaderIcon isCollapsed={isCollapsed} />
         </div>
 
         {filteredLinks.length === 0 ? (
@@ -151,12 +156,13 @@ const Sidebar = () => {
               item={item}
               isActive={item.isActive}
               userRole={userRole}
+              isCollapsed={isCollapsed}
             />
           ))
         )}
       </nav>
 
-      <Footer />
+      <Footer isCollapsed={isCollapsed} />
     </section>
   );
 };

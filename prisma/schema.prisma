@@ -622,18 +622,19 @@ model AuditLog {
 
 model Co2eRecord {
   id               String   @id @default(cuid())
-  assetId          String
+  assetId          String?
   itemType         String // Should be either "Asset" or "Accessory"
   userId           String?
   co2e             Decimal  @db.Decimal(15, 2)
   co2eType         String
   units            String   @default("kg")
   sourceOrActivity String
+  description      String? // Restored and added description
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
   // Only one of these will be used based on itemType
-  asset         Asset        @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  asset         Asset?        @relation(fields: [assetId], references: [id], onDelete: Cascade)
   user          User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
   Accessory     Accessory?   @relation(fields: [accessoryId], references: [id])
   accessoryId   String?
