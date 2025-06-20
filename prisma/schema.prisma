@@ -122,8 +122,6 @@ model PurchaseOrder {
   @@index([supplierId])
 }
 
-
-
 model Accessory {
   id                 String              @id @default(cuid())
   name               String
@@ -162,7 +160,6 @@ model Accessory {
   userItems          UserItem[]          @relation("AccessoryToUserItem")
   AccessoryStock     AccessoryStock[]
   Co2eRecord         Co2eRecord[]
-
 
   @@unique([poNumber, companyId])
   @@unique([serialNumber, companyId])
@@ -787,23 +784,43 @@ model GeneratedReport {
   @@index([companyId])
 }
 
-// Add these models to your schema
+// Pricing Plans System
+model PricingPlan {
+  id                String   @id @default(cuid())
+  name              String   @unique // e.g., "Pro Monthly", "Pro Annual"
+  description       String?
+  stripePriceId     String   @unique // Stripe Price ID for monthly or annual
+  planType          PlanType // PRO, ENTERPRISE
+  pricePerAsset     Decimal  @db.Decimal(10, 4) // e.g., 0.35 for monthly, 0.315 for annual
+  billingCycle      String   // "monthly" or "yearly"
+  trialDays         Int      @default(30)
+  isActive          Boolean  @default(true)
+  features          Json     // Array of feature strings
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  subscriptions Subscription[]
+
+  @@index([planType])
+  @@index([isActive])
+}
+
+// Update the existing Subscription model to reference PricingPlan
 model Subscription {
   id                   String    @id @default(cuid())
-  companyId            String    @unique // One subscription per company
+  companyId            String    @unique
   stripeCustomerId     String    @unique
-  stripePriceId        String
   stripeSubscriptionId String    @unique
-  status               String // active, past_due, canceled, etc.
-  currentPeriodStart   DateTime
-  currentPeriodEnd     DateTime
-  plan                 PlanType  @default(FREE)
-  pricePerAsset        Decimal   @db.Decimal(10, 2)
-  billingCycleAnchor   DateTime
+  status               String
+  billingCycle         String    // "monthly" or "yearly"
+  assetQuota           Int       // Number of assets the user wants to track
   trialEndsAt          DateTime?
   cancelAtPeriodEnd    Boolean   @default(false)
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
+
+  pricingPlanId        String?
+  pricingPlan          PricingPlan? @relation(fields: [pricingPlanId], references: [id])
 
   company         Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
   usageRecords    UsageRecord[]
@@ -811,6 +828,7 @@ model Subscription {
   billingSettings BillingSettings?
 
   @@index([companyId])
+  @@index([pricingPlanId])
 }
 
 model BillingSettings {

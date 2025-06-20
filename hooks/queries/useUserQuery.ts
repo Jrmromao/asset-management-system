@@ -1,88 +1,82 @@
-import { useUserUIStore } from "@/lib/stores/useUserUIStore";
-import { createGenericQuery } from "@/hooks/queries/useQueryFactory";
-import { z } from "zod";
-import { userSchema } from "@/lib/schemas";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  getAll,
+  createUser as createUserAction,
+  getUserById,
+  remove as deleteUserAction,
+} from "@/lib/actions/user.actions";
+import { toast } from "sonner";
+import { User } from "@prisma/client";
 
-export const MODEL_KEY = ["users"] as const;
-type CreateModelInput = z.infer<typeof userSchema>;
-
-export function useUserQuery() {
-  const { onClose } = useUserUIStore();
-
-  const genericQuery = createGenericQuery<User, CreateModelInput>(
-    MODEL_KEY,
-    {
-      getAll: async () => {
-        const response = await fetch('/api/users');
-        if (!response.ok) {
-          throw new Error('Failed to fetch users');
-        }
-        return response.json();
-      },
-      insert: async (data: CreateModelInput) => {
-        const response = await fetch('/api/users', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data),
-        });
-        if (!response.ok) {
-          throw new Error('Failed to create user');
-        }
-        return response.json();
-      },
-      update: async (id: string, data: Partial<CreateModelInput>) => {
-        const response = await fetch(`/api/users/${id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data),
-        });
-        if (!response.ok) {
-          throw new Error('Failed to update user');
-        }
-        return response.json();
-      },
-      delete: async (id: string) => {
-        const response = await fetch(`/api/users/${id}`, {
-          method: 'DELETE',
-        });
-        if (!response.ok) {
-          throw new Error('Failed to delete user');
-        }
-        return response.json();
-      },
-      findById: async (id: string) => {
-        const response = await fetch(`/api/users/${id}`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch user');
-        }
-        return response.json();
-      },
-    },
-    {
-      onClose,
-      successMessage: "User created successfully",
-      errorMessage: "Failed to create user",
-      staleTime: 5 * 60 * 1000,
-    },
-  );
+export const useUserQuery = () => {
+  const queryClient = useQueryClient();
 
   const {
-    items: users,
+    data: users = [],
     isLoading,
     error,
-    createItem: createUser,
-    isCreating,
-    refresh,
-    findById: queryFindById,
-  } = genericQuery();
+    refetch,
+  } = useQuery<User[], Error>({
+    queryKey: ["users"],
+    queryFn: async () => {
+      const result = await getAll();
+      if (!result.success || !result.data) {
+        throw new Error(result.error || "Failed to fetch users");
+      }
+      return result.data as User[];
+    },
+  });
+
+  const { mutateAsync: createUser, isPending: isCreating } = useMutation({
+    mutationFn: createUserAction,
+    onSuccess: (result) => {
+      if (result.success) {
+        queryClient.invalidateQueries({ queryKey: ["users"] });
+        toast.success("User created successfully");
+      } else {
+        toast.error(`Failed to create user: ${result.error}`);
+      }
+    },
+    onError: (error) => {
+      toast.error(`Failed to create user: ${error.message}`);
+    },
+  });
+
+  const { mutateAsync: deleteItem } = useMutation({
+    mutationFn: (id: string) => deleteUserAction(id),
+    onSuccess: (result) => {
+      if (result.success) {
+        queryClient.invalidateQueries({ queryKey: ["users"] });
+        toast.success("User deleted successfully");
+      } else {
+        toast.error(`Failed to delete user: ${result.error}`);
+      }
+    },
+    onError: (error) => {
+      toast.error(`Failed to delete user: ${error.message}`);
+    },
+  });
+
+  const findById = async (id: string) => {
+    const user = users.find((user: User) => user.id === id);
+    if (user) return user;
+
+    const result = await getUserById(id);
+    if (result.success && result.data) {
+      return result.data;
+    }
+
+    return undefined;
+  };
 
   return {
     users,
     isLoading,
     error,
-    findById: queryFindById,
+    findById,
     createUser,
     isCreating,
-    refresh,
+    refresh: refetch,
+    deleteItem,
   };
-}
+};

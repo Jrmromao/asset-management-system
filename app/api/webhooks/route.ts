@@ -2,12 +2,51 @@ import Stripe from "stripe";
 import { prisma } from "@/app/db";
 import { CompanyStatus, PlanType } from "@prisma/client";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+// Validate required environment variables
+const requiredEnvVars = {
+  STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
+  STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
+  STRIPE_PRICE_ID_PRO: process.env.STRIPE_PRICE_ID_PRO,
+  STRIPE_PRICE_ID_BUSINESS: process.env.STRIPE_PRICE_ID_BUSINESS,
+} as const;
+
+Object.entries(requiredEnvVars).forEach(([key, value]) => {
+  if (!value) {
+    console.warn(`${key} environment variable is not set.`);
+  }
+});
+
+const stripe = new Stripe(requiredEnvVars.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-02-24.acacia",
 });
 
+// Retry logic with exponential backoff
+async function handleWebhookWithRetry(
+  eventType: string,
+  handler: () => Promise<void>,
+  maxRetries = 3
+) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      await handler();
+      return;
+    } catch (error) {
+      console.error(`Webhook ${eventType} attempt ${attempt} failed:`, error);
+      
+      if (attempt === maxRetries) {
+        throw error;
+      }
+      
+      // Exponential backoff
+      await new Promise(resolve => 
+        setTimeout(resolve, Math.pow(2, attempt) * 1000)
+      );
+    }
+  }
+}
+
 export async function POST(req: Request) {
-  if (!process.env.STRIPE_SECRET_KEY || !process.env.STRIPE_WEBHOOK_SECRET) {
+  if (!requiredEnvVars.STRIPE_SECRET_KEY || !requiredEnvVars.STRIPE_WEBHOOK_SECRET) {
     console.error("Missing required environment variables");
     return new Response("Server configuration error", { status: 500 });
   }
@@ -23,46 +62,56 @@ export async function POST(req: Request) {
     const event = stripe.webhooks.constructEvent(
       body,
       signature,
-      process.env.STRIPE_WEBHOOK_SECRET!,
+      requiredEnvVars.STRIPE_WEBHOOK_SECRET!,
     );
+
+    console.log(`Processing webhook event: ${event.type}`, {
+      eventId: event.id,
+      objectId: 'id' in event.data.object ? event.data.object.id : 'unknown',
+      timestamp: new Date(event.created * 1000).toISOString(),
+    });
 
     switch (event.type) {
       case "customer.subscription.trial_will_end":
-        const trialEndEvent = event.data.object as Stripe.Subscription;
-        await handleTrialEnding(trialEndEvent);
+        await handleWebhookWithRetry(
+          event.type,
+          () => handleTrialEnding(event.data.object as Stripe.Subscription)
+        );
         break;
 
       case "checkout.session.completed":
-        const session = event.data.object as Stripe.Checkout.Session;
-        await handleCheckoutCompleted(session);
+        await handleWebhookWithRetry(
+          event.type,
+          () => handleCheckoutCompleted(event.data.object as Stripe.Checkout.Session)
+        );
         break;
 
       case "invoice.paid":
-        const invoice = event.data.object as Stripe.Invoice;
-        await handleInvoicePaid(invoice);
+        await handleWebhookWithRetry(
+          event.type,
+          () => handleInvoicePaid(event.data.object as Stripe.Invoice)
+        );
         break;
 
       case "invoice.payment_failed":
-        const failedInvoice = event.data.object as Stripe.Invoice;
-        await handlePaymentFailed(failedInvoice);
-        break;
-
-      case "customer.subscription.created":
-        const subscription = event.data.object as Stripe.Subscription;
-        await handleSubscriptionCreated(subscription);
-        break;
-
-      case "customer.subscription.updated":
-        const updatedSubscription = event.data.object as Stripe.Subscription;
-        await handleSubscriptionUpdated(updatedSubscription);
+        await handleWebhookWithRetry(
+          event.type,
+          () => handlePaymentFailed(event.data.object as Stripe.Invoice)
+        );
         break;
 
       case "customer.subscription.deleted":
-        const deletedSubscription = event.data.object as Stripe.Subscription;
-        await handleSubscriptionDeleted(deletedSubscription);
+        await handleWebhookWithRetry(
+          event.type,
+          () => handleSubscriptionDeleted(event.data.object as Stripe.Subscription)
+        );
         break;
+
+      default:
+        console.log(`Unhandled event type: ${event.type}`);
     }
 
+    console.log(`Successfully processed webhook event: ${event.type}`);
     return new Response(null, { status: 200 });
   } catch (err) {
     console.error("Webhook error:", err);
@@ -74,6 +123,12 @@ export async function POST(req: Request) {
 }
 
 async function handleTrialEnding(subscription: Stripe.Subscription) {
+  // Validate subscription status
+  if (!['active', 'trialing'].includes(subscription.status)) {
+    console.warn(`Skipping trial ending for subscription ${subscription.id} with status: ${subscription.status}`);
+    return;
+  }
+
   await prisma.subscription.update({
     where: { stripeSubscriptionId: subscription.id },
     data: {
@@ -104,50 +159,6 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
   }
 }
 
-async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
-  const price = subscription.items.data[0]?.price;
-
-  await prisma.subscription.update({
-    where: { stripeSubscriptionId: subscription.id },
-    data: {
-      status: subscription.status,
-      currentPeriodStart: new Date(subscription.current_period_start * 1000),
-      currentPeriodEnd: new Date(subscription.current_period_end * 1000),
-      billingCycleAnchor: new Date(subscription.billing_cycle_anchor * 1000),
-      trialEndsAt: subscription.trial_end
-        ? new Date(subscription.trial_end * 1000)
-        : null,
-      cancelAtPeriodEnd: subscription.cancel_at_period_end,
-      pricePerAsset: subscription.items.data[0]?.price.unit_amount
-        ? (subscription.items.data[0].price.unit_amount / 100).toString()
-        : "0",
-      plan: determinePlanType(price?.id),
-    },
-  });
-}
-
-async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
-  const price = subscription.items.data[0]?.price;
-
-  await prisma.subscription.update({
-    where: { stripeSubscriptionId: subscription.id },
-    data: {
-      status: subscription.status,
-      currentPeriodStart: new Date(subscription.current_period_start * 1000),
-      currentPeriodEnd: new Date(subscription.current_period_end * 1000),
-      billingCycleAnchor: new Date(subscription.billing_cycle_anchor * 1000),
-      trialEndsAt: subscription.trial_end
-        ? new Date(subscription.trial_end * 1000)
-        : null,
-      cancelAtPeriodEnd: subscription.cancel_at_period_end,
-      pricePerAsset: subscription.items.data[0]?.price.unit_amount
-        ? (subscription.items.data[0].price.unit_amount / 100).toString()
-        : "0",
-      plan: determinePlanType(price?.id),
-    },
-  });
-}
-
 async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   await prisma.$transaction(async (tx) => {
     await tx.subscription.update({
@@ -157,75 +168,50 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
         cancelAtPeriodEnd: true,
       },
     });
-
-    // const company = await tx.company.findFirst({
-    //   where: { subscription: { stripeSubscriptionId: subscription.id } },
-    // });
-
-    // if (company) {
-    //   await tx.company.update({
-    //     where: { id: company.id },
-    //     data: { status: CompanyStatus.INACTIVE },
-    //   });
-    // }
   });
 }
 
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
-  if (session.metadata?.companyId) {
-    const subscriptionId = session.subscription as string;
+  const { companyId, assetQuota, planId } = session.metadata as {
+    companyId: string;
+    assetQuota: string;
+    planId: string;
+  };
 
-    if (!subscriptionId) {
-      console.error("No subscription ID found in checkout session!");
-      return;
-    }
-
-    // Fetch the subscription details from Stripe
-    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-    const price = subscription.items.data[0]?.price;
-
-    // Store the subscription in the database
-    await prisma.subscription.create({
-      data: {
-        stripeSubscriptionId: subscriptionId,
-        companyId: session.metadata.companyId,
-        status: subscription.status,
-        stripePriceId: price?.id || "",
-        stripeCustomerId: session.customer as string,
-        currentPeriodStart: new Date(subscription.current_period_start * 1000),
-        currentPeriodEnd: new Date(subscription.current_period_end * 1000),
-        billingCycleAnchor: new Date(subscription.billing_cycle_anchor * 1000),
-        trialEndsAt: subscription.trial_end
-          ? new Date(subscription.trial_end * 1000)
-          : null,
-        cancelAtPeriodEnd: subscription.cancel_at_period_end,
-        pricePerAsset: price?.unit_amount
-          ? (price.unit_amount / 100).toString()
-          : "0",
-        plan: determinePlanType(price?.id),
-      },
-    });
-
-    await prisma.company.update({
-      where: { id: session.metadata.companyId },
-      data: {
-        status: CompanyStatus.ACTIVE,
-      },
-    });
+  if (!companyId || !assetQuota || !planId) {
+    console.error("Missing required metadata in checkout session");
+    return;
   }
-}
 
-function determinePlanType(priceId: string | undefined): PlanType {
-  if (!priceId) return PlanType.FREE;
-
-  // Add your logic to map price IDs to plan types
-  // Example:
-  switch (priceId) {
-    case process.env.STRIPE_PRICE_ID_PRO:
-      return PlanType.PRO;
-    case process.env.STRIPE_PRICE_ID_BUSINESS:
-      return PlanType.ENTERPRISE;
-    default:
-      return PlanType.FREE;
+  const subscriptionId = session.subscription as string;
+  if (!subscriptionId) {
+    console.error("No subscription ID found in checkout session");
+    return;
   }
+
+  const plan = await prisma.pricingPlan.findUnique({ where: { id: planId } });
+  if (!plan) {
+    console.error(`Pricing plan with ID ${planId} not found.`);
+    return;
+  }
+
+  await prisma.subscription.create({
+    data: {
+      companyId,
+      stripeSubscriptionId: subscriptionId,
+      stripeCustomerId: session.customer as string,
+      status: "trialing",
+      billingCycle: plan.billingCycle,
+      assetQuota: parseInt(assetQuota, 10),
+      trialEndsAt: new Date(
+        Date.now() + (plan.trialDays || 0) * 24 * 60 * 60 * 1000,
+      ),
+      pricingPlanId: plan.id,
+    },
+  });
+
+  await prisma.company.update({
+    where: { id: companyId },
+    data: { status: CompanyStatus.ACTIVE },
+  });
 }

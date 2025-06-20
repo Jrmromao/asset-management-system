@@ -1,50 +1,104 @@
+import {
+  getRoleById,
+  remove,
+  update,
+} from "@/lib/actions/role.actions";
 import { NextResponse } from "next/server";
-import { createServerSupabaseClient } from "@/utils/supabase/server";
-import { remove, update } from "@/lib/actions/role.actions";
 
-interface RouteParams {
-  params: {
-    id: string;
-  };
-}
-
-export async function PATCH(request: Request, { params }: RouteParams) {
+export async function GET(
+  request: Request,
+  { params }: { params: { id: string } },
+) {
   try {
-    const supabase = createServerSupabaseClient();
-    const {
-      data: { user },
-      error,
-    } = await supabase.auth.getUser();
-
-    if (error || !user) {
-      return new NextResponse("Unauthorized", { status: 401 });
+    const roleId = params.id;
+    if (!roleId) {
+      return NextResponse.json(
+        { success: false, error: "Role ID is required" },
+        { status: 400 },
+      );
     }
 
-    const body = await request.json();
-    const result = await update(params.id, body);
-    return NextResponse.json(result);
+    const response = await getRoleById(roleId);
+
+    if (!response.success) {
+      return NextResponse.json(
+        { success: false, error: response.error },
+        { status: 404 },
+      );
+    }
+
+    return NextResponse.json({ success: true, data: response.data });
   } catch (error) {
-    console.error("[ROLE_PATCH]", error);
-    return new NextResponse("Internal Error", { status: 500 });
+    console.error("Get role error:", error);
+    return NextResponse.json(
+      { success: false, error: "Failed to fetch role" },
+      { status: 500 },
+    );
   }
 }
 
-export async function DELETE(request: Request, { params }: RouteParams) {
+export async function DELETE(
+  request: Request,
+  { params }: { params: { id: string } },
+) {
   try {
-    const supabase = createServerSupabaseClient();
-    const {
-      data: { user },
-      error,
-    } = await supabase.auth.getUser();
-
-    if (error || !user) {
-      return new NextResponse("Unauthorized", { status: 401 });
+    const roleId = params.id;
+    if (!roleId) {
+      return NextResponse.json(
+        { success: false, error: "Role ID is required" },
+        { status: 400 },
+      );
     }
 
-    const result = await remove(params.id);
-    return NextResponse.json(result);
+    const response = await remove(roleId);
+
+    if (!response.success) {
+      return NextResponse.json(
+        { success: false, error: response.error },
+        { status: 400 },
+      );
+    }
+
+    return NextResponse.json({ success: true, data: response.data });
   } catch (error) {
-    console.error("[ROLE_DELETE]", error);
-    return new NextResponse("Internal Error", { status: 500 });
+    console.error("Delete role error:", error);
+    return NextResponse.json(
+      { success: false, error: "Failed to delete role" },
+      { status: 500 },
+    );
+  }
+}
+
+export async function PATCH(
+  request: Request,
+  { params }: { params: { id: string } },
+) {
+  try {
+    const roleId = params.id;
+    const body = await request.json();
+
+    if (!roleId) {
+      return NextResponse.json(
+        { success: false, error: "Role ID is required" },
+        { status: 400 },
+      );
+    }
+
+    const response = await update(roleId, body);
+
+    if (!response.success) {
+      return NextResponse.json(
+        { success: false, error: response.error },
+        { status: 400 },
+      );
+    }
+
+    return NextResponse.json({ success: true, data: response.data });
+  } catch (error) {
+    console.error("Update role error:", error);
+    return NextResponse.json(
+      { success: false, error: "Failed to update role" },
+      { status: 500 },
+    );
   }
 }

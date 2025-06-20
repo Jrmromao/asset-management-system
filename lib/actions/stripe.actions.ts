@@ -1,13 +1,24 @@
 "use server";
 
 import Stripe from "stripe";
+import { prisma } from "@/app/db";
 
-const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
-if (!stripeSecretKey) {
-  throw new Error("STRIPE_SECRET_KEY environment variable is not set.");
-}
+// Validate all required environment variables
+const requiredEnvVars = {
+  STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
+  STRIPE_PRICE_ID: process.env.STRIPE_PRICE_ID,
+  NEXTAUTH_URL: process.env.NEXTAUTH_URL,
+} as const;
 
-const stripe = new Stripe(stripeSecretKey, {
+// Type-safe validation
+Object.entries(requiredEnvVars).forEach(([key, value]) => {
+  if (!value) {
+    throw new Error(`${key} environment variable is not set.`);
+  }
+});
+
+// Type assertion after validation
+const stripe = new Stripe(requiredEnvVars.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-02-24.acacia",
 });
 
@@ -21,42 +32,51 @@ export async function createCheckoutSession({
   email,
   assetCount,
   companyId,
+  billingCycle, // "monthly" or "yearly"
 }: {
   email: string;
   assetCount: number;
   companyId: string;
+  billingCycle: string;
 }): Promise<CheckoutSessionResponse> {
   try {
+    const plan = await prisma.pricingPlan.findFirst({
+      where: {
+        billingCycle,
+        isActive: true,
+      },
+    });
+
+    if (!plan) {
+      throw new Error(`No active ${billingCycle} plan found.`);
+    }
+
+    const customer = await stripe.customers.create({
+      email,
+      metadata: { companyId },
+    });
+
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: ["card"],
+      customer: customer.id,
       mode: "subscription",
       line_items: [
         {
-          price: "price_1QlZyQ2N5SBY44N5l2hElB14", // Verify this price ID
+          price: plan.stripePriceId,
           quantity: assetCount,
-          adjustable_quantity: {
-            enabled: true,
-            minimum: 100,
-            maximum: 5000,
-          },
         },
       ],
       subscription_data: {
-        trial_period_days: 30,
+        trial_period_days: plan.trialDays,
         metadata: {
-          assetCount: assetCount.toString(),
           companyId,
+          assetQuota: assetCount,
+          planId: plan.id,
         },
       },
-      metadata: {
-        companyId,
-      },
-      success_url: `${process.env.NEXTAUTH_URL}/account-verification?session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${process.env.NEXTAUTH_URL}/onboarding-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.NEXTAUTH_URL}/`,
-      customer_email: email,
     });
 
-    console.log("Session created successfully:", session.id);
     return { success: true, session };
   } catch (error) {
     console.error("Error creating checkout session:", error);
@@ -69,3 +89,4 @@ export async function createCheckoutSession({
     };
   }
 }
+

@@ -1,5 +1,5 @@
 "use client";
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState, useEffect } from "react";
 import HeaderBox from "@/components/HeaderBox";
 import { useRouter } from "next/navigation";
 import { DataTable } from "@/components/tables/DataTable/data-table";
@@ -12,101 +12,94 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import Link from "next/link";
-import { TableHeader } from "@/components/tables/TableHeader";
-import TableHeaderSkeleton from "@/components/tables/TableHeaderSkeleton";
+import TableHeader from "@/components/tables/TableHeader";
 import { FileCheck } from "lucide-react";
 import StatusCards from "@/components/StatusCards";
 import StatusCardPlaceholder from "@/components/StatusCardPlaceholder";
 import { useLicenseQuery } from "@/hooks/queries/useLicenseQuery";
+import { useReactTable, getCoreRowModel } from "@tanstack/react-table";
 
 const Licenses = () => {
-  const navigate = useRouter();
   const { licenses, isLoading, deleteItem } = useLicenseQuery();
+  const [filteredData, setFilteredData] = useState(licenses);
 
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterDialogOpen, setFilterDialogOpen] = useState(false);
-  const [filters, setFilters] = useState({
-    supplier: "",
-    inventory: "",
-  });
+  const navigate = useRouter();
 
-  // Memoize filtered data instead of using state
-  const filteredData = useMemo(() => {
-    if (!searchTerm.trim()) {
-      return licenses;
-    }
-
-    return licenses.filter((item: any) =>
-      Object.entries(item).some(([key, val]) => {
-        if (typeof val === "string" || typeof val === "number") {
-          return val
-            .toString()
-            .toLowerCase()
-            .includes(searchTerm.toLowerCase());
-        }
-        return false;
-      }),
-    );
-  }, [licenses, searchTerm]);
-
-  const handleFilter = () => {
-    setFilterDialogOpen(true);
-  };
+  useEffect(() => {
+    setFilteredData(licenses);
+  }, [licenses]);
 
   const handleSearch = (value: string) => {
-    setSearchTerm(value);
+    const searchResults = licenses.filter((item: any) =>
+      Object.values(item).some((val) =>
+        String(val).toLowerCase().includes(value.toLowerCase()),
+      ),
+    );
+    setFilteredData(searchResults);
   };
 
-  const handleDelete = async (id: string) => {
-    await deleteItem(id);
-  };
+  const handleDelete = useCallback(
+    async (id: string) => {
+      await deleteItem(id);
+    },
+    [deleteItem],
+  );
 
-  const handleView = async (id: string) => {
-    navigate.push(`/licenses/view/${id}`);
-  };
+  const handleView = useCallback(
+    (id: string) => {
+      navigate.push(`/licenses/view/${id}`);
+    },
+    [navigate],
+  );
 
   const onDelete = useCallback(
-    (accessory: any) => handleDelete(accessory?.id!),
-    [],
+    (license: any) => {
+      handleDelete(license.id!);
+    },
+    [handleDelete],
   );
+
   const onView = useCallback(
-    (accessory: any) => handleView(accessory?.id!),
-    [],
+    (license: any) => {
+      handleView(license.id!);
+    },
+    [handleView],
   );
 
   const columns = useMemo(
     () => licenseColumns({ onDelete, onView }),
     [onDelete, onView],
   );
-
-  // Memoize available licenses calculation
-  const availableLicenses = useMemo(
-    () =>
-      licenses.filter(
-        (license) => license.statusLabel?.name.toUpperCase() === "AVAILABLE",
-      ),
-    [licenses],
+  const availableLicenses = licenses.filter(
+    (license) => license.statusLabel?.name.toLowerCase() === "available",
   );
 
-  const TopCards = useCallback(() => {
+  const table = useReactTable({
+    data: filteredData,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+  });
+
+  const TopCards = useMemo(() => {
     const cardData = [
       {
         title: "Total Licenses",
         value: licenses.length,
+        icon: <FileCheck />,
       },
       {
         title: "Available Licenses",
         value: availableLicenses.length,
-        percentage: availableLicenses.length,
-        total: availableLicenses.length,
+        icon: <FileCheck />,
+        percentage: licenses.length > 0 ? (availableLicenses.length / licenses.length) * 100 : 0,
+        total: licenses.length,
       },
     ];
-
     return <StatusCards cards={cardData} />;
   }, [licenses.length, availableLicenses.length]);
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="min-h-screen p-6 space-y-6 mt-5">
       <Breadcrumb className="hidden md:flex">
         <BreadcrumbList>
           <BreadcrumbItem>
@@ -118,35 +111,28 @@ const Licenses = () => {
         </BreadcrumbList>
       </Breadcrumb>
       <HeaderBox
+        icon={<FileCheck />}
         title="Licenses"
-        subtext="Manage your licenses."
-        icon={<FileCheck className="w-4 h-4" />}
+        subtitle="Manage all your software licenses"
       />
-      <div className="space-y-6">
-        <section className="flex w-full flex-col gap-6">
-          {isLoading ? (
-            <>
-              <StatusCardPlaceholder />
-              <TableHeaderSkeleton />
-            </>
-          ) : (
-            <>
-              <TopCards />
-              <TableHeader
-                onSearch={handleSearch}
-                onFilter={handleFilter}
-                onImport={() => {}}
-                onCreateNew={() => navigate.push("/licenses/create")}
-              />
-            </>
-          )}
-          <DataTable
-            columns={columns}
-            data={filteredData}
-            isLoading={isLoading}
+      {isLoading ? (
+        <>
+          <StatusCardPlaceholder />
+          <TableHeader table={table} />
+        </>
+      ) : (
+        <>
+          {TopCards}
+          <TableHeader
+            table={table}
+            onSearch={handleSearch}
+            onFilter={() => {}}
+            onImport={() => {}}
+            onAddNew={() => navigate.push("/licenses/create")}
           />
-        </section>
-      </div>
+        </>
+      )}
+      <DataTable columns={columns} data={filteredData} isLoading={isLoading} />
     </div>
   );
 };

@@ -14,11 +14,10 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import Link from "next/link";
-import HeaderBox from "@/components/HeaderBox";
+// import HeaderBox from "@/components/dashboard/HeaderBox";
 import StatusCards from "@/components/StatusCards";
 import StatusCardPlaceholder from "@/components/StatusCardPlaceholder";
 import TableHeaderSkeleton from "@/components/tables/TableHeaderSkeleton";
-import { TableHeader } from "@/components/tables/TableHeader";
 import { accessoriesColumns } from "@/components/tables/AccessoriesColumns";
 import {
   Dialog,
@@ -30,6 +29,10 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { BsDisplay } from "react-icons/bs";
 import { useAccessoryQuery } from "@/hooks/queries/useAccessoryQuery";
+import { getAllAccessories } from "@/lib/actions/accessory.actions";
+import HeaderBox from "@/components/HeaderBox";
+import TableHeader from "@/components/tables/TableHeader";
+import { useReactTable, getCoreRowModel } from "@tanstack/react-table";
 
 const Accessories = () => {
   const { accessories, isLoading, deleteItem } = useAccessoryQuery();
@@ -118,6 +121,11 @@ const Accessories = () => {
     () => accessoriesColumns({ onDelete, onView }),
     [onDelete, onView],
   );
+  const table = useReactTable({
+    data: filteredData,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+  });
   const availableAccessories = accessories.filter((acc) => {
     return acc.statusLabel?.name.toLowerCase() === "available";
   });
@@ -153,9 +161,9 @@ const Accessories = () => {
       </Breadcrumb>
       {/* Header Section */}
       <HeaderBox
+        icon={<BsDisplay />}
         title="Accessories"
-        subtext="Manage and track your accessories"
-        icon={<BsDisplay className="w-4 h-4" />}
+        subtitle="Manage and track all your accessories"
       />
       {/* Stats Cards */}
       {isLoading ? (
@@ -167,10 +175,11 @@ const Accessories = () => {
         <>
           <TopCards />
           <TableHeader
+            table={table}
             onSearch={handleSearch}
             onFilter={handleFilter}
             onImport={() => openDialog()}
-            onCreateNew={() => navigate.push("/accessories/create")}
+            onAddNew={() => navigate.push("/accessories/create")}
           />
         </>
       )}

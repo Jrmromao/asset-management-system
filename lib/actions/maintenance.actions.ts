@@ -6,30 +6,45 @@ import { handleError, parseStringify } from "@/lib/utils";
 import { z } from "zod";
 import { analyzeWithLlm } from "./chatGPT.actions";
 import { FlowRulesService } from "../services/flowRulesService";
+import { Prisma } from "@prisma/client";
 
 const flowRulesService = new FlowRulesService();
+
+// Define a type for the maintenance event with its relations
+const maintenanceWithDetails = Prisma.validator<Prisma.MaintenanceDefaultArgs>()({
+  include: {
+    asset: { include: { user: true, category: true } }, // Corrected from assignee to user
+    statusLabel: true,
+  },
+});
+type MaintenanceWithDetails = Prisma.MaintenanceGetPayload<
+  typeof maintenanceWithDetails
+>;
 
 // Validation schema for creating a maintenance event
 const maintenanceSchema = z.object({
   assetId: z.string(),
   title: z.string().min(3, "Title must be at least 3 characters"),
   notes: z.string().optional(),
-  startDate: z.date(),
+  startDate: z.coerce.date(), // Coerce string to Date
   isWarranty: z.boolean().default(false),
-  estimatedCost: z.number().optional(),
+  cost: z.number().optional(), // Changed from estimatedCost
 });
 
 type MaintenanceInput = z.infer<typeof maintenanceSchema>;
 
 export const createMaintenanceEvent = withAuth(
-  async (user, data: MaintenanceInput): Promise<AuthResponse<any>> => {
+  async (
+    user,
+    data: MaintenanceInput,
+  ): Promise<AuthResponse<MaintenanceWithDetails>> => {
     try {
       const validation = maintenanceSchema.safeParse(data);
       if (!validation.success) {
         return {
           success: false,
           error: validation.error.errors[0].message,
-          data: null,
+          data: {} as MaintenanceWithDetails,
         };
       }
 
@@ -45,7 +60,7 @@ export const createMaintenanceEvent = withAuth(
         return {
           success: false,
           error: "Status 'Scheduled' not found. Please create it.",
-          data: null,
+          data: {} as MaintenanceWithDetails,
         };
       }
 
@@ -59,7 +74,7 @@ export const createMaintenanceEvent = withAuth(
             statusLabelId: maintenanceStatus.id,
           },
           include: {
-            asset: { include: { assignee: true, category: true } },
+            asset: { include: { user: true, category: true } }, // Corrected relation
             statusLabel: true,
           },
         });
@@ -70,7 +85,7 @@ export const createMaintenanceEvent = withAuth(
           user,
           asset: event.asset,
           status: event.statusLabel.name,
-          estimatedCost: validation.data.estimatedCost || 0,
+          cost: validation.data.cost || 0, // Use cost
         };
 
         const flowResults = await flowRulesService.executeRules(
@@ -86,7 +101,7 @@ export const createMaintenanceEvent = withAuth(
 
       // TODO: SEND EMAIL NOTIFICATION
       // Notify the asset assignee that maintenance has been scheduled.
-      // Example: await sendEmail({ to: newEvent.asset.assignee.email, ... });
+      // Example: await sendEmail({ to: newEvent.asset.user?.email, ... });
 
       // 3. Trigger AI carbon footprint analysis (asynchronously)
       if (newEvent.notes) {
@@ -95,7 +110,7 @@ export const createMaintenanceEvent = withAuth(
 
       return { success: true, data: parseStringify(newEvent) };
     } catch (error) {
-      return handleError(error);
+      return handleError(error, {} as MaintenanceWithDetails);
     }
   },
 );

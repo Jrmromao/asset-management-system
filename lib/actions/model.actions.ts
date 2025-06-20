@@ -8,6 +8,8 @@ import { prisma } from "@/app/db";
 import { withAuth, AuthResponse } from "@/lib/middleware/withAuth";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
+import type { ModelWithRelations } from "@/types/model";
+import { Model } from "@prisma/client";
 
 type ActionResponse<T> = {
   data?: T;
@@ -27,12 +29,12 @@ export const insert = withAuth(
   async (
     user,
     values: z.infer<typeof modelSchema>,
-  ): Promise<AuthResponse<Model>> => {
+  ): Promise<AuthResponse<ModelWithRelations>> => {
     if (!user?.user_metadata?.companyId) {
       return {
         error: "Company ID not found",
         success: false,
-        data: null as unknown as Model,
+        data: null as unknown as ModelWithRelations,
       };
     }
 
@@ -47,7 +49,7 @@ export const insert = withAuth(
         return {
           error: validation.error.errors[0].message,
           success: false,
-          data: null as unknown as Model,
+          data: null as unknown as ModelWithRelations,
         };
       }
 
@@ -56,13 +58,16 @@ export const insert = withAuth(
           ...validation.data,
           companyId: user.user_metadata.companyId,
         },
+        include: {
+          manufacturer: { select: { name: true } },
+        },
       });
 
       if (!model) {
         return {
           error: "Failed to create model",
           success: false,
-          data: null as unknown as Model,
+          data: null as unknown as ModelWithRelations,
         };
       }
 
@@ -78,19 +83,19 @@ export const insert = withAuth(
           return {
             error: "A model with this number already exists",
             success: false,
-            data: null as unknown as Model,
+            data: null as unknown as ModelWithRelations,
           };
         }
         return {
           error: `Database error: ${error.code}`,
           success: false,
-          data: null as unknown as Model,
+          data: null as unknown as ModelWithRelations,
         };
       }
       return {
         error: "Failed to create model",
         success: false,
-        data: null as unknown as Model,
+        data: null as unknown as ModelWithRelations,
       };
     } finally {
       await prisma.$disconnect();
@@ -101,7 +106,7 @@ export const insert = withAuth(
 // Wrapper function for client-side use
 export async function createModel(
   values: z.infer<typeof modelSchema>,
-): Promise<AuthResponse<Model>> {
+): Promise<AuthResponse<ModelWithRelations>> {
   const session = getSession();
   return insert(values);
 }
@@ -110,7 +115,7 @@ export const getAll = withAuth(
   async (
     user,
     params?: { search?: string },
-  ): Promise<AuthResponse<Model[]>> => {
+  ): Promise<AuthResponse<ModelWithRelations[]>> => {
     if (!user?.user_metadata?.companyId) {
       return {
         error: "Company ID not found",
@@ -158,7 +163,7 @@ export const getAll = withAuth(
 // Wrapper function for client-side use
 export async function getAllModels(params?: {
   search?: string;
-}): Promise<AuthResponse<Model[]>> {
+}): Promise<AuthResponse<ModelWithRelations[]>> {
   const session = getSession();
   return getAll(params);
 }
@@ -201,12 +206,12 @@ export const update = withAuth(
     user,
     id: string,
     data: Partial<z.infer<typeof modelSchema>>,
-  ): Promise<AuthResponse<Model>> => {
+  ): Promise<AuthResponse<ModelWithRelations>> => {
     if (!user?.user_metadata?.companyId) {
       return {
         error: "Company ID not found",
         success: false,
-        data: null as unknown as Model,
+        data: null as unknown as ModelWithRelations,
       };
     }
 
@@ -217,13 +222,16 @@ export const update = withAuth(
           companyId: user.user_metadata.companyId,
         },
         data,
+        include: {
+          manufacturer: { select: { name: true } },
+        },
       });
 
       if (!model) {
         return {
           error: "Model not found",
           success: false,
-          data: null as unknown as Model,
+          data: null as unknown as ModelWithRelations,
         };
       }
 
@@ -239,26 +247,26 @@ export const update = withAuth(
           return {
             error: "A model with this number already exists",
             success: false,
-            data: null as unknown as Model,
+            data: null as unknown as ModelWithRelations,
           };
         }
         if (error.code === "P2025") {
           return {
             error: "Model not found",
             success: false,
-            data: null as unknown as Model,
+            data: null as unknown as ModelWithRelations,
           };
         }
         return {
           error: `Database error: ${error.code}`,
           success: false,
-          data: null as unknown as Model,
+          data: null as unknown as ModelWithRelations,
         };
       }
       return {
         error: "Failed to update model",
         success: false,
-        data: null as unknown as Model,
+        data: null as unknown as ModelWithRelations,
       };
     } finally {
       await prisma.$disconnect();
@@ -270,7 +278,7 @@ export const update = withAuth(
 export async function updateModel(
   id: string,
   data: Partial<z.infer<typeof modelSchema>>,
-): Promise<AuthResponse<Model>> {
+): Promise<AuthResponse<ModelWithRelations>> {
   const session = getSession();
   return update(id, data);
 }

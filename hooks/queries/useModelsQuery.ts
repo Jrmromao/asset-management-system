@@ -8,7 +8,8 @@ import {
   updateModel as updateModelAction,
 } from "@/lib/actions/model.actions";
 import { useModelUIStore } from "@/lib/stores/useModelUIStore";
-import type { Model, Manufacturer } from "@prisma/client";
+import { ModelWithRelations } from "@/types/model";
+import { Model } from "@prisma/client";
 
 export const MODEL_KEY = ["models"] as const;
 
@@ -16,16 +17,12 @@ type CreateModelInput = z.infer<typeof modelSchema>;
 type UpdateModelInput = Partial<CreateModelInput>;
 type ActionResponse<T> = { data?: T; error?: string; success: boolean };
 
-interface ModelWithRelations extends Model {
-  manufacturer?: Pick<Manufacturer, "name"> | null;
-}
-
 type CrudActions = {
   getAll: () => Promise<ActionResponse<ModelWithRelations[]>>;
   insert: (
     data: CreateModelInput,
   ) => Promise<ActionResponse<ModelWithRelations>>;
-  delete: (id: string) => Promise<ActionResponse<ModelWithRelations>>;
+  delete: (id: string) => Promise<ActionResponse<Model>>;
   update: (
     id: string,
     data: UpdateModelInput,
@@ -33,14 +30,12 @@ type CrudActions = {
 };
 
 const modelActions: CrudActions = {
-  getAll: () =>
-    getAllModels({}) as Promise<ActionResponse<ModelWithRelations[]>>,
+  getAll: () => getAllModels({}) as Promise<ActionResponse<ModelWithRelations[]>>,
 
   insert: (data: CreateModelInput) =>
     createModelAction(data) as Promise<ActionResponse<ModelWithRelations>>,
 
-  delete: (id: string) =>
-    deleteModelAction(id) as Promise<ActionResponse<ModelWithRelations>>,
+  delete: (id: string) => deleteModelAction(id) as Promise<ActionResponse<Model>>,
 
   update: (id: string, data: UpdateModelInput) =>
     updateModelAction(id, data) as Promise<ActionResponse<ModelWithRelations>>,

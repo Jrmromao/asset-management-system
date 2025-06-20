@@ -1,31 +1,35 @@
+import { processAssetCSV } from "@/lib/actions/assets.actions";
 import { NextResponse } from "next/server";
-import { createServerSupabaseClient } from "@/utils/supabase/server";
-import { processAssetsCSV } from "@/lib/actions/assets.actions";
 
 export async function POST(request: Request) {
   try {
-    const supabase = createServerSupabaseClient();
-    const {
-      data: { user },
-      error,
-    } = await supabase.auth.getUser();
+    const csvContent = await request.text();
 
-    if (error || !user) {
-      return new NextResponse("Unauthorized", { status: 401 });
+    if (!csvContent) {
+      return NextResponse.json(
+        { success: false, error: "No CSV content provided" },
+        { status: 400 },
+      );
     }
 
-    const body = await request.json();
-    const { fileContent } = body;
+    const response = await processAssetCSV(csvContent);
 
-    if (!fileContent) {
-      return new NextResponse("No file content provided", { status: 400 });
+    if (!response.success) {
+      return NextResponse.json(
+        { success: false, error: response.message },
+        { status: 400 },
+      );
     }
 
-    const result = await processAssetsCSV(fileContent);
-
-    return NextResponse.json(result);
+    return NextResponse.json({
+      success: true,
+      message: response.message,
+    });
   } catch (error) {
-    console.error("[ASSETS_IMPORT]", error);
-    return new NextResponse("Internal Error", { status: 500 });
+    console.error("Import error:", error);
+    return NextResponse.json(
+      { success: false, error: "Failed to import assets" },
+      { status: 500 },
+    );
   }
 }

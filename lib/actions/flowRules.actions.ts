@@ -51,17 +51,17 @@ export const createFlowRule = withAuth(
         return {
           success: false,
           error: validation.error.errors[0].message,
-          data: null,
+          data: {} as FlowRuleData,
         };
       }
 
       const rule = await flowRulesService.createRule(
         user.user_metadata.companyId,
-        validation.data,
+        validation.data as FlowRuleData,
       );
       return { success: true, data: parseStringify(rule) };
     } catch (error) {
-      return handleError(error);
+      return handleError(error, {} as FlowRuleData);
     }
   },
 );
@@ -75,7 +75,7 @@ export const updateFlowRule = withAuth(
       const rule = await flowRulesService.updateRule(data.id, data.rule);
       return { success: true, data: parseStringify(rule) };
     } catch (error) {
-      return handleError(error);
+      return handleError(error, {} as FlowRuleData);
     }
   },
 );
@@ -84,9 +84,9 @@ export const deleteFlowRule = withAuth(
   async (user, data: { id: string }): Promise<AuthResponse<void>> => {
     try {
       await flowRulesService.deleteRule(data.id);
-      return { success: true, data: null };
+      return { success: true, data: undefined };
     } catch (error) {
-      return handleError(error);
+      return handleError(error, undefined);
     }
   },
 );
@@ -103,7 +103,7 @@ export const getFlowRules = withAuth(
       );
       return { success: true, data: parseStringify(rules) };
     } catch (error) {
-      return handleError(error);
+      return handleError(error, []);
     }
   },
 );
@@ -114,7 +114,7 @@ export const getFlowRuleById = withAuth(
       const rule = await flowRulesService.getRuleById(data.id);
       return { success: true, data: parseStringify(rule) };
     } catch (error) {
-      return handleError(error);
+      return handleError(error, {} as FlowRuleData);
     }
   },
 );

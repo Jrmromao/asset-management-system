@@ -1,38 +1,28 @@
+import { exportAssetsToCSV } from "@/lib/actions/assets.actions";
 import { NextResponse } from "next/server";
-import { exportToCSV } from "@/lib/actions/assets.actions";
-import { createServerSupabaseClient } from "@/utils/supabase/server";
 
-export async function POST() {
+export async function GET(request: Request) {
   try {
-    const supabase = createServerSupabaseClient();
-    const {
-      data: { user },
-      error,
-    } = await supabase.auth.getUser();
+    const response = await exportAssetsToCSV();
 
-    if (error || !user) {
-      return new NextResponse("Unauthorized", { status: 401 });
+    if (!response.success) {
+      return NextResponse.json(
+        { success: false, error: response.error },
+        { status: 400 },
+      );
     }
 
-    const result = await exportToCSV();
-    if (!result.success) {
-      return new NextResponse(result.error, { status: 500 });
-    }
-
-    // Set headers for CSV download
+    const csvContent = response.data;
     const headers = new Headers();
     headers.set("Content-Type", "text/csv");
-    headers.set(
-      "Content-Disposition",
-      `attachment; filename="assets-${new Date().toISOString().split("T")[0]}.csv"`,
-    );
+    headers.set("Content-Disposition", "attachment; filename=assets.csv");
 
-    return new NextResponse(result.data, {
-      status: 200,
-      headers,
-    });
+    return new NextResponse(csvContent, { headers });
   } catch (error) {
-    console.error("[ASSETS_EXPORT]", error);
-    return new NextResponse("Internal Error", { status: 500 });
+    console.error("Export error:", error);
+    return NextResponse.json(
+      { success: false, error: "Failed to export assets" },
+      { status: 500 },
+    );
   }
 }

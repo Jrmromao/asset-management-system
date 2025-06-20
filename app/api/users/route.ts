@@ -1,103 +1,29 @@
-import { NextResponse } from "next/server";
-import { createServerSupabaseClient } from "@/utils/supabase/server";
-import { userService } from "@/services/user/userService";
-import { prisma } from "@/app/db";
+import { NextRequest, NextResponse } from "next/server";
+import { getAll, createUser } from "@/lib/actions/user.actions";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const supabase = createServerSupabaseClient();
-    const {
-      data: { user },
-      error,
-    } = await supabase.auth.getUser();
-
-    if (error || !user) {
-      return new NextResponse("Unauthorized", { status: 401 });
-    }
-
-    const companyId = user.user_metadata?.companyId;
-    if (!companyId) {
-      return new NextResponse("No company associated with your account", {
-        status: 400,
-      });
-    }
-
-    // Verify company exists
-    const company = await prisma.company.findUnique({
-      where: { id: companyId },
-    });
-
-    if (!company) {
-      return new NextResponse("Invalid company ID or company not found", {
-        status: 400,
-      });
-    }
-
-    const users = await prisma.user.findMany({
-      where: {
-        companyId: companyId,
-      },
-      include: {
-        role: true,
-        department: true,
-      },
-    });
-
-    return NextResponse.json({
-      success: true,
-      data: users,
-    });
+    const users = await getAll();
+    return NextResponse.json(users);
   } catch (error) {
-    console.error("[USERS_GET]", error);
-    return new NextResponse("Internal Error", { status: 500 });
+    console.error("Error fetching users:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch users" },
+      { status: 500 },
+    );
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(req: NextRequest) {
   try {
-    const supabase = createServerSupabaseClient();
-    const {
-      data: { user },
-      error,
-    } = await supabase.auth.getUser();
-
-    if (error || !user) {
-      return new NextResponse("Unauthorized", { status: 401 });
-    }
-
-    const companyId = user.user_metadata?.companyId;
-    if (!companyId) {
-      return new NextResponse("No company associated with your account", {
-        status: 400,
-      });
-    }
-
-    // Verify company exists
-    const company = await prisma.company.findUnique({
-      where: { id: companyId },
-    });
-
-    if (!company) {
-      return new NextResponse("Invalid company ID or company not found", {
-        status: 400,
-      });
-    }
-
-    const body = await request.json();
-    const result = await userService.createUser({
-      ...body,
-      companyId,
-    });
-
-    if (!result.success) {
-      return new NextResponse(result.error || "Failed to create user", {
-        status: result.error?.includes("company") ? 400 : 500,
-      });
-    }
-
-    return NextResponse.json(result);
-  } catch (error) {
-    console.error("[USERS_POST]", error);
-    return new NextResponse("Internal Error", { status: 500 });
+    const body = await req.json();
+    const newUser = await createUser(body);
+    return NextResponse.json(newUser, { status: 201 });
+  } catch (error: any) {
+    console.error("Error creating user:", error);
+    return NextResponse.json(
+      { error: "Failed to create user", details: error.message },
+      { status: 500 },
+    );
   }
 }

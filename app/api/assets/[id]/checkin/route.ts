@@ -1,26 +1,35 @@
+import { checkinAsset } from "@/lib/actions/assets.actions";
 import { NextResponse } from "next/server";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { checkin } from "@/lib/actions/assets.actions";
 
 export async function POST(
   request: Request,
   { params }: { params: { id: string } },
 ) {
   try {
-    const supabase = createSupabaseServerClient();
-    const {
-      data: { user },
-      error,
-    } = await supabase.auth.getUser();
+    const assetId = params.id;
 
-    if (error || !user) {
-      return new NextResponse("Unauthorized", { status: 401 });
+    if (!assetId) {
+      return NextResponse.json(
+        { success: false, error: "Asset ID is required" },
+        { status: 400 },
+      );
     }
 
-    const result = await checkin(params.id);
-    return NextResponse.json(result);
+    const response = await checkinAsset(assetId);
+
+    if (!response.success) {
+      return NextResponse.json(
+        { success: false, error: response.error },
+        { status: 400 },
+      );
+    }
+
+    return NextResponse.json({ success: true, data: response.data });
   } catch (error) {
-    console.error("[ASSET_CHECKIN]", error);
-    return new NextResponse("Internal Error", { status: 500 });
+    console.error("Checkin error:", error);
+    return NextResponse.json(
+      { success: false, error: "Failed to checkin asset" },
+      { status: 500 },
+    );
   }
 }

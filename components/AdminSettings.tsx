@@ -1,3 +1,4 @@
+"use client";
 import React, { useCallback, useMemo, useState } from "react";
 import {
   BadgeCheck,
@@ -10,7 +11,7 @@ import {
   Warehouse,
 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { TableHeader } from "@/components/tables/TableHeader";
+import TableHeader from "@/components/tables/TableHeader";
 import { DialogContainer } from "@/components/dialogs/DialogContainer";
 import {
   useDepartmentQuery,
@@ -52,6 +53,16 @@ import {
 import FormTemplateCreator from "@/components/forms/FormTemplateCreator";
 import { useFormTemplatesQuery } from "@/hooks/queries/useFormTemplatesQuery";
 import { FormTemplate } from "@/types/form";
+import { useReactTable, getCoreRowModel } from "@tanstack/react-table";
+import { ModelWithRelations } from "@/types/model";
+import {
+  Model,
+  StatusLabel,
+  Department,
+  DepartmentLocation,
+  Inventory,
+  Manufacturer,
+} from "@prisma/client";
 
 interface Tab {
   id: TabId;
@@ -134,7 +145,9 @@ const AdminSettings = () => {
   const [editingInventory, setEditingInventory] = useState<Inventory | null>(
     null,
   );
-  const [editingModel, setEditingModel] = useState<Model | null>(null);
+  const [editingModel, setEditingModel] = useState<ModelWithRelations | null>(
+    null,
+  );
   const [editingManufacturer, setEditingManufacturer] =
     useState<Manufacturer | null>();
   const [editingLocation, setEditingLocation] =
@@ -299,7 +312,7 @@ const AdminSettings = () => {
       description: editingModel ? "Update existing model" : "Add a new model",
       FormComponent: () => (
         <ModelForm
-          initialData={editingModel || undefined}
+          initialData={editingModel as any}
           onSubmitSuccess={() => {
             closeModel();
             setEditingModel(null);
@@ -317,7 +330,7 @@ const AdminSettings = () => {
         : "Add a new manufacturer",
       FormComponent: () => (
         <ManufacturerForm
-          initialData={editingManufacturer || undefined}
+          initialData={editingManufacturer as any}
           onSubmitSuccess={() => {
             closeManufacturer();
             setEditingManufacturer(null);
@@ -372,6 +385,7 @@ const AdminSettings = () => {
       FormComponent: () => (
         <StatusLabelForm
           initialData={editingStatusLabel || undefined}
+          onClose={closeStatusLabel}
           onSubmitSuccess={() => {
             closeStatusLabel();
             setEditingStatusLabel(null);
@@ -426,42 +440,42 @@ const AdminSettings = () => {
     () => ({
       models: modelColumns({
         onDelete,
-        onUpdate: (model: Model) => {
+        onUpdate: (model: any) => {
           setEditingModel(model);
           onModelOpen();
         },
       }),
       manufacturers: manufacturerColumns({
         onDelete,
-        onUpdate: (manufacturer: Manufacturer) => {
+        onUpdate: (manufacturer: any) => {
           setEditingManufacturer(manufacturer);
           onManufacturerOpen();
         },
       }),
       locations: locationColumns({
         onDelete,
-        onUpdate: (departmentLocation: DepartmentLocation) => {
+        onUpdate: (departmentLocation: any) => {
           setEditingLocation(departmentLocation);
           onLocationOpen();
         },
       }),
       departments: departmentColumns({
         onDelete,
-        onUpdate: (department: Department) => {
+        onUpdate: (department: any) => {
           setEditingDepartment(department);
           onDepartmentOpen();
         },
       }),
       "status-label": statusLabelColumns({
         onDelete,
-        onUpdate: (statusLabel: StatusLabel) => {
+        onUpdate: (statusLabel: any) => {
           setEditingStatusLabel(statusLabel);
           onStatusLabelOpen();
         },
       }),
       inventories: inventoryColumns({
         onDelete,
-        onUpdate: (inventory: Inventory) => {
+        onUpdate: (inventory: any) => {
           setEditingInventory(inventory);
           onInventoryOpen();
         },
@@ -543,7 +557,7 @@ const AdminSettings = () => {
   const renderDataTable = () => {
     switch (activeTab) {
       case "models":
-        return <DataTable columns={columns.models} data={models || []} />;
+        return <DataTable columns={columns.models} data={models as any} />;
       case "manufacturers":
         return (
           <DataTable
@@ -552,21 +566,21 @@ const AdminSettings = () => {
           />
         );
       case "locations":
-        return <DataTable columns={columns.locations} data={locations || []} />;
+        return <DataTable columns={columns.locations} data={locations as any} />;
       case "departments":
         return (
-          <DataTable columns={columns.departments} data={departments || []} />
+          <DataTable columns={columns.departments} data={departments as any} />
         );
       case "status-label":
         return (
           <DataTable
             columns={columns["status-label"]}
-            data={statusLabels || []}
+            data={statusLabels as any}
           />
         );
       case "inventories":
         return (
-          <DataTable columns={columns.inventories} data={inventories || []} />
+          <DataTable columns={columns.inventories} data={inventories as any} />
         );
 
       case "asset-categories":
@@ -584,6 +598,12 @@ const AdminSettings = () => {
 
   const activeTabConfig = TABS.find((tab) => tab.id === activeTab);
   const isLoadingData = loadingMap[activeTab];
+
+  const table = useReactTable({
+    data: models as any,
+    columns: columns.models,
+    getCoreRowModel: getCoreRowModel(),
+  });
 
   return (
     <div className="min-h-screen w-full">
@@ -664,7 +684,8 @@ const AdminSettings = () => {
                       onSearch={handleSearch}
                       onFilter={handleFilter}
                       onImport={handleImport}
-                      onCreateNew={() => handleCreateNew(activeTab)}
+                      onAddNew={() => handleCreateNew(activeTab)}
+                      table={table}
                     />
                     {renderDataTable()}
                   </>

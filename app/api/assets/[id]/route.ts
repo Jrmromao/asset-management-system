@@ -1,27 +1,39 @@
+import {
+  findAssetById,
+  removeAsset,
+  updateAsset,
+} from "@/lib/actions/assets.actions";
 import { NextResponse } from "next/server";
-import { createServerSupabaseClient } from "@/utils/supabase/server";
-import { findById, remove, update } from "@/lib/actions/assets.actions";
 
 export async function GET(
   request: Request,
   { params }: { params: { id: string } },
 ) {
   try {
-    const supabase = createServerSupabaseClient();
-    const {
-      data: { user },
-      error,
-    } = await supabase.auth.getUser();
-
-    if (error || !user) {
-      return new NextResponse("Unauthorized", { status: 401 });
+    const assetId = params.id;
+    if (!assetId) {
+      return NextResponse.json(
+        { success: false, error: "Asset ID is required" },
+        { status: 400 },
+      );
     }
 
-    const result = await findById(params.id);
-    return NextResponse.json(result);
+    const response = await findAssetById(assetId);
+
+    if (!response.success) {
+      return NextResponse.json(
+        { success: false, error: response.error },
+        { status: 404 },
+      );
+    }
+
+    return NextResponse.json({ success: true, data: response.data });
   } catch (error) {
-    console.error("[ASSET_GET]", error);
-    return new NextResponse("Internal Error", { status: 500 });
+    console.error("Get asset error:", error);
+    return NextResponse.json(
+      { success: false, error: "Failed to fetch asset" },
+      { status: 500 },
+    );
   }
 }
 
@@ -30,44 +42,63 @@ export async function DELETE(
   { params }: { params: { id: string } },
 ) {
   try {
-    const supabase = createServerSupabaseClient();
-    const {
-      data: { user },
-      error,
-    } = await supabase.auth.getUser();
-
-    if (error || !user) {
-      return new NextResponse("Unauthorized", { status: 401 });
+    const assetId = params.id;
+    if (!assetId) {
+      return NextResponse.json(
+        { success: false, error: "Asset ID is required" },
+        { status: 400 },
+      );
     }
 
-    const result = await remove(params.id);
-    return NextResponse.json(result);
+    const response = await removeAsset(assetId);
+
+    if (!response.success) {
+      return NextResponse.json(
+        { success: false, error: response.error },
+        { status: 400 },
+      );
+    }
+
+    return NextResponse.json({ success: true, data: response.data });
   } catch (error) {
-    console.error("[ASSET_DELETE]", error);
-    return new NextResponse("Internal Error", { status: 500 });
+    console.error("Delete asset error:", error);
+    return NextResponse.json(
+      { success: false, error: "Failed to delete asset" },
+      { status: 500 },
+    );
   }
 }
 
-export async function PUT(
+export async function PATCH(
   request: Request,
   { params }: { params: { id: string } },
 ) {
   try {
-    const supabase = createServerSupabaseClient();
-    const {
-      data: { user },
-      error,
-    } = await supabase.auth.getUser();
+    const assetId = params.id;
+    const body = await request.json();
 
-    if (error || !user) {
-      return new NextResponse("Unauthorized", { status: 401 });
+    if (!assetId) {
+      return NextResponse.json(
+        { success: false, error: "Asset ID is required" },
+        { status: 400 },
+      );
     }
 
-    const body = await request.json();
-    const result = await update(params.id, body);
-    return NextResponse.json(result);
+    const response = await updateAsset(assetId, body);
+
+    if (!response.success) {
+      return NextResponse.json(
+        { success: false, error: response.error },
+        { status: 400 },
+      );
+    }
+
+    return NextResponse.json({ success: true, data: response.data });
   } catch (error) {
-    console.error("[ASSET_UPDATE]", error);
-    return new NextResponse("Internal Error", { status: 500 });
+    console.error("Update asset error:", error);
+    return NextResponse.json(
+      { success: false, error: "Failed to update asset" },
+      { status: 500 },
+    );
   }
 }

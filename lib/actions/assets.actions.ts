@@ -10,6 +10,7 @@ import type { SupabaseUser } from "@/lib/middleware/withAuth";
 import { revalidatePath } from "next/cache";
 import { parseStringify } from "@/lib/utils";
 import { cookies } from "next/headers";
+import { checkAssetLimit } from "@/lib/services/usage.service";
 
 type CSVResponse = {
   success: boolean;
@@ -52,6 +53,18 @@ export const create = withAuth(
     data: CreateAssetInput,
   ): Promise<AssetResponse> => {
     try {
+      const companyId = user.user_metadata.companyId;
+
+      // Check asset limit
+      const { allowed, usage, limit } = await checkAssetLimit(companyId);
+      if (!allowed) {
+        return {
+          success: false,
+          data: [],
+          error: `Asset limit reached (${usage}/${limit}). Please upgrade your plan.`,
+        };
+      }
+
       console.log("[CREATE_ASSET] Received data:", data);
       console.log("[CREATE_ASSET] User:", {
         id: user.id,
@@ -77,7 +90,7 @@ export const create = withAuth(
         data: {
           purchaseDate: new Date(),
           ...assetData,
-          companyId: user.user_metadata.companyId,
+          companyId: companyId,
           // Add nested creation for form template values if they exist
           values: templateValues
             ? {

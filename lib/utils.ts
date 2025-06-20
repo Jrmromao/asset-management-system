@@ -396,18 +396,17 @@ export function sumUnitsAssigned(assignments: UserItems[]): number {
 //   return assignments.reduce((sum, item) => sum + item.quantity, 0);
 // }
 
-export const handleError = (error: unknown) => {
+export const handleError = <T>(
+  error: unknown,
+  defaultData: T,
+): { success: boolean; error: string; data: T } => {
   console.error(error);
-  if (error instanceof Error) {
-    return {
-      success: false,
-      error: error.message,
-      data: null,
-    };
-  }
+  const errorMessage =
+    error instanceof Error ? error.message : "An unknown error occurred.";
+
   return {
     success: false,
-    error: "An unknown error occurred.",
-    data: null,
+    error: errorMessage,
+    data: defaultData,
   };
 };

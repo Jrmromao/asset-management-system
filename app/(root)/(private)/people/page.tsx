@@ -14,14 +14,14 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { DataTable } from "@/components/tables/DataTable/data-table";
-import { peopleColumns } from "@/components/tables/PeopleColumns";
-import { TableHeader } from "@/components/tables/TableHeader";
-import TableHeaderSkeleton from "@/components/tables/TableHeaderSkeleton";
+import TableHeader from "@/components/tables/TableHeader";
 import { Building2, Laptop, UserPlus, Users } from "lucide-react";
 import StatusCards from "@/components/StatusCards";
 import StatusCardPlaceholder from "@/components/StatusCardPlaceholder";
 import { useUserQuery } from "@/hooks/queries/useUserQuery";
-import { useRoleQuery } from "@/hooks/queries/useRoleQuery";
+import { useReactTable, getCoreRowModel } from "@tanstack/react-table";
+import { peopleColumns } from "@/components/tables/PeopleColumns";
+import { User } from "@prisma/client";
 
 const People = () => {
   const [openDialog, closeDialog, isOpen] = useDialogStore((state) => [
@@ -29,46 +29,59 @@ const People = () => {
     state.onClose,
     state.isOpen,
   ]);
-  const { users, isLoading } = useUserQuery();
-  const { roles } = useRoleQuery();
+  const { users, isLoading, deleteItem } = useUserQuery();
   const navigate = useRouter();
-  const handleView = async (id: string) => {
+  const [filteredData, setFilteredData] = useState<User[]>(users);
+
+  useEffect(() => {
+    setFilteredData(users);
+  }, [users]);
+
+  const handleView = (id: string) => {
     navigate.push(`/people/view/${id}`);
   };
 
-  const handleFilter = () => {
-    setFilterDialogOpen(true);
-  };
   const handleSearch = (value: string) => {
-    setSearchTerm(value);
-  };
+    if (!value.trim()) {
+      setFilteredData(users);
+      return;
+    }
 
-  const handleDelete = async (id: string) => {};
-  const onDelete = useCallback((user: User) => handleDelete(user?.id!), []);
-  const onView = useCallback((user: User) => handleView(user?.id!), []);
-  const columns = useMemo(() => peopleColumns({ onDelete, onView }), []);
-  const [searchTerm, setSearchTerm] = useState("");
-
-  const filteredData = useMemo(() => {
-    if (!searchTerm.trim()) return users;
-
-    return users?.filter((item: any) =>
+    const searchResults = users.filter((item: any) =>
       Object.entries(item).some(([key, val]) => {
         if (typeof val === "string" || typeof val === "number") {
-          return val
-            .toString()
-            .toLowerCase()
-            .includes(searchTerm.toLowerCase());
+          return val.toString().toLowerCase().includes(value.toLowerCase());
         }
         return false;
       }),
     );
-  }, [users, searchTerm]);
+    setFilteredData(searchResults);
+  };
 
-  const [filterDialogOpen, setFilterDialogOpen] = useState(false);
-  const [filters, setFilters] = useState({
-    supplier: "",
-    inventory: "",
+  const handleDelete = useCallback(
+    async (id: string) => {
+      await deleteItem(id);
+    },
+    [deleteItem],
+  );
+
+  const onDelete = useCallback(
+    (user: any) => {
+      handleDelete(user.id!);
+    },
+    [handleDelete],
+  );
+
+  const onView = (user: any) => {
+    handleView(user.id!);
+  };
+
+  const columns = useMemo(() => peopleColumns({ onView, onDelete }), [onView, onDelete]);
+
+  const table = useReactTable({
+    data: filteredData,
+    columns: columns as any,
+    getCoreRowModel: getCoreRowModel(),
   });
 
   const TopCards = () => {
@@ -96,10 +109,6 @@ const People = () => {
     return <StatusCards cards={cardData} />;
   };
 
-  useEffect(() => {
-    console.log(users);
-  });
-
   return (
     <div className="p-6 space-y-6">
       <Breadcrumb className="hidden md:flex">
@@ -112,16 +121,12 @@ const People = () => {
           <BreadcrumbSeparator />
         </BreadcrumbList>
       </Breadcrumb>
-      {/* Header Section */}
       <HeaderBox
         title="People"
-        subtext="Manage and track people"
-        icon={<Users className="w-4 h-4" />}
+        subtitle="Manage and track people"
+        icon={<Users className="w-4 w-4" />}
       />
-
-      {/* Stats Section */}
       {isLoading ? <StatusCardPlaceholder /> : <TopCards />}
-
       <DialogContainer
         open={isOpen}
         onOpenChange={closeDialog}
@@ -131,20 +136,15 @@ const People = () => {
       />
       <div className="space-y-6">
         <section className="flex w-full flex-col gap-6">
-          {isLoading ? (
-            <>
-              <TableHeaderSkeleton />
-            </>
-          ) : (
+          {isLoading ? null : (
             <TableHeader
+              table={table}
               onSearch={handleSearch}
-              onFilter={handleFilter}
-              onImport={() => {}}
-              onCreateNew={openDialog}
+              onAddNew={openDialog}
             />
           )}
 
-          <DataTable columns={columns} data={users} isLoading={isLoading} />
+          <DataTable columns={columns as any} data={filteredData} isLoading={isLoading} />
         </section>
       </div>
     </div>

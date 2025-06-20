@@ -1,26 +1,36 @@
+import { checkoutAsset } from "@/lib/actions/assets.actions";
 import { NextResponse } from "next/server";
-import { createServerSupabaseClient } from "@/utils/supabase/server";
-import { checkout } from "@/lib/actions/assets.actions";
 
 export async function POST(
   request: Request,
   { params }: { params: { id: string } },
 ) {
   try {
-    const supabase = createServerSupabaseClient();
-    const {
-      data: { user },
-      error,
-    } = await supabase.auth.getUser();
+    const assetId = params.id;
+    const { userId } = await request.json();
 
-    if (error || !user) {
-      return new NextResponse("Unauthorized", { status: 401 });
+    if (!assetId || !userId) {
+      return NextResponse.json(
+        { success: false, error: "Asset ID and User ID are required" },
+        { status: 400 },
+      );
     }
 
-    const result = await checkout(params.id);
-    return NextResponse.json(result);
+    const response = await checkoutAsset(assetId, userId);
+
+    if (!response.success) {
+      return NextResponse.json(
+        { success: false, error: response.error },
+        { status: 400 },
+      );
+    }
+
+    return NextResponse.json({ success: true, data: response.data });
   } catch (error) {
-    console.error("[ASSET_CHECKOUT]", error);
-    return new NextResponse("Internal Error", { status: 500 });
+    console.error("Checkout error:", error);
+    return NextResponse.json(
+      { success: false, error: "Failed to checkout asset" },
+      { status: 500 },
+    );
   }
 }
