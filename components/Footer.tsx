@@ -1,68 +1,198 @@
 "use client";
-import React from "react";
-import Image from "next/image";
+import React, { useState, useRef, useEffect } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { useSession } from "@/lib/SessionProvider";
 import { useRouter } from "next/navigation";
+import { cn } from "@/lib/utils";
+import {
+  Settings,
+  LogOut,
+  User as UserIcon,
+  HelpCircle,
+  ChevronUp,
+} from "lucide-react";
+import md5 from "md5";
+import Image from "next/image";
 
 const formatUsername = (user: User | null): string => {
-  if (!user) return "Guest";
-
-  // First try to get the user's name from metadata
-  if (user.user_metadata?.name) {
-    return user.user_metadata.name;
-  }
-
-  // If no name, clean up the email
+  if (!user) return "User";
+  if (user.user_metadata?.name) return user.user_metadata.name;
   if (user.email) {
-    // Remove everything after +
     const cleanEmail = user.email.split("+")[0];
-    // Remove domain
     const localPart = cleanEmail.split("@")[0];
-    // Convert to title case and replace dots/underscores with spaces
     return localPart
       .split(/[._]/)
       .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
       .join(" ");
   }
-
-  return "Guest";
+  return "User";
 };
+
+const getGravatarURL = (email: string | undefined, size: number = 80) => {
+  if (!email) return null;
+  const hash = md5(email.trim().toLowerCase());
+  return `https://www.gravatar.com/avatar/${hash}?s=${size}&d=mp`;
+};
+
+interface MenuItem {
+  label: string;
+  icon: React.ReactNode;
+  action: () => void;
+  variant?: "default" | "danger";
+}
 
 const Footer = ({ isCollapsed = false }: { isCollapsed?: boolean }) => {
   const supabase = createClient();
   const { user } = useSession();
   const router = useRouter();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  if (!user) {
+    // A logged-out user sees no footer.
+    return null;
+  }
 
   const username = formatUsername(user);
   const firstLetter = username.charAt(0).toUpperCase();
+  const gravatarURL = getGravatarURL(user?.email, 40);
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    router.push("/sign-in");
-    router.refresh(); // Refresh the page to clear session state
+  const createAction = (path: string) => () => {
+    router.push(path);
+    setIsMenuOpen(false);
   };
 
-  return (
-    <footer className="footer">
-      <div className={isCollapsed ? "footer_name-mobile" : "footer_name"}>
-        <p className="text-xl font-bold text-gray-700">{firstLetter}</p>
-      </div>
+  const handleLogout = async () => {
+    setIsMenuOpen(false);
+    await supabase.auth.signOut();
+    router.push("/sign-in");
+    router.refresh();
+  };
 
-      <div className={isCollapsed ? "hidden" : "footer_email"}>
-        <h1 className="text-14 truncate font-semibold text-gray-700">
+  const menuItems: MenuItem[] = [
+    {
+      label: "Profile",
+      icon: <UserIcon className="size-4" />,
+      action: createAction("/profile"),
+    },
+    {
+      label: "Settings",
+      icon: <Settings className="size-4" />,
+      action: createAction("/settings"),
+    },
+    {
+      label: "Help & Support",
+      icon: <HelpCircle className="size-4" />,
+      action: createAction("/help"),
+    },
+    {
+      label: "Logout",
+      icon: <LogOut className="size-4" />,
+      action: handleLogout,
+      variant: "danger",
+    },
+  ];
+
+  const AvatarTrigger = (
+    <button
+      onClick={() => setIsMenuOpen(!isMenuOpen)}
+      aria-haspopup="true"
+      aria-expanded={isMenuOpen}
+      className={cn(
+        "flex items-center gap-3 w-full p-2 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-800",
+        { "justify-center": isCollapsed },
+      )}
+    >
+      <div className="relative flex items-center justify-center size-10 rounded-full bg-green-600 text-white font-bold text-lg transition-all duration-200 overflow-hidden">
+        {gravatarURL ? (
+          <Image
+            src={gravatarURL}
+            alt={`${username}'s avatar`}
+            fill
+            className="object-cover"
+          />
+        ) : (
+          firstLetter
+        )}
+      </div>
+      {!isCollapsed && (
+        <>
+          <div className="flex-1 min-w-0 text-left">
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 truncate">
+              {username}
+            </h3>
+          </div>
+          <ChevronUp
+            className={cn("size-4 text-gray-500 transition-transform", {
+              "rotate-180": isMenuOpen,
+            })}
+          />
+        </>
+      )}
+    </button>
+  );
+
+  const Menu = (
+    <div
+      role="menu"
+      className={cn(
+        "absolute bg-white dark:bg-gray-900 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700/50 z-50 min-w-[220px] transition-all duration-200 ease-in-out",
+        "transform opacity-0 scale-95 pointer-events-none",
+        isMenuOpen && "transform opacity-100 scale-100 pointer-events-auto",
+        {
+          "left-full bottom-0 ml-2": isCollapsed,
+          "bottom-full left-0 right-0 mb-2": !isCollapsed,
+        },
+      )}
+    >
+      <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+        <p className="text-sm font-semibold text-gray-900 dark:text-white">
           {username}
-        </h1>
-        <p className="text-14 truncate font-normal text-gray-600">
+        </p>
+        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
           {user?.email}
         </p>
       </div>
-
-      <div className="footer_image" onClick={handleLogout}>
-        <Image src="/icons/logout.svg" fill alt="logout" />
+      <div className="py-2" role="none">
+        {menuItems.map((item) => (
+          <button
+            key={item.label}
+            onClick={item.action}
+            role="menuitem"
+            className={cn(
+              "flex items-center gap-3 w-full px-4 py-2 text-sm transition-colors duration-200 text-left",
+              {
+                "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800":
+                  item.variant !== "danger",
+                "text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20":
+                  item.variant === "danger",
+              },
+            )}
+          >
+            {item.icon}
+            <span>{item.label}</span>
+          </button>
+        ))}
       </div>
-    </footer>
+    </div>
+  );
+
+  return (
+    <div ref={menuRef} className="relative w-full">
+      {Menu}
+      {AvatarTrigger}
+    </div>
   );
 };
 

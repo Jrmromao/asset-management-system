@@ -50,6 +50,12 @@ import { getPurchaseOrders } from "@/lib/actions/purchaseOrder.actions";
 import { PurchaseOrder } from "@prisma/client";
 import { usePurchaseOrderUIStore } from "@/lib/stores/usePurchaseOrderUIStore";
 import { PurchaseOrderDialog } from "../dialogs/PurchaseOrderDialog";
+import { useSession } from "@/lib/SessionProvider";
+import { User } from "@supabase/supabase-js";
+
+type UserWithCompany = User & {
+  companyId: string;
+};
 
 type FormTemplate = {
   id: string;
@@ -122,6 +128,7 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
   const { onOpen: openInventory } = useInventoryUIStore();
   const { onOpen: openTemplate } = useFormTemplateUIStore();
   const { onOpen: openPurchaseOrder } = usePurchaseOrderUIStore();
+  const { user } = useSession();
 
   const form = useForm<AssetFormValues>({
     resolver: zodResolver(assetSchema),
@@ -143,13 +150,14 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
   // Fetch purchase orders on mount
   useEffect(() => {
     const fetchPurchaseOrders = async () => {
-      const response = await getPurchaseOrders();
-      if (response.success && response.data) {
-        setPurchaseOrders(response.data);
+      const appUser = user as UserWithCompany;
+      if (appUser?.companyId) {
+        const response = await getPurchaseOrders(appUser.companyId);
+        setPurchaseOrders(response);
       }
     };
     fetchPurchaseOrders();
-  }, []);
+  }, [user]);
 
   // Load existing asset data for updates
   useEffect(() => {

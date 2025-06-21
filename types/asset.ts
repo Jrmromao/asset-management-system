@@ -52,10 +52,9 @@ export type AssetWithRelations = Asset & {
   departmentLocation?: DepartmentLocation;
   formTemplate?: FormTemplate;
   formTemplateValues?: FormTemplateValue[];
-  history?: AssetHistory[];
+  assetHistory?: AssetHistory[];
   co2eRecords?: Co2eRecord[];
   auditLogs?: PrismaAuditLog[];
-  simpleAuditLogs?: SimpleAuditLog[];
 };
 
 export interface EnhancedAssetType {

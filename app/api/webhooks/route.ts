@@ -109,6 +109,13 @@ export async function POST(req: Request) {
         );
         break;
 
+      case "customer.subscription.updated":
+        await handleWebhookWithRetry(
+          event.type,
+          () => handleSubscriptionUpdated(event.data.object as Stripe.Subscription)
+        );
+        break;
+
       default:
         console.log(`Unhandled event type: ${event.type}`);
     }
@@ -170,6 +177,16 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
         cancelAtPeriodEnd: true,
       },
     });
+  });
+}
+
+async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
+  await prisma.subscription.update({
+    where: { stripeSubscriptionId: subscription.id },
+    data: {
+      status: subscription.status,
+      cancelAtPeriodEnd: subscription.cancel_at_period_end,
+    },
   });
 }
 

@@ -19,7 +19,7 @@ import { DialogContainer } from "@/components/dialogs/DialogContainer";
 import AssignmentForm from "@/components/forms/AssignmentForm";
 import { useAssetStore } from "@/lib/stores/assetStore";
 import { DetailViewProps } from "@/components/shared/DetailView/types";
-import { checkin, checkout, findById } from "@/lib/actions/assets.actions";
+import { checkin, checkout, findById, setMaintenanceStatus } from "@/lib/actions/assets.actions";
 import DetailViewSkeleton from "@/components/shared/DetailView/DetailViewSkeleton";
 import printQRCode from "@/utils/QRCodePrinter";
 import { useRouter } from "next/navigation";
@@ -40,6 +40,7 @@ import type {
 import { JsonValue } from "@prisma/client/runtime/library";
 import { AssetWithRelations, EnhancedAssetType } from "@/types/asset";
 import { useAssetQuery } from "@/hooks/queries/useAssetQuery";
+import { FaEdit, FaTrash, FaTools } from "react-icons/fa";
 
 interface AssetResponse {
   success: boolean;
@@ -148,9 +149,9 @@ export default function AssetPage({ params }: AssetPageProps) {
         setAsset({
           id: foundAsset?.id ?? "",
           name: foundAsset?.name ?? "",
-          price: foundAsset?.price ? Number(foundAsset.price) : 0,
+          price: foundAsset?.purchasePrice ? Number(foundAsset.purchasePrice) : 0,
           serialNumber: foundAsset?.serialNumber ?? "",
-          status: foundAsset?.status ?? "",
+          status: foundAsset?.statusLabel?.name ?? "N/A",
           category: {
             name: foundAsset?.model?.name ?? "",
           },
@@ -193,13 +194,13 @@ export default function AssetPage({ params }: AssetPageProps) {
                 values: allValues ?? [],
               }
             : null,
-          AssetHistory: foundAsset?.history ?? [],
+          AssetHistory: foundAsset?.assetHistory ?? [],
           auditLogs:
-            foundAsset?.auditLogs?.map((log) => ({
+            foundAsset?.auditLogs?.map((log: any) => ({
               ...log,
               dataAccessed: log.dataAccessed as AuditLogDataAccessed | null,
             })) ?? [],
-          assigneeId: foundAsset?.assigneeId ?? "",
+          assigneeId: foundAsset?.user?.id ?? "",
           createdAt: foundAsset?.createdAt ?? new Date(),
           updatedAt: foundAsset?.updatedAt ?? new Date(),
           usedBy: [],
@@ -215,6 +216,37 @@ export default function AssetPage({ params }: AssetPageProps) {
     fetchAsset();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  const handleSetMaintenance = async () => {
+    if (!asset?.id) return;
+
+    const previousAsset = { ...asset };
+    const newStatus = {
+      name: "Maintenance",
+      colorCode: "#FBBF24", // Example yellow color for maintenance
+    };
+
+    setAsset((prev) =>
+      prev
+        ? {
+            ...prev,
+            status: newStatus.name,
+            statusLabel: newStatus,
+          }
+        : undefined,
+    );
+
+    try {
+      const result = await setMaintenanceStatus(asset.id);
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+      toast.success("Asset is now in maintenance.");
+    } catch (error: any) {
+      setAsset(previousAsset);
+      toast.error(`Failed to set maintenance status: ${error.message}`);
+    }
+  };
 
   const handleUnassign = async (e?: React.MouseEvent) => {
     e?.preventDefault();
@@ -308,8 +340,8 @@ export default function AssetPage({ params }: AssetPageProps) {
       { label: "Model", value: asset?.model?.name ?? "", type: "text" },
       {
         label: "Status",
-        value: asset?.status,
-        type: "text",
+        value: asset?.statusLabel,
+        type: "status",
       },
       { label: "Location", value: asset?.location?.name ?? "", type: "text" },
       {
@@ -354,8 +386,11 @@ export default function AssetPage({ params }: AssetPageProps) {
       </Breadcrumb>
     ) : null,
     qrCode: (
-      <div className="flex items-center gap-2">
-        <QRCode value={`/qr-code/sample.png`} size={140} />
+      <div id="qr-code-to-print" className="flex items-center gap-2">
+        <QRCode
+          value={`${window.location.origin}/assets/view/${id}`}
+          size={140}
+        />
         <Scan className="w-6 h-6 text-gray-500" />
       </div>
     ),
@@ -363,9 +398,10 @@ export default function AssetPage({ params }: AssetPageProps) {
       onArchive: () => handleAction("archive"),
       onAssign: handleAssignmentAction(asset?.status!),
       onUnassign: handleUnassignmentAction(asset?.status!),
+      onSetMaintenance: handleSetMaintenance,
       onDuplicate: () => handleAction("duplicate"),
       onEdit: () => handleAction("edit"),
-      onPrintLabel: () => printQRCode("/qr-code/sample.png"),
+      onPrintLabel: () => printQRCode("qr-code-to-print"),
     },
   };
 

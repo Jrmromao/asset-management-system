@@ -104,7 +104,11 @@ export const create = withAuth(
             : undefined,
         },
         include: {
-          model: true,
+          model: {
+            include: {
+              manufacturer: true,
+            },
+          },
           user: true,
           supplier: true,
           departmentLocation: true,
@@ -264,6 +268,14 @@ export const getAssetById = withAuth(
           statusLabel: true,
           department: true,
           inventory: true,
+          formTemplate: true,
+          co2eRecords: true,
+          assetHistory: true,
+          values: {
+            include: {
+              formTemplate: true,
+            },
+          },
         },
       });
       if (!asset) {
@@ -410,47 +422,65 @@ export async function updateAsset(
   };
 }
 
-export const findById = withAuth(
-  async (user, id: string): Promise<AssetResponse> => {
-    try {
-      const asset = await prisma.asset.findFirst({
-        where: {
-          id,
-          companyId: user.user_metadata?.companyId,
+export const findById = withAuth(async (user, id: string) => {
+  try {
+    const asset = await prisma.asset.findUnique({
+      where: {
+        id: id,
+        companyId: user.user_metadata.companyId,
+      },
+      include: {
+        model: true,
+        user: true,
+        supplier: true,
+        departmentLocation: true,
+        statusLabel: true,
+        department: true,
+        inventory: true,
+        formTemplate: true,
+        co2eRecords: true,
+        assetHistory: true,
+        values: {
+          include: {
+            formTemplate: true,
+          },
         },
-        include: {
-          model: true,
-          user: true,
-          supplier: true,
-          departmentLocation: true,
-          statusLabel: true,
-          department: true,
-          inventory: true,
-        },
-      });
-      if (!asset) {
-        return { success: false, data: [], error: "Asset not found" };
-      }
-      return {
-        success: true,
-        data: toArray(parseStringify(asset)),
-        error: undefined,
-      };
-    } catch (error) {
-      console.error("Find asset error:", error);
-      return { success: false, data: [], error: "Failed to find asset" };
-    } finally {
-      await prisma.$disconnect();
+      },
+    });
+
+    if (!asset) {
+      return { success: false, data: null, error: "Asset not found" };
     }
-  },
-);
+
+    const auditLogs = await prisma.auditLog.findMany({
+      where: {
+        entityId: asset.id,
+        companyId: user.user_metadata.companyId,
+      },
+      include: {
+        user: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    const data = { ...asset, auditLogs };
+
+    return { success: true, data: parseStringify(data) };
+  } catch (error) {
+    console.error("Find asset by id error:", error);
+    return { success: false, data: null, error: "Failed to find asset" };
+  } finally {
+    await prisma.$disconnect();
+  }
+});
 
 export async function findAssetById(id: string): Promise<AssetResponse> {
-  const session = getSession();
   const response = await findById(id);
   return {
     success: response.success,
-    data: response.data || [],
+    data: response.data ? [response.data] : [],
     error: response.error,
   };
 }
@@ -712,5 +742,54 @@ export async function exportAssetsToCSV(): Promise<TemplateResponse> {
       data: "",
       error: "Failed to export assets",
     };
+  }
+}
+
+export async function setMaintenanceStatus(
+  assetId: string,
+): Promise<AssetResponse> {
+  try {
+    const asset = await prisma.asset.findUnique({
+      where: { id: assetId },
+      select: { companyId: true },
+    });
+
+    if (!asset) {
+      return { success: false, data: [], error: "Asset not found" };
+    }
+
+    const maintenanceStatus = await prisma.statusLabel.findFirst({
+      where: {
+        name: "Maintenance",
+        companyId: asset.companyId,
+      },
+    });
+
+    if (!maintenanceStatus) {
+      return {
+        success: false,
+        data: [],
+        error:
+          'Status label "Maintenance" not found. Please create it first.',
+      };
+    }
+
+    const updatedAsset = await prisma.asset.update({
+      where: { id: assetId },
+      data: { statusLabelId: maintenanceStatus.id },
+    });
+
+    revalidatePath(`/assets/view/${assetId}`);
+
+    return { success: true, data: [parseStringify(updatedAsset)] };
+  } catch (error) {
+    console.error("Set maintenance status error:", error);
+    return {
+      success: false,
+      data: [],
+      error: "Failed to set maintenance status",
+    };
+  } finally {
+    await prisma.$disconnect();
   }
 }

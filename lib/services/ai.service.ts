@@ -78,7 +78,7 @@ export async function calculateAssetCo2(
     const jsonResponse = JSON.parse(
       response.choices[0].message.content || "{}",
     );
-
+    console.log("\n\n\n\nOpenAI Response:", response);
     console.log("OpenAI Response:", JSON.stringify(jsonResponse, null, 2));
 
     return { success: true, data: jsonResponse };

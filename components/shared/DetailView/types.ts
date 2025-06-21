@@ -22,7 +22,7 @@ export type AssetType = {
 
 export interface DetailField {
   label: string;
-  value: string | number | undefined;
+  value: string | number | { [key: string]: any } | undefined | null;
   type?: "text" | "date" | "currency" | "status";
 }
 
@@ -48,6 +48,7 @@ export interface DetailViewProps {
     onDuplicate?: () => void;
     onEdit?: () => void;
     onPrintLabel?: () => void;
+    onSetMaintenance?: () => void;
   };
   asset?: AssetType;
   checkoutDisabled?: boolean;

@@ -40,6 +40,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Badge } from "@/components/ui/badge";
 
 const fieldIcons = {
   Name: Monitor,
@@ -72,73 +73,63 @@ export const DetailView: React.FC<DetailViewProps> = ({
 }) => {
   const getField = (label: string) => fields.find((f) => f.label === label);
   const tagNumber = getField("Tag Number")?.value;
+  const statusLabel = fields.find((f) => f.label === "Status")?.value as
+    | { name: string; colorCode: string }
+    | undefined;
+
   return (
     <Card className="h-full mx-2">
-      <CardHeader className="space-y-0">
+      <CardHeader>
         {breadcrumbs && <div className="mb-4">{breadcrumbs}</div>}
-        <div className="flex flex-col gap-4">
-          <div className="flex justify-between items-start">
-            <div className="space-y-1">
-              <CardTitle className="text-2xl font-semibold flex items-center gap-2">
+        <div className="flex justify-between items-center gap-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-3">
+              <CardTitle className="text-2xl font-semibold">
                 {title}
               </CardTitle>
-              {tagNumber && (
-                <p className="text-sm text-muted-foreground">
-                  Tag: {tagNumber}{" "}
-                  {tagNumber && (
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 w-6 p-0"
-                            onClick={() =>
-                              navigator.clipboard.writeText(String(tagNumber))
-                            }
-                          >
-                            <ClipboardCopy className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>Copy Tag Number</TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  )}
-                </p>
+              {statusLabel && (
+                <Badge
+                  style={{
+                    backgroundColor: statusLabel.colorCode,
+                  }}
+                  className="text-white"
+                >
+                  {statusLabel.name}
+                </Badge>
               )}
             </div>
+            {tagNumber && (
+              <p className="text-sm text-muted-foreground flex items-center gap-1">
+                Tag: {tagNumber}
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0"
+                        onClick={() =>
+                          navigator.clipboard.writeText(String(tagNumber))
+                        }
+                      >
+                        <ClipboardCopy className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Copy Tag Number</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </p>
+            )}
           </div>
-
-          <div className="flex flex-col sm:flex-row items-start gap-2">
-            <div className="flex gap-2 w-full sm:w-auto">
-              {!(getField("Seats") || getField("Units")) && (
-                <AvailabilityChecker
-                  status={String(getField("Status")?.value)}
-                />
-              )}
-
-              <CarbonScoreTooltip
-                co2Score={{
-                  score: co2Score.co2e,
-                  units: co2Score.units,
-                }}
+          {actions && (
+            <div className="flex-shrink-0">
+              <ActionButtons
+                actions={actions}
+                isAssigned={isAssigned}
+                isActive={checkoutDisabled}
               />
             </div>
-            <div className="flex flex-wrap gap-2">
-              {["Seats", "Units"].map(
-                (field) =>
-                  getField(field)?.value && (
-                    <span
-                      key={field}
-                      className="inline-flex items-center rounded-full bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-600/20"
-                    >
-                      {String(getField(`${field} Allocated`)?.value || 0)} /{" "}
-                      {String(getField(field)?.value)} {field}
-                    </span>
-                  ),
-              )}
-            </div>
-          </div>
+          )}
         </div>
       </CardHeader>
       <CardContent>
@@ -205,18 +196,6 @@ export const DetailView: React.FC<DetailViewProps> = ({
           </>
         )}
       </CardContent>
-
-      {actions && (
-        <CardFooter className="bg-muted/50">
-          <div className="w-full flex flex-col sm:flex-row lg:justify-end gap-2">
-            <ActionButtons
-              actions={actions}
-              isAssigned={isAssigned}
-              isActive={checkoutDisabled}
-            />
-          </div>
-        </CardFooter>
-      )}
     </Card>
   );
 };

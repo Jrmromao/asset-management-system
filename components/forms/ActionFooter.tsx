@@ -40,14 +40,14 @@ const ActionFooter = ({ form, isPending, router }: ActionFooterProps) => {
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isPending} className="h-9 bg-white">
+            <Button type="submit" disabled={isPending} className="h-9">
               {isPending ? (
                 <div className="flex items-center gap-2">
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Creating...</span>
+                  <span>Saving...</span>
                 </div>
               ) : (
-                <span>Create</span>
+                <span>Save</span>
               )}
             </Button>
           </div>

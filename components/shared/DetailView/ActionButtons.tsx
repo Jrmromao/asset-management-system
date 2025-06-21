@@ -10,6 +10,7 @@ import {
   FaCopy,
   FaPen,
   FaPrint,
+  FaTools,
 } from "react-icons/fa";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -37,17 +38,24 @@ export const ActionButtons: React.FC<{
         <CustomButton
           size="sm"
           className="w-full sm:w-auto"
-          variant="outline"
           action={actions.onArchive}
           value="Archive"
           Icon={FaArchive}
+        />
+      )}
+      {actions.onSetMaintenance && (
+        <CustomButton
+          size="sm"
+          className="w-full sm:w-auto"
+          action={actions.onSetMaintenance}
+          value="Set Maintenance"
+          Icon={FaTools}
         />
       )}
       {isAssigned ? (
         <CustomButton
           size="sm"
           className="w-full sm:w-auto"
-          variant="outline"
           action={actions.onUnassign}
           value="Checkin"
           Icon={FaChevronLeft}
@@ -58,7 +66,6 @@ export const ActionButtons: React.FC<{
             disabled={isActive}
             size="sm"
             className="w-full sm:w-auto"
-            variant="outline"
             action={actions.onAssign}
             value="Checkout"
             Icon={FaChevronRight}
@@ -69,7 +76,6 @@ export const ActionButtons: React.FC<{
         <CustomButton
           className="w-full sm:w-auto md:w-auto"
           size="sm"
-          variant="outline"
           action={actions.onDuplicate}
           value="Duplicate"
           Icon={FaCopy}
@@ -79,7 +85,6 @@ export const ActionButtons: React.FC<{
         <CustomButton
           className="w-full sm:w-auto md:w-auto"
           size="sm"
-          variant="outline"
           action={actions.onEdit}
           value="Edit"
           Icon={FaPen}
@@ -89,7 +94,6 @@ export const ActionButtons: React.FC<{
         <CustomButton
           className="w-full sm:w-auto md:w-auto"
           size="sm"
-          variant="outline"
           action={actions.onPrintLabel}
           value="Print Label"
           Icon={FaPrint}

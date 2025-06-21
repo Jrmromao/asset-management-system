@@ -71,7 +71,7 @@ const MobileNav = () => {
               USER
             </nav>
           </SheetClose>
-          <Footer type={"mobile"} />
+          <Footer isCollapsed={true} />
         </SheetContent>
       </Sheet>
     </section>

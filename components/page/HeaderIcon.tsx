@@ -13,7 +13,7 @@ const HeaderIcon = ({ isCollapsed = false }: { isCollapsed?: boolean }) => {
           hidden: isCollapsed,
         })}
       >
-        Horizon
+        EcoKeepr
       </h1>
     </Link>
   );
