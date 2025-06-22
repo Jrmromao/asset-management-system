@@ -1,8 +1,8 @@
 // app/layout.tsx
 import { Inter, IBM_Plex_Serif } from "next/font/google";
 import "./globals.css";
-import { SessionProvider } from "@/lib/SessionProvider";
-import { createClient } from "@/utils/supabase/server";
+import { ClerkProvider } from "@clerk/nextjs";
+import QueryProvider from "@/components/providers/QueryClientProvider";
 
 export const dynamic = "force-dynamic";
 
@@ -21,21 +21,18 @@ export const metadata = {
   },
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
   return (
-    <html lang="en">
-      <body className={`${inter.variable} ${iBMPlexSerif.variable}`}>
-        <SessionProvider session={session}>{children}</SessionProvider>
-      </body>
-    </html>
+    <ClerkProvider>
+      <html lang="en">
+        <body className={`${inter.variable} ${iBMPlexSerif.variable}`}>
+          <QueryProvider>{children}</QueryProvider>
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }

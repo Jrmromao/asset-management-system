@@ -11,14 +11,20 @@ interface User {
 }
 
 export interface RegistrationData {
-  email: string;
+  companyName: string;
+  industry: string;
+  companySize: string;
+  assetCount: number;
+  useCase: string[];
+  painPoints: string[];
   firstName: string;
   lastName: string;
-  companyName: string;
-  assetCount: number;
-  password: string;
-  status: string;
+  email: string;
+  phoneNumber?: string;
   primaryContactEmail: string;
+  password: string;
+  clerkUserId?: string;
+  status?: string;
 }
 
 interface UserContextType {

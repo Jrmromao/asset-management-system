@@ -8,28 +8,23 @@ import {
 } from "@/components/ui/dialog";
 import { usePurchaseOrderUIStore } from "@/lib/stores/usePurchaseOrderUIStore";
 import { PurchaseOrderForm } from "../forms/PurchaseOrderForm";
-import { createClient } from "@/utils/supabase/client";
 import { useEffect, useState } from "react";
+import { useUser } from "@clerk/nextjs";
 
 export function PurchaseOrderDialog() {
   const { isOpen, onClose } = usePurchaseOrderUIStore();
+  const { user } = useUser();
   const [companyId, setCompanyId] = useState<string | undefined>(undefined);
 
   useEffect(() => {
-    async function getUserCompany() {
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (user?.user_metadata?.companyId) {
-        setCompanyId(user.user_metadata.companyId);
+    if (isOpen && user) {
+      // Access companyId from user's public metadata
+      const metadata = user.publicMetadata as { companyId?: string };
+      if (metadata?.companyId) {
+        setCompanyId(metadata.companyId);
       }
     }
-    if (isOpen) {
-      getUserCompany();
-    }
-  }, [isOpen]);
+  }, [isOpen, user]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>

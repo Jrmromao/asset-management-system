@@ -9,8 +9,6 @@ import { prisma } from "@/app/db";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 
-
-
 interface PaginationParams {
   page?: number;
   limit?: number;
@@ -35,14 +33,22 @@ export const insert = withAuth(
     try {
       const validation = inventorySchema.safeParse(values);
       if (!validation.success) {
-        return { success: false, data: null as any, error: validation.error.errors[0].message };
+        return {
+          success: false,
+          data: null as any,
+          error: validation.error.errors[0].message,
+        };
       }
-      
+
       // Check if user has a companyId
       if (!user.user_metadata?.companyId) {
-        return { success: false, data: null as any, error: "User is not associated with a company" };
+        return {
+          success: false,
+          data: null as any,
+          error: "User is not associated with a company",
+        };
       }
-      
+
       const inventory = await prisma.inventory.create({
         data: {
           ...validation.data,
@@ -53,7 +59,11 @@ export const insert = withAuth(
       return { success: true, data: parseStringify(inventory) };
     } catch (error) {
       console.error("Create inventory error:", error);
-      return { success: false, data: null as any, error: "Failed to create inventory" };
+      return {
+        success: false,
+        data: null as any,
+        error: "Failed to create inventory",
+      };
     } finally {
       await prisma.$disconnect();
     }
@@ -83,9 +93,6 @@ interface PaginationParams {
   sortOrder?: "asc" | "desc";
 }
 
-
-
-
 // Wrapper function for client-side use
 export async function createInventory(
   values: z.infer<typeof inventorySchema>,
@@ -102,18 +109,22 @@ export const update = withAuth(
   ): Promise<AuthResponse<Inventory>> => {
     try {
       if (!id) {
-        return { success: false, data: null as any, error: "ID is required for update" };
-      }
-      
-      // Check if user has a companyId
-      if (!user.user_metadata?.companyId) {
-        return { 
+        return {
           success: false,
           data: null as any,
-          error: "User is not associated with a company"
+          error: "ID is required for update",
         };
       }
-      
+
+      // Check if user has a companyId
+      if (!user.user_metadata?.companyId) {
+        return {
+          success: false,
+          data: null as any,
+          error: "User is not associated with a company",
+        };
+      }
+
       const updated = await prisma.inventory.update({
         where: {
           id,
@@ -127,7 +138,11 @@ export const update = withAuth(
       return { success: true, data: parseStringify(updated) };
     } catch (error) {
       console.error("Update inventory error:", error);
-      return { success: false, data: null as any, error: "Failed to update inventory" };
+      return {
+        success: false,
+        data: null as any,
+        error: "Failed to update inventory",
+      };
     } finally {
       await prisma.$disconnect();
     }
@@ -148,9 +163,13 @@ export const getAll = withAuth(
     try {
       // Check if user has a companyId
       if (!user.user_metadata?.companyId) {
-        return { success: false, data: null as any, error: "User is not associated with a company" };
+        return {
+          success: false,
+          data: null as any,
+          error: "User is not associated with a company",
+        };
       }
-      
+
       const inventories = await prisma.inventory.findMany({
         where: {
           companyId: user.user_metadata.companyId,
@@ -162,7 +181,11 @@ export const getAll = withAuth(
       return { success: true, data: parseStringify(inventories) };
     } catch (error) {
       console.error("Get inventories error:", error);
-      return { success: false, data: null as any, error: "Failed to fetch inventories" };
+      return {
+        success: false,
+        data: null as any,
+        error: "Failed to fetch inventories",
+      };
     } finally {
       await prisma.$disconnect();
     }
@@ -182,7 +205,11 @@ export const getAllPaginated = withAuth(
   ): Promise<AuthResponse<Inventory[]>> => {
     try {
       if (!user.user_metadata?.companyId) {
-        return { success: false, data: null as any, error: "User is not associated with a company" };
+        return {
+          success: false,
+          data: null as any,
+          error: "User is not associated with a company",
+        };
       }
       const items = await prisma.inventory.findMany({
         where: {
@@ -200,7 +227,11 @@ export const getAllPaginated = withAuth(
       return { success: true, data: parseStringify(items) };
     } catch (error) {
       console.error("Get inventories error:", error);
-      return { success: false, data: null as any, error: "Failed to fetch inventories" };
+      return {
+        success: false,
+        data: null as any,
+        error: "Failed to fetch inventories",
+      };
     } finally {
       await prisma.$disconnect();
     }
@@ -220,9 +251,13 @@ export const getInventoryById = withAuth(
     try {
       // Check if user has a companyId
       if (!user.user_metadata?.companyId) {
-        return { success: false, data: null as any, error: "User is not associated with a company" };
+        return {
+          success: false,
+          data: null as any,
+          error: "User is not associated with a company",
+        };
       }
-      
+
       const inventory = await prisma.inventory.findFirst({
         where: {
           id,
@@ -230,12 +265,20 @@ export const getInventoryById = withAuth(
         },
       });
       if (!inventory) {
-        return { success: false, data: null as any, error: "Inventory not found" };
+        return {
+          success: false,
+          data: null as any,
+          error: "Inventory not found",
+        };
       }
       return { success: true, data: parseStringify(inventory) };
     } catch (error) {
       console.error("Get inventory error:", error);
-      return { success: false, data: null as any, error: "Failed to fetch inventory" };
+      return {
+        success: false,
+        data: null as any,
+        error: "Failed to fetch inventory",
+      };
     } finally {
       await prisma.$disconnect();
     }
@@ -247,7 +290,7 @@ export async function getInventory(
   id: string,
 ): Promise<AuthResponse<Inventory>> {
   const session = getSession();
-  return getInventoryById( id);
+  return getInventoryById(id);
 }
 
 export const remove = withAuth(
@@ -255,9 +298,13 @@ export const remove = withAuth(
     try {
       // Check if user has a companyId
       if (!user.user_metadata?.companyId) {
-        return { success: false, data: null as any, error: "User is not associated with a company" };
+        return {
+          success: false,
+          data: null as any,
+          error: "User is not associated with a company",
+        };
       }
-      
+
       // Check if inventory is in use by assets
       const inUseByAssets = await prisma.asset.findFirst({
         where: {
@@ -265,7 +312,7 @@ export const remove = withAuth(
           companyId: user.user_metadata.companyId,
         },
       });
-      
+
       if (inUseByAssets) {
         return {
           success: false,
@@ -273,7 +320,7 @@ export const remove = withAuth(
           error: "Cannot delete inventory that is in use by assets",
         };
       }
-      
+
       // Check if inventory is in use by accessories
       const inUseByAccessories = await prisma.accessory.findFirst({
         where: {
@@ -281,7 +328,7 @@ export const remove = withAuth(
           companyId: user.user_metadata.companyId,
         },
       });
-      
+
       if (inUseByAccessories) {
         return {
           success: false,
@@ -289,7 +336,7 @@ export const remove = withAuth(
           error: "Cannot delete inventory that is in use by accessories",
         };
       }
-      
+
       // Check if inventory is in use by licenses
       const inUseByLicenses = await prisma.license.findFirst({
         where: {
@@ -297,7 +344,7 @@ export const remove = withAuth(
           companyId: user.user_metadata.companyId,
         },
       });
-      
+
       if (inUseByLicenses) {
         return {
           success: false,
@@ -305,7 +352,7 @@ export const remove = withAuth(
           error: "Cannot delete inventory that is in use by licenses",
         };
       }
-      
+
       const inventory = await prisma.inventory.delete({
         where: {
           id: id,
@@ -316,7 +363,11 @@ export const remove = withAuth(
       return { success: true, data: parseStringify(inventory) };
     } catch (error) {
       console.error("Delete inventory error:", error);
-      return { success: false, data: null as any, error: "Failed to delete inventory" };
+      return {
+        success: false,
+        data: null as any,
+        error: "Failed to delete inventory",
+      };
     } finally {
       await prisma.$disconnect();
     }
@@ -334,49 +385,132 @@ export async function deleteInventory(
 export const getMaintenanceDueCount = withAuth(
   async (user): Promise<AuthResponse<number>> => {
     try {
-      // In a real scenario, you would fetch this data from your database
-      // For now, we'll return a static value
-      const count = 5;
-      return { success: true, data: count };
+      if (!user.user_metadata?.companyId) {
+        return {
+          success: false,
+          data: null as any,
+          error: "User is not associated with a company",
+        };
+      }
+
+      // Get assets that have maintenance due within the next 30 days
+      const maintenanceDueAssets = await prisma.asset.findMany({
+        where: {
+          companyId: user.user_metadata.companyId,
+          nextMaintenance: {
+            lte: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+            gte: new Date(), // From today
+          },
+          active: true,
+        },
+        select: {
+          id: true,
+          name: true,
+          nextMaintenance: true,
+        },
+      });
+
+      return { success: true, data: maintenanceDueAssets.length };
     } catch (error) {
       console.error("Get maintenance due count error:", error);
-      return { success: false, data: null as any, error: "Failed to fetch maintenance due count" };
+      return {
+        success: false,
+        data: null as any,
+        error: "Failed to fetch maintenance due count",
+      };
+    } finally {
+      await prisma.$disconnect();
     }
-  }
+  },
 );
 
 export const getMaintenanceSchedule = withAuth(
   async (user): Promise<AuthResponse<any[]>> => {
     try {
-      // In a real scenario, you would fetch this data from your database
-      // For now, we'll return a static list
-      const schedule = [
-        {
-          asset: "Laptop XPS-15",
-          type: "Routine Check",
-          dueDate: "Tomorrow",
-          priority: "high",
-          impact: 25,
+      if (!user.user_metadata?.companyId) {
+        return {
+          success: false,
+          data: null as any,
+          error: "User is not associated with a company",
+        };
+      }
+
+      // Get assets with upcoming maintenance
+      const maintenanceSchedule = await prisma.asset.findMany({
+        where: {
+          companyId: user.user_metadata.companyId,
+          nextMaintenance: {
+            gte: new Date(),
+          },
+          active: true,
         },
-        {
-          asset: "Monitor U2719D",
-          type: "Calibration",
-          dueDate: "Next Week",
-          priority: "medium",
-          impact: 15,
+        select: {
+          id: true,
+          name: true,
+          nextMaintenance: true,
+          model: {
+            select: {
+              name: true,
+            },
+          },
+          statusLabel: {
+            select: {
+              name: true,
+              colorCode: true,
+            },
+          },
         },
-        {
-          asset: "Mobile Device",
-          type: "Battery Check",
-          dueDate: "2 Weeks",
-          priority: "low",
-          impact: 10,
+        orderBy: {
+          nextMaintenance: "asc",
         },
-      ];
-      return { success: true, data: schedule };
+        take: 10, // Limit to 10 upcoming maintenance items
+      });
+
+      const formattedSchedule = maintenanceSchedule.map((asset) => {
+        const daysUntil = Math.ceil(
+          (asset.nextMaintenance!.getTime() - new Date().getTime()) /
+            (1000 * 60 * 60 * 24),
+        );
+
+        let priority = "low";
+        let impact = 10;
+
+        if (daysUntil <= 7) {
+          priority = "high";
+          impact = 25;
+        } else if (daysUntil <= 14) {
+          priority = "medium";
+          impact = 15;
+        }
+
+        return {
+          asset: asset.name,
+          type: asset.model?.name || "Maintenance",
+          dueDate:
+            daysUntil === 0
+              ? "Today"
+              : daysUntil === 1
+                ? "Tomorrow"
+                : daysUntil <= 7
+                  ? `${daysUntil} days`
+                  : `${Math.ceil(daysUntil / 7)} weeks`,
+          priority,
+          impact,
+          assetId: asset.id,
+          status: asset.statusLabel?.name || "Unknown",
+        };
+      });
+
+      return { success: true, data: formattedSchedule };
     } catch (error) {
       console.error("Get maintenance schedule error:", error);
-      return { success: false, data: [], error: "Failed to fetch maintenance schedule" };
+      return {
+        success: false,
+        data: [],
+        error: "Failed to fetch maintenance schedule",
+      };
+    } finally {
+      await prisma.$disconnect();
     }
-  }
+  },
 );

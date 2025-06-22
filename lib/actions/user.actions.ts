@@ -1,505 +1,261 @@
 "use server";
 
-import { Prisma, User as PrismaUser } from "@prisma/client";
-import { parseStringify, validateEmail } from "@/lib/utils";
-import {
-  accountVerificationSchema,
-  forgotPasswordConfirmSchema,
-  forgotPasswordSchema,
-  loginSchema,
-  userSchema,
-} from "@/lib/schemas";
+import { Prisma, User as PrismaUser, UserStatus } from "@prisma/client";
 import { revalidatePath } from "next/cache";
-import { getRoleById } from "@/lib/actions/role.actions";
-import { z } from "zod";
+import { clerkClient } from "@clerk/nextjs/server";
 import { prisma } from "@/app/db";
-import { createClient } from "@/utils/supabase/server";
-import { withAuth, AuthResponse } from "@/lib/middleware/withAuth";
+import { parseStringify } from "@/lib/utils";
 
-type UserCreateInput = Prisma.UserCreateInput;
+/**
+ * Creates a new user in the database when a new user signs up via Clerk.
+ * This function is intended to be called from the Clerk webhook handler.
+ *
+ * NOTE: You must provide default 'roleId' and 'companyId' values for this
+ * to work. In a multi-tenant application, you would typically handle this
+ * during the user's onboarding flow after they have signed up.
+ */
+export async function createUser(user: {
+  clerkId: string;
+  email: string;
+  username: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  photo: string;
+}) {
+  try {
+    const newUser = await prisma.user.create({
+      data: {
+        oauthId: user.clerkId,
+        email: user.email,
+        username: user.username,
+        name: `${user.firstName || ""} ${user.lastName || ""}`.trim(),
+        firstName: user.firstName || "",
+        lastName: user.lastName || "",
+        images: user.photo,
+        status: UserStatus.ACTIVE,
+        role: {
+          connect: {
+            id: "clqg1e1lo000008l3f9g8h3j9",
+          },
+        },
+        company: {
+          connect: {
+            id: "clqg1e1lq000108l3f9g8h3ja",
+          },
+        },
+      },
+    });
+
+    // Update the user's public metadata in Clerk to store the local DB user ID.
+    if (newUser && newUser.oauthId) {
+      const clerk = await clerkClient();
+      await clerk.users.updateUserMetadata(newUser.oauthId, {
+        publicMetadata: {
+          userId: newUser.id,
+        },
+      });
+    }
+
+    return parseStringify(newUser);
+  } catch (error) {
+    console.error("Error creating user:", error);
+    throw new Error("Failed to create user in database.");
+  }
+}
+
+/**
+ * Updates an existing user in the database when their details are changed in Clerk.
+ * This function is intended to be called from the Clerk webhook handler.
+ */
+export async function updateUser(
+  clerkId: string,
+  user: {
+    firstName: string | null;
+    lastName: string | null;
+    username: string | null;
+    photo: string;
+  },
+) {
+  try {
+    const updatedUser = await prisma.user.update({
+      where: { oauthId: clerkId },
+      data: {
+        name: `${user.firstName || ""} ${user.lastName || ""}`.trim(),
+        username: user.username,
+        firstName: user.firstName || "",
+        lastName: user.lastName || "",
+        images: user.photo,
+      },
+    });
+
+    return parseStringify(updatedUser);
+  } catch (error) {
+    console.error("Error updating user:", error);
+    throw new Error("Failed to update user in database.");
+  }
+}
+
+/**
+ * Deletes a user from the database when they are deleted from Clerk.
+ * This function is intended to be called from the Clerk webhook handler.
+ */
+export async function deleteUser(clerkId: string) {
+  try {
+    const deletedUser = await prisma.user.delete({
+      where: { oauthId: clerkId },
+    });
+
+    revalidatePath("/");
+
+    return parseStringify(deletedUser);
+  } catch (error) {
+    console.error("Error deleting user:", error);
+    throw new Error("Failed to delete user from database.");
+  }
+}
+
+// --- Generic User Management Functions ---
+
 type UserUpdateInput = Prisma.UserUpdateInput;
 
-// Define RegUser based on your needs, example:
-interface RegUser {
-  email: string;
-  password?: string; // Password might not always be present if created by admin
-  firstName: string;
-  lastName: string;
-  title?: string;
-  employeeId?: string;
-  roleId: string;
-  companyId: string;
-}
-
-// Shared user creation logic (Prisma)
-async function createPrismaUser({
-  data,
-  supabaseUserId,
-  tx,
-}: {
-  data: RegUser;
-  supabaseUserId?: string;
-  tx?: Prisma.TransactionClient;
-}): Promise<PrismaUser> {
-  if (!data.roleId) throw new Error("Role ID is required");
-  const prismaClient = tx || prisma;
-  return await prismaClient.user.create({
-    data: {
-      name: `${data.firstName} ${data.lastName}`,
-      email: data.email,
-      firstName: String(data.firstName),
-      lastName: String(data.lastName),
-      employeeId: data.employeeId,
-      title: data.title,
-      oauthId: supabaseUserId,
-      roleId: data.roleId,
-      companyId: data.companyId,
-      emailVerified: supabaseUserId ? null : new Date(),
-    },
-  });
-}
-
-// Login (client-side, no withAuth needed)
-export async function login(
-  values: z.infer<typeof loginSchema>,
-): Promise<AuthResponse<null>> {
+/**
+ * Updates non-sensitive details of a user.
+ * TODO: Implement proper authorization to ensure the caller can update the target user.
+ */
+export const updateUserNonAuthDetails = async (
+  id: string,
+  data: Partial<
+    Pick<
+      PrismaUser,
+      "firstName" | "lastName" | "roleId" | "title" | "employeeId"
+    >
+  >,
+): Promise<{ success: boolean; error?: string; data?: PrismaUser }> => {
   try {
-    const validation = loginSchema.safeParse(values);
-    if (!validation.success) {
-      return { success: false, error: "Invalid email or password", data: null };
-    }
-    const { email, password } = validation.data;
-    const supabase = await createClient();
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    if (error) {
-      return { success: false, error: "Invalid email or password", data: null };
-    }
-    return { success: true, data: null };
-  } catch (error) {
-    return {
-      success: false,
-      error: "Login failed due to an unexpected error.",
-      data: null,
-    };
-  }
-}
-
-// Create user (server-side, must be tenant-aware)
-export const createUser = withAuth(
-  async (
-    user,
-    values: z.infer<typeof userSchema> & { companyId?: string },
-  ): Promise<AuthResponse<PrismaUser | undefined>> => {
-    try {
-      const validation = userSchema.parse(values);
-      // Use companyId from authenticated user if not provided
-      const companyId = values.companyId || user.user_metadata?.companyId;
-      if (!companyId) {
-        return {
-          success: false,
-          error: "Company information missing",
-          data: undefined,
-        };
-      }
-      const role = await getRoleById(validation.roleId);
-      if (!role?.data) {
-        return { success: false, error: "Role not found", data: undefined };
-      }
-      const roleName = (role.data as { name: string }).name;
-      const userToRegister: RegUser = {
-        roleId: validation.roleId,
-        email: validation.email!,
-        password: process.env.DEFAULT_PASSWORD!,
-        firstName: validation.firstName,
-        lastName: validation.lastName,
-        title: validation.title,
-        employeeId: validation.employeeId,
-        companyId,
-      };
-      let createdPrismaUser: PrismaUser;
-      const supabase = await createClient();
-      if (roleName === "Lonee") {
-        createdPrismaUser = await createPrismaUser({ data: userToRegister });
-      } else {
-        // Use a transaction for atomicity
-        const result = await prisma.$transaction(async (tx) => {
-          // 1. Register in Supabase
-          const { data: supabaseSignUpData, error: supabaseSignUpError } =
-            await supabase.auth.signUp({
-              email: userToRegister.email,
-              password: userToRegister.password!,
-              options: {
-                data: {
-                  firstName: userToRegister.firstName,
-                  lastName: userToRegister.lastName,
-                  companyId: userToRegister.companyId,
-                  role: roleName,
-                },
-              },
-            });
-          if (supabaseSignUpError || !supabaseSignUpData.user) {
-            throw new Error(
-              supabaseSignUpError?.message || "Supabase registration failed",
-            );
-          }
-          // 2. Create in Prisma
-          const prismaUser = await createPrismaUser({
-            data: userToRegister,
-            supabaseUserId: supabaseSignUpData.user.id,
-            tx,
-          });
-          return prismaUser;
-        });
-        createdPrismaUser = result;
-      }
-      return { success: true, data: parseStringify(createdPrismaUser) };
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return { success: false, error: error.message, data: undefined };
-      }
-      return {
-        success: false,
-        error: "User creation failed due to an unexpected error.",
-        data: undefined,
-      };
-    }
-  },
-);
-
-// Resend verification email (client-side, no withAuth needed)
-export async function resendVerificationEmail(
-  email: string,
-): Promise<AuthResponse<null>> {
-  try {
-    if (!validateEmail(email)) {
-      return { success: false, error: "Invalid email address", data: null };
-    }
-    const supabase = await createClient();
-    const { error: resendError } = await supabase.auth.resend({
-      type: "signup",
-      email: email,
-    });
-    if (resendError) {
-      return {
-        success: false,
-        error: `Failed to resend verification email: ${resendError.message}`,
-        data: null,
-      };
-    }
-    return { success: true, data: null };
-  } catch (error) {
-    return {
-      success: false,
-      error: "Failed to resend verification email due to an unexpected error.",
-      data: null,
-    };
-  }
-}
-
-// Forgot password (client-side, no withAuth needed)
-export async function forgotPassword(
-  values: z.infer<typeof forgotPasswordSchema>,
-): Promise<AuthResponse<null>> {
-  try {
-    const validation = forgotPasswordSchema.safeParse(values);
-    if (!validation.success) {
-      return { success: false, error: "Invalid email address.", data: null };
-    }
-    const supabase = await createClient();
-    const { error } = await supabase.auth.resetPasswordForEmail(
-      validation.data.email,
-      {
-        redirectTo: `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/forgot-password/confirm`,
+    const updatedUser = await prisma.user.update({
+      where: { id },
+      data: {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        roleId: data.roleId,
+        title: data.title,
+        employeeId: data.employeeId,
       },
-    );
-    if (error) {
-      return {
-        success: false,
-        error:
-          "If an account with this email exists, a password reset link has been sent.",
-        data: null,
-      };
-    }
-    return { success: true, data: null };
+    });
+    revalidatePath("/admin/users");
+    revalidatePath(`/admin/users/${id}`);
+    return { success: true, data: parseStringify(updatedUser) };
   } catch (error) {
     return {
       success: false,
-      error:
-        "Failed to process forgot password request due to an unexpected error.",
-      data: null,
+      error: "Failed to update user",
     };
   }
-}
+};
 
-// Verify account (client-side, no withAuth needed)
-export async function verifyAccount(
-  values: z.infer<typeof accountVerificationSchema> & { token: string },
-): Promise<AuthResponse<null>> {
+/**
+ * Retrieves all users.
+ * TODO: Implement filtering by company based on the authenticated user's organization.
+ */
+export const getAll = async (): Promise<{
+  success: boolean;
+  error?: string;
+  data?: PrismaUser[];
+}> => {
   try {
-    const validation = accountVerificationSchema
-      .extend({ token: z.string() })
-      .safeParse(values);
-    if (!validation.success) {
-      return {
-        success: false,
-        error: "Invalid email, code, or token",
-        data: null,
-      };
-    }
-    const { email, token } = validation.data;
-    const supabase = await createClient();
-    const { error: verifyError } = await supabase.auth.verifyOtp({
-      type: "signup",
-      email: email,
-      token: token,
+    const users = await prisma.user.findMany({
+      orderBy: {
+        name: "asc",
+      },
+      include: {
+        role: true,
+      },
     });
-    if (verifyError) {
-      return {
-        success: false,
-        error: `Account verification failed: ${verifyError?.message || "Invalid token or email."}`,
-        data: null,
-      };
-    }
-    await prisma.user.update({
-      where: { email },
-      data: { emailVerified: new Date() },
-    });
-    return { success: true, data: null };
+    return { success: true, data: parseStringify(users) };
   } catch (error) {
+    console.error("Get users error:", error);
     return {
       success: false,
-      error: "Account could not be verified due to an unexpected error.",
-      data: null,
+      error: "Failed to fetch users",
     };
   }
-}
+};
 
-// Update user details (server-side, must be tenant-aware)
-export const updateUserNonAuthDetails = withAuth(
-  async (
-    user,
-    id: string,
-    data: Partial<
-      Pick<
-        PrismaUser,
-        "firstName" | "lastName" | "roleId" | "title" | "employeeId"
-      >
-    >,
-  ): Promise<AuthResponse<PrismaUser | undefined>> => {
-    try {
-      // Only allow update if user belongs to the same company
-      const userToUpdate = await prisma.user.findFirst({
-        where: { id, companyId: user.user_metadata?.companyId },
-      });
-      if (!userToUpdate) {
-        return { success: false, error: "User not found.", data: undefined };
-      }
-      const updatedUser = await prisma.user.update({
-        where: { id },
-        data: {
-          firstName: data.firstName,
-          lastName: data.lastName,
-          roleId: data.roleId,
-          title: data.title,
-          employeeId: data.employeeId,
-        },
-      });
-      revalidatePath("/users");
-      revalidatePath(`/users/${id}`);
-      return { success: true, data: parseStringify(updatedUser) };
-    } catch (error) {
-      return {
-        success: false,
-        error: "Failed to update user",
-        data: undefined,
-      };
-    }
-  },
-);
-
-export const getAll = withAuth(
-  async (user): Promise<AuthResponse<PrismaUser[] | undefined>> => {
-    try {
-      const users = await prisma.user.findMany({
-        where: {
-          companyId: user.user_metadata?.companyId,
-        },
-        orderBy: {
-          name: "asc",
-        },
-        include: {
-          role: true,
-        },
-      });
-      return { success: true, data: parseStringify(users) };
-    } catch (error) {
-      console.error("Get users error:", error);
-      return {
-        success: false,
-        error: "Failed to fetch users",
-        data: undefined,
-      };
-    }
-  },
-);
-
-export const getUserById = withAuth(
-  async (user, id: string): Promise<AuthResponse<PrismaUser | undefined>> => {
-    try {
-      const foundUser = await prisma.user.findFirst({
-        where: {
-          id,
-          companyId: user.user_metadata?.companyId,
-        },
-        include: {
-          role: true,
-        },
-      });
-      if (!foundUser) {
-        return { success: false, error: "User not found", data: undefined };
-      }
-      return { success: true, data: parseStringify(foundUser) };
-    } catch (error) {
-      console.error("Get user error:", error);
-      return { success: false, error: "Failed to fetch user", data: undefined };
-    }
-  },
-);
-
-export const insert = withAuth(
-  async (
-    user,
-    data: UserCreateInput,
-  ): Promise<AuthResponse<PrismaUser | undefined>> => {
-    try {
-      const { email, firstName, lastName, name, role, ...rest } = data;
-      const newUser = await prisma.user.create({
-        data: {
-          email,
-          firstName,
-          lastName,
-          name,
-          ...rest,
-          company: {
-            connect: { id: user.user_metadata?.companyId },
-          },
-          role: {
-            connect: { id: (role as any)?.connect?.id },
-          },
-        },
-        include: {
-          role: true,
-        },
-      });
-      revalidatePath("/users");
-      return { success: true, data: parseStringify(newUser) };
-    } catch (error) {
-      console.error("Create user error:", error);
-      return {
-        success: false,
-        error: "Failed to create user",
-        data: undefined,
-      };
-    }
-  },
-);
-
-export const update = withAuth(
-  async (
-    user,
-    id: string,
-    data: UserUpdateInput,
-  ): Promise<AuthResponse<PrismaUser | undefined>> => {
-    try {
-      const updatedUser = await prisma.user.update({
-        where: {
-          id,
-          companyId: user.user_metadata?.companyId,
-        },
-        data,
-        include: {
-          role: true,
-        },
-      });
-      revalidatePath("/users");
-      return { success: true, data: parseStringify(updatedUser) };
-    } catch (error) {
-      console.error("Update user error:", error);
-      return {
-        success: false,
-        error: "Failed to update user",
-        data: undefined,
-      };
-    }
-  },
-);
-
-export const remove = withAuth(
-  async (user, id: string): Promise<AuthResponse<PrismaUser | undefined>> => {
-    try {
-      const deletedUser = await prisma.user.delete({
-        where: {
-          id,
-          companyId: user.user_metadata?.companyId,
-        },
-      });
-      revalidatePath("/users");
-      return { success: true, data: parseStringify(deletedUser) };
-    } catch (error) {
-      console.error("Delete user error:", error);
-      return {
-        success: false,
-        error: "Failed to delete user",
-        data: undefined,
-      };
-    }
-  },
-);
-
-export async function resetPassword(
-  values: z.infer<typeof forgotPasswordConfirmSchema>,
-): Promise<AuthResponse<null>> {
+/**
+ * Retrieves a single user by their ID.
+ * TODO: Implement proper authorization.
+ */
+export const getUserById = async (
+  id: string,
+): Promise<{ success: boolean; error?: string; data?: PrismaUser }> => {
   try {
-    const validation = forgotPasswordConfirmSchema.safeParse(values);
-    if (!validation.success) {
-      const error = validation.error.flatten().fieldErrors;
-      const message =
-        error.newPassword?.[0] ??
-        error.confirmNewPassword?.[0] ??
-        "Invalid data";
-      return { success: false, error: message, data: null };
+    const foundUser = await prisma.user.findFirst({
+      where: {
+        id,
+      },
+      include: {
+        role: true,
+      },
+    });
+    if (!foundUser) {
+      return { success: false, error: "User not found" };
     }
+    return { success: true, data: parseStringify(foundUser) };
+  } catch (error) {
+    console.error("Get user error:", error);
+    return { success: false, error: "Failed to fetch user" };
+  }
+};
 
-    const supabase = await createClient();
-    const {
-      data: { session },
-      error: sessionError,
-    } = await supabase.auth.getSession();
-
-    if (sessionError || !session) {
-      return {
-        success: false,
-        error: "Not authenticated. Invalid or expired password reset link.",
-        data: null,
-      };
-    }
-
-    const { newPassword } = validation.data;
-    const { error } = await supabase.auth.updateUser({ password: newPassword });
-
-    if (error) {
-      return { success: false, error: error.message, data: null };
-    }
-
-    return { success: true, data: null };
-  } catch (e) {
+/**
+ * Updates a user's record.
+ * TODO: Implement proper authorization.
+ */
+export const update = async (
+  id: string,
+  data: UserUpdateInput,
+): Promise<{ success: boolean; error?: string; data?: PrismaUser }> => {
+  try {
+    const updatedUser = await prisma.user.update({
+      where: {
+        id,
+      },
+      data,
+      include: {
+        role: true,
+      },
+    });
+    revalidatePath("/admin/users");
+    return { success: true, data: parseStringify(updatedUser) };
+  } catch (error) {
+    console.error("Update user error:", error);
     return {
       success: false,
-      error: "An unexpected error occurred.",
-      data: null,
+      error: "Failed to update user",
     };
   }
-}
+};
+
+/**
+ * Deletes a user from the database by their ID.
+ * TODO: Implement proper authorization.
+ */
+export const remove = async (
+  id: string,
+): Promise<{ success: boolean; error?: string; data?: PrismaUser }> => {
+  try {
+    const deletedUser = await prisma.user.delete({
+      where: {
+        id,
+      },
+    });
+    revalidatePath("/admin/users");
+    return { success: true, data: parseStringify(deletedUser) };
+  } catch (error) {
+    console.error("Delete user error:", error);
+    return {
+      success: false,
+      error: "Failed to delete user",
+    };
+  }
+};

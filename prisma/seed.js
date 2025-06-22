@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 
@@ -125,6 +126,27 @@ async function main() {
   });
 
   console.log(`Created flow rule: ${flowRule1.name}`);
+
+  // --- Seed Pricing Plan ---
+  await prisma.pricingPlan.upsert({
+    where: { name: "Pro" },
+    update: {},
+    create: {
+      name: "Pro",
+      planType: "PRO",
+      assetQuota: 100, // A high number to accommodate any request
+      pricePerAsset: 0.39,
+      billingCycle: "monthly",
+      stripePriceId: "price_1QlZyQ2N5SBY44N5l2hElB14", // Replace with your actual Stripe Price ID
+      features: JSON.stringify([
+        "Up to 100,000 assets",
+        "Advanced reporting",
+        "Email support",
+      ]),
+    },
+  });
+
+  console.log("Seeded pricing plan.");
 
   console.log("Seeding finished.");
 }

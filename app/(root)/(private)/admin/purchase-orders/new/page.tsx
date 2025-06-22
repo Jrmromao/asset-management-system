@@ -1,5 +1,4 @@
 import { PurchaseOrderForm } from "@/components/forms/PurchaseOrderForm";
-import { createClient } from "@/utils/supabase/server";
 
 export default async function NewPurchaseOrderPage() {
   const supabase = await createClient();

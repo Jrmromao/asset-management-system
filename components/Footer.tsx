@@ -1,8 +1,5 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
-import { createClient } from "@/utils/supabase/client";
-import { User } from "@supabase/supabase-js";
-import { useSession } from "@/lib/SessionProvider";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
@@ -12,18 +9,25 @@ import {
   HelpCircle,
   ChevronUp,
 } from "lucide-react";
-import md5 from "md5";
 import Image from "next/image";
+import { useUser, useClerk } from "@clerk/nextjs";
 
-const formatUsername = (user: User | null): string => {
+const formatUsername = (user: any): string => {
   if (!user) return "User";
-  if (user.user_metadata?.name) return user.user_metadata.name;
-  if (user.email) {
-    const cleanEmail = user.email.split("+")[0];
+  if (user.firstName && user.lastName) {
+    return `${user.firstName} ${user.lastName}`;
+  }
+  if (user.firstName) return user.firstName;
+  if (user.emailAddresses?.[0]?.emailAddress) {
+    const email = user.emailAddresses[0].emailAddress;
+    const cleanEmail = email.split("+")[0];
     const localPart = cleanEmail.split("@")[0];
     return localPart
       .split(/[._]/)
-      .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+      .map(
+        (part: string) =>
+          part.charAt(0).toUpperCase() + part.slice(1).toLowerCase(),
+      )
       .join(" ");
   }
   return "User";
@@ -31,8 +35,8 @@ const formatUsername = (user: User | null): string => {
 
 const getGravatarURL = (email: string | undefined, size: number = 80) => {
   if (!email) return null;
-  const hash = md5(email.trim().toLowerCase());
-  return `https://www.gravatar.com/avatar/${hash}?s=${size}&d=mp`;
+  // Use Clerk's built-in avatar or fallback to Gravatar
+  return `https://www.gravatar.com/avatar/${email.trim().toLowerCase()}?s=${size}&d=mp`;
 };
 
 interface MenuItem {
@@ -43,8 +47,8 @@ interface MenuItem {
 }
 
 const Footer = ({ isCollapsed = false }: { isCollapsed?: boolean }) => {
-  const supabase = createClient();
-  const { user } = useSession();
+  const { user } = useUser();
+  const { signOut } = useClerk();
   const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -66,7 +70,8 @@ const Footer = ({ isCollapsed = false }: { isCollapsed?: boolean }) => {
 
   const username = formatUsername(user);
   const firstLetter = username.charAt(0).toUpperCase();
-  const gravatarURL = getGravatarURL(user?.email, 40);
+  const userEmail = user.emailAddresses?.[0]?.emailAddress;
+  const gravatarURL = getGravatarURL(userEmail, 40);
 
   const createAction = (path: string) => () => {
     router.push(path);
@@ -75,7 +80,7 @@ const Footer = ({ isCollapsed = false }: { isCollapsed?: boolean }) => {
 
   const handleLogout = async () => {
     setIsMenuOpen(false);
-    await supabase.auth.signOut();
+    await signOut();
     router.push("/sign-in");
     router.refresh();
   };
@@ -115,7 +120,14 @@ const Footer = ({ isCollapsed = false }: { isCollapsed?: boolean }) => {
       )}
     >
       <div className="relative flex items-center justify-center size-10 rounded-full bg-green-600 text-white font-bold text-lg transition-all duration-200 overflow-hidden">
-        {gravatarURL ? (
+        {user.imageUrl ? (
+          <Image
+            src={user.imageUrl}
+            alt={`${username}'s avatar`}
+            fill
+            className="object-cover"
+          />
+        ) : gravatarURL ? (
           <Image
             src={gravatarURL}
             alt={`${username}'s avatar`}
@@ -161,7 +173,7 @@ const Footer = ({ isCollapsed = false }: { isCollapsed?: boolean }) => {
           {username}
         </p>
         <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-          {user?.email}
+          {userEmail}
         </p>
       </div>
       <div className="py-2" role="none">

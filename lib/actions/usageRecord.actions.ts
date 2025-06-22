@@ -2,9 +2,8 @@
 
 import { prisma } from "@/app/db";
 import Stripe from "stripe";
-
+import { auth } from "@clerk/nextjs/server";
 import { parseStringify } from "@/lib/utils";
-import { createClient } from "@/utils/supabase/server";
 
 if (!process.env.STRIPE_SECRET_KEY || !process.env.STRIPE_PRICE_ID) {
   throw new Error("Missing required Stripe environment variables");
@@ -21,43 +20,45 @@ interface ActionResponse<T> {
 }
 
 export const getAssetQuota = async (): Promise<ActionResponse<number>> => {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const companyId = user?.user_metadata?.companyId;
+  const { orgId } = await auth();
 
-  console.log("companyId: ", companyId);
-  console.log("user: ", user);
-
-  if (!companyId) {
+  if (!orgId) {
     return {
       success: false,
-      error: "Unauthorized: No valid session found",
+      error: "Unauthorized: No active organization found",
     };
   }
 
-  const quota = await prisma.subscription.findUnique({
+  const company = await prisma.company.findUnique({
+    where: { clerkOrgId: orgId },
+    select: { id: true },
+  });
+
+  if (!company) {
+    return {
+      success: false,
+      error: "Company not found for the current organization.",
+    };
+  }
+
+  const subscription = await prisma.subscription.findUnique({
     where: {
-      companyId: companyId,
+      companyId: company.id,
     },
-    include: {
-      usageRecords: {
-        select: {
-          purchasedAssetQuota: true,
-        },
-      },
+    select: {
+      assetQuota: true,
     },
   });
 
-  const total = quota?.usageRecords.reduce(
-    (sum, record) => sum + record.purchasedAssetQuota,
-    0,
-  );
+  if (!subscription) {
+    return {
+      success: false,
+      error: "Subscription not found for the current organization.",
+    };
+  }
 
-  console.log("total: ", total);
   return {
     success: true,
-    data: parseStringify(total),
+    data: subscription.assetQuota,
   };
 };

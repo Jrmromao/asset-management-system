@@ -34,7 +34,7 @@ export interface GeminiConfig {
 }
 
 // Example usage with recommended settings for CO2 calculations
-const recommendedConfig: GeminiConfig = {
+export const GeminiConfigConst: GeminiConfig = {
   apiKey: "your-api-key",
   model: "gemini-pro",
   maxOutputTokens: 150,

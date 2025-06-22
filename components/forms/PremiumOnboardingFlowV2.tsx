@@ -47,6 +47,7 @@ import { useRouter } from "next/navigation"; // Keeping for context, though not 
 import { registerCompany } from "@/lib/actions/company.actions"; // Assuming this is your server action
 import { Stepper } from "@/components/ui/stepper";
 import { Slider } from "@/components/ui/slider";
+import { useSignUp, useAuth, useClerk, useSession } from "@clerk/nextjs";
 
 // Define the schema for your form data
 interface OnboardingData {
@@ -62,31 +63,22 @@ interface OnboardingData {
   phoneNumber: string;
   primaryContactEmail: string;
   password: string;
-  repeatPassword: string;
-  recaptchaToken: string;
 }
 
-const onboardingSchema = z
-  .object({
-    companyName: z.string().min(2, "Company name is required"),
-    industry: z.string().min(1, "Please select an industry"),
-    companySize: z.string().min(1, "Please select company size"),
-    assetCount: z.number().min(100, "Minimum 100 assets"), // Ensure this is handled if user can change it
-    useCase: z.array(z.string()).min(1, "Select at least one use case"),
-    painPoints: z.array(z.string()).min(1, "Select at least one pain point"),
-    firstName: z.string().min(2, "First name is required"),
-    lastName: z.string().min(2, "Last name is required"),
-    email: z.string().email("A valid email is required"),
-    phoneNumber: z.string().optional(),
-    primaryContactEmail: z.string().email("A valid contact email is required"),
-    password: z.string().min(8, "Password must be at least 8 characters"),
-    repeatPassword: z.string(),
-    recaptchaToken: z.string().min(1, "Please complete the security check"),
-  })
-  .refine((data) => data.password === data.repeatPassword, {
-    message: "Passwords do not match",
-    path: ["repeatPassword"],
-  });
+const onboardingSchema = z.object({
+  companyName: z.string().min(2, "Company name is required"),
+  industry: z.string().min(1, "Please select an industry"),
+  companySize: z.string().min(1, "Please select company size"),
+  assetCount: z.number().min(100, "Minimum 100 assets"),
+  useCase: z.array(z.string()).min(1, "Select at least one use case"),
+  painPoints: z.array(z.string()).min(1, "Select at least one pain point"),
+  firstName: z.string().min(2, "First name is required"),
+  lastName: z.string().min(2, "Last name is required"),
+  email: z.string().email("A valid email is required"),
+  phoneNumber: z.string().optional(),
+  primaryContactEmail: z.string().email("A valid contact email is required"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+});
 
 // Static data for form options
 const industries = [
@@ -145,7 +137,7 @@ const SelectableItem: React.FC<{
 interface StepComponentProps {
   form: UseFormReturn<OnboardingData>;
   // Add other props if needed for specific steps (e.g., error for PaymentStep)
-  error?: string;
+  error?: string | undefined;
 }
 
 const WelcomeStep: React.FC = () => (
@@ -249,31 +241,20 @@ const CompanyInfoStep: React.FC<StepComponentProps> = ({ form }) => {
             >
               Company Size (employees) *
             </label>
-            <div className="flex items-center gap-6">
-              <Slider
-                id="company-size-slider"
-                min={0}
-                max={companySizes.length - 1}
-                step={1}
-                value={[companySizeIndex > -1 ? companySizeIndex : 0]}
-                onValueChange={(value) => {
-                  form.setValue("companySize", companySizes[value[0]]);
-                  form.trigger("companySize");
-                }}
-                className="flex-grow"
-              />
-              <Badge
-                variant="secondary"
-                className="w-28 justify-center py-2 text-base font-semibold bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800"
-              >
-                {companySizeValue || companySizes[0]}
-              </Badge>
+            <Slider
+              id="company-size-slider"
+              min={0}
+              max={companySizes.length - 1}
+              step={1}
+              value={[companySizeIndex]}
+              onValueChange={([index]) => {
+                form.setValue("companySize", companySizes[index]);
+                form.trigger("companySize");
+              }}
+            />
+            <div className="mt-2 text-center text-lg font-semibold text-foreground">
+              {companySizeValue}
             </div>
-            {form.formState.errors.companySize && (
-              <p className="mt-2 text-sm text-destructive">
-                {form.formState.errors.companySize.message}
-              </p>
-            )}
           </div>
         </CardContent>
       </Card>
@@ -287,87 +268,85 @@ const GoalsStep: React.FC<StepComponentProps> = ({ form }) => (
     animate={{ opacity: 1, x: 0 }}
     exit={{ opacity: 0, x: -50 }}
   >
-    <div className="grid max-w-4xl gap-8 mx-auto md:grid-cols-2">
-      <Card className="bg-card/50 backdrop-blur-lg border-border/30 shadow-lg">
-        <CardHeader>
-          <CardTitle className="text-green-700 dark:text-green-400">
-            What are your goals?
-          </CardTitle>
-          <CardDescription>Select all that apply.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {useCases.map(({ value, label, icon: Icon }) => {
-            const isSelected = form.watch("useCase").includes(value);
-            return (
-              <button
+    <Card className="max-w-2xl mx-auto bg-card/50 backdrop-blur-lg border-border/30 shadow-lg">
+      <CardHeader>
+        <CardTitle className="text-green-700 dark:text-green-400">
+          Your Goals
+        </CardTitle>
+        <CardDescription>
+          What do you want to achieve? Select all that apply.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div>
+          <label className="block mb-2 text-sm font-medium text-muted-foreground">
+            Primary Use Cases *
+          </label>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+            {useCases.map(({ value, label, icon: Icon }) => (
+              <SelectableItem
                 key={value}
-                type="button" // IMPORTANT: Ensure this is a button
+                isSelected={form.watch("useCase", []).includes(value)}
                 onClick={() => {
-                  const currentUseCases = form.watch("useCase");
-                  const updated = isSelected
-                    ? currentUseCases.filter((v: string) => v !== value)
-                    : [...currentUseCases, value];
-                  form.setValue("useCase", updated);
+                  const currentSelection = form.getValues("useCase") || [];
+                  const newSelection = currentSelection.includes(value)
+                    ? currentSelection.filter((item) => item !== value)
+                    : [...currentSelection, value];
+                  form.setValue("useCase", newSelection);
                   form.trigger("useCase");
                 }}
-                className={`flex items-center w-full gap-4 p-4 text-left border rounded-lg transition-all ${
-                  isSelected
-                    ? "border-green-600 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400"
-                    : "border-border bg-transparent hover:border-green-300 dark:hover:border-green-700"
-                }`}
               >
-                <Icon className="w-5 h-5 text-green-600 dark:text-green-400" />
-                <span className="font-medium">{label}</span>
-              </button>
-            );
-          })}
+                <Icon className="w-6 h-6 mx-auto mb-2 text-green-600 dark:text-green-400" />
+                <span className="text-sm font-medium">{label}</span>
+              </SelectableItem>
+            ))}
+          </div>
           {form.formState.errors.useCase && (
-            <p className="text-sm text-destructive">
+            <p className="mt-2 text-sm text-destructive">
               {form.formState.errors.useCase.message}
             </p>
           )}
-        </CardContent>
-      </Card>
-      <Card className="bg-card/50 backdrop-blur-lg border-border/30 shadow-lg">
-        <CardHeader>
-          <CardTitle className="text-green-700 dark:text-green-400">
-            What are your biggest challenges?
-          </CardTitle>
-          <CardDescription>Select your top pain points.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {painPoints.map(({ value, label }) => {
-            const isSelected = form.watch("painPoints").includes(value);
-            return (
-              <button
+        </div>
+
+        <div>
+          <label className="block mb-2 text-sm font-medium text-muted-foreground">
+            Biggest Pain Points *
+          </label>
+          <div className="space-y-2">
+            {painPoints.map(({ value, label }) => (
+              <label
                 key={value}
-                type="button" // IMPORTANT: Ensure this is a button
-                onClick={() => {
-                  const currentPainPoints = form.watch("painPoints");
-                  const updated = isSelected
-                    ? currentPainPoints.filter((v: string) => v !== value)
-                    : [...currentPainPoints, value];
-                  form.setValue("painPoints", updated, {});
-                  form.trigger("painPoints");
-                }}
-                className={`w-full p-4 text-left border rounded-lg transition-all ${
-                  isSelected
-                    ? "border-green-600 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400"
+                className={`flex items-center p-3 rounded-lg border cursor-pointer transition-all ${
+                  form.watch("painPoints", []).includes(value)
+                    ? "border-green-600 bg-green-50 dark:bg-green-900/20"
                     : "border-border bg-transparent hover:border-green-300 dark:hover:border-green-700"
                 }`}
               >
-                <span className="font-medium">{label}</span>
-              </button>
-            );
-          })}
+                <input
+                  type="checkbox"
+                  className="hidden"
+                  checked={form.watch("painPoints", []).includes(value)}
+                  onChange={() => {
+                    const currentSelection = form.getValues("painPoints") || [];
+                    const newSelection = currentSelection.includes(value)
+                      ? currentSelection.filter((item) => item !== value)
+                      : [...currentSelection, value];
+                    form.setValue("painPoints", newSelection);
+                    form.trigger("painPoints");
+                  }}
+                />
+                <span className="font-medium text-foreground">{label}</span>
+              </label>
+            ))}
+          </div>
           {form.formState.errors.painPoints && (
-            <p className="text-sm text-destructive">
+            <p className="mt-2 text-sm text-destructive">
               {form.formState.errors.painPoints.message}
             </p>
           )}
-        </CardContent>
-      </Card>
-    </div>
+        </div>
+      </CardContent>
+    </Card>
   </motion.div>
 );
 
@@ -421,30 +400,16 @@ const AccountStep: React.FC<StepComponentProps> = ({ form }) => (
           control={form.control}
           name="phoneNumber"
         />
-        <div className="grid gap-4 md:grid-cols-2">
-          <CustomInput
-            label="Password"
-            type="password"
-            control={form.control}
-            name="password"
-            required
-          />
-          <CustomInput
-            label="Repeat Password"
-            type="password"
-            control={form.control}
-            name="repeatPassword"
-            required
-          />
-        </div>
+        <CustomInput
+          label="Password"
+          type="password"
+          control={form.control}
+          name="password"
+          required
+        />
         {form.formState.errors.password && (
           <p className="text-sm text-destructive">
             {form.formState.errors.password.message}
-          </p>
-        )}
-        {form.formState.errors.repeatPassword && (
-          <p className="text-sm text-destructive">
-            {form.formState.errors.repeatPassword.message}
           </p>
         )}
       </CardContent>
@@ -461,71 +426,36 @@ const PaymentStep: React.FC<StepComponentProps> = ({ form, error }) => (
     <Card className="max-w-2xl mx-auto bg-card/50 backdrop-blur-lg border-border/30 shadow-lg">
       <CardHeader>
         <CardTitle className="text-green-700 dark:text-green-400">
-          Start Your Free Trial
+          Final Step: Review
         </CardTitle>
         <CardDescription>
-          Confirm your plan details. No charges today.
+          Review your details and complete the sign-up.
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <div className="p-6 space-y-4 border rounded-lg bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-green-700 dark:text-green-400">
-              Pro Plan
-            </h3>
-            <Badge
-              variant="secondary"
-              className="text-base bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800"
-            >
-              15-Day Free Trial
-            </Badge>
-          </div>
-          <div className="flex justify-between">
-            <span>Assets to track:</span>
-            <strong>{form.watch("assetCount")}</strong>
-          </div>
-          <div className="flex justify-between">
-            <span>Price per asset/month:</span> <strong>€0.35</strong>
-          </div>
-          <div className="my-4 border-t border-green-200 dark:border-green-700"></div>
-          <div className="flex justify-between text-xl font-bold text-green-700 dark:text-green-400">
-            <span>Total per month:</span>
-            <span>€{(form.watch("assetCount") * 0.35).toFixed(2)}</span>
-          </div>
-          <p className="text-xs text-center text-muted-foreground">
-            You will be redirected to Stripe to securely enter your payment
-            details. You won&apos;t be charged until your trial ends.
+      <CardContent className="space-y-6">
+        <div className="p-6 border rounded-lg bg-background/50">
+          <h3 className="text-lg font-semibold mb-2">Summary</h3>
+          <p className="text-muted-foreground">
+            You are signing up for the{" "}
+            <Badge variant="default">Premium Plan</Badge> with support for up to{" "}
+            <span className="font-bold text-foreground">
+              {form.getValues("assetCount")}
+            </span>{" "}
+            assets.
+          </p>
+          <p className="text-sm mt-4">
+            No payment is required today. Your 14-day free trial will begin
+            after you complete the sign-up.
           </p>
         </div>
+        {error && <p className="text-destructive text-center">{error}</p>}
       </CardContent>
-      <CardFooter className="flex-col items-center gap-4">
-        <ReCAPTCHA
-          siteKey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY!}
-          onVerify={(token) => {
-            form.setValue("recaptchaToken", token);
-            form.trigger("recaptchaToken");
-          }}
-          onExpire={() => {
-            form.setValue("recaptchaToken", "");
-            form.trigger("recaptchaToken");
-          }}
-        />
-        {form.formState.errors.recaptchaToken && (
-          <p className="text-sm text-destructive">
-            {form.formState.errors.recaptchaToken.message}
-          </p>
-        )}
-        {error && (
-          <div className="p-3 text-sm text-center rounded-lg text-destructive bg-destructive/10">
-            {error}
-          </div>
-        )}
-      </CardFooter>
     </Card>
   </motion.div>
 );
 
-// Define a type for the step configuration for better type safety
+// --- Component Definition ---
+
 interface FormStepConfig {
   name: string;
   icon: React.ElementType;
@@ -540,12 +470,12 @@ interface PremiumOnboardingFlowProps {
 const PremiumOnboardingFlowV2 = ({
   assetCount = 100,
 }: PremiumOnboardingFlowProps) => {
+  const { user } = useContext(UserContext);
+  const router = useRouter();
+  const { isLoaded, signUp, setActive } = useSignUp();
+  const { userId, isLoaded: isAuthLoaded } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
-  // Removed unused user and router from useContext and useRouter for clarity,
-  // but keep them if your component logic truly relies on them later.
-  // const { user } = useContext(UserContext);
-  // const router = useRouter();
+  const [error, setError] = useState<string | undefined>();
 
   const form = useForm<OnboardingData>({
     resolver: zodResolver(onboardingSchema),
@@ -562,10 +492,8 @@ const PremiumOnboardingFlowV2 = ({
       phoneNumber: "",
       primaryContactEmail: "",
       password: "",
-      repeatPassword: "",
-      recaptchaToken: "",
     },
-    mode: "onBlur", // Validate on blur
+    mode: "onBlur",
   });
 
   const steps: readonly FormStepConfig[] = [
@@ -596,64 +524,72 @@ const PremiumOnboardingFlowV2 = ({
         "email",
         "primaryContactEmail",
         "password",
-        "repeatPassword",
       ],
     },
     {
       name: "Payment",
       icon: CreditCard,
       component: PaymentStep,
-      fields: ["recaptchaToken"],
     },
   ];
 
-  // Pass component and props to useMultistepForm
   const { currentStepIndex, step, next, back, isLastStep, goTo } =
     useMultistepForm(
       steps.map((s, index) => {
-        // CRITICAL FIX: Use 'index' as the key for stable rendering
         const Component = s.component;
         const propsForStep: StepComponentProps = { form };
         if (Component === PaymentStep) {
-          propsForStep.error = error;
+          propsForStep.error = error || undefined;
         }
-        return <Component key={index} {...propsForStep} />; // Corrected key prop
+        return <Component key={index} {...propsForStep} />;
       }),
     );
 
   const onSubmit = async (data: OnboardingData) => {
-    // This function should ONLY be called when the *final* submit button is clicked.
-    // This check acts as a safeguard.
-    if (!isLastStep) {
-      console.warn(
-        "Attempted form submission before the last step. Preventing.",
-      );
-      return;
-    }
-
-    if (isLoading) return; // Prevent double submission
+    if (!isLoaded || !isAuthLoaded) return;
     setIsLoading(true);
-    setError("");
+    setError(undefined);
 
     try {
-      console.log("Final form submission with data:", data); // For debugging
-      const result = await registerCompany({ ...data, status: "INACTIVE" });
+      // Step 1: Create user in Clerk if they don't exist
+      let clerkUserId = userId;
+      if (!clerkUserId) {
+        const signUpResult = await signUp.create({
+          emailAddress: data.email,
+          password: data.password,
+          unsafeMetadata: {
+            firstName: data.firstName,
+            lastName: data.lastName,
+          },
+        });
 
-      if (result.success && result.redirectUrl) {
-        console.log(
-          "Registration successful, redirecting to:",
-          result.redirectUrl,
-        );
-        // TODO: Send internal notification (e.g., Slack) about new sign-up
-        window.location.href = result.redirectUrl;
-      } else {
-        console.error("Registration failed:", result.error);
-        setError(result.error || "An unknown error occurred.");
+        if (signUpResult.status !== "complete") {
+          // Handle cases like email verification if needed
+          throw new Error("Clerk sign-up could not be completed.");
+        }
+        clerkUserId = signUpResult.createdUserId;
+        // The session will be set active by Clerk's SignUp component logic
       }
-    } catch (e) {
-      console.error("Exception during registration:", e);
+
+      // Step 2: Register the company and create a subscription
+      const companyResult = await registerCompany({
+        ...data,
+        clerkUserId: clerkUserId || "",
+        status: "INACTIVE", // Company is inactive until subscription is confirmed
+      });
+
+      if (!companyResult.success || !companyResult.redirectUrl) {
+        throw new Error(companyResult.error || "Failed to create company.");
+      }
+
+      // Step 3: Redirect to Stripe for payment
+      if (typeof window !== "undefined") {
+        window.location.href = companyResult.redirectUrl;
+      }
+    } catch (err: any) {
+      console.error("Onboarding failed:", err);
       setError(
-        e instanceof Error ? e.message : "Registration failed unexpectedly.",
+        err.errors?.[0]?.message || err.message || "An unknown error occurred.",
       );
     } finally {
       setIsLoading(false);

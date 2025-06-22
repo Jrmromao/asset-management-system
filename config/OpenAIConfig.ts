@@ -36,7 +36,7 @@ export interface OpenAIConfig {
 }
 
 // Example usage with recommended settings for CO2 calculations
-const recommendedConfig: OpenAIConfig = {
+export const OpenAIConfigConst: OpenAIConfig = {
   apiKey: "your-api-key",
   model: "gpt-4",
   maxTokens: 150,

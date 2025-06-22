@@ -1,6 +1,5 @@
 import { prisma } from "@/app/db";
 import { Prisma, User as PrismaUser } from "@prisma/client";
-import { authService } from "../auth/supabaseAuthService";
 
 interface CreateUserParams {
   email: string;
@@ -42,11 +41,11 @@ export class UserService {
 
   private async createPrismaUser(
     data: CreateUserParams,
-    supabaseUserId?: string,
-    tx?: Prisma.TransactionClient
+    oauthId?: string,
+    tx?: Prisma.TransactionClient,
   ): Promise<PrismaUser> {
     const prismaClient = tx || prisma;
-    
+
     return await prismaClient.user.create({
       data: {
         name: `${data.firstName} ${data.lastName}`,
@@ -55,15 +54,17 @@ export class UserService {
         lastName: String(data.lastName),
         employeeId: data.employeeId,
         title: data.title,
-        oauthId: supabaseUserId,
+        oauthId: oauthId,
         roleId: data.roleId,
         companyId: data.companyId,
-        emailVerified: supabaseUserId ? null : new Date(),
+        emailVerified: oauthId ? null : new Date(),
       },
     });
   }
 
-  async createUser(data: CreateUserParams): Promise<ServiceResponse<PrismaUser>> {
+  async createUser(
+    data: CreateUserParams,
+  ): Promise<ServiceResponse<PrismaUser>> {
     try {
       // Validate company exists
       if (!data.companyId) {
@@ -81,42 +82,10 @@ export class UserService {
         };
       }
 
-      let createdPrismaUser: PrismaUser;
-
-      // Handle Loanee users differently (no auth account needed)
-      if (data.role.name === "Loanee") {
-        createdPrismaUser = await this.createPrismaUser(data);
-      } else {
-        // For non-Loanee users, create both auth and database accounts
-        const result = await prisma.$transaction(async (tx) => {
-          // 1. Create Supabase auth account
-          const { data: authUser, error } = await authService.createUser({
-            email: data.email,
-            password: process.env.DEFAULT_PASSWORD!,
-            metadata: {
-              firstName: data.firstName,
-              lastName: data.lastName,
-              companyId: data.companyId,
-              role: data.role.name,
-            },
-          });
-
-          if (error || !authUser) {
-            throw new Error(error?.message || "Failed to create auth account");
-          }
-
-          // 2. Create Prisma user record
-          const prismaUser = await this.createPrismaUser(
-            data,
-            authUser.id,
-            tx
-          );
-
-          return prismaUser;
-        });
-
-        createdPrismaUser = result;
-      }
+      // The logic for creating an auth user (previously with Supabase)
+      // will now be handled by Clerk's sign-up flow.
+      // This service will now only handle creating the user in the local database.
+      const createdPrismaUser = await this.createPrismaUser(data);
 
       return {
         success: true,
@@ -162,7 +131,7 @@ export class UserService {
 
   async updateUser(
     id: string,
-    data: Partial<CreateUserParams>
+    data: Partial<CreateUserParams>,
   ): Promise<ServiceResponse<PrismaUser>> {
     try {
       // If company ID is being updated, validate it exists
@@ -185,9 +154,10 @@ export class UserService {
           ...(data.employeeId && { employeeId: data.employeeId }),
           ...(data.roleId && { roleId: data.roleId }),
           ...(data.companyId && { companyId: data.companyId }),
-          ...(data.firstName && data.lastName && {
-            name: `${data.firstName} ${data.lastName}`,
-          }),
+          ...(data.firstName &&
+            data.lastName && {
+              name: `${data.firstName} ${data.lastName}`,
+            }),
         },
       });
 
@@ -211,8 +181,8 @@ export class UserService {
 
       // If the user has an auth account, we should delete it too
       if (user.oauthId) {
-        // Note: You'll need to implement this in the auth service
-        // await authService.deleteUser(user.oauthId);
+        // This will need to be implemented using the Clerk Admin SDK
+        // For example: await clerkClient.users.deleteUser(user.oauthId);
       }
 
       return {
@@ -226,5 +196,3 @@ export class UserService {
     }
   }
 }
-
-export const userService = UserService.getInstance(); 

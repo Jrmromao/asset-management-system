@@ -1,15 +1,61 @@
-import { redirect } from 'next/navigation';
-import { createClient } from '@/utils/supabase/server';
+"use client";
+
+import { useEffect } from "react";
+import { useAuth, useSession } from "@clerk/nextjs";
+import { useRouter, useSearchParams } from "next/navigation";
 import { DashboardHeader } from "@/components/dashboard/Header";
 import { StatsGrid } from "@/components/dashboard/StatsGrid";
 import { AssetOverview } from "@/components/dashboard/AssetOverview";
 import { MaintenanceScheduleCard } from "@/components/dashboard/MaintenanceSchedule";
 import { ESGReportingCard } from "@/components/dashboard/ESGReportingCard";
+import FullscreenLoader from "@/components/FullscreenLoader";
 
-export default async function DashboardPage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+export default function AdminPage() {
+  const { isLoaded, isSignedIn } = useAuth();
+  const { session } = useSession();
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
+  const hasOnboardingFlag =
+    session?.user?.publicMetadata?.onboardingComplete === true;
+  const cameFromSubscription =
+    searchParams.get("subscription_success") === "true";
+
+  useEffect(() => {
+    if (!isLoaded) {
+      return;
+    }
+
+    if (!isSignedIn) {
+      router.push("/sign-in");
+      return;
+    }
+
+    if (hasOnboardingFlag) {
+      if (cameFromSubscription) {
+        router.replace("/admin");
+      }
+    } else {
+      if (cameFromSubscription) {
+        session?.reload().then(() => {
+          router.replace("/admin");
+        });
+      } else {
+        router.push("/sign-up");
+      }
+    }
+  }, [
+    isLoaded,
+    isSignedIn,
+    hasOnboardingFlag,
+    cameFromSubscription,
+    session,
+    router,
+  ]);
+
+  if (!isLoaded || !hasOnboardingFlag) {
+    return <FullscreenLoader />;
+  }
 
   return (
     <div className="p-8 space-y-6">

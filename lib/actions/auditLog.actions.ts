@@ -49,9 +49,9 @@ export const createAuditLog = withAuth(async (user, data: AuditLogInput) => {
   } catch (error) {
     console.error("Error creating audit log:", error);
     if (error instanceof z.ZodError) {
-      return { error: error.errors[0].message };
+      return { success: false, error: error.errors[0].message };
     }
-    return { error: "Failed to create audit log" };
+    return { success: false, error: "Failed to create audit log" };
   } finally {
     await prisma.$disconnect();
   }
@@ -67,7 +67,7 @@ export const getAuditLog = withAuth(async (user, entityId: string) => {
     });
 
     if (!auditLog) {
-      return { error: "Audit log not found" };
+      return { success: false, error: "Audit log not found" };
     }
 
     return {
@@ -76,7 +76,7 @@ export const getAuditLog = withAuth(async (user, entityId: string) => {
     };
   } catch (error) {
     console.error("Error fetching audit log:", error);
-    return { error: "Failed to fetch audit log" };
+    return { success: false, error: "Failed to fetch audit log" };
   } finally {
     await prisma.$disconnect();
   }
@@ -139,7 +139,7 @@ export const getAuditLogs = withAuth(
       };
     } catch (error) {
       console.error("Error fetching audit logs:", error);
-      return { error: "Failed to fetch audit logs" };
+      return { success: false, error: "Failed to fetch audit logs" };
     } finally {
       await prisma.$disconnect();
     }
@@ -157,7 +157,7 @@ export const updateAuditLog = withAuth(
       });
 
       if (!existingLog) {
-        return { error: "Audit log not found" };
+        return { success: false, error: "Audit log not found" };
       }
 
       const validatedData = auditLogSchema.partial().parse(data);
@@ -175,9 +175,9 @@ export const updateAuditLog = withAuth(
     } catch (error) {
       console.error("Error updating audit log:", error);
       if (error instanceof z.ZodError) {
-        return { error: error.errors[0].message };
+        return { success: false, error: error.errors[0].message };
       }
-      return { error: "Failed to update audit log" };
+      return { success: false, error: "Failed to update audit log" };
     } finally {
       await prisma.$disconnect();
     }
@@ -194,7 +194,7 @@ export const deleteAuditLog = withAuth(async (user, id: string) => {
     });
 
     if (!existingLog) {
-      return { error: "Audit log not found" };
+      return { success: false, error: "Audit log not found" };
     }
 
     await prisma.auditLog.delete({
@@ -205,7 +205,7 @@ export const deleteAuditLog = withAuth(async (user, id: string) => {
     return { success: true };
   } catch (error) {
     console.error("Error deleting audit log:", error);
-    return { error: "Failed to delete audit log" };
+    return { success: false, error: "Failed to delete audit log" };
   } finally {
     await prisma.$disconnect();
   }
@@ -268,7 +268,7 @@ export const exportAuditLogs = withAuth(
       };
     } catch (error) {
       console.error("Error exporting audit logs:", error);
-      return { error: "Failed to export audit logs" };
+      return { success: false, error: "Failed to export audit logs" };
     } finally {
       await prisma.$disconnect();
     }

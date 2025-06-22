@@ -1,24 +1,17 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/utils/supabase/server";
 import { getAll, insert } from "@/lib/actions/role.actions";
+import { auth } from "@clerk/nextjs/server";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   try {
-    const supabase = await createClient();
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-
-    if (!session) {
+    const { orgId } = await auth();
+    if (!orgId) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const result = await getAll({
-      accessToken: session.access_token,
-      refreshToken: session.refresh_token,
-    });
+    const result = await getAll();
     return NextResponse.json(result);
   } catch (error) {
     console.error("[ROLES_GET]", error);
@@ -28,23 +21,13 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const supabase = await createClient();
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-
-    if (!session) {
+    const { orgId } = await auth();
+    if (!orgId) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
     const body = await request.json();
-    const result = await insert(
-      {
-        accessToken: session.access_token,
-        refreshToken: session.refresh_token,
-      },
-      body,
-    );
+    const result = await insert(body);
     return NextResponse.json(result);
   } catch (error) {
     console.error("[ROLES_POST]", error);

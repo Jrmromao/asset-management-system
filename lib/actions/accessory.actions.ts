@@ -7,8 +7,8 @@ import { accessorySchema, assignmentSchema } from "@/lib/schemas";
 import { getAuditLog } from "@/lib/actions/auditLog.actions";
 import { revalidatePath } from "next/cache";
 import { ItemType, Prisma } from "@prisma/client";
-import { withAuth } from "@/lib/middleware/withAuth";
 import { cookies } from "next/headers";
+import { withAuth } from "@/lib/middleware/withAuth";
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000; // 1 second
@@ -104,7 +104,7 @@ export async function createAccessory(
   values: z.infer<typeof accessorySchema>,
 ): Promise<ActionResponse<Accessory>> {
   const session = getSession();
-  return insert(session, values);
+  return insert(values);
 }
 
 export const getAll = withAuth(
@@ -142,7 +142,7 @@ export async function getAllAccessories(): Promise<
   ActionResponse<Accessory[]>
 > {
   const session = getSession();
-  return getAll(session);
+  return getAll();
 }
 
 export const findById = withAuth(
@@ -192,7 +192,7 @@ export const findById = withAuth(
 
       const [accessory, auditLogsResult] = await Promise.all([
         prisma.accessory.findUnique(accessoryQuery),
-        getAuditLog(session, id),
+        getAuditLog(id),
       ]);
 
       if (!accessory) {
@@ -223,7 +223,7 @@ export async function getAccessory(
   id: string,
 ): Promise<ActionResponse<Accessory>> {
   const session = getSession();
-  return findById(session, id);
+  return findById(id);
 }
 
 export const remove = withAuth(
@@ -278,7 +278,7 @@ export async function deleteAccessory(
   id: string,
 ): Promise<ActionResponse<Accessory>> {
   const session = getSession();
-  return remove(session, id);
+  return remove(id);
 }
 
 export const update = withAuth(
@@ -316,7 +316,7 @@ export async function updateAccessory(
   data: Partial<Accessory>,
 ): Promise<ActionResponse<Accessory>> {
   const session = getSession();
-  return update(session, id, data);
+  return update(id, data);
 }
 
 export const processAccessoryCSV = withAuth(
@@ -400,7 +400,7 @@ export async function processAccessoriesCSV(
   csvContent: string,
 ): Promise<ActionResponse<Accessory[]>> {
   const session = getSession();
-  return processAccessoryCSV(session, csvContent);
+  return processAccessoryCSV(csvContent);
 }
 
 export const checkout = withAuth(
@@ -426,10 +426,7 @@ export const checkout = withAuth(
           throw new Error("Accessory not found");
         }
 
-        const assignedQuantity = accessory.userItems.reduce(
-          (sum, assignment) => sum + assignment.quantity,
-          0,
-        );
+        const assignedQuantity = accessory.userItems.length;
         const availableQuantity =
           accessory.totalQuantityCount - assignedQuantity;
         const requestedQuantity = 1;
@@ -444,10 +441,8 @@ export const checkout = withAuth(
           data: {
             itemType: ItemType.ACCESSORY,
             userId: values.userId,
-            accessoryId: values.itemId,
-            quantity: requestedQuantity,
+            itemId: values.itemId,
             companyId: user.user_metadata?.companyId,
-            notes: "Assigned by user",
           },
         });
 
@@ -514,7 +509,7 @@ export async function checkoutAccessory(
   values: z.infer<typeof assignmentSchema>,
 ): Promise<ActionResponse<Accessory>> {
   const session = getSession();
-  return checkout(session, values);
+  return checkout(values);
 }
 
 export const checkin = withAuth(
@@ -546,11 +541,11 @@ export const checkin = withAuth(
 
             await tx.accessoryStock.create({
               data: {
-                accessoryId: currentAssignment.accessoryId!,
-                quantity: currentAssignment.quantity,
+                accessoryId: currentAssignment.itemId,
+                quantity: 1,
                 type: "return",
                 companyId: user.user_metadata?.companyId,
-                notes: `Returned ${currentAssignment.quantity} units from user ${currentAssignment.userId}`,
+                notes: `Returned 1 unit from user ${currentAssignment.userId}`,
               },
             });
 
@@ -558,15 +553,15 @@ export const checkin = withAuth(
               data: {
                 action: "ACCESSORY_CHECKIN",
                 entity: "ACCESSORY",
-                entityId: currentAssignment.accessoryId,
+                entityId: currentAssignment.itemId,
                 userId: user.id,
                 companyId: user.user_metadata?.companyId,
-                details: `Unassigned ${currentAssignment.quantity} units from user ${currentAssignment.userId}`,
+                details: `Unassigned 1 unit from user ${currentAssignment.userId}`,
               },
             });
 
             const updatedAccessory = await tx.accessory.findUnique({
-              where: { id: currentAssignment.accessoryId! },
+              where: { id: currentAssignment.itemId },
               include: {
                 userItems: {
                   include: {
@@ -633,5 +628,5 @@ export async function checkinAccessory(
   userAccessoryId: string,
 ): Promise<ActionResponse<Accessory>> {
   const session = getSession();
-  return checkin(session, userAccessoryId);
+  return checkin(userAccessoryId);
 }

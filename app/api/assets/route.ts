@@ -1,30 +1,36 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/utils/supabase/server";
-import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { getAll } from "@/lib/actions/assets.actions";
+import { getAllAssets, createAsset } from "@/lib/actions/assets.actions";
+import { auth } from "@clerk/nextjs/server";
 
 export const dynamic = "force-dynamic";
 
 const assetSchema = z.object({
   name: z.string().min(1, "Name is required"),
-  description: z.string().optional(),
-  // Add other asset fields as needed
+  serialNumber: z.string().min(1, "Serial Number is required"),
+  modelId: z.string().min(1, "Model is required"),
+  statusLabelId: z.string().min(1, "Status is required"),
+  departmentId: z.string().min(1, "Department is required"),
+  inventoryId: z.string().min(1, "Inventory is required"),
+  locationId: z.string().min(1, "Location is required"),
+  formTemplateId: z.string().min(1, "Form Template is required"),
 });
 
 export async function GET() {
   try {
-    const supabase = await createClient();
-
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    if (!session?.user) {
+    const { orgId } = await auth();
+    if (!orgId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    const assets = await getAll();
+    const assetsResponse = await getAllAssets();
+    if (!assetsResponse.success) {
+      return NextResponse.json(
+        { error: assetsResponse.error },
+        { status: 500 },
+      );
+    }
 
-    return NextResponse.json({ data: assets });
+    return NextResponse.json({ data: assetsResponse.data });
   } catch (error) {
     console.error("Error fetching assets:", error);
     return NextResponse.json(
@@ -36,12 +42,8 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const supabase = await createClient();
-
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    if (!session?.user) {
+    const { orgId } = await auth();
+    if (!orgId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -55,18 +57,13 @@ export async function POST(request: Request) {
       );
     }
 
-    const { data, error } = await supabase
-      .from("assets")
-      .insert([{ ...validatedData.data, user_id: session.user.id }])
-      .select()
-      .single();
+    const assetResponse = await createAsset(validatedData.data);
 
-    if (error) throw error;
+    if (!assetResponse.success) {
+      return NextResponse.json({ error: assetResponse.error }, { status: 500 });
+    }
 
-    // Revalidate the assets list
-    revalidatePath("/assets");
-
-    return NextResponse.json({ data });
+    return NextResponse.json({ data: assetResponse.data });
   } catch (error) {
     console.error("Error creating asset:", error);
     return NextResponse.json(

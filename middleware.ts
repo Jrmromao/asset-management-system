@@ -1,139 +1,84 @@
-import { createServerClient } from "@supabase/ssr";
-import { NextResponse, type NextRequest } from "next/server";
+import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
 
-// Define routes that don't require authentication
-const PUBLIC_ROUTES = [
+// Define public routes
+const isPublicRoute = createRouteMatcher([
   "/",
-  "/sign-in",
-  "/sign-up",
-  "/forgot-password",
-  "/forgot-password/confirm",
-  "/account-verification",
-  "/privacy-policy",
-  "/terms-of-service",
-  "/api/auth", // Auth-related API routes
-  "/api/webhooks", // Webhook endpoints
-  "/_next", // Next.js internal routes
+  "/sign-in(.*)",
+  "/sign-up(.*)",
+  "/forgot-password(.*)",
+  "/account-verification(.*)",
+  "/privacy-policy(.*)",
+  "/terms-of-service(.*)",
+  "/api/webhooks(.*)",
+  "/_next(.*)",
   "/favicon.ico",
-  "/images",
-  "/icons",
-];
+  "/images(.*)",
+  "/icons(.*)",
+  "/api(.*)",
+]);
 
-// Function to check if a path matches any of the public routes
-function isPublicRoute(path: string): boolean {
-  return PUBLIC_ROUTES.some((route) => {
-    // Exact match
-    if (route === path) return true;
-    // Path starts with route (for directories)
-    if (route.endsWith("/*") && path.startsWith(route.slice(0, -2)))
-      return true;
-    // Check if the path starts with any of the public routes
-    return path.startsWith(route);
-  });
+const isOnboardingRoute = createRouteMatcher(["/sign-up(.*)"]);
+
+// Define admin routes
+const isAdminRoute = createRouteMatcher(["/admin(.*)"]);
+
+// Define the metadata type
+interface UserMetadata {
+  onboardingComplete?: boolean;
+  companyId?: string;
 }
 
-export async function updateSession(request: NextRequest) {
-  let response = NextResponse.next({
-    request,
-  });
+export default clerkMiddleware(async (auth, request) => {
+  const { userId, sessionClaims } = await auth();
+  const url = request.nextUrl;
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name) {
-          return request.cookies.get(name)?.value;
-        },
-        set(name, value, options) {
-          // Set cookie on the request
-          request.cookies.set(name, value);
-          // Set cookie on the response
-          response.cookies.set(name, value, options);
-        },
-        remove(name, options) {
-          // Remove cookie from the request
-          request.cookies.delete(name);
-          // Remove cookie from the response
-          response.cookies.delete(name);
-        },
-      },
-    },
-  );
+  // Cast the metadata to the expected type
+  const metadata = sessionClaims?.metadata as UserMetadata;
 
-  // IMPORTANT: Avoid writing any logic between createServerClient and
-  // supabase.auth.getUser(). A simple mistake could make it very hard to debug
-  // issues with users being randomly logged out.
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // For users who are signed in but haven't completed onboarding,
+  // redirect them to the sign-up page to complete the flow.
+  if (userId && !metadata?.onboardingComplete) {
+    // If the user is returning from a successful subscription, allow them to proceed.
+    // The client-side will handle the session update.
+    if (url.searchParams.get("subscription_success") === "true") {
+      return NextResponse.next();
+    }
 
-  // Check for admin routes
-  const pathname = request.nextUrl.pathname;
-  if (pathname.startsWith("/admin") && user) {
-    const { data } = await supabase
-      .from("users")
-      .select("role")
-      .eq("id", user.id)
-      .single();
+    const isSignInRoute = url.pathname.startsWith("/sign-in");
 
-    if (!data || data.role !== "admin") {
-      // Redirect non-admin users to home page
-      const url = request.nextUrl.clone();
-      url.pathname = "/";
-      return NextResponse.redirect(url);
+    // Do not redirect if the user is on an onboarding, sign-in, root, or admin page
+    if (
+      !isOnboardingRoute(request) &&
+      !isSignInRoute &&
+      !isAdminRoute(request) &&
+      url.pathname !== "/"
+    ) {
+      const onboardingUrl = new URL("/sign-up", request.url);
+      return NextResponse.redirect(onboardingUrl);
     }
   }
 
-  if (!user && !isPublicRoute(pathname)) {
-    // no user, redirect to sign-in page
-    const url = request.nextUrl.clone();
-    url.pathname = "/sign-in";
-    return NextResponse.redirect(url);
-  }
-
-  return response;
-}
-
-export async function middleware(request: NextRequest) {
-  const pathname = request.nextUrl.pathname;
-
-  // Handle common typos in URLs
-  const pathCorrections: { [key: string]: string } = {
-    "/assetes/": "/assets/",
-    "/accessorys/": "/accessories/",
-    "/licence/": "/license/",
-  };
-
-  // URL correction logic
-  for (const [wrongPath, correctPath] of Object.entries(pathCorrections)) {
-    if (pathname.startsWith(wrongPath)) {
-      const correctedPath = pathname.replace(wrongPath, correctPath);
-      const url = new URL(correctedPath, request.url);
-      return NextResponse.redirect(url);
+  // If the user is signed in and has completed onboarding,
+  // prevent them from accessing the sign-up page again.
+  if (userId && metadata?.onboardingComplete) {
+    if (isOnboardingRoute(request)) {
+      const dashboardUrl = new URL("/dashboard", request.url);
+      return NextResponse.redirect(dashboardUrl);
     }
   }
 
-  // Allow access to public routes
-  if (isPublicRoute(pathname)) {
-    return NextResponse.next();
+  // Allow public routes
+  if (isPublicRoute(request)) {
+    return;
   }
 
-  // For all other routes, require authentication
-  const supabaseResponse = await updateSession(request);
-
-  return supabaseResponse;
-}
+  // Protect all other routes
+  await auth.protect();
+});
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * Feel free to modify this pattern to include more paths.
-     */
     "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

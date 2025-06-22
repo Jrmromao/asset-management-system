@@ -1,7 +1,7 @@
 import { Resend } from "resend";
 import { emailTemplates } from "./templates";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = new Resend("re_3X6yYWsR_BjuhW5XcVBi3PhnkiThLdvnG");
 
 export interface SendEmailOptions {
   to: string;
@@ -19,11 +19,11 @@ export class EmailService {
   }: SendEmailOptions) {
     try {
       const templateFn = emailTemplates[templateName];
-      const html = templateFn(templateData);
+      const html = templateFn(templateData as any);
 
       const { data, error } = await resend.emails.send({
-        from: "Your App <noreply@yourdomain.com>",
-        to,
+        from: "onboarding@resend.dev",
+        to: "jrmromao@gmail.com",
         subject,
         html,
       });

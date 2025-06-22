@@ -8,37 +8,28 @@ import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useDialogStore } from "@/lib/stores/store";
-import { useSession } from "@/lib/SessionProvider";
-
 import CustomInput from "@/components/CustomInput";
 import CustomSelect from "@/components/CustomSelect";
-import { userSchema } from "@/lib/schemas";
-import { useUserQuery } from "@/hooks/queries/useUserQuery";
 import { useRoleQuery } from "@/hooks/queries/useRoleQuery";
+import { inviteUser } from "@/lib/actions/invitation.actions";
 
-type UserFormValues = z.infer<typeof userSchema>;
+// Simplified schema for invitation
+const userInviteSchema = z.object({
+  email: z.string().email("A valid email is required"),
+  roleId: z.string().min(1, "Please select a role"),
+});
 
-interface UserFormProps {
-  id?: string;
-  isUpdate?: boolean;
-}
+type UserFormValues = z.infer<typeof userInviteSchema>;
 
-const UserForm = ({ id, isUpdate = false }: UserFormProps) => {
+const UserForm = () => {
   const [isPending, startTransition] = useTransition();
   const { roles } = useRoleQuery();
   const [closeDialog] = useDialogStore((state) => [state.onClose]);
-  const { user } = useSession();
-
-  const { createUser, isCreating } = useUserQuery();
 
   const form = useForm<UserFormValues>({
-    resolver: zodResolver(userSchema),
+    resolver: zodResolver(userInviteSchema),
     defaultValues: {
-      firstName: "",
-      lastName: "",
       email: "",
-      title: "",
-      employeeId: "",
       roleId: "",
     },
     mode: "onChange",
@@ -47,21 +38,15 @@ const UserForm = ({ id, isUpdate = false }: UserFormProps) => {
   async function onSubmit(data: UserFormValues) {
     startTransition(async () => {
       try {
-        const companyId = user?.user_metadata?.companyId;
-        if (!companyId) {
-          toast.error("No company associated with your account.");
-          return;
-        }
-        const inviteData = { ...data, companyId };
-        const result = await createUser(inviteData);
+        const result = await inviteUser(data);
         if (result.success) {
           form.reset();
-          toast.success("Invitation sent!");
+          toast.success("Invitation sent successfully!");
         } else {
-          toast.error(result.error || "Failed to invite user");
+          toast.error(result.error || "Failed to send invitation.");
         }
       } catch (error) {
-        toast.error("Something went wrong");
+        toast.error("An unexpected error occurred.");
         console.error(error);
       } finally {
         closeDialog();
@@ -75,79 +60,29 @@ const UserForm = ({ id, isUpdate = false }: UserFormProps) => {
         <div className="p-6">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              {/* Personal Information */}
               <div className="space-y-4">
-                <h3 className="font-medium">Personal Information</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <CustomInput
-                    required
-                    name="firstName"
-                    label="First Name"
-                    control={form.control}
-                    type="text"
-                    placeholder="Enter first name"
-                  />
-                  <CustomInput
-                    required
-                    name="lastName"
-                    label="Last Name"
-                    control={form.control}
-                    type="text"
-                    placeholder="Enter last name"
-                  />
-                </div>
-              </div>
-
-              {/* Contact Information */}
-              <div className="space-y-4">
-                <h3 className="font-medium">Contact Information</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <CustomInput
-                    required
-                    name="email"
-                    label="Email Address"
-                    control={form.control}
-                    type="email"
-                    placeholder="Enter email address"
-                  />
-                </div>
-              </div>
-
-              {/* Employment Information */}
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <CustomInput
-                    required
-                    name="employeeId"
-                    label="Employee ID"
-                    control={form.control}
-                    type="text"
-                    placeholder="Enter employee ID"
-                  />
-                  <CustomInput
-                    required
-                    name="title"
-                    label="Job Title"
-                    control={form.control}
-                    type="text"
-                    placeholder="Enter job title"
-                  />
-                </div>
-                <div>
-                  <CustomSelect
-                    label="Role"
-                    value={form.watch("roleId")}
-                    name="roleId"
-                    required
-                    control={form.control}
-                    data={roles}
-                    placeholder="Select role"
-                  />
-                  <p className="mt-2 text-sm text-gray-500">
-                    Users with the Loanee role cannot access the application
-                    dashboard.
-                  </p>
-                </div>
+                <h3 className="font-medium">Invite New User</h3>
+                <CustomInput
+                  required
+                  name="email"
+                  label="Email Address"
+                  control={form.control}
+                  type="email"
+                  placeholder="Enter email address"
+                />
+                <CustomSelect
+                  label="Role"
+                  value={form.watch("roleId")}
+                  name="roleId"
+                  required
+                  control={form.control}
+                  data={roles}
+                  placeholder="Select role"
+                />
+                <p className="mt-2 text-sm text-gray-500">
+                  The user will receive an email to set up their account and
+                  password.
+                </p>
               </div>
               <div className="flex justify-end gap-3 pt-4">
                 <Button
@@ -163,7 +98,7 @@ const UserForm = ({ id, isUpdate = false }: UserFormProps) => {
                   disabled={isPending}
                   className="px-4 py-2 h-9"
                 >
-                  Create User
+                  {isPending ? "Sending..." : "Send Invitation"}
                 </Button>
               </div>
             </form>

@@ -24,7 +24,8 @@ model User {
   images                String?
   phoneNum              String?       @unique
   emailVerified         DateTime?
-  oauthId               String?
+  oauthId               String?       @unique
+  username              String?       @unique
   roleId                String
   companyId             String
   createdAt             DateTime      @default(now())
@@ -311,6 +312,7 @@ model Role {
 model Company {
   id                    String   @id @default(cuid())
   name                  String
+  clerkOrgId            String?  @unique
   address               String?
   country               String?
   industry              String?
@@ -792,6 +794,7 @@ model PricingPlan {
   description       String?
   stripePriceId     String   @unique // Stripe Price ID for monthly or annual
   planType          PlanType // PRO, ENTERPRISE
+  assetQuota        Int // Max number of assets for this plan
   pricePerAsset     Decimal  @db.Decimal(10, 4) // e.g., 0.35 for monthly, 0.315 for annual
   billingCycle      String   // "monthly" or "yearly"
   trialDays         Int      @default(30)

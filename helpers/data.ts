@@ -63,28 +63,6 @@ export const findByEmail = async (email: string) => {
   }
 };
 
-// findUserBySupabaseId
-// crate a funtion called findUserBySupabaseId
-
-export const findUserBySupabaseId = async (supabaseId: string) => {
-  try {
-    const user = await prisma.user.findFirst({
-      where: {
-        oauthId: supabaseId,
-      },
-      include: {
-        role: true,
-        company: true,
-      },
-    });
-    return parseStringify(user);
-  } catch (error) {
-    console.log(error);
-  } finally {
-    await prisma.$disconnect();
-  }
-};
-
 // crate a method called PrismaUserWithRelations
 export const PrismaUserWithRelations = async (userId: string) => {
   try {
