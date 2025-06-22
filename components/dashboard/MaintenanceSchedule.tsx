@@ -15,6 +15,30 @@ interface MaintenanceItemProps {
   impact: number;
 }
 
+const mockMaintenanceData: MaintenanceItemProps[] = [
+  {
+    asset: "MacBook Pro 16-inch",
+    type: "Hardware Check",
+    dueDate: "In 3 days",
+    priority: "high",
+    impact: 12.5,
+  },
+  {
+    asset: "Dell UltraSharp U2721DE",
+    type: "Firmware Update",
+    dueDate: "In 1 week",
+    priority: "medium",
+    impact: 3.2,
+  },
+  {
+    asset: "Logitech MX Master 3S",
+    type: "Battery Check",
+    dueDate: "In 2 weeks",
+    priority: "low",
+    impact: 0.5,
+  },
+];
+
 const MaintenanceItem = ({
   asset,
   type,
@@ -55,26 +79,26 @@ const MaintenanceItem = ({
 };
 
 export const MaintenanceScheduleCard = () => {
-  const [schedule, setSchedule] = useState<MaintenanceItemProps[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [schedule, setSchedule] = useState<MaintenanceItemProps[]>(mockMaintenanceData);
+  const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setIsLoading(true);
-        const response = await getMaintenanceSchedule();
-        if (response.success) {
-          setSchedule(response.data);
-        }
-      } catch (error) {
-        console.error("Error fetching maintenance schedule:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
+  // useEffect(() => {
+  //   const fetchData = async () => {
+  //     try {
+  //       setIsLoading(true);
+  //       const response = await getMaintenanceSchedule();
+  //       if (response.success) {
+  //         setSchedule(response.data);
+  //       }
+  //     } catch (error) {
+  //       console.error("Error fetching maintenance schedule:", error);
+  //     } finally {
+  //       setIsLoading(false);
+  //     }
+  //   };
+  //
+  //   fetchData();
+  // }, []);
 
   return (
     <Card className="border-none shadow-sm">

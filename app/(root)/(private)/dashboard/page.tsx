@@ -10,6 +10,13 @@ import { MaintenanceScheduleCard } from "@/components/dashboard/MaintenanceSched
 import { ESGReportingCard } from "@/components/dashboard/ESGReportingCard";
 import FullscreenLoader from "@/components/FullscreenLoader";
 import { AlertItem } from "@/components/dashboard/AlertItem";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 export default function DashboardPage() {
   const { isLoaded, isSignedIn } = useAuth();
@@ -81,11 +88,25 @@ export default function DashboardPage() {
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
       <DashboardHeader />
-      <StatsGrid />
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <AssetOverview />
-        <MaintenanceScheduleCard />
-        <ESGReportingCard />
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2 space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Key Metrics</CardTitle>
+              <CardDescription>
+                An overview of your asset ecosystem's performance.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <StatsGrid />
+            </CardContent>
+          </Card>
+          <AssetOverview />
+        </div>
+        <div className="space-y-6">
+          <MaintenanceScheduleCard />
+          <ESGReportingCard />
+        </div>
       </div>
     </div>
   );

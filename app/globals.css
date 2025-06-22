@@ -13,7 +13,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 224 71.4% 4.1%;
 
-    --primary: 149 70% 30%;
+    --primary: 145 73% 36%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 220 14.3% 95.9%;
@@ -22,8 +22,8 @@
     --muted: 220 14.3% 95.9%;
     --muted-foreground: 220 8.9% 46.1%;
 
-    --accent: 145 68% 50%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 220 14.3% 95.9%;
+    --accent-foreground: 220.9 39.3% 11%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
@@ -33,7 +33,7 @@
 
     --border: 220 13% 91%;
     --input: 220 13% 91%;
-    --ring: 142.1 76.2% 36.3%;
+    --ring: 145 73% 36%;
 
     --radius: 0.5rem;
   }
@@ -48,8 +48,8 @@
     --popover: 224 71.4% 4.1%;
     --popover-foreground: 210 20% 98%;
 
-    --primary: 149 70% 30%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 0 0% 100%;
+    --primary-foreground: 145 73% 36%;
 
     --secondary: 215 27.9% 16.9%;
     --secondary-foreground: 210 20% 98%;
@@ -57,8 +57,8 @@
     --muted: 215 27.9% 16.9%;
     --muted-foreground: 217.9 10.6% 64.9%;
 
-    --accent: 145 68% 50%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 215 27.9% 16.9%;
+    --accent-foreground: 210 20% 98%;
 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
@@ -68,7 +68,7 @@
 
     --border: 215 27.9% 16.9%;
     --input: 215 27.9% 16.9%;
-    --ring: 142.1 76.2% 36.3%;
+    --ring: 145 73% 36%;
   }
 }
 
@@ -93,30 +93,30 @@
 
 @layer base {
     .slider-thumb {
-        @apply bg-emerald-500 hover:bg-emerald-600;
+        @apply bg-primary hover:bg-primary/90;
     }
 
     /* For Webkit (Chrome, Safari, newer versions of Opera) */
     [data-orientation="horizontal"] .slider-thumb {
-        @apply h-4 w-4 rounded-full border-2 border-white shadow-md bg-emerald-500;
+        @apply h-4 w-4 rounded-full border-2 border-white shadow-md bg-primary;
         transition: transform 0.2s;                                     
     }
 
     /* Add focus and hover states */
     [data-orientation="horizontal"] .slider-thumb:hover,
     [data-orientation="horizontal"] .slider-thumb:focus {
-        @apply bg-emerald-600;
+        @apply bg-primary/90;
         transform: scale(1.1);
     }
 
     /* Track styles */
     [data-orientation="horizontal"] .slider-track {
-        @apply h-2 rounded-full bg-emerald-100;
+        @apply h-2 rounded-full bg-primary/20;
     }
 
     /* Range (filled part) styles */
     [data-orientation="horizontal"] .slider-range {
-        @apply h-2 rounded-full bg-emerald-500;
+        @apply h-2 rounded-full bg-primary;
     }
 }
 
@@ -386,7 +386,7 @@ button:focus {
 
 
     .form-link {
-        @apply text-green-600 font-semibold;
+        @apply text-primary font-semibold;
     }
 
 
@@ -455,13 +455,13 @@ button:focus {
 
     /* Focus states for accessibility */
     .sidebar-link:focus-visible {
-        @apply outline-none ring-2 ring-emerald-500 ring-offset-2 ring-offset-white 
+        @apply outline-none ring-2 ring-primary ring-offset-2 ring-offset-white 
                dark:ring-offset-gray-900;
     }
 
     /* Active state enhancements */
     .sidebar-link[aria-current="page"] {
-        @apply shadow-lg shadow-emerald-600/25;
+        @apply shadow-lg shadow-primary/25;
     }
 
     /* Loading state improvements */
@@ -1009,7 +1009,7 @@ button:focus {
 
 /* Custom slider thumb */
 .slider-thumb {
-    @apply bg-emerald-500 hover:bg-emerald-600;
+    @apply bg-primary hover:bg-primary/90;
 }
 
 /* Base slider range styles */
@@ -1019,53 +1019,53 @@ button:focus {
 
 /* Thumb styles for different browsers */
 [type='range']::-webkit-slider-thumb {
-    @apply appearance-none w-5 h-5 rounded-full bg-emerald-500 border-4 border-white shadow-md cursor-pointer;
+    @apply appearance-none w-5 h-5 rounded-full bg-primary border-4 border-white shadow-md cursor-pointer;
     margin-top: -0.5rem;
 }
 
 [type='range']::-moz-range-thumb {
-    @apply appearance-none w-5 h-5 rounded-full bg-emerald-500 border-4 border-white shadow-md cursor-pointer;
+    @apply appearance-none w-5 h-5 rounded-full bg-primary border-4 border-white shadow-md cursor-pointer;
 }
 
 [type='range']::-ms-thumb {
-    @apply appearance-none w-5 h-5 rounded-full bg-emerald-500 border-4 border-white shadow-md cursor-pointer;
+    @apply appearance-none w-5 h-5 rounded-full bg-primary border-4 border-white shadow-md cursor-pointer;
 }
 
 /* Track styles */
 [type='range']::-webkit-slider-runnable-track {
-    @apply bg-emerald-100 rounded-full h-2;
+    @apply bg-primary/20 rounded-full h-2;
 }
 
 [type='range']::-moz-range-track {
-    @apply bg-emerald-100 rounded-full h-2;
+    @apply bg-primary/20 rounded-full h-2;
 }
 
 [type='range']::-ms-track {
-    @apply bg-emerald-100 rounded-full h-2;
+    @apply bg-primary/20 rounded-full h-2;
 }
 
 /* Focus styles */
 [type='range']:focus::-webkit-slider-thumb {
-    @apply ring-2 ring-emerald-200 ring-offset-2;
+    @apply ring-2 ring-primary/30 ring-offset-2;
 }
 
 [type='range']:focus::-moz-range-thumb {
-    @apply ring-2 ring-emerald-200 ring-offset-2;
+    @apply ring-2 ring-primary/30 ring-offset-2;
 }
 
 [type='range']:focus::-ms-thumb {
-    @apply ring-2 ring-emerald-200 ring-offset-2;
+    @apply ring-2 ring-primary/30 ring-offset-2;
 }
 
 /* Active track */
 [type='range']::-webkit-slider-thumb:active {
-    @apply bg-emerald-600;
+    @apply bg-primary/80;
 }
 
 [type='range']::-moz-range-thumb:active {
-    @apply bg-emerald-600;
+    @apply bg-primary/80;
 }
 
 [type='range']::-ms-thumb:active {
-    @apply bg-emerald-600;
+    @apply bg-primary/80;
 }

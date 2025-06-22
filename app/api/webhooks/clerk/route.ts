@@ -80,6 +80,10 @@ export async function POST(req: Request) {
       await clerk.users.updateUserMetadata(data.id, {
         publicMetadata: {
           userId: newUser.id,
+          // companyId removed from public metadata for security
+        },
+        privateMetadata: {
+          companyId: newUser.companyId, // companyId in private metadata only
         },
       });
       return NextResponse.json({ message: "OK", user: newUser });

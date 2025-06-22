@@ -26,7 +26,7 @@ export const ESGReportingCard = () => {
           variant="outline"
           size="sm"
           className="w-full"
-          onClick={() => navigate.push("/admin/reporting")}
+          onClick={() => navigate.push("/dashboard/reporting")}
         >
           Go to Reports <ChevronRight className="h-4 w-4 ml-1" />
         </Button>
