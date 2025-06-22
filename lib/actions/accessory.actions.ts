@@ -35,11 +35,36 @@ export const insert = withAuth(
     user,
     values: z.infer<typeof accessorySchema>,
   ): Promise<ActionResponse<Accessory>> => {
+    console.log(" [accessory.actions] insert - Starting with user:", {
+      userId: user?.id,
+      privateMetadata: user?.privateMetadata,
+      hasCompanyId: !!user?.privateMetadata?.companyId,
+    });
+
     try {
       const validation = accessorySchema.safeParse(values);
       if (!validation.success) {
         return { success: false, error: validation.error.errors[0].message };
       }
+
+      // Get companyId from private metadata
+      const companyId = user.privateMetadata?.companyId;
+
+      if (!companyId) {
+        console.error("❌ [accessory.actions] insert - User missing companyId in private metadata:", {
+          user: user?.id,
+          privateMetadata: user?.privateMetadata,
+        });
+        return {
+          success: false,
+          error: "User is not associated with a company",
+        };
+      }
+
+      console.log("✅ [accessory.actions] insert - Creating accessory with data:", {
+        ...values,
+        companyId,
+      });
 
       const result = await prisma.$transaction(async (tx) => {
         const accessory = await tx.accessory.create({
@@ -50,7 +75,7 @@ export const insert = withAuth(
             reorderPoint: Number(values.reorderPoint),
             totalQuantityCount: Number(values.totalQuantityCount),
             modelNumber: values.modelNumber,
-            companyId: user.user_metadata?.companyId,
+            companyId: companyId,
             statusLabelId: values.statusLabelId,
             departmentId: values.departmentId,
             locationId: values.locationId,
@@ -64,7 +89,7 @@ export const insert = withAuth(
             accessoryId: accessory.id,
             quantity: Number(values.totalQuantityCount),
             type: "purchase",
-            companyId: user.user_metadata?.companyId,
+            companyId: companyId,
             notes: `Initial stock purchase of ${values.totalQuantityCount} units`,
           },
         });
@@ -75,7 +100,7 @@ export const insert = withAuth(
             entity: "ACCESSORY",
             entityId: accessory.id,
             userId: user.id,
-            companyId: user.user_metadata?.companyId,
+            companyId: companyId,
             details: `Created accessory ${values.name} with initial stock of ${values.totalQuantityCount} units`,
           },
         });
@@ -83,12 +108,13 @@ export const insert = withAuth(
         return accessory;
       });
 
+      console.log("✅ [accessory.actions] insert - Accessory created successfully");
       return {
         success: true,
         data: parseStringify(result),
       };
     } catch (error) {
-      console.error(error);
+      console.error("❌ [accessory.actions] insert - Error:", error);
       return {
         success: false,
         error: error instanceof Error ? error.message : "Unknown error",
@@ -110,6 +136,16 @@ export async function createAccessory(
 export const getAll = withAuth(
   async (user): Promise<ActionResponse<Accessory[]>> => {
     try {
+      // Get companyId from private metadata
+      const companyId = user.privateMetadata?.companyId;
+
+      if (!companyId) {
+        return {
+          success: false,
+          error: "User is not associated with a company",
+        };
+      }
+
       const accessories = await prisma.accessory.findMany({
         include: {
           company: true,
@@ -118,7 +154,7 @@ export const getAll = withAuth(
           statusLabel: true,
         },
         where: {
-          companyId: user.user_metadata?.companyId,
+          companyId,
         },
         orderBy: {
           createdAt: "desc",
@@ -148,10 +184,20 @@ export async function getAllAccessories(): Promise<
 export const findById = withAuth(
   async (user, id: string): Promise<ActionResponse<Accessory>> => {
     try {
+      // Get companyId from private metadata
+      const companyId = user.privateMetadata?.companyId;
+
+      if (!companyId) {
+        return {
+          success: false,
+          error: "User is not associated with a company",
+        };
+      }
+
       const accessoryQuery = {
         where: {
           id,
-          companyId: user.user_metadata?.companyId,
+          companyId,
         },
         include: {
           company: true,
@@ -183,13 +229,6 @@ export const findById = withAuth(
         },
       } as const;
 
-      // Get the original session from cookies since we're in a server action
-      const cookieStore = cookies();
-      const session = {
-        accessToken: cookieStore.get("sb-access-token")?.value,
-        refreshToken: cookieStore.get("sb-refresh-token")?.value,
-      };
-
       const [accessory, auditLogsResult] = await Promise.all([
         prisma.accessory.findUnique(accessoryQuery),
         getAuditLog(id),
@@ -199,15 +238,16 @@ export const findById = withAuth(
         return { success: false, error: "Accessory not found" };
       }
 
+      const accessoryWithComputedFields = {
+        ...accessory,
+        auditLogs: auditLogsResult.success ? auditLogsResult.data : [],
+        userAccessories: accessory.userItems,
+        currentAssignments: accessory.userItems,
+      };
+
       return {
         success: true,
-        data: parseStringify({
-          ...accessory,
-          auditLogs: auditLogsResult.success ? auditLogsResult.data : [],
-          userAccessories: accessory.userItems,
-          stockHistory: accessory.AccessoryStock,
-          currentAssignments: accessory.userItems,
-        }),
+        data: parseStringify(accessoryWithComputedFields),
       };
     } catch (error) {
       console.error("Error finding accessory:", error);
@@ -229,43 +269,30 @@ export async function getAccessory(
 export const remove = withAuth(
   async (user, id: string): Promise<ActionResponse<Accessory>> => {
     try {
-      const asset = await prisma.accessory.delete({
+      // Get companyId from private metadata
+      const companyId = user.privateMetadata?.companyId;
+
+      if (!companyId) {
+        return {
+          success: false,
+          error: "User is not associated with a company",
+        };
+      }
+
+      const accessory = await prisma.accessory.delete({
         where: {
           id,
-          companyId: user.user_metadata?.companyId,
+          companyId,
         },
       });
 
-      await prisma.auditLog.create({
-        data: {
-          action: "ACCESSORY_DELETED",
-          entity: "ACCESSORY",
-          entityId: id,
-          userId: user.id,
-          companyId: user.user_metadata?.companyId,
-          details: `Deleted accessory with ID ${id}`,
-        },
-      });
-
+      revalidatePath("/accessories");
       return {
         success: true,
-        data: parseStringify(asset),
+        data: parseStringify(accessory),
       };
     } catch (error) {
       console.error("Error deleting accessory:", error);
-
-      if (error instanceof Prisma.PrismaClientKnownRequestError) {
-        if (error.code === "P2025") {
-          return { success: false, error: "Accessory not found" };
-        }
-        if (error.code === "P2003") {
-          return {
-            success: false,
-            error: "Cannot delete accessory because it is still in use",
-          };
-        }
-      }
-
       return { success: false, error: "Failed to delete accessory" };
     } finally {
       await prisma.$disconnect();
@@ -288,21 +315,44 @@ export const update = withAuth(
     data: Partial<Accessory>,
   ): Promise<ActionResponse<Accessory>> => {
     try {
+      // Get companyId from private metadata
+      const companyId = user.privateMetadata?.companyId;
+
+      if (!companyId) {
+        return {
+          success: false,
+          error: "User is not associated with a company",
+        };
+      }
+
       const accessory = await prisma.accessory.update({
-        where: { id, companyId: user.user_metadata?.companyId },
-        data: data as Prisma.AccessoryUpdateInput,
+        where: {
+          id,
+          companyId,
+        },
+        data: {
+          name: data.name,
+          alertEmail: data.alertEmail,
+          serialNumber: data.serialNumber || "",
+          reorderPoint: data.reorderPoint,
+          totalQuantityCount: data.totalQuantityCount,
+          modelNumber: data.modelNumber,
+          statusLabelId: data.statusLabelId,
+          departmentId: data.departmentId,
+          locationId: data.locationId,
+          inventoryId: data.inventoryId,
+          categoryId: data.categoryId,
+        },
       });
+
+      revalidatePath("/accessories");
+      revalidatePath(`/accessories/${id}`);
       return {
         success: true,
         data: parseStringify(accessory),
       };
     } catch (error) {
       console.error("Error updating accessory:", error);
-      if (error instanceof Prisma.PrismaClientKnownRequestError) {
-        if (error.code === "P2025") {
-          return { success: false, error: "Accessory not found" };
-        }
-      }
       return { success: false, error: "Failed to update accessory" };
     } finally {
       await prisma.$disconnect();

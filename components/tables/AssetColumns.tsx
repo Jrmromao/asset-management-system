@@ -1,10 +1,16 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
-import { ArrowUpDown } from "lucide-react";
+import { ArrowUpDown, Loader2 } from "lucide-react";
 import LinkTableCell from "@/components/tables/LinkTableCell";
-import React from "react";
+import React, { useTransition, useState } from "react";
 import DataTableRowActions from "@/components/tables/DataTable/DataTableRowActions";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
+import { useRouter } from "next/navigation";
+import { calculateAssetCO2Action } from "@/lib/actions/co2.actions";
+import CO2Dialog from "@/components/dialogs/CO2Dialog";
+import { Co2eRecord } from "@prisma/client";
+import { CO2CalculationResult } from "@/types/co2";
 
 // const navigate = useRouter() cannot use hook in a non hook component
 interface AssetColumnsProps {
@@ -86,13 +92,68 @@ export const assetColumns = ({
   {
     header: "CO2 Footprint",
     cell: ({ row }) => {
+      const { toast } = useToast();
+      const router = useRouter();
+      const [isPending, startTransition] = useTransition();
+      const [isDialogOpen, setDialogOpen] = useState(false);
+      const [calculationResult, setCalculationResult] = useState<CO2CalculationResult | null>(null);
+      const [isNewCalculation, setIsNewCalculation] = useState(false);
       const record = row.original.Co2eRecord?.[0];
-      if (!record) return <span className="text-gray-400">-</span>;
 
-      const co2Value = record.co2e;
-      const unit = record.units;
+      const openDialog = (result: CO2CalculationResult, isNew: boolean) => {
+        setCalculationResult(result);
+        setIsNewCalculation(isNew);
+        setDialogOpen(true);
+      };
 
-      // Function to determine impact level based on normalized value (in kg)
+      const handleCalculate = (assetId: string) => {
+        startTransition(async () => {
+          try {
+            const result = await calculateAssetCO2Action(assetId);
+            if (result.success && "data" in result && result.data) {
+              const formattedData: CO2CalculationResult = {
+                totalCo2e: result.data.totalCo2e || 0,
+                units: result.data.units || "kgCO2e",
+                confidenceScore: result.data.confidenceScore || 0.5,
+                lifecycleBreakdown: result.data.lifecycleBreakdown || {
+                  manufacturing: "N/A",
+                  transport: "N/A",
+                  use: "N/A",
+                  endOfLife: "N/A"
+                },
+                sources: result.data.sources || [],
+                description: result.data.description || ""
+              };
+              openDialog(formattedData, true);
+            } else {
+              toast({
+                title: "CO2 Calculation Failed",
+                description:
+                  "error" in result && result.error
+                    ? String(result.error)
+                    : "An unknown error occurred.",
+                variant: "destructive",
+              });
+            }
+          } catch (error) {
+            toast({
+              title: "Error",
+              description:
+                error instanceof Error
+                  ? error.message
+                  : "An unknown error occurred.",
+              variant: "destructive",
+            });
+          }
+        });
+      };
+
+      const handleSaveResult = (result: CO2CalculationResult) => {
+        // The result is already saved by the action, just refresh the page
+        router.refresh();
+        setDialogOpen(false);
+      };
+
       const getImpactLevel = (value: number, unit: string) => {
         // Convert everything to kg for comparison
         const normalizedValue = unit.toLowerCase().includes("ton")
@@ -116,36 +177,129 @@ export const assetColumns = ({
         };
       };
 
-      const impact = getImpactLevel(co2Value, unit);
-
       return (
-        <div className="group relative flex items-center gap-2">
-          <div className="flex flex-col">
-            <span className="font-medium">
-              {co2Value.toLocaleString(undefined, {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })}
-              <span className="text-gray-500 text-sm ml-1">{unit}</span>
-            </span>
-            <div className="flex items-center gap-1 text-xs text-gray-500">
-              <div className={`w-2 h-2 rounded-full ${impact.color}`} />
-              {impact.label}
-            </div>
-          </div>
+        <>
+          {record ? (
+            <div
+              className="group relative flex items-center gap-2 cursor-pointer"
+              onClick={() => {
+                let resultToShow: CO2CalculationResult;
+                if (record.details) {
+                  try {
+                    const details = JSON.parse(record.details as string);
+                    resultToShow = {
+                      totalCo2e: details.totalCo2e || Number(record.co2e),
+                      units: details.units || record.units,
+                      confidenceScore: details.confidenceScore || 0.5,
+                      lifecycleBreakdown:
+                        details.lifecycleBreakdown || {
+                          manufacturing: "N/A",
+                          transport: "N/A",
+                          use: "N/A",
+                          endOfLife: "N/A",
+                        },
+                      sources: details.sources || [],
+                      description:
+                        details.description || (record as any).description || "",
+                    };
+                  } catch {
+                    resultToShow = {
+                      totalCo2e: Number(record.co2e),
+                      units: record.units,
+                      confidenceScore: 0.5,
+                      lifecycleBreakdown: {
+                        manufacturing: "N/A",
+                        transport: "N/A",
+                        use: "N/A",
+                        endOfLife: "N/A",
+                      },
+                      sources: [],
+                      description: (record as any).description || "",
+                    };
+                  }
+                } else {
+                  resultToShow = {
+                    totalCo2e: Number(record.co2e),
+                    units: record.units,
+                    confidenceScore: 0.5,
+                    lifecycleBreakdown: {
+                      manufacturing: "N/A",
+                      transport: "N/A",
+                      use: "N/A",
+                      endOfLife: "N/A",
+                    },
+                    sources: [],
+                    description: (record as any).description || "",
+                  };
+                }
+                openDialog(resultToShow, false);
+              }}
+            >
+              <div className="flex flex-col">
+                <span className="font-medium">
+                  {Number(record.co2e).toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
+                  <span className="text-gray-500 text-sm ml-1">
+                    {record.units}
+                  </span>
+                </span>
+                <div className="flex items-center gap-1 text-xs text-gray-500">
+                  <div
+                    className={`w-2 h-2 rounded-full ${
+                      getImpactLevel(Number(record.co2e), record.units).color
+                    }`}
+                  />
+                  {getImpactLevel(Number(record.co2e), record.units).label}
+                </div>
+              </div>
 
-          {/* Tooltip */}
-          <div className="invisible group-hover:visible absolute top-full left-0 mt-2 p-2 bg-gray-800 text-white text-xs rounded shadow-lg z-10 w-48">
-            <p className="font-medium mb-1">CO2 Footprint Details</p>
-            <p>
-              Value: {co2Value.toLocaleString()} {unit}
-            </p>
-            {record.co2eType && <p>Type: {record.co2eType}</p>}
-            {record.sourceOrActivity && (
-              <p>Source: {record.sourceOrActivity}</p>
-            )}
-          </div>
-        </div>
+              {/* Tooltip */}
+              <div className="invisible group-hover:visible absolute top-full left-0 mt-2 p-2 bg-gray-800 text-white text-xs rounded shadow-lg z-10 w-48">
+                <p className="font-medium mb-1">CO2 Footprint Details</p>
+                <p>
+                  Value: {Number(record.co2e).toLocaleString()} {record.units}
+                </p>
+                {record.co2eType && <p>Type: {record.co2eType}</p>}
+                {record.sourceOrActivity && (
+                  <p>Source: {record.sourceOrActivity}</p>
+                )}
+                <p className="text-xs text-gray-300 mt-1">
+                  Click to view details
+                </p>
+              </div>
+            </div>
+          ) : (
+            <Button
+              onClick={() => handleCalculate(row.original.id)}
+              disabled={isPending}
+              size="sm"
+              variant="outline"
+            >
+              {isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Calculating...
+                </>
+              ) : (
+                "Calculate CO2"
+              )}
+            </Button>
+          )}
+
+          {calculationResult && (
+            <CO2Dialog
+              isOpen={isDialogOpen}
+              onClose={() => setDialogOpen(false)}
+              assetId={row.original.id}
+              assetName={row.original.name}
+              initialResult={calculationResult}
+              isNewCalculation={isNewCalculation}
+              onSave={handleSaveResult}
+            />
+          )}
+        </>
       );
     },
   },
