@@ -5,38 +5,29 @@ import {
   getAllAssets,
   getAssetUtilizationStats,
 } from "@/lib/actions/assets.actions";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { getAssetQuota } from "@/lib/actions/usageRecord.actions";
 import { getMaintenanceDueCount } from "@/lib/actions/inventory.actions";
 import {
   getTotalCo2Savings,
   getCo2SavingsTrend,
 } from "@/lib/actions/co2.actions";
-import type { Asset } from "@/types/asset";
+import { Skeleton } from "@/components/ui/skeleton";
+
+interface DashboardStats {
+  totalAssets: number;
+  quota: number;
+  maintenanceDue: number;
+  co2Savings: number;
+  co2Trend: number;
+  utilizationRate: number;
+  assignedAssets: number;
+}
 
 export const StatsGrid = () => {
-  // Group the state declarations together for better readability
-  const [quota, setQuota] = useState<number>(0);
-  const [assets, setAssets] = useState<Asset[]>([]);
-  const [maintenanceDue, setMaintenanceDue] = useState<number>(0);
-  const [co2Savings, setCo2Savings] = useState<number>(0);
-  const [co2Trend, setCo2Trend] = useState<number>(0);
-  const [utilizationStats, setUtilizationStats] = useState<any>(null);
+  const [stats, setStats] = useState<DashboardStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Calculate assigned assets using useMemo to avoid unnecessary recalculations
-  const assetsAssigned = useMemo(
-    () => assets.reduce((sum, asset) => sum + (asset.assignee ? 1 : 0), 0),
-    [assets],
-  );
-
-  // Calculate usage rate using useMemo
-  const usageRate = useMemo(
-    () => (quota > 0 ? (assetsAssigned / quota) * 100 : 0),
-    [assetsAssigned, quota],
-  );
-
-  // Combine API calls in a single useEffect
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -57,24 +48,30 @@ export const StatsGrid = () => {
           getAssetUtilizationStats(),
         ]);
 
-        if (assetsResponse.success) {
-          setAssets(assetsResponse.data || []);
-        }
-        if (quotaResponse.success) {
-          setQuota(quotaResponse.data || 0);
-        }
-        if (maintenanceDueResponse.success) {
-          setMaintenanceDue(maintenanceDueResponse.data || 0);
-        }
-        if (co2SavingsResponse.data) {
-          setCo2Savings(co2SavingsResponse.data as number);
-        }
-        if (co2TrendResponse.data) {
-          setCo2Trend(co2TrendResponse.data as number);
-        }
-        if (utilizationStatsResponse.success) {
-          setUtilizationStats(utilizationStatsResponse.data?.[0] || null);
-        }
+        const assets = assetsResponse.data || [];
+        const quota = quotaResponse.data || 0;
+        const assignedAssets = assets.reduce(
+          (sum, asset) => sum + (asset.assignee ? 1 : 0),
+          0,
+        );
+        const calculatedUsageRate = quota > 0 ? (assignedAssets / quota) * 100 : 0;
+
+        const utilizationData = utilizationStatsResponse.data?.[0];
+        const displayUtilizationRate =
+          utilizationData?.utilizationRate || calculatedUsageRate;
+        const displayAssignedAssets =
+          utilizationData?.assignedAssets || assignedAssets;
+        const displayTotalAssets = utilizationData?.totalAssets || assets.length;
+
+        setStats({
+          totalAssets: displayTotalAssets,
+          quota: quota,
+          maintenanceDue: maintenanceDueResponse.data || 0,
+          co2Savings: co2SavingsResponse.data as number,
+          co2Trend: co2TrendResponse.data as number,
+          utilizationRate: displayUtilizationRate,
+          assignedAssets: displayAssignedAssets,
+        });
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
       } finally {
@@ -85,32 +82,37 @@ export const StatsGrid = () => {
     fetchData();
   }, []);
 
-  // Use real utilization data if available, otherwise fall back to calculated values
-  const displayUtilizationRate = utilizationStats?.utilizationRate || usageRate;
-  const displayAssignedAssets =
-    utilizationStats?.assignedAssets || assetsAssigned;
-  const displayTotalAssets = utilizationStats?.totalAssets || assets.length;
+  if (isLoading || !stats) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <Skeleton className="h-24" />
+        <Skeleton className="h-24" />
+        <Skeleton className="h-24" />
+        <Skeleton className="h-24" />
+      </div>
+    );
+  }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       <StatCard
         title="Total Assets"
-        mainValue={displayTotalAssets}
-        subValue={`/${quota}`}
-        subtitle={`${Math.round(displayUtilizationRate)}% utilization rate`}
+        mainValue={stats.totalAssets}
+        subValue={`/${stats.quota}`}
+        subtitle={`${Math.round(stats.utilizationRate)}% utilization rate`}
         icon={<Box className="h-5 w-5 text-emerald-600" />}
       />
 
       <StatCard
         title="Utilization Rate"
-        mainValue={`${Math.round(displayUtilizationRate)}%`}
-        subtitle={`${displayAssignedAssets} of ${displayTotalAssets} assigned`}
+        mainValue={`${Math.round(stats.utilizationRate)}%`}
+        subtitle={`${stats.assignedAssets} of ${stats.totalAssets} assigned`}
         icon={<BarChart3 className="h-5 w-5 text-blue-600" />}
       />
 
       <StatCard
         title="Maintenance Due"
-        mainValue={maintenanceDue}
+        mainValue={stats.maintenanceDue}
         subValue="assets"
         subtitle="Within next 30 days"
         icon={<Clock className="h-5 w-5 text-amber-600" />}
@@ -118,9 +120,9 @@ export const StatsGrid = () => {
 
       <StatCard
         title="CO₂ Savings"
-        mainValue={co2Savings}
+        mainValue={stats.co2Savings}
         subValue="tons"
-        subtitle={`+${co2Trend} this month`}
+        subtitle={`+${stats.co2Trend} this month`}
         icon={<Battery className="h-5 w-5 text-emerald-600" />}
       />
     </div>

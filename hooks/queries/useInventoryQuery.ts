@@ -47,29 +47,41 @@ export function useInventoryQuery() {
     MODEL_KEY,
     {
       getAll: async () => {
+        console.log(" [useInventoryQuery] getAll - Starting");
         const response = await getAllInventories();
+        console.log(" [useInventoryQuery] getAll - Response:", response);
         if (!response.success) {
+          console.error("❌ [useInventoryQuery] getAll - Failed:", response.error);
           throw new Error(response.error || "Failed to fetch inventories");
         }
         return response;
       },
       insert: async (data: CreateInventoryInput) => {
+        console.log(" [useInventoryQuery] insert - Starting with data:", data);
         const response = await createInventory(data);
+        console.log(" [useInventoryQuery] insert - Response:", response);
         if (!response.success) {
+          console.error("❌ [useInventoryQuery] insert - Failed:", response.error);
           throw new Error(response.error || "Failed to create inventory");
         }
         return response;
       },
       update: async (id: string, data: UpdateInventoryInput) => {
+        console.log(" [useInventoryQuery] update - Starting with id:", id, "data:", data);
         const response = await updateInventory(id, data);
+        console.log(" [useInventoryQuery] update - Response:", response);
         if (!response.success) {
+          console.error("❌ [useInventoryQuery] update - Failed:", response.error);
           throw new Error(response.error || "Failed to update inventory");
         }
         return response;
       },
       delete: async (id: string) => {
+        console.log(" [useInventoryQuery] delete - Starting with id:", id);
         const response = await deleteInventory(id);
+        console.log(" [useInventoryQuery] delete - Response:", response);
         if (!response.success) {
+          console.error("❌ [useInventoryQuery] delete - Failed:", response.error);
           throw new Error(response.error || "Failed to delete inventory");
         }
         return response;
