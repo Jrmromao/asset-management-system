@@ -632,6 +632,7 @@ model Co2eRecord {
   units            String   @default("kg")
   sourceOrActivity String
   description      String? // Restored and added description
+  details          Json?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 

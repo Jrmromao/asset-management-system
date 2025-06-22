@@ -26,48 +26,59 @@ const InventoryForm = ({
     name: initialData?.name ?? "",
   };
 
+  console.log("🔍 [InventoryForm] - Component rendered with:", {
+    initialData,
+    defaultValues,
+  });
+
   const form = useForm<z.infer<typeof inventorySchema>>({
     resolver: zodResolver(inventorySchema),
     defaultValues,
   });
 
   async function onSubmit(data: z.infer<typeof inventorySchema>) {
+    console.log("🔍 [InventoryForm] onSubmit - Starting with data:", data);
+    
     startTransition(async () => {
       try {
         if (initialData && initialData.id) {
+          console.log("🔍 [InventoryForm] onSubmit - Updating existing inventory:", initialData.id);
           await updateInventory(
             initialData.id,
             { ...data },
             {
               onSuccess: () => {
+                console.log("✅ [InventoryForm] onSubmit - Update successful");
                 onClose();
                 form.reset();
                 toast.success("Successfully updated inventory");
                 onSubmitSuccess?.();
               },
               onError: (error: any) => {
-                console.error("Error updating inventory:", error);
+                console.error("❌ [InventoryForm] onSubmit - Update error:", error);
                 toast.error("Failed to update inventory");
               },
             },
           );
         } else {
+          console.log("🔍 [InventoryForm] onSubmit - Creating new inventory");
           // Create new inventory
           await createInventory(data, {
             onSuccess: () => {
+              console.log("✅ [InventoryForm] onSubmit - Create successful");
               onClose();
               form.reset();
               toast.success("Successfully created inventory");
               onSubmitSuccess?.();
             },
             onError: (error) => {
-              console.error("Error creating inventory:", error);
+              console.error("❌ [InventoryForm] onSubmit - Create error:", error);
               toast.error("Failed to create inventory");
             },
           });
         }
       } catch (error) {
-        console.error("Inventory operation error:", error);
+        console.error("❌ [InventoryForm] onSubmit - Operation error:", error);
         toast.error(`Failed to ${initialData ? "update" : "create"} inventory`);
       }
     });

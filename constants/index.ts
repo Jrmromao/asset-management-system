@@ -6,9 +6,9 @@ export const roles = {
 
 export const sidebarLinks = [
   {
-    imgURL: "/icons/admin-icon.svg",
-    route: "/admin",
-    label: "Admin",
+    imgURL: "/icons/dashboard-icon.svg",
+    route: "/dashboard",
+    label: "Dashboard",
     visibleTo: [roles.ADMIN],
   },
   {
@@ -55,8 +55,8 @@ export const sidebarLinks = [
   //   visibleTo: [roles.ADMIN],
   // },
 ].sort((a, b) => {
-  if (a.label === "Admin") return -1;
-  if (b.label === "Admin") return 1;
+  if (a.label === "Dashboard") return -1;
+  if (b.label === "Dashboard") return 1;
   return a.label.localeCompare(b.label);
 });
 
