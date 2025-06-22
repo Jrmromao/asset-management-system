@@ -6,6 +6,8 @@ import { handleError } from "@/lib/utils";
 import { OpenAIConfigConst } from "@/config/OpenAIConfig";
 import { GeminiConfigConst } from "@/config/GeminiConfig";
 import { auth } from "@clerk/nextjs/server";
+import { CO2FootprintService } from "@/lib/services/co2Footprint.service";
+import { CO2CalculationResult } from "@/types/co2";
 
 export async function generateCo2eForAsset(
   assetId: string,
@@ -172,3 +174,26 @@ export const getCo2SavingsTrend = async () => {
     return handleError(error, "getCo2SavingsTrend");
   }
 };
+
+export async function calculateAssetCO2Action(assetId: string) {
+  try {
+    const result = await CO2FootprintService.calculateAssetCO2(assetId);
+    return result;
+  } catch (error: any) {
+    console.error("Error in calculateAssetCO2Action:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function saveAssetCO2Action(
+  assetId: string,
+  co2Data: CO2CalculationResult,
+) {
+  try {
+    const result = await CO2FootprintService.saveAssetCO2(assetId, co2Data);
+    return result;
+  } catch (error: any) {
+    console.error("Error in saveAssetCO2Action:", error);
+    return { success: false, error: error.message };
+  }
+}

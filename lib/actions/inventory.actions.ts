@@ -21,9 +21,18 @@ export const insert = withAuth(
     user,
     values: z.infer<typeof inventorySchema>,
   ): Promise<AuthResponse<Inventory>> => {
+    console.log("\n\n\n [inventory.actions] insert - Starting with user:", {
+      userId: user?.id,
+      privateMetadata: user?.privateMetadata,
+      hasCompanyId: !!user?.privateMetadata?.companyId,
+    });
+
     try {
       const validation = inventorySchema.safeParse(values);
+      console.log(" [inventory.actions] insert - Validation result:", validation);
+
       if (!validation.success) {
+        console.error("❌ [inventory.actions] insert - Validation failed:", validation.error.errors);
         return {
           success: false,
           data: null as any,
@@ -31,8 +40,14 @@ export const insert = withAuth(
         };
       }
 
-      // Check if user has a companyId
-      if (!user.user_metadata?.companyId) {
+      // Get companyId from private metadata
+      const companyId = user.privateMetadata?.companyId;
+
+      if (!companyId) {
+        console.error("❌ [inventory.actions] insert - User missing companyId in private metadata:", {
+          user: user?.id,
+          privateMetadata: user?.privateMetadata,
+        });
         return {
           success: false,
           data: null as any,
@@ -40,16 +55,23 @@ export const insert = withAuth(
         };
       }
 
+      console.log("✅ [inventory.actions] insert - Creating inventory with data:", {
+        ...validation.data,
+        companyId,
+      });
+
       const inventory = await prisma.inventory.create({
         data: {
           ...validation.data,
-          companyId: user.user_metadata.companyId,
+          companyId,
         },
       });
+
+      console.log("✅ [inventory.actions] insert - Inventory created successfully:", inventory);
       revalidatePath("/inventories");
       return { success: true, data: parseStringify(inventory) };
     } catch (error) {
-      console.error("Create inventory error:", error);
+      console.error("❌ [inventory.actions] insert - Database error:", error);
       return {
         success: false,
         data: null as any,
@@ -65,6 +87,7 @@ export const insert = withAuth(
 export async function createInventory(
   values: z.infer<typeof inventorySchema>,
 ): Promise<AuthResponse<Inventory>> {
+  console.log(" [inventory.actions] createInventory - Called with values:", values);
   return insert(values);
 }
 
@@ -83,8 +106,10 @@ export const update = withAuth(
         };
       }
 
-      // Check if user has a companyId
-      if (!user.user_metadata?.companyId) {
+      // Get companyId from private metadata
+      const companyId = user.privateMetadata?.companyId;
+
+      if (!companyId) {
         return {
           success: false,
           data: null as any,
@@ -95,7 +120,7 @@ export const update = withAuth(
       const updated = await prisma.inventory.update({
         where: {
           id,
-          companyId: user.user_metadata.companyId,
+          companyId,
         },
         data: {
           name: data.name,
@@ -127,8 +152,10 @@ export async function updateInventory(
 export const getAll = withAuth(
   async (user): Promise<AuthResponse<Inventory[]>> => {
     try {
-      // Check if user has a companyId
-      if (!user.user_metadata?.companyId) {
+      // Get companyId from private metadata
+      const companyId = user.privateMetadata?.companyId;
+
+      if (!companyId) {
         return {
           success: false,
           data: null as any,
@@ -138,7 +165,7 @@ export const getAll = withAuth(
 
       const inventories = await prisma.inventory.findMany({
         where: {
-          companyId: user.user_metadata.companyId,
+          companyId,
         },
         orderBy: {
           name: "asc",
@@ -169,16 +196,20 @@ export const getAllPaginated = withAuth(
     params?: PaginationParams,
   ): Promise<AuthResponse<Inventory[]>> => {
     try {
-      if (!user.user_metadata?.companyId) {
+      // Get companyId from private metadata
+      const companyId = user.privateMetadata?.companyId;
+
+      if (!companyId) {
         return {
           success: false,
           data: null as any,
           error: "User is not associated with a company",
         };
       }
+
       const items = await prisma.inventory.findMany({
         where: {
-          companyId: user.user_metadata.companyId,
+          companyId,
           ...(params?.search
             ? {
                 name: { contains: params.search, mode: "insensitive" },
@@ -213,8 +244,10 @@ export async function getPaginatedInventories(
 export const getInventoryById = withAuth(
   async (user, id: string): Promise<AuthResponse<Inventory>> => {
     try {
-      // Check if user has a companyId
-      if (!user.user_metadata?.companyId) {
+      // Get companyId from private metadata
+      const companyId = user.privateMetadata?.companyId;
+
+      if (!companyId) {
         return {
           success: false,
           data: null as any,
@@ -225,7 +258,7 @@ export const getInventoryById = withAuth(
       const inventory = await prisma.inventory.findFirst({
         where: {
           id,
-          companyId: user.user_metadata.companyId,
+          companyId,
         },
       });
       if (!inventory) {
@@ -259,8 +292,10 @@ export async function getInventory(
 export const remove = withAuth(
   async (user, id: string): Promise<AuthResponse<Inventory>> => {
     try {
-      // Check if user has a companyId
-      if (!user.user_metadata?.companyId) {
+      // Get companyId from private metadata
+      const companyId = user.privateMetadata?.companyId;
+
+      if (!companyId) {
         return {
           success: false,
           data: null as any,
@@ -272,7 +307,7 @@ export const remove = withAuth(
       const inUseByAssets = await prisma.asset.findFirst({
         where: {
           inventoryId: id,
-          companyId: user.user_metadata.companyId,
+          companyId,
         },
       });
 
@@ -288,7 +323,7 @@ export const remove = withAuth(
       const inUseByAccessories = await prisma.accessory.findFirst({
         where: {
           inventoryId: id,
-          companyId: user.user_metadata.companyId,
+          companyId,
         },
       });
 
@@ -304,7 +339,7 @@ export const remove = withAuth(
       const inUseByLicenses = await prisma.license.findFirst({
         where: {
           inventoryId: id,
-          companyId: user.user_metadata.companyId,
+          companyId,
         },
       });
 
@@ -319,7 +354,7 @@ export const remove = withAuth(
       const inventory = await prisma.inventory.delete({
         where: {
           id: id,
-          companyId: user.user_metadata.companyId,
+          companyId,
         },
       });
       revalidatePath("/inventories");
@@ -347,7 +382,10 @@ export async function deleteInventory(
 export const getMaintenanceDueCount = withAuth(
   async (user): Promise<AuthResponse<number>> => {
     try {
-      if (!user.user_metadata?.companyId) {
+      // Get companyId from private metadata
+      const companyId = user.privateMetadata?.companyId;
+
+      if (!companyId) {
         return {
           success: false,
           data: null as any,
@@ -358,7 +396,7 @@ export const getMaintenanceDueCount = withAuth(
       // Get assets that have maintenance due within the next 30 days
       const maintenanceDueAssets = await prisma.asset.findMany({
         where: {
-          companyId: user.user_metadata.companyId,
+          companyId,
           nextMaintenance: {
             lte: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
             gte: new Date(), // From today
@@ -389,7 +427,10 @@ export const getMaintenanceDueCount = withAuth(
 export const getMaintenanceSchedule = withAuth(
   async (user): Promise<AuthResponse<any[]>> => {
     try {
-      if (!user.user_metadata?.companyId) {
+      // Get companyId from private metadata
+      const companyId = user.privateMetadata?.companyId;
+
+      if (!companyId) {
         return {
           success: false,
           data: null as any,
@@ -400,7 +441,7 @@ export const getMaintenanceSchedule = withAuth(
       // Get assets with upcoming maintenance
       const maintenanceSchedule = await prisma.asset.findMany({
         where: {
-          companyId: user.user_metadata.companyId,
+          companyId,
           nextMaintenance: {
             gte: new Date(),
           },

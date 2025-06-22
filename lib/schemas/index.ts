@@ -373,28 +373,10 @@ export const getValidationResult = (field: string, value: string) => {
 export const assetSchema = z.object({
   serialNumber: z
     .string()
-    .min(1, "Serial Number is required")
-    .refine(async (value) => {
-      if (!value.trim()) return true;
-      const result = await validateField(
-        "serialNumber",
-        value,
-        `/api/validate/assets?type=serialNumber&serialNumber=${value}`,
-      );
-      return result;
-    }, "Serial number already exists"),
+    .min(1, "Serial Number is required"),
   name: z
     .string()
-    .min(1, "Asset name is required")
-    .refine(async (value) => {
-      if (!value.trim()) return true;
-      const result = await validateField(
-        "name",
-        value,
-        `/api/validate/assets?type=assetName&assetName=${value}`,
-      );
-      return result;
-    }, "Asset name already exists"),
+    .min(1, "Asset name is required"),
   modelId: z.string().min(1, "Model is required"),
   statusLabelId: z.string().min(1, "Status is required"),
   departmentId: z.string().min(1, "Department is required"),

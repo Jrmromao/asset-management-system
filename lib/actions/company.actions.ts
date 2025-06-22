@@ -273,21 +273,21 @@ export async function registerCompany(
     });
     console.log("Company updated with organization ID.");
 
-    // 6. Update Clerk user metadata (consolidated)
+    // 6. Update Clerk user metadata (SECURE - companyId in private metadata only)
     console.log("Step 6: Updating Clerk user metadata...");
     await clerk.users.updateUserMetadata(data.clerkUserId, {
       publicMetadata: {
         userId: prismaUser.id,
-        companyId: company.id,
         role: "Admin",
         onboardingComplete: true, // Mark onboarding as complete
+        // companyId removed from public metadata for security
       },
       privateMetadata: {
-        companyId: company.id,
+        companyId: company.id, // companyId in private metadata only
         clerkOrgId: organization.id,
       },
     });
-    console.log("User metadata updated.");
+    console.log("User metadata updated securely.");
 
     // 7. Send welcome email
     console.log("Step 7: Sending welcome email...");

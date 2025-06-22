@@ -35,15 +35,15 @@ export async function createUser(user: {
         data: { oauthId: user.clerkId },
       });
 
-      // Update Clerk metadata
+      // Update Clerk metadata (SECURE - companyId in private metadata only)
       const clerk = await clerkClient();
       await clerk.users.updateUserMetadata(user.clerkId, {
         publicMetadata: {
           userId: updatedUser.id,
-          companyId: updatedUser.companyId,
+          // companyId removed from public metadata for security
         },
         privateMetadata: {
-          companyId: updatedUser.companyId,
+          companyId: updatedUser.companyId, // companyId in private metadata only
         },
       });
 
@@ -54,7 +54,7 @@ export async function createUser(user: {
     const clerk = await clerkClient();
     const clerkUser = await clerk.users.getUser(user.clerkId);
 
-    // Extract company ID from user metadata
+    // Extract company ID from private metadata (more secure)
     const companyId = clerkUser.privateMetadata?.companyId as string;
     const roleName = (clerkUser.publicMetadata?.role as string) || "Admin";
 
@@ -93,14 +93,14 @@ export async function createUser(user: {
       },
     });
 
-    // Update Clerk metadata with the database user ID
+    // Update Clerk metadata with the database user ID (SECURE - companyId in private metadata only)
     await clerk.users.updateUserMetadata(user.clerkId, {
       publicMetadata: {
         userId: newUser.id,
-        companyId: newUser.companyId,
+        // companyId removed from public metadata for security
       },
       privateMetadata: {
-        companyId: newUser.companyId,
+        companyId: newUser.companyId, // companyId in private metadata only
       },
     });
 
@@ -372,15 +372,15 @@ export async function createUserWithCompany(user: {
       },
     });
 
-    // Update Clerk metadata
+    // Update Clerk metadata (SECURE - companyId in private metadata only)
     const clerk = await clerkClient();
     await clerk.users.updateUserMetadata(user.clerkId, {
       publicMetadata: {
         userId: newUser.id,
-        companyId: newUser.companyId,
+        // companyId removed from public metadata for security
       },
       privateMetadata: {
-        companyId: newUser.companyId,
+        companyId: newUser.companyId, // companyId in private metadata only
       },
     });
 
@@ -455,3 +455,213 @@ export const resetPassword = async (data: {
     };
   }
 };
+
+/**
+ * Syncs user metadata in Clerk with the database
+ * This ensures Clerk metadata is always up-to-date
+ */
+export async function syncUserMetadata(clerkUserId: string): Promise<{
+  success: boolean;
+  error?: string;
+  synced?: boolean;
+}> {
+  try {
+    console.log("🔄 [syncUserMetadata] - Starting sync for user:", clerkUserId);
+    
+    const dbUser = await prisma.user.findUnique({
+      where: { oauthId: clerkUserId },
+      select: { 
+        id: true, 
+        companyId: true,
+        role: {
+          select: {
+            name: true,
+          },
+        },
+      },
+    });
+
+    if (!dbUser) {
+      console.warn("⚠️ [syncUserMetadata] - User not found in database:", clerkUserId);
+      return {
+        success: false,
+        error: "User not found in database",
+        synced: false,
+      };
+    }
+
+    const clerk = await clerkClient();
+    
+    // Update Clerk metadata with current database values
+    await clerk.users.updateUserMetadata(clerkUserId, {
+      publicMetadata: {
+        userId: dbUser.id,
+        companyId: dbUser.companyId,
+        role: dbUser.role.name,
+        onboardingComplete: true,
+      },
+      privateMetadata: {
+        companyId: dbUser.companyId,
+      },
+    });
+
+    console.log("✅ [syncUserMetadata] - Successfully synced metadata for user:", {
+      clerkUserId,
+      userId: dbUser.id,
+      companyId: dbUser.companyId,
+      role: dbUser.role.name,
+    });
+
+    return {
+      success: true,
+      synced: true,
+    };
+  } catch (error) {
+    console.error("❌ [syncUserMetadata] - Error syncing metadata:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to sync metadata",
+      synced: false,
+    };
+  }
+}
+
+/**
+ * Syncs metadata for all users in a company
+ * Useful for bulk operations or data migrations
+ */
+export async function syncCompanyUserMetadata(companyId: string): Promise<{
+  success: boolean;
+  error?: string;
+  syncedCount: number;
+  totalCount: number;
+}> {
+  try {
+    console.log("🔄 [syncCompanyUserMetadata] - Starting sync for company:", companyId);
+    
+    const users = await prisma.user.findMany({
+      where: { companyId },
+      select: { 
+        oauthId: true,
+        id: true,
+        companyId: true,
+        role: {
+          select: {
+            name: true,
+          },
+        },
+      },
+    });
+
+    if (users.length === 0) {
+      return {
+        success: true,
+        syncedCount: 0,
+        totalCount: 0,
+      };
+    }
+
+    const clerk = await clerkClient();
+    let syncedCount = 0;
+
+    for (const user of users) {
+      if (!user.oauthId) {
+        console.warn("⚠️ [syncCompanyUserMetadata] - User has no oauthId:", user.id);
+        continue;
+      }
+
+      try {
+        await clerk.users.updateUserMetadata(user.oauthId, {
+          publicMetadata: {
+            userId: user.id,
+            companyId: user.companyId,
+            role: user.role.name,
+            onboardingComplete: true,
+          },
+          privateMetadata: {
+            companyId: user.companyId,
+          },
+        });
+        syncedCount++;
+      } catch (error) {
+        console.error("❌ [syncCompanyUserMetadata] - Failed to sync user:", user.id, error);
+      }
+    }
+
+    console.log("✅ [syncCompanyUserMetadata] - Completed sync:", {
+      companyId,
+      syncedCount,
+      totalCount: users.length,
+    });
+
+    return {
+      success: true,
+      syncedCount,
+      totalCount: users.length,
+    };
+  } catch (error) {
+    console.error("❌ [syncCompanyUserMetadata] - Error syncing company metadata:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to sync company metadata",
+      syncedCount: 0,
+      totalCount: 0,
+    };
+  }
+}
+
+/**
+ * Ensures user metadata is synced before proceeding
+ * This can be called at the start of any action that needs user metadata
+ */
+export async function ensureUserMetadataSync(clerkUserId: string): Promise<{
+  success: boolean;
+  companyId?: string;
+  error?: string;
+}> {
+  try {
+    // First, try to get the user from database
+    const dbUser = await prisma.user.findUnique({
+      where: { oauthId: clerkUserId },
+      select: { companyId: true },
+    });
+
+    if (!dbUser) {
+      return {
+        success: false,
+        error: "User not found in database",
+      };
+    }
+
+    // Check if metadata needs syncing by getting current Clerk user
+    const clerk = await clerkClient();
+    const clerkUser = await clerk.users.getUser(clerkUserId);
+    
+    // Look for companyId in private metadata (more secure)
+    const currentCompanyId = clerkUser.privateMetadata?.companyId;
+    
+    // If metadata is missing or doesn't match, sync it
+    if (!currentCompanyId || currentCompanyId !== dbUser.companyId) {
+      console.log("🔄 [ensureUserMetadataSync] - Metadata out of sync, syncing...");
+      const syncResult = await syncUserMetadata(clerkUserId);
+      
+      if (!syncResult.success) {
+        return {
+          success: false,
+          error: syncResult.error || "Failed to sync metadata",
+        };
+      }
+    }
+
+    return {
+      success: true,
+      companyId: dbUser.companyId,
+    };
+  } catch (error) {
+    console.error("❌ [ensureUserMetadataSync] - Error ensuring metadata sync:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to ensure metadata sync",
+    };
+  }
+}

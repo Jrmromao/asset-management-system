@@ -150,6 +150,7 @@ declare global {
   }
 
   interface Co2eRecord {
+    details: any;
     id: string;
     assetId: string;
     itemType: "Asset" | "Accessory";

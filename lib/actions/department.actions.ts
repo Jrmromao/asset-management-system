@@ -23,6 +23,12 @@ export const insert = withAuth(
     user,
     data: z.infer<typeof departmentSchema>,
   ): Promise<AuthResponse<Department>> => {
+    console.log(" [department.actions] insert - Starting with user:", {
+      userId: user?.id,
+      privateMetadata: user?.privateMetadata,
+      hasCompanyId: !!user?.privateMetadata?.companyId,
+    });
+
     try {
       const validation = departmentSchema.safeParse(data);
       if (!validation.success) {
@@ -33,8 +39,14 @@ export const insert = withAuth(
         };
       }
 
-      // Check if user has a companyId
-      if (!user.user_metadata?.companyId) {
+      // Get companyId from private metadata
+      const companyId = user.privateMetadata?.companyId;
+
+      if (!companyId) {
+        console.error("❌ [department.actions] insert - User missing companyId in private metadata:", {
+          user: user?.id,
+          privateMetadata: user?.privateMetadata,
+        });
         return {
           success: false,
           data: null as any,
@@ -42,10 +54,15 @@ export const insert = withAuth(
         };
       }
 
+      console.log("✅ [department.actions] insert - Creating department with data:", {
+        ...validation.data,
+        companyId,
+      });
+
       const department = await prisma.department.create({
         data: {
           ...validation.data,
-          companyId: user.user_metadata.companyId,
+          companyId,
         },
       });
 
@@ -90,8 +107,10 @@ export const getAll = withAuth(
     params?: { search?: string },
   ): Promise<AuthResponse<Department[]>> => {
     try {
-      // Check if user has a companyId
-      if (!user.user_metadata?.companyId) {
+      // Get companyId from private metadata
+      const companyId = user.privateMetadata?.companyId;
+
+      if (!companyId) {
         return {
           success: false,
           data: null as any,
@@ -100,7 +119,7 @@ export const getAll = withAuth(
       }
 
       const where: Prisma.DepartmentWhereInput = {
-        companyId: user.user_metadata.companyId,
+        companyId,
         ...(params?.search && {
           name: {
             contains: params.search,
@@ -144,8 +163,10 @@ export async function getAllDepartments(params?: {
 export const findById = withAuth(
   async (user, id: string): Promise<AuthResponse<Department>> => {
     try {
-      // Check if user has a companyId
-      if (!user.user_metadata?.companyId) {
+      // Get companyId from private metadata
+      const companyId = user.privateMetadata?.companyId;
+
+      if (!companyId) {
         return {
           success: false,
           data: null as any,
@@ -156,7 +177,7 @@ export const findById = withAuth(
       const department = await prisma.department.findFirst({
         where: {
           id,
-          companyId: user.user_metadata.companyId,
+          companyId,
         },
       });
 
@@ -200,8 +221,10 @@ export const update = withAuth(
     data: z.infer<typeof departmentSchema>,
   ): Promise<AuthResponse<Department>> => {
     try {
-      // Check if user has a companyId
-      if (!user.user_metadata?.companyId) {
+      // Get companyId from private metadata
+      const companyId = user.privateMetadata?.companyId;
+
+      if (!companyId) {
         return {
           success: false,
           data: null as any,
@@ -212,7 +235,7 @@ export const update = withAuth(
       const department = await prisma.department.update({
         where: {
           id,
-          companyId: user.user_metadata.companyId,
+          companyId,
         },
         data: {
           name: data.name,
@@ -266,8 +289,10 @@ export async function updateDepartment(
 export const remove = withAuth(
   async (user, id: string): Promise<AuthResponse<Department>> => {
     try {
-      // Check if user has a companyId
-      if (!user.user_metadata?.companyId) {
+      // Get companyId from private metadata
+      const companyId = user.privateMetadata?.companyId;
+
+      if (!companyId) {
         return {
           success: false,
           data: null as any,
@@ -278,7 +303,7 @@ export const remove = withAuth(
       const department = await prisma.department.delete({
         where: {
           id,
-          companyId: user.user_metadata.companyId,
+          companyId,
         },
       });
 

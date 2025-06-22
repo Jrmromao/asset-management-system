@@ -1,5 +1,5 @@
 import { auth } from "@clerk/nextjs/server";
-import { cookies } from "next/headers";
+import { clerkClient } from "@clerk/nextjs/server";
 
 export type AuthResponse<T> = {
   data?: T;
@@ -33,29 +33,52 @@ export function withAuth<T extends any[], R>(
     message?: string;
   }> => {
     try {
-      const { userId, sessionClaims } = await auth();
+      console.log("🔍 [withAuth] - Starting authentication check");
+      const { userId } = await auth();
 
       if (!userId) {
+        console.error("❌ [withAuth] - No userId found");
         return {
           success: false,
           error: "Unauthorized - User not authenticated",
         };
       }
 
-      // Create a user object that matches the expected structure
+      // Get the full user object from Clerk to access metadata
+      const clerk = await clerkClient();
+      const clerkUser = await clerk.users.getUser(userId);
+
+      console.log("�� [withAuth] - Clerk user data:", {
+        userId,
+        hasPublicMetadata: !!clerkUser.publicMetadata,
+        hasPrivateMetadata: !!clerkUser.privateMetadata,
+        publicMetadata: clerkUser.publicMetadata,
+        privateMetadata: clerkUser.privateMetadata,
+      });
+
+      // Create user object with metadata from Clerk user
       const user = {
         id: userId,
         user_metadata: {
-          ...(sessionClaims?.publicMetadata || {}),
-          ...(sessionClaims?.privateMetadata || {}),
+          ...(clerkUser.publicMetadata || {}),
+          ...(clerkUser.privateMetadata || {}),
         },
-        ...sessionClaims,
+        publicMetadata: clerkUser.publicMetadata || {},
+        privateMetadata: clerkUser.privateMetadata || {},
       };
+
+      console.log("🔍 [withAuth] - Created user object:", {
+        id: user.id,
+        publicMetadata: user.publicMetadata,
+        privateMetadata: user.privateMetadata,
+        hasCompanyId: !!user.privateMetadata?.companyId,
+        companyId: user.privateMetadata?.companyId,
+      });
 
       // Call the original action with the authenticated user
       return await action(user, ...args);
     } catch (error) {
-      console.error("Authentication error:", error);
+      console.error("❌ [withAuth] - Authentication error:", error);
       return {
         success: false,
         error: "Authentication failed",
@@ -86,7 +109,7 @@ export function withAuthSession<T extends any[], R>(
     message?: string;
   }> => {
     try {
-      const { userId, sessionClaims } = await auth();
+      const { userId } = await auth();
 
       if (!userId) {
         return {
@@ -95,14 +118,19 @@ export function withAuthSession<T extends any[], R>(
         };
       }
 
+      // Get the full user object from Clerk to access metadata
+      const clerk = await clerkClient();
+      const clerkUser = await clerk.users.getUser(userId);
+
       // Create a user object that matches the expected structure
       const user = {
         id: userId,
         user_metadata: {
-          ...(sessionClaims?.publicMetadata || {}),
-          ...(sessionClaims?.privateMetadata || {}),
+          ...(clerkUser.publicMetadata || {}),
+          ...(clerkUser.privateMetadata || {}),
         },
-        ...sessionClaims,
+        publicMetadata: clerkUser.publicMetadata || {},
+        privateMetadata: clerkUser.privateMetadata || {},
       };
 
       // Call the original action with the authenticated user

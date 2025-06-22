@@ -1,86 +1,43 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from "@prisma/client";
+import { seedRoles } from "./seeds/roles";
+import { seedStatusLabels } from "./seeds/statusLabels";
+import { seedCategories } from "./seeds/categories";
+import { seedDepartments } from "./seeds/departments";
+import { seedLocations } from "./seeds/locations";
+import { seedInventories } from "./seeds/inventories";
+import { seedPricingPlans } from "./seeds/pricingPlans";
+import { seedManufacturers } from "./seeds/manufacturers";
+import { seedFormTemplates } from "./seeds/formTemplates";
+import { seedAssets } from "./seeds/assets";
+import { seedSuppliers } from "./seeds/suppliers";
+import { seedModels } from "./seeds/models";
 
 const prisma = new PrismaClient();
 
 async function main() {
+  console.log("🚀 Starting database seeding...");
+
   try {
-    // Clean up existing data except the target company
-    await prisma.$transaction([
-      prisma.auditLog.deleteMany({ where: { companyId: 'cmc1t7vwp00098osdp18wncux' } }),
-      prisma.formTemplateValue.deleteMany({ where: { asset: { companyId: 'cmc1t7vwp00098osdp18wncux' } } }),
-      prisma.formTemplate.deleteMany({ where: { companyId: 'cmc1t7vwp00098osdp18wncux' } }),
-      prisma.asset.deleteMany({ where: { companyId: 'cmc1t7vwp00098osdp18wncux' } }),
-      prisma.accessory.deleteMany({ where: { companyId: 'cmc1t7vwp00098osdp18wncux' } }),
-      prisma.model.deleteMany({ where: { companyId: 'cmc1t7vwp00098osdp18wncux' } }),
-      prisma.manufacturer.deleteMany({ where: { companyId: 'cmc1t7vwp00098osdp18wncux' } }),
-      prisma.category.deleteMany({ where: { companyId: 'cmc1t7vwp00098osdp18wncux' } }),
-      prisma.department.deleteMany({ where: { companyId: 'cmc1t7vwp00098osdp18wncux' } }),
-      prisma.departmentLocation.deleteMany({ where: { companyId: 'cmc1t7vwp00098osdp18wncux' } }),
-      prisma.inventory.deleteMany({ where: { companyId: 'cmc1t7vwp00098osdp18wncux' } }),
-      prisma.statusLabel.deleteMany({ where: { companyId: 'cmc1t7vwp00098osdp18wncux' } }),
-      prisma.supplier.deleteMany({ where: { companyId: 'cmc1t7vwp00098osdp18wncux' } }),
-      prisma.user.deleteMany({ where: { companyId: 'cmc1t7vwp00098osdp18wncux', id: { not: '30007441-32f4-4ae3-8da1-5c7b4a04586a' } } }),
-    ]);
+ 
+    const company1 = { id: "cmc80pcez00048oa5v3px063c" };
 
-    // Fetch the existing company
-    const company = await prisma.company.findUnique({
-      where: { id: 'cmc1t7vwp00098osdp18wncux' },
-    });
-    if (!company) {
-      throw new Error('Company with id cmc1t7vwp00098osdp18wncux not found');
-    }
+    await seedRoles(prisma, company1.id);
+    await seedStatusLabels(prisma, company1.id);
+    await seedCategories(prisma, company1.id);
+    await seedDepartments(prisma, company1.id);
+    await seedLocations(prisma, company1.id);
+    await seedInventories(prisma, company1.id);
+    await seedSuppliers(prisma, company1.id);
+    await seedManufacturers(prisma);
+    await seedModels(prisma, company1.id);
+    await seedFormTemplates(prisma, company1.id);
+    await seedAssets(prisma, company1.id);
+    await seedPricingPlans(prisma);
 
-    // Create or find a role (no companyId field on Role)
-    let adminRole = await prisma.role.findFirst({ where: { name: 'Admin' } });
-    if (!adminRole) {
-      adminRole = await prisma.role.create({ data: { name: 'Admin', active: true } });
-    }
-
-    // Create or find a department
-    let department = await prisma.department.findFirst({ where: { name: 'IT Department', companyId: company.id } });
-    if (!department) {
-      department = await prisma.department.create({ data: { name: 'IT Department', companyId: company.id, active: true } });
-    }
-
-    // Create or update the user
-    const user = await prisma.user.upsert({
-      where: { id: '30007441-32f4-4ae3-8da1-5c7b4a04586a' },
-      update: {
-        email: 'jrmromao+ui@gmail.com',
-        firstName: 'Joao',
-        lastName: 'Romao',
-        name: 'Joao Romao',
-        title: 'Admin',
-        employeeId: 'EMP_SUPA_001',
-        roleId: adminRole.id,
-        companyId: company.id,
-        departmentId: department.id,
-        status: 'ACTIVE',
-      },
-      create: {
-        id: '30007441-32f4-4ae3-8da1-5c7b4a04586a',
-        email: 'jrmromao+ui@gmail.com',
-        firstName: 'Joao',
-        lastName: 'Romao',
-        name: 'Joao Romao',
-        title: 'Admin',
-        employeeId: 'EMP_SUPA_001',
-        roleId: adminRole.id,
-        companyId: company.id,
-        departmentId: department.id,
-        status: 'ACTIVE',
-      },
-    });
-
-    // --- Legacy asset/model/auditlog seeding code removed for clarity and to avoid linter errors ---
-    // Add asset/model/auditlog seeding here later with correct field names if needed.
-
-    console.log('User assigned to company and seed data created successfully');
+    console.log("🎉 Database seeding completed successfully!");
   } catch (error) {
-    console.error('Error seeding data:', error);
+    console.error("❌ Seeding failed:", error);
     throw error;
-  } finally {
-    await prisma.$disconnect();
   }
 }
 
@@ -88,4 +45,7 @@ main()
   .catch((e) => {
     console.error(e);
     process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
   });
