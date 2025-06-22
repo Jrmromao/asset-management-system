@@ -47,7 +47,7 @@ export async function createSubscription(
       payment_method_types: ["card"],
       line_items: [{ price: plan.stripePriceId, quantity: 1 }],
       mode: "subscription",
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/admin?subscription_success=true`,
+      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?subscription_success=true`,
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/sign-up`,
       customer_email: email,
       subscription_data: {

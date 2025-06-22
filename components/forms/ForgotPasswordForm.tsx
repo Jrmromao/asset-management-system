@@ -1,29 +1,30 @@
 "use client";
-import React, { useEffect, useState, useTransition } from "react";
+import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { Form } from "@/components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { Loader2 } from "lucide-react";
 import CustomInput from "@/components/CustomInput";
 import { forgotPasswordSchema } from "@/lib/schemas";
 import { FormError } from "@/components/forms/form-error";
-import { forgotPassword } from "@/lib/actions/user.actions";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import useEmailStore from "@/lib/stores/emailStore";
 import HeaderIcon from "@/components/page/HeaderIcon";
+import { useSignIn } from "@clerk/nextjs";
+import { toast } from "sonner";
+import z from "zod";
 
 const ForgotPasswordForm = () => {
   const [error, setError] = useState<string>("");
   const [errorForm, setErrorForm] = useState("");
-  const [isPending, startTransition] = useTransition();
+  const [isPending, setIsPending] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathError = searchParams.get("error");
-
   const { setEmail } = useEmailStore();
+  const { isLoaded, signIn } = useSignIn();
 
   const form = useForm<z.infer<typeof forgotPasswordSchema>>({
     resolver: zodResolver(forgotPasswordSchema),
@@ -33,28 +34,39 @@ const ForgotPasswordForm = () => {
   });
 
   const onSubmit = async (data: z.infer<typeof forgotPasswordSchema>) => {
-    startTransition(async () => {
-      try {
-        await forgotPassword(data)
-          .then((_) => {
-            form.reset();
-            router.push(`/forgot-password/confirm`);
-          })
-          .catch((error) => {
-            setError(error);
-          });
+    if (!isLoaded) return;
+
+    setIsPending(true);
+    setError("");
+
+    try {
+      const result = await signIn.create({
+        strategy: "reset_password_email_code",
+        identifier: data.email,
+      });
+
+      if (result.status === "needs_first_factor") {
         setEmail(data.email);
-      } catch (e) {
-        console.error(e);
+        toast.success("Password reset email sent. Please check your inbox.");
+        router.push("/forgot-password/reset");
+      } else {
+        setError("Failed to send password reset email.");
       }
-    });
+    } catch (err: any) {
+      console.error(JSON.stringify(err, null, 2));
+      setError(err.errors?.[0]?.message || "An unexpected error occurred.");
+    } finally {
+      setIsPending(false);
+    }
   };
 
   useEffect(() => {
     if (pathError) {
-      setErrorForm(pathError);
-    } else setErrorForm("");
-  }, []);
+      setErrorForm(decodeURIComponent(pathError));
+    } else {
+      setErrorForm("");
+    }
+  }, [pathError]);
 
   return (
     <section className={"auth-form"}>
@@ -79,7 +91,7 @@ const ForgotPasswordForm = () => {
             <>
               <CustomInput
                 control={form.control}
-                {...form.register("email")}
+                name="email"
                 label={"Email"}
                 placeholder={"Enter your email"}
                 type={"email"}
@@ -105,4 +117,5 @@ const ForgotPasswordForm = () => {
     </section>
   );
 };
+
 export default ForgotPasswordForm;

@@ -7,7 +7,6 @@ import { z } from "zod";
 import type { Inventory } from "@prisma/client";
 import { prisma } from "@/app/db";
 import { revalidatePath } from "next/cache";
-import { cookies } from "next/headers";
 
 interface PaginationParams {
   page?: number;
@@ -16,14 +15,6 @@ interface PaginationParams {
   sortBy?: "name" | "createdAt" | "purchaseDate";
   sortOrder?: "asc" | "desc";
 }
-
-const getSession = () => {
-  const cookieStore = cookies();
-  return {
-    accessToken: cookieStore.get("sb-access-token")?.value,
-    refreshToken: cookieStore.get("sb-refresh-token")?.value,
-  };
-};
 
 export const insert = withAuth(
   async (
@@ -70,34 +61,10 @@ export const insert = withAuth(
   },
 );
 
-// ... existing code ...
-
-// Add a local ActionResponse type if not present
-export type ActionResponse<T = any> = {
-  success?: boolean;
-  data?: T;
-  error?: string;
-};
-
-// type AuthResponse<T> = {
-//   data?: T;
-//   error?: string;
-//   success: boolean;
-// };
-
-interface PaginationParams {
-  page?: number;
-  limit?: number;
-  search?: string;
-  sortBy?: "name" | "createdAt" | "purchaseDate";
-  sortOrder?: "asc" | "desc";
-}
-
 // Wrapper function for client-side use
 export async function createInventory(
   values: z.infer<typeof inventorySchema>,
 ): Promise<AuthResponse<Inventory>> {
-  const session = getSession();
   return insert(values);
 }
 
@@ -154,7 +121,6 @@ export async function updateInventory(
   id: string,
   data: Partial<Inventory>,
 ): Promise<AuthResponse<Inventory>> {
-  const session = getSession();
   return update(id, data);
 }
 
@@ -194,7 +160,6 @@ export const getAll = withAuth(
 
 // Wrapper function for client-side use
 export async function getAllInventories(): Promise<AuthResponse<Inventory[]>> {
-  const session = getSession();
   return getAll();
 }
 
@@ -242,7 +207,6 @@ export const getAllPaginated = withAuth(
 export async function getPaginatedInventories(
   params?: PaginationParams,
 ): Promise<AuthResponse<Inventory[]>> {
-  const session = getSession();
   return getAllPaginated(params);
 }
 
@@ -289,7 +253,6 @@ export const getInventoryById = withAuth(
 export async function getInventory(
   id: string,
 ): Promise<AuthResponse<Inventory>> {
-  const session = getSession();
   return getInventoryById(id);
 }
 
@@ -378,7 +341,6 @@ export const remove = withAuth(
 export async function deleteInventory(
   id: string,
 ): Promise<AuthResponse<Inventory>> {
-  const session = getSession();
   return remove(id);
 }
 

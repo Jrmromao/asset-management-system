@@ -14,7 +14,9 @@ export default function OperationalReportsPage() {
       <div className="space-y-8">
         {/* Section for Maintenance Reports */}
         <section>
-          <h2 className="text-xl font-semibold mb-4">Log a New Maintenance Event</h2>
+          <h2 className="text-xl font-semibold mb-4">
+            Log a New Maintenance Event
+          </h2>
           <div className="p-8 border rounded-lg">
             <MaintenanceForm />
           </div>
@@ -23,11 +25,13 @@ export default function OperationalReportsPage() {
         {/* Section for Utilization Reports */}
         <section>
           <h2 className="text-xl font-semibold mb-4">Asset Utilization</h2>
-           <div className="p-8 border-dashed border-2 border-gray-300 rounded-lg text-center">
-            <p className="text-gray-500">Utilization reporting components will be here.</p>
+          <div className="p-8 border-dashed border-2 border-gray-300 rounded-lg text-center">
+            <p className="text-gray-500">
+              Utilization reporting components will be here.
+            </p>
           </div>
         </section>
       </div>
     </div>
   );
-} 
+}

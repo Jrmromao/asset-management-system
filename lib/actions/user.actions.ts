@@ -23,6 +23,61 @@ export async function createUser(user: {
   photo: string;
 }) {
   try {
+    // First, try to find existing user by email
+    const existingUser = await prisma.user.findUnique({
+      where: { email: user.email },
+    });
+
+    if (existingUser) {
+      // Update existing user with Clerk ID
+      const updatedUser = await prisma.user.update({
+        where: { id: existingUser.id },
+        data: { oauthId: user.clerkId },
+      });
+
+      // Update Clerk metadata
+      const clerk = await clerkClient();
+      await clerk.users.updateUserMetadata(user.clerkId, {
+        publicMetadata: {
+          userId: updatedUser.id,
+          companyId: updatedUser.companyId,
+        },
+        privateMetadata: {
+          companyId: updatedUser.companyId,
+        },
+      });
+
+      return parseStringify(updatedUser);
+    }
+
+    // Get user metadata from Clerk to find company ID
+    const clerk = await clerkClient();
+    const clerkUser = await clerk.users.getUser(user.clerkId);
+
+    // Extract company ID from user metadata
+    const companyId = clerkUser.privateMetadata?.companyId as string;
+    const roleName = (clerkUser.publicMetadata?.role as string) || "Admin";
+
+    if (!companyId) {
+      console.warn(
+        `No company ID found for user ${user.email}. User may need to complete onboarding.`,
+      );
+      // Don't create user without company ID - they should go through onboarding first
+      return null;
+    }
+
+    // Find the role for this company
+    const role = await prisma.role.findFirst({
+      where: {
+        name: roleName,
+        companyId: companyId,
+      },
+    });
+
+    if (!role) {
+      throw new Error(`Role '${roleName}' not found for company ${companyId}`);
+    }
+
     const newUser = await prisma.user.create({
       data: {
         oauthId: user.clerkId,
@@ -33,28 +88,21 @@ export async function createUser(user: {
         lastName: user.lastName || "",
         images: user.photo,
         status: UserStatus.ACTIVE,
-        role: {
-          connect: {
-            id: "clqg1e1lo000008l3f9g8h3j9",
-          },
-        },
-        company: {
-          connect: {
-            id: "clqg1e1lq000108l3f9g8h3ja",
-          },
-        },
+        roleId: role.id,
+        companyId: companyId,
       },
     });
 
-    // Update the user's public metadata in Clerk to store the local DB user ID.
-    if (newUser && newUser.oauthId) {
-      const clerk = await clerkClient();
-      await clerk.users.updateUserMetadata(newUser.oauthId, {
-        publicMetadata: {
-          userId: newUser.id,
-        },
-      });
-    }
+    // Update Clerk metadata with the database user ID
+    await clerk.users.updateUserMetadata(user.clerkId, {
+      publicMetadata: {
+        userId: newUser.id,
+        companyId: newUser.companyId,
+      },
+      privateMetadata: {
+        companyId: newUser.companyId,
+      },
+    });
 
     return parseStringify(newUser);
   } catch (error) {
@@ -256,6 +304,154 @@ export const remove = async (
     return {
       success: false,
       error: "Failed to delete user",
+    };
+  }
+};
+
+// Function to create a user when they first sign up (before company registration)
+export async function createInitialUser(user: {
+  clerkId: string;
+  email: string;
+  username: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  photo: string;
+}) {
+  try {
+    // Check if user already exists
+    const existingUser = await prisma.user.findUnique({
+      where: { email: user.email },
+    });
+
+    if (existingUser) {
+      // Update existing user with Clerk ID
+      const updatedUser = await prisma.user.update({
+        where: { id: existingUser.id },
+        data: { oauthId: user.clerkId },
+      });
+
+      return parseStringify(updatedUser);
+    }
+
+    // For initial signup, we don't create a user in the database yet
+    // They will be created during company registration
+    console.log(
+      `User ${user.email} signed up but needs to complete company registration`,
+    );
+    return null;
+  } catch (error) {
+    console.error("Error handling initial user:", error);
+    throw new Error("Failed to handle initial user signup.");
+  }
+}
+
+// Function to create user during company registration
+export async function createUserWithCompany(user: {
+  clerkId: string;
+  email: string;
+  username: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  photo: string;
+  companyId: string;
+  roleId: string;
+}) {
+  try {
+    const newUser = await prisma.user.create({
+      data: {
+        oauthId: user.clerkId,
+        email: user.email,
+        username: user.username,
+        name: `${user.firstName || ""} ${user.lastName || ""}`.trim(),
+        firstName: user.firstName || "",
+        lastName: user.lastName || "",
+        images: user.photo,
+        status: UserStatus.ACTIVE,
+        roleId: user.roleId,
+        companyId: user.companyId,
+      },
+    });
+
+    // Update Clerk metadata
+    const clerk = await clerkClient();
+    await clerk.users.updateUserMetadata(user.clerkId, {
+      publicMetadata: {
+        userId: newUser.id,
+        companyId: newUser.companyId,
+      },
+      privateMetadata: {
+        companyId: newUser.companyId,
+      },
+    });
+
+    return parseStringify(newUser);
+  } catch (error) {
+    console.error("Error creating user with company:", error);
+    throw new Error("Failed to create user in database.");
+  }
+}
+
+/**
+ * Initiates the forgot password process by sending a reset code to the user's email.
+ * This function works with Clerk's password reset functionality.
+ */
+export const forgotPassword = async (data: {
+  email: string;
+}): Promise<void> => {
+  try {
+    // Check if user exists in our database
+    const user = await prisma.user.findUnique({
+      where: { email: data.email },
+    });
+
+    if (!user) {
+      throw new Error("No account found with this email address.");
+    }
+
+    // If user exists, we can proceed with Clerk's password reset
+    // The actual reset code sending is handled by Clerk in the frontend
+    return;
+  } catch (error) {
+    console.error("Forgot password error:", error);
+    throw new Error("Failed to process password reset request.");
+  }
+};
+
+/**
+ * Resets the user's password using the provided reset code and new password.
+ * This function works with Clerk's password reset functionality.
+ */
+export const resetPassword = async (data: {
+  newPassword: string;
+  confirmNewPassword: string;
+}): Promise<{ success: boolean; error?: string }> => {
+  try {
+    // Validate passwords match
+    if (data.newPassword !== data.confirmNewPassword) {
+      return {
+        success: false,
+        error: "Passwords do not match",
+      };
+    }
+
+    // Validate password strength
+    if (data.newPassword.length < 8) {
+      return {
+        success: false,
+        error: "Password must be at least 8 characters long",
+      };
+    }
+
+    // This function is a placeholder since Clerk handles the actual password reset
+    // The real implementation happens in the frontend using Clerk's useSignIn hook
+    // We're keeping this for compatibility with existing components
+
+    return { success: true };
+  } catch (error) {
+    console.error("Reset password error:", error);
+    return {
+      success: false,
+      error: "Failed to reset password",
     };
   }
 };

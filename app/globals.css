@@ -5,64 +5,70 @@
 @layer base {
   :root {
     --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --foreground: 224 71.4% 4.1%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 224 71.4% 4.1%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 224 71.4% 4.1%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 149 70% 30%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 220 14.3% 95.9%;
+    --secondary-foreground: 220.9 39.3% 11%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 220 14.3% 95.9%;
+    --muted-foreground: 220 8.9% 46.1%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 145 68% 50%;
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --warning: 48 96% 53%;
+    --warning-foreground: 34 96% 15%;
+
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 142.1 76.2% 36.3%;
 
     --radius: 0.5rem;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --background: 224 71.4% 4.1%;
+    --foreground: 210 20% 98%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 224 71.4% 4.1%;
+    --card-foreground: 210 20% 98%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 224 71.4% 4.1%;
+    --popover-foreground: 210 20% 98%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 149 70% 30%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 215 27.9% 16.9%;
+    --secondary-foreground: 210 20% 98%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 215 27.9% 16.9%;
+    --muted-foreground: 217.9 10.6% 64.9%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 145 68% 50%;
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 215 20.2% 65.1%;
+    --warning: 48 96% 53%;
+    --warning-foreground: 34 96% 15%;
+
+    --border: 215 27.9% 16.9%;
+    --input: 215 27.9% 16.9%;
+    --ring: 142.1 76.2% 36.3%;
   }
 }
 
@@ -148,6 +154,10 @@
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background: #7878a3;
+}
+
+button:focus {
+  outline: none !important;
 }
 
 @layer utilities {
@@ -246,7 +256,7 @@
     }
 
     .view-all-btn {
-        @apply text-14 rounded-lg border border-gray-300 px-4 py-2.5 font-semibold text-gray-700;
+        @apply text-14 rounded-lg bg-primary px-4 py-2.5 font-semibold text-primary-foreground;
     }
 
     .recent-transactions {
@@ -351,7 +361,7 @@
 
     /* Auth Form */
     .auth-form {
-        @apply flex min-h-screen w-full max-w-[420px] flex-col justify-center gap-5 py-10 md:gap-8;
+        @apply flex min-h-screen w-full flex-col justify-center gap-5 px-6 py-8 sm:gap-6 md:gap-8 md:px-8 lg:px-12 xl:max-w-[800px] xl:px-0;
     }
 
     .form-item {
@@ -367,16 +377,16 @@
     }
 
     .form-btn {
-        @apply text-16 rounded-lg border border-bankGradient bg-green-700 font-semibold text-white shadow-form;
+        @apply w-full rounded-lg border-transparent bg-primary py-[12px] text-16 font-semibold text-primary-foreground hover:bg-primary/90;
     }
 
     .form-secondary-btn {
-        @apply text-14 rounded-lg border  bg-transparent font-semibold text-gray-600 shadow-none;
+        @apply w-full rounded-lg border border-gray-300 bg-transparent py-[12px] text-16 font-semibold text-gray-700;
     }
 
 
     .form-link {
-        @apply text-14 cursor-pointer font-medium text-16 text-green-600;
+        @apply text-green-600 font-semibold;
     }
 
 
@@ -683,7 +693,7 @@
     }
 
     .view-all-btn {
-        @apply text-14 rounded-lg border border-gray-300 px-4 py-2.5 font-semibold text-gray-700;
+        @apply text-14 rounded-lg bg-primary px-4 py-2.5 font-semibold text-primary-foreground;
     }
 
     .recent-transactions {
@@ -812,7 +822,7 @@
     /*}*/
     /* Auth Form */
     .auth-form {
-        @apply flex min-h-screen w-full max-w-[420px] flex-col justify-center gap-5 py-10 md:gap-8;
+        @apply flex min-h-screen w-full flex-col justify-center gap-5 px-6 py-8 sm:gap-6 md:gap-8 md:px-8 lg:px-12 xl:max-w-[800px] xl:px-0;
     }
 
     .form-item {
@@ -829,7 +839,7 @@
 
 
     .form-secondary-btn {
-        @apply text-14 rounded-lg border  bg-transparent font-semibold text-gray-600 shadow-none;
+        @apply w-full rounded-lg border border-gray-300 bg-transparent py-[12px] text-16 font-semibold text-gray-700;
     }
 
 

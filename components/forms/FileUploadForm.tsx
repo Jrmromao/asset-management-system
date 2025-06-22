@@ -5,13 +5,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
-import { Loader2, Download } from "lucide-react";
+import { Download, Loader2 } from "lucide-react";
 import { useDialogStore } from "@/lib/stores/store";
 import Dropzone from "@/components/Dropzone";
 import { useAssetStore } from "@/lib/stores/assetStore";
 import { toast } from "sonner";
-import { generateAssetCSVTemplate } from "@/lib/actions/assets.actions";
-import { useSession } from "@/lib/SessionProvider";
+import { useUser } from "@clerk/nextjs";
 
 interface FileUploadFormProps {
   dataType: string;
@@ -22,7 +21,7 @@ const FileUploadForm = ({ dataType }: FileUploadFormProps) => {
   const [closeDialog] = useDialogStore((state) => [state.onClose]);
   const [file, setFile] = useState<File | null>(null);
   const { getAll } = useAssetStore();
-  const { user } = useSession();
+  const { user } = useUser();
   const schema = z.object({
     file: z.any(),
   });
@@ -105,10 +104,11 @@ const FileUploadForm = ({ dataType }: FileUploadFormProps) => {
   const handleDownloadTemplate = async () => {
     let template = "";
     if (dataType === "assets") {
-      const result = await generateAssetCSVTemplate();
-      if (result.success) {
-        template = result.data || "";
-      }
+      // const result = await generateAssetCSVTemplate();
+      // if (result.success) {
+      //   template = result.data || "";
+      // }
+      template = "";
     }
     // Add other data types here
 

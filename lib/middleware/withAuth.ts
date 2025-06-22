@@ -45,7 +45,10 @@ export function withAuth<T extends any[], R>(
       // Create a user object that matches the expected structure
       const user = {
         id: userId,
-        user_metadata: sessionClaims?.metadata || {},
+        user_metadata: {
+          ...(sessionClaims?.publicMetadata || {}),
+          ...(sessionClaims?.privateMetadata || {}),
+        },
         ...sessionClaims,
       };
 
@@ -95,7 +98,10 @@ export function withAuthSession<T extends any[], R>(
       // Create a user object that matches the expected structure
       const user = {
         id: userId,
-        user_metadata: sessionClaims?.metadata || {},
+        user_metadata: {
+          ...(sessionClaims?.publicMetadata || {}),
+          ...(sessionClaims?.privateMetadata || {}),
+        },
         ...sessionClaims,
       };
 

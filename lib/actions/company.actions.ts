@@ -10,6 +10,7 @@ import { AuthResponse, withAuth } from "@/lib/middleware/withAuth";
 import { cookies } from "next/headers";
 import { EmailService } from "@/services/email";
 import { clerkClient } from "@clerk/nextjs/server";
+import { createUserWithCompany } from "./user.actions";
 
 interface RegistrationState {
   companyId?: string;
@@ -159,10 +160,9 @@ export async function registerCompany(
   let company;
 
   try {
-    const clerk = await clerkClient();
     console.log("Clerk client initialized.");
 
-    // 1. Create company
+    // 1. Create company in Prisma
     console.log("Step 1: Creating company in Prisma...");
     company = await prisma.company.create({
       data: {
@@ -180,47 +180,92 @@ export async function registerCompany(
       data: {
         name: "Admin",
         companyId: company.id,
+        isAdmin: true, // Mark as admin role
       },
     });
     console.log("Admin role created with ID:", adminRole.id);
 
-    // 3. Create the user in Prisma DB, linking to Clerk user
+    // 3. Create the user in Prisma DB
     console.log("Step 3: Creating user in Prisma...");
     if (!data.clerkUserId) {
       throw new Error("Clerk User ID is missing.");
     }
+
+    // Use the existing createPrismaUser function instead
     const prismaUser = await createPrismaUser({
-      ...data,
+      email: data.email,
       companyId: company.id,
-      clerkUserId: data.clerkUserId,
-      roleId: adminRole.id,
+      firstName: data.firstName,
+      lastName: data.lastName,
       title: "Administrator",
       employeeId: "001",
+      roleId: adminRole.id,
+      clerkUserId: data.clerkUserId,
     });
+
     if (!prismaUser) {
       throw new Error("Failed to create a user in the database.");
     }
     console.log("Prisma user created successfully with ID:", prismaUser.id);
 
-    // 4. Create Clerk Organization
-    console.log("Step 4: Creating Clerk organization...");
-    const organization = await clerk.organizations.createOrganization({
-      name: data.companyName,
-      createdBy: data.clerkUserId,
-    });
-    console.log("Clerk organization created with ID:", organization.id);
-
-    // 5. Explicitly assign the 'admin' role to the user for this organization
-    await clerk.organizations.createOrganizationMembership({
-      organizationId: organization.id,
-      userId: data.clerkUserId,
-      role: "org:admin",
-    });
+    // 4. Find or create a Clerk organization for the company
     console.log(
-      `Assigned 'org:admin' role to user ${data.clerkUserId} in organization ${organization.id}.`,
+      "Step 4: Finding or creating a Clerk organization for the company...",
+    );
+    let organization;
+    const clerk = await clerkClient();
+    const orgListResponse = await clerk.organizations.getOrganizationList({
+      query: data.companyName,
+    });
+    const existingOrg = orgListResponse.data.find(
+      (org: any) => org.name === data.companyName,
     );
 
-    // Update company with the clerkOrgId
+    if (existingOrg) {
+      organization = existingOrg;
+      console.log(
+        `Found existing organization for "${data.companyName}" with ID: ${organization.id}`,
+      );
+    } else {
+      console.log(
+        `No organization found for "${data.companyName}", creating a new one...`,
+      );
+      organization = await clerk.organizations.createOrganization({
+        name: data.companyName,
+        createdBy: data.clerkUserId,
+      });
+      console.log("Clerk organization created with ID:", organization.id);
+    }
+
+    // Ensure the user is an admin in the organization
+    const { data: membershipList } =
+      await clerk.users.getOrganizationMembershipList({
+        userId: data.clerkUserId,
+      });
+
+    const membership = membershipList.find(
+      (m) => m.organization.id === organization.id,
+    );
+
+    if (!membership) {
+      await clerk.organizations.createOrganizationMembership({
+        organizationId: organization.id,
+        userId: data.clerkUserId,
+        role: "org:admin",
+      });
+      console.log("User added to organization as admin.");
+    } else if (membership.role !== "org:admin") {
+      await clerk.organizations.updateOrganizationMembership({
+        organizationId: organization.id,
+        userId: data.clerkUserId,
+        role: "org:admin",
+      });
+      console.log("User membership updated to admin.");
+    } else {
+      console.log("User is already an admin of the organization.");
+    }
+
+    // 5. Update company with Clerk organization ID
     console.log("Step 5: Updating company with Clerk organization ID...");
     await prisma.company.update({
       where: { id: company.id },
@@ -228,27 +273,39 @@ export async function registerCompany(
     });
     console.log("Company updated with organization ID.");
 
-    // 6. Set onboarding as complete for the user
-    console.log("Step 6: Updating user metadata to complete onboarding...");
+    // 6. Update Clerk user metadata (consolidated)
+    console.log("Step 6: Updating Clerk user metadata...");
     await clerk.users.updateUserMetadata(data.clerkUserId, {
       publicMetadata: {
-        onboardingComplete: true,
+        userId: prismaUser.id,
+        companyId: company.id,
+        role: "Admin",
+        onboardingComplete: true, // Mark onboarding as complete
+      },
+      privateMetadata: {
+        companyId: company.id,
+        clerkOrgId: organization.id,
       },
     });
     console.log("User metadata updated.");
 
-    // 7. Send Welcome Email
+    // 7. Send welcome email
     console.log("Step 7: Sending welcome email...");
-    await EmailService.sendEmail({
-      to: data.email,
-      subject: "Welcome to EcoKeepr!",
-      templateName: "welcome",
-      templateData: {
-        firstName: data.firstName,
-        companyName: data.companyName,
-      },
-    });
-    console.log("Welcome email sent successfully.");
+    try {
+      await EmailService.sendEmail({
+        to: data.email,
+        subject: "Welcome to EcoKeepr!",
+        templateName: "welcome",
+        templateData: {
+          firstName: data.firstName,
+          companyName: data.companyName,
+        },
+      });
+      console.log("Welcome email sent successfully.");
+    } catch (emailError) {
+      console.warn("Failed to send welcome email:", emailError);
+      // Don't fail the entire registration for email issues
+    }
 
     // 8. Create Stripe Subscription
     console.log("Step 8: Creating Stripe subscription...");
@@ -271,15 +328,25 @@ export async function registerCompany(
 
     // 9. Initialize S3 Storage
     console.log("Step 9: Initializing S3 storage...");
-    const s3Service = S3Service.getInstance();
-    await s3Service.initializeCompanyStorage(company.id);
-    state.bucketCreated = true;
-    console.log("S3 storage initialized.");
+    try {
+      const s3Service = S3Service.getInstance();
+      await s3Service.initializeCompanyStorage(company.id);
+      state.bucketCreated = true;
+      console.log("S3 storage initialized.");
+    } catch (s3Error) {
+      console.warn("Failed to initialize S3 storage:", s3Error);
+      // Don't fail the entire registration for S3 issues
+    }
 
     // 10. Bulk Insert Templates
     console.log("Step 10: Bulk inserting templates...");
-    await bulkInsertTemplates(company.id);
-    console.log("Templates inserted.");
+    try {
+      await bulkInsertTemplates(company.id);
+      console.log("Templates inserted.");
+    } catch (templateError) {
+      console.warn("Failed to insert templates:", templateError);
+      // Don't fail the entire registration for template issues
+    }
 
     console.log("Company registration completed successfully.");
     return { success: true, redirectUrl: subscriptionResponse.url };

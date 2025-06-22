@@ -20,6 +20,7 @@ const AuthForm = () => {
   const [error, setError] = useState<string>("");
   const searchParams = useSearchParams();
   const [isPending, setIsPending] = useState(false);
+  const router = useRouter();
 
   const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
@@ -45,11 +46,22 @@ const AuthForm = () => {
 
       if (result.status === "complete") {
         await setActive({ session: result.createdSessionId });
+
+        // Get the redirect URL from search params or use default
+        const redirectUrl = searchParams.get("redirect_url") || "/admin";
+
+        // Force redirect after a short delay to ensure session is active
+        setTimeout(() => {
+          router.push(redirectUrl);
+        }, 100);
+      } else if (result.status === "needs_second_factor") {
+        router.push("/sign-in/factor-two");
       } else {
         console.log(result);
         setError("Invalid email or password");
       }
     } catch (err: any) {
+      console.error("Login error:", err);
       setError(err.errors?.[0]?.message || "An unexpected error occurred.");
     } finally {
       setIsPending(false);

@@ -1,80 +1,70 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
-// Define public routes
+// Define public routes that don't require authentication
 const isPublicRoute = createRouteMatcher([
   "/",
   "/sign-in(.*)",
   "/sign-up(.*)",
   "/forgot-password(.*)",
-  "/account-verification(.*)",
-  "/privacy-policy(.*)",
-  "/terms-of-service(.*)",
-  "/api/webhooks(.*)",
-  "/_next(.*)",
-  "/favicon.ico",
-  "/images(.*)",
-  "/icons(.*)",
-  "/api(.*)",
+  "/forgot-password/reset(.*)",
+  "/sign-in/factor-two(.*)",
+  "/api/webhooks/stripe",
+  "/api/webhooks/clerk",
+  "/privacy-policy",
+  "/terms-of-service",
+  "/onboarding-success",
 ]);
 
-const isOnboardingRoute = createRouteMatcher(["/sign-up(.*)"]);
-
-// Define admin routes
-const isAdminRoute = createRouteMatcher(["/admin(.*)"]);
+// Define auth routes that should redirect signed-in users to dashboard
+const isAuthRoute = createRouteMatcher([
+  "/sign-in(.*)",
+  "/sign-up(.*)",
+  "/forgot-password(.*)",
+]);
 
 // Define the metadata type
 interface UserMetadata {
   onboardingComplete?: boolean;
   companyId?: string;
+  role?: string;
 }
 
 export default clerkMiddleware(async (auth, request) => {
-  const { userId, sessionClaims } = await auth();
+  const { userId } = await auth();
   const url = request.nextUrl;
 
-  // Cast the metadata to the expected type
-  const metadata = sessionClaims?.metadata as UserMetadata;
+  // Debug logging
+  console.log("🔍 Middleware Debug:", {
+    pathname: url.pathname,
+    userId: userId ? "exists" : "none",
+    isPublicRoute: isPublicRoute(request),
+    isAuthRoute: isAuthRoute(request),
+  });
 
-  // For users who are signed in but haven't completed onboarding,
-  // redirect them to the sign-up page to complete the flow.
-  if (userId && !metadata?.onboardingComplete) {
-    // If the user is returning from a successful subscription, allow them to proceed.
-    // The client-side will handle the session update.
-    if (url.searchParams.get("subscription_success") === "true") {
-      return NextResponse.next();
-    }
-
-    const isSignInRoute = url.pathname.startsWith("/sign-in");
-
-    // Do not redirect if the user is on an onboarding, sign-in, root, or admin page
-    if (
-      !isOnboardingRoute(request) &&
-      !isSignInRoute &&
-      !isAdminRoute(request) &&
-      url.pathname !== "/"
-    ) {
-      const onboardingUrl = new URL("/sign-up", request.url);
-      return NextResponse.redirect(onboardingUrl);
-    }
-  }
-
-  // If the user is signed in and has completed onboarding,
-  // prevent them from accessing the sign-up page again.
-  if (userId && metadata?.onboardingComplete) {
-    if (isOnboardingRoute(request)) {
-      const dashboardUrl = new URL("/dashboard", request.url);
-      return NextResponse.redirect(dashboardUrl);
-    }
-  }
-
-  // Allow public routes
+  // For public routes, allow access regardless of auth status
   if (isPublicRoute(request)) {
-    return;
+    console.log("✅ Public route, allowing access");
+    return NextResponse.next();
   }
 
-  // Protect all other routes
-  await auth.protect();
+  // If the user is not signed in, redirect them to the sign-in page
+  if (!userId) {
+    console.log("❌ No user ID, redirecting to sign-in");
+    const signInUrl = new URL("/sign-in", request.url);
+    signInUrl.searchParams.set("redirect_url", url.pathname);
+    return NextResponse.redirect(signInUrl);
+  }
+
+  // If signed-in user tries to access auth routes (except forgot-password), redirect to dashboard
+  if (isAuthRoute(request) && !url.pathname.startsWith("/forgot-password")) {
+    console.log("🔄 Auth route with signed user, redirecting to dashboard");
+    return NextResponse.redirect(new URL("/dashboard", request.url));
+  }
+
+  // For all other routes, allow access if user is signed in
+  console.log("✅ User signed in, allowing access to:", url.pathname);
+  return NextResponse.next();
 });
 
 export const config = {

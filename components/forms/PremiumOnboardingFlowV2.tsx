@@ -48,6 +48,7 @@ import { registerCompany } from "@/lib/actions/company.actions"; // Assuming thi
 import { Stepper } from "@/components/ui/stepper";
 import { Slider } from "@/components/ui/slider";
 import { useSignUp, useAuth, useClerk, useSession } from "@clerk/nextjs";
+import Link from "next/link";
 
 // Define the schema for your form data
 interface OnboardingData {
@@ -142,35 +143,85 @@ interface StepComponentProps {
 
 const WelcomeStep: React.FC = () => (
   <motion.div
-    initial={{ opacity: 0 }}
-    animate={{ opacity: 1 }}
-    exit={{ opacity: 0 }}
-    className="flex flex-col items-center justify-center py-16 text-center space-y-6"
+    initial="hidden"
+    animate="visible"
+    exit="hidden"
+    variants={{
+      visible: { transition: { staggerChildren: 0.2 } },
+    }}
+    className="grid grid-cols-1 items-center gap-12 lg:grid-cols-2 lg:gap-24"
   >
+    {/* Left Column: Welcome Message */}
     <motion.div
-      initial={{ scale: 0, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1 }}
-      transition={{ delay: 0.2, type: "spring", stiffness: 120 }}
+      variants={{
+        hidden: { opacity: 0, x: -50 },
+        visible: { opacity: 1, x: 0, transition: { duration: 0.5 } },
+      }}
+      className="flex flex-col items-center text-center lg:items-start lg:text-left"
     >
       <HeaderIcon />
+      <h1 className="mt-6 text-4xl font-bold tracking-tighter text-foreground sm:text-5xl md:text-6xl">
+        Welcome to EcoKeepr
+      </h1>
+      <p className="mt-4 max-w-md text-lg text-muted-foreground">
+        Let&apos;s get you set up with the perfect asset management solution.
+        This will only take a few minutes.
+      </p>
     </motion.div>
-    <motion.h1
-      initial={{ y: 20, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ delay: 0.4, duration: 0.5 }}
-      className="text-5xl font-bold tracking-tight text-foreground"
+
+    {/* Right Column: Value Proposition & Social Proof */}
+    <motion.div
+      variants={{
+        hidden: { opacity: 0, x: 50 },
+        visible: { opacity: 1, x: 0, transition: { duration: 0.5 } },
+      }}
+      className="space-y-8"
     >
-      Welcome to EcoKeepr
-    </motion.h1>
-    <motion.p
-      initial={{ y: 20, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ delay: 0.6, duration: 0.5 }}
-      className="max-w-2xl mx-auto text-xl text-muted-foreground"
-    >
-      Let&apos;s get you set up with the perfect asset management solution. This
-      will only take a few minutes.
-    </motion.p>
+      <div className="space-y-4">
+        <h3 className="text-xl font-semibold">What you get:</h3>
+        <ul className="space-y-3">
+          {[
+            {
+              icon: Target,
+              text: "Comprehensive, real-time asset tracking.",
+            },
+            {
+              icon: Wrench,
+              text: "Simplified and predictive maintenance schedules.",
+            },
+            { icon: Leaf, text: "Powerful sustainability and CO2 reporting." },
+          ].map((item, index) => (
+            <motion.li
+              key={index}
+              variants={{
+                hidden: { opacity: 0, y: 20 },
+                visible: {
+                  opacity: 1,
+                  y: 0,
+                  transition: { delay: 0.4 + index * 0.1 },
+                },
+              }}
+              className="flex items-center gap-3"
+            >
+              <item.icon className="h-6 w-6 text-green-500" />
+              <span className="text-muted-foreground">{item.text}</span>
+            </motion.li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="border-t pt-6">
+        <blockquote className="text-muted-foreground">
+          <p>
+            &quot;EcoKeepr has transformed how we manage our assets. It&apos;s
+            intuitive, powerful, and has saved us thousands.&quot;
+          </p>
+          <footer className="mt-2 text-sm font-semibold text-foreground">
+            - Alex Johnson, CEO of Innovate Inc.
+          </footer>
+        </blockquote>
+      </div>
+    </motion.div>
   </motion.div>
 );
 
@@ -407,11 +458,6 @@ const AccountStep: React.FC<StepComponentProps> = ({ form }) => (
           name="password"
           required
         />
-        {form.formState.errors.password && (
-          <p className="text-sm text-destructive">
-            {form.formState.errors.password.message}
-          </p>
-        )}
       </CardContent>
     </Card>
   </motion.div>
@@ -622,7 +668,7 @@ const PremiumOnboardingFlowV2 = ({
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className="flex flex-col h-screen transition-colors duration-500 bg-gradient-to-b from-background to-green-50/30 dark:to-green-950/20"
+        className="flex flex-col transition-colors duration-500 bg-gradient-to-b from-background to-green-50/30 dark:to-green-950/20"
       >
         <header className="px-4 pt-12">
           <div className="w-full max-w-5xl mx-auto">
@@ -642,26 +688,28 @@ const PremiumOnboardingFlowV2 = ({
           </div>
         </main>
 
-        <footer className="px-4 py-4 mt-auto border-t bg-background/80 backdrop-blur-lg border-border/30">
+        <footer className="px-4 py-4 border-t bg-background/80 backdrop-blur-lg border-border/30">
           <div className="w-full max-w-5xl mx-auto">
-            <div className="relative flex items-center justify-center">
-              {currentStepIndex > 0 && (
+            <div className="flex items-center justify-between">
+              {currentStepIndex > 0 ? (
                 <Button
                   variant="ghost"
                   onClick={back}
                   type="button"
                   disabled={isLoading || currentStepIndex === 0}
-                  className="absolute left-0 hover:text-green-600 dark:hover:text-green-400"
+                  className="hover:bg-yellow-500 hover:text-white dark:hover:bg-yellow-500"
                 >
                   <ArrowLeft className="w-4 h-4 mr-2" /> Back
                 </Button>
+              ) : (
+                <div />
               )}
 
               {isLastStep ? (
                 <Button
                   type="submit"
                   disabled={isLoading}
-                  className="px-8 py-3 text-base font-semibold transition-all rounded-full shadow-lg bg-green-600 hover:bg-green-700 text-white hover:shadow-xl"
+                  className="px-8 py-3 text-base font-semibold transition-all rounded-full shadow-lg bg-primary hover:bg-primary/90 text-primary-foreground hover:shadow-xl"
                 >
                   {isLoading ? "Processing..." : "Complete Sign-up"}
                   {!isLoading && <ArrowRight className="w-5 h-5 ml-2" />}
@@ -671,12 +719,30 @@ const PremiumOnboardingFlowV2 = ({
                   type="button"
                   onClick={handleNext}
                   disabled={isLoading}
-                  className="px-8 py-3 text-base font-semibold transition-all rounded-full shadow-lg bg-green-600 hover:bg-green-700 text-white hover:shadow-xl"
+                  className="px-8 py-3 text-base font-semibold transition-all rounded-full shadow-lg bg-primary hover:bg-primary/90 text-primary-foreground hover:shadow-xl"
                 >
                   Continue
                   {!isLoading && <ArrowRight className="w-5 h-5 ml-2" />}
                 </Button>
               )}
+            </div>
+            <div className="flex justify-center gap-4 pt-4 mt-4 border-t border-border/30">
+              <p className="text-sm text-muted-foreground">
+                Already have an account?{" "}
+                <Link
+                  href="/sign-in"
+                  className="font-semibold text-primary hover:underline"
+                >
+                  Sign In
+                </Link>
+              </p>
+              <span className="text-muted-foreground">|</span>
+              <Link
+                href="/"
+                className="text-sm font-semibold text-muted-foreground hover:text-primary hover:underline"
+              >
+                Back to Home
+              </Link>
             </div>
           </div>
         </footer>

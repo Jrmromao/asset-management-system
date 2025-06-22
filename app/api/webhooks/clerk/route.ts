@@ -82,9 +82,14 @@ export async function POST(req: Request) {
           userId: newUser.id,
         },
       });
+      return NextResponse.json({ message: "OK", user: newUser });
+    } else {
+      // User creation was skipped (likely no company ID yet)
+      return NextResponse.json({
+        message: "User creation skipped - no company ID found",
+        user: null,
+      });
     }
-
-    return NextResponse.json({ message: "OK", user: newUser });
   }
 
   if (eventType === "user.updated") {
