@@ -5,18 +5,9 @@ import { parseStringify } from "@/lib/utils";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/app/db";
 import { withAuth, type AuthResponse } from "@/lib/middleware/withAuth";
-import { cookies } from "next/headers";
 import { z } from "zod";
 import { departmentSchema } from "@/lib/schemas";
 import type { Department } from "@prisma/client";
-
-const getSession = () => {
-  const cookieStore = cookies();
-  return {
-    accessToken: cookieStore.get("sb-access-token")?.value,
-    refreshToken: cookieStore.get("sb-refresh-token")?.value,
-  };
-};
 
 export const insert = withAuth(
   async (
@@ -99,13 +90,7 @@ export const insert = withAuth(
   },
 );
 
-// Wrapper function for client-side use
-export async function createDepartment(
-  data: z.infer<typeof departmentSchema>,
-): Promise<AuthResponse<Department>> {
-  const session = getSession();
-  return insert(data);
-}
+
 
 export const getAll = withAuth(
   async (
@@ -158,13 +143,7 @@ export const getAll = withAuth(
   },
 );
 
-// Wrapper function for client-side use
-export async function getAllDepartments(params?: {
-  search?: string;
-}): Promise<AuthResponse<Department[]>> {
-  const session = getSession();
-  return getAll(params);
-}
+
 
 export const findById = withAuth(
   async (user, id: string): Promise<AuthResponse<Department>> => {
@@ -212,13 +191,7 @@ export const findById = withAuth(
   },
 );
 
-// Wrapper function for client-side use
-export async function getDepartment(
-  id: string,
-): Promise<AuthResponse<Department>> {
-  const session = getSession();
-  return findById(id);
-}
+
 
 export const update = withAuth(
   async (
@@ -283,14 +256,7 @@ export const update = withAuth(
   },
 );
 
-// Wrapper function for client-side use
-export async function updateDepartment(
-  id: string,
-  data: z.infer<typeof departmentSchema>,
-): Promise<AuthResponse<Department>> {
-  const session = getSession();
-  return update(id, data);
-}
+
 
 export const remove = withAuth(
   async (user, id: string): Promise<AuthResponse<Department>> => {
@@ -340,10 +306,4 @@ export const remove = withAuth(
   },
 );
 
-// Wrapper function for client-side use
-export async function deleteDepartment(
-  id: string,
-): Promise<AuthResponse<Department>> {
-  const session = getSession();
-  return remove(id);
-}
+

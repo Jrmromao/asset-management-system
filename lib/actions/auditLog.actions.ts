@@ -20,17 +20,10 @@ const auditLogSchema = z.object({
 
 type AuditLogInput = z.infer<typeof auditLogSchema>;
 
-// Helper function to get IP address
-const getIpAddress = () => {
-  const headersList = headers();
-  const xForwardedFor = headersList.get("x-forwarded-for");
-  return xForwardedFor?.split(",")[0] || "unknown";
-};
-
 export const createAuditLog = withAuth(async (user, data: AuditLogInput) => {
   try {
     const validatedData = auditLogSchema.parse(data);
-    const ipAddress = getIpAddress();
+    const ipAddress = user.ipAddress;
     const companyId = user.privateMetadata?.companyId as string;
 
     if (!companyId) {

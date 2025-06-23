@@ -168,8 +168,8 @@ export default function PricingTable() {
       tooltip: "Effortlessly manage your inventories and track usage",
     },
     {
-      name: "License & Accessories management",
-      tooltip: "Manage your license and accessories inventory effortlessly",
+      name: "Asset maintenance scheduling",
+      tooltip: "Schedule, track, and manage asset maintenance with AI-powered carbon impact analysis",
     },
   ].sort((a, b) => a.name.localeCompare(b.name));
 

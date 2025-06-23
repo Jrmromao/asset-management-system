@@ -2,7 +2,7 @@
 
 import { clerkClient, auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
-import prisma from "@/lib/PrismaClient";
+import { prisma } from "@/app/db";
 
 interface InviteUserParams {
   email: string;

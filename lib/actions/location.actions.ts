@@ -7,16 +7,8 @@ import { z } from "zod";
 import { locationSchema } from "@/lib/schemas";
 import { prisma } from "@/app/db";
 import { withAuth, type AuthResponse } from "@/lib/middleware/withAuth";
-import { cookies } from "next/headers";
 import type { DepartmentLocation } from "@prisma/client";
 
-const getSession = () => {
-  const cookieStore = cookies();
-  return {
-    accessToken: cookieStore.get("sb-access-token")?.value,
-    refreshToken: cookieStore.get("sb-refresh-token")?.value,
-  };
-};
 
 export const insert = withAuth(
   async (
@@ -75,13 +67,7 @@ export const insert = withAuth(
   },
 );
 
-// Wrapper function for client-side use
-export async function createLocation(
-  values: z.infer<typeof locationSchema>,
-): Promise<AuthResponse<DepartmentLocation>> {
-  const session = getSession();
-  return insert(values);
-}
+
 
 export const getAll = withAuth(
   async (
@@ -117,14 +103,6 @@ export const getAll = withAuth(
     }
   },
 );
-
-// Wrapper function for client-side use
-export async function getAllLocations(params?: {
-  search?: string;
-}): Promise<AuthResponse<DepartmentLocation[]>> {
-  const session = getSession();
-  return getAll(params);
-}
 
 export const findById = withAuth(
   async (user, id: string): Promise<AuthResponse<DepartmentLocation>> => {
@@ -165,13 +143,7 @@ export const findById = withAuth(
   },
 );
 
-// Wrapper function for client-side use
-export async function getLocation(
-  id: string,
-): Promise<AuthResponse<DepartmentLocation>> {
-  const session = getSession();
-  return findById(id);
-}
+
 
 export const remove = withAuth(
   async (user, id: string): Promise<AuthResponse<DepartmentLocation>> => {
@@ -206,13 +178,7 @@ export const remove = withAuth(
   },
 );
 
-// Wrapper function for client-side use
-export async function deleteLocation(
-  id: string,
-): Promise<AuthResponse<DepartmentLocation>> {
-  const session = getSession();
-  return remove(id);
-}
+
 
 type CreateLocationInput = z.infer<typeof locationSchema>;
 
@@ -274,11 +240,4 @@ export const update = withAuth(
   },
 );
 
-// Wrapper function for client-side use
-export async function updateLocation(
-  id: string,
-  data: z.infer<typeof locationSchema>,
-): Promise<AuthResponse<DepartmentLocation>> {
-  const session = getSession();
-  return update(id, data);
-}
+

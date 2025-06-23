@@ -1,19 +1,16 @@
 "use server";
 import { parseStringify } from "@/lib/utils";
-import { ItemType, PrismaClient } from "@prisma/client";
 import { z } from "zod";
 import { assignmentSchema, licenseSchema } from "@/lib/schemas";
 import { getAuditLog } from "@/lib/actions/auditLog.actions";
 import { prisma } from "@/app/db";
-import { withAuth } from "@/lib/middleware/withAuth";
-
-const prismaClient = new PrismaClient();
+import { withAuth, type AuthResponse } from "@/lib/middleware/withAuth";
 
 export const create = withAuth(
   async (
     user,
     values: z.infer<typeof licenseSchema>,
-  ): Promise<ActionResponse<License>> => {
+  ): Promise<AuthResponse<License>> => {
     try {
       const validation = licenseSchema.safeParse(values);
       if (!validation.success) {
@@ -29,15 +26,15 @@ export const create = withAuth(
         error: error instanceof Error ? error.message : "Unknown error",
       };
     } finally {
-      await prismaClient.$disconnect();
+      await prisma.$disconnect();
     }
   },
 );
 
 export const getAll = withAuth(
-  async (user): Promise<ActionResponse<License[]>> => {
+  async (user): Promise<AuthResponse<License[]>> => {
     try {
-      const licenses = await prismaClient.license.findMany({
+      const licenses = await prisma.license.findMany({
         where: {
           companyId: user.user_metadata?.companyId,
         },
@@ -56,13 +53,13 @@ export const getAll = withAuth(
       console.error("Error fetching licenses:", error);
       return { success: false, error: "Failed to fetch licenses" };
     } finally {
-      await prismaClient.$disconnect();
+      await prisma.$disconnect();
     }
   },
 );
 
 export const findById = withAuth(
-  async (user, id: string): Promise<ActionResponse<License>> => {
+  async (user, id: string): Promise<AuthResponse<License>> => {
     try {
       const licenseQuery = {
         where: { id, companyId: user.user_metadata?.companyId },
@@ -91,7 +88,7 @@ export const findById = withAuth(
         },
       };
       const [license, auditLogsResult] = await Promise.all([
-        prismaClient.license.findUnique(licenseQuery),
+        prisma.license.findUnique(licenseQuery),
         id ? getAuditLog(id) : Promise.resolve({ success: false, data: [] }),
       ]);
       if (!license) {
@@ -109,7 +106,7 @@ export const findById = withAuth(
       console.error("Error finding license:", error);
       return { success: false, error: "Failed to find license" };
     } finally {
-      await prismaClient.$disconnect();
+      await prisma.$disconnect();
     }
   },
 );
@@ -122,13 +119,13 @@ export const update = withAuth(async (user, data: License, id: string) => {
     console.log(error);
     return { success: false, error: "Failed to update license" };
   } finally {
-    await prismaClient.$disconnect();
+    await prisma.$disconnect();
   }
 });
 
 export const remove = withAuth(async (user, id: string) => {
   try {
-    const licenseTool = await prismaClient.license.delete({
+    const licenseTool = await prisma.license.delete({
       where: {
         id: id,
         companyId: user.user_metadata?.companyId,
@@ -138,7 +135,7 @@ export const remove = withAuth(async (user, id: string) => {
   } catch (error) {
     return { success: false, error: "Failed to delete license" };
   } finally {
-    await prismaClient.$disconnect();
+    await prisma.$disconnect();
   }
 });
 
@@ -146,7 +143,7 @@ export const checkout = withAuth(
   async (
     user,
     values: z.infer<typeof assignmentSchema>,
-  ): Promise<ActionResponse<UserItems>> => {
+  ): Promise<AuthResponse<UserItems>> => {
     try {
       const validation = await assignmentSchema.safeParseAsync(values);
       if (!validation.success) {
@@ -165,7 +162,7 @@ export const checkout = withAuth(
 );
 
 export const checkin = withAuth(
-  async (user, userLicenseId: string): Promise<ActionResponse<License>> => {
+  async (user, userLicenseId: string): Promise<AuthResponse<License>> => {
     try {
       // Implement checkin logic here, using user.user_metadata?.companyId
       return { success: true, data: parseStringify({}) };
