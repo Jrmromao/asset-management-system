@@ -1,0 +1,15 @@
+{
+  "buildCommand": "next build",
+  "outputDirectory": ".next",
+  "functions": {
+    "app/**/*.js": {
+      "maxDuration": 30
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/"
+    }
+  ]
+} 

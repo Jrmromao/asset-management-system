@@ -6,6 +6,12 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  // Add experimental features for better Vercel compatibility
+  experimental: {
+    serverComponentsExternalPackages: [],
+  },
+  // Ensure proper output configuration for Vercel
+  output: process.env.NODE_ENV === "production" ? "standalone" : undefined,
   images: {
     remotePatterns: [
       {

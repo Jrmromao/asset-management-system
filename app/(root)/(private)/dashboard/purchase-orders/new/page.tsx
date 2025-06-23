@@ -1,12 +1,14 @@
 import { PurchaseOrderForm } from "@/components/forms/PurchaseOrderForm";
+import { currentUser } from "@clerk/nextjs/server";
 
 export default async function NewPurchaseOrderPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await currentUser();
 
-  const companyId = user?.user_metadata?.companyId;
+  if (!user) {
+    return <div>Please sign in to create purchase orders.</div>;
+  }
+
+  const companyId = user.privateMetadata?.companyId as string;
 
   if (!companyId) {
     return <div>Could not determine company to create purchase order for.</div>;

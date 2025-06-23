@@ -791,3 +791,107 @@ export const getAssetCountByStatus = withAuth(async (user) => {
     return handleError(error, []);
   }
 });
+
+export const findById = withAuth(
+  async (user, id: string): Promise<AssetResponse> => {
+    try {
+      const companyId = user.privateMetadata?.companyId as string;
+      if (!companyId) {
+        return {
+          success: false,
+          data: [],
+          error: "User is not associated with a company",
+        };
+      }
+
+      const asset = await prisma.asset.findFirst({
+        where: {
+          id,
+          companyId,
+        },
+        include: {
+          model: { include: { manufacturer: true } },
+          statusLabel: true,
+          user: true,
+          category: true,
+        },
+      });
+
+      if (!asset) {
+        return {
+          success: false,
+          data: [],
+          error: "Asset not found",
+        };
+      }
+
+      return {
+        success: true,
+        data: [parseStringify(serializeAsset(asset))],
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        data: [],
+        error: error.message,
+      };
+    }
+  },
+);
+
+export const processAssetCSV = withAuth(
+  async (user, csvContent: string): Promise<AssetResponse> => {
+    // Add your CSV processing logic here
+    // For now, return a placeholder
+    return {
+      success: false,
+      data: [],
+      error: "CSV processing not yet implemented",
+    };
+  },
+);
+
+export const exportAssetsToCSV = withAuth(
+  async (
+    user,
+  ): Promise<{ success: boolean; data?: string; error?: string }> => {
+    try {
+      const companyId = user.privateMetadata?.companyId as string;
+      if (!companyId) {
+        return {
+          success: false,
+          error: "User is not associated with a company",
+        };
+      }
+
+      const assets = await prisma.asset.findMany({
+        where: { companyId },
+        include: {
+          model: { include: { manufacturer: true } },
+          statusLabel: true,
+          user: true,
+          category: true,
+        },
+      });
+
+      // Simple CSV export - you can enhance this
+      const csvHeaders = "Name,Asset Tag,Status,Category,Assigned To\n";
+      const csvRows = assets
+        .map(
+          (asset) =>
+            `"${asset.name}","${asset.assetTag}","${asset.statusLabel?.name || ""}","${asset.category?.name || ""}","${asset.user?.name || ""}"`,
+        )
+        .join("\n");
+
+      return {
+        success: true,
+        data: csvHeaders + csvRows,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
+  },
+);
