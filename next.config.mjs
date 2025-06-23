@@ -6,12 +6,19 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-  // Add output for Vercel deployment
-  output: "standalone",
-  // Optimize for Vercel deployment
+  // Remove or comment out the standalone output for now
+  // output: "standalone",
+  
+  // Keep other optimizations
   trailingSlash: false,
   poweredByHeader: false,
   generateEtags: false,
+  
+  // Add experimental features that might help
+  experimental: {
+    optimizePackageImports: ['lucide-react'],
+  },
+  
   images: {
     remotePatterns: [
       {

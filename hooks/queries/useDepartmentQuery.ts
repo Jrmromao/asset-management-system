@@ -2,10 +2,10 @@ import { createGenericQuery } from "@/hooks/queries/useQueryFactory";
 import { z } from "zod";
 import { departmentSchema } from "@/lib/schemas";
 import {
-  getAllDepartments,
-  createDepartment as createDepartmentAction,
-  deleteDepartment as deleteDepartmentAction,
-  updateDepartment as updateDepartmentAction,
+  getAll as getAllDepartments,
+  insert as createDepartmentAction,
+  remove as deleteDepartmentAction,
+  update as updateDepartmentAction,
 } from "@/lib/actions/department.actions";
 import { useDepartmentUIStore } from "@/lib/stores/useDepartmentUIStore";
 

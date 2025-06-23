@@ -3,10 +3,10 @@ import { createGenericQuery } from "@/hooks/queries/useQueryFactory";
 import { z } from "zod";
 import { locationSchema } from "@/lib/schemas";
 import {
-  getAllLocations,
-  createLocation as createLocationAction,
-  deleteLocation as deleteLocationAction,
-  updateLocation as updateLocationAction,
+  getAll as getAllLocations,
+  insert as createLocationAction,
+  remove as deleteLocationAction,
+  update as updateLocationAction,
 } from "@/lib/actions/location.actions";
 
 export const MODEL_KEY = ["locations"] as const;
