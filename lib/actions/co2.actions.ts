@@ -191,6 +191,17 @@ export async function saveAssetCO2Action(
 ) {
   try {
     const result = await CO2FootprintService.saveAssetCO2(assetId, co2Data);
+
+    if (result.success && result.data) {
+      return {
+        ...result,
+        data: {
+          ...result.data,
+          co2e: Number(result.data.co2e),
+        },
+      };
+    }
+
     return result;
   } catch (error: any) {
     console.error("Error in saveAssetCO2Action:", error);

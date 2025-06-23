@@ -2,7 +2,13 @@
 
 import React, { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
@@ -114,15 +120,14 @@ const CalculateCO2Button: React.FC<CalculateCO2ButtonProps> = ({
             {/* Confidence Score */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Confidence Score:</span>
+                <span className="text-sm text-muted-foreground">
+                  Confidence Score:
+                </span>
                 <span className="text-sm font-medium">
                   {(result.confidenceScore * 100).toFixed(0)}%
                 </span>
               </div>
-              <Progress 
-                value={result.confidenceScore * 100} 
-                className="h-2"
-              />
+              <Progress value={result.confidenceScore * 100} className="h-2" />
             </div>
 
             {/* Lifecycle Breakdown */}
@@ -132,29 +137,45 @@ const CalculateCO2Button: React.FC<CalculateCO2ButtonProps> = ({
                 <div className="flex items-center gap-2 p-2 bg-blue-50 rounded">
                   <Factory className="h-4 w-4 text-blue-600" />
                   <div>
-                    <div className="text-xs text-muted-foreground">Manufacturing</div>
-                    <div className="font-medium">{formatCO2e(result.lifecycleBreakdown.manufacturing)}</div>
+                    <div className="text-xs text-muted-foreground">
+                      Manufacturing
+                    </div>
+                    <div className="font-medium">
+                      {formatCO2e(result.lifecycleBreakdown.manufacturing)}
+                    </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 p-2 bg-orange-50 rounded">
                   <Truck className="h-4 w-4 text-orange-600" />
                   <div>
-                    <div className="text-xs text-muted-foreground">Transport</div>
-                    <div className="font-medium">{formatCO2e(result.lifecycleBreakdown.transport)}</div>
+                    <div className="text-xs text-muted-foreground">
+                      Transport
+                    </div>
+                    <div className="font-medium">
+                      {formatCO2e(result.lifecycleBreakdown.transport)}
+                    </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 p-2 bg-green-50 rounded">
                   <Zap className="h-4 w-4 text-green-600" />
                   <div>
-                    <div className="text-xs text-muted-foreground">Use Phase</div>
-                    <div className="font-medium">{formatCO2e(result.lifecycleBreakdown.use)}</div>
+                    <div className="text-xs text-muted-foreground">
+                      Use Phase
+                    </div>
+                    <div className="font-medium">
+                      {formatCO2e(result.lifecycleBreakdown.use)}
+                    </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 p-2 bg-purple-50 rounded">
                   <Recycle className="h-4 w-4 text-purple-600" />
                   <div>
-                    <div className="text-xs text-muted-foreground">End of Life</div>
-                    <div className="font-medium">{formatCO2e(result.lifecycleBreakdown.endOfLife)}</div>
+                    <div className="text-xs text-muted-foreground">
+                      End of Life
+                    </div>
+                    <div className="font-medium">
+                      {formatCO2e(result.lifecycleBreakdown.endOfLife)}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -172,11 +193,16 @@ const CalculateCO2Button: React.FC<CalculateCO2ButtonProps> = ({
               <div className="space-y-2">
                 <h4 className="font-medium text-sm">Sources:</h4>
                 <div className="space-y-1">
-                  {result.sources.map((source: { name: string }, index: number) => (
-                    <div key={index} className="text-xs text-muted-foreground">
-                      • {source.name}
-                    </div>
-                  ))}
+                  {result.sources.map(
+                    (source: { name: string }, index: number) => (
+                      <div
+                        key={index}
+                        className="text-xs text-muted-foreground"
+                      >
+                        • {source.name}
+                      </div>
+                    ),
+                  )}
                 </div>
               </div>
             )}
@@ -187,4 +213,4 @@ const CalculateCO2Button: React.FC<CalculateCO2ButtonProps> = ({
   );
 };
 
-export default CalculateCO2Button; 
+export default CalculateCO2Button;

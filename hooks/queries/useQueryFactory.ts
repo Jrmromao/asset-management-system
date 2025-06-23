@@ -66,7 +66,7 @@ interface UseGenericQueryResult<T, TCreateInput, TUpdateInput = TCreateInput> {
   isDeleting: boolean;
   isUpdating: boolean;
   refresh: () => Promise<void>;
-  findById?: (id: string) => Promise<T | undefined>;
+  findItemById: (id: string) => Promise<T | undefined>;
 }
 
 export function createGenericQuery<
@@ -100,6 +100,21 @@ export function createGenericQuery<
       },
       ...options,
     });
+
+    const findItemById = useCallback(
+      async (id: string): Promise<T | undefined> => {
+        if (actions.findById) {
+          const result = await actions.findById(id);
+          if (result.success) {
+            return result.data;
+          }
+        }
+        // Fallback to searching in the cached list
+        const cachedData = queryClient.getQueryData<T[]>(queryKey);
+        return cachedData?.find((item) => item.id === id);
+      },
+      [queryClient, queryKey],
+    );
 
     const { mutate: mutateCreate, isPending: isCreating } = useMutation<
       ActionResponse<T>,
@@ -320,13 +335,7 @@ export function createGenericQuery<
       isDeleting,
       isUpdating,
       refresh,
-      findById: actions.findById
-        ? async (id: string) => {
-            const result = await actions.findById!(id);
-            if (result.error) throw new Error(result.error);
-            return result.data!;
-          }
-        : undefined,
+      findItemById,
     };
   };
 }
