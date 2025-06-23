@@ -9,6 +9,29 @@ export const DashboardHeader = () => {
   const navigate = useRouter();
   const { user, isLoaded } = useUser();
 
+  // Get username from public metadata or fallback to firstName/lastName
+  const getDisplayName = () => {
+    if (!user) return "";
+    
+    // Try to get username from public metadata first
+    const publicMetadata = user.publicMetadata as any;
+    if (publicMetadata?.username) {
+      return `, ${publicMetadata.username}`;
+    }
+    
+    // Fallback to firstName if available
+    if (user.firstName) {
+      return `, ${user.firstName}`;
+    }
+    
+    // Fallback to username field if available
+    if (user.username) {
+      return `, ${user.username}`;
+    }
+    
+    return "";
+  };
+
   return (
     <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4">
       <div className="flex-1">
@@ -16,7 +39,7 @@ export const DashboardHeader = () => {
           {!isLoaded ? (
             <Skeleton className="h-8 w-48" />
           ) : (
-            `Welcome back${user?.username ? `, ${user.username}` : ""} 👋`
+            `Welcome back${getDisplayName()} 👋`
           )}
         </h1>
         <p className="text-gray-500 mt-1">

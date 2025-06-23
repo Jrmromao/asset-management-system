@@ -23,12 +23,12 @@ export const sidebarLinks = [
   //   label: "Licenses",
   //   visibleTo: [roles.ADMIN, roles.USER, roles.SUPER_ADMIN],
   // },
-  {
-    imgURL: "/icons/monitor.svg",
-    route: "/accessories",
-    label: "Accessories",
-    visibleTo: [roles.ADMIN],
-  },
+  // {
+  //   imgURL: "/icons/monitor.svg",
+  //   route: "/accessories",
+  //   label: "Accessories",
+  //   visibleTo: [roles.ADMIN],
+  // },
   {
     imgURL: "/icons/people.svg",
     route: "/people",
@@ -42,12 +42,12 @@ export const sidebarLinks = [
   //   label: "Reports",
   //   visibleTo: [roles.ADMIN],
   // },
-  {
-    imgURL: "/icons/settings.svg",
-    route: "/settings",
-    label: "Settings",
-    visibleTo: [roles.ADMIN],
-  },
+  // {
+  //   imgURL: "/icons/settings.svg",
+  //   route: "/settings",
+  //   label: "Settings",
+  //   visibleTo: [roles.ADMIN],
+  // },
   // {
   //   imgURL: "/icons/Admin-icon.svg",
   //   route: "/admin",

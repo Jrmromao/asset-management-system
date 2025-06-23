@@ -1,5 +1,6 @@
 import { prisma } from "@/app/db";
 import { Prisma, User as PrismaUser } from "@prisma/client";
+import { clerkClient } from "@clerk/nextjs/server";
 
 interface CreateUserParams {
   email: string;
@@ -12,6 +13,13 @@ interface CreateUserParams {
   role: {
     name: string;
   };
+}
+
+interface InvitationParams {
+  email: string;
+  roleId: string;
+  companyId: string;
+  invitedBy: string;
 }
 
 interface ServiceResponse<T> {
@@ -37,6 +45,16 @@ export class UserService {
       where: { id: companyId },
     });
     return !!company;
+  }
+
+  private async validateRole(roleId: string, companyId: string): Promise<boolean> {
+    const role = await prisma.role.findFirst({
+      where: { 
+        id: roleId,
+        companyId: companyId 
+      },
+    });
+    return !!role;
   }
 
   private async createPrismaUser(
@@ -82,9 +100,27 @@ export class UserService {
         };
       }
 
-      // The logic for creating an auth user (previously with Supabase)
-      // will now be handled by Clerk's sign-up flow.
-      // This service will now only handle creating the user in the local database.
+      // Validate role exists for this company
+      const roleExists = await this.validateRole(data.roleId, data.companyId);
+      if (!roleExists) {
+        return {
+          success: false,
+          error: "Invalid role ID or role not found for this company",
+        };
+      }
+
+      // Check if user already exists
+      const existingUser = await prisma.user.findUnique({
+        where: { email: data.email },
+      });
+
+      if (existingUser) {
+        return {
+          success: false,
+          error: "User with this email already exists",
+        };
+      }
+
       const createdPrismaUser = await this.createPrismaUser(data);
 
       return {
@@ -95,6 +131,79 @@ export class UserService {
       return {
         success: false,
         error: error instanceof Error ? error.message : "Failed to create user",
+      };
+    }
+  }
+
+  async inviteUser(
+    params: InvitationParams
+  ): Promise<ServiceResponse<{ invitationId: string }>> {
+    try {
+      // Validate company exists
+      const companyExists = await this.validateCompany(params.companyId);
+      if (!companyExists) {
+        return {
+          success: false,
+          error: "Invalid company ID or company not found",
+        };
+      }
+
+      // Validate role exists for this company
+      const roleExists = await this.validateRole(params.roleId, params.companyId);
+      if (!roleExists) {
+        return {
+          success: false,
+          error: "Invalid role ID or role not found for this company",
+        };
+      }
+
+      // Check if user already exists
+      const existingUser = await prisma.user.findUnique({
+        where: { email: params.email },
+      });
+
+      if (existingUser) {
+        return {
+          success: false,
+          error: "User with this email already exists",
+        };
+      }
+
+      // Get company details for the invitation
+      const company = await prisma.company.findUnique({
+        where: { id: params.companyId },
+        select: { clerkOrgId: true, name: true },
+      });
+
+      if (!company?.clerkOrgId) {
+        return {
+          success: false,
+          error: "Company organization not found",
+        };
+      }
+
+      // Send Clerk invitation
+      const clerk = await clerkClient();
+      const invitation = await clerk.organizations.createOrganizationInvitation({
+        organizationId: company.clerkOrgId,
+        inviterUserId: params.invitedBy,
+        emailAddress: params.email,
+        redirectUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/sign-in`,
+        publicMetadata: {
+          companyId: params.companyId,
+          roleId: params.roleId,
+        },
+        role: "org:member",
+      });
+
+      return {
+        success: true,
+        data: { invitationId: invitation.id },
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to send invitation",
       };
     }
   }
@@ -145,6 +254,17 @@ export class UserService {
         }
       }
 
+      // If role ID is being updated, validate it exists for the company
+      if (data.roleId && data.companyId) {
+        const roleExists = await this.validateRole(data.roleId, data.companyId);
+        if (!roleExists) {
+          return {
+            success: false,
+            error: "Invalid role ID or role not found for this company",
+          };
+        }
+      }
+
       const user = await prisma.user.update({
         where: { id },
         data: {
@@ -181,8 +301,13 @@ export class UserService {
 
       // If the user has an auth account, we should delete it too
       if (user.oauthId) {
-        // This will need to be implemented using the Clerk Admin SDK
-        // For example: await clerkClient.users.deleteUser(user.oauthId);
+        try {
+          const clerk = await clerkClient();
+          await clerk.users.deleteUser(user.oauthId);
+        } catch (clerkError) {
+          console.warn("Failed to delete user from Clerk:", clerkError);
+          // Don't fail the entire operation if Clerk deletion fails
+        }
       }
 
       return {
@@ -192,6 +317,30 @@ export class UserService {
       return {
         success: false,
         error: error instanceof Error ? error.message : "Failed to delete user",
+      };
+    }
+  }
+
+  async getAllUsers(companyId: string): Promise<ServiceResponse<PrismaUser[]>> {
+    try {
+      const users = await prisma.user.findMany({
+        where: { companyId },
+        include: {
+          role: true,
+        },
+        orderBy: {
+          name: 'asc',
+        },
+      });
+
+      return {
+        success: true,
+        data: users,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to fetch users",
       };
     }
   }

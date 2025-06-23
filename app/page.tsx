@@ -5,24 +5,20 @@ import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import PricingTable from "@/components/Pricing";
 import HeaderIcon from "@/components/page/HeaderIcon";
-import React, { useContext, useEffect } from "react";
+import React, { useEffect } from "react";
 import Footer from "@/components/page/Footer";
 import DevelopmentBanner from "@/components/DevelopmentBanner";
 import { Features } from "@/components/page/Features";
 import Industries from "@/components/page/Industries";
 import Hero from "@/components/page/Hero";
 import { ValuePropositionSection } from "@/components/page/ProblemSection";
-import { UserContext } from "@/components/providers/UserContext";
+import { useAuth } from "@clerk/nextjs";
 
 const LandingPage = () => {
   const router = useRouter();
-  const { user } = useContext(UserContext);
+  const { isSignedIn, isLoaded } = useAuth();
 
-  useEffect(() => {
-    if (user) {
-      router.replace("/dashboard");
-    }
-  }, [user, router]);
+  // Removed auto-redirect so users can view the landing page even when signed in
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
@@ -71,14 +67,14 @@ const LandingPage = () => {
             </nav>
           </div>
           <div className="flex items-center gap-4">
-            {user ? (
+            {isLoaded && isSignedIn ? (
               <Button
                 className="bg-emerald-600 hover:bg-emerald-700"
                 onClick={() => router.push("/dashboard")}
               >
                 Go to App
               </Button>
-            ) : (
+            ) : isLoaded ? (
               <>
                 <Button variant="ghost" onClick={() => router.push("/sign-in")}>
                   Login
@@ -90,6 +86,9 @@ const LandingPage = () => {
                   Free trial
                 </Button>
               </>
+            ) : (
+              // Show loading state or placeholder
+              <div className="w-32 h-10 bg-gray-200 animate-pulse rounded"></div>
             )}
           </div>
         </div>

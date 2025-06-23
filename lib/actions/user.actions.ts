@@ -2,9 +2,10 @@
 
 import { Prisma, User as PrismaUser, UserStatus } from "@prisma/client";
 import { revalidatePath } from "next/cache";
-import { clerkClient } from "@clerk/nextjs/server";
+import { clerkClient, auth } from "@clerk/nextjs/server";
 import { prisma } from "@/app/db";
 import { parseStringify } from "@/lib/utils";
+import { UserService } from "@/services/user/userService";
 
 /**
  * Creates a new user in the database when a new user signs up via Clerk.
@@ -665,3 +666,91 @@ export async function ensureUserMetadataSync(clerkUserId: string): Promise<{
     };
   }
 }
+
+/**
+ * Enhanced invitation function using UserService
+ */
+export async function inviteUserWithService(data: {
+  email: string;
+  roleId: string;
+}): Promise<{ success: boolean; error?: string; data?: any }> {
+  try {
+    const { orgId, userId } = await auth();
+
+    if (!orgId || !userId) {
+      return { success: false, error: "User is not part of an organization." };
+    }
+
+    const currentUser = await prisma.user.findFirst({
+      where: { oauthId: userId },
+      select: { companyId: true },
+    });
+
+    if (!currentUser || !currentUser.companyId) {
+      return {
+        success: false,
+        error: "Could not find the associated company.",
+      };
+    }
+
+    const userService = UserService.getInstance();
+    const result = await userService.inviteUser({
+      email: data.email,
+      roleId: data.roleId,
+      companyId: currentUser.companyId,
+      invitedBy: userId,
+    });
+
+    if (result.success) {
+      revalidatePath("/people");
+    }
+
+    return result;
+  } catch (error) {
+    console.error("Failed to invite user:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "An unknown error occurred.",
+    };
+  }
+}
+
+/**
+ * Get all users for the current organization using UserService
+ */
+export const getAllUsersWithService = async (): Promise<{
+  success: boolean;
+  error?: string;
+  data?: PrismaUser[];
+}> => {
+  try {
+    const { orgId, userId } = await auth();
+
+    if (!orgId || !userId) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    const currentUser = await prisma.user.findFirst({
+      where: { oauthId: userId },
+      select: { companyId: true },
+    });
+
+    if (!currentUser || !currentUser.companyId) {
+      return {
+        success: false,
+        error: "Could not find the associated company.",
+      };
+    }
+
+    const userService = UserService.getInstance();
+    const result = await userService.getAllUsers(currentUser.companyId);
+
+    return result;
+  } catch (error) {
+    console.error("Get users error:", error);
+    return {
+      success: false,
+      error: "Failed to fetch users",
+    };
+  }
+};

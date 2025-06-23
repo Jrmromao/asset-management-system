@@ -10,8 +10,9 @@ import { useAuth } from "@clerk/nextjs";
 const HeaderIcon = ({ isCollapsed = false }: { isCollapsed?: boolean }) => {
   const { isSignedIn, isLoaded } = useAuth();
 
-  // Default to home page while loading
-  const href = isLoaded && isSignedIn ? "/dashboard" : "/";
+  // Always use dashboard to prevent hydration mismatch
+  // The middleware will handle redirecting unauthenticated users
+  const href = "/dashboard";
 
   return (
     <Link

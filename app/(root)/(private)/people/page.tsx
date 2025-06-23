@@ -31,31 +31,14 @@ const People = () => {
   ]);
   const { users, isLoading, deleteItem } = useUserQuery();
   const navigate = useRouter();
-  const [filteredData, setFilteredData] = useState<User[]>(users);
-
-  useEffect(() => {
-    setFilteredData(users);
-  }, [users]);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const handleView = (id: string) => {
     navigate.push(`/people/view/${id}`);
   };
 
   const handleSearch = (value: string) => {
-    if (!value.trim()) {
-      setFilteredData(users);
-      return;
-    }
-
-    const searchResults = users.filter((item: any) =>
-      Object.entries(item).some(([key, val]) => {
-        if (typeof val === "string" || typeof val === "number") {
-          return val.toString().toLowerCase().includes(value.toLowerCase());
-        }
-        return false;
-      }),
-    );
-    setFilteredData(searchResults);
+    setSearchTerm(value);
   };
 
   const handleDelete = useCallback(
@@ -78,10 +61,26 @@ const People = () => {
 
   const columns = useMemo(() => peopleColumns({ onView, onDelete }), [onView, onDelete]);
 
+  const memoizedUsers = useMemo(() => users || [], [users]);
+
+  const filteredData = useMemo(() => {
+    if (!searchTerm?.trim()) return memoizedUsers;
+    
+    return memoizedUsers.filter((item: any) =>
+      Object.entries(item).some(([key, val]) => {
+        if (typeof val === "string" || typeof val === "number") {
+          return val.toString().toLowerCase().includes(searchTerm.toLowerCase());
+        }
+        return false;
+      }),
+    );
+  }, [memoizedUsers, searchTerm]);
+
   const table = useReactTable({
     data: filteredData,
     columns: columns as any,
     getCoreRowModel: getCoreRowModel(),
+    autoResetPageIndex: false,
   });
 
   const TopCards = () => {
@@ -139,7 +138,9 @@ const People = () => {
           {isLoading ? null : (
             <TableHeader
               table={table}
-              onSearch={handleSearch}
+              onSearch={(value) => {
+                setSearchTerm(value);
+              }}
               onAddNew={openDialog}
             />
           )}

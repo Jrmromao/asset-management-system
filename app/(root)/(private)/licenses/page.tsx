@@ -74,8 +74,10 @@ const Licenses = () => {
     (license) => license.statusLabel?.name.toLowerCase() === "available",
   );
 
+  const memoizedFilteredData = useMemo(() => filteredData, [filteredData]);
+
   const table = useReactTable({
-    data: filteredData,
+    data: memoizedFilteredData,
     columns,
     getCoreRowModel: getCoreRowModel(),
   });

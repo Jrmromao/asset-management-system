@@ -70,6 +70,7 @@ export function DataTable<TData, TValue>({
     onSortingChange: setSorting,
     onColumnVisibilityChange: setColumnVisibility,
     onPaginationChange: setPagination,
+    autoResetPageIndex: false,
     state: {
       sorting,
       columnVisibility,

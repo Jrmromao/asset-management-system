@@ -41,21 +41,45 @@ model User {
   status                UserStatus    @default(INVITED)
 
   // Relations
-  company     Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  role        Role          @relation(fields: [roleId], references: [id], onDelete: Restrict)
-  department  Department?   @relation(fields: [departmentId], references: [id], onDelete: SetNull)
-  assets      Asset[]       @relation("assignedToUser")
-  auditLogs   AuditLog[]
-  accounts    Account[]
-  userKits    UserKit[]
-  // licenses      UserLicense[]
-  userItem    UserItem[]
-  Co2eRecord  Co2eRecord[]
-  Maintenance Maintenance[]
+  company           Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  role              Role          @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  department        Department?   @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  assets            Asset[]       @relation("assignedToUser")
+  auditLogs         AuditLog[]
+  accounts          Account[]
+  userKits          UserKit[]
+  userItem          UserItem[]
+  Co2eRecord        Co2eRecord[]
+  Maintenance       Maintenance[]
+  sentInvitations   Invitation[]  @relation("UserInvitations")
 
   @@unique([employeeId, companyId])
   @@index([companyId])
   @@index([roleId])
+  @@index([email])
+}
+
+model Invitation {
+  id                String   @id @default(cuid())
+  email             String
+  roleId            String
+  companyId         String
+  invitedBy         String
+  clerkInvitationId String?  @unique
+  status            String   @default("PENDING") // PENDING, ACCEPTED, EXPIRED, CANCELLED
+  expiresAt         DateTime?
+  acceptedAt        DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  role      Role    @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  inviter   User    @relation("UserInvitations", fields: [invitedBy], references: [id], onDelete: Restrict)
+
+  @@unique([email, companyId]) // Prevent duplicate invitations for same email in same company
+  @@index([companyId])
+  @@index([status])
   @@index([email])
 }
 
@@ -301,6 +325,7 @@ model Role {
   updatedAt   DateTime @updatedAt
   company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
   users       User[]
+  invitations Invitation[]
   isDefault   Boolean  @default(false)
   isAdmin     Boolean  @default(false)
   permissions Json?
@@ -342,6 +367,7 @@ model Company {
   // Relations
   users               User[]
   roles               Role[]
+  invitations         Invitation[]
   departments         Department[]
   locations           DepartmentLocation[]
   inventories         Inventory[]

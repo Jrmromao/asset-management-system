@@ -26,6 +26,7 @@ interface CustomInputProps {
   className?: string;
   error?: string;
   isLoading?: boolean;
+  disabled?: boolean;
 }
 
 const CustomInput = ({
@@ -38,6 +39,7 @@ const CustomInput = ({
   className,
   error,
   isLoading,
+  disabled,
 }: CustomInputProps) => {
   return (
     <FormField
@@ -61,7 +63,7 @@ const CustomInput = ({
                     "border-red-500 focus:border-red-500",
                   className,
                 )}
-                disabled={isLoading}
+                disabled={isLoading || disabled}
               />
               {isLoading && (
                 <div className="absolute right-3 top-1/2 transform -translate-y-1/2">

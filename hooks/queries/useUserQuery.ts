@@ -1,9 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   getAll,
-  createUser as createUserAction,
+  getAllUsersWithService,
+  inviteUserWithService,
   getUserById,
   remove as deleteUserAction,
+  updateUserNonAuthDetails,
 } from "@/lib/actions/user.actions";
 import { toast } from "sonner";
 import { User } from "@prisma/client";
@@ -19,7 +21,7 @@ export const useUserQuery = () => {
   } = useQuery<User[], Error>({
     queryKey: ["users"],
     queryFn: async () => {
-      const result = await getAll();
+      const result = await getAllUsersWithService();
       if (!result.success || !result.data) {
         throw new Error(result.error || "Failed to fetch users");
       }
@@ -27,18 +29,34 @@ export const useUserQuery = () => {
     },
   });
 
-  const { mutateAsync: createUser, isPending: isCreating } = useMutation({
-    mutationFn: createUserAction,
+  const { mutateAsync: inviteUser, isPending: isInviting } = useMutation({
+    mutationFn: inviteUserWithService,
     onSuccess: (result) => {
       if (result.success) {
         queryClient.invalidateQueries({ queryKey: ["users"] });
-        toast.success("User created successfully");
+        toast.success("User invitation sent successfully");
       } else {
-        toast.error(`Failed to create user: ${result.error}`);
+        toast.error(`Failed to invite user: ${result.error}`);
       }
     },
     onError: (error) => {
-      toast.error(`Failed to create user: ${error.message}`);
+      toast.error(`Failed to invite user: ${error.message}`);
+    },
+  });
+
+  const { mutateAsync: updateUser, isPending: isUpdating } = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) => 
+      updateUserNonAuthDetails(id, data),
+    onSuccess: (result) => {
+      if (result.success) {
+        queryClient.invalidateQueries({ queryKey: ["users"] });
+        toast.success("User updated successfully");
+      } else {
+        toast.error(`Failed to update user: ${result.error}`);
+      }
+    },
+    onError: (error) => {
+      toast.error(`Failed to update user: ${error.message}`);
     },
   });
 
@@ -74,8 +92,10 @@ export const useUserQuery = () => {
     isLoading,
     error,
     findById,
-    createUser,
-    isCreating,
+    inviteUser,
+    isInviting,
+    updateUser,
+    isUpdating,
     refresh: refetch,
     deleteItem,
   };

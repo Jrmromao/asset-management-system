@@ -6,9 +6,10 @@ export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   try {
-    const { orgId } = await auth();
-    if (!orgId) {
-      return new NextResponse("Unauthorized", { status: 401 });
+    const { userId } = await auth();
+    
+    if (!userId) {
+      return new NextResponse("Unauthorized - No user ID", { status: 401 });
     }
 
     const result = await getAll();
@@ -21,9 +22,10 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const { orgId } = await auth();
-    if (!orgId) {
-      return new NextResponse("Unauthorized", { status: 401 });
+    const { userId } = await auth();
+    
+    if (!userId) {
+      return new NextResponse("Unauthorized - No user ID", { status: 401 });
     }
 
     const body = await request.json();
