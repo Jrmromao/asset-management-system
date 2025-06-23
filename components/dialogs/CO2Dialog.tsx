@@ -1,5 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,7 +13,22 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Leaf, Zap, Truck, Recycle, Factory, Save, RefreshCw, X, Edit, Loader2 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Leaf,
+  Zap,
+  Truck,
+  Recycle,
+  Factory,
+  Save,
+  RefreshCw,
+  X,
+  Edit,
+  Loader2,
+  Target,
+  BarChart3,
+  Globe,
+} from "lucide-react";
 import { CO2CalculationResult } from "@/types/co2";
 import {
   calculateAssetCO2Action,
@@ -43,13 +64,14 @@ const CO2Dialog: React.FC<CO2DialogProps> = ({
 }) => {
   const { toast } = useToast();
   const [isRecalculating, setIsRecalculating] = useState(false);
-  const [currentResult, setCurrentResult] = useState<CO2CalculationResult>(initialResult);
+  const [currentResult, setCurrentResult] =
+    useState<CO2CalculationResult>(initialResult);
   const [isEditing, setIsEditing] = useState(isNewCalculation);
   const [refinementParams, setRefinementParams] = useState<RefinementParams>({
     lifespan: 4,
     energyConsumption: 100,
     transportDistance: 1000,
-    manufacturingComplexity: "medium"
+    manufacturingComplexity: "medium",
   });
 
   useEffect(() => {
@@ -65,7 +87,8 @@ const CO2Dialog: React.FC<CO2DialogProps> = ({
         setCurrentResult(result.data);
         toast({
           title: "Recalculation Complete",
-          description: "CO2 footprint has been recalculated with refined parameters.",
+          description:
+            "CO2 footprint has been recalculated with refined parameters.",
         });
       } else {
         toast({
@@ -103,7 +126,7 @@ const CO2Dialog: React.FC<CO2DialogProps> = ({
   };
 
   const formatCO2e = (value: number | "N/A") => {
-    if (value === "N/A" || typeof value !== 'number') return "N/A";
+    if (value === "N/A" || typeof value !== "number") return "N/A";
     return `${value.toFixed(2)} kg CO2e`;
   };
 
@@ -115,220 +138,375 @@ const CO2Dialog: React.FC<CO2DialogProps> = ({
 
   const impact = getImpactLevel(currentResult.totalCo2e);
 
+  const getScopeIcon = (scope: number) => {
+    switch (scope) {
+      case 1:
+        return <Factory className="h-4 w-4 text-red-600" />;
+      case 2:
+        return <Zap className="h-4 w-4 text-orange-600" />;
+      case 3:
+        return <Globe className="h-4 w-4 text-blue-600" />;
+      default:
+        return <BarChart3 className="h-4 w-4 text-gray-600" />;
+    }
+  };
+
+  const getScopeColor = (scope: number) => {
+    switch (scope) {
+      case 1:
+        return "bg-red-50 border-red-200";
+      case 2:
+        return "bg-orange-50 border-orange-200";
+      case 3:
+        return "bg-blue-50 border-blue-200";
+      default:
+        return "bg-gray-50 border-gray-200";
+    }
+  };
+
+  const getScopeDescription = (scope: number) => {
+    switch (scope) {
+      case 1:
+        return "Direct emissions from owned/controlled sources";
+      case 2:
+        return "Indirect emissions from purchased electricity";
+      case 3:
+        return "All other indirect emissions in value chain";
+      default:
+        return "Unknown scope classification";
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Leaf className="h-5 w-5 text-green-600" />
-            {isNewCalculation ? "CO2 Footprint Calculation" : "CO2 Footprint Details"}
+            CO2 Footprint Analysis
           </DialogTitle>
           <DialogDescription>
-            {isNewCalculation 
-              ? `Review and refine the CO2 footprint calculation for ${assetName}`
-              : `CO2 footprint details for ${assetName}`
-            }
+            Comprehensive carbon footprint analysis for {assetName}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6">
-          <Card className="relative">
-            {isRecalculating && (
-              <div className="absolute inset-0 bg-white/80 dark:bg-black/80 flex flex-col items-center justify-center z-10 rounded-lg">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                <p className="mt-2 text-sm text-muted-foreground">
-                  Updating calculation...
-                </p>
-              </div>
-            )}
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>CO2 Footprint Result</span>
-                <div className="flex items-center gap-2">
-                  <Badge variant="secondary" className="text-lg">
-                    {formatCO2e(currentResult.totalCo2e)}
-                  </Badge>
-                  <div className={`w-3 h-3 rounded-full ${impact.color}`} />
-                  <span className="text-sm text-gray-500">{impact.label}</span>
-                </div>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
+        <Tabs defaultValue="overview" className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="scopes">GHG Scopes</TabsTrigger>
+            <TabsTrigger value="lifecycle">Lifecycle</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overview" className="space-y-4">
+            {/* Total CO2e */}
+            <Card className="border-l-4 border-l-green-500">
+              <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Confidence Score:</span>
-                  <span className="text-sm font-medium">
-                    {(currentResult.confidenceScore * 100).toFixed(0)}%
-                  </span>
-                </div>
-                <Progress 
-                  value={currentResult.confidenceScore * 100} 
-                  className="h-2"
-                />
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="flex items-center gap-2 p-3 bg-blue-50 rounded">
-                    <Factory className="h-4 w-4 text-blue-600" />
-                    <div>
-                      <div className="text-xs text-muted-foreground">Manufacturing</div>
-                      <div className="font-medium">{formatCO2e(currentResult.lifecycleBreakdown.manufacturing)}</div>
-                    </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">
+                      Total Carbon Footprint
+                    </p>
+                    <p className="text-3xl font-bold text-green-600">
+                      {currentResult.totalCo2e} {currentResult.units}
+                    </p>
                   </div>
-                  <div className="flex items-center gap-2 p-3 bg-orange-50 rounded">
-                    <Truck className="h-4 w-4 text-orange-600" />
-                    <div>
-                      <div className="text-xs text-muted-foreground">Transport</div>
-                      <div className="font-medium">{formatCO2e(currentResult.lifecycleBreakdown.transport)}</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 p-3 bg-green-50 rounded">
-                    <Zap className="h-4 w-4 text-green-600" />
-                    <div>
-                      <div className="text-xs text-muted-foreground">Use Phase</div>
-                      <div className="font-medium">{formatCO2e(currentResult.lifecycleBreakdown.use)}</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 p-3 bg-purple-50 rounded">
-                    <Recycle className="h-4 w-4 text-purple-600" />
-                    <div>
-                      <div className="text-xs text-muted-foreground">End of Life</div>
-                      <div className="font-medium">{formatCO2e(currentResult.lifecycleBreakdown.endOfLife)}</div>
+                  <div className="text-right">
+                    <p className="text-sm text-muted-foreground">
+                      Primary Scope
+                    </p>
+                    <div className="flex items-center gap-2">
+                      {getScopeIcon(currentResult.primaryScope)}
+                      <Badge
+                        variant="outline"
+                        className={getScopeColor(currentResult.primaryScope)}
+                      >
+                        Scope {currentResult.primaryScope}
+                      </Badge>
                     </div>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
 
-                {currentResult.description && (
-                  <div className="text-sm text-muted-foreground pt-2">
-                    <strong>Methodology:</strong> {currentResult.description}
+            {/* Confidence Score */}
+            <Card>
+              <CardContent className="pt-6">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">
+                      Confidence Score
+                    </span>
+                    <span className="text-sm font-medium">
+                      {(currentResult.confidenceScore * 100).toFixed(0)}%
+                    </span>
                   </div>
-                )}
+                  <Progress
+                    value={currentResult.confidenceScore * 100}
+                    className="h-2"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Based on {currentResult.sources?.length || 0} data sources
+                    and {currentResult.methodology}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-                {currentResult.sources && currentResult.sources.length > 0 && (
-                  <div className="space-y-2 pt-2">
-                    <h4 className="font-medium text-sm">Sources:</h4>
-                    <div className="space-y-1">
-                      {currentResult.sources.map((source, index) => (
-                        <a 
-                          href={source.url} 
-                          key={index} 
-                          target="_blank" 
-                          rel="noopener noreferrer" 
-                          className="text-xs text-blue-600 hover:underline block"
-                        >
-                          • {source.name}
-                        </a>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Parameter Refinement - Only show for new calculations or when editing */}
-          {(isNewCalculation || isEditing) && (
-            <>
-              <Separator />
-              <Card>
-                <CardHeader>
-                  <CardTitle>Refine Parameters</CardTitle>
+          <TabsContent value="scopes" className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Scope 1 */}
+              <Card className="border-l-4 border-l-red-500">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-sm">
+                    <Factory className="h-4 w-4 text-red-600" />
+                    Scope 1: Direct
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="lifespan">Expected Lifespan (years)</Label>
-                      <Input
-                        id="lifespan"
-                        type="number"
-                        value={refinementParams.lifespan}
-                        onChange={(e) => setRefinementParams(prev => ({
-                          ...prev,
-                          lifespan: Number(e.target.value)
-                        }))}
-                        min="1"
-                        max="20"
-                      />
+                  <p className="text-2xl font-bold text-red-600">
+                    {currentResult.scopeBreakdown?.scope1?.total || 0} kg CO2e
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {getScopeDescription(1)}
+                  </p>
+                  <div className="mt-3 space-y-1">
+                    {Object.entries(
+                      currentResult.scopeBreakdown?.scope1?.categories || {},
+                    ).map(([key, value]) =>
+                      value > 0 ? (
+                        <div key={key} className="flex justify-between text-xs">
+                          <span className="capitalize">
+                            {key.replace(/([A-Z])/g, " $1")}
+                          </span>
+                          <span>{value} kg</span>
+                        </div>
+                      ) : null,
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Scope 2 */}
+              <Card className="border-l-4 border-l-orange-500">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-sm">
+                    <Zap className="h-4 w-4 text-orange-600" />
+                    Scope 2: Energy Indirect
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-2xl font-bold text-orange-600">
+                    {currentResult.scopeBreakdown?.scope2?.total || 0} kg CO2e
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {getScopeDescription(2)}
+                  </p>
+                  <div className="mt-3 space-y-1">
+                    <div className="flex justify-between text-xs">
+                      <span>Location-based</span>
+                      <span>
+                        {currentResult.scopeBreakdown?.scope2?.locationBased ||
+                          0}{" "}
+                        kg
+                      </span>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="energy">Annual Energy Consumption (kWh)</Label>
-                      <Input
-                        id="energy"
-                        type="number"
-                        value={refinementParams.energyConsumption}
-                        onChange={(e) => setRefinementParams(prev => ({
-                          ...prev,
-                          energyConsumption: Number(e.target.value)
-                        }))}
-                        min="0"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="transport">Transport Distance (km)</Label>
-                      <Input
-                        id="transport"
-                        type="number"
-                        value={refinementParams.transportDistance}
-                        onChange={(e) => setRefinementParams(prev => ({
-                          ...prev,
-                          transportDistance: Number(e.target.value)
-                        }))}
-                        min="0"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="complexity">Manufacturing Complexity</Label>
-                      <select
-                        id="complexity"
-                        value={refinementParams.manufacturingComplexity}
-                        onChange={(e) => setRefinementParams(prev => ({
-                          ...prev,
-                          manufacturingComplexity: e.target.value as "low" | "medium" | "high"
-                        }))}
-                        className="w-full p-2 border rounded-md"
-                      >
-                        <option value="low">Low</option>
-                        <option value="medium">Medium</option>
-                        <option value="high">High</option>
-                      </select>
+                    <div className="flex justify-between text-xs">
+                      <span>Market-based</span>
+                      <span>
+                        {currentResult.scopeBreakdown?.scope2?.marketBased || 0}{" "}
+                        kg
+                      </span>
                     </div>
                   </div>
                 </CardContent>
               </Card>
-            </>
-          )}
 
-          {/* Action Buttons */}
-          <div className="flex justify-end gap-3">
+              {/* Scope 3 */}
+              <Card className="border-l-4 border-l-blue-500">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-sm">
+                    <Globe className="h-4 w-4 text-blue-600" />
+                    Scope 3: Other Indirect
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-2xl font-bold text-blue-600">
+                    {currentResult.scopeBreakdown?.scope3?.total || 0} kg CO2e
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {getScopeDescription(3)}
+                  </p>
+                  <div className="mt-3 space-y-1 max-h-20 overflow-y-auto">
+                    {Object.entries(
+                      currentResult.scopeBreakdown?.scope3?.categories || {},
+                    ).map(([key, value]) =>
+                      value > 0 ? (
+                        <div key={key} className="flex justify-between text-xs">
+                          <span className="capitalize">
+                            {key.replace(/([A-Z])/g, " $1")}
+                          </span>
+                          <span>{value} kg</span>
+                        </div>
+                      ) : null,
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Primary Scope Category */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-sm">
+                  <Target className="h-4 w-4" />
+                  Primary Classification
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-4">
+                  {getScopeIcon(currentResult.primaryScope)}
+                  <div>
+                    <p className="font-medium">
+                      Scope {currentResult.primaryScope}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {currentResult.primaryScopeCategory}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="lifecycle" className="space-y-4">
+            {/* Lifecycle Breakdown */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex items-center gap-2 p-3 bg-blue-50 rounded border">
+                <Factory className="h-4 w-4 text-blue-600" />
+                <div>
+                  <div className="text-xs text-muted-foreground">
+                    Manufacturing
+                  </div>
+                  <div className="font-medium">
+                    {formatCO2e(currentResult.lifecycleBreakdown.manufacturing)}
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 p-3 bg-orange-50 rounded border">
+                <Truck className="h-4 w-4 text-orange-600" />
+                <div>
+                  <div className="text-xs text-muted-foreground">Transport</div>
+                  <div className="font-medium">
+                    {formatCO2e(currentResult.lifecycleBreakdown.transport)}
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 p-3 bg-green-50 rounded border">
+                <Zap className="h-4 w-4 text-green-600" />
+                <div>
+                  <div className="text-xs text-muted-foreground">Use Phase</div>
+                  <div className="font-medium">
+                    {formatCO2e(currentResult.lifecycleBreakdown.use)}
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 p-3 bg-purple-50 rounded border">
+                <Recycle className="h-4 w-4 text-purple-600" />
+                <div>
+                  <div className="text-xs text-muted-foreground">
+                    End of Life
+                  </div>
+                  <div className="font-medium">
+                    {formatCO2e(currentResult.lifecycleBreakdown.endOfLife)}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Activity Data */}
+            {currentResult.activityData && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm">Activity Data Used</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    {currentResult.activityData.weight && (
+                      <div>
+                        <span className="text-muted-foreground">Weight:</span>
+                        <span className="font-medium ml-2">
+                          {currentResult.activityData.weight} kg
+                        </span>
+                      </div>
+                    )}
+                    {currentResult.activityData.energyConsumption && (
+                      <div>
+                        <span className="text-muted-foreground">Energy:</span>
+                        <span className="font-medium ml-2">
+                          {currentResult.activityData.energyConsumption}{" "}
+                          kWh/year
+                        </span>
+                      </div>
+                    )}
+                    {currentResult.activityData.expectedLifespan && (
+                      <div>
+                        <span className="text-muted-foreground">Lifespan:</span>
+                        <span className="font-medium ml-2">
+                          {currentResult.activityData.expectedLifespan} years
+                        </span>
+                      </div>
+                    )}
+                    {currentResult.activityData.transportDistance && (
+                      <div>
+                        <span className="text-muted-foreground">
+                          Transport:
+                        </span>
+                        <span className="font-medium ml-2">
+                          {currentResult.activityData.transportDistance} km
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+        </Tabs>
+
+        {/* Action Buttons */}
+        <div className="flex justify-between pt-4 border-t">
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRecalculate}
+              disabled={isRecalculating}
+            >
+              {isRecalculating ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Recalculating...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  Recalculate
+                </>
+              )}
+            </Button>
+          </div>
+
+          <div className="flex gap-2">
             <Button variant="outline" onClick={onClose}>
-              <X className="h-4 w-4 mr-2" />
+              <X className="mr-2 h-4 w-4" />
               Close
             </Button>
-            
-            {!isNewCalculation && !isEditing && (
-              <Button 
-                variant="outline" 
-                onClick={() => setIsEditing(true)}
-              >
-                <Edit className="h-4 w-4 mr-2" />
-                Edit
+            {isNewCalculation && (
+              <Button onClick={handleSave}>
+                <Save className="mr-2 h-4 w-4" />
+                Save Results
               </Button>
-            )}
-            
-            {(isNewCalculation || isEditing) && (
-              <>
-                <Button 
-                  onClick={handleRecalculate}
-                  disabled={isRecalculating}
-                  variant="outline"
-                >
-                  <RefreshCw className={`h-4 w-4 mr-2 ${isRecalculating ? 'animate-spin' : ''}`} />
-                  {isRecalculating ? 'Recalculating...' : 'Recalculate'}
-                </Button>
-                <Button onClick={handleSave}>
-                  <Save className="h-4 w-4 mr-2" />
-                  Save Result
-                </Button>
-              </>
             )}
           </div>
         </div>
@@ -337,4 +515,4 @@ const CO2Dialog: React.FC<CO2DialogProps> = ({
   );
 };
 
-export default CO2Dialog; 
+export default CO2Dialog;

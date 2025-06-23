@@ -13,8 +13,8 @@ export async function calculateAssetCo2(
 ): Promise<{ success: boolean; data?: any; error?: string }> {
   try {
     const prompt = `
-      You are an expert in Life Cycle Assessment (LCA) and carbon footprint analysis for electronic devices.
-      Your task is to provide an accurate and well-documented estimation of the carbon footprint (CO2e) for the following asset.
+      You are an expert in Life Cycle Assessment (LCA), carbon footprint analysis, and GHG Protocol Scope 1/2/3 classification for electronic devices and IT assets.
+      Your task is to provide an accurate and well-documented estimation of the carbon footprint (CO2e) with proper GHG scope classification.
 
       **Asset Details:**
       - **Type:** ${assetName}
@@ -22,51 +22,173 @@ export async function calculateAssetCo2(
       - **Model:** ${model}
 
       **Instructions:**
-      1.  **Calculate the total CO2e (in kg)** across the entire lifecycle of the asset. If specific data for the model is not available, use data from a comparable model from the same manufacturer or a well-documented industry average.
-      2.  **Break down the CO2e** by the following lifecycle stages if possible:
-          *   Manufacturing (including raw material extraction)
-          *   Transportation/Distribution
-          *   Use Phase (based on an estimated average lifespan and energy consumption)
-          *   End-of-Life (disposal/recycling)
-      3.  **Provide a confidence score** (from 0 to 1) for your estimation, where 1 is very high confidence.
-      4.  **Cite the primary data sources** you used for the estimation (e.g., manufacturer's sustainability reports, academic LCA studies, reputable databases like Ecoinvent).
-      5.  **Return the response as a single, minified JSON object** with no markdown formatting.
+      1. **Calculate the total CO2e (in kg)** across the entire lifecycle of the asset
+      2. **Break down by lifecycle stages**: Manufacturing, Transportation, Use Phase, End-of-Life
+      3. **Classify emissions by GHG Protocol Scopes**:
+         - **Scope 1**: Direct emissions (typically 0 for IT assets unless fuel-powered)
+         - **Scope 2**: Indirect emissions from purchased electricity (use phase energy consumption)
+         - **Scope 3**: All other indirect emissions (manufacturing, transport, end-of-life)
+      4. **Determine the primary scope** for this asset type (usually Scope 3 for IT assets)
+      5. **Provide specific Scope 3 categories** following GHG Protocol:
+         - Category 1: Purchased goods and services (manufacturing)
+         - Category 2: Capital goods (if applicable)
+         - Category 4: Upstream transportation (shipping)
+         - Category 11: Use of sold products (if applicable)
+         - Category 12: End-of-life treatment
+      6. **Include activity data** used for calculations (weight, power consumption, lifespan)
+      7. **Provide confidence score** (0-1) and cite data sources
 
       **JSON Output Format:**
       {
         "totalCo2e": number,
         "units": "kgCO2e",
         "confidenceScore": number,
+        "primaryScope": 1 | 2 | 3,
+        "primaryScopeCategory": "string describing main category",
+        "methodology": "Brief description of calculation methodology",
         "lifecycleBreakdown": {
           "manufacturing": number | "N/A",
-          "transport": number | "N/A",
+          "transport": number | "N/A", 
           "use": number | "N/A",
           "endOfLife": number | "N/A"
         },
+        "scopeBreakdown": {
+          "scope1": {
+            "total": number,
+            "categories": {
+              "stationaryCombustion": number,
+              "mobileCombustion": number,
+              "processEmissions": number,
+              "fugitiveEmissions": number
+            }
+          },
+          "scope2": {
+            "total": number,
+            "locationBased": number,
+            "marketBased": number,
+            "electricity": number,
+            "heating": number,
+            "cooling": number,
+            "steam": number
+          },
+          "scope3": {
+            "total": number,
+            "categories": {
+              "purchasedGoods": number,
+              "capitalGoods": number,
+              "fuelEnergyActivities": number,
+              "upstreamTransport": number,
+              "wasteGenerated": number,
+              "businessTravel": number,
+              "employeeCommuting": number,
+              "upstreamAssets": number,
+              "downstreamTransport": number,
+              "processingProducts": number,
+              "useOfProducts": number,
+              "endOfLifeTreatment": number,
+              "downstreamAssets": number,
+              "franchises": number,
+              "investments": number
+            }
+          }
+        },
+        "activityData": {
+          "weight": number,
+          "energyConsumption": number,
+          "expectedLifespan": number,
+          "transportDistance": number
+        },
+        "emissionFactors": [
+          {
+            "name": "Source name",
+            "version": "2024",
+            "url": "URL if available",
+            "region": "Global/US/EU",
+            "lastUpdated": "2024-01-01"
+          }
+        ],
         "sources": [
           { "name": "Source Name", "url": "Source URL or identifier" }
         ],
         "description": "Brief summary of the methodology and assumptions made."
       }
 
-      **Example for a different asset:**
+      **Example for MacBook Pro 14-inch:**
       {
-        "totalCo2e": 350.5,
+        "totalCo2e": 384.2,
         "units": "kgCO2e",
-        "confidenceScore": 0.85,
+        "confidenceScore": 0.94,
+        "primaryScope": 3,
+        "primaryScopeCategory": "Purchased goods and services (manufacturing)",
+        "methodology": "Based on Apple's official LCA using process-based methodology with hybrid approach for upstream impacts",
         "lifecycleBreakdown": {
-          "manufacturing": 250,
-          "transport": 15.5,
-          "use": 75,
-          "endOfLife": 10
+          "manufacturing": 270.8,
+          "transport": 18.4,
+          "use": 85.0,
+          "endOfLife": 10.0
         },
+        "scopeBreakdown": {
+          "scope1": {
+            "total": 0,
+            "categories": {
+              "stationaryCombustion": 0,
+              "mobileCombustion": 0,
+              "processEmissions": 0,
+              "fugitiveEmissions": 0
+            }
+          },
+          "scope2": {
+            "total": 85.0,
+            "locationBased": 85.0,
+            "marketBased": 75.2,
+            "electricity": 85.0,
+            "heating": 0,
+            "cooling": 0,
+            "steam": 0
+          },
+          "scope3": {
+            "total": 299.2,
+            "categories": {
+              "purchasedGoods": 270.8,
+              "capitalGoods": 0,
+              "fuelEnergyActivities": 0,
+              "upstreamTransport": 18.4,
+              "wasteGenerated": 0,
+              "businessTravel": 0,
+              "employeeCommuting": 0,
+              "upstreamAssets": 0,
+              "downstreamTransport": 0,
+              "processingProducts": 0,
+              "useOfProducts": 0,
+              "endOfLifeTreatment": 10.0,
+              "downstreamAssets": 0,
+              "franchises": 0,
+              "investments": 0
+            }
+          }
+        },
+        "activityData": {
+          "weight": 1.6,
+          "energyConsumption": 65,
+          "expectedLifespan": 4,
+          "transportDistance": 8000
+        },
+        "emissionFactors": [
+          {
+            "name": "IEA Electricity Grid Factors",
+            "version": "2023",
+            "url": "https://www.iea.org/data-and-statistics",
+            "region": "Global",
+            "lastUpdated": "2023-12-01"
+          }
+        ],
         "sources": [
           { "name": "Apple Product Environmental Report for MacBook Pro 14-inch", "url": "https://www.apple.com/environment/pdf/products/notebooks/14-inch_MacBook_Pro_PER_Oct2023.pdf" }
         ],
-        "description": "Estimation based on Apple's official 2023 lifecycle assessment report for the 14-inch MacBook Pro. Assumes a 4-year lifespan."
+        "description": "Comprehensive LCA based on Apple's official environmental report with GHG Protocol scope classification. Manufacturing represents 70% of total emissions (Scope 3), use phase 22% (Scope 2), transport 5% (Scope 3)."
       }
 
-      Now, provide the JSON object for the requested asset.
+      Now, provide the detailed JSON object for the requested asset with proper GHG scope classification.
       `;
 
     const response = await openai.chat.completions.create({
