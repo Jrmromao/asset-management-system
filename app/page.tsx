@@ -31,13 +31,17 @@ const LandingPage = () => {
       <div className="hidden md:block bg-muted/40 border-b py-2">
         <div className="max-w-7xl mx-auto px-4 flex justify-end">
           <nav className="flex gap-6">
-            {["About EcoKeepr", "Careers", "Contact"].map((item) => (
+            {[
+              { name: "About EcoKeepr", href: "/about" },
+              { name: "Careers", href: "/careers" }, 
+              { name: "Contact", href: "/contact" }
+            ].map((item) => (
               <Link
-                key={item}
-                href="#"
+                key={item.name}
+                href={item.href}
                 className="text-sm hover:text-emerald-600 transition-colors"
               >
-                {item}
+                {item.name}
               </Link>
             ))}
           </nav>
@@ -53,7 +57,7 @@ const LandingPage = () => {
               {[
                 { name: "Features", href: "#features" },
                 { name: "Industries", href: "#industries" },
-                { name: "Blog", href: "#" },
+                { name: "About", href: "/about" },
                 { name: "Pricing", href: "#pricing" },
               ].map((item) => (
                 <Link

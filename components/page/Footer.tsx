@@ -90,8 +90,14 @@ const Footer = () => {
       title: "Company",
       icon: <Building2 className="w-5 h-5 text-green-500" />,
       links: [
-        "About Us",
-        "Careers",
+        {
+          label: "About Us",
+          href: "/about",
+        },
+        {
+          label: "Careers",
+          href: "/careers",
+        },
         // "Press Room",
         // "Partner Network",
         "Contact",
@@ -212,12 +218,12 @@ const Footer = () => {
               </div>
               <ul className="space-y-4">
                 {column.links.map((link) => (
-                  <li key={link}>
+                  <li key={typeof link === "string" ? link : link.href}>
                     <a
-                      href="#"
+                      href={typeof link === "string" ? link : link.href}
                       className="text-gray-600 hover:text-green-600 transition-colors"
                     >
-                      {link}
+                      {typeof link === "string" ? link : link.label}
                     </a>
                   </li>
                 ))}

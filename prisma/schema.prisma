@@ -1022,3 +1022,26 @@ model FlowExecution {
   @@index([executedAt])
   @@index([success])
 }
+
+model ContactSubmission {
+  id          String   @id @default(cuid())
+  firstName   String
+  lastName    String
+  email       String
+  company     String?
+  jobTitle    String?
+  inquiryType String
+  message     String
+  phoneNumber String?
+  isRead      Boolean  @default(false)
+  isReplied   Boolean  @default(false)
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([createdAt])
+  @@index([isRead])
+  @@index([inquiryType])
+  @@index([email])
+}
