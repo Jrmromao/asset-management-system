@@ -3,6 +3,7 @@ import { Inter, IBM_Plex_Serif } from "next/font/google";
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import QueryProvider from "@/components/providers/QueryClientProvider";
+import HydrationWarningSuppress from "@/components/HydrationWarningSuppress";
 
 export const dynamic = "force-dynamic";
 
@@ -29,7 +30,11 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en">
-        <body className={`${inter.variable} ${iBMPlexSerif.variable}`}>
+        <body 
+          className={`${inter.variable} ${iBMPlexSerif.variable}`}
+          suppressHydrationWarning={true}
+        >
+          <HydrationWarningSuppress />
           <QueryProvider>{children}</QueryProvider>
         </body>
       </html>

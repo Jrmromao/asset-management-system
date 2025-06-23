@@ -636,6 +636,14 @@ model Co2eRecord {
   sourceOrActivity String
   description      String? // Restored and added description
   details          Json?
+  
+  // GHG Scope Classification
+  scope            Int?     // 1, 2, or 3 for GHG Protocol scopes
+  scopeCategory    String?  // Detailed category within scope (e.g., "Purchased goods and services")
+  emissionFactor   Decimal? @db.Decimal(15, 6) // kg CO2e per unit
+  emissionFactorSource String? // Source of emission factor (e.g., "IEA 2023", "EPA 2024")
+  activityData     Json?    // Store activity data used for calculation
+  
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 

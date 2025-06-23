@@ -43,10 +43,13 @@ export const insert = withAuth(
       const companyId = user.privateMetadata?.companyId;
 
       if (!companyId) {
-        console.error("❌ [department.actions] insert - User missing companyId in private metadata:", {
-          user: user?.id,
-          privateMetadata: user?.privateMetadata,
-        });
+        console.error(
+          "❌ [department.actions] insert - User missing companyId in private metadata:",
+          {
+            user: user?.id,
+            privateMetadata: user?.privateMetadata,
+          },
+        );
         return {
           success: false,
           data: null as any,
@@ -54,10 +57,13 @@ export const insert = withAuth(
         };
       }
 
-      console.log("✅ [department.actions] insert - Creating department with data:", {
-        ...validation.data,
-        companyId,
-      });
+      console.log(
+        "✅ [department.actions] insert - Creating department with data:",
+        {
+          ...validation.data,
+          companyId,
+        },
+      );
 
       const department = await prisma.department.create({
         data: {

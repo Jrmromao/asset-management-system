@@ -1,7 +1,5 @@
 "use server";
 
-import { prisma } from "@/app/db";
-import { Prisma } from "@prisma/client";
 import { assetSchema } from "@/lib/schemas";
 import { AssetResponse, AssetWithRelations } from "@/types/asset";
 import { revalidatePath } from "next/cache";
@@ -12,6 +10,8 @@ import { calculateAssetCo2, createCo2eRecord } from "@/lib/services/ai.service";
 import { handleError } from "@/lib/utils";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { z } from "zod";
+import { prisma } from "@/app/db";
+import { Prisma } from "@prisma/client";
 
 type CSVResponse = {
   success: boolean;

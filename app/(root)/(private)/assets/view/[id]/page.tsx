@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
-import Swal from "sweetalert2";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -11,6 +10,16 @@ import {
   BreadcrumbList,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { DialogContainer } from "@/components/dialogs/DialogContainer";
 import AssignmentForm, {
   type AssetType,
@@ -45,6 +54,7 @@ interface AssetPageProps {
 export default function AssetPage({ params }: AssetPageProps) {
   const { id } = params;
   const [asset, setAsset] = useState<EnhancedAssetType | undefined>();
+  const [showUnassignDialog, setShowUnassignDialog] = useState(false);
   const { isAssignOpen, onAssignOpen, onAssignClose } = useAssetStore();
   const navigate = useRouter();
   const queryClient = useQueryClient();
@@ -133,24 +143,13 @@ export default function AssetPage({ params }: AssetPageProps) {
 
   const handleUnassign = async () => {
     if (!asset) return;
-    const result = await Swal.fire({
-      title: "Are you sure?",
-      text: "You won't be able to revert this!",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
-      confirmButtonText: "Yes, check it in!",
-    });
-
-    if (result.isConfirmed) {
-      try {
-        await checkinAsset(asset.id);
-        toast.success("Asset checked in successfully");
-        refetch();
-      } catch (e: any) {
-        toast.error(`Failed to check in asset: ${e.message}`);
-      }
+    try {
+      await checkinAsset(asset.id);
+      toast.success("Asset checked in successfully");
+      refetch();
+      setShowUnassignDialog(false);
+    } catch (e: any) {
+      toast.error(`Failed to check in asset: ${e.message}`);
     }
   };
 
@@ -192,7 +191,7 @@ export default function AssetPage({ params }: AssetPageProps) {
 
   const detailViewActions = {
     onAssign: onAssignOpen,
-    onUnassign: handleUnassign,
+    onUnassign: () => setShowUnassignDialog(true),
     onSetMaintenance: handleSetMaintenance,
     onEdit: () => handleAction("edit"),
     menu: [
@@ -254,6 +253,26 @@ export default function AssetPage({ params }: AssetPageProps) {
           />
         }
       />
+
+      <AlertDialog 
+        open={showUnassignDialog} 
+        onOpenChange={() => setShowUnassignDialog(false)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Unassignment</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to check in this asset?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleUnassign}>
+              Check In
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

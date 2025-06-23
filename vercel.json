@@ -1,6 +1,9 @@
 {
-  "buildCommand": "next build",
+  "buildCommand": "NODE_ENV=production next build",
   "outputDirectory": ".next",
+  "env": {
+    "NODE_ENV": "production"
+  },
   "functions": {
     "app/**/*.js": {
       "maxDuration": 30
