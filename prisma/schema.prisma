@@ -500,7 +500,7 @@ model Supplier {
 model Asset {
   id                 String              @id @default(cuid())
   name               String
-  serialNumber       String              @unique
+  assetTag           String @unique @map("serialNumber")
   notes              String?
   reorderPoint       Int?
   purchaseDate       DateTime
@@ -526,6 +526,9 @@ model Asset {
   active             Boolean             @default(true)
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
+  energyConsumption  Decimal?
+  expectedLifespan   Int?
+  endOfLifePlan      String?
   company            Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
   model              Model               @relation(fields: [modelId], references: [id])
   statusLabel        StatusLabel?        @relation(fields: [statusLabelId], references: [id], onDelete: SetNull)

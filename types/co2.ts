@@ -10,4 +10,4 @@ export interface CO2CalculationResult {
   };
   sources: Array<{ name: string; url: string }>;
   description: string;
-} 
+}
