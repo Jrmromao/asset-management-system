@@ -1,52 +1,63 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/app/db";
+import { auth, currentUser } from "@clerk/nextjs/server";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const type = searchParams.get("type");
+    // Authenticate user
+    const { userId } = await auth();
+    const user = await currentUser();
 
-    // Validate type parameter
-    if (!type || !["serialNumber", "assetName"].includes(type)) {
+    if (!userId || !user) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    }
+
+    // Get company ID from user's private metadata
+    const companyId = user.privateMetadata?.companyId as string;
+    if (!companyId) {
       return NextResponse.json(
-        { message: "Invalid validation type" },
+        { message: "User not associated with a company" },
         { status: 400 },
       );
     }
 
-    const validationMap = {
-      serialNumber: {
-        value: searchParams.get("serialNumber"),
-        field: "serialNumber",
-      },
-      assetName: {
-        value: searchParams.get("assetName"),
-        field: "name",
-      },
-    };
+    const { searchParams } = new URL(request.url);
+    const type = searchParams.get("type");
+    const assetName = searchParams.get("assetName");
+    const assetTag = searchParams.get("assetTag");
+    const excludeId = searchParams.get("excludeId");
 
-    const validationConfig = validationMap[type as keyof typeof validationMap];
+    let existingAsset;
 
-    // If value is empty or just whitespace, return success without checking database
-    if (!validationConfig.value?.trim()) {
-      return NextResponse.json({
-        exists: false,
+    if (type === "assetName") {
+      existingAsset = await prisma.asset.findFirst({
+        where: {
+          name: assetName || "",
+          companyId,
+          id: excludeId ? { not: excludeId } : undefined,
+        },
+      });
+    } else if (type === "assetTag") {
+      existingAsset = await prisma.asset.findFirst({
+        where: {
+          assetTag: assetTag || "",
+          companyId,
+          id: excludeId ? { not: excludeId } : undefined,
+        },
       });
     }
 
-    const existingAsset = await prisma.asset.findFirst({
-      where: {
-        [validationConfig.field]: validationConfig.value,
-      },
-    });
-
     return NextResponse.json({
       exists: existingAsset !== null,
+      available: existingAsset === null,
+      message: existingAsset
+        ? `${type === "serialNumber" ? "Serial number" : "Asset name"} already exists in your company`
+        : `${type === "serialNumber" ? "Serial number" : "Asset name"} is available`,
     });
   } catch (error) {
-    console.error("Validation error:", error);
+    console.error("Asset validation error:", error);
     return NextResponse.json(
       { message: "Internal server error" },
       { status: 500 },

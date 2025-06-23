@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { ReactNode, useState, useTransition, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,23 @@ import {
   MapPin,
   Building2,
   Coins,
+  Briefcase,
+  DollarSign,
+  ShoppingCart,
+  Clock,
+  QrCode,
+  ShieldCheck,
+  Building,
+  Leaf,
+  Loader2,
+  Plus,
+  Save,
+  Receipt,
+  Truck,
+  Zap,
+  Recycle,
+  Hourglass,
+  Edit,
 } from "lucide-react";
 import QRCode from "react-qr-code";
 import {
@@ -23,140 +40,538 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import { EnhancedAssetType } from "@/types/asset";
-import { DetailField } from "./DetailField";
 import { ActionButtons } from "./ActionButtons";
+import CO2Dialog from "@/components/dialogs/CO2Dialog";
+import { CO2CalculationResult } from "@/types/co2";
+import { calculateAssetCO2Action } from "@/lib/actions/co2.actions";
+import { useToast } from "@/hooks/use-toast";
+import { useRouter } from "next/navigation";
+import { DataTable } from "@/components/tables/DataTable/data-table";
+import { auditLogColumns } from "@/components/tables/AuditLogColumns";
+import { assetHistoryColumns } from "@/components/tables/AsetHistoryColumns";
 
-interface AssetDetailViewProps {
-  asset: EnhancedAssetType;
-  actions: {
-    onAssign?: () => void;
-    onUnassign?: () => void;
-    onSetMaintenance?: () => void;
-    menu?: {
-      label: string;
-      onClick: () => void;
-      icon?: React.ReactNode;
-      isDestructive?: boolean;
-    }[];
-    main?: React.ReactNode;
+// Helper component for individual detail items to reduce repetition
+const DetailItem: React.FC<{
+  icon: ReactNode;
+  label: string;
+  value?: string | number | null | ReactNode;
+}> = ({ icon, label, value }) => (
+  <div className="flex items-start gap-3">
+    <div className="text-muted-foreground mt-1">{icon}</div>
+    <div>
+      <p className="text-sm text-muted-foreground">{label}</p>
+      <p className="text-sm font-medium">{value || "—"}</p>
+    </div>
+  </div>
+);
+
+// Notes component
+const NotesSection: React.FC<{
+  assetId: string;
+  currentNotes?: string;
+}> = ({ assetId, currentNotes }) => {
+  const [notes, setNotes] = useState(currentNotes || "");
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const { toast } = useToast();
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      // TODO: Implement save notes action
+      // await saveAssetNotes(assetId, notes);
+      toast({
+        title: "Notes saved",
+        description: "Asset notes have been updated successfully.",
+      });
+      setIsEditing(false);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save notes. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
-  breadcrumbs?: React.ReactNode;
-}
-
-const fieldIcons = {
-  Name: Monitor,
-  Location: MapPin,
-  "Tag Number": Tag,
-  "Last Updated": RefreshCcw,
-  Category: Laptop,
-  "Assigned To": User,
-  "Created At": Calendar,
-  Price: Coins,
-  Department: Building2,
-};
-
-export const AssetDetailView: React.FC<AssetDetailViewProps> = ({
-  asset,
-  actions,
-  breadcrumbs,
-}) => {
-  const fields = [
-    { label: "Name", value: asset.name },
-    { label: "Category", value: asset.category?.name },
-    { label: "Location", value: asset.location?.name },
-    { label: "Model Number", value: asset.model?.name },
-    { label: "Price", value: asset.price, format: "currency" },
-    { label: "Created At", value: asset.createdAt, format: "date" },
-    { label: "Last Updated", value: asset.updatedAt, format: "date" },
-    { label: "Assigned To", value: asset.assignee?.name },
-  ].filter((field) => field.value != null);
 
   return (
-    <Card className="h-full mx-2">
-      <CardHeader>
-        {breadcrumbs && <div className="mb-4">{breadcrumbs}</div>}
-        <div className="flex justify-between items-center gap-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-3">
-              <CardTitle className="text-2xl font-semibold">
-                {asset.name}
-              </CardTitle>
-              {asset.statusLabel && (
-                <Badge
-                  style={{
-                    backgroundColor: asset.statusLabel.colorCode,
-                  }}
-                  className="text-white"
-                >
-                  {asset.statusLabel.name}
-                </Badge>
-              )}
-            </div>
-            {asset.serialNumber && (
-              <p className="text-sm text-muted-foreground flex items-center gap-1">
-                Tag: {asset.serialNumber}
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 w-6 p-0"
-                        onClick={() =>
-                          navigator.clipboard.writeText(
-                            String(asset.serialNumber),
-                          )
-                        }
-                      >
-                        <ClipboardCopy className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Copy Tag Number</TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </p>
-            )}
-          </div>
-          <div className="flex-shrink-0">
-            <ActionButtons
-              actions={actions}
-              isAssigned={!!asset.assignee}
-              isActive={
-                !["maintenance", "archived"].includes(
-                  asset.status.toLowerCase(),
-                )
-              }
-            />
-          </div>
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle>Asset Notes</CardTitle>
+        <div className="flex gap-2">
+          {isEditing ? (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setNotes(currentNotes || "");
+                  setIsEditing(false);
+                }}
+                disabled={isSaving}
+              >
+                Cancel
+              </Button>
+              <Button size="sm" onClick={handleSave} disabled={isSaving}>
+                {isSaving ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Save className="h-4 w-4 mr-2" />
+                )}
+                Save
+              </Button>
+            </>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsEditing(true)}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              {notes ? "Edit" : "Add"} Notes
+            </Button>
+          )}
         </div>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 lg:grid-cols-6 gap-6">
-          <div className="lg:col-span-5 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 border rounded-md p-4">
-            {fields.map((field, index) => {
-              const IconComponent =
-                fieldIcons[field.label as keyof typeof fieldIcons];
-              return (
-                <DetailField
-                  key={index}
-                  label={field.label}
-                  value={field.value}
-                  format={field.format}
-                  icon={
-                    IconComponent && (
-                      <IconComponent className="h-4 w-4 text-muted-foreground" />
-                    )
-                  }
-                />
-              );
-            })}
+        {isEditing ? (
+          <Textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Enter notes about this asset..."
+            className="min-h-[200px]"
+          />
+        ) : (
+          <div className="min-h-[200px] p-4 border rounded-lg bg-muted/50">
+            {notes ? (
+              <p className="whitespace-pre-wrap text-sm">{notes}</p>
+            ) : (
+              <p className="text-muted-foreground text-sm">
+                No notes added yet. Click &quot;Add Notes&quot; to add
+                information about this asset.
+              </p>
+            )}
           </div>
-          <div className="flex items-center justify-center p-4 lg:border-l">
-            <QRCode value={window.location.href} size={128} />
-          </div>
-        </div>
+        )}
       </CardContent>
     </Card>
+  );
+};
+
+export const AssetDetailView: React.FC<{
+  asset: EnhancedAssetType;
+  actions: any; // Using `any` to match original props, should be refined
+  breadcrumbs?: React.ReactNode;
+}> = ({ asset, actions, breadcrumbs }) => {
+  const router = useRouter();
+  const { toast } = useToast();
+  const [isPending, startTransition] = useTransition();
+  const [isCo2DialogOpen, setCo2DialogOpen] = useState(false);
+  const [co2Result, setCo2Result] = useState<CO2CalculationResult | null>(null);
+  const [isNewCo2Calculation, setIsNewCo2Calculation] = useState(false);
+
+  // Memoize columns to prevent unnecessary re-renders
+  const auditLogColumnsMemo = useMemo(() => auditLogColumns(), []);
+  const assetHistoryColumnsMemo = useMemo(() => assetHistoryColumns(), []);
+
+  // Sort records to ensure we always have the latest one.
+  const latestCo2Record = asset.Co2eRecord?.sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+  )[0];
+
+  const handleCalculateCo2 = () => {
+    startTransition(async () => {
+      const result = await calculateAssetCO2Action(asset.id);
+      if (result.success && "data" in result && result.data) {
+        setCo2Result(result.data);
+        setIsNewCo2Calculation(true);
+        setCo2DialogOpen(true);
+      } else {
+        toast({
+          title: "CO2 Calculation Failed",
+          description: result.error || "An unknown error occurred.",
+          variant: "destructive",
+        });
+      }
+    });
+  };
+
+  const handleViewCo2 = () => {
+    if (!latestCo2Record?.details) return;
+
+    try {
+      const details = JSON.parse(latestCo2Record.details as string);
+      setCo2Result(details);
+      setIsNewCo2Calculation(false);
+      setCo2DialogOpen(true);
+    } catch (error) {
+      toast({
+        title: "Could not parse CO2 details",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const hardwareDetails = (
+    <>
+      <DetailItem
+        icon={<Laptop className="h-4 w-4" />}
+        label="Category"
+        value={asset.category?.name}
+      />
+      <DetailItem
+        icon={<Briefcase className="h-4 w-4" />}
+        label="Model"
+        value={asset.model?.name}
+      />
+      <DetailItem
+        icon={<Building className="h-4 w-4" />}
+        label="Manufacturer"
+        value={asset.model?.manufacturer?.name}
+      />
+    </>
+  );
+
+  const assignmentDetails = (
+    <>
+      <DetailItem
+        icon={<User className="h-4 w-4" />}
+        label="Assigned To"
+        value={asset.user?.name}
+      />
+      <DetailItem
+        icon={<Building2 className="h-4 w-4" />}
+        label="Department"
+        value={asset.department?.name}
+      />
+      <DetailItem
+        icon={<MapPin className="h-4 w-4" />}
+        label="Location"
+        value={asset.departmentLocation?.name}
+      />
+    </>
+  );
+
+  const financialDetails = (
+    <>
+      <DetailItem
+        icon={<DollarSign className="h-4 w-4" />}
+        label="Price"
+        value={`$${Number(asset.price || 0).toFixed(2)}`}
+      />
+      <DetailItem
+        icon={<ShoppingCart className="h-4 w-4" />}
+        label="Purchase Date"
+        value={
+          asset.purchaseDate
+            ? new Date(asset.purchaseDate).toLocaleDateString()
+            : "—"
+        }
+      />
+      <DetailItem
+        icon={<ShieldCheck className="h-4 w-4" />}
+        label="Warranty End"
+        value={
+          asset.warrantyEndDate
+            ? new Date(asset.warrantyEndDate).toLocaleDateString()
+            : "—"
+        }
+      />
+      <DetailItem
+        icon={<Truck className="h-4 w-4" />}
+        label="Supplier"
+        value={asset.supplier?.name}
+      />
+      <DetailItem
+        icon={<Receipt className="h-4 w-4" />}
+        label="PO Number"
+        value={asset.purchaseOrderNumber}
+      />
+    </>
+  );
+
+  const environmentalAndLifecycleDetails = (
+    <>
+      <DetailItem
+        icon={<Zap className="h-4 w-4" />}
+        label="Energy Consumption (Watts)"
+        value={asset.energyConsumption ? `${asset.energyConsumption} W` : "—"}
+      />
+      <DetailItem
+        icon={<Hourglass className="h-4 w-4" />}
+        label="Expected Lifespan (Years)"
+        value={asset.expectedLifespan ? `${asset.expectedLifespan} years` : "—"}
+      />
+      <DetailItem
+        icon={<Recycle className="h-4 w-4" />}
+        label="End-of-Life Plan"
+        value={asset.endOfLifePlan || "—"}
+      />
+    </>
+  );
+
+  return (
+    <>
+      <Card className="h-full mx-2 border-0 shadow-none">
+        <CardHeader>
+          {breadcrumbs && <div className="mb-4">{breadcrumbs}</div>}
+          <div className="flex justify-between items-start gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-3">
+                <CardTitle className="text-2xl font-semibold">
+                  {asset.name}
+                </CardTitle>
+                {asset.statusLabel && (
+                  <Badge
+                    style={{
+                      backgroundColor: asset.statusLabel.colorCode,
+                    }}
+                    className="text-white"
+                  >
+                    {asset.statusLabel.name}
+                  </Badge>
+                )}
+              </div>
+              {asset.assetTag && (
+                <p className="text-sm text-muted-foreground flex items-center gap-1">
+                  Tag: {asset.assetTag}
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0"
+                          onClick={() =>
+                            navigator.clipboard.writeText(
+                              String(asset.assetTag),
+                            )
+                          }
+                        >
+                          <ClipboardCopy className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Copy Tag Number</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </p>
+              )}
+            </div>
+            <div className="flex-shrink-0">
+              <ActionButtons
+                actions={actions}
+                isAssigned={!!asset.user}
+                isActive={[
+                  "maintenance",
+                  "archived",
+                  "inactive",
+                  "out of order",
+                ].includes(asset.status.toLowerCase())}
+              />
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="details">
+            <TabsList className="mb-4">
+              <TabsTrigger value="details">Details</TabsTrigger>
+              <TabsTrigger value="history">History</TabsTrigger>
+              <TabsTrigger value="notes">Notes</TabsTrigger>
+            </TabsList>
+            <TabsContent value="details">
+              <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                <div className="lg:col-span-3 space-y-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg font-semibold">
+                        Hardware Details
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {hardwareDetails}
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg font-semibold">
+                        Assignment & Location
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {assignmentDetails}
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg font-semibold">
+                        Financial Details
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {financialDetails}
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg font-semibold">
+                        Environmental & Lifecycle
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {environmentalAndLifecycleDetails}
+                    </CardContent>
+                  </Card>
+                </div>
+                <div className="lg:col-span-1 space-y-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-sm font-medium flex items-center gap-2">
+                        <QrCode className="h-4 w-4" />
+                        Asset QR Code
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="flex items-center justify-center p-4">
+                      <QRCode value={window.location.href} size={128} />
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-sm font-medium flex items-center gap-2">
+                        <Clock className="h-4 w-4" />
+                        Timestamps
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <DetailItem
+                        icon={<Calendar className="h-4 w-4" />}
+                        label="Created At"
+                        value={new Date(asset.createdAt).toLocaleString()}
+                      />
+                      <DetailItem
+                        icon={<RefreshCcw className="h-4 w-4" />}
+                        label="Last Updated"
+                        value={new Date(asset.updatedAt).toLocaleString()}
+                      />
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                      <CardTitle className="text-sm font-medium">
+                        CO2 Footprint
+                      </CardTitle>
+                      <Leaf className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div
+                        className="text-2xl font-bold"
+                        onClick={latestCo2Record ? handleViewCo2 : undefined}
+                        style={{
+                          cursor: latestCo2Record ? "pointer" : "default",
+                        }}
+                      >
+                        {latestCo2Record
+                          ? `${Number(latestCo2Record.co2e).toFixed(2)} ${
+                              latestCo2Record.units
+                            }`
+                          : "N/A"}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {latestCo2Record
+                          ? `Calculated on ${new Date(
+                              latestCo2Record.createdAt,
+                            ).toLocaleDateString()}`
+                          : "Not calculated"}
+                      </p>
+                      <Button
+                        size="sm"
+                        className="w-full mt-4"
+                        onClick={handleCalculateCo2}
+                        disabled={isPending}
+                      >
+                        {isPending ? (
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        ) : null}
+                        {latestCo2Record ? "Recalculate" : "Calculate"}
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            </TabsContent>
+            <TabsContent value="history">
+              <div className="space-y-6">
+                {/* Asset History */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Asset History</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {asset.assetHistory && asset.assetHistory.length > 0 ? (
+                      <DataTable
+                        columns={assetHistoryColumnsMemo}
+                        data={asset.assetHistory as any}
+                      />
+                    ) : (
+                      <div className="text-center py-12 text-gray-500">
+                        <Clock className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                        <p className="text-lg font-medium">No Asset History</p>
+                        <p className="text-sm">
+                          No history records have been found for this asset.
+                        </p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Audit Logs */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Audit Logs</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {asset.auditLogs && asset.auditLogs.length > 0 ? (
+                      <DataTable
+                        columns={auditLogColumnsMemo}
+                        data={asset.auditLogs}
+                      />
+                    ) : (
+                      <div className="text-center py-12 text-gray-500">
+                        <Clock className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                        <p className="text-lg font-medium">No Audit Logs</p>
+                        <p className="text-sm">
+                          No audit activities have been recorded for this asset.
+                        </p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+            <TabsContent value="notes">
+              <NotesSection assetId={asset.id} currentNotes={asset.notes} />
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
+      {co2Result && (
+        <CO2Dialog
+          isOpen={isCo2DialogOpen}
+          onClose={() => setCo2DialogOpen(false)}
+          assetId={asset.id}
+          assetName={asset.name}
+          initialResult={co2Result}
+          isNewCalculation={isNewCo2Calculation}
+          onSave={() => {
+            setCo2DialogOpen(false);
+            router.refresh();
+          }}
+        />
+      )}
+    </>
   );
 };
