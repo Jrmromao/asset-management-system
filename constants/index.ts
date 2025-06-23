@@ -109,3 +109,17 @@ export const topCategoryStyles = {
     icon: "/icons/shopping-bag.svg",
   },
 };
+
+export enum EOLPlan {
+  Recycle = "Recycle",
+  Refurbish = "Refurbish",
+  Dispose = "Dispose",
+  TBD = "To Be Determined",
+}
+
+export const eolPlanOptions = [
+  { id: EOLPlan.Recycle, name: "Recycle" },
+  { id: EOLPlan.Refurbish, name: "Refurbish" },
+  { id: EOLPlan.Dispose, name: "Dispose" },
+  { id: EOLPlan.TBD, name: "To Be Determined" },
+];

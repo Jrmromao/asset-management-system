@@ -11,6 +11,7 @@ import type { CustomField } from "@/types/form";
 import { Asset, AssetWithRelations } from "@/types/asset";
 import { FormTemplateValue } from "@prisma/client";
 import { CreateAssetInput } from "@/lib/actions/assets.actions";
+import { debounce } from "lodash";
 
 // Components
 import CustomInput from "@/components/CustomInput";
@@ -52,6 +53,9 @@ import { usePurchaseOrderUIStore } from "@/lib/stores/usePurchaseOrderUIStore";
 import { PurchaseOrderDialog } from "../dialogs/PurchaseOrderDialog";
 import { auth, User } from "@clerk/nextjs/server";
 import { useUser } from "@clerk/nextjs";
+import { EOLPlan, eolPlanOptions } from "@/constants";
+import CustomDatePicker from "../CustomDatePicker";
+import { usePurchaseOrderQuery } from "@/hooks/queries/usePurchaseOrderQuery";
 
 type UserWithCompany = User & {
   companyId: string;
@@ -63,14 +67,108 @@ type FormTemplate = {
   fields: CustomField[];
 };
 
-type AssetFormValues = z.infer<typeof assetSchema> & {
-  templateValues: Record<string, any>;
-};
+const assetFormSchema = z.object({
+  name: z.string().min(2, "Asset name must be at least 2 characters."),
+  assetTag: z.string().min(1, "Asset Tag is required."),
+  modelId: z.string().min(1, "Model is required."),
+  statusLabelId: z.string().min(1, "Status is required."),
+  departmentId: z.string().min(1, "Department is required."),
+  inventoryId: z.string().min(1, "Inventory is required."),
+  locationId: z.string().min(1, "Location is required."),
+  formTemplateId: z.string().min(1, "Form template is required."),
+  templateValues: z.record(z.string(), z.any()).optional(),
+  purchaseOrderId: z.string().optional(),
+  notes: z.string().optional(),
+  energyConsumption: z.coerce.number().optional(),
+  expectedLifespan: z.coerce.number().optional(),
+  endOfLifePlan: z.nativeEnum(EOLPlan).optional(),
+  supplierId: z.string().optional(),
+  warrantyEndDate: z.date().optional(),
+});
+
+type AssetFormValues = z.infer<typeof assetFormSchema>;
 
 interface AssetFormProps {
   id?: string;
   isUpdate?: boolean;
 }
+
+const useImprovedAssetValidation = (
+  type: "assetName" | "assetTag",
+  value: string,
+  excludeId?: string,
+) => {
+  const [validationState, setValidationState] = useState<{
+    isValidating: boolean;
+    isValid: boolean | null;
+    error: string | null;
+  }>({
+    isValidating: false,
+    isValid: null,
+    error: null,
+  });
+
+  const [lastValidatedValue, setLastValidatedValue] = useState<string>("");
+
+  const validate = useCallback(
+    debounce(async (inputValue: string) => {
+      if (!inputValue.trim() || inputValue.trim().length < 2) {
+        setValidationState({
+          isValidating: false,
+          isValid: null,
+          error: null,
+        });
+        return;
+      }
+
+      if (lastValidatedValue === inputValue.trim()) {
+        return;
+      }
+
+      setValidationState((prev) => ({ ...prev, isValidating: true }));
+
+      try {
+        const params = new URLSearchParams({
+          type,
+          [type === "assetTag" ? "assetTag" : "assetName"]: inputValue.trim(),
+        });
+
+        if (excludeId) {
+          params.append("excludeId", excludeId);
+        }
+
+        const response = await fetch(`/api/validate/assets?${params}`);
+
+        if (!response.ok) {
+          throw new Error("Validation failed");
+        }
+
+        const result = await response.json();
+
+        setValidationState({
+          isValidating: false,
+          isValid: result.available,
+          error: result.exists ? result.message : null,
+        });
+
+        setLastValidatedValue(inputValue.trim());
+      } catch (error) {
+        setValidationState({
+          isValidating: false,
+          isValid: null,
+          error: "Validation error occurred",
+        });
+      }
+    }, 800),
+    [type, excludeId, lastValidatedValue],
+  );
+
+  useEffect(() => {
+    validate(value);
+  }, [value, validate]);
+
+  return validationState;
+};
 
 const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
   const router = useRouter();
@@ -79,7 +177,6 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
   const [selectedTemplate, setSelectedTemplate] = useState<FormTemplate | null>(
     null,
   );
-  const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([]);
   const [formSections, setFormSections] = useState([
     {
       name: "Asset Category",
@@ -111,9 +208,12 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
     isLoading,
     createItem: createAsset,
     updateItem: updateAsset,
+    findItemById,
     isCreating,
     isUpdating,
   } = useAssetQuery()();
+
+  const { items: purchaseOrders } = usePurchaseOrderQuery()();
 
   const { formTemplates } = useFormTemplatesQuery();
   const { locations } = useLocationQuery();
@@ -131,10 +231,10 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
   const { user } = useUser();
 
   const form = useForm<AssetFormValues>({
-    resolver: zodResolver(assetSchema),
+    resolver: zodResolver(assetFormSchema),
     defaultValues: {
       name: "",
-      serialNumber: "",
+      assetTag: "",
       modelId: "",
       statusLabelId: "",
       departmentId: "",
@@ -143,23 +243,42 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
       formTemplateId: "",
       templateValues: {},
       purchaseOrderId: "",
+      notes: "",
+      energyConsumption: undefined,
+      expectedLifespan: undefined,
+      endOfLifePlan: undefined,
+      supplierId: "",
+      warrantyEndDate: undefined,
     },
     mode: "onSubmit",
   });
 
+  const assetNameValidation = useImprovedAssetValidation(
+    "assetName",
+    form.watch("name"),
+    isUpdate ? id : undefined,
+  );
+
+  const assetTagValidation = useImprovedAssetValidation(
+    "assetTag",
+    form.watch("assetTag"),
+    isUpdate ? id : undefined,
+  );
+
   // Load existing asset data for updates
   useEffect(() => {
-    if (!isUpdate || !id || isDataLoaded || !assets) return;
+    if (!isUpdate || !id || isDataLoaded) return;
 
     const loadAssetData = async () => {
       try {
-        const asset = assets.find((a: Asset) => a.id === id) as Asset;
+        // Use findItemById to get full asset details
+        const asset = await findItemById(id);
 
         if (asset) {
           // Set form values
           form.reset({
             name: asset.name || "",
-            serialNumber: asset.serialNumber || "",
+            assetTag: asset.assetTag || "",
             modelId: asset.modelId || "",
             statusLabelId: asset.statusLabelId || "",
             departmentId: asset.departmentId || "",
@@ -167,7 +286,16 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
             locationId: asset.departmentLocation?.id || "",
             formTemplateId: asset.formTemplateId || "",
             purchaseOrderId: asset.purchaseOrderId || "",
-            templateValues: {},
+            templateValues:
+              (asset.values?.[0]?.values as Record<string, any>) || {},
+            notes: asset.notes || "",
+            energyConsumption: asset.energyConsumption
+              ? Number(asset.energyConsumption)
+              : undefined,
+            expectedLifespan: asset.expectedLifespan || undefined,
+            endOfLifePlan: (asset.endOfLifePlan as EOLPlan) || undefined,
+            supplierId: asset.supplierId || "",
+            warrantyEndDate: asset.warrantyEndDate || undefined,
           });
 
           // Set selected template if exists and validate fields
@@ -176,7 +304,7 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
               (t) => t.id === asset.formTemplateId,
             );
             if (template) {
-              setSelectedTemplate(template);
+              setSelectedTemplate(template as any);
               // Validate the fields after setting the template
               setTimeout(() => {
                 validateTemplateFields();
@@ -192,7 +320,7 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
     };
 
     loadAssetData();
-  }, [isUpdate, id, isDataLoaded, form, formTemplates, assets]);
+  }, [isUpdate, id, isDataLoaded, form, formTemplates, findItemById]);
 
   const statusLocationSection = getStatusLocationSection({
     form,
@@ -223,7 +351,7 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
     }
 
     form.setValue("formTemplateId", formTemplateId);
-    setSelectedTemplate(template);
+    setSelectedTemplate(template as any);
 
     // Initialize template values with default values based on field type
     const initialValues = template.fields.reduce<Record<string, any>>(
@@ -364,12 +492,13 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
   const onSubmit = async (data: AssetFormValues) => {
     try {
       setSubmitting(true);
+      toast.loading(id ? "Updating asset..." : "Creating asset...");
       console.log("[FORM_SUBMIT] Initial form data:", data);
 
       // Validate all required fields
       const requiredFields = [
         "name",
-        "serialNumber",
+        "assetTag",
         "modelId",
         "statusLabelId",
         "departmentId",
@@ -390,38 +519,40 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
         return;
       }
 
-      // Create the asset data object with non-null values
+      // Create the asset data object that matches CreateAssetInput type exactly
       const assetData: CreateAssetInput = {
         name: data.name,
-        serialNumber: data.serialNumber,
+        assetTag: data.assetTag,
         modelId: data.modelId,
         statusLabelId: data.statusLabelId,
         departmentId: data.departmentId,
         inventoryId: data.inventoryId,
         locationId: data.locationId,
         formTemplateId: data.formTemplateId,
-        purchaseOrderId: data.purchaseOrderId || undefined,
         templateValues: data.templateValues || {},
+        notes: data.notes || "",
+        energyConsumption: data.energyConsumption || undefined,
+        expectedLifespan: data.expectedLifespan || undefined,
+        endOfLifePlan: data.endOfLifePlan || undefined,
+        purchaseOrderId: data.purchaseOrderId || undefined,
       };
-
-      // If purchaseOrderId is an empty string, convert it to null
-      if (assetData.purchaseOrderId === "") {
-        assetData.purchaseOrderId = undefined;
-      }
 
       console.log("[FORM_SUBMIT] Submitting asset data:", assetData);
 
       if (id) {
         console.log("[FORM_SUBMIT] Updating asset:", id);
         await updateAsset(id, assetData);
+        toast.success("Asset updated successfully!");
       } else {
         console.log("[FORM_SUBMIT] Creating new asset");
         await createAsset(assetData);
+        toast.success("Asset created successfully!");
       }
 
       router.push("/assets");
     } catch (error) {
       console.error("[FORM_SUBMIT] Error:", error);
+      toast.dismiss(); // Dismiss loading toast
       if (error instanceof z.ZodError) {
         const errors = error.errors.map(
           (err) => `${err.path.join(".")}: ${err.message}`,
@@ -446,7 +577,7 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
     name: [
       "formTemplateId",
       "name",
-      "serialNumber",
+      "assetTag",
       "modelId",
       "statusLabelId",
       "locationId",
@@ -498,8 +629,10 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
         name: "Asset Details",
         isValid:
           !!formValues[1] && // name
-          !!formValues[2] && // serialNumber
-          !!formValues[3], // modelId
+          !!formValues[2] && // assetTag
+          !!formValues[3] && // modelId
+          assetNameValidation.isValid !== false &&
+          assetTagValidation.isValid !== false,
       },
       {
         name: "Assignment & Location",
@@ -516,13 +649,19 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
     ];
 
     setFormSections(newSections);
-  }, [formValues, selectedTemplate, specialFieldsValid]);
+  }, [
+    formValues,
+    selectedTemplate,
+    specialFieldsValid,
+    assetNameValidation.isValid,
+    assetTagValidation.isValid,
+  ]);
 
   return (
     <FormContainer
       form={form}
-      requiredFields={getRequiredFieldsList(assetSchema)}
-      requiredFieldsCount={getRequiredFieldCount(assetSchema)}
+      requiredFields={getRequiredFieldsList(assetFormSchema)}
+      requiredFieldsCount={getRequiredFieldCount(assetFormSchema)}
     >
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
@@ -541,7 +680,7 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
                           <SelectWithButton
                             name="formTemplateId"
                             label="Category Template"
-                            data={formTemplates}
+                            data={formTemplates as any}
                             onNew={openTemplate}
                             placeholder="Select a template"
                             form={form}
@@ -559,25 +698,46 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
                             control={form.control}
                             placeholder="Enter asset name"
                             className="dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 dark:placeholder-gray-400"
+                            error={assetNameValidation.error || undefined}
+                            isLoading={assetNameValidation.isValidating}
                           />
 
                           <CustomInput
                             required
-                            name="serialNumber"
-                            label="Serial Number"
+                            name="assetTag"
+                            label="Asset Tag"
                             control={form.control}
-                            placeholder="Enter tag number"
+                            placeholder="Enter asset tag"
                             className="dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 dark:placeholder-gray-400"
+                            error={assetTagValidation.error || undefined}
+                            isLoading={assetTagValidation.isValidating}
                           />
 
                           <SelectWithButton
                             name="modelId"
                             form={form}
                             label="Model"
-                            data={models}
+                            data={models as any}
                             onNew={openModel}
                             placeholder="Select model"
                             required
+                          />
+
+                          <SelectWithButton
+                            name="supplierId"
+                            form={form}
+                            label="Supplier"
+                            data={suppliers as any}
+                            onNew={() => {
+                              /* open supplier modal */
+                            }}
+                            placeholder="Select a supplier"
+                          />
+
+                          <CustomDatePicker
+                            name="warrantyEndDate"
+                            label="Warranty End Date"
+                            form={form}
                           />
 
                           <SelectWithButton
@@ -590,6 +750,31 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
                             }))}
                             onNew={openPurchaseOrder}
                             placeholder="Select a PO"
+                          />
+                        </FormSection>
+
+                        {/* Environmental & Lifecycle */}
+                        <FormSection title="Environmental & Lifecycle">
+                          <CustomInput
+                            name="energyConsumption"
+                            label="Energy Consumption (Watts)"
+                            control={form.control}
+                            type="number"
+                            placeholder="e.g. 85"
+                          />
+                          <CustomInput
+                            name="expectedLifespan"
+                            label="Expected Lifespan (Years)"
+                            control={form.control}
+                            type="number"
+                            placeholder="e.g. 5"
+                          />
+                          <CustomSelect
+                            name="endOfLifePlan"
+                            label="End-of-Life Plan"
+                            control={form.control}
+                            placeholder="Select a plan"
+                            data={eolPlanOptions}
                           />
                         </FormSection>
 
@@ -619,7 +804,7 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
           </div>
 
           {/* Footer */}
-          <ActionFooter form={form} isPending={isUpdating} router={router} />
+          <ActionFooter form={form} isPending={submitting} router={router} />
         </form>
       </Form>
     </FormContainer>

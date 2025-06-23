@@ -3,12 +3,15 @@
 import { prisma } from "@/app/db";
 import { Prisma } from "@prisma/client";
 import { assetSchema } from "@/lib/schemas";
-import { AssetResponse } from "@/types/asset";
+import { AssetResponse, AssetWithRelations } from "@/types/asset";
 import { revalidatePath } from "next/cache";
 import { parseStringify } from "@/lib/utils";
 import { withAuth } from "@/lib/middleware/withAuth";
 import { checkAssetLimit } from "@/lib/services/usage.service";
 import { calculateAssetCo2, createCo2eRecord } from "@/lib/services/ai.service";
+import { handleError } from "@/lib/utils";
+import { auth, currentUser } from "@clerk/nextjs/server";
+import { z } from "zod";
 
 type CSVResponse = {
   success: boolean;
@@ -52,237 +55,172 @@ export type AssetUtilizationStatsResponse = {
   error?: string;
 };
 
-export type CreateAssetInput = {
-  name: string;
-  serialNumber: string;
-  modelId: string;
-  statusLabelId: string;
-  departmentId: string;
-  inventoryId: string;
-  locationId: string;
-  formTemplateId: string;
-  templateValues?: Record<string, any>;
-  purchaseOrderId?: string;
-};
+export type CreateAssetInput = z.infer<typeof assetSchema>;
 
 // Helper function to convert single item to array
 const toArray = <T>(item: T | null): T[] => (item ? [item] : []);
 
 // Helper function to validate asset uniqueness within company
-const validateAssetUniqueness = async (companyId: string, name: string, serialNumber: string) => {
-  const [existingName, existingSerial] = await Promise.all([
+const validateAssetUniqueness = async (
+  companyId: string,
+  name: string,
+  assetTag: string,
+) => {
+  const [existingName, existingAssetTag] = await Promise.all([
     prisma.asset.findFirst({
       where: { name, companyId },
     }),
     prisma.asset.findFirst({
-      where: { serialNumber, companyId },
+      where: { assetTag, companyId },
     }),
   ]);
 
   return {
     nameExists: !!existingName,
-    serialExists: !!existingSerial,
+    assetTagExists: !!existingAssetTag,
   };
 };
 
+const serializeAsset = (asset: any) => {
+  if (!asset) {
+    return null;
+  }
+  const serialized = { ...asset };
+  if (asset.purchasePrice) {
+    serialized.purchasePrice = Number(asset.purchasePrice);
+  }
+  if (asset.currentValue) {
+    serialized.currentValue = Number(asset.currentValue);
+  }
+  if (asset.depreciationRate) {
+    serialized.depreciationRate = Number(asset.depreciationRate);
+  }
+  if (asset.energyConsumption) {
+    serialized.energyConsumption = Number(asset.energyConsumption);
+  }
+  if (asset.co2eRecords && Array.isArray(asset.co2eRecords)) {
+    serialized.co2eRecords = asset.co2eRecords.map((record: any) => ({
+      ...record,
+      co2e: record.co2e ? Number(record.co2e) : null,
+    }));
+  }
+  return serialized;
+};
+
 export const createAsset = withAuth(
-  async (
-    user,
-    data: CreateAssetInput,
-  ): Promise<AssetResponse> => {
-    console.log(" [assets.actions] createAsset - Starting with user:", {
-      userId: user?.id,
-      privateMetadata: user?.privateMetadata,
-      hasCompanyId: !!user?.privateMetadata?.companyId,
-    });
-
+  async (user, data: CreateAssetInput): Promise<AssetResponse> => {
     try {
-      // Get companyId from private metadata
-      const companyId = user.privateMetadata?.companyId;
-
+      const companyId = user.privateMetadata?.companyId as string;
       if (!companyId) {
-        console.error("❌ [assets.actions] createAsset - User missing companyId in private metadata:", {
-          user: user?.id,
-          privateMetadata: user?.privateMetadata,
-        });
-        return {
-          success: false,
-          data: [],
-          error: "User is not associated with a company",
-        };
+        throw new Error("User is not associated with a company");
       }
 
-      // Check asset limit
       const { allowed, usage, limit } = await checkAssetLimit(companyId);
       if (!allowed) {
-        return {
-          success: false,
-          data: [],
-          error: `Asset limit reached (${usage}/${limit}). Please upgrade your plan.`,
-        };
+        throw new Error(
+          `Asset limit reached (${usage}/${limit}). Please upgrade your plan.`,
+        );
       }
 
-      // Validate asset uniqueness within company
-      const uniquenessCheck = await validateAssetUniqueness(companyId, data.name, data.serialNumber);
-      
-      if (uniquenessCheck.nameExists) {
-        return {
-          success: false,
-          data: [],
-          error: "Asset name already exists in your company",
-        };
-      }
-
-      if (uniquenessCheck.serialExists) {
-        return {
-          success: false,
-          data: [],
-          error: "Serial number already exists in your company",
-        };
-      }
-
-      // Basic validation without the async refinements
-      const validation = await assetSchema.omit({
-        name: true,
-        serialNumber: true,
-      }).parseAsync(data);
-
-      if (!validation) {
-        return {
-          success: false,
-          data: [],
-          error: "Invalid asset data",
-        };
-      }
-
-      // Extract templateValues from validation and prepare the create data
-      const { templateValues, ...assetData } = validation;
-
-      console.log("✅ [assets.actions] createAsset - Creating asset with data:", {
-        ...assetData,
-        companyId,
-      });
+      const { name, assetTag, templateValues, modelId, ...rest } =
+        await assetSchema.parseAsync(data);
 
       const asset = await prisma.asset.create({
         data: {
-          purchaseDate: new Date(),
-          name: data.name,
-          serialNumber: data.serialNumber,
-          ...assetData,
+          ...rest,
+          name,
+          assetTag,
+          modelId,
           companyId,
-          // Add nested creation for form template values if they exist
+          purchaseDate: new Date(),
           values: templateValues
             ? {
-                create: [
-                  {
-                    values: templateValues,
-                    formTemplate: { connect: { id: assetData.formTemplateId } },
-                  },
-                ],
+                create: {
+                  values: templateValues,
+                  formTemplate: { connect: { id: rest.formTemplateId } },
+                },
               }
             : undefined,
         },
         include: {
-          model: {
-            include: {
-              manufacturer: true,
-            },
-          },
-          user: true,
-          supplier: true,
-          departmentLocation: true,
+          model: { include: { manufacturer: true } },
           statusLabel: true,
-          department: true,
-          inventory: true,
-          values: true,
+          user: true,
         },
       });
 
-      // Calculate and store CO2e record
       if (asset.model) {
         const co2eResponse = await calculateAssetCo2(
           asset.name,
           asset.model.manufacturer.name,
           asset.model.name,
         );
-
         if (co2eResponse.success) {
           await createCo2eRecord(asset.id, co2eResponse.data);
-        } else {
-          console.error(
-            "Failed to calculate CO2e for asset:",
-            co2eResponse.error,
-          );
         }
       }
 
-      console.log("✅ [assets.actions] createAsset - Asset created successfully");
       revalidatePath("/assets");
-      return { success: true, data: [parseStringify(asset)], error: undefined };
+      return {
+        success: true,
+        data: [parseStringify(serializeAsset(asset))],
+      };
     } catch (error: any) {
-      console.error("❌ [assets.actions] createAsset - Error:", error);
       return {
         success: false,
         data: [],
-        error: error?.message || "Failed to create asset",
+        error: error.message,
       };
-    } finally {
-      await prisma.$disconnect();
     }
   },
 );
 
-export const getAllAssets = withAuth(
-  async (user): Promise<AssetResponse> => {
-    try {
-      // Get companyId from private metadata
-      const companyId = user.privateMetadata?.companyId;
+export async function getAllAssets() {
+  const { orgId: authOrgId } = await auth();
+  const user = await currentUser();
+  const orgId = authOrgId || (user?.privateMetadata?.clerkOrgId as string);
 
-      if (!companyId) {
-        return {
-          success: false,
-          data: [],
-          error: "User is not associated with a company",
-        };
-      }
+  if (!orgId) {
+    throw new Error("Organization ID not found");
+  }
 
-      const assets = await prisma.asset.findMany({
-        where: {
-          companyId,
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-        include: {
-          model: true,
-          user: true,
-          supplier: true,
-          departmentLocation: true,
-          statusLabel: true,
-          department: true,
-          inventory: true,
-        },
-      });
+  try {
+    const company = await prisma.company.findUnique({
+      where: { clerkOrgId: orgId },
+      select: { id: true },
+    });
 
-      return {
-        success: true,
-        data: parseStringify(assets) || [],
-        error: undefined,
-      };
-    } catch (error) {
-      console.error("Get assets error:", error);
-      return { success: false, data: [], error: "Failed to fetch assets" };
-    } finally {
-      await prisma.$disconnect();
+    if (!company) {
+      throw new Error("Company not found");
     }
-  },
-);
+
+    const assets = await prisma.asset.findMany({
+      where: { companyId: company.id },
+      include: {
+        model: { include: { manufacturer: true } },
+        statusLabel: true,
+        co2eRecords: true,
+        category: true,
+      },
+    });
+
+    const serializableAssets = assets.map(serializeAsset);
+
+    return { success: true, data: serializableAssets };
+  } catch (error) {
+    return {
+      success: false,
+      data: [],
+      error:
+        error instanceof Error ? error.message : "An unknown error occurred",
+    };
+  }
+}
 
 export const getAssetOverview = withAuth(
   async (user): Promise<{ success: boolean; data: any; error?: string }> => {
     try {
-      // Get companyId from private metadata
-      const companyId = user.privateMetadata?.companyId;
+      const companyId = user.privateMetadata?.companyId as string;
 
       if (!companyId) {
         return {
@@ -331,8 +269,6 @@ export const getAssetOverview = withAuth(
         data: [],
         error: "Failed to fetch asset overview",
       };
-    } finally {
-      await prisma.$disconnect();
     }
   },
 );
@@ -340,8 +276,7 @@ export const getAssetOverview = withAuth(
 export const getAssetById = withAuth(
   async (user, id: string): Promise<AssetResponse> => {
     try {
-      // Get companyId from private metadata
-      const companyId = user.privateMetadata?.companyId;
+      const companyId = user.privateMetadata?.companyId as string;
 
       if (!companyId) {
         return {
@@ -351,29 +286,40 @@ export const getAssetById = withAuth(
         };
       }
 
-      const asset = await prisma.asset.findFirst({
-        where: {
-          id,
-          companyId,
-        },
+      const asset = await prisma.asset.findUnique({
+        where: { id, companyId },
         include: {
           model: { include: { manufacturer: true } },
-          user: true,
-          supplier: true,
-          departmentLocation: true,
           statusLabel: true,
           department: true,
+          departmentLocation: true,
           inventory: true,
-          values: { include: { formTemplate: true } },
+          category: true,
+          values: true,
           co2eRecords: true,
-          License: true,
+          assetHistory: true,
+          user: true,
+          supplier: true,
+          purchaseOrder: true,
+          formTemplate: true,
         },
       });
+
+      if (!asset) {
+        return {
+          success: false,
+          data: [],
+          error: "Asset not found",
+        };
+      }
+
       return { success: true, data: toArray(parseStringify(asset)) };
     } catch (error: any) {
-      return { success: false, data: [], error: error.message };
-    } finally {
-      await prisma.$disconnect();
+      return {
+        success: false,
+        data: [],
+        error: error.message,
+      };
     }
   },
 );
@@ -381,8 +327,7 @@ export const getAssetById = withAuth(
 export const removeAsset = withAuth(
   async (user, id: string): Promise<AssetResponse> => {
     try {
-      // Get companyId from private metadata
-      const companyId = user.privateMetadata?.companyId;
+      const companyId = user.privateMetadata?.companyId as string;
 
       if (!companyId) {
         return {
@@ -402,22 +347,14 @@ export const removeAsset = withAuth(
       return { success: true, data: [] };
     } catch (error: any) {
       return { success: false, data: [], error: error.message };
-    } finally {
-      await prisma.$disconnect();
     }
   },
 );
 
 export const updateAsset = withAuth(
-  async (
-    user,
-    id: string,
-    data: CreateAssetInput,
-  ): Promise<AssetResponse> => {
+  async (user, id: string, data: CreateAssetInput): Promise<AssetResponse> => {
     try {
-      // Get companyId from private metadata
-      const companyId = user.privateMetadata?.companyId;
-
+      const companyId = user.privateMetadata?.companyId as string;
       if (!companyId) {
         return {
           success: false,
@@ -426,20 +363,19 @@ export const updateAsset = withAuth(
         };
       }
 
-      const { templateValues, ...assetData } = await assetSchema.parseAsync(data);
+      const { name, assetTag, templateValues, ...assetData } =
+        await assetSchema.parseAsync(data);
 
       const updatedAsset = await prisma.asset.update({
-        where: {
-          id,
-          companyId,
-        },
+        where: { id, companyId },
         data: {
           ...assetData,
+          name,
+          assetTag,
           values: templateValues
             ? {
-                deleteMany: {}, // Delete all previous values
+                deleteMany: { assetId: id },
                 create: {
-                  // Create a new value
                   values: templateValues,
                   formTemplate: { connect: { id: assetData.formTemplateId } },
                 },
@@ -447,42 +383,50 @@ export const updateAsset = withAuth(
             : undefined,
         },
         include: {
-          model: true,
-          user: true,
-          supplier: true,
-          departmentLocation: true,
+          model: { include: { manufacturer: true } },
           statusLabel: true,
-          department: true,
-          inventory: true,
-          values: true,
+          co2eRecords: true,
         },
       });
+
       revalidatePath(`/assets/${id}`);
-      return { success: true, data: toArray(parseStringify(updatedAsset)) };
+      return {
+        success: true,
+        data: [parseStringify(serializeAsset(updatedAsset))],
+      };
     } catch (error: any) {
-      return { success: false, data: [], error: error.message };
-    } finally {
-      await prisma.$disconnect();
+      return {
+        success: false,
+        data: [],
+        error: error.message,
+      };
     }
   },
 );
 
 export const findAssetById = withAuth(
   async (user, id: string): Promise<AssetResponse> => {
-    const result = await getAssetById(id);
-    return {
-      success: result.success,
-      data: result.data || [], // Ensure data is always an array
-      error: result.error,
-    };
+    try {
+      const result = await getAssetById(id);
+      return {
+        success: result.success,
+        data: result.data || [],
+        error: result.error,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        data: [],
+        error: error.message,
+      };
+    }
   },
 );
 
 export const checkinAsset = withAuth(
   async (user, id: string): Promise<AssetResponse> => {
     try {
-      // Get companyId from private metadata
-      const companyId = user.privateMetadata?.companyId;
+      const companyId = user.privateMetadata?.companyId as string;
 
       if (!companyId) {
         return {
@@ -492,45 +436,83 @@ export const checkinAsset = withAuth(
         };
       }
 
-      const asset = await prisma.asset.update({
-        where: {
-          id,
-          companyId,
-        },
-        data: {
-          userId: null,
-          active: true,
-        },
-        include: {
-          model: true,
-          user: true,
-          supplier: true,
-          departmentLocation: true,
-          statusLabel: true,
-          department: true,
-          inventory: true,
-        },
+      const result = await prisma.$transaction(async (tx) => {
+        // Find the internal user record for audit logging
+        const internalUser = await tx.user.findFirst({
+          where: { oauthId: user.id, companyId },
+          select: { id: true },
+        });
+
+        if (!internalUser) {
+          throw new Error("Internal user record not found for audit logging");
+        }
+
+        // Get the current asset to track who it was assigned to
+        const currentAsset = await tx.asset.findUnique({
+          where: { id, companyId },
+          select: { userId: true },
+        });
+
+        // Update the asset
+        const asset = await tx.asset.update({
+          where: {
+            id,
+            companyId,
+          },
+          data: {
+            userId: null,
+          },
+          include: {
+            model: { include: { manufacturer: true } },
+            statusLabel: true,
+            co2eRecords: true,
+          },
+        });
+
+        // Create audit log entry
+        await tx.auditLog.create({
+          data: {
+            action: "ASSET_CHECKIN",
+            entity: "ASSET",
+            entityId: id,
+            userId: internalUser.id,
+            companyId,
+            details: currentAsset?.userId
+              ? `Asset returned from user ${currentAsset.userId}`
+              : "Asset checked in",
+          },
+        });
+
+        // Create asset history entry
+        await tx.assetHistory.create({
+          data: {
+            assetId: id,
+            type: "return",
+            companyId,
+            notes: currentAsset?.userId
+              ? `Asset checked in from user ${currentAsset.userId}`
+              : "Asset checked in",
+          },
+        });
+
+        return asset;
       });
 
       revalidatePath("/assets");
-      return { success: true, data: toArray(parseStringify(asset)) };
+      return {
+        success: true,
+        data: toArray(parseStringify(serializeAsset(result))),
+      };
     } catch (error: any) {
       return { success: false, data: [], error: error.message };
-    } finally {
-      await prisma.$disconnect();
     }
   },
 );
 
 export const checkoutAsset = withAuth(
-  async (
-    user,
-    id: string,
-    userId: string,
-  ): Promise<AssetResponse> => {
+  async (user, id: string, userId: string): Promise<AssetResponse> => {
     try {
-      // Get companyId from private metadata
-      const companyId = user.privateMetadata?.companyId;
+      const companyId = user.privateMetadata?.companyId as string;
 
       if (!companyId) {
         return {
@@ -540,32 +522,70 @@ export const checkoutAsset = withAuth(
         };
       }
 
-      const asset = await prisma.asset.update({
-        where: {
-          id,
-          companyId,
-        },
-        data: {
-          userId,
-          active: false,
-        },
-        include: {
-          model: true,
-          user: true,
-          supplier: true,
-          departmentLocation: true,
-          statusLabel: true,
-          department: true,
-          inventory: true,
-        },
+      const result = await prisma.$transaction(async (tx) => {
+        // Find the internal user record for audit logging
+        const internalUser = await tx.user.findFirst({
+          where: { oauthId: user.id, companyId },
+          select: { id: true },
+        });
+
+        if (!internalUser) {
+          throw new Error("Internal user record not found for audit logging");
+        }
+
+        // Update the asset
+        const asset = await tx.asset.update({
+          where: { id, companyId },
+          data: { userId },
+          include: {
+            model: { include: { manufacturer: true } },
+            statusLabel: true,
+            department: true,
+            departmentLocation: true,
+            inventory: true,
+            category: true,
+            values: true,
+            co2eRecords: true,
+            assetHistory: true,
+            user: true,
+            supplier: true,
+            purchaseOrder: true,
+            formTemplate: true,
+          },
+        });
+
+        // Create audit log entry
+        await tx.auditLog.create({
+          data: {
+            action: "ASSET_CHECKOUT",
+            entity: "ASSET",
+            entityId: id,
+            userId: internalUser.id,
+            companyId,
+            details: `Asset assigned to user ${userId}`,
+          },
+        });
+
+        // Create asset history entry
+        await tx.assetHistory.create({
+          data: {
+            assetId: id,
+            type: "assignment",
+            companyId,
+            notes: `Asset checked out to user ${userId}`,
+          },
+        });
+
+        return asset;
       });
 
-      revalidatePath("/assets");
-      return { success: true, data: toArray(parseStringify(asset)) };
+      revalidatePath(`/assets/${id}`);
+      return {
+        success: true,
+        data: toArray(parseStringify(serializeAsset(result))),
+      };
     } catch (error: any) {
       return { success: false, data: [], error: error.message };
-    } finally {
-      await prisma.$disconnect();
     }
   },
 );
@@ -573,8 +593,7 @@ export const checkoutAsset = withAuth(
 export const setMaintenanceStatus = withAuth(
   async (user, assetId: string): Promise<AssetResponse> => {
     try {
-      // Get companyId from private metadata
-      const companyId = user.privateMetadata?.companyId;
+      const companyId = user.privateMetadata?.companyId as string;
 
       if (!companyId) {
         return {
@@ -618,8 +637,6 @@ export const setMaintenanceStatus = withAuth(
       return { success: true, data: toArray(parseStringify(maintenance)) };
     } catch (error: any) {
       return { success: false, data: [], error: error.message };
-    } finally {
-      await prisma.$disconnect();
     }
   },
 );
@@ -627,9 +644,7 @@ export const setMaintenanceStatus = withAuth(
 export const getAssetUtilizationStats = withAuth(
   async (user): Promise<AssetUtilizationStatsResponse> => {
     try {
-      // Get companyId from private metadata
       const companyId = user.privateMetadata?.companyId;
-
       if (!companyId) {
         return {
           success: false,
@@ -637,46 +652,42 @@ export const getAssetUtilizationStats = withAuth(
         };
       }
 
-      const [
-        totalAssets,
-        assignedAssets,
-        assetsByStatus,
-        assetsByCategory,
-        recentAssets,
-      ] = await Promise.all([
-        prisma.asset.count({ where: { companyId } }),
-        prisma.asset.count({
-          where: { companyId, userId: { not: null } },
-        }),
-        prisma.asset.groupBy({
-          by: ["statusLabelId"],
-          where: { companyId },
-          _count: { id: true },
-        }),
-        prisma.asset.groupBy({
-          by: ["categoryId"],
-          where: { companyId },
-          _count: { id: true },
-        }),
-        prisma.asset.count({
-          where: {
-            companyId,
-            createdAt: {
-              gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // Last 30 days
-            },
-          },
-        }),
-      ]);
+      const totalAssets = await prisma.asset.count({
+        where: { companyId },
+      });
+
+      const assignedAssets = await prisma.asset.count({
+        where: { companyId, NOT: { userId: null } },
+      });
+
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const recentAssets = await prisma.asset.count({
+        where: { companyId, createdAt: { gte: thirtyDaysAgo } },
+      });
+
+      const assetsByStatus = await prisma.asset.groupBy({
+        by: ["statusLabelId"],
+        where: { companyId },
+        _count: { id: true },
+      });
+
+      const assetsByCategory = await prisma.asset.groupBy({
+        by: ["categoryId"],
+        where: { companyId },
+        _count: { id: true },
+      });
 
       const unassignedAssets = totalAssets - assignedAssets;
-      const utilizationRate = totalAssets > 0 ? (assignedAssets / totalAssets) * 100 : 0;
+      const utilizationRate =
+        totalAssets > 0 ? (assignedAssets / totalAssets) * 100 : 0;
 
       return {
         success: true,
         data: {
           totalAssets,
           assignedAssets,
-          unassignedAssets,
+          unassignedAssets: unassignedAssets,
           utilizationRate,
           assetsByStatus,
           assetsByCategory,
@@ -684,13 +695,99 @@ export const getAssetUtilizationStats = withAuth(
         },
       };
     } catch (error) {
-      console.error("Get asset utilization stats error:", error);
-      return {
-        success: false,
-        error: "Failed to fetch asset utilization stats",
-      };
-    } finally {
-      await prisma.$disconnect();
+      return handleError(error, {
+        totalAssets: 0,
+        assignedAssets: 0,
+        unassignedAssets: 0,
+        utilizationRate: 0,
+        assetsByStatus: [],
+        assetsByCategory: [],
+        recentAssets: 0,
+      });
     }
   },
 );
+
+export const getAssetStats = withAuth(async (user) => {
+  try {
+    const companyId = user.privateMetadata?.companyId as string;
+    if (!companyId) {
+      return {
+        success: false,
+        data: {
+          total: 0,
+          assigned: 0,
+          maintenance: 0,
+        },
+        error: "User not associated with a company",
+      };
+    }
+    const total = await prisma.asset.count({ where: { companyId } });
+    const assigned = await prisma.asset.count({
+      where: { companyId, userId: { not: null } },
+    });
+    const maintenance = await prisma.asset.count({
+      where: {
+        companyId,
+        statusLabel: { name: { contains: "maintenance", mode: "insensitive" } },
+      },
+    });
+
+    return {
+      success: true,
+      data: {
+        total,
+        assigned,
+        maintenance,
+      },
+    };
+  } catch (error) {
+    return handleError(error, {
+      total: 0,
+      assigned: 0,
+      maintenance: 0,
+    });
+  }
+});
+
+export const getAssetCountByStatus = withAuth(async (user) => {
+  try {
+    const companyId = user.privateMetadata?.companyId as string;
+    if (!companyId) {
+      return {
+        success: false,
+        data: [],
+        error: "User not associated with a company",
+      };
+    }
+    const result = await prisma.asset.groupBy({
+      by: ["statusLabelId"],
+      where: { companyId },
+      _count: {
+        statusLabelId: true,
+      },
+    });
+
+    const statusLabels = await prisma.statusLabel.findMany({
+      where: { id: { in: result.map((r) => r.statusLabelId as string) } },
+    });
+
+    const statusMap = statusLabels.reduce(
+      (acc, label) => {
+        acc[label.id] = label.name;
+        return acc;
+      },
+      {} as Record<string, string>,
+    );
+
+    return {
+      success: true,
+      data: result.map((item) => ({
+        status: statusMap[item.statusLabelId as string],
+        count: item._count.statusLabelId,
+      })),
+    };
+  } catch (error) {
+    return handleError(error, []);
+  }
+});
