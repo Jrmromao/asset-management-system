@@ -31,13 +31,31 @@ export const createAuditLog = withAuth(async (user, data: AuditLogInput) => {
   try {
     const validatedData = auditLogSchema.parse(data);
     const ipAddress = getIpAddress();
+    const companyId = user.privateMetadata?.companyId as string;
+
+    if (!companyId) {
+      return { success: false, error: "User is not associated with a company" };
+    }
+
+    // Find the internal user record for audit logging
+    const internalUser = await prisma.user.findFirst({
+      where: { oauthId: user.id, companyId },
+      select: { id: true },
+    });
+
+    if (!internalUser) {
+      return {
+        success: false,
+        error: "Internal user record not found for audit logging",
+      };
+    }
 
     const auditLog = await prisma.auditLog.create({
       data: {
         ...validatedData,
-        userId: user.id,
+        userId: internalUser.id,
         ipAddress,
-        companyId: user.user_metadata?.companyId,
+        companyId,
       },
     });
 

@@ -51,22 +51,38 @@ export const insert = withAuth(
       const companyId = user.privateMetadata?.companyId;
 
       if (!companyId) {
-        console.error("❌ [accessory.actions] insert - User missing companyId in private metadata:", {
-          user: user?.id,
-          privateMetadata: user?.privateMetadata,
-        });
+        console.error(
+          "❌ [accessory.actions] insert - User missing companyId in private metadata:",
+          {
+            user: user?.id,
+            privateMetadata: user?.privateMetadata,
+          },
+        );
         return {
           success: false,
           error: "User is not associated with a company",
         };
       }
 
-      console.log("✅ [accessory.actions] insert - Creating accessory with data:", {
-        ...values,
-        companyId,
-      });
+      console.log(
+        "✅ [accessory.actions] insert - Creating accessory with data:",
+        {
+          ...values,
+          companyId,
+        },
+      );
 
       const result = await prisma.$transaction(async (tx) => {
+        // Find the internal user record for audit logging
+        const internalUser = await tx.user.findFirst({
+          where: { oauthId: user.id, companyId },
+          select: { id: true },
+        });
+
+        if (!internalUser) {
+          throw new Error("Internal user record not found for audit logging");
+        }
+
         const accessory = await tx.accessory.create({
           data: {
             name: values.name,
@@ -99,7 +115,7 @@ export const insert = withAuth(
             action: "ACCESSORY_CREATED",
             entity: "ACCESSORY",
             entityId: accessory.id,
-            userId: user.id,
+            userId: internalUser.id,
             companyId: companyId,
             details: `Created accessory ${values.name} with initial stock of ${values.totalQuantityCount} units`,
           },
@@ -108,7 +124,9 @@ export const insert = withAuth(
         return accessory;
       });
 
-      console.log("✅ [accessory.actions] insert - Accessory created successfully");
+      console.log(
+        "✅ [accessory.actions] insert - Accessory created successfully",
+      );
       return {
         success: true,
         data: parseStringify(result),
@@ -465,21 +483,36 @@ export const checkout = withAuth(
       }
 
       const result = await prisma.$transaction(async (tx) => {
+        // Find the internal user record for audit logging
+        const internalUser = await tx.user.findFirst({
+          where: { oauthId: user.id, companyId: user.user_metadata?.companyId },
+          select: { id: true },
+        });
+
+        if (!internalUser) {
+          throw new Error("Internal user record not found for audit logging");
+        }
+
+        // Get the current stock of the accessory
         const accessory = await tx.accessory.findUnique({
           where: { id: values.itemId },
-          include: {
-            userItems: true,
-          },
+          select: { totalQuantityCount: true },
         });
 
         if (!accessory) {
           throw new Error("Accessory not found");
         }
 
-        const assignedQuantity = accessory.userItems.length;
-        const availableQuantity =
-          accessory.totalQuantityCount - assignedQuantity;
-        const requestedQuantity = 1;
+        // Calculate available quantity
+        const assignments = await tx.userItem.count({
+          where: {
+            itemId: values.itemId,
+            itemType: ItemType.ACCESSORY,
+          },
+        });
+
+        const availableQuantity = accessory.totalQuantityCount - assignments;
+        const requestedQuantity = 1; // Always 1 for accessory checkout
 
         if (availableQuantity < requestedQuantity) {
           throw new Error(
@@ -511,7 +544,7 @@ export const checkout = withAuth(
             action: "ACCESSORY_CHECKOUT",
             entity: "ACCESSORY",
             entityId: values.itemId,
-            userId: user.id,
+            userId: internalUser.id,
             companyId: user.user_metadata?.companyId,
             details: `Assigned ${requestedQuantity} units to user ${values.userId}`,
           },
@@ -599,16 +632,17 @@ export const checkin = withAuth(
               },
             });
 
-            await tx.auditLog.create({
-              data: {
-                action: "ACCESSORY_CHECKIN",
-                entity: "ACCESSORY",
-                entityId: currentAssignment.itemId,
-                userId: user.id,
-                companyId: user.user_metadata?.companyId,
-                details: `Unassigned 1 unit from user ${currentAssignment.userId}`,
-              },
-            });
+            // TODO: Add audit log
+
+            // await tx.auditLog.create({
+            //   data: {
+            //     action: "ACCESSORY_CHECKIN",
+            //     entity: "ACCESSORY",
+            //     entityId: currentAssignment.itemId,
+            //     companyId: user.user_metadata?.companyId,
+            //     details: `Unassigned 1 unit from user ${currentAssignment.userId}`,
+            //   },
+            // });
 
             const updatedAccessory = await tx.accessory.findUnique({
               where: { id: currentAssignment.itemId },

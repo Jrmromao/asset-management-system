@@ -371,12 +371,8 @@ export const getValidationResult = (field: string, value: string) => {
 };
 
 export const assetSchema = z.object({
-  serialNumber: z
-    .string()
-    .min(1, "Serial Number is required"),
-  name: z
-    .string()
-    .min(1, "Asset name is required"),
+  assetTag: z.string().min(1, "Serial Number is required"),
+  name: z.string().min(1, "Asset name is required"),
   modelId: z.string().min(1, "Model is required"),
   statusLabelId: z.string().min(1, "Status is required"),
   departmentId: z.string().min(1, "Department is required"),
@@ -386,6 +382,10 @@ export const assetSchema = z.object({
   templateValues: z.record(z.any()).optional(),
   customFields: z.array(z.any()).optional(),
   purchaseOrderId: z.string().optional(),
+  notes: z.string().optional(),
+  energyConsumption: z.number().optional(),
+  expectedLifespan: z.number().optional(),
+  endOfLifePlan: z.string().optional(),
 });
 
 export const createTemplateSchema = z.object({
