@@ -32,6 +32,7 @@ import { AssetDetailView } from "@/components/shared/DetailView/AssetDetailView"
 import * as z from "zod";
 import { assignmentSchema } from "@/lib/schemas";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useUser } from "@clerk/nextjs";
 
 type AssignmentFormValues = z.infer<typeof assignmentSchema>;
 
@@ -47,6 +48,7 @@ export default function AssetPage({ params }: AssetPageProps) {
   const { isAssignOpen, onAssignOpen, onAssignClose } = useAssetStore();
   const navigate = useRouter();
   const queryClient = useQueryClient();
+  const { user } = useUser();
 
   const {
     data: fetchedAsset,
@@ -56,10 +58,12 @@ export default function AssetPage({ params }: AssetPageProps) {
   } = useQuery({
     queryKey: ["asset", id],
     queryFn: async () => {
+      if (!user) return null;
       const response = await findAssetById(id);
       if (response.error) throw new Error(response.error);
-      return response.data?.[0];
+      return Array.isArray(response.data) ? response.data[0] : undefined;
     },
+    enabled: !!user,
   });
 
   useEffect(() => {
@@ -68,33 +72,50 @@ export default function AssetPage({ params }: AssetPageProps) {
       setAsset({
         id: assetData.id,
         name: assetData.name,
-        price: assetData.purchasePrice ? Number(assetData.purchasePrice) : 0,
-        serialNumber: assetData.serialNumber ?? "",
+        assetTag: assetData.assetTag ?? "",
         status: assetData.statusLabel?.name ?? "N/A",
-        category: { name: assetData.model?.name ?? "N/A" },
-        statusLabel: assetData.statusLabel ?? null,
-        assignee: assetData.user ? { name: assetData.user.name } : undefined,
-        co2Score: assetData.co2eRecords?.[0]
-          ? {
-              co2e: Number(assetData.co2eRecords[0].co2e),
-              units: assetData.co2eRecords[0].units,
-            }
+        purchaseDate: assetData.purchaseDate,
+        warrantyEndDate: assetData.warrantyEndDate ?? undefined,
+        notes: assetData.notes ?? undefined,
+        supplier: assetData.supplier
+          ? { name: assetData.supplier.name }
           : undefined,
-        model: assetData.model ?? null,
-        location: assetData.departmentLocation ?? null,
-        department: assetData.department ?? null,
-        formTemplate: assetData.formTemplate
-          ? {
-              ...assetData.formTemplate,
-              values: assetData.formTemplateValues?.map((v) => v.values) ?? [],
-            }
-          : null,
-        AssetHistory: assetData.assetHistory ?? [],
+        purchaseOrderNumber: assetData.purchaseOrder?.poNumber ?? undefined,
+        purchaseCost: assetData.purchaseOrder?.totalAmount
+          ? Number(assetData.purchaseOrder.totalAmount)
+          : undefined,
+        category: { name: assetData.model?.name ?? "N/A" },
+        statusLabel: assetData.statusLabel,
+        user: assetData.user ? { name: assetData.user.name } : undefined,
+        co2Score:
+          (assetData.Co2eRecord as any)?.length > 0
+            ? {
+                co2e: Number(assetData.Co2eRecord[0].co2e),
+                units: assetData.Co2eRecord[0].units,
+              }
+            : undefined,
+        model: assetData.model,
+        departmentLocation: assetData.departmentLocation,
+        department: assetData.department,
+        formTemplate:
+          assetData.formTemplate && assetData.values
+            ? {
+                ...assetData.formTemplate,
+                values: assetData.values?.map((v) => v.values) ?? [],
+              }
+            : null,
+        assetHistory: assetData.assetHistory ?? [],
         auditLogs: (assetData.auditLogs as any) ?? [],
-        assigneeId: assetData.user?.id,
+        userId: assetData.user?.id,
         createdAt: assetData.createdAt,
         updatedAt: assetData.updatedAt,
-        usedBy: [],
+        Co2eRecord: assetData.Co2eRecord,
+        energyConsumption: assetData.energyConsumption
+          ? Number(assetData.energyConsumption)
+          : undefined,
+        expectedLifespan: assetData.expectedLifespan ?? undefined,
+        endOfLifePlan: assetData.endOfLifePlan ?? undefined,
+        price: 0,
       });
     }
   }, [fetchedAsset]);
@@ -146,8 +167,8 @@ export default function AssetPage({ params }: AssetPageProps) {
       prev
         ? {
             ...prev,
-            assigneeId: data.userId,
-            assignee: { name: data.userName },
+            userId: data.userId,
+            user: { name: data.userName },
           }
         : undefined,
     );
@@ -169,26 +190,24 @@ export default function AssetPage({ params }: AssetPageProps) {
     return <div>Error: {(error as Error)?.message || "Asset not found"}</div>;
   }
 
-  const menuActions = [
-    { label: "Edit", onClick: () => handleAction("edit"), icon: <FaEdit /> },
-    {
-      label: "Set to Maintenance",
-      onClick: handleSetMaintenance,
-      icon: <FaTools />,
-    },
-    {
-      label: "Archive",
-      onClick: () => handleAction("archive"),
-      icon: <FaTrash />,
-      isDestructive: true,
-    },
-  ];
-
   const detailViewActions = {
     onAssign: onAssignOpen,
     onUnassign: handleUnassign,
     onSetMaintenance: handleSetMaintenance,
-    menu: menuActions,
+    onEdit: () => handleAction("edit"),
+    menu: [
+      {
+        label: "Set to Maintenance",
+        onClick: handleSetMaintenance,
+        icon: <FaTools />,
+      },
+      {
+        label: "Archive",
+        onClick: () => handleAction("archive"),
+        icon: <FaTrash />,
+        isDestructive: true,
+      },
+    ],
     main: <GenerateCo2Button assetId={id} />,
   };
 
@@ -201,10 +220,6 @@ export default function AssetPage({ params }: AssetPageProps) {
           <Breadcrumb>
             <BreadcrumbList>
               <BreadcrumbItem>
-                <BreadcrumbLink href="/admin">Dashboard</BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
                 <BreadcrumbLink href="/assets">Assets</BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator />
@@ -215,17 +230,7 @@ export default function AssetPage({ params }: AssetPageProps) {
           </Breadcrumb>
         }
       />
-      <div className="mt-6">
-        <ItemDetailsTabs
-          itemId={id}
-          itemType="asset"
-          auditLogs={asset.auditLogs || []}
-          usedBy={asset.usedBy || []}
-          handleCheckIn={async () => {}}
-          isCheckingIn={new Set()}
-          isRefreshing={false}
-        />
-      </div>
+
       <DialogContainer
         open={isAssignOpen}
         onOpenChange={onAssignClose}

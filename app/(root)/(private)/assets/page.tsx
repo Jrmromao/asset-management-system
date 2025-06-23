@@ -60,11 +60,14 @@ interface Asset {
   statusLabel?: { id: string; name: string } | null;
   endOfLife?: Date | null;
   updatedAt: Date;
-  Co2eRecord?: Array<{
+  co2eRecords?: Array<{
+    id: string;
     co2e: number;
     units: string;
-    co2eType?: string;
-    sourceOrActivity?: string;
+    co2eType: string;
+    sourceOrActivity: string;
+    description: string | null;
+    details: string | null;
   }>;
 }
 

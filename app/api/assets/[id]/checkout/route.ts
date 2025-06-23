@@ -1,11 +1,20 @@
 import { checkoutAsset } from "@/lib/actions/assets.actions";
 import { NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 
 export async function POST(
   request: Request,
   { params }: { params: { id: string } },
 ) {
   try {
+    const { userId: currentUserId } = await auth();
+    if (!currentUserId) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+
     const assetId = params.id;
     const { userId } = await request.json();
 

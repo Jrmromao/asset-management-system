@@ -29,7 +29,7 @@ const SettingsPage = (): JSX.Element => {
 
       <HeaderBox
         title="Settings"
-        subtext="Configure your application settings and manage master data"
+        subtitle="Configure your application settings and manage master data"
         icon={<Settings className="w-4 h-4" />}
       />
 
