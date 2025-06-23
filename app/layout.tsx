@@ -4,6 +4,7 @@ import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import QueryProvider from "@/components/providers/QueryClientProvider";
 import HydrationWarningSuppress from "@/components/HydrationWarningSuppress";
+import { UserProvider } from "@/components/providers/UserContext";
 
 export const dynamic = "force-dynamic";
 
@@ -30,12 +31,14 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en">
-        <body 
+        <body
           className={`${inter.variable} ${iBMPlexSerif.variable}`}
           suppressHydrationWarning={true}
         >
           <HydrationWarningSuppress />
-          <QueryProvider>{children}</QueryProvider>
+          <UserProvider>
+            <QueryProvider>{children}</QueryProvider>
+          </UserProvider>
         </body>
       </html>
     </ClerkProvider>

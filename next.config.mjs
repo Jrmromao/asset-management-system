@@ -6,17 +6,17 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-  // Remove or comment out the standalone output for now
+  // Remove output: "standalone" to fix client reference manifest issues
   // output: "standalone",
   
-  // Keep other optimizations
+  // Optimize for Vercel deployment
   trailingSlash: false,
   poweredByHeader: false,
   generateEtags: false,
   
-  // Add experimental features that might help
+  // Add experimental features to help with build
   experimental: {
-    optimizePackageImports: ['lucide-react'],
+    optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
   },
   
   images: {
