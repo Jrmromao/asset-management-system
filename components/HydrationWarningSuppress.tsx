@@ -21,7 +21,7 @@ export default function HydrationWarningSuppress() {
 
     return () => {
       console.error = originalError;
-    };
+    };    
   }, []);
 
   return null; // This component doesn't render anything

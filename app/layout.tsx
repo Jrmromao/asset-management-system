@@ -1,6 +1,4 @@
 // app/layout.tsx
-"use client";
-
 import { Inter, IBM_Plex_Serif } from "next/font/google";
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
