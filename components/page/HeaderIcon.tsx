@@ -5,22 +5,17 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Leaf } from "lucide-react";
 import { APP_NAME } from "@/constants";
+import { useAuth } from "@clerk/nextjs";
 
 const HeaderIcon = ({ isCollapsed = false }: { isCollapsed?: boolean }) => {
-  return (
-    // <Link href="/" className="flex items-center gap-2">
-    //   <Image src="/icons/logo.svg" width={34} height={34} alt="Horizon logo" />
-    //   <h1
-    //   className={cn("text-26 font-ibm-plex-serif font-bold text-black-1", {
-    //     hidden: isCollapsed,
-    //   })}
-    // >
-    //     EcoKeepr
-    //   </h1>
-    // </Link>
+  const { isSignedIn, isLoaded } = useAuth();
 
+  // Default to home page while loading
+  const href = isLoaded && isSignedIn ? "/dashboard" : "/";
+
+  return (
     <Link
-      href={true ? "/admin" : "/"}
+      href={href}
       className="flex items-center gap-2.5 hover:opacity-90 transition-opacity"
     >
       <Leaf className="w-7 h-7 text-emerald-600" />

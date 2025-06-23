@@ -20,7 +20,7 @@ const LandingPage = () => {
 
   useEffect(() => {
     if (user) {
-      router.replace("/admin");
+      router.replace("/dashboard");
     }
   }, [user, router]);
 
@@ -33,8 +33,8 @@ const LandingPage = () => {
           <nav className="flex gap-6">
             {[
               { name: "About EcoKeepr", href: "/about" },
-              { name: "Careers", href: "/careers" }, 
-              { name: "Contact", href: "/contact" }
+              { name: "Careers", href: "/careers" },
+              { name: "Contact", href: "/contact" },
             ].map((item) => (
               <Link
                 key={item.name}
