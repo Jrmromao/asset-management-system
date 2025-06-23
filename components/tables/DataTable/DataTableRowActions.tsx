@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Row } from "@tanstack/react-table";
 import {
   DropdownMenu,
@@ -6,7 +6,16 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import Swal from "sweetalert2";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface DataTableRowActionsProps<TData> {
   row: Row<TData>;
@@ -25,37 +34,17 @@ const DataTableRowActions = <TData,>({
   onDisable,
   className = "",
 }: DataTableRowActionsProps<TData>) => {
-  const handleDisable = () => {
-    Swal.fire({
-      title: "Are you sure?",
-      text: `This operation will deactivate the item and it wont be shown to the users.`,
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
-      confirmButtonText: "Yes, disable it!",
-    }).then((result) => {
-      if (result.isConfirmed) {
-        onDelete && onDelete(row.original);
-      }
-    });
-  };
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showDisableDialog, setShowDisableDialog] = useState(false);
 
   const handleDelete = () => {
-    Swal.fire({
-      title: "Are you sure?",
-      text: `This operation will delete this item and it cannot be recovered. \n Deleting this may lead to unexpected results and loss of data.`,
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
-      confirmButtonText: "Yes, delete it!",
-    }).then((result) => {
-      if (result.isConfirmed) {
-        onDelete && onDelete(row.original);
-        // toast.success("The item has been deleted!");
-      }
-    });
+    onDelete && onDelete(row.original);
+    setShowDeleteDialog(false);
+  };
+
+  const handleDisable = () => {
+    onDisable && onDisable(row.original);
+    setShowDisableDialog(false);
   };
 
   return (
@@ -66,13 +55,15 @@ const DataTableRowActions = <TData,>({
         </DropdownMenuTrigger>
         <DropdownMenuContent>
           {onDelete && (
-            <DropdownMenuCheckboxItem onClick={() => handleDelete()}>
+            <DropdownMenuCheckboxItem onClick={() => setShowDeleteDialog(true)}>
               <div className={"cursor-pointer text-[#344054]"}> Delete</div>
             </DropdownMenuCheckboxItem>
           )}
           {onDisable && (
-            <DropdownMenuCheckboxItem onClick={() => handleDisable()}>
-              <div className={"cursor-pointer text-[#344054]"}> Delete</div>
+            <DropdownMenuCheckboxItem
+              onClick={() => setShowDisableDialog(true)}
+            >
+              <div className={"cursor-pointer text-[#344054]"}> Disable</div>
             </DropdownMenuCheckboxItem>
           )}
           {onView && (
@@ -88,6 +79,47 @@ const DataTableRowActions = <TData,>({
           )}
         </DropdownMenuContent>
       </DropdownMenu>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This operation will delete this item and it cannot be recovered.
+              Deleting this may lead to unexpected results and loss of data.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Yes, delete it!
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Disable Confirmation Dialog */}
+      <AlertDialog open={showDisableDialog} onOpenChange={setShowDisableDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This operation will deactivate the item and it won&apos;t be shown
+              to the users.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDisable}>
+              Yes, disable it!
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

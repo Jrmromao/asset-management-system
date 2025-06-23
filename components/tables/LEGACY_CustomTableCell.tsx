@@ -1,12 +1,22 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import Swal from "sweetalert2";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 const LEGACY_CustomTableCell = ({
   id,
@@ -23,27 +33,13 @@ const LEGACY_CustomTableCell = ({
   setRefresh: (flag: boolean) => void;
 }) => {
   const navigate = useRouter();
-  const handleDelete = (id: string) => {
-    Swal.fire({
-      title: "Are you sure?",
-      text: `You won't be able to revert this!`,
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
-      confirmButtonText: "Yes, delete it!",
-    }).then((result) => {
-      if (result.isConfirmed) {
-        Swal.fire({
-          title: "Deleted!",
-          text: "Your file has been deleted.",
-          icon: "success",
-        });
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
-        deleteEntity(id);
-        setRefresh(true);
-      }
-    });
+  const handleDelete = () => {
+    deleteEntity(id);
+    setRefresh(true);
+    setShowDeleteDialog(false);
+    toast.success("Item has been deleted successfully");
   };
 
   return (
@@ -61,15 +57,32 @@ const LEGACY_CustomTableCell = ({
           <DropdownMenuCheckboxItem onClick={() => updateEntity(id)}>
             <div className={"cursor-pointer text-[#344054]"}> Update</div>
           </DropdownMenuCheckboxItem>
-          <DropdownMenuCheckboxItem
-            onClick={() => {
-              handleDelete(id);
-            }}
-          >
+          <DropdownMenuCheckboxItem onClick={() => setShowDeleteDialog(true)}>
             <div className={"cursor-pointer text-[#344054]"}> Delete</div>
           </DropdownMenuCheckboxItem>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You won&apos;t be able to revert this action!
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDelete}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Yes, delete it!
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };

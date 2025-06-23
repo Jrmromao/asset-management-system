@@ -5,8 +5,6 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import Swal from "sweetalert2";
-import withReactContent from "sweetalert2-react-content";
 import { TableCell } from "@/components/ui/table";
 import { useRouter } from "next/navigation";
 import {
