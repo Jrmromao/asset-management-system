@@ -1,13 +1,23 @@
 "use client";
 
-import React, { useState, useMemo, useCallback, Suspense } from "react";
+import React, { useState, useMemo, useCallback, useTransition } from "react";
 import { DataTable } from "@/components/tables/DataTable/data-table";
 import { maintenanceColumns } from "@/components/tables/MaintenanceColumns";
+import type {
+  ColumnDef,
+  ColumnFiltersState,
+  SortingState,
+  VisibilityState,
+} from "@tanstack/react-table";
+import {
+  getCoreRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
 import { MaintenanceForm } from "@/components/forms/MaintenanceForm";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -15,167 +25,71 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
+import Link from "next/link";
+import HeaderBox from "@/components/HeaderBox";
+import StatusCards from "@/components/StatusCards";
+import StatusCardPlaceholder from "@/components/StatusCardPlaceholder";
+import { DataTableHeader } from "@/components/tables/TableHeader";
+import { EmptyStateCard } from "@/components/EmptyStateCard";
 import { 
-  Plus, 
-  Search, 
   Calendar, 
-  TrendingUp, 
-  DollarSign, 
-  Leaf,
-  Filter,
-  Download,
-  RefreshCw,
-  AlertCircle,
   CheckCircle,
   Clock,
   AlertTriangle,
-  Settings
+  Settings,
+  AlertCircle,
+  RefreshCw,
+  Download,
+  Plus
 } from "lucide-react";
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { Button } from "@/components/ui/button";
 import { useMaintenance } from "@/hooks/useMaintenance";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useDebounce } from "@/hooks/useDebounce";
 import { toast } from "sonner";
 
-// Loading Skeleton Components
-const StatsLoadingSkeleton = () => (
-  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-    {Array.from({ length: 4 }).map((_, i) => (
-      <Card key={i}>
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div className="space-y-2">
-              <Skeleton className="h-4 w-16" />
-              <Skeleton className="h-8 w-12" />
-              <Skeleton className="h-3 w-20" />
-            </div>
-            <Skeleton className="h-10 w-10 rounded-full" />
-          </div>
-        </CardContent>
-      </Card>
-    ))}
-  </div>
-);
+// Constants for better maintainability
+const SEARCH_DEBOUNCE_MS = 300;
 
-const TableLoadingSkeleton = () => (
-  <Card>
-    <CardHeader>
-      <div className="flex items-center justify-between">
-        <Skeleton className="h-6 w-40" />
-        <Skeleton className="h-10 w-32" />
-      </div>
-    </CardHeader>
-    <CardContent>
-      <div className="space-y-4">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className="flex items-center space-x-4">
-            <Skeleton className="h-4 w-32" />
-            <Skeleton className="h-4 w-24" />
-            <Skeleton className="h-4 w-16" />
-            <Skeleton className="h-4 w-20" />
-            <Skeleton className="h-4 w-20" />
-            <Skeleton className="h-4 w-16" />
-            <Skeleton className="h-4 w-12" />
-          </div>
-        ))}
-      </div>
-    </CardContent>
-  </Card>
-);
+// Utility function for debounced search
+const useDebounce = (value: string, delay: number) => {
+  const [debouncedValue, setDebouncedValue] = useState(value);
 
-// Stats Card Component
-const StatCard = React.memo(({ 
-  title, 
-  value, 
-  description, 
-  icon: Icon, 
-  color = "blue", 
-  loading = false 
-}: {
-  title: string;
-  value: string | number;
-  description?: string;
-  icon: React.ComponentType<{ className?: string }>;
-  color?: "blue" | "green" | "amber" | "red" | "purple";
-  loading?: boolean;
-}) => {
-  const colorClasses = {
-    blue: "bg-blue-50 text-blue-600",
-    green: "bg-green-50 text-green-600",
-    amber: "bg-amber-50 text-amber-600",
-    red: "bg-red-50 text-red-600",
-    purple: "bg-purple-50 text-purple-600",
-  };
+  React.useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
 
-  if (loading) {
-    return (
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div className="space-y-2">
-              <Skeleton className="h-4 w-16" />
-              <Skeleton className="h-8 w-12" />
-              <Skeleton className="h-3 w-20" />
-            </div>
-            <Skeleton className="h-10 w-10 rounded-full" />
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
 
-  return (
-    <Card>
-      <CardContent className="p-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium text-gray-600">{title}</p>
-            <p className="text-2xl font-bold text-gray-900">{value}</p>
-            {description && (
-              <p className="text-xs text-gray-500 mt-1">{description}</p>
-            )}
-          </div>
-          <div className={`p-2 rounded-full ${colorClasses[color]}`}>
-            <Icon className="h-5 w-5" />
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-});
-
-StatCard.displayName = "StatCard";
+  return debouncedValue;
+};
 
 // Main Maintenance Page Component
 export default function MaintenancePage() {
   const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string[]>([]);
-  const [sortBy, setSortBy] = useState("startDate");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const [isPending, startTransition] = useTransition();
   
-  const debouncedSearchTerm = useDebounce(searchTerm, 300);
+  const debouncedSearchTerm = useDebounce(searchTerm, SEARCH_DEBOUNCE_MS);
 
   // Use the maintenance hook with filters
   const filters = useMemo(() => ({
     search: debouncedSearchTerm,
-    status: statusFilter,
-  }), [debouncedSearchTerm, statusFilter]);
+  }), [debouncedSearchTerm]);
+
+  // Memoized columns to prevent unnecessary re-renders
+  const columns = useMemo(() => {
+    return maintenanceColumns;
+  }, []);
 
   const {
     data: maintenance,
@@ -191,312 +105,233 @@ export default function MaintenancePage() {
     isCreating,
   } = useMaintenance({ filters });
 
-  // Memoized filtered and sorted data
-  const processedData = useMemo(() => {
-    let filtered = [...maintenance];
+  // Table configuration
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [rowSelection, setRowSelection] = useState({});
 
-    // Apply sorting
-    filtered.sort((a, b) => {
-      let aValue: any, bValue: any;
-      
-      switch (sortBy) {
-        case "assetName":
-          aValue = a.asset.name;
-          bValue = b.asset.name;
-          break;
-        case "status":
-          aValue = a.statusLabel.name;
-          bValue = b.statusLabel.name;
-          break;
-        case "cost":
-          aValue = a.totalCost || a.cost || 0;
-          bValue = b.totalCost || b.cost || 0;
-          break;
-        default:
-          aValue = a[sortBy as keyof typeof a];
-          bValue = b[sortBy as keyof typeof b];
-      }
-
-      if (typeof aValue === "string" && typeof bValue === "string") {
-        return sortOrder === "asc" 
-          ? aValue.localeCompare(bValue)
-          : bValue.localeCompare(aValue);
-      }
-
-      if (aValue instanceof Date && bValue instanceof Date) {
-        return sortOrder === "asc"
-          ? aValue.getTime() - bValue.getTime()
-          : bValue.getTime() - aValue.getTime();
-      }
-
-      return sortOrder === "asc" ? aValue - bValue : bValue - aValue;
-    });
-
-    return filtered;
-  }, [maintenance, sortBy, sortOrder]);
+  const table = useReactTable({
+    data: maintenance,
+    columns,
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    onColumnVisibilityChange: setColumnVisibility,
+    onRowSelectionChange: setRowSelection,
+    state: {
+      sorting,
+      columnFilters,
+      columnVisibility,
+      rowSelection,
+    },
+  });
 
   const handleScheduleSuccess = useCallback(() => {
     setIsScheduleDialogOpen(false);
     toast.success("Maintenance scheduled successfully!");
   }, []);
 
-     const handleExport = useCallback(() => {
-     const csvContent = [
-       ["Title", "Asset", "Status", "Scheduled", "Cost", "CO2 Impact"].join(","),
-       ...processedData.map(item => [
-         item.title,
-         item.asset.name,
-         item.statusLabel.name,
-         new Date(item.startDate).toLocaleDateString(),
-         item.totalCost || item.cost || 0,
-         item.co2eRecords?.reduce((sum: number, record: any) => sum + Number(record.co2e), 0) || 0
-       ].join(","))
-     ].join("\n");
-
-    const blob = new Blob([csvContent], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `maintenance-report-${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  }, [processedData]);
-
-  const clearFilters = useCallback(() => {
-    setSearchTerm("");
-    setStatusFilter([]);
+  const handleCreateNew = useCallback(() => {
+    setIsScheduleDialogOpen(true);
   }, []);
 
-  if (error) {
+  const handleExport = useCallback(async () => {
+    try {
+      const response = await fetch("/api/maintenance/export", {
+        method: "POST",
+      });
+
+      if (!response.ok) {
+        throw new Error(`Export failed: ${response.statusText}`);
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `maintenance-${new Date().toISOString().split("T")[0]}.csv`;
+
+      a.style.display = "none";
+      document.body.appendChild(a);
+      a.click();
+
+      setTimeout(() => {
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      }, 100);
+
+      toast.success("Maintenance records exported successfully");
+    } catch (error) {
+      console.error("Error exporting maintenance:", error);
+      toast.error("Failed to export maintenance records");
+    }
+  }, []);
+
+  // Memoized card data
+  const cardData = useMemo(
+    () => [
+      {
+        title: "Scheduled",
+        value: (stats as any)?.scheduled || 0,
+        subtitle: "Upcoming maintenance",
+        color: "info" as const,
+        icon: <Calendar className="w-4 h-4" />,
+      },
+      {
+        title: "In Progress",
+        value: (stats as any)?.inProgress || 0,
+        subtitle: "Currently active",
+        color: "warning" as const,
+        icon: <Clock className="w-4 h-4" />,
+      },
+      {
+        title: "Completed",
+        value: (stats as any)?.completed || 0,
+        subtitle: "Finished tasks",
+        color: "success" as const,
+        icon: <CheckCircle className="w-4 h-4" />,
+      },
+      {
+        title: "Overdue",
+        value: (stats as any)?.overdue || 0,
+        subtitle: "Past due date",
+        color: "danger" as const,
+        icon: <AlertTriangle className="w-4 h-4" />,
+      },
+    ],
+    [stats],
+  );
+
+  // Loading state
+  if (isLoading || isStatsLoading) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <Card className="w-full max-w-md">
-          <CardContent className="p-6 text-center">
-            <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              Failed to load maintenance data
-            </h3>
-            <p className="text-gray-600 mb-4">
-              {error.message || "An unexpected error occurred"}
-            </p>
-            <Button onClick={() => refetch()} variant="outline">
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Try Again
-            </Button>
+      <div className="p-6 space-y-6 dark:bg-gray-900">
+        <Breadcrumb className="hidden md:flex">
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link href="/maintenance">Maintenance</Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+          </BreadcrumbList>
+        </Breadcrumb>
+
+        <HeaderBox
+          title="Maintenance"
+          subtitle="Manage and track maintenance activities for your assets"
+          icon={<Settings className="w-4 h-4" />}
+        />
+
+        <StatusCardPlaceholder />
+
+        <Card className="dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+          <CardContent className="p-0">
+            <DataTable columns={columns} data={[]} isLoading={true} />
           </CardContent>
         </Card>
       </div>
     );
   }
 
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Maintenance</h1>
-          <p className="text-gray-600 mt-1">
-            Manage and track maintenance activities for your assets
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <Button
-            onClick={() => refetch()}
-            variant="outline"
-            size="sm"
-            disabled={isFetching}
-          >
-            <RefreshCw className={`h-4 w-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
-          <Button
-            onClick={handleExport}
-            variant="outline"
-            size="sm"
-            disabled={isEmpty}
-          >
-            <Download className="h-4 w-4 mr-2" />
-            Export
-          </Button>
-          <Button
-            onClick={() => setIsScheduleDialogOpen(true)}
-            disabled={isCreating}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Schedule Maintenance
-          </Button>
-        </div>
-      </div>
+  if (error) {
+    return (
+      <div className="p-6 space-y-6 dark:bg-gray-900">
+        <Breadcrumb className="hidden md:flex">
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link href="/maintenance">Maintenance</Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+          </BreadcrumbList>
+        </Breadcrumb>
 
-      {/* Stats Grid */}
-      <ErrorBoundary isolate fallback={<StatsLoadingSkeleton />}>
-        <Suspense fallback={<StatsLoadingSkeleton />}>
-          {isStatsLoading ? (
-            <StatsLoadingSkeleton />
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                             <StatCard
-                 title="Scheduled"
-                 value={(stats as any)?.scheduled || 0}
-                 description="Upcoming maintenance"
-                 icon={Calendar}
-                 color="blue"
-               />
-               <StatCard
-                 title="In Progress"
-                 value={(stats as any)?.inProgress || 0}
-                 description="Currently active"
-                 icon={Clock}
-                 color="amber"
-               />
-               <StatCard
-                 title="Completed"
-                 value={(stats as any)?.completed || 0}
-                 description="Finished tasks"
-                 icon={CheckCircle}
-                 color="green"
-               />
-               <StatCard
-                 title="Overdue"
-                 value={(stats as any)?.overdue || 0}
-                 description="Past due date"
-                 icon={AlertTriangle}
-                 color="red"
-               />
-            </div>
-          )}
-        </Suspense>
-      </ErrorBoundary>
+        <HeaderBox
+          title="Maintenance"
+          subtitle="Manage and track maintenance activities for your assets"
+          icon={<Settings className="w-4 h-4" />}
+        />
 
-      {/* Filters and Search */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <Settings className="h-5 w-5" />
-              Filters & Search
-            </CardTitle>
-            {hasFilters && (
-              <Button
-                onClick={clearFilters}
-                variant="outline"
-                size="sm"
-              >
-                Clear Filters
+        <div className="flex items-center justify-center h-96">
+          <Card className="w-full max-w-md">
+            <CardContent className="p-6 text-center">
+              <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Failed to load maintenance data
+              </h3>
+              <p className="text-gray-600 mb-4">
+                {error.message || "An unexpected error occurred"}
+              </p>
+              <Button onClick={() => refetch()} variant="outline">
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Try Again
               </Button>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Search maintenance records..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-            <Select
-              value={statusFilter.length > 0 ? statusFilter.join(",") : "all"}
-              onValueChange={(value) => setStatusFilter(value === "all" ? [] : value.split(","))}
-            >
-              <SelectTrigger className="w-full md:w-48">
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="Scheduled">Scheduled</SelectItem>
-                <SelectItem value="In Progress">In Progress</SelectItem>
-                <SelectItem value="Completed">Completed</SelectItem>
-                <SelectItem value="Overdue">Overdue</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select
-              value={`${sortBy}-${sortOrder}`}
-              onValueChange={(value) => {
-                const [field, order] = value.split("-");
-                setSortBy(field);
-                setSortOrder(order as "asc" | "desc");
-              }}
-            >
-              <SelectTrigger className="w-full md:w-48">
-                <SelectValue placeholder="Sort by" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="startDate-desc">Latest First</SelectItem>
-                <SelectItem value="startDate-asc">Oldest First</SelectItem>
-                <SelectItem value="assetName-asc">Asset A-Z</SelectItem>
-                <SelectItem value="assetName-desc">Asset Z-A</SelectItem>
-                <SelectItem value="status-asc">Status A-Z</SelectItem>
-                <SelectItem value="cost-desc">Cost High-Low</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Maintenance Table */}
-      <ErrorBoundary isolate fallback={<TableLoadingSkeleton />}>
-        <Suspense fallback={<TableLoadingSkeleton />}>
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>
-                  Maintenance Records
-                  {maintenance.length > 0 && (
-                    <Badge variant="secondary" className="ml-2">
-                      {maintenance.length} record{maintenance.length !== 1 ? 's' : ''}
-                    </Badge>
-                  )}
-                </CardTitle>
-                {isFetching && (
-                  <div className="flex items-center gap-2 text-sm text-gray-500">
-                    <RefreshCw className="h-4 w-4 animate-spin" />
-                    Updating...
-                  </div>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <TableLoadingSkeleton />
-              ) : isEmpty ? (
-                <div className="text-center py-12">
-                  <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                    {hasFilters ? "No maintenance records match your filters" : "No maintenance records yet"}
-                  </h3>
-                  <p className="text-gray-600 mb-4">
-                    {hasFilters 
-                      ? "Try adjusting your search or filter criteria"
-                      : "Schedule your first maintenance to get started"
-                    }
-                  </p>
-                  {hasFilters ? (
-                    <Button onClick={clearFilters} variant="outline">
-                      Clear Filters
-                    </Button>
-                  ) : (
-                    <Button onClick={() => setIsScheduleDialogOpen(true)}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Schedule Maintenance
-                    </Button>
-                  )}
-                </div>
-              ) : (
-                <DataTable
-                  columns={maintenanceColumns}
-                  data={processedData}
-                />
-              )}
             </CardContent>
           </Card>
-        </Suspense>
-      </ErrorBoundary>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-6 space-y-6 dark:bg-gray-900">
+      <Breadcrumb className="hidden md:flex">
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink asChild>
+              <Link href="/maintenance">Maintenance</Link>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+        </BreadcrumbList>
+      </Breadcrumb>
+
+      <HeaderBox
+        title="Maintenance"
+        subtitle="Manage and track maintenance activities for your assets"
+        icon={<Settings className="w-4 h-4" />}
+      />
+
+      <StatusCards cards={cardData} columns={4} />
+
+      <div className="space-y-4">
+        <DataTableHeader
+          table={table}
+          addNewText="Schedule Maintenance"
+          onAddNew={handleCreateNew}
+          onExport={handleExport}
+          isLoading={isLoading || isPending}
+          filterPlaceholder="Search maintenance records..."
+          className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm"
+          showFilter={false}
+        />
+
+        {maintenance.length === 0 && !isLoading ? (
+          <EmptyStateCard
+            icon={Settings}
+            title="No Maintenance Records Yet"
+            description="Schedule your first maintenance to track asset health, costs, and carbon footprint. Regular maintenance helps extend asset life and optimize performance."
+            actionText="Schedule Maintenance"
+            onAction={handleCreateNew}
+          />
+        ) : (
+          <Card className="dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+            <CardContent className="p-0">
+                          <DataTable
+              columns={columns}
+              data={maintenance}
+              isLoading={isLoading || isPending}
+            />
+            </CardContent>
+          </Card>
+        )}
+      </div>
 
              {/* Schedule Maintenance Dialog */}
        <Dialog open={isScheduleDialogOpen} onOpenChange={setIsScheduleDialogOpen}>

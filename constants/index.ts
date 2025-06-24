@@ -53,6 +53,12 @@ export const sidebarLinks = [
     label: "Maintenance",
     visibleTo: [roles.ADMIN],
   },
+  {
+    imgURL: "/icons/maintenance-icon.svg",
+    route: "/maintenance-flows",
+    label: "Maintenance Flows",
+    visibleTo: [roles.ADMIN],
+  },
   // {
   //   imgURL: "/icons/settings.svg",
   //   route: "/settings",

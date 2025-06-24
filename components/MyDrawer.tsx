@@ -29,7 +29,6 @@ export default function MyDrawer({
       </DrawerTrigger>
       <DrawerContent>
         <DrawerHeader>
-          <DrawerTitle>Navigation</DrawerTitle>
           <DrawerClose />
         </DrawerHeader>
         {/* Your drawer content (links, etc.) goes here */}

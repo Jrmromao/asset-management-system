@@ -109,13 +109,7 @@ const Sidebar = () => {
 
         {/* Navigation */}
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-          {!isCollapsed && (
-            <div className="mb-4">
-              <h2 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider px-4 mb-3">
-                Navigation
-              </h2>
-            </div>
-          )}
+       
           
           {sidebarLinks.map((item) => (
             <SidebarLink
