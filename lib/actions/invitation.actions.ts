@@ -3,6 +3,8 @@
 import { clerkClient, auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/app/db";
+import { randomBytes } from 'crypto';
+import { EmailService } from "@/services/email";
 
 interface InviteUserParams {
   email: string;
@@ -28,7 +30,7 @@ export async function inviteUser({ email, roleId }: InviteUserParams) {
 
     const currentUser = await prisma.user.findFirst({
       where: { oauthId: userId },
-      select: { companyId: true },
+      select: { companyId: true, id: true },
     });
 
     console.log("🔍 [inviteUser] Current user:", { found: !!currentUser, companyId: currentUser?.companyId });
@@ -67,7 +69,7 @@ export async function inviteUser({ email, roleId }: InviteUserParams) {
     }
 
     const clerk = await clerkClient();
-    
+
     // Check if user already exists in Clerk
     console.log("🔍 [inviteUser] Checking if user already exists in Clerk...");
     try {
@@ -98,25 +100,88 @@ export async function inviteUser({ email, roleId }: InviteUserParams) {
       console.log("🔍 [inviteUser] User doesn't exist in Clerk, proceeding with invitation");
     }
 
+    console.log("🔐 [inviteUser] Checking user permissions...");
+    try {
+      const membershipList = await clerk.organizations.getOrganizationMembershipList({
+        organizationId: company.clerkOrgId,
+      });
+      
+      const userMembership = membershipList.data.find(m => m.publicUserData?.userId === userId);
+      
+      if (!userMembership) {
+        return {
+          success: false,
+          error: "You don't have permission to invite users to this organization.",
+        };
+      }
+      
+      console.log("👤 [inviteUser] User membership details:", {
+        role: userMembership.role,
+        permissions: userMembership.permissions,
+      });
+      
+      // Check if user has admin role
+      if (userMembership.role !== "org:admin") {
+        console.warn("⚠️ [inviteUser] User is not an org admin, this might cause issues");
+      }
+    } catch (membershipError) {
+      console.error("❌ [inviteUser] Failed to get user membership:", membershipError);
+      return {
+        success: false,
+        error: "You don't have permission to invite users to this organization.",
+      };
+    }
+
+    // Add this line before the try block (around line 125)
+    let invitation: any;
+
     console.log("📧 [inviteUser] Creating Clerk invitation...");
-    const invitation = await clerk.organizations.createOrganizationInvitation({
-      organizationId: company.clerkOrgId,
+    try {
+      invitation = await clerk.organizations.createOrganizationInvitation({
+        organizationId: company.clerkOrgId,
       inviterUserId: userId,
       emailAddress: email,
-      redirectUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/accept-invitation`,
+        redirectUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/accept-invitation`,
       publicMetadata: {
         companyId: companyId,
         roleId: roleId,
       },
       role: "org:member",
     });
+      console.log("✅ [inviteUser] Clerk invitation created:", invitation.id);
+    } catch (clerkError: any) {
+      console.error("❌ [inviteUser] Clerk invitation failed:", {
+        status: clerkError.status,
+        message: clerkError.message,
+        errors: clerkError.errors,
+        clerkTraceId: clerkError.clerkTraceId,
+      });
+      
+      // Check if it's a permissions issue
+      if (clerkError.status === 403) {
+        // Try to get user's role in the organization
+        try {
+          const membershipList = await clerk.organizations.getOrganizationMembershipList({
+            organizationId: company.clerkOrgId,
+          });
+          
+          const userMembership = membershipList.data.find(m => m.publicUserData?.userId === userId);
+          
+          if (userMembership) {
+            console.log("👤 [inviteUser] User membership:", {
+              role: userMembership.role,
+              permissions: userMembership.permissions,
+            });
+          }
+        } catch (membershipError) {
+          console.error("❌ [inviteUser] Cannot get user membership:", membershipError);
+        }
+      }
+      
+      throw clerkError;
+    }
 
-    console.log("✅ [inviteUser] Clerk invitation created:", {
-      id: invitation.id,
-      email: invitation.emailAddress,
-      status: invitation.status,
-      url: invitation.url,
-    });
+    // Now invitation is available here
 
     // Save invitation to database if you added the Invitation model
     try {
@@ -125,8 +190,9 @@ export async function inviteUser({ email, roleId }: InviteUserParams) {
           email,
           roleId,
           companyId,
-          invitedBy: userId,
+          invitedBy: currentUser.id,
           clerkInvitationId: invitation.id,
+          token: randomBytes(32).toString('hex'),
           status: "PENDING",
           expiresAt: invitation.expiresAt ? new Date(invitation.expiresAt) : null,
         },
@@ -170,7 +236,7 @@ export async function completeInvitationRegistration({
   clerkUserId,
   invitationId,
   userData,
-  ticket,
+  token,
 }: {
   clerkUserId: string;
   invitationId: string;
@@ -184,7 +250,7 @@ export async function completeInvitationRegistration({
     roleId: string;
     companyId: string;
   };
-  ticket: string;
+  token: string;
 }) {
   try {
     console.log("🎯 [completeInvitationRegistration] Starting completion process");
@@ -236,6 +302,158 @@ export async function completeInvitationRegistration({
     return {
       success: false,
       error: error instanceof Error ? error.message : "Registration failed",
+    };
+  }
+}
+
+// Replace the invitation creation with direct approach
+export async function inviteUserAlternative({ email, roleId }: InviteUserParams) {
+  try {
+    const { userId } = await auth();
+    if (!userId) {
+      return { success: false, error: "User is not authenticated." };
+    }
+
+    const currentUser = await prisma.user.findFirst({
+      where: { oauthId: userId },
+      select: { companyId: true, id: true },
+    });
+
+    if (!currentUser || !currentUser.companyId) {
+      return { success: false, error: "Could not find the associated company." };
+    }
+
+    const { companyId } = currentUser;
+
+    // Create invitation record
+    const invitationRecord = await prisma.invitation.create({
+      data: {
+        email,
+        roleId,
+        companyId,
+        invitedBy: currentUser.id,
+        token: randomBytes(32).toString('hex'),
+        status: "PENDING",
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+      },
+    });
+
+    const invitationUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/accept-invitation?id=${invitationRecord.id}`;
+    console.log("📧 Invitation URL:", invitationUrl);
+
+    return {
+      success: true,
+      invitationId: invitationRecord.id,
+      invitationUrl: invitationUrl,
+      message: "Invitation created successfully!",
+    };
+  } catch (error) {
+    console.error("❌ [inviteUserAlternative] Error:", error);
+    return {
+      success: false,
+      error: "Failed to create invitation",
+    };
+  }
+}
+
+export async function inviteUserSecure({ email, roleId }: InviteUserParams) {
+  try {
+    console.log("🚀 [inviteUserSecure] Starting secure invitation process:", { email, roleId });
+    
+    const { userId } = await auth();
+    if (!userId) {
+      return { success: false, error: "User is not authenticated." };
+    }
+
+    // Get current user with name
+    const currentUser = await prisma.user.findFirst({
+      where: { oauthId: userId },
+      select: { 
+        companyId: true, 
+        id: true, 
+        name: true,
+        firstName: true,
+        lastName: true 
+      },
+    });
+
+    if (!currentUser?.companyId) {
+      return { success: false, error: "Could not find the associated company." };
+    }
+
+    // Get company and role details for email
+    const [company, role] = await Promise.all([
+      prisma.company.findUnique({
+        where: { id: currentUser.companyId },
+        select: { name: true },
+      }),
+      prisma.role.findUnique({
+        where: { id: roleId },
+        select: { name: true },
+      }),
+    ]);
+
+    if (!company || !role) {
+      return { success: false, error: "Could not find company or role details." };
+    }
+
+    // Generate secure random token
+    const invitationToken = randomBytes(32).toString('hex');
+    
+    // Create invitation with secure token
+    const invitation = await prisma.invitation.create({
+      data: {
+        email,
+        roleId,
+        companyId: currentUser.companyId,
+        invitedBy: currentUser.id,
+        status: "PENDING",
+        token: invitationToken,
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+      },
+    });
+
+    const invitationUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/accept-invitation?token=${invitationToken}`;
+    
+    // Send invitation email
+    try {
+      const emailResult = await EmailService.sendEmail({
+        to: email,
+        subject: `You're invited to join ${company.name} on EcoKeepr`,
+        templateName: "invitation",
+        templateData: {
+          companyName: company.name,
+          roleName: role.name,
+          invitationUrl,
+          inviterName: currentUser.name || `${currentUser.firstName} ${currentUser.lastName}`,
+        },
+      });
+
+      if (!emailResult.success) {
+        console.warn("⚠️ [inviteUserSecure] Failed to send email:", emailResult.error);
+      } else {
+        console.log("✅ [inviteUserSecure] Invitation email sent successfully");
+      }
+    } catch (emailError) {
+      console.warn("⚠️ [inviteUserSecure] Email sending failed:", emailError);
+      // Don't fail the whole process if email fails
+    }
+
+    console.log("✅ [inviteUserSecure] Secure invitation created:", invitationUrl);
+
+    revalidatePath("/people");
+
+    return {
+      success: true,
+      invitationId: invitation.id,
+      invitationUrl: invitationUrl,
+      message: "Invitation sent successfully!",
+    };
+  } catch (error) {
+    console.error("❌ [inviteUserSecure] Error:", error);
+    return {
+      success: false,
+      error: "Failed to create invitation",
     };
   }
 }

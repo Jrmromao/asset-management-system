@@ -125,4 +125,51 @@ export const emailTemplates = {
       </div>
     </div>
   `,
+  
+  invitation: ({
+    firstName,
+    lastName,
+    companyName,
+    roleName,
+    invitationUrl,
+    inviterName,
+  }: {
+    firstName?: string;
+    lastName?: string;
+    companyName: string;
+    roleName: string;
+    invitationUrl: string;
+    inviterName: string;
+  }) => `
+    <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
+      <div style="background-color: #f7f7f7; padding: 20px; text-align: center;">
+        <h1 style="color: #22c55e; margin: 0;">You're Invited!</h1>
+        <p style="margin: 5px 0 0; color: #666;">Join ${companyName} on EcoKeepr</p>
+      </div>
+      <div style="padding: 30px;">
+        <h2 style="color: #333;">Hello${firstName ? ` ${firstName}` : ''}!</h2>
+        <p><strong>${inviterName}</strong> has invited you to join <strong>${companyName}</strong> as a <strong>${roleName}</strong> on EcoKeepr.</p>
+        <p>EcoKeepr is a sustainable asset management platform that helps organizations track and manage their environmental impact.</p>
+        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #22c55e;">
+          <p style="margin: 0; font-size: 14px; color: #666;">
+            <strong>What's next?</strong><br/>
+            Click the button below to accept your invitation and set up your account. The invitation will expire in 7 days.
+          </p>
+        </div>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${invitationUrl}" style="background-color: #22c55e; color: #fff; padding: 15px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">Accept Invitation</a>
+        </div>
+        <p style="font-size: 12px; color: #666;">
+          If the button doesn't work, copy and paste this link into your browser:<br/>
+          <a href="${invitationUrl}" style="color: #22c55e; word-break: break-all;">${invitationUrl}</a>
+        </p>
+        <p>If you have any questions, feel free to contact ${inviterName} or our support team.</p>
+        <p>Best regards,<br>The EcoKeepr Team</p>
+      </div>
+      <div style="background-color: #f7f7f7; padding: 15px; text-align: center; font-size: 12px; color: #777;">
+        <p>You received this email because you were invited to join ${companyName}.</p>
+        <p>&copy; ${new Date().getFullYear()} EcoKeepr. All rights reserved.</p>
+      </div>
+    </div>
+  `,
 };

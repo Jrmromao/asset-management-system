@@ -65,8 +65,9 @@ model Invitation {
   roleId            String
   companyId         String
   invitedBy         String
+  token             String   @unique
   clerkInvitationId String?  @unique
-  status            String   @default("PENDING") // PENDING, ACCEPTED, EXPIRED, CANCELLED
+  status            String   @default("PENDING")
   expiresAt         DateTime?
   acceptedAt        DateTime?
   createdAt         DateTime @default(now())
@@ -77,10 +78,11 @@ model Invitation {
   role      Role    @relation(fields: [roleId], references: [id], onDelete: Restrict)
   inviter   User    @relation("UserInvitations", fields: [invitedBy], references: [id], onDelete: Restrict)
 
-  @@unique([email, companyId]) // Prevent duplicate invitations for same email in same company
+  @@unique([email, companyId])
   @@index([companyId])
   @@index([status])
   @@index([email])
+  @@index([token])
 }
 
 model License {

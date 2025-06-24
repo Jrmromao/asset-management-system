@@ -35,12 +35,12 @@ interface InvitationRegistrationFormProps {
     roleName: string;
     invitationId: string;
   };
-  ticket: string;
+  token: string;
 }
 
 export function InvitationRegistrationForm({ 
   invitationData, 
-  ticket 
+  token 
 }: InvitationRegistrationFormProps) {
   const [isPending, startTransition] = useTransition();
   const [step, setStep] = useState(1);
@@ -87,7 +87,7 @@ export function InvitationRegistrationForm({
               roleId: invitationData.roleId,
               companyId: invitationData.companyId,
             },
-            ticket,
+            token,
           });
 
           if (registrationResult.success) {

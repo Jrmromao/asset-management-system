@@ -24,15 +24,14 @@ export default function AcceptInvitationPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const ticket = searchParams?.get("ticket");
-  const invitationId = searchParams?.get("invitation_id");
+  const token = searchParams?.get("token");
 
   const validateInvitation = useCallback(async () => {
     try {
       const response = await fetch("/api/validate-invitation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ticket, invitationId }),
+        body: JSON.stringify({ token }),
       });
 
       const result = await response.json();
@@ -47,10 +46,10 @@ export default function AcceptInvitationPage() {
     } finally {
       setLoading(false);
     }
-  }, [ticket, invitationId]);
+  }, [token]);
 
   useEffect(() => {
-    if (!ticket && !invitationId) {
+    if (!token) {
       setError("Invalid invitation link");
       setLoading(false);
       return;
@@ -62,7 +61,7 @@ export default function AcceptInvitationPage() {
     }
 
     validateInvitation();
-  }, [ticket, invitationId, isSignedIn, validateInvitation]);
+  }, [token, isSignedIn, validateInvitation]);
 
   if (loading) {
     return (
@@ -112,7 +111,7 @@ export default function AcceptInvitationPage() {
               companyId: "",
               invitationId: "",
             }}
-            ticket={ticket || ""}
+            token={token || ""}
           />
         </CardContent>
       </Card>

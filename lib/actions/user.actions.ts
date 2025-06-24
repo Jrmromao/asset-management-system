@@ -717,40 +717,134 @@ export async function inviteUserWithService(data: {
 
 /**
  * Get all users for the current organization using UserService
+ * Enhanced to work with or without Clerk orgId by using user's company association
  */
 export const getAllUsersWithService = async (): Promise<{
   success: boolean;
   error?: string;
-  data?: PrismaUser[];
+  data: { users: PrismaUser[]; totalUsers: number; newThisMonth: number; uniqueRoles: number };
 }> => {
   try {
+    console.log("🔍 [getAllUsersWithService] Starting user fetch...");
     const { orgId, userId } = await auth();
-
-    if (!orgId || !userId) {
-      return { success: false, error: "Unauthorized" };
-    }
-
-    const currentUser = await prisma.user.findFirst({
-      where: { oauthId: userId },
-      select: { companyId: true },
+    
+    console.log("🔍 [getAllUsersWithService] Auth result:", { 
+      userId: !!userId, 
+      orgId: !!orgId,
+      userIdValue: userId,
+      orgIdValue: orgId 
     });
 
+    // We need at least userId
+    if (!userId) {
+      console.log("❌ [getAllUsersWithService] Missing userId");
+      return { 
+        success: false, 
+        error: "Unauthorized - No user ID",
+        data: { users: [], totalUsers: 0, newThisMonth: 0, uniqueRoles: 0 }
+      };
+    }
+
+    console.log("🔍 [getAllUsersWithService] Looking for current user with oauthId:", userId);
+    const currentUser = await prisma.user.findFirst({
+      where: { oauthId: userId },
+      select: { 
+        companyId: true, 
+        id: true, 
+        email: true, 
+        name: true,
+        company: {
+          select: {
+            id: true,
+            name: true,
+            clerkOrgId: true
+          }
+        }
+      },
+    });
+
+    console.log("🔍 [getAllUsersWithService] Current user found:", currentUser);
+
     if (!currentUser || !currentUser.companyId) {
+      console.log("❌ [getAllUsersWithService] No current user or company ID:", {
+        userFound: !!currentUser,
+        companyId: currentUser?.companyId
+      });
+      
+      // Let's also check if there are any users in the database at all
+      const allUsers = await prisma.user.findMany({
+        select: { id: true, email: true, oauthId: true, companyId: true, status: true },
+        take: 5
+      });
+      console.log("🔍 [getAllUsersWithService] All users in DB (first 5):", allUsers);
+      
       return {
         success: false,
         error: "Could not find the associated company.",
+        data: { users: [], totalUsers: 0, newThisMonth: 0, uniqueRoles: 0 }
       };
     }
+
+    console.log("🔍 [getAllUsersWithService] Fetching users for company:", {
+      companyId: currentUser.companyId,
+      companyName: currentUser.company?.name,
+      clerkOrgId: currentUser.company?.clerkOrgId
+    });
 
     const userService = UserService.getInstance();
     const result = await userService.getAllUsers(currentUser.companyId);
 
-    return result;
+    console.log("🔍 [getAllUsersWithService] UserService result:", {
+      success: result.success,
+      userCount: result.data?.length || 0,
+      error: result.error
+    });
+
+    if (!result.success || !result.data) {
+      return {
+        success: false,
+        error: result.error || "Failed to fetch users",
+        data: { users: [], totalUsers: 0, newThisMonth: 0, uniqueRoles: 0 }
+      };
+    }
+
+    // Calculate metrics
+    const users = result.data;
+    const totalUsers = users.length;
+    
+    // Calculate new users this month
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const newThisMonth = users.filter(user => {
+      const createdDate = new Date(user.createdAt);
+      return createdDate >= startOfMonth;
+    }).length;
+
+    // Calculate unique roles
+    const uniqueRoles = new Set(users.map(user => user.roleId)).size;
+
+    console.log("✅ [getAllUsersWithService] Success:", {
+      totalUsers,
+      newThisMonth,
+      uniqueRoles,
+      userStatuses: users.map(u => ({ email: u.email, status: u.status }))
+    });
+
+    return {
+      success: true,
+      data: {
+        users,
+        totalUsers,
+        newThisMonth,
+        uniqueRoles
+      }
+    };
   } catch (error) {
-    console.error("Get users error:", error);
+    console.error("❌ [getAllUsersWithService] Error:", error);
     return {
       success: false,
       error: "Failed to fetch users",
+      data: { users: [], totalUsers: 0, newThisMonth: 0, uniqueRoles: 0 }
     };
   }
 };

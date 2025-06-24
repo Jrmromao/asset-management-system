@@ -46,7 +46,7 @@ const Hero = () => {
             >
               <Star className="w-4 h-4" />
               <span className="hidden sm:inline">
-                Rated #1 AI-Powered Carbon Tracker
+                AI-Powered Carbon Tracking
               </span>
               <span className="sm:hidden">AI-Powered</span>
             </motion.div>

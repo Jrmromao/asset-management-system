@@ -2,11 +2,11 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   getAll,
   getAllUsersWithService,
-  inviteUserWithService,
   getUserById,
   remove as deleteUserAction,
   updateUserNonAuthDetails,
 } from "@/lib/actions/user.actions";
+import { inviteUserSecure } from "@/lib/actions/invitation.actions";
 import { toast } from "sonner";
 import { User } from "@prisma/client";
 
@@ -14,23 +14,36 @@ export const useUserQuery = () => {
   const queryClient = useQueryClient();
 
   const {
-    data: users = [],
+    data: usersData,
     isLoading,
     error,
     refetch,
-  } = useQuery<User[], Error>({
+  } = useQuery<{ users: User[]; totalUsers: number; newThisMonth: number; uniqueRoles: number }, Error>({
     queryKey: ["users"],
     queryFn: async () => {
+      console.log("🔍 [useUserQuery] Starting query...");
       const result = await getAllUsersWithService();
-      if (!result.success || !result.data) {
+      console.log("🔍 [useUserQuery] Query result:", {
+        success: result.success,
+        hasData: !!result.data,
+        totalUsers: result.data.totalUsers,
+        newThisMonth: result.data.newThisMonth,
+        uniqueRoles: result.data.uniqueRoles,
+        error: result.error
+      });
+      
+      if (!result.success) {
         throw new Error(result.error || "Failed to fetch users");
       }
-      return result.data as User[];
+      return result.data;
     },
   });
 
+  // Extract users array for backward compatibility
+  const users = usersData?.users || [];
+
   const { mutateAsync: inviteUser, isPending: isInviting } = useMutation({
-    mutationFn: inviteUserWithService,
+    mutationFn: inviteUserSecure,
     onSuccess: (result) => {
       if (result.success) {
         queryClient.invalidateQueries({ queryKey: ["users"] });
@@ -98,5 +111,9 @@ export const useUserQuery = () => {
     isUpdating,
     refresh: refetch,
     deleteItem,
+    // Metrics from the enhanced service
+    totalUsers: usersData?.totalUsers || 0,
+    newThisMonth: usersData?.newThisMonth || 0,
+    uniqueRoles: usersData?.uniqueRoles || 0,
   };
 };

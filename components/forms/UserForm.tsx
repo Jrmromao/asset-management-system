@@ -11,7 +11,7 @@ import { useDialogStore } from "@/lib/stores/store";
 import CustomInput from "@/components/CustomInput";
 import CustomSelect from "@/components/CustomSelect";
 import { useRoleQuery } from "@/hooks/queries/useRoleQuery";
-import { inviteUser } from "@/lib/actions/invitation.actions";
+import { inviteUserSecure } from "@/lib/actions/invitation.actions";
 
 // Simplified schema for invitation
 const userInviteSchema = z.object({
@@ -38,7 +38,7 @@ const UserForm = () => {
   async function onSubmit(data: UserFormValues) {
     startTransition(async () => {
       try {
-        const result = await inviteUser(data);
+        const result = await inviteUserSecure(data);
         if (result.success) {
           form.reset();
           if (result.invitationUrl) {
