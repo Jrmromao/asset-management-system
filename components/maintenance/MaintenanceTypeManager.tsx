@@ -35,7 +35,7 @@ import {
   Calendar,
   Zap,
   Shield,
-  Hammer
+  Hammer,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -89,24 +89,46 @@ const ICONS = [
   { value: "clock", label: "Clock", icon: Clock },
   { value: "calendar", label: "Calendar", icon: Calendar },
   { value: "alert", label: "Alert", icon: AlertTriangle },
-  { value: "check", label: "Check", icon: CheckCircle }
+  { value: "check", label: "Check", icon: CheckCircle },
 ];
 
 // Main Maintenance Type Manager Component
 export const MaintenanceTypeManager: React.FC = () => {
   const [categories, setCategories] = useState<MaintenanceCategory[]>([]);
-  const [maintenanceTypes, setMaintenanceTypes] = useState<MaintenanceType[]>([]);
+  const [maintenanceTypes, setMaintenanceTypes] = useState<MaintenanceType[]>(
+    [],
+  );
   const [isEditingType, setIsEditingType] = useState(false);
   const [isEditingCategory, setIsEditingCategory] = useState(false);
   const [currentType, setCurrentType] = useState<Partial<MaintenanceType>>({});
-  const [currentCategory, setCurrentCategory] = useState<Partial<MaintenanceCategory>>({});
+  const [currentCategory, setCurrentCategory] = useState<
+    Partial<MaintenanceCategory>
+  >({});
 
   useEffect(() => {
     // Load initial data - this would come from your API
     const defaultCategories = [
-      { id: "1", name: "Preventive", description: "Scheduled maintenance to prevent issues", color: "#22C55E", isActive: true },
-      { id: "2", name: "Corrective", description: "Maintenance to fix existing problems", color: "#F59E0B", isActive: true },
-      { id: "3", name: "Emergency", description: "Urgent maintenance to restore operations", color: "#EF4444", isActive: true }
+      {
+        id: "1",
+        name: "Preventive",
+        description: "Scheduled maintenance to prevent issues",
+        color: "#22C55E",
+        isActive: true,
+      },
+      {
+        id: "2",
+        name: "Corrective",
+        description: "Maintenance to fix existing problems",
+        color: "#F59E0B",
+        isActive: true,
+      },
+      {
+        id: "3",
+        name: "Emergency",
+        description: "Urgent maintenance to restore operations",
+        color: "#EF4444",
+        isActive: true,
+      },
     ];
     setCategories(defaultCategories);
   }, []);
@@ -131,13 +153,15 @@ export const MaintenanceTypeManager: React.FC = () => {
         color: currentType.color || "#3B82F6",
         icon: currentType.icon || "wrench",
         checklist: currentType.checklist || [],
-        customFields: currentType.customFields || []
+        customFields: currentType.customFields || [],
       };
 
       if (currentType.id) {
-        setMaintenanceTypes(prev => prev.map(t => t.id === currentType.id ? newType : t));
+        setMaintenanceTypes((prev) =>
+          prev.map((t) => (t.id === currentType.id ? newType : t)),
+        );
       } else {
-        setMaintenanceTypes(prev => [...prev, newType]);
+        setMaintenanceTypes((prev) => [...prev, newType]);
       }
 
       setIsEditingType(false);
@@ -160,13 +184,15 @@ export const MaintenanceTypeManager: React.FC = () => {
         name: currentCategory.name!,
         description: currentCategory.description || "",
         color: currentCategory.color || "#3B82F6",
-        isActive: currentCategory.isActive ?? true
+        isActive: currentCategory.isActive ?? true,
       };
 
       if (currentCategory.id) {
-        setCategories(prev => prev.map(c => c.id === currentCategory.id ? newCategory : c));
+        setCategories((prev) =>
+          prev.map((c) => (c.id === currentCategory.id ? newCategory : c)),
+        );
       } else {
-        setCategories(prev => [...prev, newCategory]);
+        setCategories((prev) => [...prev, newCategory]);
       }
 
       setIsEditingCategory(false);
@@ -188,7 +214,7 @@ export const MaintenanceTypeManager: React.FC = () => {
   };
 
   const getIconComponent = (iconName: string) => {
-    const iconData = ICONS.find(i => i.value === iconName);
+    const iconData = ICONS.find((i) => i.value === iconName);
     return iconData?.icon || Wrench;
   };
 
@@ -198,7 +224,9 @@ export const MaintenanceTypeManager: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold">Maintenance Types & Categories</h2>
-          <p className="text-gray-600">Manage custom maintenance types and workflows</p>
+          <p className="text-gray-600">
+            Manage custom maintenance types and workflows
+          </p>
         </div>
         <div className="flex gap-2">
           <Button
@@ -247,7 +275,9 @@ export const MaintenanceTypeManager: React.FC = () => {
                     {category.isActive ? "Active" : "Inactive"}
                   </Badge>
                 </div>
-                <p className="text-sm text-gray-600 mb-3">{category.description}</p>
+                <p className="text-sm text-gray-600 mb-3">
+                  {category.description}
+                </p>
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
@@ -281,7 +311,10 @@ export const MaintenanceTypeManager: React.FC = () => {
                     <div className="flex items-start gap-3 flex-1">
                       <div
                         className="p-2 rounded-lg"
-                        style={{ backgroundColor: `${type.color}20`, color: type.color }}
+                        style={{
+                          backgroundColor: `${type.color}20`,
+                          color: type.color,
+                        }}
                       >
                         <IconComponent className="h-5 w-5" />
                       </div>
@@ -291,14 +324,19 @@ export const MaintenanceTypeManager: React.FC = () => {
                           <Badge variant="outline">{type.category}</Badge>
                           <Badge
                             variant={
-                              type.priority === "Critical" ? "destructive" :
-                              type.priority === "High" ? "default" : "secondary"
+                              type.priority === "Critical"
+                                ? "destructive"
+                                : type.priority === "High"
+                                  ? "default"
+                                  : "secondary"
                             }
                           >
                             {type.priority}
                           </Badge>
                         </div>
-                        <p className="text-sm text-gray-600 mb-2">{type.description}</p>
+                        <p className="text-sm text-gray-600 mb-2">
+                          {type.description}
+                        </p>
                         <div className="flex gap-4 text-sm text-gray-500">
                           <span>Duration: {type.estimatedDuration}h</span>
                           <span>Cost: ${type.defaultCost}</span>
@@ -322,7 +360,8 @@ export const MaintenanceTypeManager: React.FC = () => {
             })}
             {maintenanceTypes.length === 0 && (
               <div className="text-center py-8 text-gray-500">
-                No maintenance types created yet. Create your first type to get started.
+                No maintenance types created yet. Create your first type to get
+                started.
               </div>
             )}
           </div>
@@ -334,13 +373,15 @@ export const MaintenanceTypeManager: React.FC = () => {
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {currentType.id ? "Edit Maintenance Type" : "Create Maintenance Type"}
+              {currentType.id
+                ? "Edit Maintenance Type"
+                : "Create Maintenance Type"}
             </DialogTitle>
             <DialogDescription>
               Define the properties and workflow for this maintenance type
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-6">
             {/* Basic Information */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -348,7 +389,12 @@ export const MaintenanceTypeManager: React.FC = () => {
                 <Label>Name *</Label>
                 <Input
                   value={currentType.name || ""}
-                  onChange={(e) => setCurrentType(prev => ({ ...prev, name: e.target.value }))}
+                  onChange={(e) =>
+                    setCurrentType((prev) => ({
+                      ...prev,
+                      name: e.target.value,
+                    }))
+                  }
                   placeholder="e.g., Oil Change"
                 />
               </div>
@@ -356,17 +402,21 @@ export const MaintenanceTypeManager: React.FC = () => {
                 <Label>Category *</Label>
                 <Select
                   value={currentType.category || ""}
-                  onValueChange={(value) => setCurrentType(prev => ({ ...prev, category: value }))}
+                  onValueChange={(value) =>
+                    setCurrentType((prev) => ({ ...prev, category: value }))
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
-                    {categories.filter(c => c.isActive).map((cat) => (
-                      <SelectItem key={cat.id} value={cat.name}>
-                        {cat.name}
-                      </SelectItem>
-                    ))}
+                    {categories
+                      .filter((c) => c.isActive)
+                      .map((cat) => (
+                        <SelectItem key={cat.id} value={cat.name}>
+                          {cat.name}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -376,7 +426,12 @@ export const MaintenanceTypeManager: React.FC = () => {
               <Label>Description</Label>
               <Textarea
                 value={currentType.description || ""}
-                onChange={(e) => setCurrentType(prev => ({ ...prev, description: e.target.value }))}
+                onChange={(e) =>
+                  setCurrentType((prev) => ({
+                    ...prev,
+                    description: e.target.value,
+                  }))
+                }
                 placeholder="Describe this maintenance type..."
               />
             </div>
@@ -386,7 +441,9 @@ export const MaintenanceTypeManager: React.FC = () => {
                 <Label>Priority</Label>
                 <Select
                   value={currentType.priority || "Medium"}
-                  onValueChange={(value: any) => setCurrentType(prev => ({ ...prev, priority: value }))}
+                  onValueChange={(value: any) =>
+                    setCurrentType((prev) => ({ ...prev, priority: value }))
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -404,7 +461,12 @@ export const MaintenanceTypeManager: React.FC = () => {
                 <Input
                   type="number"
                   value={currentType.estimatedDuration || ""}
-                  onChange={(e) => setCurrentType(prev => ({ ...prev, estimatedDuration: Number(e.target.value) }))}
+                  onChange={(e) =>
+                    setCurrentType((prev) => ({
+                      ...prev,
+                      estimatedDuration: Number(e.target.value),
+                    }))
+                  }
                 />
               </div>
               <div>
@@ -412,14 +474,21 @@ export const MaintenanceTypeManager: React.FC = () => {
                 <Input
                   type="number"
                   value={currentType.defaultCost || ""}
-                  onChange={(e) => setCurrentType(prev => ({ ...prev, defaultCost: Number(e.target.value) }))}
+                  onChange={(e) =>
+                    setCurrentType((prev) => ({
+                      ...prev,
+                      defaultCost: Number(e.target.value),
+                    }))
+                  }
                 />
               </div>
               <div>
                 <Label>Icon</Label>
                 <Select
                   value={currentType.icon || "wrench"}
-                  onValueChange={(value) => setCurrentType(prev => ({ ...prev, icon: value }))}
+                  onValueChange={(value) =>
+                    setCurrentType((prev) => ({ ...prev, icon: value }))
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -442,10 +511,15 @@ export const MaintenanceTypeManager: React.FC = () => {
               <Label>Required Skills (comma-separated)</Label>
               <Input
                 value={currentType.requiredSkills?.join(", ") || ""}
-                onChange={(e) => setCurrentType(prev => ({ 
-                  ...prev, 
-                  requiredSkills: e.target.value.split(",").map(s => s.trim()).filter(Boolean)
-                }))}
+                onChange={(e) =>
+                  setCurrentType((prev) => ({
+                    ...prev,
+                    requiredSkills: e.target.value
+                      .split(",")
+                      .map((s) => s.trim())
+                      .filter(Boolean),
+                  }))
+                }
                 placeholder="Basic Mechanical, Electrical, Safety Certification"
               />
             </div>
@@ -474,39 +548,56 @@ export const MaintenanceTypeManager: React.FC = () => {
               Configure the category settings
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4">
             <div>
               <Label>Name *</Label>
               <Input
                 value={currentCategory.name || ""}
-                onChange={(e) => setCurrentCategory(prev => ({ ...prev, name: e.target.value }))}
+                onChange={(e) =>
+                  setCurrentCategory((prev) => ({
+                    ...prev,
+                    name: e.target.value,
+                  }))
+                }
                 placeholder="e.g., Preventive"
               />
             </div>
-            
+
             <div>
               <Label>Description</Label>
               <Textarea
                 value={currentCategory.description || ""}
-                onChange={(e) => setCurrentCategory(prev => ({ ...prev, description: e.target.value }))}
+                onChange={(e) =>
+                  setCurrentCategory((prev) => ({
+                    ...prev,
+                    description: e.target.value,
+                  }))
+                }
                 placeholder="Describe this category..."
               />
             </div>
-            
+
             <div>
               <Label>Color</Label>
               <Input
                 type="color"
                 value={currentCategory.color || "#3B82F6"}
-                onChange={(e) => setCurrentCategory(prev => ({ ...prev, color: e.target.value }))}
+                onChange={(e) =>
+                  setCurrentCategory((prev) => ({
+                    ...prev,
+                    color: e.target.value,
+                  }))
+                }
               />
             </div>
 
             <div className="flex items-center space-x-2">
               <Switch
                 checked={currentCategory.isActive ?? true}
-                onCheckedChange={(checked) => setCurrentCategory(prev => ({ ...prev, isActive: checked }))}
+                onCheckedChange={(checked) =>
+                  setCurrentCategory((prev) => ({ ...prev, isActive: checked }))
+                }
               />
               <Label>Active</Label>
             </div>
@@ -516,7 +607,10 @@ export const MaintenanceTypeManager: React.FC = () => {
                 <CheckCircle className="h-4 w-4 mr-2" />
                 Save Category
               </Button>
-              <Button variant="outline" onClick={() => setIsEditingCategory(false)}>
+              <Button
+                variant="outline"
+                onClick={() => setIsEditingCategory(false)}
+              >
                 Cancel
               </Button>
             </div>
@@ -525,4 +619,4 @@ export const MaintenanceTypeManager: React.FC = () => {
       </Dialog>
     </div>
   );
-}; 
+};

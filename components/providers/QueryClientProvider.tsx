@@ -15,9 +15,11 @@ export default function QueryClientProvider({ children }: QueryProviderProps) {
   return (
     <QCP client={queryClient}>
       {children}
-      {process.env.NODE_ENV === "development" && (
-        <ReactQueryDevtools initialIsOpen={false} />
-      )}
+      {/* {process.env.NODE_ENV === "development" && (
+        // 
+      )} */}
+
+<ReactQueryDevtools initialIsOpen={false} />
     </QCP>
   );
 }

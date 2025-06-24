@@ -7,7 +7,7 @@ import DataTableRowActions from "@/components/tables/DataTable/DataTableRowActio
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
-import { calculateAssetCO2Action } from "@/lib/actions/co2.actions";
+
 import CO2Dialog from "@/components/dialogs/CO2Dialog";
 import { Co2eRecord } from "@prisma/client";
 import { CO2CalculationResult } from "@/types/co2";
@@ -27,7 +27,7 @@ const CO2FootprintCell = ({ row }: { row: any }) => {
   const [calculationResult, setCalculationResult] =
     useState<CO2CalculationResult | null>(null);
   const [isNewCalculation, setIsNewCalculation] = useState(false);
-  const record = row.original.Co2eRecord?.sort(
+  const record = row.original.co2eRecords?.sort(
     (a: Co2eRecord, b: Co2eRecord) =>
       new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
   )[0];
@@ -41,29 +41,27 @@ const CO2FootprintCell = ({ row }: { row: any }) => {
   const handleCalculate = (assetId: string) => {
     startTransition(async () => {
       try {
-        const result = await calculateAssetCO2Action(assetId);
-        if (result.success && "data" in result && result.data) {
-          const formattedData: CO2CalculationResult = {
-            totalCo2e: result.data.totalCo2e || 0,
-            units: result.data.units || "kgCO2e",
-            confidenceScore: result.data.confidenceScore || 0.5,
-            lifecycleBreakdown: result.data.lifecycleBreakdown || {
-              manufacturing: "N/A",
-              transport: "N/A",
-              use: "N/A",
-              endOfLife: "N/A",
-            },
-            sources: result.data.sources || [],
-            description: result.data.description || "",
-          };
-          openDialog(formattedData, true);
+        const response = await fetch("/api/co2/calculate", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ assetId }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+
+        if (result.success && result.data) {
+          // Use the complete data directly from API route
+          openDialog(result.data, true);
         } else {
           toast({
             title: "CO2 Calculation Failed",
-            description:
-              "error" in result && result.error
-                ? String(result.error)
-                : "An unknown error occurred.",
+            description: result.error || "An unknown error occurred.",
             variant: "destructive",
           });
         }
@@ -130,8 +128,17 @@ const CO2FootprintCell = ({ row }: { row: any }) => {
                     endOfLife: "N/A",
                   },
                   sources: details.sources || [],
-                  description:
-                    details.description || (record as any).description || "",
+                  description: details.description || (record as any).description || "",
+                  scopeBreakdown: details.scopeBreakdown || {
+                    scope1: { total: 0, categories: {} },
+                    scope2: { total: 0, locationBased: 0, marketBased: 0, electricity: 0 },
+                    scope3: { total: 0, categories: {} },
+                  },
+                  primaryScope: details.primaryScope || 3,
+                  primaryScopeCategory: details.primaryScopeCategory || "Unknown",
+                  emissionFactors: details.emissionFactors || [],
+                  methodology: details.methodology || "Historical data",
+                  activityData: details.activityData || {},
                 };
               } catch {
                 resultToShow = {
@@ -146,6 +153,16 @@ const CO2FootprintCell = ({ row }: { row: any }) => {
                   },
                   sources: [],
                   description: (record as any).description || "",
+                  scopeBreakdown: {
+                    scope1: { total: 0, categories: {} },
+                    scope2: { total: 0, locationBased: 0, marketBased: 0, electricity: 0 },
+                    scope3: { total: 0, categories: {} },
+                  },
+                  primaryScope: 3,
+                  primaryScopeCategory: "Unknown",
+                  emissionFactors: [],
+                  methodology: "Historical data",
+                  activityData: {},
                 };
               }
             } else {
@@ -161,6 +178,16 @@ const CO2FootprintCell = ({ row }: { row: any }) => {
                 },
                 sources: [],
                 description: (record as any).description || "",
+                scopeBreakdown: {
+                  scope1: { total: 0, categories: {} },
+                  scope2: { total: 0, locationBased: 0, marketBased: 0, electricity: 0 },
+                  scope3: { total: 0, categories: {} },
+                },  
+                primaryScope: 3,
+                primaryScopeCategory: "Unknown",
+                emissionFactors: [],
+                methodology: "Historical data",
+                activityData: {},
               };
             }
             openDialog(resultToShow, false);

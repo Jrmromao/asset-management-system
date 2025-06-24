@@ -1,6 +1,12 @@
 "use client";
 
-import React, { ReactNode, useState, useTransition, useMemo } from "react";
+import React, {
+  ReactNode,
+  useState,
+  useTransition,
+  useMemo,
+  useEffect,
+} from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -46,7 +52,11 @@ import { EnhancedAssetType } from "@/types/asset";
 import { ActionButtons } from "./ActionButtons";
 import CO2Dialog from "@/components/dialogs/CO2Dialog";
 import { CO2CalculationResult } from "@/types/co2";
-import { calculateAssetCO2Action } from "@/lib/actions/co2.actions";
+import {
+  calculateAssetCO2Action,
+  saveAssetCO2Action,
+  getCO2DataFromStore,
+} from "@/lib/actions/co2.actions";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { DataTable } from "@/components/tables/DataTable/data-table";
@@ -180,15 +190,22 @@ export const AssetDetailView: React.FC<{
   const assetHistoryColumnsMemo = useMemo(() => assetHistoryColumns(), []);
 
   // Sort records to ensure we always have the latest one.
-  const latestCo2Record = asset.Co2eRecord?.sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+  const latestCo2Record = asset.co2eRecords?.sort(
+    (a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
   )[0];
 
   const handleCalculateCo2 = () => {
-    startTransition(async () => {
-      const result = await calculateAssetCO2Action(asset.id);
+    startTransition(async () => {      
+      // Test with API route instead of server action
+      const response = await fetch(`/api/co2/calculate?t=${Date.now()}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ assetId: asset.id }),
+      });
+      const result = await response.json();
+
       if (result.success && "data" in result && result.data) {
-        setCo2Result(result.data);
+        setCo2Result(result.data as CO2CalculationResult);
         setIsNewCo2Calculation(true);
         setCo2DialogOpen(true);
       } else {
@@ -206,12 +223,60 @@ export const AssetDetailView: React.FC<{
 
     try {
       const details = JSON.parse(latestCo2Record.details as string);
-      setCo2Result(details);
+
+      // Convert any Decimal fields to numbers to avoid serialization issues
+      if (
+        details.emissionFactor &&
+        typeof details.emissionFactor === "object"
+      ) {
+        details.emissionFactor = Number(details.emissionFactor);
+      }
+
+      // Ensure all numeric fields in scope breakdown are numbers
+      if (details.scopeBreakdown) {
+        if (
+          details.scopeBreakdown.scope1?.total &&
+          typeof details.scopeBreakdown.scope1.total === "object"
+        ) {
+          details.scopeBreakdown.scope1.total = Number(
+            details.scopeBreakdown.scope1.total,
+          );
+        }
+        if (
+          details.scopeBreakdown.scope2?.total &&
+          typeof details.scopeBreakdown.scope2.total === "object"
+        ) {
+          details.scopeBreakdown.scope2.total = Number(
+            details.scopeBreakdown.scope2.total,
+          );
+        }
+        if (
+          details.scopeBreakdown.scope3?.total &&
+          typeof details.scopeBreakdown.scope3.total === "object"
+        ) {
+          details.scopeBreakdown.scope3.total = Number(
+            details.scopeBreakdown.scope3.total,
+          );
+        }
+      }
+
+      // Ensure all required properties exist with defaults if missing
+      const completeDetails = {
+        ...details,
+        lifecycleBreakdown: details.lifecycleBreakdown || {},
+        sources: details.sources || [],
+        emissionFactors: details.emissionFactors || [],
+      };
+
+      setCo2Result(completeDetails as CO2CalculationResult);
       setIsNewCo2Calculation(false);
       setCo2DialogOpen(true);
     } catch (error) {
+      console.error("Error parsing CO2 details:", error);
       toast({
         title: "Could not parse CO2 details",
+        description:
+          "There was an error loading the CO2 data. Please try recalculating.",
         variant: "destructive",
       });
     }
@@ -459,44 +524,82 @@ export const AssetDetailView: React.FC<{
                       />
                     </CardContent>
                   </Card>
-                  <Card>
-                    <CardHeader className="flex flex-row items-center justify-between pb-2">
-                      <CardTitle className="text-sm font-medium">
-                        CO2 Footprint
-                      </CardTitle>
-                      <Leaf className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                      <div
-                        className="text-2xl font-bold"
-                        onClick={latestCo2Record ? handleViewCo2 : undefined}
-                        style={{
-                          cursor: latestCo2Record ? "pointer" : "default",
-                        }}
-                      >
-                        {latestCo2Record
-                          ? `${Number(latestCo2Record.co2e).toFixed(2)} ${
-                              latestCo2Record.units
-                            }`
-                          : "N/A"}
+                  <Card className="border-l-4 border-l-green-500">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-sm font-medium flex items-center gap-2">
+                          <Leaf className="h-4 w-4 text-green-600" />
+                          CO2 Footprint
+                        </CardTitle>
+                        {latestCo2Record && (
+                          <Badge 
+                            variant={
+                              Number(latestCo2Record.co2e) < 50 
+                                ? "default" 
+                                : Number(latestCo2Record.co2e) < 200 
+                                ? "secondary" 
+                                : "destructive"
+                            }
+                            className="text-xs"
+                          >
+                            {Number(latestCo2Record.co2e) < 50 
+                              ? "Low Impact" 
+                              : Number(latestCo2Record.co2e) < 200 
+                              ? "Medium Impact" 
+                              : "High Impact"}
+                          </Badge>
+                        )}
                       </div>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {latestCo2Record
-                          ? `Calculated on ${new Date(
-                              latestCo2Record.createdAt,
-                            ).toLocaleDateString()}`
-                          : "Not calculated"}
-                      </p>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <div className="space-y-3">
+                        <div
+                          className={`text-3xl font-bold transition-colors ${
+                            latestCo2Record 
+                              ? "text-green-700 hover:text-green-800 cursor-pointer" 
+                              : "text-muted-foreground"
+                          }`}
+                          onClick={latestCo2Record ? handleViewCo2 : undefined}
+                          title={latestCo2Record ? "Click to view detailed breakdown" : undefined}
+                        >
+                          {latestCo2Record
+                            ? `${Number(latestCo2Record.co2e).toFixed(2)} ${latestCo2Record.units}`
+                            : "N/A"}
+                        </div>
+                        
+                        {latestCo2Record && (
+                          <div className="text-xs text-muted-foreground space-y-1">
+                            <div className="flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              Calculated on {new Date(latestCo2Record.createdAt).toLocaleDateString()}
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <RefreshCcw className="h-3 w-3" />
+                              Click value for detailed scope breakdown
+                            </div>
+                          </div>
+                        )}
+                        
+                        {!latestCo2Record && (
+                          <p className="text-xs text-muted-foreground">
+                            Environmental impact not yet calculated
+                          </p>
+                        )}
+                      </div>
+                      
                       <Button
                         size="sm"
                         className="w-full mt-4"
                         onClick={handleCalculateCo2}
                         disabled={isPending}
+                        variant={latestCo2Record ? "outline" : "default"}
                       >
                         {isPending ? (
                           <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        ) : null}
-                        {latestCo2Record ? "Recalculate" : "Calculate"}
+                        ) : (
+                          <Leaf className="h-4 w-4 mr-2" />
+                        )}
+                        {latestCo2Record ? "Recalculate CO2" : "Calculate CO2"}
                       </Button>
                     </CardContent>
                   </Card>

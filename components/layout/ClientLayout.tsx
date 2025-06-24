@@ -9,6 +9,7 @@ import { Toaster } from "sonner";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
 import CookieBanner from "@/components/cookies/CookieBanner";
+import { FloatingHelpWidget } from "@/components/floating/FloatingHelpWidget";
 
 const ClientLayout = ({ children }: { children: React.ReactNode }) => {
   const [queryClient] = React.useState(() => new QueryClient());
@@ -34,6 +35,7 @@ const ClientLayout = ({ children }: { children: React.ReactNode }) => {
             />
           )}
           {children}
+          <FloatingHelpWidget />
           <CookieBanner onPreferencesChange={handlePreferencesChange} />
           <SpeedInsights />
         </ThemeProvider>
