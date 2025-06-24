@@ -102,6 +102,8 @@ const serializeAsset = (asset: any) => {
     serialized.co2eRecords = asset.co2eRecords.map((record: any) => ({
       ...record,
       co2e: record.co2e ? Number(record.co2e) : null,
+      emissionFactor: record.emissionFactor ? Number(record.emissionFactor) : null,
+      activityData: record.activityData ? Number(record.activityData) : null,
     }));
   }
   return serialized;
@@ -175,47 +177,42 @@ export const createAsset = withAuth(
   },
 );
 
-export async function getAllAssets() {
-  const { orgId: authOrgId } = await auth();
-  const user = await currentUser();
-  const orgId = authOrgId || (user?.privateMetadata?.clerkOrgId as string);
+export const getAllAssets = withAuth(
+  async (user): Promise<{ success: boolean; data: any[]; error?: string }> => {
+    try {
+      const companyId = user.privateMetadata?.companyId as string;
 
-  if (!orgId) {
-    throw new Error("Organization ID not found");
-  }
+      if (!companyId) {
+        return {
+          success: false,
+          data: [],
+          error: "User is not associated with a company",
+        };
+      }
 
-  try {
-    const company = await prisma.company.findUnique({
-      where: { clerkOrgId: orgId },
-      select: { id: true },
-    });
+      const assets = await prisma.asset.findMany({
+        where: { companyId },
+        include: {
+          model: { include: { manufacturer: true } },
+          statusLabel: true,
+          co2eRecords: true,
+          category: true,
+        },
+      });
 
-    if (!company) {
-      throw new Error("Company not found");
+      const serializableAssets = assets.map(serializeAsset);
+
+      return { success: true, data: serializableAssets };
+    } catch (error) {
+      return {
+        success: false,
+        data: [],
+        error:
+          error instanceof Error ? error.message : "An unknown error occurred",
+      };
     }
-
-    const assets = await prisma.asset.findMany({
-      where: { companyId: company.id },
-      include: {
-        model: { include: { manufacturer: true } },
-        statusLabel: true,
-        co2eRecords: true,
-        category: true,
-      },
-    });
-
-    const serializableAssets = assets.map(serializeAsset);
-
-    return { success: true, data: serializableAssets };
-  } catch (error) {
-    return {
-      success: false,
-      data: [],
-      error:
-        error instanceof Error ? error.message : "An unknown error occurred",
-    };
-  }
-}
+  },
+);
 
 export const getAssetOverview = withAuth(
   async (user): Promise<{ success: boolean; data: any; error?: string }> => {
