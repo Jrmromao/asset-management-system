@@ -1,6 +1,7 @@
 "use server";
 
-import { db } from "@/app/db";
+import { prisma as db } from "@/app/db";
+
 import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 
@@ -27,8 +28,7 @@ export interface CreateMaintenanceFlowParams {
   trigger: string;
   conditions: any[];
   actions: any[];
-  priority?: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
-  category: string;
+  priority?: number;
   isActive?: boolean;
 }
 
@@ -38,8 +38,7 @@ export interface UpdateMaintenanceFlowParams {
   trigger?: string;
   conditions?: any[];
   actions?: any[];
-  priority?: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
-  category?: string;
+  priority?: number;
   isActive?: boolean;
 }
 
@@ -50,10 +49,6 @@ export interface MaintenanceFlowStats {
   totalExecutions: number;
   averageSuccessRate: number;
   recentExecutions: number;
-  flowsByCategory: Array<{
-    category: string;
-    count: number;
-  }>;
   flowsByPriority: Array<{
     priority: string;
     count: number;
@@ -68,7 +63,7 @@ export async function getMaintenanceFlows(filters: Record<string, any> = {}): Pr
     }
 
     const user = await db.user.findUnique({
-      where: { authId: userId },
+      where: { oauthId: userId },
       select: { id: true, companyId: true },
     });
 
@@ -83,10 +78,6 @@ export async function getMaintenanceFlows(filters: Record<string, any> = {}): Pr
 
     if (filters.isActive !== undefined) {
       whereClause.isActive = filters.isActive;
-    }
-
-    if (filters.category) {
-      whereClause.category = filters.category;
     }
 
     if (filters.priority) {
@@ -108,7 +99,7 @@ export async function getMaintenanceFlows(filters: Record<string, any> = {}): Pr
         executions: {
           select: {
             id: true,
-            status: true,
+            success: true,
             executedAt: true,
           },
           orderBy: { executedAt: "desc" },
@@ -126,16 +117,15 @@ export async function getMaintenanceFlows(filters: Record<string, any> = {}): Pr
       conditions: flow.conditions,
       actions: flow.actions,
       isActive: flow.isActive,
-      priority: flow.priority as "LOW" | "MEDIUM" | "HIGH" | "CRITICAL",
-      category: flow.category,
+      priority: flow.priority,
       executionCount: flow.executions.length,
       successRate: flow.executions.length > 0 
-        ? (flow.executions.filter((e: any) => e.status === "SUCCESS").length / flow.executions.length) * 100
+        ? (flow.executions.filter((e: any) => e.success === true).length / flow.executions.length) * 100
         : 0,
       lastExecuted: flow.executions[0]?.executedAt,
       createdAt: flow.createdAt,
       updatedAt: flow.updatedAt,
-      createdBy: flow.createdBy,
+      createdBy: user.id,
     }));
   } catch (error) {
     console.error("Error fetching maintenance flows:", error);
@@ -151,7 +141,7 @@ export async function createMaintenanceFlow(data: CreateMaintenanceFlowParams): 
     }
 
     const user = await db.user.findUnique({
-      where: { authId: userId },
+      where: { oauthId: userId },
       select: { id: true, companyId: true },
     });
 
@@ -162,26 +152,24 @@ export async function createMaintenanceFlow(data: CreateMaintenanceFlowParams): 
     const flow = await db.flowRule.create({
       data: {
         name: data.name,
-        description: data.description,
+        description: data.description || "",
         trigger: data.trigger,
-        priority: data.priority || "MEDIUM",
-        category: data.category,
+        priority: data.priority || 100,
         isActive: data.isActive ?? true,
         companyId: user.companyId,
-        createdBy: user.id,
         conditions: {
           create: data.conditions.map((condition, index) => ({
-            type: condition.type,
             field: condition.field,
             operator: condition.operator,
             value: JSON.stringify(condition.value),
+            logicalOperator: condition.logicalOperator || "AND",
             order: index,
           })),
         },
         actions: {
           create: data.actions.map((action, index) => ({
             type: action.type,
-            config: JSON.stringify(action.config),
+            parameters: action.parameters || {},
             order: index,
           })),
         },
@@ -202,13 +190,12 @@ export async function createMaintenanceFlow(data: CreateMaintenanceFlowParams): 
       conditions: flow.conditions,
       actions: flow.actions,
       isActive: flow.isActive,
-      priority: flow.priority as "LOW" | "MEDIUM" | "HIGH" | "CRITICAL",
-      category: flow.category,
+      priority: flow.priority,
       executionCount: 0,
       successRate: 0,
       createdAt: flow.createdAt,
       updatedAt: flow.updatedAt,
-      createdBy: flow.createdBy,
+      createdBy: user.id,
     };
   } catch (error) {
     console.error("Error creating maintenance flow:", error);
@@ -227,7 +214,7 @@ export async function updateMaintenanceFlow(
     }
 
     const user = await db.user.findUnique({
-      where: { authId: userId },
+      where: { oauthId: userId },
       select: { id: true, companyId: true },
     });
 
@@ -259,10 +246,10 @@ export async function updateMaintenanceFlow(
       });
       updateData.conditions = {
         create: data.conditions.map((condition, index) => ({
-          type: condition.type,
           field: condition.field,
           operator: condition.operator,
           value: JSON.stringify(condition.value),
+          logicalOperator: condition.logicalOperator || "AND",
           order: index,
         })),
       };
@@ -276,7 +263,7 @@ export async function updateMaintenanceFlow(
       updateData.actions = {
         create: data.actions.map((action, index) => ({
           type: action.type,
-          config: JSON.stringify(action.config),
+          parameters: action.parameters || {},
           order: index,
         })),
       };
@@ -291,7 +278,7 @@ export async function updateMaintenanceFlow(
         executions: {
           select: {
             id: true,
-            status: true,
+            success: true,
             executedAt: true,
           },
           orderBy: { executedAt: "desc" },
@@ -310,16 +297,15 @@ export async function updateMaintenanceFlow(
       conditions: flow.conditions,
       actions: flow.actions,
       isActive: flow.isActive,
-      priority: flow.priority as "LOW" | "MEDIUM" | "HIGH" | "CRITICAL",
-      category: flow.category,
+      priority: flow.priority,
       executionCount: flow.executions.length,
       successRate: flow.executions.length > 0 
-        ? (flow.executions.filter(e => e.status === "SUCCESS").length / flow.executions.length) * 100
+        ? (flow.executions.filter((e: any) => e.success === true).length / flow.executions.length) * 100
         : 0,
       lastExecuted: flow.executions[0]?.executedAt,
       createdAt: flow.createdAt,
       updatedAt: flow.updatedAt,
-      createdBy: flow.createdBy,
+      createdBy: user.id,
     };
   } catch (error) {
     console.error("Error updating maintenance flow:", error);
@@ -335,7 +321,7 @@ export async function deleteMaintenanceFlow(id: string): Promise<void> {
     }
 
     const user = await db.user.findUnique({
-      where: { authId: userId },
+      where: { oauthId: userId },
       select: { id: true, companyId: true },
     });
 
@@ -387,7 +373,7 @@ export async function getMaintenanceFlowStats(): Promise<MaintenanceFlowStats> {
     }
 
     const user = await db.user.findUnique({
-      where: { authId: userId },
+      where: { oauthId: userId },
       select: { id: true, companyId: true },
     });
 
@@ -401,7 +387,6 @@ export async function getMaintenanceFlowStats(): Promise<MaintenanceFlowStats> {
         select: {
           id: true,
           isActive: true,
-          category: true,
           priority: true,
         },
       }),
@@ -416,45 +401,35 @@ export async function getMaintenanceFlowStats(): Promise<MaintenanceFlowStats> {
         },
         select: {
           id: true,
-          status: true,
+          success: true,
           executedAt: true,
         },
       }),
     ]);
 
     const totalFlows = flows.length;
-    const activeFlows = flows.filter(f => f.isActive).length;
+    const activeFlows = flows.filter((f: any) => f.isActive).length;
     const inactiveFlows = totalFlows - activeFlows;
     const totalExecutions = executions.length;
-    const successfulExecutions = executions.filter(e => e.status === "SUCCESS").length;
+    const successfulExecutions = executions.filter((e: any) => e.success === true).length;
     const averageSuccessRate = totalExecutions > 0 ? (successfulExecutions / totalExecutions) * 100 : 0;
 
     // Recent executions (last 7 days)
     const recentExecutions = executions.filter(
-      e => e.executedAt >= new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+      (e: any) => e.executedAt >= new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
     ).length;
 
-    // Group by category
-    const flowsByCategory = flows.reduce((acc, flow) => {
-      const existing = acc.find(item => item.category === flow.category);
-      if (existing) {
-        existing.count++;
-      } else {
-        acc.push({ category: flow.category, count: 1 });
-      }
-      return acc;
-    }, [] as Array<{ category: string; count: number }>);
-
     // Group by priority
-    const flowsByPriority = flows.reduce((acc, flow) => {
-      const existing = acc.find(item => item.priority === flow.priority);
+    const flowsByPriority = flows.reduce((acc: Array<{ priority: string; count: number }>, flow: any) => {
+      const priorityLevel = flow.priority > 300 ? "HIGH" : flow.priority > 200 ? "MEDIUM" : "LOW";
+      const existing = acc.find(item => item.priority === priorityLevel);
       if (existing) {
         existing.count++;
       } else {
-        acc.push({ priority: flow.priority, count: 1 });
+        acc.push({ priority: priorityLevel, count: 1 });
       }
       return acc;
-    }, [] as Array<{ priority: string; count: number }>);
+    }, []);
 
     return {
       totalFlows,
@@ -463,7 +438,6 @@ export async function getMaintenanceFlowStats(): Promise<MaintenanceFlowStats> {
       totalExecutions,
       averageSuccessRate: Math.round(averageSuccessRate),
       recentExecutions,
-      flowsByCategory,
       flowsByPriority,
     };
   } catch (error) {

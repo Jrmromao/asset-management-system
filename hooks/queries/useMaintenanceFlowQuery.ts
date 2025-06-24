@@ -38,7 +38,20 @@ export const useMaintenanceFlowQuery = (options: UseMaintenanceFlowQueryOptions 
     refetch,
   } = useQuery({
     queryKey: MAINTENANCE_FLOW_QUERY_KEYS.list(filters),
-    queryFn: () => getMaintenanceFlows(filters),
+    queryFn: async () => {
+      const searchParams = new URLSearchParams();
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          searchParams.append(key, String(value));
+        }
+      });
+      
+      const response = await fetch(`/api/maintenance-flows?${searchParams}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch maintenance flows');
+      }
+      return response.json();
+    },
     enabled,
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
@@ -50,14 +63,34 @@ export const useMaintenanceFlowQuery = (options: UseMaintenanceFlowQueryOptions 
     isLoading: isStatsLoading,
   } = useQuery({
     queryKey: MAINTENANCE_FLOW_QUERY_KEYS.stats(),
-    queryFn: getMaintenanceFlowStats,
+    queryFn: async () => {
+      const response = await fetch('/api/maintenance-flows/stats');
+      if (!response.ok) {
+        throw new Error('Failed to fetch maintenance flow stats');
+      }
+      return response.json();
+    },
     enabled,
     staleTime: 5 * 60 * 1000,
   });
 
   // Create maintenance flow mutation
   const createMutation = useMutation({
-    mutationFn: createMaintenanceFlow,
+    mutationFn: async (newFlow: CreateMaintenanceFlowParams) => {
+      const response = await fetch('/api/maintenance-flows', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newFlow),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to create maintenance flow');
+      }
+      
+      return response.json();
+    },
     onMutate: async (newFlow) => {
       // Cancel any outgoing refetches
       await queryClient.cancelQueries({ queryKey: MAINTENANCE_FLOW_QUERY_KEYS.lists() });
@@ -99,8 +132,21 @@ export const useMaintenanceFlowQuery = (options: UseMaintenanceFlowQueryOptions 
 
   // Update maintenance flow mutation
   const updateMutation = useMutation({
-    mutationFn: ({ id, ...data }: UpdateMaintenanceFlowParams & { id: string }) =>
-      updateMaintenanceFlow(id, data),
+    mutationFn: async ({ id, ...data }: UpdateMaintenanceFlowParams & { id: string }) => {
+      const response = await fetch(`/api/maintenance-flows/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to update maintenance flow');
+      }
+      
+      return response.json();
+    },
     onMutate: async ({ id, ...updatedData }) => {
       await queryClient.cancelQueries({ queryKey: MAINTENANCE_FLOW_QUERY_KEYS.lists() });
 
@@ -133,7 +179,17 @@ export const useMaintenanceFlowQuery = (options: UseMaintenanceFlowQueryOptions 
 
   // Delete maintenance flow mutation
   const deleteMutation = useMutation({
-    mutationFn: deleteMaintenanceFlow,
+    mutationFn: async (id: string) => {
+      const response = await fetch(`/api/maintenance-flows/${id}`, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to delete maintenance flow');
+      }
+      
+      return response.json();
+    },
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: MAINTENANCE_FLOW_QUERY_KEYS.lists() });
 

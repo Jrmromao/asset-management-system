@@ -47,7 +47,7 @@ interface MenuItem {
 }
 
 const Footer = ({ isCollapsed = false }: { isCollapsed?: boolean }) => {
-  const { user } = useUser();
+  const { user, isLoaded } = useUser();
   const { signOut } = useClerk();
   const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -63,8 +63,8 @@ const Footer = ({ isCollapsed = false }: { isCollapsed?: boolean }) => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  if (!user) {
-    // A logged-out user sees no footer.
+  if (!isLoaded || !user) {
+    // Show nothing until user data is loaded to prevent hydration mismatch
     return null;
   }
 

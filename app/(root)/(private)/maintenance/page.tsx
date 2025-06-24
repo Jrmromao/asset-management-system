@@ -307,7 +307,7 @@ export default function MaintenancePage() {
           onAddNew={handleCreateNew}
           onExport={handleExport}
           isLoading={isLoading || isPending}
-          filterPlaceholder="Search maintenance records..."
+          searchPlaceholder="Search maintenance records..."
           className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm"
           showFilter={false}
         />

@@ -27,7 +27,7 @@ import { DataTableHeader } from "@/components/tables/TableHeader";
 import { DialogContainer } from "@/components/dialogs/DialogContainer";
 import { Card, CardContent } from "@/components/ui/card";
 import { DataTable } from "@/components/tables/DataTable/data-table";
-// import { useMaintenanceFlowQuery } from "@/hooks/queries/useMaintenanceFlowQuery";
+import { useMaintenanceFlowQuery } from "@/hooks/queries/useMaintenanceFlowQuery";
 import { toast } from "sonner";
 import type {
   ColumnDef,
@@ -93,26 +93,31 @@ const getNestedValue = (obj: any, path: string): any => {
 };
 
 const MaintenanceFlowsPage = () => {
-  // Mock data for now until the hook is properly implemented
-  const isLoading = false;
-  const flows: MaintenanceFlow[] = [];
-  const stats = {
-    totalFlows: 0,
-    activeFlows: 0,
-    averageSuccessRate: 0,
-    recentExecutions: 0,
-  };
-  const isStatsLoading = false;
+  // State management
+  const [searchTerm, setSearchTerm] = useState("");
+  const [activeTab, setActiveTab] = useState("flows");
+  const [filters, setFilters] = useState({
+    priority: "",
+    status: "",
+  });
 
-  // Demo mode - uncomment to see cards with sample data
-  // const stats = {
-  //   totalFlows: 5,
-  //   activeFlows: 3,
-  //   averageSuccessRate: 92,
-  //   recentExecutions: 12,
-  // };
-  const deleteItem = (id: string) => console.log('Delete', id);
-  const updateItem = (data: any) => console.log('Update', data);
+  // Use the maintenance flow query hook
+  const {
+    items: flows,
+    stats,
+    isLoading,
+    isStatsLoading,
+    createItem,
+    updateItem,
+    deleteItem,
+    refetch,
+  } = useMaintenanceFlowQuery({
+    filters: {
+      search: searchTerm,
+      isActive: filters.status ? filters.status === "active" : undefined,
+      priority: filters.priority ? parseInt(filters.priority) : undefined,
+    },
+  });
 
   const [openDialog, closeDialog, isOpen] = useDialogStore((state) => [
     state.onOpen,
@@ -121,14 +126,6 @@ const MaintenanceFlowsPage = () => {
   ]);
   const navigate = useRouter();
   const [isPending, startTransition] = useTransition();
-
-  // State management
-  const [searchTerm, setSearchTerm] = useState("");
-  const [activeTab, setActiveTab] = useState("flows");
-  const [filters, setFilters] = useState({
-    priority: "",
-    status: "",
-  });
 
   // Event handlers
   const handleView = useCallback(
@@ -268,7 +265,7 @@ const MaintenanceFlowsPage = () => {
         title: "Total Flows",
         value: stats?.totalFlows ? stats.totalFlows.toString() : "—",
         subtitle: stats?.totalFlows === 0 ? "Create your first automation flow" : 
-                 stats?.totalFlows === 1 ? "1 flow configured" : `${stats.totalFlows} flows configured`,
+                 stats?.totalFlows === 1 ? "1 flow configured" : `${stats?.totalFlows} flows configured`,
         color: "info" as const,
         icon: <Workflow className="w-4 h-4" />,
       },
@@ -300,7 +297,7 @@ const MaintenanceFlowsPage = () => {
         value: stats?.recentExecutions ? stats.recentExecutions.toString() : "—",
         subtitle: stats?.recentExecutions === 0 ? "No recent activity" :
                  stats?.recentExecutions === 1 ? "1 execution this week" :
-                 `${stats.recentExecutions} executions this week`,
+                 `${stats?.recentExecutions} executions this week`,
         color: stats?.recentExecutions && stats.recentExecutions > 0 ? "info" as const : "default" as const,
         icon: <Clock className="w-4 h-4" />,
       },
@@ -472,7 +469,7 @@ const MaintenanceFlowsPage = () => {
             onAddNew={handleCreateNew}
             onExport={handleExport}
             isLoading={isLoading || isPending}
-            filterPlaceholder="Search flows..."
+            searchPlaceholder="Search flows..."
             className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm"
             showFilter={false}
           />

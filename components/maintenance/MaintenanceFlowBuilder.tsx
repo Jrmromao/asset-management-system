@@ -43,6 +43,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useMaintenanceFlowQuery } from "@/hooks/queries/useMaintenanceFlowQuery";
+import type { MaintenanceFlow as DBMaintenanceFlow } from "@/lib/actions/maintenanceFlow.actions";
 
 // Types for flow building
 interface FlowCondition {
@@ -63,7 +64,7 @@ interface FlowAction {
 interface MaintenanceFlow {
   id?: string;
   name: string;
-  description: string;
+  description?: string;
   trigger: string;
   priority: number;
   isActive: boolean;
@@ -521,8 +522,18 @@ const ActionBuilder: React.FC<{
 
 // Main Flow Builder Component
 export const MaintenanceFlowBuilder: React.FC = () => {
-  // Temporarily use local state until backend is fully connected
-  const [flows, setFlows] = useState<MaintenanceFlow[]>([]);
+  // Use the maintenance flow query hook for database persistence
+  const {
+    items: flows,
+    isLoading: isLoadingFlows,
+    createItem,
+    updateItem,
+    deleteItem,
+    isCreating,
+    isUpdating,
+    isDeleting,
+  } = useMaintenanceFlowQuery();
+
   const [currentFlow, setCurrentFlow] = useState<MaintenanceFlow>({
     name: "",
     description: "",
@@ -534,8 +545,9 @@ export const MaintenanceFlowBuilder: React.FC = () => {
   });
   const [isEditing, setIsEditing] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  
+  const isLoading = isCreating || isUpdating;
 
   const addCondition = useCallback(() => {
     const newCondition: FlowCondition = {
@@ -623,10 +635,7 @@ export const MaintenanceFlowBuilder: React.FC = () => {
     }
 
     try {
-      setIsLoading(true);
-      
       const flowData = {
-        id: currentFlow.id || `flow-${Date.now()}`,
         name: currentFlow.name,
         description: currentFlow.description || "",
         trigger: currentFlow.trigger,
@@ -634,23 +643,17 @@ export const MaintenanceFlowBuilder: React.FC = () => {
         conditions: currentFlow.conditions,
         actions: currentFlow.actions,
         isActive: currentFlow.isActive,
-        executionCount: 0,
-        successRate: 0,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        createdBy: "current-user",
       };
 
       if (currentFlow.id) {
         // Update existing flow
-        setFlows(prev => prev.map(flow => 
-          flow.id === currentFlow.id ? { ...flowData, updatedAt: new Date() } : flow
-        ));
-        toast.success("Maintenance flow updated successfully!");
+        updateItem({
+          id: currentFlow.id,
+          ...flowData,
+        });
       } else {
         // Create new flow
-        setFlows(prev => [...prev, flowData]);
-        toast.success("Maintenance flow created successfully!");
+        createItem(flowData);
       }
       
       setIsEditing(false);
@@ -666,10 +669,8 @@ export const MaintenanceFlowBuilder: React.FC = () => {
     } catch (error) {
       console.error("Error saving flow:", error);
       toast.error("Failed to save maintenance flow");
-    } finally {
-      setIsLoading(false);
     }
-  }, [currentFlow]);
+  }, [currentFlow, createItem, updateItem]);
 
   return (
     <div className="space-y-6">
@@ -1096,15 +1097,17 @@ export const MaintenanceFlowBuilder: React.FC = () => {
                       size="sm"
                       onClick={() => {
                         const duplicatedFlow = {
-                          ...flow,
-                          id: `flow-${Date.now()}`,
                           name: `${flow.name} (Copy)`,
-                          createdAt: new Date(),
-                          updatedAt: new Date(),
+                          description: flow.description,
+                          trigger: flow.trigger,
+                          priority: flow.priority,
+                          conditions: flow.conditions,
+                          actions: flow.actions,
+                          isActive: flow.isActive,
                         };
-                        setFlows(prev => [...prev, duplicatedFlow]);
-                        toast.success("Flow duplicated successfully");
+                        createItem(duplicatedFlow);
                       }}
+                      disabled={isCreating}
                     >
                       <Copy className="h-4 w-4" />
                     </Button>
@@ -1112,9 +1115,11 @@ export const MaintenanceFlowBuilder: React.FC = () => {
                       variant="outline"
                       size="sm"
                       onClick={() => {
-                        setFlows(prev => prev.filter(f => f.id !== flow.id));
-                        toast.success("Flow deleted successfully");
+                        if (flow.id && confirm("Are you sure you want to delete this flow?")) {
+                          deleteItem(flow.id);
+                        }
                       }}
+                      disabled={isDeleting}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>

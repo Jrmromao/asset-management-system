@@ -76,28 +76,41 @@ export function DataTableHeader<TData>({
           )}
         </div>
         <div className="flex items-center space-x-3">
-          {showSearch && (
-            <Input
-              placeholder={searchPlaceholder}
-              value={
-                (table.getColumn("name")?.getFilterValue() as string) ?? ""
-              }
-              onChange={(event) =>
-                table.getColumn("name")?.setFilterValue(event.target.value)
-              }
-              className="h-9 w-[150px] lg:w-[250px] dark:bg-gray-800 dark:border-gray-700 dark:placeholder-gray-400"
-            />
-          )}
-          {Boolean(table.getColumn("name")?.getFilterValue()) && (
-            <Button
-              variant="ghost"
-              onClick={() => table.getColumn("name")?.setFilterValue("")}
-              className="h-8 px-2 lg:px-3"
-            >
-              Reset
-              <Cross2Icon className="ml-2 h-4 w-4" />
-            </Button>
-          )}
+          {showSearch && (() => {
+            const nameColumn = table.getColumn("name");
+            const titleColumn = table.getColumn("title");
+            const searchColumn = nameColumn || titleColumn;
+            
+            if (!searchColumn) return null;
+            
+            return (
+              <Input
+                placeholder={searchPlaceholder}
+                value={(searchColumn.getFilterValue() as string) ?? ""}
+                onChange={(event) => searchColumn.setFilterValue(event.target.value)}
+                className="h-9 w-[150px] lg:w-[250px] dark:bg-gray-800 dark:border-gray-700 dark:placeholder-gray-400"
+              />
+            );
+          })()}
+          {(() => {
+            const nameColumn = table.getColumn("name");
+            const titleColumn = table.getColumn("title");
+            const searchColumn = nameColumn || titleColumn;
+            const hasFilterValue = searchColumn && Boolean(searchColumn.getFilterValue());
+            
+            if (!hasFilterValue) return null;
+            
+            return (
+              <Button
+                variant="ghost"
+                onClick={() => searchColumn?.setFilterValue("")}
+                className="h-8 px-2 lg:px-3"
+              >
+                Reset
+                <Cross2Icon className="ml-2 h-4 w-4" />
+              </Button>
+            );
+          })()}
         </div>
         <div className="flex items-center space-x-3">
           {showAddNew && (

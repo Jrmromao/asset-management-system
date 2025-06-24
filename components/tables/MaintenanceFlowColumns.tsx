@@ -48,30 +48,22 @@ export const maintenanceFlowColumns = ({
     },
   },
   {
-    accessorKey: "category",
-    header: "Category",
-    cell: ({ row }) => {
-      const category = row.getValue("category") as string;
-      return (
-        <Badge variant="outline" className="capitalize">
-          {category}
-        </Badge>
-      );
-    },
-  },
-  {
     accessorKey: "priority",
     header: "Priority",
     cell: ({ row }) => {
-      const priority = row.getValue("priority") as string;
-      const getVariant = (priority: string) => {
-        switch (priority) {
-          case "CRITICAL":
-            return "destructive";
+      const priority = row.getValue("priority") as number;
+      const getPriorityLevel = (priority: number) => {
+        if (priority > 300) return "HIGH";
+        if (priority > 200) return "MEDIUM";
+        return "LOW";
+      };
+      
+      const getVariant = (level: string) => {
+        switch (level) {
           case "HIGH":
-            return "default";
+            return "destructive";
           case "MEDIUM":
-            return "secondary";
+            return "default";
           case "LOW":
             return "outline";
           default:
@@ -79,9 +71,10 @@ export const maintenanceFlowColumns = ({
         }
       };
 
+      const level = getPriorityLevel(priority);
       return (
-        <Badge variant={getVariant(priority)} className="capitalize">
-          {priority.toLowerCase()}
+        <Badge variant={getVariant(level)} className="capitalize">
+          {level.toLowerCase()}
         </Badge>
       );
     },
