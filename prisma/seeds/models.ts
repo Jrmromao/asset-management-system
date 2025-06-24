@@ -21,7 +21,12 @@ export async function seedModels(prisma: PrismaClient, companyId: string) {
     const manufacturer = await prisma.manufacturer.findFirst({ where: { name: model.manufacturerName } });
     if (manufacturer) {
       const created = await prisma.model.upsert({
-        where: { id: `model_${model.name}_${manufacturer.id}` },
+        where: { 
+          modelNo_companyId: {
+            modelNo: model.modelNo,
+            companyId: companyId
+          }
+        },
         update: {},
         create: {
           name: model.name,
