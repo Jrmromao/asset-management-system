@@ -1,7 +1,18 @@
 import React, { useEffect, useState } from "react";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
-import { CheckCircle2, HelpCircle } from "lucide-react";
+import { 
+  CheckCircle2, 
+  Zap, 
+  Shield, 
+  TrendingUp, 
+  Users, 
+  Clock,
+  Star,
+  ArrowRight,
+  Sparkles,
+  Database
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
   Tooltip,
@@ -11,41 +22,124 @@ import {
 } from "@/components/ui/tooltip";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
 
-export default function PricingTable() {
-  const [assetCount, setAssetCount] = useState(100);
-  const [inputValue, setInputValue] = useState("100");
-  const [isAnnual, setIsAnnual] = useState(false);
-  const [currency, setCurrency] = useState("EUR");
+interface PricingTier {
+  name: string;
+  description: string;
+  pricePerUser: number;
+  maxAssets: number;
+  features: string[];
+  badge?: string;
+  popular?: boolean;
+  cta: string;
+  savings?: string;
+  assetOveragePrice?: number; // Price per additional asset beyond limit
+}
 
-  const pricePerAsset = currency === "EUR" ? "0.35" : "0.36";
-  const annualDiscount = 0.1;
+export default function PricingTable() {
+  const [userCount, setUserCount] = useState(5);
+  const [assetCount, setAssetCount] = useState(1000);
+  const [userInputValue, setUserInputValue] = useState("5");
+  const [assetInputValue, setAssetInputValue] = useState("1000");
+  const [isAnnual, setIsAnnual] = useState(true);
   const navigate = useRouter();
 
-  const calculatePrice = () => ({
-    monthly: (assetCount * Number(pricePerAsset)).toFixed(2),
-    annual: (
-      assetCount *
-      Number(pricePerAsset) *
-      12 *
-      (1 - annualDiscount)
-    ).toFixed(2),
-  });
-  const handleInputChange = (value: string) => {
-    const parsed = parseInt(value);
-    setInputValue(value);
-    if (!isNaN(parsed)) {
-      setAssetCount(Math.min(Math.max(parsed, 100), 10000));
+  // Competitive pricing tiers - per user per month + asset overages
+  const pricingTiers: PricingTier[] = [
+    {
+      name: "Launch",
+      description: "Perfect for small teams getting started with asset management",
+      pricePerUser: 25,
+      maxAssets: 1000,
+      assetOveragePrice: 0.02, // $0.02 per additional asset per month
+      features: [
+        "Physical assets, licenses & accessories",
+        "Asset tracking & QR codes",
+        "Basic maintenance tracking",
+        "Basic reporting & analytics",
+        "Web-based dashboard",
+        "Email support",
+        "CSV import/export",
+        "User roles & permissions",
+        "Company data isolation"
+      ],
+      cta: "Start Free Trial",
+      savings: "Save 15% annually"
+    },
+    {
+      name: "Scale",
+      description: "AI-powered optimization for growing businesses",
+      pricePerUser: 45,
+      maxAssets: 10000,
+      assetOveragePrice: 0.015, // $0.015 per additional asset per month
+      features: [
+        "Everything in Launch, plus:",
+        "License compliance tracking",
+        "Accessory inventory management",
+        "AI-powered cost optimization",
+        "Advanced analytics & dashboards",
+        "CO2 impact tracking",
+        "Automated reporting",
+        "Advanced maintenance scheduling",
+        "API access",
+        "Priority email support"
+      ],
+      badge: "Most Popular",
+      popular: true,
+      cta: "Start Free Trial",
+      savings: "Save 15% annually"
+    },
+    {
+      name: "Transform",
+      description: "Enterprise-grade features with dedicated support",
+      pricePerUser: 85,
+      maxAssets: 50000,
+      assetOveragePrice: 0.01, // $0.01 per additional asset per month
+      features: [
+        "Everything in Scale, plus:",
+        "Advanced AI analytics",
+        "Multi-company management",
+        "Custom reporting & dashboards",
+        "Advanced user permissions",
+        "Dedicated email support",
+        "Advanced API features",
+        "Data export & backup",
+        "Priority feature requests",
+        "Coming soon: SSO integration",
+        "Coming soon: Custom branding",
+        "Coming soon: Phone support"
+      ],
+      badge: "Best Value",
+      cta: "Contact Our Team",
+      savings: "Save 15% annually"
     }
+  ];
+
+  const calculatePrice = (tier: PricingTier, users: number, assets: number) => {
+    const basePrice = tier.pricePerUser * users;
+    const assetOverage = Math.max(0, assets - tier.maxAssets);
+    const assetOveragePrice = assetOverage * (tier.assetOveragePrice || 0);
+    const monthly = basePrice + assetOveragePrice;
+    const annual = Math.round(monthly * 12 * 0.85); // 15% annual discount
+    return { 
+      monthly, 
+      annual, 
+      basePrice, 
+      assetOveragePrice, 
+      assetOverage 
+    };
   };
+
+  const getRecommendedTier = () => {
+    // Consider both users and assets for recommendation
+    if (assetCount <= 1000 && userCount <= 5) return "Launch";
+    if (assetCount <= 10000 && userCount <= 25) return "Scale";
+    return "Transform";
+  };
+
   const containerVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: {
@@ -58,384 +152,417 @@ export default function PricingTable() {
     },
   };
 
-  const featureVariants = {
-    hidden: { opacity: 0, x: -20 },
+  const cardVariants = {
+    hidden: { opacity: 0, y: 30 },
     visible: (i: number) => ({
       opacity: 1,
-      x: 0,
+      y: 0,
       transition: {
         delay: i * 0.1,
         type: "spring",
         stiffness: 100,
       },
     }),
+    hover: {
+      y: -5,
+      transition: { type: "spring", stiffness: 300 }
+    }
   };
 
-  const priceVariants = {
-    hidden: { scale: 0.9, opacity: 0 },
-    visible: {
-      scale: 1,
-      opacity: 1,
-      transition: {
-        type: "spring",
-        stiffness: 200,
-        damping: 20,
-      },
-    },
-    exit: {
-      scale: 0.9,
-      opacity: 0,
-      transition: { duration: 0.2 },
-    },
+  const handleUserInputChange = (value: string) => {
+    const parsed = parseInt(value);
+    setUserInputValue(value);
+    if (!isNaN(parsed)) {
+      setUserCount(Math.min(Math.max(parsed, 1), 100));
+    }
   };
 
-  const buttonVariants = {
-    hover: { scale: 1.05 },
-    tap: { scale: 0.95 },
+  const handleAssetInputChange = (value: string) => {
+    const parsed = parseInt(value);
+    setAssetInputValue(value);
+    if (!isNaN(parsed)) {
+      setAssetCount(Math.min(Math.max(parsed, 1), 100000));
+    }
   };
 
   useEffect(() => {
-    setInputValue(assetCount.toString());
+    setUserInputValue(userCount.toString());
+  }, [userCount]);
+
+  useEffect(() => {
+    setAssetInputValue(assetCount.toString());
   }, [assetCount]);
 
-  const calculateMonthlyPrice = () => {
-    return (assetCount * Number(pricePerAsset)).toFixed(2);
-  };
-
-  const calculateAnnualPrice = () => {
-    return (
-      assetCount *
-      Number(pricePerAsset) *
-      12 *
-      (1 - annualDiscount)
-    ).toFixed(2);
-  };
-  const priceAnimation = {
-    initial: { opacity: 0, scale: 0.8 },
-    animate: {
-      opacity: 1,
-      scale: 1,
-      transition: {
-        type: "spring",
-        stiffness: 200,
-        damping: 20,
-      },
-    },
-    exit: { opacity: 0, y: 20 },
-  };
-
-  const enterpriseAnimation = {
-    initial: { opacity: 0, y: 50 },
-    animate: {
-      opacity: 1,
-      y: 0,
-      transition: { type: "spring", stiffness: 100 },
-    },
-    exit: { opacity: 0, y: -50 },
-  };
-
-  const features = [
-    {
-      name: "Unlimited users",
-      tooltip: "Add as many team members as you need at no extra cost",
-    },
-    {
-      name: "24/7 support",
-      tooltip: "Access to our dedicated support team around the clock",
-    },
-    {
-      name: "Real-time asset tracking",
-      tooltip: "Monitor your assets' location and status in real-time",
-    },
-    {
-      name: "Carbon footprint monitoring",
-      tooltip: "Track and analyze your organization's environmental impact",
-    },
-    {
-      name: "Customizable sustainability reports",
-      tooltip: "Generate detailed reports tailored to your needs",
-    },
-    {
-      name: "Data export",
-      tooltip: "Export your data in various formats (CSV, PDF, Excel)",
-    },
-    {
-      name: "Low stock alerts",
-      tooltip: "Get notified when your assets are running low on resources",
-    },
-    {
-      name: "Inventory management",
-      tooltip: "Effortlessly manage your inventories and track usage",
-    },
-    {
-      name: "Asset maintenance scheduling",
-      tooltip: "Schedule, track, and manage asset maintenance with AI-powered carbon impact analysis",
-    },
-  ].sort((a, b) => a.name.localeCompare(b.name));
+  const recommendedTier = getRecommendedTier();
 
   return (
-    <motion.div
-      variants={containerVariants}
-      initial="hidden"
-      whileInView="visible"
-      viewport={{ once: true }}
-      className="w-full max-w-7xl mx-auto bg-white rounded-lg shadow-lg"
-    >
+    <div className="w-full max-w-7xl mx-auto py-12">
       {/* Header Section */}
-      <motion.div variants={featureVariants} className="p-6 border-b">
-        <h2 className="text-2xl font-bold text-emerald-800">
-          Build Your Package
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="text-center mb-12"
+      >
+        <div className="inline-flex items-center gap-2 bg-emerald-50 text-emerald-700 px-4 py-2 rounded-full text-sm font-medium mb-4">
+          <Sparkles className="h-4 w-4" />
+          Limited Time: 30-Day Free Trial + 15% Annual Discount
+        </div>
+        <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+          Simple, Transparent Pricing
         </h2>
-        <p className="mt-2 text-gray-600">Complete asset management solution</p>
+        <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+          Complete asset management platform with AI-powered optimization. Track assets, licenses, and accessories with maintenance scheduling, CO2 impact analysis, and cost optimization insights.
+        </p>
       </motion.div>
 
-      <div className="grid md:grid-cols-2 gap-8 p-6">
-        {/* Features List */}
-        <div className="space-y-6">
-          <motion.h3
-            variants={featureVariants}
-            className="text-base font-semibold text-emerald-800 pb-3"
-          >
-            Features Included
-          </motion.h3>
-          <TooltipProvider>
-            <motion.div variants={containerVariants} className="grid gap-3">
-              {features.map((feature, i) => (
-                <motion.div
-                  key={feature.name}
-                  custom={i}
-                  variants={featureVariants}
-                  whileHover={{ x: 5 }}
-                  className="flex items-center gap-3 p-2 rounded-md hover:bg-emerald-50 transition-colors group text-sm"
-                >
-                  <motion.div
-                    whileHover={{ scale: 1.1, rotate: 360 }}
-                    transition={{ type: "spring", stiffness: 300 }}
-                  >
-                    <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                  </motion.div>
-                  <span className="font-medium text-gray-600">
-                    {feature.name}
-                  </span>
-                  <Tooltip>
-                    <TooltipTrigger className="ml-auto">
-                      <motion.div
-                        whileHover={{ rotate: 180 }}
-                        transition={{ duration: 0.3 }}
-                      >
-                        <HelpCircle className="h-4 w-4 text-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity" />
-                      </motion.div>
-                    </TooltipTrigger>
-                    <TooltipContent className="bg-emerald-800 text-white">
-                      <p className="text-xs">{feature.tooltip}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </motion.div>
-              ))}
-            </motion.div>
-          </TooltipProvider>
-        </div>
-
-        {/* Price Calculator */}
-        <div className="space-y-6">
-          <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <Select value={currency} onValueChange={setCurrency}>
-                <SelectTrigger className="w-full sm:w-[180px]">
-                  <SelectValue placeholder="Select currency" />
-                </SelectTrigger>
-                <SelectContent className={"bg-white"}>
-                  <SelectItem value="EUR">EUR (€)</SelectItem>
-                  <SelectItem value="USD">USD ($)</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <div className="flex items-center gap-4 bg-gray-50 px-4 py-2 rounded-lg w-full sm:w-auto justify-center">
-                <span className={!isAnnual ? "font-medium" : "text-gray-500"}>
-                  Monthly
-                </span>
-                <Switch checked={isAnnual} onCheckedChange={setIsAnnual} />
-                <span className={isAnnual ? "font-medium" : "text-gray-500"}>
-                  Annual (-10%)
-                </span>
+      {/* Calculator */}
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className="bg-white rounded-2xl shadow-lg border p-8 mb-12"
+      >
+        <div className="max-w-4xl mx-auto">
+          <h3 className="text-2xl font-bold text-center mb-8">Calculate Your Pricing</h3>
+          
+          <div className="grid md:grid-cols-2 gap-8">
+            {/* Users */}
+            <div className="space-y-6">
+              <div className="flex items-center gap-3 mb-4">
+                <Users className="h-6 w-6 text-emerald-600" />
+                <h4 className="text-lg font-semibold">Team Members</h4>
               </div>
-            </div>
-
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <h3 className="text-sm font-medium">Assets to track</h3>
-                <span className="text-sm text-gray-500">
-                  {assetCount} assets
-                </span>
+              
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-gray-700">Number of users</span>
+                <div className="flex items-center gap-4">
+                  <Input
+                    type="number"
+                    value={userInputValue}
+                    onChange={(e) => handleUserInputChange(e.target.value)}
+                    min={1}
+                    max={100}
+                    className="w-24 text-center"
+                  />
+                  <span className="text-sm text-gray-500">users</span>
+                </div>
               </div>
 
-              <Input
-                type="number"
-                value={inputValue}
-                onChange={(e) => handleInputChange(e.target.value)}
-                min={100}
-                max={10000}
+              <Slider
+                value={[userCount]}
+                onValueChange={(value) => {
+                  setUserCount(value[0]);
+                  setUserInputValue(value[0].toString());
+                }}
+                min={1}
+                max={100}
+                step={1}
                 className="mb-4"
               />
+            </div>
+
+            {/* Assets */}
+            <div className="space-y-6">
+              <div className="flex items-center gap-3 mb-4">
+                <Database className="h-6 w-6 text-blue-600" />
+                <h4 className="text-lg font-semibold">Items to Track</h4>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-gray-700">Assets, licenses & accessories</span>
+                <div className="flex items-center gap-4">
+                  <Input
+                    type="number"
+                    value={assetInputValue}
+                    onChange={(e) => handleAssetInputChange(e.target.value)}
+                    min={1}
+                    max={100000}
+                    className="w-32 text-center"
+                  />
+                  <span className="text-sm text-gray-500">items</span>
+                </div>
+              </div>
 
               <Slider
                 value={[assetCount]}
                 onValueChange={(value) => {
                   setAssetCount(value[0]);
-                  setInputValue(value[0].toString());
+                  setAssetInputValue(value[0].toString());
                 }}
-                min={100}
-                max={10000}
-                step={100}
-                className="mb-2"
+                min={1}
+                max={100000}
+                step={10}
+                className="mb-4"
               />
             </div>
           </div>
 
-          <AnimatePresence mode="wait">
-            {assetCount < 10000 ? (
-              <motion.div
-                key="standard-price"
-                className="bg-emerald-50 rounded-xl p-6"
-              >
-                <motion.div
-                  key={
-                    isAnnual
-                      ? calculatePrice().annual
-                      : calculatePrice().monthly
-                  }
-                  initial="initial"
-                  animate="animate"
-                  exit="exit"
-                  variants={priceAnimation}
-                  className="text-center mb-4"
-                >
-                  <div className="text-3xl sm:text-4xl font-bold text-emerald-800 mb-2">
-                    {currency === "EUR" ? "€" : "$"}
-                    {isAnnual
-                      ? calculatePrice().annual
-                      : calculatePrice().monthly}
-                  </div>
-                  <span className="text-gray-600">
-                    per {isAnnual ? "year" : "month"}
-                  </span>
-                </motion.div>
+          <div className="mt-8 text-center">
+            <div className="inline-flex items-center gap-4 bg-gray-50 px-6 py-3 rounded-lg">
+              <span className={!isAnnual ? "font-medium text-gray-900" : "text-gray-500"}>
+                Monthly
+              </span>
+              <Switch checked={isAnnual} onCheckedChange={setIsAnnual} />
+              <span className={isAnnual ? "font-medium text-gray-900" : "text-gray-500"}>
+                Annual
+                <Badge variant="secondary" className="ml-2 bg-emerald-100 text-emerald-700">
+                  Save 15%
+                </Badge>
+              </span>
+            </div>
+          </div>
 
-                <div className="space-y-3 text-sm text-gray-600">
-                  <div className="flex justify-between">
-                    <span>Base price per asset:</span>
-                    <span className="font-medium">
-                      {currency === "EUR" ? "€" : "$"}
-                      {pricePerAsset}
-                    </span>
-                  </div>
-                  {isAnnual && (
-                    <div className="flex justify-between text-emerald-600">
-                      <span>Annual discount:</span>
-                      <span className="font-medium">-10%</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between border-t pt-2">
-                    <span>Total assets:</span>
-                    <motion.span
-                      key={
-                        isAnnual
-                          ? calculatePrice().annual
-                          : calculatePrice().monthly
-                      }
-                      initial="initial"
-                      animate="animate"
-                      exit="exit"
-                      variants={priceAnimation}
-                      className="font-medium"
-                    >
-                      {assetCount}
-                    </motion.span>
-                  </div>
-                </div>
-
-                <Button
-                  className="w-full mt-6 bg-emerald-600 hover:bg-emerald-700"
-                  onClick={() => navigate.push(`/sign-up?assets=${assetCount}`)}
-                >
-                  Get Started
-                </Button>
-              </motion.div>
-            ) : (
-              <motion.div
-                key="enterprise"
-                initial="initial"
-                animate="animate"
-                exit="exit"
-                variants={enterpriseAnimation}
-                className="bg-emerald-50 rounded-xl p-6 text-center"
-              >
-                <h3 className="text-xl font-bold text-emerald-800 mb-3">
-                  Enterprise Solution
-                </h3>
-                <p className="text-gray-600 mb-6">
-                  Custom pricing and advanced features for organizations
-                  tracking 10,000+ assets
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left mb-6">
-                  <div className="flex items-start gap-2">
-                    <CheckCircle2 className="h-5 w-5 text-emerald-500 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <p className="font-medium text-gray-800">
-                        Priority Support
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        Dedicated account manager & 24/7 priority support
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <CheckCircle2 className="h-5 w-5 text-emerald-500 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <p className="font-medium text-gray-800">
-                        Custom Integration
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        API access & custom system integrations
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <CheckCircle2 className="h-5 w-5 text-emerald-500 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <p className="font-medium text-gray-800">
-                        Advanced Analytics
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        Custom reports & predictive insights
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <CheckCircle2 className="h-5 w-5 text-emerald-500 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <p className="font-medium text-gray-800">
-                        Enhanced Security
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        SSO, audit logs & compliance features
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <Button
-                  className="w-full bg-emerald-600 hover:bg-emerald-700"
-                  onClick={() => {
-                    window.location.href = "mailto:sales@ecokeepr.com";
-                  }}
-                >
-                  Contact Sales
-                </Button>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          <div className="text-center mt-6">
+            <p className="text-sm text-emerald-600 font-medium">
+              Recommended: <span className="font-bold">{recommendedTier}</span> plan for {userCount} {userCount === 1 ? 'user' : 'users'} and {assetCount.toLocaleString()} items
+            </p>
+          </div>
         </div>
-      </div>
-    </motion.div>
+      </motion.div>
+
+      {/* Pricing Cards */}
+      <motion.div 
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="grid md:grid-cols-3 gap-8 mb-12"
+      >
+        {pricingTiers.map((tier, index) => {
+          const pricing = calculatePrice(tier, userCount, assetCount);
+          const isRecommended = tier.name === recommendedTier;
+          const price = isAnnual ? pricing.annual : pricing.monthly;
+          const period = isAnnual ? "year" : "month";
+
+          return (
+            <motion.div
+              key={tier.name}
+              custom={index}
+              variants={cardVariants}
+              whileHover="hover"
+              className="relative"
+            >
+              <Card className={`h-full flex flex-col transition-all duration-300 ${
+                isRecommended 
+                  ? 'ring-2 ring-emerald-500 shadow-xl scale-105' 
+                  : 'hover:shadow-lg'
+              }`}>
+                {tier.badge && (
+                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                    <Badge className={`px-4 py-1 ${
+                      tier.popular 
+                        ? 'bg-emerald-600 hover:bg-emerald-700' 
+                        : 'bg-blue-600 hover:bg-blue-700'
+                    }`}>
+                      {tier.badge}
+                    </Badge>
+                  </div>
+                )}
+
+                <CardHeader className="text-center pb-4 flex-shrink-0">
+                  <h3 className="text-2xl font-bold text-gray-900">{tier.name}</h3>
+                  <p className="text-gray-600">{tier.description}</p>
+                  
+                  <div className="mt-4">
+                    {tier.name === "Transform" ? (
+                      <div className="text-center">
+                        <div className="text-4xl font-bold text-gray-900 mb-2">
+                          Custom Pricing
+                        </div>
+                        <p className="text-sm text-gray-600">
+                          Tailored to your organization's needs
+                        </p>
+                        <p className="text-xs text-gray-500 mt-2">
+                          Volume discounts available
+                        </p>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex items-baseline justify-center gap-1">
+                          <span className="text-4xl font-bold text-gray-900">
+                            ${price.toLocaleString()}
+                          </span>
+                          <span className="text-gray-600">/{period}</span>
+                        </div>
+                        {isAnnual && (
+                          <p className="text-sm text-emerald-600 font-medium mt-1">
+                            {tier.savings}
+                          </p>
+                        )}
+                        
+                        {/* Price Breakdown */}
+                        <div className="mt-3 text-xs text-gray-500 space-y-1">
+                          <div>Base: ${pricing.basePrice.toFixed(2)}/month</div>
+                          {pricing.assetOverage > 0 && (
+                            <div>Assets: +${pricing.assetOveragePrice.toFixed(2)}/month</div>
+                          )}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </CardHeader>
+
+                <CardContent className="flex flex-col flex-grow">
+                  <div className="space-y-3 flex-grow">
+                    {tier.features.map((feature, featureIndex) => (
+                      <div key={featureIndex} className="flex items-start gap-3">
+                        <CheckCircle2 className="h-5 w-5 text-emerald-500 flex-shrink-0 mt-0.5" />
+                        <span className="text-sm text-gray-700">{feature}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="mt-6 pt-4 border-t border-gray-100">
+                    <Button
+                      size="lg"
+                      className={`w-full text-white font-semibold py-4 px-6 rounded-lg transition-all duration-300 transform hover:scale-[1.02] hover:shadow-xl ${
+                        isRecommended
+                          ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-200 hover:shadow-emerald-300'
+                          : tier.name === "Transform"
+                          ? 'bg-blue-600 hover:bg-blue-700 shadow-blue-200 hover:shadow-blue-300'
+                          : 'bg-gray-800 hover:bg-gray-900 shadow-gray-200 hover:shadow-gray-300'
+                      }`}
+                      onClick={() => {
+                        if (tier.name === "Transform") {
+                          navigate.push('/contact');
+                        } else {
+                          navigate.push(`/sign-up?plan=${tier.name.toLowerCase()}&users=${userCount}&assets=${assetCount}&billing=${isAnnual ? 'annual' : 'monthly'}`);
+                        }
+                      }}
+                    >
+                      {tier.cta}
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          );
+        })}
+      </motion.div>
+
+      {/* Example Scenario */}
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+        className="bg-blue-50 rounded-2xl p-8 mb-12"
+      >
+        <h3 className="text-xl font-bold text-center mb-6 text-blue-900">
+          💡 Example: Solo User with 4,000 Items (Assets + Licenses + Accessories)
+        </h3>
+        <div className="grid md:grid-cols-3 gap-6">
+          {pricingTiers.map((tier) => {
+            const pricing = calculatePrice(tier, 1, 4000);
+            const monthlyPrice = pricing.monthly;
+            
+            return (
+              <div key={tier.name} className="bg-white rounded-lg p-4 text-center">
+                <h4 className="font-semibold text-gray-900 mb-2">{tier.name}</h4>
+                {tier.name === "Transform" ? (
+                  <div>
+                    <div className="text-2xl font-bold text-gray-900 mb-1">
+                      Custom Quote
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      Contact sales for pricing
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <div className="text-2xl font-bold text-gray-900 mb-1">
+                      ${monthlyPrice.toFixed(2)}/month
+                    </div>
+                    <div className="text-xs text-gray-500 space-y-1">
+                      <div>Base: ${tier.pricePerUser}/month</div>
+                      {pricing.assetOverage > 0 && (
+                        <div>
+                          Assets: {pricing.assetOverage.toLocaleString()} × ${tier.assetOveragePrice} = ${pricing.assetOveragePrice.toFixed(2)}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </motion.div>
+
+      {/* Trust Indicators */}
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4 }}
+        className="grid md:grid-cols-4 gap-8 mb-12"
+      >
+        <div className="text-center">
+          <div className="bg-emerald-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Shield className="h-8 w-8 text-emerald-600" />
+          </div>
+          <h4 className="font-semibold text-gray-900 mb-2">30-Day Free Trial</h4>
+          <p className="text-sm text-gray-600">No credit card required</p>
+        </div>
+        
+        <div className="text-center">
+          <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Clock className="h-8 w-8 text-blue-600" />
+          </div>
+          <h4 className="font-semibold text-gray-900 mb-2">Quick Setup</h4>
+          <p className="text-sm text-gray-600">Get started in under 10 minutes</p>
+        </div>
+        
+        <div className="text-center">
+          <div className="bg-purple-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Users className="h-8 w-8 text-purple-600" />
+          </div>
+          <h4 className="font-semibold text-gray-900 mb-2">Expert Support</h4>
+          <p className="text-sm text-gray-600">Dedicated customer success team</p>
+        </div>
+        
+        <div className="text-center">
+          <div className="bg-green-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+            <TrendingUp className="h-8 w-8 text-green-600" />
+          </div>
+          <h4 className="font-semibold text-gray-900 mb-2">Proven ROI</h4>
+          <p className="text-sm text-gray-600">Average 25% cost reduction in first year</p>
+        </div>
+      </motion.div>
+
+      {/* FAQ Section */}
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.6 }}
+        className="bg-gray-50 rounded-2xl p-8"
+      >
+        <h3 className="text-2xl font-bold text-center mb-8">Frequently Asked Questions</h3>
+        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          <div>
+            <h4 className="font-semibold text-gray-900 mb-2">What's included in the free trial?</h4>
+            <p className="text-sm text-gray-600">Full access to Scale plan features for 30 days. No credit card required to start.</p>
+          </div>
+          <div>
+            <h4 className="font-semibold text-gray-900 mb-2">What AI features are currently available?</h4>
+            <p className="text-sm text-gray-600">AI-powered cost optimization analysis for licenses and accessories, CO2 impact tracking, and automated recommendations to reduce expenses and improve efficiency.</p>
+          </div>
+          <div>
+            <h4 className="font-semibold text-gray-900 mb-2">What types of items can I track?</h4>
+            <p className="text-sm text-gray-600">Track physical assets (laptops, equipment), software licenses (with compliance monitoring), and accessories (cables, peripherals) all in one unified platform.</p>
+          </div>
+          <div>
+            <h4 className="font-semibold text-gray-900 mb-2">How does maintenance tracking work?</h4>
+            <p className="text-sm text-gray-600">Schedule maintenance events, track costs, assign technicians, and monitor asset health. The system includes automated CO2 impact analysis for maintenance activities.</p>
+          </div>
+          <div>
+            <h4 className="font-semibold text-gray-900 mb-2">Is there an API available?</h4>
+            <p className="text-sm text-gray-600">Yes, we provide REST API access for integrating with your existing systems. API documentation is available for Scale and Transform plans.</p>
+          </div>
+          <div>
+            <h4 className="font-semibold text-gray-900 mb-2">Do you offer volume discounts?</h4>
+            <p className="text-sm text-gray-600">Yes, we offer custom pricing for large organizations. Contact our sales team for enterprise pricing.</p>
+          </div>
+        </div>
+      </motion.div>
+    </div>
   );
 }

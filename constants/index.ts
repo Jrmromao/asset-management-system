@@ -47,6 +47,12 @@ export const sidebarLinks = [
     label: "Reports",
     visibleTo: [roles.ADMIN],
   },
+  {
+    imgURL: "/icons/maintenance-icon.svg",
+    route: "/maintenance",
+    label: "Maintenance",
+    visibleTo: [roles.ADMIN],
+  },
   // {
   //   imgURL: "/icons/settings.svg",
   //   route: "/settings",

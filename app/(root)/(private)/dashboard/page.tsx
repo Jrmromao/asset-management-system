@@ -29,12 +29,21 @@ export default function DashboardPage() {
     searchParams.get("subscription_success") === "true";
 
   useEffect(() => {
+    console.log("Dashboard useEffect:", {
+      isLoaded,
+      isSignedIn,
+      session: !!session,
+      cameFromSubscription,
+    });
+
     if (!isLoaded) {
+      console.log("Dashboard: Clerk not loaded yet");
       return;
     }
 
     // If returning from a successful subscription, reload the session to get the latest metadata.
     if (cameFromSubscription) {
+      console.log("Dashboard: Came from subscription, reloading session");
       session?.reload().then(() => {
         // After reloading, remove the query param from the URL and let the effect re-run.
         router.replace("/dashboard", { scroll: false });
@@ -44,32 +53,39 @@ export default function DashboardPage() {
 
     // If not signed in, redirect to the sign-in page.
     if (!isSignedIn) {
+      console.log("Dashboard: Not signed in, redirecting to sign-in");
       router.push("/sign-in");
       return;
     }
 
-    // Check onboarding status
+    // Check onboarding status with timeout
     const checkOnboarding = async () => {
       try {
         const publicMetadata = session?.user?.publicMetadata as any;
+        const privateMetadata = (session?.user as any)?.privateMetadata;
         const hasOnboardingFlag = publicMetadata?.onboardingComplete === true;
         const hasUserId = publicMetadata?.userId;
+        const hasCompanyId = publicMetadata?.companyId || privateMetadata?.companyId;
 
         console.log("Dashboard onboarding check:", {
           hasOnboardingFlag,
           hasUserId,
+          hasCompanyId,
           publicMetadata,
+          privateMetadata,
         });
 
-        // If user has completed onboarding (either flag or userId exists), allow access
-        if (hasOnboardingFlag || hasUserId) {
+        // If user has completed onboarding (either flag, userId, or companyId exists), allow access
+        if (hasOnboardingFlag || hasUserId || hasCompanyId) {
+          console.log("Dashboard: Onboarding complete, showing dashboard");
           setIsCheckingOnboarding(false);
           return;
         }
 
-        // If no onboarding flag and no userId, redirect to sign-up
-        console.log("Onboarding not complete, redirecting to sign-up");
-        router.push("/sign-up");
+        // If no onboarding indicators found, but user is signed in, allow access (fail open)
+        // This prevents infinite loading if metadata isn't set properly
+        console.log("Dashboard: No onboarding metadata found, allowing access anyway");
+        setIsCheckingOnboarding(false);
       } catch (error) {
         console.error("Error checking onboarding status:", error);
         // If there's an error, allow access to dashboard (fail open)
@@ -77,7 +93,19 @@ export default function DashboardPage() {
       }
     };
 
-    checkOnboarding();
+    // Add a timeout to prevent infinite loading
+    const timeoutId = setTimeout(() => {
+      console.log("Dashboard: Onboarding check timeout, allowing access");
+      setIsCheckingOnboarding(false);
+    }, 3000); // 3 second timeout
+
+    checkOnboarding().finally(() => {
+      clearTimeout(timeoutId);
+    });
+
+    return () => {
+      clearTimeout(timeoutId);
+    };
   }, [isLoaded, isSignedIn, cameFromSubscription, session, router]);
 
   // Show a loader while Clerk is loading or while checking onboarding
