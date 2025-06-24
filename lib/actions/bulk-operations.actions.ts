@@ -56,19 +56,14 @@ export const generateSmartAssignmentRecommendations = withAuth(
           companyId,
         },
         include: {
-          model: {
-            include: {
-              manufacturer: true,
-              category: true,
-            },
-          },
+          model: true,
           statusLabel: true,
           department: true,
-          formTemplate: true,
+          category: true,
         },
-      });
+      }) as any[];
 
-      // Fetch available users with their profiles
+      // Fetch available users with their profiles and assigned assets
       const users = await prisma.user.findMany({
         where: {
           companyId,
@@ -77,53 +72,38 @@ export const generateSmartAssignmentRecommendations = withAuth(
         include: {
           department: true,
           role: true,
-          userItem: {
-            include: {
-              asset: {
-                include: {
-                  model: {
-                    include: { category: true },
-                  },
-                },
-              },
-            },
-          },
+          assets: true,
         },
-      });
+      }) as any[];
 
       // Prepare data for AI analysis
       const analysisData = {
-        assets: assets.map(asset => ({
+        assets: assets.map((asset: any) => ({
           id: asset.id,
           name: asset.name,
-          category: asset.model?.category?.name,
-          manufacturer: asset.model?.manufacturer?.name,
-          modelName: asset.model?.name,
-          department: asset.department?.name,
-          requirements: asset.formTemplate?.name,
-          specifications: {
-            // Add any custom fields from formTemplate
-          },
+          category: asset.category?.name || 'Unknown',
+          manufacturer: asset.model?.name || 'Unknown',
+          modelName: asset.model?.name || 'Unknown',
+          department: asset.department?.name || 'Unassigned',
+          specifications: {},
         })),
-        users: users.map(user => ({
+        users: users.map((user: any) => ({
           id: user.id,
-          name: user.name,
+          name: user.name || 'Unknown User',
           email: user.email,
-          department: user.department?.name,
-          role: user.role?.name,
-          title: user.title,
-          currentAssets: user.userItem
-            .filter(ui => ui.asset)
-            .map(ui => ({
-              category: ui.asset?.model?.category?.name,
-              name: ui.asset?.name,
-            })),
-          assetCount: user.userItem.filter(ui => ui.asset).length,
+          department: user.department?.name || 'Unassigned',
+          role: user.role?.name || 'Unknown Role',
+          title: user.title || 'Unknown Title',
+          currentAssets: (user.assets || []).map((asset: any) => ({
+            category: 'Unknown',
+            name: asset.name || 'Unknown',
+          })),
+          assetCount: (user.assets || []).length,
         })),
         organizationalContext: {
           totalUsers: users.length,
-          departments: Array.from(new Set(users.map(u => u.department?.name).filter(Boolean))),
-          roles: Array.from(new Set(users.map(u => u.role?.name).filter(Boolean))),
+          departments: Array.from(new Set(users.map((u: any) => u.department?.name).filter(Boolean))),
+          roles: Array.from(new Set(users.map((u: any) => u.role?.name).filter(Boolean))),
         },
       };
 

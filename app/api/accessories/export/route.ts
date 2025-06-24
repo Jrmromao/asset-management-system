@@ -10,12 +10,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { accessories } = await getAllAccessories({ 
-      userId, 
-      orgId: orgId || undefined 
-    });
+    const result = await getAllAccessories();
 
-    if (!accessories || accessories.length === 0) {
+    if (!result.success || !result.data || result.data.length === 0) {
       return NextResponse.json({ error: "No accessories found" }, { status: 404 });
     }
 
@@ -36,7 +33,7 @@ export async function POST(request: NextRequest) {
     ];
 
     // Convert accessories to CSV rows
-    const csvRows = accessories.map((accessory: any) => [
+    const csvRows = result.data.map((accessory: any) => [
       accessory.id || "",
       accessory.name || "",
       accessory.description || "",
@@ -53,7 +50,7 @@ export async function POST(request: NextRequest) {
 
     // Combine headers and rows
     const csvContent = [headers, ...csvRows]
-      .map((row) => row.map((field) => `"${field}"`).join(","))
+      .map((row) => row.map((field: any) => `"${field}"`).join(","))
       .join("\n");
 
     // Return CSV file

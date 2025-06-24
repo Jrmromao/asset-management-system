@@ -22,8 +22,8 @@ export type ActionResponse<T> = {
   message?: string;
 };
 
-const getSession = () => {
-  const cookieStore = cookies();
+const getSession = async () => {
+  const cookieStore = await cookies();
   return {
     accessToken: cookieStore.get("sb-access-token")?.value,
     refreshToken: cookieStore.get("sb-refresh-token")?.value,
@@ -171,7 +171,7 @@ export const insert = withAuth(
 export async function createAccessory(
   values: z.infer<typeof accessorySchema>,
 ): Promise<ActionResponse<Accessory>> {
-  const session = getSession();
+  const session = await getSession();
   return insert(values);
 }
 
@@ -219,7 +219,7 @@ export const getAll = withAuth(
 export async function getAllAccessories(): Promise<
   ActionResponse<Accessory[]>
 > {
-  const session = getSession();
+  const session = await getSession();
   return getAll();
 }
 
