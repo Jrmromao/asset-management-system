@@ -12,8 +12,7 @@ export interface MaintenanceFlow {
   conditions: any[];
   actions: any[];
   isActive: boolean;
-  priority: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
-  category: string;
+  priority: number;
   executionCount: number;
   successRate: number;
   lastExecuted?: Date;
@@ -131,7 +130,7 @@ export async function getMaintenanceFlows(filters: Record<string, any> = {}): Pr
       category: flow.category,
       executionCount: flow.executions.length,
       successRate: flow.executions.length > 0 
-        ? (flow.executions.filter(e => e.status === "SUCCESS").length / flow.executions.length) * 100
+        ? (flow.executions.filter((e: any) => e.status === "SUCCESS").length / flow.executions.length) * 100
         : 0,
       lastExecuted: flow.executions[0]?.executedAt,
       createdAt: flow.createdAt,

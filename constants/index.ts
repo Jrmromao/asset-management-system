@@ -59,12 +59,6 @@ export const sidebarLinks = [
     label: "Maintenance Flows",
     visibleTo: [roles.ADMIN],
   },
-  // {
-  //   imgURL: "/icons/settings.svg",
-  //   route: "/settings",
-  //   label: "Settings",
-  //   visibleTo: [roles.ADMIN],
-  // },
 ].sort((a, b) => {
   if (a.label === "Dashboard") return -1;
   if (b.label === "Dashboard") return 1;

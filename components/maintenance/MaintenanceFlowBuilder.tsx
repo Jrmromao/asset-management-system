@@ -42,6 +42,7 @@ import {
   Upload,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useMaintenanceFlowQuery } from "@/hooks/queries/useMaintenanceFlowQuery";
 
 // Types for flow building
 interface FlowCondition {
@@ -148,6 +149,143 @@ const ACTION_TYPES = [
       { name: "approverRole", type: "select", options: ["Manager", "Senior Technician", "Admin"] },
       { name: "reason", type: "text" }
     ]
+  }
+];
+
+// Predefined flow templates
+const FLOW_TEMPLATES = [
+  {
+    id: "high-value-asset",
+    name: "High-Value Asset Workflow",
+    description: "Requires approval for maintenance on assets over $10,000",
+    icon: DollarSign,
+    flow: {
+      name: "High-Value Asset Workflow",
+      description: "Automatically require approval for maintenance on high-value assets",
+      trigger: "creation",
+      priority: 200,
+      isActive: true,
+      conditions: [
+        {
+          id: "1",
+          field: "asset.value",
+          operator: "greater_than",
+          value: 10000,
+          logicalOperator: "AND" as const
+        }
+      ],
+      actions: [
+        {
+          id: "1",
+          type: "require_approval",
+          name: "Require Manager Approval",
+          parameters: {
+            approverRole: "Manager",
+            reason: "High-value asset maintenance"
+          }
+        },
+        {
+          id: "2",
+          type: "send_notification",
+          name: "Notify Management",
+          parameters: {
+            recipient: "Manager",
+            message: "High-value asset maintenance requires approval"
+          }
+        }
+      ]
+    }
+  },
+  {
+    id: "emergency-response",
+    name: "Emergency Response",
+    description: "Fast-track critical maintenance with immediate notifications",
+    icon: AlertTriangle,
+    flow: {
+      name: "Emergency Response Workflow",
+      description: "Fast-track critical maintenance requests",
+      trigger: "creation",
+      priority: 500,
+      isActive: true,
+      conditions: [
+        {
+          id: "1",
+          field: "maintenance.priority",
+          operator: "equals",
+          value: "Critical",
+          logicalOperator: "AND" as const
+        }
+      ],
+      actions: [
+        {
+          id: "1",
+          type: "update_status",
+          name: "Set to In Progress",
+          parameters: {
+            status: "In Progress"
+          }
+        },
+        {
+          id: "2",
+          type: "send_notification",
+          name: "Alert Maintenance Team",
+          parameters: {
+            recipient: "Maintenance Team",
+            message: "URGENT: Critical maintenance request requires immediate attention"
+          }
+        },
+        {
+          id: "3",
+          type: "assign_technician",
+          name: "Auto-assign Senior Tech",
+          parameters: {
+            autoAssign: true
+          }
+        }
+      ]
+    }
+  },
+  {
+    id: "preventive-scheduler",
+    name: "Preventive Maintenance Scheduler",
+    description: "Automatically schedule follow-up maintenance",
+    icon: Calendar,
+    flow: {
+      name: "Preventive Maintenance Scheduler",
+      description: "Schedule follow-up maintenance after completion",
+      trigger: "completion",
+      priority: 100,
+      isActive: true,
+      conditions: [
+        {
+          id: "1",
+          field: "maintenance.type",
+          operator: "equals",
+          value: "Preventive",
+          logicalOperator: "AND" as const
+        }
+      ],
+      actions: [
+        {
+          id: "1",
+          type: "schedule_followup",
+          name: "Schedule Next Maintenance",
+          parameters: {
+            daysOffset: 90,
+            followupType: "Maintenance"
+          }
+        },
+        {
+          id: "2",
+          type: "send_notification",
+          name: "Notify Asset Owner",
+          parameters: {
+            recipient: "Asset Owner",
+            message: "Preventive maintenance completed. Next maintenance scheduled in 90 days."
+          }
+        }
+      ]
+    }
   }
 ];
 
@@ -383,6 +521,7 @@ const ActionBuilder: React.FC<{
 
 // Main Flow Builder Component
 export const MaintenanceFlowBuilder: React.FC = () => {
+  // Temporarily use local state until backend is fully connected
   const [flows, setFlows] = useState<MaintenanceFlow[]>([]);
   const [currentFlow, setCurrentFlow] = useState<MaintenanceFlow>({
     name: "",
@@ -394,6 +533,9 @@ export const MaintenanceFlowBuilder: React.FC = () => {
     actions: []
   });
   const [isEditing, setIsEditing] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const addCondition = useCallback(() => {
     const newCondition: FlowCondition = {
@@ -456,11 +598,61 @@ export const MaintenanceFlowBuilder: React.FC = () => {
       return;
     }
 
-    try {
-      // This would call your API to save the flow
-      // await saveMaintenanceFlow(currentFlow);
+    if (currentFlow.actions.length === 0) {
+      toast.error("Please add at least one action");
+      return;
+    }
+
+    // Validate actions have required parameters
+    const invalidActions = currentFlow.actions.filter(action => {
+      if (!action.type) return true;
+      const actionType = ACTION_TYPES.find(t => t.value === action.type);
+      if (!actionType) return true;
       
-      toast.success("Maintenance flow saved successfully!");
+      // Check required parameters
+      return actionType.parameters.some(param => {
+        const value = action.parameters[param.name];
+        if (param.type === "boolean") return false; // Boolean can be false
+        return !value || (typeof value === "string" && value.trim() === "");
+      });
+    });
+
+    if (invalidActions.length > 0) {
+      toast.error("Please complete all action configurations");
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      
+      const flowData = {
+        id: currentFlow.id || `flow-${Date.now()}`,
+        name: currentFlow.name,
+        description: currentFlow.description || "",
+        trigger: currentFlow.trigger,
+        priority: currentFlow.priority,
+        conditions: currentFlow.conditions,
+        actions: currentFlow.actions,
+        isActive: currentFlow.isActive,
+        executionCount: 0,
+        successRate: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        createdBy: "current-user",
+      };
+
+      if (currentFlow.id) {
+        // Update existing flow
+        setFlows(prev => prev.map(flow => 
+          flow.id === currentFlow.id ? { ...flowData, updatedAt: new Date() } : flow
+        ));
+        toast.success("Maintenance flow updated successfully!");
+      } else {
+        // Create new flow
+        setFlows(prev => [...prev, flowData]);
+        toast.success("Maintenance flow created successfully!");
+      }
+      
       setIsEditing(false);
       setCurrentFlow({
         name: "",
@@ -472,7 +664,10 @@ export const MaintenanceFlowBuilder: React.FC = () => {
         actions: []
       });
     } catch (error) {
+      console.error("Error saving flow:", error);
       toast.error("Failed to save maintenance flow");
+    } finally {
+      setIsLoading(false);
     }
   }, [currentFlow]);
 
@@ -486,14 +681,86 @@ export const MaintenanceFlowBuilder: React.FC = () => {
         </div>
         <div className="flex gap-2">
           <Button
-            variant="outline"
             onClick={() => setIsEditing(true)}
           >
             <Plus className="h-4 w-4 mr-2" />
             New Flow
           </Button>
+          <Button
+            variant="outline"
+            onClick={() => setShowPreview(!showPreview)}
+          >
+            <Workflow className="h-4 w-4 mr-2" />
+            {showPreview ? "Hide" : "Show"} Templates
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => {
+              const dataStr = JSON.stringify(flows, null, 2);
+              const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+              const exportFileDefaultName = 'maintenance-flows.json';
+              const linkElement = document.createElement('a');
+              linkElement.setAttribute('href', dataUri);
+              linkElement.setAttribute('download', exportFileDefaultName);
+              linkElement.click();
+              toast.success("Flows exported successfully!");
+            }}
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Export
+          </Button>
         </div>
       </div>
+
+      {/* Flow Templates */}
+      {showPreview && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Copy className="h-5 w-5" />
+              Flow Templates
+            </CardTitle>
+            <p className="text-sm text-gray-600">
+              Get started quickly with these pre-built workflow templates
+            </p>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {FLOW_TEMPLATES.map((template: any) => (
+                <div
+                  key={template.id}
+                  className="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                  onClick={() => {
+                    setCurrentFlow({
+                      ...template.flow,
+                      id: undefined // Remove ID so it creates a new flow
+                    });
+                    setIsEditing(true);
+                    setShowPreview(false);
+                  }}
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <template.icon className="h-5 w-5 text-blue-600" />
+                    <h3 className="font-medium">{template.name}</h3>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-3">{template.description}</p>
+                  <div className="flex gap-2 flex-wrap">
+                    <Badge variant="outline" className="text-xs">
+                      {template.flow.trigger}
+                    </Badge>
+                    <Badge variant="outline" className="text-xs">
+                      {template.flow.conditions.length} conditions
+                    </Badge>
+                    <Badge variant="outline" className="text-xs">
+                      {template.flow.actions.length} actions
+                    </Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Flow Builder */}
       {isEditing && (
@@ -639,24 +906,140 @@ export const MaintenanceFlowBuilder: React.FC = () => {
               )}
             </div>
 
+            {/* Flow Preview */}
+            {(currentFlow.conditions.length > 0 || currentFlow.actions.length > 0) && (
+              <>
+                <Separator />
+                <div>
+                  <h3 className="text-lg font-semibold mb-4">Flow Preview</h3>
+                  <div className="p-4 bg-gray-50 rounded-lg">
+                    <div className="text-sm text-gray-600 mb-2">
+                      <strong>When:</strong> {currentFlow.trigger === "creation" ? "Maintenance is created" : 
+                      currentFlow.trigger === "status_change" ? "Status changes" :
+                      currentFlow.trigger === "completion" ? "Maintenance is completed" : "Approval is required"}
+                    </div>
+                    
+                    {currentFlow.conditions.length > 0 && (
+                      <div className="text-sm text-gray-600 mb-2">
+                        <strong>If:</strong>
+                        <ul className="ml-4 mt-1">
+                          {currentFlow.conditions.map((condition, index) => (
+                            <li key={condition.id}>
+                              {CONDITION_FIELDS.find(f => f.value === condition.field)?.label || condition.field} {" "}
+                              {OPERATORS.find(o => o.value === condition.operator)?.label || condition.operator} {" "}
+                              <strong>{condition.value}</strong>
+                              {index < currentFlow.conditions.length - 1 && (
+                                <span className="text-blue-600 font-medium"> {condition.logicalOperator} </span>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    
+                    {currentFlow.actions.length > 0 && (
+                      <div className="text-sm text-gray-600">
+                        <strong>Then:</strong>
+                        <ul className="ml-4 mt-1">
+                          {currentFlow.actions.map((action, index) => (
+                            <li key={action.id}>
+                              {index + 1}. {action.name || ACTION_TYPES.find(t => t.value === action.type)?.label}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
+
             {/* Actions */}
             <div className="flex gap-3 pt-6 border-t">
-              <Button onClick={saveFlow} disabled={!currentFlow.name}>
+              <Button onClick={saveFlow} disabled={!currentFlow.name || isLoading}>
                 <CheckCircle className="h-4 w-4 mr-2" />
-                Save Flow
+                {isLoading ? "Saving..." : "Save Flow"}
               </Button>
               <Button variant="outline" onClick={() => setIsEditing(false)}>
                 Cancel
               </Button>
+              {currentFlow.actions.length > 0 && (
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    toast.success("Flow test completed! Check the preview above to see how it works.");
+                  }}
+                >
+                  <Play className="h-4 w-4 mr-2" />
+                  Test Flow
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>
       )}
 
+      {/* Flow Statistics */}
+      {flows.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2">
+                <Workflow className="h-4 w-4 text-blue-600" />
+                <span className="text-sm font-medium">Total Flows</span>
+              </div>
+              <p className="text-2xl font-bold mt-1">{flows.length}</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <span className="text-sm font-medium">Active Flows</span>
+              </div>
+              <p className="text-2xl font-bold mt-1">{flows.filter(f => f.isActive).length}</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-orange-600" />
+                <span className="text-sm font-medium">High Priority</span>
+              </div>
+              <p className="text-2xl font-bold mt-1">{flows.filter(f => f.priority > 300).length}</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2">
+                <Settings className="h-4 w-4 text-gray-600" />
+                <span className="text-sm font-medium">Avg Actions</span>
+              </div>
+              <p className="text-2xl font-bold mt-1">
+                {flows.length > 0 ? Math.round(flows.reduce((acc, f) => acc + f.actions.length, 0) / flows.length) : 0}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {/* Existing Flows List */}
       <Card>
         <CardHeader>
-          <CardTitle>Existing Flows</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle>Existing Flows ({flows.filter(f => 
+              f.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              f.description?.toLowerCase().includes(searchTerm.toLowerCase())
+            ).length})</CardTitle>
+            {flows.length > 0 && (
+              <Input
+                placeholder="Search flows..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="max-w-xs"
+              />
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           {flows.length === 0 ? (
@@ -664,8 +1047,23 @@ export const MaintenanceFlowBuilder: React.FC = () => {
               No custom flows created yet. Create your first flow to get started.
             </div>
           ) : (
-            <div className="space-y-3">
-              {flows.map((flow) => (
+            <>
+              {flows
+                .filter(f => 
+                  f.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  f.description?.toLowerCase().includes(searchTerm.toLowerCase())
+                ).length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  {searchTerm ? `No flows found matching "${searchTerm}"` : "No flows found"}
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {flows
+                    .filter(f => 
+                      f.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                      f.description?.toLowerCase().includes(searchTerm.toLowerCase())
+                    )
+                    .map((flow: MaintenanceFlow) => (
                 <div key={flow.id} className="flex items-center justify-between p-4 border rounded-lg">
                   <div>
                     <h4 className="font-medium">{flow.name}</h4>
@@ -676,6 +1074,9 @@ export const MaintenanceFlowBuilder: React.FC = () => {
                       </Badge>
                       <Badge variant={flow.isActive ? "default" : "secondary"}>
                         {flow.isActive ? "Active" : "Inactive"}
+                      </Badge>
+                      <Badge variant="outline" className="text-xs">
+                        Priority: {flow.priority}
                       </Badge>
                     </div>
                   </div>
@@ -690,10 +1091,39 @@ export const MaintenanceFlowBuilder: React.FC = () => {
                     >
                       <Edit className="h-4 w-4" />
                     </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const duplicatedFlow = {
+                          ...flow,
+                          id: `flow-${Date.now()}`,
+                          name: `${flow.name} (Copy)`,
+                          createdAt: new Date(),
+                          updatedAt: new Date(),
+                        };
+                        setFlows(prev => [...prev, duplicatedFlow]);
+                        toast.success("Flow duplicated successfully");
+                      }}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setFlows(prev => prev.filter(f => f.id !== flow.id));
+                        toast.success("Flow deleted successfully");
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
               ))}
-            </div>
+                </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>

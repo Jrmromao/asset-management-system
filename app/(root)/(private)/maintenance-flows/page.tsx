@@ -75,9 +75,7 @@ const searchFlows = (flows: MaintenanceFlow[], searchTerm: string): MaintenanceF
   const searchLower = searchTerm.toLowerCase();
   const searchableFields = [
     "name",
-    "description",
-    "category",
-    "priority",
+    "description", 
     "trigger",
   ];
 
@@ -128,7 +126,6 @@ const MaintenanceFlowsPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("flows");
   const [filters, setFilters] = useState({
-    category: "",
     priority: "",
     status: "",
   });
@@ -201,11 +198,8 @@ const MaintenanceFlowsPage = () => {
     let filtered = searchFlows(flows, debouncedSearchTerm);
     
     // Apply filters
-    if (filters.category) {
-      filtered = filtered.filter(flow => flow.category === filters.category);
-    }
     if (filters.priority) {
-      filtered = filtered.filter(flow => flow.priority === filters.priority);
+      filtered = filtered.filter(flow => flow.priority === parseInt(filters.priority));
     }
     if (filters.status) {
       const isActive = filters.status === "active";
