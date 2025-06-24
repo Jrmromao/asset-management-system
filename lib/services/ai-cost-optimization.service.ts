@@ -1,6 +1,13 @@
 import OpenAI from "openai";
 import { prisma } from "@/app/db";
 
+// Check environment variables
+console.log("🔧 AI Cost Optimization Service: Environment check", {
+  hasOpenAIKey: !!process.env.OPENAI_API_KEY,
+  hasDeepSeekURL: !!process.env.DEEPSEEK_API_URL,
+  openAIKeyLength: process.env.OPENAI_API_KEY?.length || 0
+});
+
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
   baseURL: process.env.DEEPSEEK_API_URL || undefined, // Support for DeepSeek
@@ -13,6 +20,25 @@ interface CostOptimizationAnalysis {
   riskAssessment: RiskAssessment;
   implementationPriority: ImplementationPlan[];
   complianceImpact: ComplianceAnalysis;
+  environmentalImpact: EnvironmentalImpact;
+}
+
+interface EnvironmentalImpact {
+  totalCO2Emissions: number; // kg CO2e
+  emissionsByCategory: Array<{
+    category: string;
+    emissions: number;
+    percentage: number;
+  }>;
+  potentialCO2Savings: number; // kg CO2e that could be saved
+  carbonFootprintReduction: number; // percentage reduction possible
+  sustainabilityScore: number; // 0-100 score
+  recommendations: Array<{
+    action: string;
+    co2Reduction: number;
+    costSavings: number;
+    feasibility: 'low' | 'medium' | 'high';
+  }>;
 }
 
 interface CostRecommendation {
@@ -77,14 +103,26 @@ export async function analyzeLicenseCostOptimization(
     }
 
     // Fetch comprehensive license data
+    console.log(`🌱 License Analysis: Fetching license data for company ${user.companyId}`);
     const licenseData = await getLicenseAnalyticsData(user.companyId, timeframe);
     
+    console.log(`🌱 License Analysis: Fetching CO2 data for company ${user.companyId}`);
+    const co2Data = await getCO2AnalyticsData(user.companyId);
+    console.log(`🌱 License Analysis: CO2 data retrieved`, { 
+      totalEmissions: co2Data.totalCO2Emissions, 
+      recordCount: co2Data.recordCount,
+      categories: co2Data.emissionsByCategory.length 
+    });
+    
     const prompt = `
-    You are an expert IT Asset Management consultant specializing in software license optimization and cost reduction.
-    Analyze the following license data and provide actionable cost optimization recommendations.
+    You are an expert IT Asset Management consultant specializing in software license optimization, cost reduction, and environmental sustainability.
+    Analyze the following license data and provide actionable cost optimization recommendations that also consider environmental impact.
 
     **Company License Portfolio:**
     ${JSON.stringify(licenseData, null, 2)}
+
+    **Environmental Data (CO2 Emissions):**
+    ${JSON.stringify(co2Data, null, 2)}
 
     **Analysis Requirements:**
     1. **Utilization Analysis**: Identify underutilized licenses
@@ -94,6 +132,7 @@ export async function analyzeLicenseCostOptimization(
     5. **Alternative Solutions**: Open-source or cheaper alternatives
     6. **Compliance Risk Assessment**: License compliance issues
     7. **Workflow Optimization**: Process improvements to reduce waste
+    8. **Environmental Impact**: CO2 reduction opportunities through optimization
 
     **Output JSON Format:**
     {
@@ -140,6 +179,27 @@ export async function analyzeLicenseCostOptimization(
         "affectedPolicies": ["policy names"],
         "requiredApprovals": ["approval types needed"],
         "complianceChecklist": ["compliance verification steps"]
+      },
+      "environmentalImpact": {
+        "totalCO2Emissions": number_in_kg_co2e,
+        "emissionsByCategory": [
+          {
+            "category": "category name",
+            "emissions": number_in_kg_co2e,
+            "percentage": percentage_of_total
+          }
+        ],
+        "potentialCO2Savings": number_in_kg_co2e,
+        "carbonFootprintReduction": percentage_reduction,
+        "sustainabilityScore": number_0_to_100,
+        "recommendations": [
+          {
+            "action": "specific environmental action",
+            "co2Reduction": number_in_kg_co2e,
+            "costSavings": number_in_currency,
+            "feasibility": "low" | "medium" | "high"
+          }
+        ]
       }
     }
 
@@ -186,14 +246,26 @@ export async function analyzeAccessoryCostOptimization(
       return { success: false, error: 'User not associated with a company' };
     }
 
+    console.log(`🌱 Accessory Analysis: Fetching accessory data for company ${user.companyId}`);
     const accessoryData = await getAccessoryAnalyticsData(user.companyId);
     
+    console.log(`🌱 Accessory Analysis: Fetching CO2 data for company ${user.companyId}`);
+    const co2Data = await getCO2AnalyticsData(user.companyId);
+    console.log(`🌱 Accessory Analysis: CO2 data retrieved`, { 
+      totalEmissions: co2Data.totalCO2Emissions, 
+      recordCount: co2Data.recordCount,
+      categories: co2Data.emissionsByCategory.length 
+    });
+    
     const prompt = `
-    You are an expert in inventory management and procurement optimization.
-    Analyze the following accessory inventory data and provide cost optimization recommendations.
+    You are an expert in inventory management, procurement optimization, and environmental sustainability.
+    Analyze the following accessory inventory data and provide cost optimization recommendations that also consider environmental impact.
 
     **Company Accessory Inventory:**
     ${JSON.stringify(accessoryData, null, 2)}
+
+    **Environmental Data (CO2 Emissions):**
+    ${JSON.stringify(co2Data, null, 2)}
 
     **Analysis Focus:**
     1. **Inventory Optimization**: Reduce excess stock and carrying costs
@@ -203,6 +275,7 @@ export async function analyzeAccessoryCostOptimization(
     5. **Vendor Consolidation**: Reduce procurement complexity
     6. **Standardization**: Reduce variety and complexity
     7. **Demand Forecasting**: Predictive inventory planning
+    8. **Environmental Impact**: CO2 reduction through sustainable practices
 
     **Cost Reduction Opportunities:**
     - **Excess Inventory**: Items with low turnover or overstocking
@@ -587,6 +660,72 @@ async function storeCostOptimizationAnalysis(
   } catch (error) {
     console.error('Error storing cost optimization analysis:', error);
   }
+}
+
+async function getCO2AnalyticsData(companyId: string) {
+  console.log(`🌱 getCO2AnalyticsData: Starting analysis for company ${companyId}`);
+  
+  // Get all users and assets for the company first
+  const companyUsers = await prisma.user.findMany({ where: { companyId }, select: { id: true } });
+  const companyAssets = await prisma.asset.findMany({ where: { companyId }, select: { id: true } });
+  
+  console.log(`🌱 getCO2AnalyticsData: Found ${companyUsers.length} users and ${companyAssets.length} assets`);
+  
+  // Get all CO2 records for the company
+  const co2Records = await prisma.co2eRecord.findMany({
+    where: {
+      OR: [
+        { userId: { in: companyUsers.map(u => u.id) } },
+        { assetId: { in: companyAssets.map(a => a.id) } }
+      ]
+    },
+    include: {
+      asset: {
+        include: {
+          category: true,
+          model: {
+            include: {
+              manufacturer: true
+            }
+          }
+        }
+      }
+    }
+  });
+
+  console.log(`🌱 getCO2AnalyticsData: Found ${co2Records.length} CO2 records`);
+  
+  const totalEmissions = co2Records.reduce((sum, record) => sum + Number(record.co2e), 0);
+  
+  console.log(`🌱 getCO2AnalyticsData: Total emissions: ${totalEmissions} kg CO2e`);
+  
+  // Group emissions by category
+  const emissionsByCategory = co2Records.reduce((acc, record) => {
+    const category = record.asset?.category?.name || record.co2eType || 'Unknown';
+    acc[category] = (acc[category] || 0) + Number(record.co2e);
+    return acc;
+  }, {} as Record<string, number>);
+  
+  console.log(`🌱 getCO2AnalyticsData: Emissions by category:`, emissionsByCategory);
+
+  // Convert to percentage format
+  const categoryBreakdown = Object.entries(emissionsByCategory).map(([category, emissions]) => ({
+    category,
+    emissions,
+    percentage: totalEmissions > 0 ? (emissions / totalEmissions) * 100 : 0
+  }));
+
+  return {
+    totalCO2Emissions: totalEmissions,
+    emissionsByCategory: categoryBreakdown,
+    recordCount: co2Records.length,
+    averageEmissionPerAsset: co2Records.length > 0 ? totalEmissions / co2Records.length : 0,
+    scopeBreakdown: co2Records.reduce((acc, record) => {
+      const scope = `Scope ${record.scope}`;
+      acc[scope] = (acc[scope] || 0) + Number(record.co2e);
+      return acc;
+    }, {} as Record<string, number>)
+  };
 }
 
 async function storeCostForecast(

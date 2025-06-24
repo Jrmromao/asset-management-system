@@ -14,7 +14,9 @@ import {
   Brain,
   Lightbulb,
   Target,
-  Zap
+  Zap,
+  Leaf,
+  BarChart3
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useUser } from '@clerk/nextjs';
@@ -31,6 +33,24 @@ interface CostRecommendation {
   timeToValue: number;
   affectedAssets: string[];
   actionItems: string[];
+}
+
+interface EnvironmentalImpact {
+  totalCO2Emissions: number;
+  emissionsByCategory: Array<{
+    category: string;
+    emissions: number;
+    percentage: number;
+  }>;
+  potentialCO2Savings: number;
+  carbonFootprintReduction: number;
+  sustainabilityScore: number;
+  recommendations: Array<{
+    action: string;
+    co2Reduction: number;
+    costSavings: number;
+    feasibility: 'low' | 'medium' | 'high';
+  }>;
 }
 
 interface CostOptimizationAnalysis {
@@ -54,6 +74,7 @@ interface CostOptimizationAnalysis {
     dependencies: string[];
     expectedSavings: number;
   }>;
+  environmentalImpact?: EnvironmentalImpact;
 }
 
 export function CostOptimizationDashboard() {
@@ -387,6 +408,140 @@ export function CostOptimizationDashboard() {
             </CardContent>
           </Card>
 
+          {/* Environmental Impact */}
+          {analysis.environmentalImpact && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Leaf className="h-5 w-5 text-green-600" />
+                  Environmental Impact & Sustainability
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  {/* Overview Stats */}
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Leaf className="h-4 w-4 text-green-600" />
+                        <span className="text-sm font-medium text-green-700">Total CO2 Emissions</span>
+                      </div>
+                      <p className="text-2xl font-bold text-green-800">
+                        {analysis.environmentalImpact.totalCO2Emissions.toFixed(1)} kg
+                      </p>
+                      <p className="text-xs text-green-600">CO2 equivalent</p>
+                    </div>
+                    
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <TrendingDown className="h-4 w-4 text-blue-600" />
+                        <span className="text-sm font-medium text-blue-700">Potential Savings</span>
+                      </div>
+                      <p className="text-2xl font-bold text-blue-800">
+                        {analysis.environmentalImpact.potentialCO2Savings.toFixed(1)} kg
+                      </p>
+                      <p className="text-xs text-blue-600">CO2 reduction possible</p>
+                    </div>
+                    
+                    <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <BarChart3 className="h-4 w-4 text-purple-600" />
+                        <span className="text-sm font-medium text-purple-700">Footprint Reduction</span>
+                      </div>
+                      <p className="text-2xl font-bold text-purple-800">
+                        {analysis.environmentalImpact.carbonFootprintReduction.toFixed(1)}%
+                      </p>
+                      <p className="text-xs text-purple-600">potential reduction</p>
+                    </div>
+                    
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Target className="h-4 w-4 text-yellow-600" />
+                        <span className="text-sm font-medium text-yellow-700">Sustainability Score</span>
+                      </div>
+                      <p className="text-2xl font-bold text-yellow-800">
+                        {analysis.environmentalImpact.sustainabilityScore}/100
+                      </p>
+                      <p className="text-xs text-yellow-600">current rating</p>
+                    </div>
+                  </div>
+
+                  {/* Emissions Breakdown */}
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div>
+                      <h4 className="font-semibold text-lg mb-4 flex items-center gap-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        Emissions by Category
+                      </h4>
+                      <div className="space-y-3">
+                        {analysis.environmentalImpact.emissionsByCategory.map((category, index) => (
+                          <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <div className="flex-1">
+                              <span className="font-medium text-gray-800">{category.category}</span>
+                              <div className="flex items-center gap-2 mt-1">
+                                <div className="w-full bg-gray-200 rounded-full h-2">
+                                  <div 
+                                    className="bg-green-500 h-2 rounded-full" 
+                                    style={{ width: `${category.percentage}%` }}
+                                  ></div>
+                                </div>
+                                <span className="text-sm text-gray-600 min-w-[50px]">
+                                  {category.percentage.toFixed(1)}%
+                                </span>
+                              </div>
+                            </div>
+                            <div className="text-right ml-4">
+                              <p className="font-bold text-gray-800">{category.emissions.toFixed(1)} kg</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Environmental Recommendations */}
+                    <div>
+                      <h4 className="font-semibold text-lg mb-4 flex items-center gap-2">
+                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                        Sustainability Actions
+                      </h4>
+                      <div className="space-y-3">
+                        {analysis.environmentalImpact.recommendations.map((rec, index) => (
+                          <div key={index} className="border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow">
+                            <div className="flex items-start justify-between mb-3">
+                              <div className="flex-1">
+                                <p className="font-medium text-gray-800 mb-2">{rec.action}</p>
+                                <div className="flex items-center gap-2">
+                                  <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
+                                    rec.feasibility === 'high' ? 'bg-green-100 text-green-800' :
+                                    rec.feasibility === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                                    'bg-red-100 text-red-800'
+                                  }`}>
+                                    {rec.feasibility} feasibility
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div className="grid grid-cols-2 gap-4 text-sm">
+                              <div className="bg-green-50 p-2 rounded">
+                                <span className="text-green-600 font-medium">CO2 Reduction:</span>
+                                <p className="font-bold text-green-800">{rec.co2Reduction.toFixed(1)} kg</p>
+                              </div>
+                              <div className="bg-blue-50 p-2 rounded">
+                                <span className="text-blue-600 font-medium">Cost Savings:</span>
+                                <p className="font-bold text-blue-800">${rec.costSavings.toLocaleString()}</p>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Risk Assessment */}
           <Card>
             <CardHeader>
@@ -396,42 +551,95 @@ export function CostOptimizationDashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 mb-4">
-                  <span className="font-medium">Overall Risk Level:</span>
-                  <Badge className={`${getRiskColor(analysis.riskAssessment.overall)} bg-opacity-10`}>
-                    {analysis.riskAssessment.overall.toUpperCase()}
-                  </Badge>
+              <div className="space-y-6">
+                {/* Overall Risk Level */}
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="flex items-center gap-3">
+                    <AlertTriangle className={`h-6 w-6 ${getRiskColor(analysis.riskAssessment.overall)}`} />
+                    <div>
+                      <p className="text-sm font-medium text-gray-600 mb-1">Overall Risk Level:</p>
+                      <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-bold ${
+                        analysis.riskAssessment.overall === 'low' 
+                          ? 'bg-green-100 text-green-800 border border-green-200' 
+                          : analysis.riskAssessment.overall === 'medium'
+                          ? 'bg-yellow-100 text-yellow-800 border border-yellow-200'
+                          : 'bg-red-100 text-red-800 border border-red-200'
+                      }`}>
+                        {analysis.riskAssessment.overall.toUpperCase()}
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-6">
+                  {/* Risk Factors */}
                   <div>
-                    <h4 className="font-medium mb-3">Risk Factors:</h4>
-                    <div className="space-y-2">
+                    <h4 className="font-semibold text-lg mb-4 flex items-center gap-2">
+                      <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                      Risk Factors
+                    </h4>
+                    <div className="space-y-3">
                       {analysis.riskAssessment.factors.map((factor, index) => (
-                        <div key={index} className="flex items-center justify-between p-2 border rounded">
-                          <div>
-                            <p className="font-medium text-sm">{factor.category}</p>
-                            <p className="text-xs text-gray-600">{factor.description}</p>
+                        <div key={index} className="border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow">
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-2">
+                                <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800 capitalize">
+                                  {factor.category}
+                                </span>
+                                <div className={`inline-flex items-center px-2 py-1 rounded text-xs font-bold ${
+                                  factor.severity === 'low' 
+                                    ? 'bg-green-100 text-green-800' 
+                                    : factor.severity === 'medium'
+                                    ? 'bg-yellow-100 text-yellow-800'
+                                    : 'bg-red-100 text-red-800'
+                                }`}>
+                                  {factor.severity.toUpperCase()}
+                                </div>
+                              </div>
+                              <p className="text-sm text-gray-700 leading-relaxed mb-2">
+                                {factor.description}
+                              </p>
+                            </div>
                           </div>
-                          <div className="text-right">
-                            <Badge className={`${getRiskColor(factor.severity)} bg-opacity-10 text-xs`}>
-                              {factor.severity}
-                            </Badge>
-                            <p className="text-xs text-gray-600">{factor.likelihood}%</p>
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-gray-500">Likelihood:</span>
+                            <div className="flex items-center gap-2">
+                              <div className="w-16 bg-gray-200 rounded-full h-2">
+                                <div 
+                                  className={`h-2 rounded-full ${
+                                    factor.likelihood >= 0.8 ? 'bg-red-500' : 
+                                    factor.likelihood >= 0.5 ? 'bg-yellow-500' : 'bg-green-500'
+                                  }`}
+                                  style={{ width: `${factor.likelihood * 100}%` }}
+                                ></div>
+                              </div>
+                              <span className="text-xs font-medium text-gray-700">
+                                {(factor.likelihood * 100).toFixed(1)}%
+                              </span>
+                            </div>
                           </div>
                         </div>
                       ))}
                     </div>
                   </div>
 
+                  {/* Mitigation Strategies */}
                   <div>
-                    <h4 className="font-medium mb-3">Mitigation Strategies:</h4>
-                    <ul className="list-disc list-inside text-sm text-gray-600 space-y-2">
+                    <h4 className="font-semibold text-lg mb-4 flex items-center gap-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      Mitigation Strategies
+                    </h4>
+                    <div className="space-y-3">
                       {analysis.riskAssessment.mitigationStrategies.map((strategy, index) => (
-                        <li key={index}>{strategy}</li>
+                        <div key={index} className="flex items-start gap-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                          <div className="flex-shrink-0 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center mt-0.5">
+                            <span className="text-white text-xs font-bold">{index + 1}</span>
+                          </div>
+                          <p className="text-sm text-gray-700 leading-relaxed">{strategy}</p>
+                        </div>
                       ))}
-                    </ul>
+                    </div>
                   </div>
                 </div>
               </div>

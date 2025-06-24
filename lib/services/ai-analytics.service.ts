@@ -1,6 +1,13 @@
 import OpenAI from "openai";
 import { prisma } from "@/app/db";
 
+// Check environment variables
+console.log("🔧 AI Analytics Service: Environment check", {
+  hasOpenAIKey: !!process.env.OPENAI_API_KEY,
+  hasDeepSeekURL: !!process.env.DEEPSEEK_API_URL,
+  openAIKeyLength: process.env.OPENAI_API_KEY?.length || 0
+});
+
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
   baseURL: process.env.DEEPSEEK_API_URL || undefined, // Support for DeepSeek
@@ -77,19 +84,34 @@ export async function generateAssetInsights(
   userId: string,
   options: AnalysisOptions
 ): Promise<{ success: boolean; data?: AIAnalyticsData; error?: string }> {
+  console.log("🧠 AI Analytics Service: Starting generateAssetInsights", { userId, options });
+  
   try {
     // Get user's company ID
+    console.log("👤 AI Analytics Service: Looking up user company");
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: { companyId: true }
     });
 
+    console.log("🏢 AI Analytics Service: User lookup result", { 
+      found: !!user, 
+      companyId: user?.companyId 
+    });
+
     if (!user?.companyId) {
+      console.log("❌ AI Analytics Service: User not associated with company");
       return { success: false, error: 'User not associated with a company' };
     }
 
     // Gather comprehensive asset data
+    console.log("📊 AI Analytics Service: Gathering comprehensive asset data");
     const assetData = await getComprehensiveAssetData(user.companyId);
+    console.log("📈 AI Analytics Service: Asset data gathered", { 
+      assetsCount: assetData.assets?.total || 0,
+      licensesCount: assetData.licenses?.total || 0,
+      accessoriesCount: assetData.accessories?.total || 0
+    });
     
     const prompt = `
     You are an expert AI analyst specializing in IT asset management and operational optimization.
@@ -167,6 +189,9 @@ export async function generateAssetInsights(
     Focus on actionable insights that can drive real business value and operational improvements.
     `;
 
+    console.log("🤖 AI Analytics Service: Calling OpenAI API");
+    console.log("📝 AI Analytics Service: Prompt length", { promptLength: prompt.length });
+    
     const response = await openai.chat.completions.create({
       model: "gpt-4-turbo",
       messages: [{ role: "user", content: prompt }],
@@ -174,14 +199,28 @@ export async function generateAssetInsights(
       temperature: 0.3,
     });
 
+    console.log("✅ AI Analytics Service: OpenAI response received", {
+      model: response.model,
+      usage: response.usage,
+      hasContent: !!response.choices[0]?.message?.content
+    });
+
     const analysis = JSON.parse(response.choices[0].message.content || '{}');
+    console.log("📊 AI Analytics Service: Analysis parsed", {
+      insightsCount: analysis.insights?.length || 0,
+      utilizationCount: analysis.utilization?.length || 0,
+      lifecycleCount: analysis.lifecycle?.length || 0,
+      anomaliesCount: analysis.anomalies?.length || 0
+    });
     
     // Store the analysis for tracking
+    console.log("💾 AI Analytics Service: Storing analysis");
     await storeAssetAnalysis(user.companyId, analysis);
     
+    console.log("🎉 AI Analytics Service: Analysis completed successfully");
     return { success: true, data: analysis };
   } catch (error) {
-    console.error('Error in AI asset insights generation:', error);
+    console.error('💥 AI Analytics Service: Error in asset insights generation:', error);
     return { 
       success: false, 
       error: error instanceof Error ? error.message : 'Unknown error' 

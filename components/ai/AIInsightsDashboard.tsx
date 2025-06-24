@@ -85,39 +85,64 @@ export function AIInsightsDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
 
   const runAnalysis = async () => {
+    console.log("🚀 AI Dashboard: Starting analysis");
+    
     if (!user) {
+      console.log("❌ AI Dashboard: User not authenticated");
       toast.error('User not authenticated');
       return;
     }
 
+    console.log("👤 AI Dashboard: User authenticated", { userId: user.id });
     setIsLoading(true);
+    
     try {
+      const requestBody = {
+        analysisType: 'comprehensive',
+        includeUtilization: true,
+        includeLifecycle: true,
+        includeAnomalies: true
+      };
+      
+      console.log("📤 AI Dashboard: Sending request to /api/ai/insights", requestBody);
+      
       const response = await fetch('/api/ai/insights', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          analysisType: 'comprehensive',
-          includeUtilization: true,
-          includeLifecycle: true,
-          includeAnomalies: true
-        }),
+        body: JSON.stringify(requestBody),
+      });
+
+      console.log("📥 AI Dashboard: Response received", { 
+        status: response.status, 
+        ok: response.ok 
       });
 
       const result = await response.json();
+      console.log("📊 AI Dashboard: Response parsed", { 
+        success: result.success, 
+        hasData: !!result.data,
+        error: result.error 
+      });
 
       if (result.success) {
+        console.log("✅ AI Dashboard: Analysis successful", {
+          insightsCount: result.data?.insights?.length || 0,
+          utilizationCount: result.data?.utilization?.length || 0
+        });
         setData(result.data);
         toast.success(`AI analysis complete! Generated ${result.data.insights.length} insights.`);
       } else {
+        console.log("❌ AI Dashboard: Analysis failed", { error: result.error });
         toast.error(result.error || 'Analysis failed');
       }
     } catch (error) {
-      console.error('Analysis error:', error);
+      console.error('💥 AI Dashboard: Analysis error:', error);
       toast.error('Failed to run AI analysis');
     } finally {
       setIsLoading(false);
+      console.log("🏁 AI Dashboard: Analysis completed");
     }
   };
 
