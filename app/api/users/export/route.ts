@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
     ];
 
     // Convert users to CSV rows
-    const csvRows = users.map((user: any) => [
+    const csvRows = users.users.map((user: any) => [
       user.id,
       user.name || "",
       user.email,
@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
 
     // Combine headers and rows
     const csvContent = [headers, ...csvRows]
-      .map(row => row.map(field => `"${field}"`).join(","))
+      .map((row: string[]) => row.map((field: string) => `"${field}"`).join(","))
       .join("\n");
 
     // Return CSV as downloadable file

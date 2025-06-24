@@ -29,6 +29,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Form } from "@/components/ui/form";
 import { SelectWithButton } from "@/components/SelectWithButton";
 import CustomInput from "@/components/CustomInput";
+import CustomPriceInput from "@/components/CustomPriceInput";
+import CustomDatePicker from "@/components/CustomDatePicker";
+import CustomCurrencySelect from "@/components/CustomCurrencySelect";
 import { FormContainer } from "@/components/forms/FormContainer";
 import ActionFooter from "@/components/forms/ActionFooter";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -276,41 +279,150 @@ const AccessoryForm = () => {
                       </FormSection>
 
                       {/* Purchase Information */}
+                      <FormSection title="Purchase Information">
+                        <div className="grid gap-4 md:grid-cols-2">
+                          <CustomInput
+                            name="poNumber"
+                            label="PO Number"
+                            control={form.control}
+                            placeholder="Enter purchase order number"
+                          />
+                          <SelectWithButton
+                            name="supplierId"
+                            label="Supplier"
+                            form={form}
+                            data={suppliers}
+                            onNew={openSupplier}
+                            placeholder="Select supplier"
+                            isPending={isPending}
+                          />
+                        </div>
+                        <div className="grid gap-4 md:grid-cols-2">
+                          <CustomDatePicker
+                            name="purchaseDate"
+                            form={form}
+                            label="Purchase Date"
+                            placeholder="Select purchase date"
+                          />
+                          <CustomDatePicker
+                            name="endOfLife"
+                            form={form}
+                            label="End of Life"
+                            placeholder="Select end of life date"
+                          />
+                        </div>
+                      </FormSection>
 
-                      {/*<FormSection title={"Purchase Information"}>*/}
-                      {/*  <div className="grid gap-4 md:grid-cols-2">*/}
-                      {/*    <CustomInput*/}
-                      {/*      name="poNumber"*/}
-                      {/*      label="PO Number"*/}
-                      {/*      control={form.control}*/}
-                      {/*    />*/}
-                      {/*    <CustomPriceInput*/}
-                      {/*      name="price"*/}
-                      {/*      label="Unit Price"*/}
-                      {/*      control={form.control}*/}
-                      {/*      required*/}
-                      {/*    />*/}
-                      {/*    <CustomDatePicker*/}
-                      {/*      name="purchaseDate"*/}
-                      {/*      form={form}*/}
-                      {/*      label="Purchase Date"*/}
-                      {/*    />*/}
-                      {/*    <CustomDatePicker*/}
-                      {/*      name="endOfLife"*/}
-                      {/*      form={form}*/}
-                      {/*      label="End of Life"*/}
-                      {/*    />*/}
-                      {/*  </div>*/}
-                      {/*  <SelectWithButton*/}
-                      {/*    name="supplierId"*/}
-                      {/*    label="Supplier"*/}
-                      {/*    form={form}*/}
-                      {/*    data={suppliers}*/}
-                      {/*    onNew={openSupplier}*/}
-                      {/*    placeholder={""}*/}
-                      {/*    isPending={isPending}*/}
-                      {/*  />*/}
-                      {/*</FormSection>*/}
+                      {/* Pricing Information */}
+                      <FormSection title="Pricing Information">
+                        <div className="grid gap-4 md:grid-cols-3">
+                          <CustomPriceInput
+                            name="price"
+                            label="Unit Price"
+                            control={form.control}
+                            placeholder="0.00"
+                          />
+                          <CustomPriceInput
+                            name="unitCost"
+                            label="Unit Cost"
+                            control={form.control}
+                            placeholder="0.00"
+                          />
+                          <CustomCurrencySelect
+                            name="currency"
+                            label="Currency"
+                            form={form}
+                          />
+                        </div>
+                        
+                        <div className="grid gap-4 md:grid-cols-3">
+                          <CustomPriceInput
+                            name="totalValue"
+                            label="Total Value"
+                            control={form.control}
+                            placeholder="0.00"
+                          />
+                          <CustomPriceInput
+                            name="currentValue"
+                            label="Current Value"
+                            control={form.control}
+                            placeholder="0.00"
+                          />
+                          <CustomPriceInput
+                            name="replacementCost"
+                            label="Replacement Cost"
+                            control={form.control}
+                            placeholder="0.00"
+                          />
+                        </div>
+
+                        <div className="grid gap-4 md:grid-cols-3">
+                          <CustomInput
+                            name="depreciationRate"
+                            label="Depreciation Rate (0-1)"
+                            control={form.control}
+                            type="number"
+                            placeholder="0.15"
+                          />
+                          <CustomPriceInput
+                            name="averageCostPerUnit"
+                            label="Average Cost Per Unit"
+                            control={form.control}
+                            placeholder="0.00"
+                          />
+                          <CustomPriceInput
+                            name="lastPurchasePrice"
+                            label="Last Purchase Price"
+                            control={form.control}
+                            placeholder="0.00"
+                          />
+                        </div>
+                      </FormSection>
+
+                      {/* Cost Management */}
+                      <FormSection title="Cost Management">
+                        <div className="grid gap-4 md:grid-cols-2">
+                          <CustomInput
+                            name="costCenter"
+                            label="Cost Center"
+                            control={form.control}
+                            placeholder="Enter cost center"
+                          />
+                          <CustomInput
+                            name="budgetCode"
+                            label="Budget Code"
+                            control={form.control}
+                            placeholder="Enter budget code"
+                          />
+                        </div>
+                      </FormSection>
+
+                      {/* Physical Properties */}
+                      <FormSection title="Physical Properties">
+                        <div className="grid gap-4 md:grid-cols-2">
+                          <CustomInput
+                            name="material"
+                            label="Material"
+                            control={form.control}
+                            placeholder="Enter material type"
+                          />
+                          <CustomInput
+                            name="weight"
+                            label="Weight (kg)"
+                            control={form.control}
+                            type="number"
+                            placeholder="0.0"
+                          />
+                        </div>
+                        <div className="grid gap-4 md:grid-cols-1">
+                          <CustomInput
+                            name="notes"
+                            label="Notes"
+                            control={form.control}
+                            placeholder="Enter additional notes"
+                          />
+                        </div>
+                      </FormSection>
 
                       <FormSection title={"Inventory Information"}>
                         <SelectWithButton
@@ -391,10 +503,22 @@ const AccessoryForm = () => {
                         !!form.watch("statusLabelId") &&
                         !!form.watch("locationId"),
                     },
-                    // {
-                    //   name: "Purchase Information",
-                    //   isValid: !!form.watch("price"),
-                    // },
+                    {
+                      name: "Purchase Information",
+                      isValid: !!form.watch("poNumber") || !!form.watch("purchaseDate"),
+                    },
+                    {
+                      name: "Pricing Information",
+                      isValid: !!form.watch("price") || !!form.watch("unitCost"),
+                    },
+                    {
+                      name: "Cost Management",
+                      isValid: !!form.watch("costCenter") || !!form.watch("budgetCode"),
+                    },
+                    {
+                      name: "Physical Properties",
+                      isValid: !!form.watch("material") || !!form.watch("weight"),
+                    },
                     {
                       name: "Inventory Management",
                       isValid:

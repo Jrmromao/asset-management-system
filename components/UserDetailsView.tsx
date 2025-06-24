@@ -45,7 +45,23 @@ const fieldIcons = {
 } as const;
 
 interface UserDetailsViewProps {
-  user: User;
+  user: {
+    id: string;
+    name?: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    title?: string | null;
+    employeeId?: string | null;
+    accountType?: string;
+    active?: boolean;
+    role?: { name: string };
+    company?: { name: string };
+    department?: { name: string };
+    userItem?: UserItems[];
+    assets?: Asset[];
+    licenses?: License[];
+  };
   isLoading: boolean;
 }
 
@@ -54,12 +70,11 @@ export default function UserDetailsView({
   isLoading,
 }: UserDetailsViewProps) {
   const fields: DetailFieldType[] = [
-    { label: "Email Address", value: user.email, type: "text" },
+    { label: "Email Address", value: user.email || "-", type: "text" },
     { label: "Account Type", value: user.accountType || "-", type: "text" },
     { label: "Department", value: user.department?.name || "-", type: "text" },
     { label: "Role", value: user.role?.name || "-", type: "text" },
     { label: "Title", value: user.title || "-", type: "text" },
-    // { label: 'Account Status', value: user.active ? 'Active' : 'Inactive', type: 'text' },
     { label: "Employee ID", value: user.employeeId || "-", type: "text" },
   ];
 
@@ -76,6 +91,12 @@ export default function UserDetailsView({
     return <UserProfileSkeleton />;
   }
 
+  // Determine user status based on active field or other status indicators
+  const userStatus = user.active ? "Active" : "Inactive";
+  const statusColor = user.active 
+    ? "bg-green-100 text-green-800" 
+    : "bg-red-100 text-red-800";
+
   return (
     <div className="bg-white shadow overflow-hidden sm:rounded-lg">
       {/* Breadcrumbs */}
@@ -90,7 +111,7 @@ export default function UserDetailsView({
             <BreadcrumbSeparator />
             <BreadcrumbItem>
               <BreadcrumbLink asChild>
-                <Link href={`/users/${user.id}`}>View</Link>
+                <Link href={`/people/view/${user.id}`}>View</Link>
               </BreadcrumbLink>
             </BreadcrumbItem>
           </BreadcrumbList>
@@ -100,23 +121,21 @@ export default function UserDetailsView({
       {/* Header */}
       <div className="px-4 py-1 sm:px-6">
         <div>
-          <h3 className="text-xl font-semibold text-gray-900">{user.name}</h3>
+          <h3 className="text-xl font-semibold text-gray-900">
+            {user.name || `${user.firstName} ${user.lastName}`.trim()}
+          </h3>
           <p className="text-sm text-gray-500 mt-1">{user.email}</p>
         </div>
 
         <div className="flex items-center gap-3 mt-4 flex-wrap mb-3">
-          <span className="px-3 py-1 text-sm rounded-full bg-blue-100 text-blue-800">
-            {user.accountType}
-          </span>
+          {user.accountType && (
+            <span className="px-3 py-1 text-sm rounded-full bg-blue-100 text-blue-800">
+              {user.accountType}
+            </span>
+          )}
 
-          <span
-            className={`px-3 py-1 text-sm rounded-full ${
-              user.active
-                ? "bg-green-200 text-green-800"
-                : "bg-red-200 text-red-800"
-            }`}
-          >
-            {user.active ? "Active" : "Inactive"}
+          <span className={`px-3 py-1 text-sm rounded-full ${statusColor}`}>
+            {userStatus}
           </span>
         </div>
       </div>
@@ -154,9 +173,18 @@ export default function UserDetailsView({
           <div className="w-full flex flex-col sm:flex-row lg:justify-end gap-2 md:flex-row md:justify-center mt-4 md:mt-0">
             <Button variant="outline">
               <Download className="h-4 w-4 mr-2" />
-              Export
+              Export Report
             </Button>
-            <Button>Check-in All</Button>
+            <Button variant="outline">
+              <Mail className="h-4 w-4 mr-2" />
+              Send Message
+            </Button>
+            {user?.assets && user.assets.length > 0 && (
+              <Button>
+                <Laptop className="h-4 w-4 mr-2" />
+                Manage Assets
+              </Button>
+            )}
           </div>
         </CardFooter>
       </Card>
@@ -171,7 +199,7 @@ export default function UserDetailsView({
             <Laptop className="h-4 w-4" />
             Assets
             <span className="ml-1 bg-primary text-primary-foreground rounded-full h-5 w-5 flex items-center justify-center text-xs">
-              {user?.assets?.length || ""}
+              {user?.assets?.length || 0}
             </span>
           </TabsTrigger>
           <TabsTrigger
@@ -181,7 +209,7 @@ export default function UserDetailsView({
             <Monitor className="h-4 w-4" />
             Accessories
             <span className="ml-1 bg-primary text-primary-foreground rounded-full h-5 w-5 flex items-center justify-center text-xs">
-              {user?.userItem.length || ""}
+              {user?.userItem?.length || 0}
             </span>
           </TabsTrigger>
           <TabsTrigger
@@ -191,90 +219,102 @@ export default function UserDetailsView({
             <Key className="h-4 w-4" />
             Licenses
             <span className="ml-1 bg-primary text-primary-foreground rounded-full h-5 w-5 flex items-center justify-center text-xs">
-              {user?.userItem.length || ""}
+              {user?.licenses?.length || 0}
             </span>
           </TabsTrigger>
-          {/*<TabsTrigger*/}
-          {/*    value="consumables"*/}
-          {/*    className="flex items-center gap-2 px-6 py-3 data-[state=active]:bg-white rounded-none border-b-2 border-transparent data-[state=active]:border-primary"*/}
-          {/*>*/}
-          {/*    <Package className="h-4 w-4"/>*/}
-          {/*    Consumables*/}
-          {/*    <span*/}
-          {/*        className="ml-1 bg-primary text-primary-foreground rounded-full h-5 w-5 flex items-center justify-center text-xs">*/}
-          {/*        {user?.licenses?.length || ''}*/}
-          {/*    </span>*/}
-          {/*</TabsTrigger>*/}
           <TabsTrigger
             value="history"
             className="flex items-center gap-2 px-6 py-3 data-[state=active]:bg-white rounded-none border-b-2 border-transparent data-[state=active]:border-primary"
           >
             <History className="h-4 w-4" />
-            History
-          </TabsTrigger>
-          <TabsTrigger
-            value="booking-history"
-            className="flex items-center gap-2 px-6 py-3 data-[state=active]:bg-white rounded-none border-b-2 border-transparent data-[state=active]:border-primary"
-          >
-            <CalendarDays className="h-4 w-4" />
-            Booking History
+            Activity Log
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="assets" className="mt-6">
           <div className="space-y-4">
-            <div className="text-muted-foreground">
-              {user?.assets ? (
-                <DataTable
-                  columns={columns}
-                  data={user?.assets || []}
-                  isLoading={isLoading}
-                />
-              ) : (
-                <EmptyState type={"assets"} />
-              )}
-            </div>
+            {user?.assets && user.assets.length > 0 ? (
+              <DataTable
+                columns={columns}
+                data={user.assets}
+                isLoading={isLoading}
+              />
+            ) : (
+              <EmptyState type={"assets"} />
+            )}
           </div>
         </TabsContent>
 
         <TabsContent value="accessories" className="mt-6">
           <div className="space-y-4">
-            <div className="text-muted-foreground">
-              {JSON.stringify(user?.accessories, null, 2)}
-
-              {/*<DataTable columns={} data={user?.accessories || []} />*/}
-            </div>
+            {user?.userItem && user.userItem.length > 0 ? (
+              <div className="space-y-3">
+                {user.userItem.map((item, index) => (
+                  <div key={index} className="flex items-center justify-between p-4 border rounded-lg bg-gray-50">
+                    <div className="flex items-center gap-3">
+                      <Monitor className="h-5 w-5 text-gray-400" />
+                      <div>
+                        <p className="font-medium">{item.accessory?.name || "Accessory"}</p>
+                        <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
+                      </div>
+                    </div>
+                    <span className="text-xs text-gray-500">
+                      {new Date(item.assignedAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <Monitor className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No Accessories</h3>
+                <p className="text-gray-600 mb-4">This user hasn't been assigned any accessories yet.</p>
+                <p className="text-sm text-gray-500">
+                  <strong>Coming Soon:</strong> Full accessory management with tracking, requests, and more.
+                </p>
+              </div>
+            )}
           </div>
         </TabsContent>
 
         <TabsContent value="licenses" className="mt-6">
           <div className="space-y-4">
-            <div className="text-muted-foreground">No licenses assigned</div>
+            {user?.licenses && user.licenses.length > 0 ? (
+              <div className="space-y-3">
+                {user.licenses.map((license, index) => (
+                  <div key={index} className="flex items-center justify-between p-4 border rounded-lg bg-gray-50">
+                    <div className="flex items-center gap-3">
+                      <Key className="h-5 w-5 text-gray-400" />
+                      <div>
+                        <p className="font-medium">{license.name}</p>
+                        <p className="text-sm text-gray-600">Seats: {license.seats}</p>
+                      </div>
+                    </div>
+                    <span className="text-xs text-gray-500">
+                      Expires: {new Date(license.renewalDate).toLocaleDateString()}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <Key className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No Licenses</h3>
+                <p className="text-gray-600 mb-4">This user hasn't been assigned any software licenses yet.</p>
+                <p className="text-sm text-gray-500">
+                  <strong>Coming Soon:</strong> Complete license management with renewals, compliance tracking, and cost optimization.
+                </p>
+              </div>
+            )}
           </div>
-
-          <EmptyState type={"licenses"} />
         </TabsContent>
 
-        {/*<TabsContent value="consumables" className="mt-6">*/}
-        {/*    <div className="space-y-4">*/}
-        {/*        <div className="text-muted-foreground">No consumables assigned</div>*/}
-        {/*    </div>*/}
-        {/*</TabsContent>*/}
-
         <TabsContent value="history" className="mt-6">
-          {false ? (
-            <ActivityLog sourceType="user" sourceId={user?.id!} />
+          {user?.id ? (
+            <ActivityLog sourceType="user" sourceId={user.id} />
           ) : (
             <EmptyState type={"history"} />
           )}
-        </TabsContent>
-
-        <TabsContent value="booking-history" className="mt-6">
-          <div className="space-y-4">
-            <div className="text-muted-foreground">
-              <EmptyState type={"history"} />
-            </div>
-          </div>
         </TabsContent>
       </Tabs>
     </div>
