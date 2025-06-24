@@ -36,7 +36,12 @@ const maintenanceFormSchema = z.object({
 
 type MaintenanceFormValues = z.infer<typeof maintenanceFormSchema>;
 
-export const MaintenanceForm = () => {
+interface MaintenanceFormProps {
+  onSuccess?: () => void;
+  preselectedAssetId?: string;
+}
+
+export const MaintenanceForm = ({ onSuccess, preselectedAssetId }: MaintenanceFormProps) => {
   const [assets, setAssets] = useState<SearchableSelectItem[]>([]);
   const [statusLabels, setStatusLabels] = useState<SearchableSelectItem[]>([]);
 
@@ -49,13 +54,13 @@ export const MaintenanceForm = () => {
           assetResponse.data.map((asset: Asset) => ({
             value: asset.id,
             label: asset.name,
-            secondaryLabel: asset.serialNumber,
+            secondaryLabel: asset.assetTag,
           })),
         );
       }
 
       // Fetch status labels
-      const statusResponse = await getAllStatusLabels({});
+      const statusResponse = await getAllStatusLabels();
       if (statusResponse.success && statusResponse.data) {
         setStatusLabels(
           statusResponse.data.map((label: any) => ({
@@ -72,6 +77,7 @@ export const MaintenanceForm = () => {
     resolver: zodResolver(maintenanceFormSchema),
     defaultValues: {
       isWarranty: false,
+      assetId: preselectedAssetId || "",
     },
   });
 
@@ -80,6 +86,7 @@ export const MaintenanceForm = () => {
     if (response.success) {
       toast.success("Maintenance event created successfully!");
       form.reset();
+      onSuccess?.();
     } else {
       toast.error(response.error || "Failed to create maintenance event.");
     }

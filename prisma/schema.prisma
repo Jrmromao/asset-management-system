@@ -50,7 +50,6 @@ model User {
   userKits          UserKit[]
   userItem          UserItem[]
   Co2eRecord        Co2eRecord[]
-  Maintenance       Maintenance[]
   sentInvitations   Invitation[]  @relation("UserInvitations")
 
   @@unique([employeeId, companyId])
@@ -982,7 +981,6 @@ model Maintenance {
   id             String    @id @default(cuid())
   assetId        String
   statusLabelId  String
-  technicianId   String?
   supplierId     String?
   title          String
   notes          String?
@@ -996,16 +994,14 @@ model Maintenance {
 
   asset          Asset           @relation(fields: [assetId], references: [id], onDelete: Cascade)
   statusLabel    StatusLabel     @relation(fields: [statusLabelId], references: [id])
-  technician     User?           @relation(fields: [technicianId], references: [id])
   supplier       Supplier?       @relation(fields: [supplierId], references: [id])
-  co2eRecords    Co2eRecord[] // Relation to CO2e records
+  co2eRecords    Co2eRecord[]
   flowExecutions FlowExecution[]
   Manufacturer   Manufacturer?   @relation(fields: [manufacturerId], references: [id])
   manufacturerId String?
 
   @@index([assetId])
   @@index([statusLabelId])
-  @@index([technicianId])
 }
 
 // Flow Rules System
