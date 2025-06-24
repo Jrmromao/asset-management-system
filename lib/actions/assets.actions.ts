@@ -625,7 +625,6 @@ export const setMaintenanceStatus = withAuth(
           title: "Scheduled Maintenance",
           startDate: new Date(),
           isWarranty: false,
-          technicianId: user.id,
           notes: "Scheduled maintenance for asset",
         },
       });
