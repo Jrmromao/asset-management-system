@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     console.error("Error fetching maintenance flow stats:", error);
     return NextResponse.json(
       { error: "Failed to fetch maintenance flow stats" },
-      { status: 500 }
+      { status: 500 },
     );
   }
-} 
+}

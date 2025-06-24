@@ -75,6 +75,27 @@ const CO2Dialog: React.FC<CO2DialogProps> = ({
   });
 
   useEffect(() => {
+    console.log("🔍 CO2Dialog received initialResult:", initialResult);
+    console.log("🔍 CO2Dialog initialResult type:", typeof initialResult);
+    console.log(
+      "🔍 CO2Dialog initialResult keys:",
+      initialResult ? Object.keys(initialResult) : "no data",
+    );
+    console.log("🔍 CO2Dialog scope breakdown:", initialResult?.scopeBreakdown);
+    console.log(
+      "🔍 CO2Dialog scope breakdown type:",
+      typeof initialResult?.scopeBreakdown,
+    );
+    console.log(
+      "🔍 CO2Dialog scope breakdown JSON:",
+      JSON.stringify(initialResult?.scopeBreakdown, null, 2),
+    );
+    console.log("🔍 CO2Dialog scope totals:", {
+      scope1: initialResult?.scopeBreakdown?.scope1?.total,
+      scope2: initialResult?.scopeBreakdown?.scope2?.total,
+      scope3: initialResult?.scopeBreakdown?.scope3?.total,
+    });
+    console.log("🔍 CO2Dialog isNewCalculation:", isNewCalculation);
     setCurrentResult(initialResult);
     setIsEditing(isNewCalculation);
   }, [initialResult, isNewCalculation]);
@@ -254,6 +275,7 @@ const CO2Dialog: React.FC<CO2DialogProps> = ({
           </TabsContent>
 
           <TabsContent value="scopes" className="space-y-4">
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Scope 1 */}
               <Card className="border-l-4 border-l-red-500">

@@ -4,6 +4,7 @@ import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import QueryProvider from "@/components/providers/QueryClientProvider";
 import { UserProvider } from "@/components/providers/UserContext";
+import ClientLayout from "@/components/layout/ClientLayout";
 
 export const dynamic = "force-dynamic";
 
@@ -35,7 +36,9 @@ export default function RootLayout({
           suppressHydrationWarning={true}
         >
           <UserProvider>
-            <QueryProvider>{children}</QueryProvider>
+            <QueryProvider>
+              <ClientLayout>{children}</ClientLayout>
+            </QueryProvider>
           </UserProvider>
         </body>
       </html>
