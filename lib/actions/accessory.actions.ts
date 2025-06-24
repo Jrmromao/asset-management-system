@@ -97,6 +97,30 @@ export const insert = withAuth(
             locationId: values.locationId,
             inventoryId: values.inventoryId,
             categoryId: values.categoryId,
+            
+            // Enhanced pricing fields
+            price: values.price ? parseFloat(values.price) : null,
+            unitCost: values.unitCost ? parseFloat(values.unitCost) : null,
+            totalValue: values.totalValue ? parseFloat(values.totalValue) : null,
+            currency: values.currency || "USD",
+            depreciationRate: values.depreciationRate ? parseFloat(values.depreciationRate) : null,
+            currentValue: values.currentValue ? parseFloat(values.currentValue) : null,
+            replacementCost: values.replacementCost ? parseFloat(values.replacementCost) : null,
+            averageCostPerUnit: values.averageCostPerUnit ? parseFloat(values.averageCostPerUnit) : null,
+            lastPurchasePrice: values.lastPurchasePrice ? parseFloat(values.lastPurchasePrice) : null,
+            costCenter: values.costCenter || null,
+            budgetCode: values.budgetCode || null,
+            
+            // Purchase and physical fields
+            poNumber: values.poNumber || null,
+            purchaseDate: values.purchaseDate || null,
+            endOfLife: values.endOfLife || null,
+            material: values.material || null,
+            weight: values.weight ? parseFloat(values.weight) : null,
+            notes: values.notes || null,
+            
+            // Supplier field
+            supplierId: values.supplierId || null,
           },
         });
 

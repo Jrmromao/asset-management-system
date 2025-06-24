@@ -17,41 +17,40 @@ export const sidebarLinks = [
     label: "Assets",
     visibleTo: [roles.ADMIN, roles.USER, roles.SUPER_ADMIN],
   },
-  // {
-  //   imgURL: "/icons/license.svg",
-  //   route: "/licenses",
-  //   label: "Licenses",
-  //   visibleTo: [roles.ADMIN, roles.USER, roles.SUPER_ADMIN],
-  // },
-  // {
-  //   imgURL: "/icons/monitor.svg",
-  //   route: "/accessories",
-  //   label: "Accessories",
-  //   visibleTo: [roles.ADMIN],
-  // },
+  {
+    imgURL: "/icons/license.svg",
+    route: "/licenses",
+    label: "Licenses",
+    visibleTo: [roles.ADMIN, roles.USER, roles.SUPER_ADMIN],
+  },
+  {
+    imgURL: "/icons/monitor.svg",
+    route: "/accessories",
+    label: "Accessories",
+    visibleTo: [roles.ADMIN],
+  },
   {
     imgURL: "/icons/people.svg",
     route: "/people",
     label: "People",
     visibleTo: [roles.ADMIN],
   },
-
-  // {
-  //   imgURL: "/icons/reports.svg",
-  //   route: "/reports",
-  //   label: "Reports",
-  //   visibleTo: [roles.ADMIN],
-  // },
+  {
+    imgURL: "/icons/ai-brain.svg",
+    route: "/ai-assistant",
+    label: "AI Assistant",
+    visibleTo: [roles.ADMIN, roles.USER, roles.SUPER_ADMIN],
+  },
+  {
+    imgURL: "/icons/reports.svg",
+    route: "/reports",
+    label: "Reports",
+    visibleTo: [roles.ADMIN],
+  },
   // {
   //   imgURL: "/icons/settings.svg",
   //   route: "/settings",
   //   label: "Settings",
-  //   visibleTo: [roles.ADMIN],
-  // },
-  // {
-  //   imgURL: "/icons/Admin-icon.svg",
-  //   route: "/admin",
-  //   label: "Maintenance",
   //   visibleTo: [roles.ADMIN],
   // },
 ].sort((a, b) => {
