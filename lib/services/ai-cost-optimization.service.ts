@@ -285,7 +285,76 @@ export async function analyzeAccessoryCostOptimization(
     - **Sharing Economy**: Pool resources across departments
     - **Alternative Sourcing**: Cost-effective suppliers or refurbished options
 
-    Use the same JSON format as the license analysis, but focus on accessory-specific optimizations.
+    **Output JSON Format:**
+    {
+      "totalPotentialSavings": number,
+      "recommendations": [
+        {
+          "id": "unique-id",
+          "type": "accessory",
+          "category": "inventory" | "procurement" | "standardization" | "lifecycle" | "sharing" | "sourcing",
+          "title": "Clear recommendation title",
+          "description": "Detailed explanation with specific actions",
+          "potentialSavings": number,
+          "confidenceScore": 85,
+          "implementationEffort": "low" | "medium" | "high",
+          "timeToValue": number_in_days,
+          "affectedAssets": ["accessory-ids or accessory-names"],
+          "actionItems": ["specific steps to implement"]
+        }
+      ],
+      "riskAssessment": {
+        "overall": "low" | "medium" | "high",
+        "factors": [
+          {
+            "category": "inventory" | "operational" | "financial" | "supplier",
+            "severity": "low" | "medium" | "high",
+            "description": "Risk description",
+            "likelihood": 0.75
+          }
+        ],
+        "mitigationStrategies": ["risk mitigation approaches"]
+      },
+      "implementationPriority": [
+        {
+          "phase": 1,
+          "title": "Phase name",
+          "duration": number_in_days,
+          "recommendations": ["recommendation-ids"],
+          "dependencies": ["prerequisite requirements"],
+          "expectedSavings": number
+        }
+      ],
+      "complianceImpact": {
+        "impactLevel": "none" | "low" | "medium" | "high",
+        "affectedPolicies": ["policy names"],
+        "requiredApprovals": ["approval types needed"],
+        "complianceChecklist": ["compliance verification steps"]
+      },
+      "environmentalImpact": {
+        "totalCO2Emissions": number_in_kg_co2e,
+        "emissionsByCategory": [
+          {
+            "category": "category name",
+            "emissions": number_in_kg_co2e,
+            "percentage": percentage_of_total
+          }
+        ],
+        "potentialCO2Savings": number_in_kg_co2e,
+        "carbonFootprintReduction": percentage_reduction,
+        "sustainabilityScore": number_0_to_100,
+        "recommendations": [
+          {
+            "action": "specific environmental action",
+            "co2Reduction": number_in_kg_co2e,
+            "costSavings": number_in_currency,
+            "feasibility": "low" | "medium" | "high"
+          }
+        ]
+      }
+    }
+
+    Provide specific, actionable recommendations with realistic savings estimates and implementation guidance focused on accessory optimization.
     `;
 
     const response = await openai.chat.completions.create({
@@ -654,11 +723,60 @@ async function storeCostOptimizationAnalysis(
   type: 'license' | 'accessory'
 ) {
   try {
-    // Store analysis results for tracking and historical comparison
     console.log(`Storing ${type} cost optimization analysis for company ${companyId}`);
-    // Implementation would store in database table for tracking
+    
+    // Calculate total potential savings from recommendations if not provided
+    const totalSavings = analysis.totalPotentialSavings || 
+      (analysis.recommendations?.reduce((sum, rec) => sum + (rec.potentialSavings || 0), 0) || 0);
+    
+    console.log(`💰 Total potential savings calculated: $${totalSavings}`);
+    
+    // Store the main analysis record
+    const analysisRecord = await prisma.costOptimizationAnalysis.create({
+      data: {
+        companyId,
+        analysisType: type,
+        totalPotentialSavings: totalSavings,
+        confidence: 0.85, // Default confidence score
+        status: 'completed',
+        analysisData: analysis as any, // Store full analysis as JSON
+      }
+    });
+
+    // Store individual recommendations
+    if (analysis.recommendations && analysis.recommendations.length > 0) {
+      console.log(`📊 Processing ${analysis.recommendations.length} recommendations for storage`);
+      const recommendations = analysis.recommendations.map((rec, index) => {
+        const convertedConfidence = rec.confidenceScore > 1 ? rec.confidenceScore / 100 : rec.confidenceScore;
+        console.log(`📊 Rec ${index}: confidence ${rec.confidenceScore} → ${convertedConfidence}, savings: $${rec.potentialSavings}`);
+        
+        return {
+          analysisId: analysisRecord.id,
+          recommendationId: rec.id || `${type}-${index}`,
+          title: rec.title,
+          description: rec.description,
+          category: rec.category,
+          type: rec.type,
+          potentialSavings: rec.potentialSavings,
+          confidenceScore: convertedConfidence,
+          implementationEffort: rec.implementationEffort,
+          timeToValue: rec.timeToValue,
+          priority: index + 1,
+          affectedAssets: rec.affectedAssets || [],
+          actionItems: rec.actionItems || [],
+        };
+      });
+
+      await prisma.costOptimizationRecommendation.createMany({
+        data: recommendations
+      });
+    }
+
+    console.log(`✅ Stored ${type} cost optimization analysis with ${analysis.recommendations?.length || 0} recommendations`);
+    return analysisRecord;
   } catch (error) {
     console.error('Error storing cost optimization analysis:', error);
+    throw error;
   }
 }
 
