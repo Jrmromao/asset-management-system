@@ -13,13 +13,39 @@ import {
 export type License = {
   id: string;
   name: string;
-  notes?: string | null;
+  licensedEmail: string;
+  poNumber: string;
   companyId: string;
   statusLabelId?: string | null;
   supplierId?: string | null;
   departmentId?: string | null;
-  departmentLocationId?: string | null;
+  locationId?: string | null;
   inventoryId?: string | null;
+  renewalDate: Date;
+  purchaseDate: Date;
+  purchaseNotes?: string | null;
+  licenseUrl?: string | null;
+  minSeatsAlert: number;
+  alertRenewalDays: number;
+  seats: number;
+  purchasePrice: number;
+  
+  // Enhanced pricing fields
+  renewalPrice?: number | null;
+  monthlyPrice?: number | null;
+  annualPrice?: number | null;
+  pricePerSeat?: number | null;
+  billingCycle?: string | null;
+  currency?: string | null;
+  discountPercent?: number | null;
+  taxRate?: number | null;
+  
+  // Usage and optimization fields
+  lastUsageAudit?: Date | null;
+  utilizationRate?: number | null;
+  costCenter?: string | null;
+  budgetCode?: string | null;
+  
   createdAt: Date;
   updatedAt: Date;
 
@@ -30,11 +56,11 @@ export type License = {
   departmentLocation?: DepartmentLocation | null;
   inventory?: Inventory | null;
   LicenseSeat: LicenseSeat[];
-  userItems: UserItems[];
+  userItems: UserItem[];
 
   // Computed fields
   stockHistory: LicenseSeat[];
   auditLogs: AuditLog[];
-  userLicenses: UserItems[];
-  currentAssignments: UserItems[];
+  userLicenses: UserItem[];
+  currentAssignments: UserItem[];
 };

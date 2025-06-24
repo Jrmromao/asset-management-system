@@ -244,6 +244,30 @@ export const getUserById = async (
       },
       include: {
         role: true,
+        company: true,
+        department: true,
+        assets: {
+          include: {
+            model: {
+              include: {
+                manufacturer: true,
+              },
+            },
+            statusLabel: true,
+            department: true,
+            departmentLocation: true,
+          },
+        },
+        userItem: {
+          include: {
+            accessory: {
+              include: {
+                statusLabel: true,
+                category: true,
+              },
+            },
+          },
+        },
       },
     });
     if (!foundUser) {

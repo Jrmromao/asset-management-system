@@ -104,6 +104,23 @@ model License {
   alertRenewalDays Int
   seats            Int      @default(0)
   purchasePrice    Decimal  @db.Decimal(10, 2)
+  
+  // Enhanced pricing fields for cost optimization
+  renewalPrice     Decimal? @db.Decimal(10, 2)  // Price for renewal (may differ from purchase)
+  monthlyPrice     Decimal? @db.Decimal(10, 2)  // Monthly subscription price
+  annualPrice      Decimal? @db.Decimal(10, 2)  // Annual subscription price
+  pricePerSeat     Decimal? @db.Decimal(10, 4)  // Price per seat/user
+  billingCycle     String?  @default("annual")   // "monthly", "annual", "one-time"
+  currency         String   @default("USD")      // Currency code
+  discountPercent  Decimal? @db.Decimal(5, 2)   // Discount percentage applied
+  taxRate          Decimal? @db.Decimal(5, 4)   // Tax rate for calculations
+  
+  // Usage and optimization fields
+  lastUsageAudit   DateTime?                     // Last time usage was audited
+  utilizationRate  Decimal? @db.Decimal(5, 4)   // Current utilization percentage
+  costCenter       String?                       // Cost center for accounting
+  budgetCode       String?                       // Budget allocation code
+  
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
@@ -170,7 +187,22 @@ model Accessory {
   categoryId         String?
   poNumber           String?
   weight             Decimal?
-  price              Decimal?
+  price              Decimal?  @db.Decimal(10, 2)
+  
+  // Enhanced pricing fields for cost optimization
+  unitCost           Decimal?  @db.Decimal(10, 2)  // Cost per unit
+  totalValue         Decimal?  @db.Decimal(10, 2)  // Total inventory value
+  currency           String    @default("USD")      // Currency code
+  depreciationRate   Decimal?  @db.Decimal(5, 4)   // Annual depreciation rate
+  currentValue       Decimal?  @db.Decimal(10, 2)  // Current depreciated value
+  replacementCost    Decimal?  @db.Decimal(10, 2)  // Cost to replace
+  
+  // Inventory optimization fields
+  averageCostPerUnit Decimal?  @db.Decimal(10, 4)  // Weighted average cost
+  lastPurchasePrice  Decimal?  @db.Decimal(10, 2)  // Most recent purchase price
+  costCenter         String?                        // Cost center for accounting
+  budgetCode         String?                        // Budget allocation code
+  
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
   
@@ -367,32 +399,34 @@ model Company {
   active                Boolean  @default(true)
 
   // Relations
-  users               User[]
-  roles               Role[]
-  invitations         Invitation[]
-  departments         Department[]
-  locations           DepartmentLocation[]
-  inventories         Inventory[]
-  statusLabels        StatusLabel[]
-  suppliers           Supplier[]
-  assets              Asset[]
-  categories          Category[]
-  manufacturers       Manufacturer[]
-  models              Model[]
-  formTemplates       FormTemplate[]
-  auditLogs           AuditLog[]
-  accessories         Accessory[]
-  License             License[]
-  AccessoryStock      AccessoryStock[]
-  LicenseSeat         LicenseSeat[]
-  AssetHistory        AssetHistory[]
-  Kit                 Kit[]
-  ReportConfiguration ReportConfiguration[]
-  GeneratedReport     GeneratedReport[]
-  Subscription        Subscription?
-  flowRules           FlowRule[]
-  userItems           UserItem[]
-  purchaseOrders      PurchaseOrder[]
+  users                        User[]
+  roles                        Role[]
+  invitations                  Invitation[]
+  departments                  Department[]
+  locations                    DepartmentLocation[]
+  inventories                  Inventory[]
+  statusLabels                 StatusLabel[]
+  suppliers                    Supplier[]
+  assets                       Asset[]
+  categories                   Category[]
+  manufacturers                Manufacturer[]
+  models                       Model[]
+  formTemplates                FormTemplate[]
+  auditLogs                    AuditLog[]
+  accessories                  Accessory[]
+  License                      License[]
+  AccessoryStock               AccessoryStock[]
+  LicenseSeat                  LicenseSeat[]
+  AssetHistory                 AssetHistory[]
+  Kit                          Kit[]
+  ReportConfiguration          ReportConfiguration[]
+  GeneratedReport              GeneratedReport[]
+  Subscription                 Subscription?
+  flowRules                    FlowRule[]
+  userItems                    UserItem[]
+  purchaseOrders               PurchaseOrder[]
+  costOptimizationAnalyses     CostOptimizationAnalysis[]
+  costBudgets                  CostBudget[]
 
   @@unique([name])
 }
@@ -480,17 +514,18 @@ model Inventory {
 }
 
 model Department {
-  id        String      @id @default(cuid())
-  name      String
-  companyId String
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
-  active    Boolean     @default(true)
-  company   Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  Asset     Asset[]
-  Accessory Accessory[]
-  License   License[]
-  User      User[]
+  id          String       @id @default(cuid())
+  name        String
+  companyId   String
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  active      Boolean      @default(true)
+  company     Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  Asset       Asset[]
+  Accessory   Accessory[]
+  License     License[]
+  User        User[]
+  costBudgets CostBudget[]
 
   @@unique([name, companyId])
   @@index([companyId])
@@ -1072,4 +1107,85 @@ model ContactSubmission {
   @@index([isRead])
   @@index([inquiryType])
   @@index([email])
+}
+
+// AI Cost Optimization tracking
+model CostOptimizationAnalysis {
+  id                    String   @id @default(cuid())
+  companyId             String
+  analysisType          String   // "license", "accessory", "comprehensive"
+  totalPotentialSavings Decimal  @db.Decimal(12, 2)
+  confidence            Decimal  @db.Decimal(3, 2)  // 0.00 to 1.00
+  status                String   @default("pending") // "pending", "in_progress", "completed", "cancelled"
+  analysisData          Json     // Full AI analysis results
+  implementedSavings    Decimal? @db.Decimal(12, 2)  // Actual savings achieved
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  // Relations
+  company         Company                      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  recommendations CostOptimizationRecommendation[]
+
+  @@index([companyId])
+  @@index([analysisType])
+  @@index([createdAt])
+}
+
+model CostOptimizationRecommendation {
+  id                  String   @id @default(cuid())
+  analysisId          String
+  recommendationId    String   // AI-generated unique ID
+  title               String
+  description         String
+  category            String   // "consolidation", "rightsizing", "alternative", etc.
+  type                String   // "license", "accessory", "workflow"
+  potentialSavings    Decimal  @db.Decimal(10, 2)
+  confidenceScore     Decimal  @db.Decimal(3, 2)
+  implementationEffort String  // "low", "medium", "high"
+  timeToValue         Int      // days
+  priority            Int      @default(100)
+  status              String   @default("pending") // "pending", "approved", "in_progress", "completed", "rejected"
+  actualSavings       Decimal? @db.Decimal(10, 2)  // Actual savings if implemented
+  implementedAt       DateTime?
+  implementedBy       String?  // User ID who implemented
+  notes               String?
+  affectedAssets      Json?    // Array of asset/license IDs
+  actionItems         Json     // Array of action items
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  // Relations
+  analysis CostOptimizationAnalysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+
+  @@index([analysisId])
+  @@index([status])
+  @@index([priority])
+  @@index([implementedAt])
+}
+
+// Cost tracking for budgeting and forecasting
+model CostBudget {
+  id                String   @id @default(cuid())
+  companyId         String
+  budgetYear        Int
+  budgetPeriod      String   // "annual", "quarterly", "monthly"
+  category          String   // "licenses", "accessories", "maintenance", "total"
+  budgetedAmount    Decimal  @db.Decimal(12, 2)
+  actualAmount      Decimal? @db.Decimal(12, 2)
+  forecastedAmount  Decimal? @db.Decimal(12, 2)
+  variance          Decimal? @db.Decimal(12, 2)  // Actual vs Budget
+  costCenter        String?
+  departmentId      String?
+  notes             String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  company    Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  department Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+
+  @@unique([companyId, budgetYear, budgetPeriod, category, costCenter])
+  @@index([companyId])
+  @@index([budgetYear])
+  @@index([category])
 }

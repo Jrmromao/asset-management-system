@@ -69,25 +69,78 @@ export const licenseSchema = z
         message: "Min. copies alert is required",
       }),
     licensedEmail: z.string().email("Valid email is required"),
-    // purchaseDate: z.date(),
-    // renewalDate: z.date(),
+    purchaseDate: z.date().optional(),
+    renewalDate: z.date().optional(),
     statusLabelId: z.string().min(1, "Status is required"),
     alertRenewalDays: z
       .string()
       .refine((val) => !Number.isNaN(parseInt(val, 10)), {
         message: "Alert renewal days is required",
       }),
-    // purchasePrice: z
-    //   .string()
-    //   .refine((val) => !Number.isNaN(parseInt(val, 10)), {
-    //     message: "Purchase price is required",
-    //   }),
-    // poNumber: z.string().min(1, "PO number is required"),
+    
+    // Enhanced pricing fields
+    purchasePrice: z
+      .string()
+      .optional()
+      .refine((val) => !val || !Number.isNaN(parseFloat(val)), {
+        message: "Purchase price must be a valid number",
+      }),
+    renewalPrice: z
+      .string()
+      .optional()
+      .refine((val) => !val || !Number.isNaN(parseFloat(val)), {
+        message: "Renewal price must be a valid number",
+      }),
+    monthlyPrice: z
+      .string()
+      .optional()
+      .refine((val) => !val || !Number.isNaN(parseFloat(val)), {
+        message: "Monthly price must be a valid number",
+      }),
+    annualPrice: z
+      .string()
+      .optional()
+      .refine((val) => !val || !Number.isNaN(parseFloat(val)), {
+        message: "Annual price must be a valid number",
+      }),
+    pricePerSeat: z
+      .string()
+      .optional()
+      .refine((val) => !val || !Number.isNaN(parseFloat(val)), {
+        message: "Price per seat must be a valid number",
+      }),
+    billingCycle: z.enum(["monthly", "annual", "one-time"]).optional().default("annual"),
+    currency: z.string().optional().default("USD"),
+    discountPercent: z
+      .string()
+      .optional()
+      .refine((val) => !val || (!Number.isNaN(parseFloat(val)) && parseFloat(val) >= 0 && parseFloat(val) <= 100), {
+        message: "Discount must be between 0 and 100",
+      }),
+    taxRate: z
+      .string()
+      .optional()
+      .refine((val) => !val || (!Number.isNaN(parseFloat(val)) && parseFloat(val) >= 0), {
+        message: "Tax rate must be a positive number",
+      }),
+    
+    // Usage and optimization fields
+    lastUsageAudit: z.date().optional(),
+    utilizationRate: z
+      .string()
+      .optional()
+      .refine((val) => !val || (!Number.isNaN(parseFloat(val)) && parseFloat(val) >= 0 && parseFloat(val) <= 1), {
+        message: "Utilization rate must be between 0 and 1",
+      }),
+    costCenter: z.string().optional(),
+    budgetCode: z.string().optional(),
+    
+    poNumber: z.string().optional(),
     notes: z.string().optional(),
     departmentId: z.string().min(1, "Department is required"),
     inventoryId: z.string().min(1, "Inventory is required"),
     locationId: z.string().min(1, "Location is required"),
-    // supplierId: z.string().min(1, "Supplier is required"),
+    supplierId: z.string().optional(),
     attachments: z.array(z.any()).optional(),
   })
   .refine(
@@ -96,7 +149,11 @@ export const licenseSchema = z
       message: "License copies count must be greater than min. copies alert",
       path: ["seats"],
     },
-  );
+  )
+  .refine((data) => !data.purchaseDate || !data.renewalDate || data.purchaseDate <= data.renewalDate, {
+    message: "Renewal date must be after purchase date",
+    path: ["renewalDate"],
+  });
 // .refine((data) => data.purchaseDate <= data.renewalDate, {
 //   message: "Renewal date must be in the future",
 //   path: ["renewalDate"],
@@ -110,13 +167,63 @@ export const accessorySchema = z
     modelNumber: z.string().min(1, "Model number is required"),
     statusLabelId: z.string().min(1, "Status is required"),
     departmentId: z.string().min(1, "Department is required"),
-    // supplierId: z.string().min(1, "Supplier is required"),
+    supplierId: z.string().optional(),
     locationId: z.string().min(1, "Location is required"),
     inventoryId: z.string().min(1, "Inventory is required"),
-    // price: z
-    //   .union([z.string(), z.number()])
-    //   .transform((value) => (typeof value === "string" ? Number(value) : value))
-    //   .optional(),
+    
+    // Enhanced pricing fields
+    price: z
+      .string()
+      .optional()
+      .refine((val) => !val || !Number.isNaN(parseFloat(val)), {
+        message: "Price must be a valid number",
+      }),
+    unitCost: z
+      .string()
+      .optional()
+      .refine((val) => !val || !Number.isNaN(parseFloat(val)), {
+        message: "Unit cost must be a valid number",
+      }),
+    totalValue: z
+      .string()
+      .optional()
+      .refine((val) => !val || !Number.isNaN(parseFloat(val)), {
+        message: "Total value must be a valid number",
+      }),
+    currency: z.string().optional().default("USD"),
+    depreciationRate: z
+      .string()
+      .optional()
+      .refine((val) => !val || (!Number.isNaN(parseFloat(val)) && parseFloat(val) >= 0 && parseFloat(val) <= 1), {
+        message: "Depreciation rate must be between 0 and 1",
+      }),
+    currentValue: z
+      .string()
+      .optional()
+      .refine((val) => !val || !Number.isNaN(parseFloat(val)), {
+        message: "Current value must be a valid number",
+      }),
+    replacementCost: z
+      .string()
+      .optional()
+      .refine((val) => !val || !Number.isNaN(parseFloat(val)), {
+        message: "Replacement cost must be a valid number",
+      }),
+    averageCostPerUnit: z
+      .string()
+      .optional()
+      .refine((val) => !val || !Number.isNaN(parseFloat(val)), {
+        message: "Average cost per unit must be a valid number",
+      }),
+    lastPurchasePrice: z
+      .string()
+      .optional()
+      .refine((val) => !val || !Number.isNaN(parseFloat(val)), {
+        message: "Last purchase price must be a valid number",
+      }),
+    costCenter: z.string().optional(),
+    budgetCode: z.string().optional(),
+    
     totalQuantityCount: z
       .union([z.string(), z.number()])
       .transform((value) =>
@@ -127,16 +234,18 @@ export const accessorySchema = z
       .transform((value) =>
         typeof value === "string" ? Number(value) : value,
       ),
-    // poNumber: z.string().optional(),
-    // purchaseDate: z.date(),
-    // endOfLife: z.date(),
+    poNumber: z.string().optional(),
+    purchaseDate: z.date().optional(),
+    endOfLife: z.date().optional(),
     alertEmail: z.string().email("Invalid email"),
-    // material: z.string().optional(),
-    // weight: z
-    //   .union([z.string(), z.number()])
-    //   .transform((value) => (typeof value === "string" ? Number(value) : value))
-    //   .optional(),
-    // notes: z.string().optional(),
+    material: z.string().optional(),
+    weight: z
+      .string()
+      .optional()
+      .refine((val) => !val || !Number.isNaN(parseFloat(val)), {
+        message: "Weight must be a valid number",
+      }),
+    notes: z.string().optional(),
   })
   .refine((data) => data.reorderPoint <= data.totalQuantityCount, {
     message: "Reorder point must be less than or equal to quantity count.",
