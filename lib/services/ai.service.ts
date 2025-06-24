@@ -5,6 +5,14 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+// Debug API key loading
+console.log(
+  "🔍 OpenAI API Key loaded:",
+  process.env.OPENAI_API_KEY
+    ? `${process.env.OPENAI_API_KEY.substring(0, 20)}...`
+    : "NOT FOUND",
+);
+
 // Function to calculate CO2 emission for an asset
 export async function calculateAssetCo2(
   assetName: string,
@@ -12,6 +20,10 @@ export async function calculateAssetCo2(
   model: string,
 ): Promise<{ success: boolean; data?: any; error?: string }> {
   try {
+    console.log(
+      `🔍 Calculating CO2 for: ${assetName} (${manufacturer} ${model})`,
+    );
+
     const prompt = `
       You are an expert in Life Cycle Assessment (LCA), carbon footprint analysis, and GHG Protocol Scope 1/2/3 classification for electronic devices and IT assets.
       Your task is to provide an accurate and well-documented estimation of the carbon footprint (CO2e) with proper GHG scope classification.
@@ -37,12 +49,15 @@ export async function calculateAssetCo2(
          - Category 12: End-of-life treatment
       6. **Include activity data** used for calculations (weight, power consumption, lifespan)
       7. **Provide confidence score** (0-1) and cite data sources
+      8. **Include uncertainty range** (±%) to indicate calculation precision
+      9. **Use deterministic methodology** - prefer official manufacturer LCA data when available
 
       **JSON Output Format:**
       {
         "totalCo2e": number,
         "units": "kgCO2e",
         "confidenceScore": number,
+        "uncertaintyRange": number, // Percentage uncertainty (e.g., 15 for ±15%)
         "primaryScope": 1 | 2 | 3,
         "primaryScopeCategory": "string describing main category",
         "methodology": "Brief description of calculation methodology",
@@ -118,6 +133,7 @@ export async function calculateAssetCo2(
         "totalCo2e": 384.2,
         "units": "kgCO2e",
         "confidenceScore": 0.94,
+        "uncertaintyRange": 15,
         "primaryScope": 3,
         "primaryScopeCategory": "Purchased goods and services (manufacturing)",
         "methodology": "Based on Apple's official LCA using process-based methodology with hybrid approach for upstream impacts",
@@ -192,20 +208,34 @@ export async function calculateAssetCo2(
       `;
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4-turbo",
+      model: "gpt-4o-mini",
       messages: [{ role: "user", content: prompt }],
       response_format: { type: "json_object" },
+      temperature: 0.1,
+      seed: 12345,
     });
 
     const jsonResponse = JSON.parse(
       response.choices[0].message.content || "{}",
     );
-    console.log("\n\n\n\nOpenAI Response:", response);
-    console.log("OpenAI Response:", JSON.stringify(jsonResponse, null, 2));
+
+    // Normalize confidence score if it's > 1 (convert from percentage to decimal)
+    if (jsonResponse.confidenceScore && jsonResponse.confidenceScore > 1) {
+      jsonResponse.confidenceScore = jsonResponse.confidenceScore / 100;
+    }
+
+    // Ensure we have valid data
+    if (!jsonResponse.totalCo2e || jsonResponse.totalCo2e === 0) {
+      console.error("⚠️ OpenAI returned 0 or missing totalCo2e:", jsonResponse);
+      return {
+        success: false,
+        error: "OpenAI returned invalid CO2e value (0 or missing)",
+      };
+    }
 
     return { success: true, data: jsonResponse };
   } catch (error: any) {
-    console.error("Error calculating CO2 for asset with OpenAI:", error);
+    console.error("❌ Error calculating CO2 for asset with OpenAI:", error);
     return { success: false, error: error.message };
   }
 }
@@ -233,3 +263,5 @@ export async function createCo2eRecord(
     return { success: false, error: error.message };
   }
 }
+
+

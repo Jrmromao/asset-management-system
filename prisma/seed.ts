@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma/client";
-import { seedRoles } from "./seeds/roles";
+import { seedGlobalRoles } from "./seeds/roles";
 import { seedStatusLabels } from "./seeds/statusLabels";
 import { seedCategories } from "./seeds/categories";
 import { seedDepartments } from "./seeds/departments";
@@ -15,46 +15,56 @@ import { seedLicenses } from "./seeds/licenses";
 import { seedAccessories } from "./seeds/accessories";
 import { seedUserItems } from "./seeds/userItems";
 
-
 const prisma = new PrismaClient();
 
 async function main() {
   console.log("🚀 Starting database seeding...");
 
   try {
-    const company1 = { id: "cmc80pcez00048oa5v3px063c" };
+    // Seed global roles first (no company required)
+    // await seedGlobalRoles(prisma);
 
-    // Seed foundational data first
-    await seedRoles(prisma, company1.id);
-    await seedStatusLabels(prisma, company1.id);
-    await seedCategories(prisma, company1.id);
-    await seedDepartments(prisma, company1.id);
-    await seedLocations(prisma, company1.id);
-    await seedInventories(prisma, company1.id);
-    await seedSuppliers(prisma, company1.id);
+    // Seed pricing plans (also global/system-wide)
+    // await seedPricingPlans(prisma);
+
+    // Uncomment these when you need to seed company-specific data
+    // You'll need to create companies first, then seed their data
+
+    // const company = await prisma.company.create({
+    //   data: {
+    //     name: "Example Company",
+    //     primaryContactEmail: "admin@example.com",
+    //     status: "ACTIVE",
+    //   },
+    // });
+    const company = {
+      id: "cmcavp31o000x8ozo07zcd7mu",
+    };
+
+    await seedStatusLabels(prisma, company.id);
+    await seedCategories(prisma, company.id);
+    await seedDepartments(prisma, company.id);
+    await seedLocations(prisma, company.id);
+    await seedInventories(prisma, company.id);
+    await seedSuppliers(prisma, company.id);
     await seedManufacturers(prisma);
-    await seedModels(prisma, company1.id);
-    await seedFormTemplates(prisma, company1.id);
-
-    // Seed main entities
-    await seedAssets(prisma, company1.id);
-    await seedLicenses(prisma, company1.id);
-    await seedAccessories(prisma, company1.id);
-    
-    // Seed user assignments
-    await seedUserItems(prisma, company1.id);
-    
-    // Seed pricing plans
-    await seedPricingPlans(prisma);
+    await seedModels(prisma, company.id);
+    await seedFormTemplates(prisma, company.id);
+    await seedAssets(prisma, company.id);
+    await seedLicenses(prisma, company.id);
+    await seedAccessories(prisma, company.id);
+    await seedUserItems(prisma, company.id);
 
     console.log("🎉 Database seeding completed successfully!");
     console.log("📊 Summary:");
-    console.log("  - Enhanced assets with realistic data and assignments");
-    console.log("  - Added comprehensive software licenses with cost optimization data");
-    console.log("  - Added IT accessories with inventory management data");
-    console.log("  - Created user-item assignments linking everything together");
-    console.log(`  - All data linked to company: ${company1.id}`);
-    console.log("  - All data linked to primary user: cmc80pcfb00088oa52sxacapd");
+    console.log("  - Created 3 global roles that can be used by any company");
+    console.log("  - Super Admin: Full system access");
+    console.log("  - Admin: Company management access");
+    console.log("  - User: Basic user access (default)");
+    console.log("  - Created pricing plans for subscriptions");
+    console.log("  - Free: Up to 10 assets");
+    console.log("  - Pro: Up to 100,000 assets");
+    console.log("  - Enterprise: Unlimited assets");
   } catch (error) {
     console.error("❌ Seeding failed:", error);
     throw error;

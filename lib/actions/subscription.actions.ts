@@ -35,12 +35,73 @@ export async function createSubscription(
   assetQuota: number,
 ): Promise<{ success: boolean; url?: string | null; error?: string }> {
   try {
-    const plan = await prisma.pricingPlan.findFirst({
-      where: { isActive: true },
+    // Find the appropriate plan based on asset quota
+    let plan = await prisma.pricingPlan.findFirst({
+      where: {
+        isActive: true,
+        assetQuota: { gte: assetQuota },
+      },
+      orderBy: { assetQuota: "asc" },
     });
 
-    if (!plan || !plan.stripePriceId) {
+    // If no plan found, get the free plan
+    if (!plan) {
+      plan = await prisma.pricingPlan.findFirst({
+        where: {
+          isActive: true,
+          planType: "FREE",
+        },
+      });
+    }
+
+    if (!plan) {
       return { success: false, error: "No suitable pricing plan found." };
+    }
+
+    // Handle free plan - create subscription directly without Stripe
+    if (
+      plan.planType === "FREE" ||
+      plan.stripePriceId?.includes("placeholder")
+    ) {
+      try {
+        const subscription = await prisma.subscription.create({
+          data: {
+            companyId,
+            stripeCustomerId: `free_${companyId}`, // Placeholder for free plan
+            stripeSubscriptionId: `free_sub_${companyId}`,
+            status: "active",
+            billingCycle: plan.billingCycle,
+            assetQuota: plan.assetQuota,
+            pricingPlanId: plan.id,
+          },
+        });
+
+        // Create usage record for free plan
+        await prisma.usageRecord.create({
+          data: {
+            subscriptionId: subscription.id,
+            purchasedAssetQuota: plan.assetQuota,
+            actualAssetCount: 0,
+            billingPeriodStart: new Date(),
+            billingPeriodEnd: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year
+            pricePerAsset: plan.pricePerAsset,
+            totalAmount: 0,
+          },
+        });
+
+        return { success: true, url: null }; // No redirect needed for free plan
+      } catch (error) {
+        console.error("Error creating free subscription:", error);
+        return {
+          success: false,
+          error: "Failed to create free subscription",
+        };
+      }
+    }
+
+    // Handle paid plans - create Stripe checkout session
+    if (!plan.stripePriceId) {
+      return { success: false, error: "Pricing plan missing Stripe price ID." };
     }
 
     const session = await stripe.checkout.sessions.create({

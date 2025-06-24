@@ -314,16 +314,20 @@ export async function registerCompany(
       data.email,
       data.assetCount || 100,
     );
-    if (!subscriptionResponse.success || !subscriptionResponse.url) {
+    if (!subscriptionResponse.success) {
       console.error(
         "Subscription creation failed:",
         subscriptionResponse.error,
       );
       throw new Error("Failed to create a subscription.");
     }
+
+    // For free plans, there might be no redirect URL
+    const redirectUrl =
+      subscriptionResponse.url || `/dashboard?subscription_success=true`;
     console.log(
-      "Stripe subscription created. Redirect URL:",
-      subscriptionResponse.url,
+      "Subscription created successfully. Redirect URL:",
+      redirectUrl,
     );
 
     // 9. Initialize S3 Storage
@@ -349,7 +353,7 @@ export async function registerCompany(
     }
 
     console.log("Company registration completed successfully.");
-    return { success: true, redirectUrl: subscriptionResponse.url };
+    return { success: true, redirectUrl };
   } catch (error) {
     console.error("Error during company registration:", error);
     await cleanup(state);

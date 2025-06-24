@@ -99,12 +99,37 @@ const serializeAsset = (asset: any) => {
     serialized.energyConsumption = Number(asset.energyConsumption);
   }
   if (asset.co2eRecords && Array.isArray(asset.co2eRecords)) {
-    serialized.co2eRecords = asset.co2eRecords.map((record: any) => ({
-      ...record,
-      co2e: record.co2e ? Number(record.co2e) : null,
-      emissionFactor: record.emissionFactor ? Number(record.emissionFactor) : null,
-      activityData: record.activityData ? Number(record.activityData) : null,
-    }));
+    serialized.co2eRecords = asset.co2eRecords.map((record: any) => {
+      const serializedRecord = {
+        ...record,
+        co2e: record.co2e ? Number(record.co2e) : null,
+        emissionFactor: record.emissionFactor
+          ? Number(record.emissionFactor)
+          : null,
+        activityData: record.activityData ? Number(record.activityData) : null,
+      };
+
+      // Parse and serialize the details JSON to handle any Decimal objects
+      if (record.details && typeof record.details === "string") {
+        try {
+          const parsedDetails = JSON.parse(record.details);
+          // Convert any Decimal objects in the parsed details
+          if (
+            parsedDetails.emissionFactor &&
+            typeof parsedDetails.emissionFactor === "object"
+          ) {
+            parsedDetails.emissionFactor = Number(parsedDetails.emissionFactor);
+          }
+          // Serialize back to string
+          serializedRecord.details = JSON.stringify(parsedDetails);
+        } catch (parseError) {
+          // If parsing fails, keep the original details
+          serializedRecord.details = record.details;
+        }
+      }
+
+      return serializedRecord;
+    });
   }
   return serialized;
 };

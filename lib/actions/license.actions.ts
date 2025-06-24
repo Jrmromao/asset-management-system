@@ -16,7 +16,7 @@ export const create = withAuth(
       if (!validation.success) {
         return { success: false, error: validation.error.errors[0].message };
       }
-      
+
       // Get companyId from private metadata
       const companyId = user.privateMetadata?.companyId;
 
@@ -55,21 +55,35 @@ export const create = withAuth(
             minSeatsAlert: parseInt(values.minSeatsAlert),
             alertRenewalDays: parseInt(values.alertRenewalDays),
             seats: parseInt(values.seats),
-            
+
             // Enhanced pricing fields
-            purchasePrice: values.purchasePrice ? parseFloat(values.purchasePrice) : 0,
-            renewalPrice: values.renewalPrice ? parseFloat(values.renewalPrice) : null,
-            monthlyPrice: values.monthlyPrice ? parseFloat(values.monthlyPrice) : null,
-            annualPrice: values.annualPrice ? parseFloat(values.annualPrice) : null,
-            pricePerSeat: values.pricePerSeat ? parseFloat(values.pricePerSeat) : null,
+            purchasePrice: values.purchasePrice
+              ? parseFloat(values.purchasePrice)
+              : 0,
+            renewalPrice: values.renewalPrice
+              ? parseFloat(values.renewalPrice)
+              : null,
+            monthlyPrice: values.monthlyPrice
+              ? parseFloat(values.monthlyPrice)
+              : null,
+            annualPrice: values.annualPrice
+              ? parseFloat(values.annualPrice)
+              : null,
+            pricePerSeat: values.pricePerSeat
+              ? parseFloat(values.pricePerSeat)
+              : null,
             billingCycle: values.billingCycle || "annual",
             currency: values.currency || "USD",
-            discountPercent: values.discountPercent ? parseFloat(values.discountPercent) : null,
+            discountPercent: values.discountPercent
+              ? parseFloat(values.discountPercent)
+              : null,
             taxRate: values.taxRate ? parseFloat(values.taxRate) : null,
-            
+
             // Usage and optimization fields
             lastUsageAudit: values.lastUsageAudit || null,
-            utilizationRate: values.utilizationRate ? parseFloat(values.utilizationRate) : null,
+            utilizationRate: values.utilizationRate
+              ? parseFloat(values.utilizationRate)
+              : null,
             costCenter: values.costCenter || null,
             budgetCode: values.budgetCode || null,
           },
@@ -218,20 +232,133 @@ export const checkout = withAuth(
   async (
     user,
     values: z.infer<typeof assignmentSchema>,
-  ): Promise<AuthResponse<UserItems>> => {
+  ): Promise<AuthResponse<any>> => {
     try {
-      const validation = await assignmentSchema.safeParseAsync(values);
-      if (!validation.success) {
-        return { success: false, error: validation.error.errors[0].message };
+      // Skip the async validation for now to avoid the baseUrl issue
+      const basicValidation = z
+        .object({
+          userId: z.string().min(1, "User ID is required"),
+          itemId: z.string().min(1, "Item ID is required"),
+          type: z.enum(["asset", "license", "accessory", "consumable"]),
+          seatsRequested: z.number().optional().default(1),
+        })
+        .safeParse(values);
+
+      if (!basicValidation.success) {
+        return {
+          success: false,
+          error: basicValidation.error.errors[0].message,
+        };
       }
-      // Implement checkout logic here, using user.user_metadata?.companyId
-      return { success: true, data: parseStringify({}) };
+
+      const companyId = user.privateMetadata?.companyId as string;
+      if (!companyId) {
+        return {
+          success: false,
+          error: "User is not associated with a company",
+        };
+      }
+
+      const result = await prisma.$transaction(async (tx) => {
+        // Find the internal user record for audit logging
+        const internalUser = await tx.user.findFirst({
+          where: { oauthId: user.id, companyId },
+          select: { id: true },
+        });
+
+        if (!internalUser) {
+          throw new Error("Internal user record not found for audit logging");
+        }
+
+        // Verify the user exists in the company
+        const assigneeUser = await tx.user.findFirst({
+          where: { id: values.userId, companyId },
+          select: { id: true, name: true, email: true },
+        });
+
+        if (!assigneeUser) {
+          throw new Error("Assignee user not found in company");
+        }
+
+        // Get the license to check available seats
+        const license = await tx.license.findUnique({
+          where: { id: values.itemId, companyId },
+        });
+
+        if (!license) {
+          throw new Error("License not found");
+        }
+
+        // Check existing assignments for this license
+        const existingAssignments = await tx.userItem.findMany({
+          where: {
+            itemId: values.itemId,
+            itemType: "LICENSE",
+            companyId,
+          },
+        });
+
+        // Check if user already has this license assigned
+        const userAlreadyAssigned = existingAssignments.some(
+          (assignment) => assignment.userId === values.userId,
+        );
+
+        if (userAlreadyAssigned) {
+          throw new Error("License is already assigned to this user");
+        }
+
+        // Check if there are available seats
+        const assignedSeats = existingAssignments.length;
+        const availableSeats = license.seats - assignedSeats;
+
+        if (availableSeats < (values.seatsRequested || 1)) {
+          throw new Error(
+            `Not enough seats available. Requested: ${values.seatsRequested || 1}, Available: ${availableSeats}`,
+          );
+        }
+
+        // Create the assignment - we'll create it without the problematic foreign key relations
+        const userItem = await tx.userItem.create({
+          data: {
+            userId: values.userId,
+            itemId: values.itemId,
+            itemType: "LICENSE",
+            companyId: companyId,
+          },
+        });
+
+        // Create audit log
+        await tx.auditLog.create({
+          data: {
+            action: "LICENSE_ASSIGNED",
+            entity: "LICENSE",
+            entityId: license.id,
+            userId: internalUser.id,
+            companyId: companyId,
+            details: `License ${license.name} assigned to user ${assigneeUser.name || assigneeUser.email}`,
+          },
+        });
+
+        // Return the created assignment with related data
+        return {
+          ...userItem,
+          user: assigneeUser,
+          license: {
+            id: license.id,
+            name: license.name,
+          },
+        };
+      });
+
+      return { success: true, data: parseStringify(result) };
     } catch (error) {
       console.error("Error assigning license:", error);
       return {
         success: false,
         error: error instanceof Error ? error.message : String(error),
       };
+    } finally {
+      await prisma.$disconnect();
     }
   },
 );
@@ -239,14 +366,96 @@ export const checkout = withAuth(
 export const checkin = withAuth(
   async (user, userLicenseId: string): Promise<AuthResponse<License>> => {
     try {
-      // Implement checkin logic here, using user.user_metadata?.companyId
-      return { success: true, data: parseStringify({}) };
+      const companyId = user.privateMetadata?.companyId as string;
+      if (!companyId) {
+        return {
+          success: false,
+          error: "User is not associated with a company",
+        };
+      }
+
+      const result = await prisma.$transaction(async (tx) => {
+        // Find the internal user record for audit logging
+        const internalUser = await tx.user.findFirst({
+          where: { oauthId: user.id, companyId },
+          select: { id: true },
+        });
+
+        if (!internalUser) {
+          throw new Error("Internal user record not found for audit logging");
+        }
+
+        // Find and delete the user item assignment
+        const userItem = await tx.userItem.findUnique({
+          where: { id: userLicenseId },
+          include: {
+            user: { select: { name: true, email: true } },
+          },
+        });
+
+        if (!userItem || userItem.companyId !== companyId) {
+          throw new Error("Assignment not found or not authorized");
+        }
+
+        await tx.userItem.delete({
+          where: { id: userLicenseId },
+        });
+
+        // Get the updated license
+        const license = await tx.license.findUnique({
+          where: { id: userItem.itemId },
+          include: {
+            company: true,
+            statusLabel: true,
+            supplier: true,
+            department: true,
+            departmentLocation: true,
+            inventory: true,
+            userItems: {
+              include: {
+                user: {
+                  select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                    title: true,
+                    employeeId: true,
+                    active: true,
+                  },
+                },
+              },
+            },
+          },
+        });
+
+        if (!license) {
+          throw new Error("License not found");
+        }
+
+        // Create audit log
+        await tx.auditLog.create({
+          data: {
+            action: "LICENSE_CHECKIN",
+            entity: "LICENSE",
+            entityId: license.id,
+            userId: internalUser.id,
+            companyId: companyId,
+            details: `License ${license.name} checked in from user ${userItem.user?.name || userItem.user?.email}`,
+          },
+        });
+
+        return license;
+      });
+
+      return { success: true, data: parseStringify(result) };
     } catch (error) {
       console.error("Error checking in license:", error);
       return {
         success: false,
         error: error instanceof Error ? error.message : String(error),
       };
+    } finally {
+      await prisma.$disconnect();
     }
   },
 );
@@ -286,14 +495,15 @@ export const exportLicensesToCSV = withAuth(
       });
 
       // CSV export with comprehensive license data
-      const csvHeaders = "Name,Licensed Email,Seats,Status,Department,Location,Supplier,Purchase Price,Renewal Price,Currency,Renewal Date,Assigned Users\n";
+      const csvHeaders =
+        "Name,Licensed Email,Seats,Status,Department,Location,Supplier,Purchase Price,Renewal Price,Currency,Renewal Date,Assigned Users\n";
       const csvRows = licenses
         .map((license) => {
           const assignedUsers = license.userItems
-            .map(item => item.user?.name || item.user?.email)
+            .map((item) => item.user?.name || item.user?.email)
             .filter(Boolean)
-            .join('; ');
-          
+            .join("; ");
+
           return `"${license.name}","${license.licensedEmail || ""}","${license.seats || 0}","${license.statusLabel?.name || ""}","${license.department?.name || ""}","${license.departmentLocation?.name || ""}","${license.supplier?.name || ""}","${license.purchasePrice || 0}","${license.renewalPrice || ""}","${license.currency || "USD"}","${license.renewalDate ? new Date(license.renewalDate).toLocaleDateString() : ""}","${assignedUsers}"`;
         })
         .join("\n");
