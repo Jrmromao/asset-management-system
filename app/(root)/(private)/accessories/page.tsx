@@ -179,7 +179,7 @@ const Accessories = () => {
 
   // Memoized columns to prevent unnecessary re-renders
   const columns = useMemo(() => {
-    return accessoriesColumns({ onDelete, onView }) as ColumnDef<Accessory>[];
+    return accessoriesColumns({ onDelete, onView }) as ColumnDef<Accessory, any>[];
   }, [onDelete, onView]);
 
   // Memoized computed values
@@ -207,7 +207,7 @@ const Accessories = () => {
 
   const table = useReactTable({
     data: filteredData,
-    columns,
+    columns: columns as ColumnDef<Accessory, any>[],
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),

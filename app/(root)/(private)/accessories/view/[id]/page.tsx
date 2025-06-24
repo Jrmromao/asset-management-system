@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, use } from "react";
 import { DetailView } from "@/components/shared/DetailView/DetailView";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -29,9 +29,9 @@ interface LoadingStates {
 }
 
 interface AssetPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 interface EnhancedAccessoryType {
@@ -71,7 +71,7 @@ interface EnhancedAccessoryType {
 
 export default function Page({ params }: AssetPageProps) {
   const [error, setError] = useState<string | null>(null);
-  const { id } = params;
+  const { id } = use(params);
   const { isAssignOpen, onAssignOpen, onAssignClose } = useAccessoryStore();
   const [accessory, setAccessory] = useState<
     EnhancedAccessoryType | undefined
@@ -425,7 +425,7 @@ export default function Page({ params }: AssetPageProps) {
       <div className="mt-5">
         <ItemDetailsTabs
           handleCheckIn={handleCheckIn}
-          auditLogs={accessory?.auditLogs ?? []}
+          auditLogs={(accessory?.auditLogs ?? []) as any}
           itemId={id}
           usedBy={accessory?.usedBy}
           itemType="accessory"

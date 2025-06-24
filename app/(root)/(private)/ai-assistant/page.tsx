@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { AIInsightsDashboard } from "@/components/ai/AIInsightsDashboard";
 import { CostOptimizationDashboard } from "@/components/ai/CostOptimizationDashboard";
+import { toast } from "sonner";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -28,6 +29,39 @@ import Link from "next/link";
 
 export default function AIAssistantPage() {
   const [activeTab, setActiveTab] = useState("overview");
+
+  // Test function to check AI functionality
+  const testAIFunctionality = async () => {
+    console.log("🧪 Testing AI functionality...");
+    toast.info("Testing AI functionality - check console for logs");
+    
+    try {
+      // Test AI Insights
+      console.log("🔬 Testing AI Insights API");
+      const insightsResponse = await fetch('/api/ai/insights', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ analysisType: 'comprehensive' }),
+      });
+      const insightsResult = await insightsResponse.json();
+      console.log("📊 AI Insights Test Result:", insightsResult);
+
+      // Test Cost Optimization
+      console.log("🔬 Testing Cost Optimization API");
+      const costResponse = await fetch('/api/ai/cost-optimization', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ analysisType: 'license', timeframe: 'quarterly' }),
+      });
+      const costResult = await costResponse.json();
+      console.log("💰 Cost Optimization Test Result:", costResult);
+
+      toast.success("AI functionality test completed - check console for detailed logs");
+    } catch (error) {
+      console.error("❌ AI Test Error:", error);
+      toast.error("AI test failed - check console for details");
+    }
+  };
 
   const aiCapabilities = [
     {
@@ -94,10 +128,20 @@ export default function AIAssistantPage() {
             Leverage artificial intelligence to optimize your asset management operations
           </p>
         </div>
-        <Badge variant="secondary" className="flex items-center gap-2">
-          <Zap className="h-4 w-4" />
-          AI Powered
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Button 
+            onClick={testAIFunctionality}
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-2"
+          >
+            🧪 Test AI
+          </Button>
+          <Badge variant="secondary" className="flex items-center gap-2">
+            <Zap className="h-4 w-4" />
+            AI Powered
+          </Badge>
+        </div>
       </div>
 
       {/* AI Capabilities Overview */}

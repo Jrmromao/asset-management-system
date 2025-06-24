@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { use } from "react";
 import UserDetailsView from "@/components/UserDetailsView";
 import UserProfileSkeleton from "@/components/UserProfileSkeleton";
 import { useUserQuery } from "@/hooks/queries/useUserQuery";
@@ -10,20 +10,21 @@ import { AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
-export default function UserPage({ params }: { params: { id: string } }) {
+export default function UserPage({ params }: { params: Promise<{ id: string }> }) {
   const { findById } = useUserQuery();
+  const { id } = use(params);
 
   const {
     data: user,
     isLoading,
     error,
   } = useQuery({
-    queryKey: ["user", params.id],
+    queryKey: ["user", id],
     queryFn: async () => {
       if (!findById) {
         throw new Error("FindById functionality not available");
       }
-      return await findById(params.id);
+      return await findById(id);
     },
     enabled: !!findById,
   });

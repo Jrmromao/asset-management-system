@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, use } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import {
@@ -46,13 +46,13 @@ import { useUser } from "@clerk/nextjs";
 type AssignmentFormValues = z.infer<typeof assignmentSchema>;
 
 interface AssetPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export default function AssetPage({ params }: AssetPageProps) {
-  const { id } = params;
+  const { id } = use(params);
   const [asset, setAsset] = useState<EnhancedAssetType | undefined>();
   const [showUnassignDialog, setShowUnassignDialog] = useState(false);
   const { isAssignOpen, onAssignOpen, onAssignClose } = useAssetStore();

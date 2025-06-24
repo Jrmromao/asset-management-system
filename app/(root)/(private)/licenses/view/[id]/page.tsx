@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, use } from "react";
 import { DetailView } from "@/components/shared/DetailView/DetailView";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -21,9 +21,9 @@ import { sleep, sumSeatsAssigned } from "@/lib/utils";
 import DetailViewSkeleton from "@/components/shared/DetailView/DetailViewSkeleton";
 
 interface AssetPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 interface EnhancedLicenseType {
@@ -67,7 +67,7 @@ interface LoadingStates {
 
 export default function View({ params }: AssetPageProps) {
   const [error, setError] = useState<string | null>(null);
-  const { id } = params;
+  const { id } = use(params); // ✅ Use use(params) to properly await the promise
   const { isAssignOpen, onAssignOpen, onAssignClose } = useAccessoryStore();
   const [license, setLicense] = useState<EnhancedLicenseType | undefined>();
   const [loadingStates, setLoadingStates] = useState<LoadingStates>({
@@ -87,7 +87,7 @@ export default function View({ params }: AssetPageProps) {
   const addCheckingInId = (id: string) => {
     setLoadingStates((prev) => ({
       ...prev,
-      isCheckingIn: new Set([...prev.isCheckingIn, id]),
+      isCheckingIn: new Set(prev.isCheckingIn).add(id),
     }));
   };
   const removeCheckingInId = (id: string) => {
