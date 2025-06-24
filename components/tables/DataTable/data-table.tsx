@@ -155,14 +155,17 @@ export function DataTable<TData, TValue>({
             >
               <div className="space-y-3">
                 {row.getVisibleCells().map((cell) => {
-                  const header = cell.column.columnDef.header as string;
+                  const header = cell.column.columnDef.header;
+                  const headerText = typeof header === 'function' 
+                    ? String(cell.column.id).replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())
+                    : header;
                   return (
                     <div
                       key={cell.id}
                       className="flex justify-between items-center gap-2"
                     >
                       <span className="text-xs font-medium text-slate-600 dark:text-gray-400">
-                        {header}
+                        {headerText}
                       </span>
                       <span className="text-sm text-slate-700 dark:text-gray-300 text-right">
                         {flexRender(
