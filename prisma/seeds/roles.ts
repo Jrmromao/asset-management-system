@@ -1,36 +1,84 @@
 import { PrismaClient } from "@prisma/client";
 
-export async function seedRoles(prisma: PrismaClient, companyId: string) {
-  console.log("👥 Seeding roles...");
+export async function seedGlobalRoles(prisma: PrismaClient) {
+  console.log("👥 Seeding global roles...");
 
-  const roles = [
+  const globalRoles = [
+    {
+      name: "Super Admin",
+      isAdmin: true,
+      isDefault: false,
+      isGlobal: true,
+      permissions: {
+        canManageUsers: true,
+        canManageAssets: true,
+        canManageLicenses: true,
+        canManageAccessories: true,
+        canManageReports: true,
+        canManageSettings: true,
+        canViewAuditLogs: true,
+        canManageCompany: true,
+      },
+    },
     {
       name: "Admin",
       isAdmin: true,
-      companyId,
-    },
-    {
-      name: "Manager",
-      isAdmin: false,
-      companyId,
+      isDefault: false,
+      isGlobal: true,
+      permissions: {
+        canManageUsers: true,
+        canManageAssets: true,
+        canManageLicenses: true,
+        canManageAccessories: true,
+        canManageReports: true,
+        canManageSettings: false,
+        canViewAuditLogs: true,
+        canManageCompany: false,
+      },
     },
     {
       name: "User",
       isAdmin: false,
-      companyId,
+      isDefault: true,
+      isGlobal: true,
+      permissions: {
+        canManageUsers: false,
+        canManageAssets: false,
+        canManageLicenses: false,
+        canManageAccessories: false,
+        canManageReports: false,
+        canManageSettings: false,
+        canViewAuditLogs: false,
+        canManageCompany: false,
+      },
     },
   ];
 
   const createdRoles = [];
-  for (const role of roles) {
-    const created = await prisma.role.upsert({
-      where: { name_companyId: { name: role.name, companyId: role.companyId } },
-      update: {},
-      create: role,
+  for (const role of globalRoles) {
+    // For global roles, check by name and isGlobal flag
+    const existingRole = await prisma.role.findFirst({
+      where: {
+        name: role.name,
+        isGlobal: true,
+      },
     });
+
+    let created;
+    if (existingRole) {
+      created = existingRole;
+      console.log(`✅ Found existing global role: ${created.name}`);
+    } else {
+      created = await prisma.role.create({
+        data: role,
+      });
+      console.log(
+        `✅ Created global role: ${created.name} (Admin: ${created.isAdmin})`,
+      );
+    }
     createdRoles.push(created);
-    console.log(`✅ Created role: ${created.name}`);
   }
 
+  console.log(`👥 Successfully processed ${createdRoles.length} global roles`);
   return createdRoles;
-} 
+}

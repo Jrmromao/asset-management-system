@@ -36,7 +36,7 @@ export type AssetWithRelations = Asset & {
   departmentLocation: DepartmentLocation | null;
   inventory: Inventory | null;
   values: FormTemplateValue[];
-  Co2eRecord: Co2eRecord[];
+  co2eRecords: Co2eRecord[];
   assetHistory: AssetHistory[];
   user: User | null;
   supplier: Supplier | null;
@@ -77,7 +77,7 @@ export interface EnhancedAssetType {
   userId?: string | null;
   createdAt: Date;
   updatedAt: Date;
-  Co2eRecord?: Co2eRecord[];
+  co2eRecords?: Co2eRecord[];
   purchaseCost?: number | null;
   energyConsumption?: number | null;
   expectedLifespan?: number | null;

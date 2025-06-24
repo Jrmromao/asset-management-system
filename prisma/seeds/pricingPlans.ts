@@ -6,11 +6,11 @@ export async function seedPricingPlans(prisma: PrismaClient) {
   const pricingPlans = [
     {
       name: "Free",
-      planType: "FREE",
+      planType: "FREE" as PlanType,
       assetQuota: 10,
       pricePerAsset: 0,
       billingCycle: "monthly",
-      stripePriceId: null,
+      stripePriceId: "free_plan_placeholder",
       features: JSON.stringify([
         "Up to 10 assets",
         "Basic reporting",
@@ -19,47 +19,58 @@ export async function seedPricingPlans(prisma: PrismaClient) {
     },
     {
       name: "Pro",
-      planType: "PRO",
+      planType: "PRO" as PlanType,
       assetQuota: 100,
       pricePerAsset: 0.39,
       billingCycle: "monthly",
-      stripePriceId: "price_1QlZyQ2N5SBY44N5l2hElB14",
+      stripePriceId: "pro_plan_placeholder",
       features: JSON.stringify([
-        "Up to 100,000 assets",
+        "Up to 100 assets",
         "Advanced reporting",
-        "Email support",
+        "Priority support",
+        "Custom fields",
+        "API access",
       ]),
     },
     {
       name: "Enterprise",
-      planType: "ENTERPRISE",
-      assetQuota: 10000,
+      planType: "ENTERPRISE" as PlanType,
+      assetQuota: 1000,
       pricePerAsset: 0.29,
       billingCycle: "monthly",
-      stripePriceId: "price_1QlZyQ2N5SBY44N5l2hElB15",
+      stripePriceId: "enterprise_plan_placeholder",
       features: JSON.stringify([
-        "Unlimited assets",
-        "Advanced reporting",
-        "Priority support",
+        "Up to 1000 assets",
+        "Advanced analytics",
+        "Dedicated support",
         "Custom integrations",
+        "White-label options",
+        "SLA guarantee",
       ]),
     },
   ];
 
   const createdPlans = [];
   for (const plan of pricingPlans) {
-    const created = await prisma.pricingPlan.upsert({
+    const existing = await prisma.pricingPlan.findFirst({
       where: { name: plan.name },
-      update: {},
-      create: {
-        ...plan,
-        planType: plan.planType as PlanType,
-        stripePriceId: plan.stripePriceId || "",
-      },
     });
+
+    if (existing) {
+      console.log(`⚠️  Pricing plan already exists: ${existing.name}`);
+      continue;
+    }
+
+    const created = await prisma.pricingPlan.create({
+      data: plan,
+    });
+
     createdPlans.push(created);
-    console.log(`✅ Created pricing plan: ${created.name}`);
+    console.log(
+      `✅ Created pricing plan: ${created.name} (${created.stripePriceId || "Free"})`,
+    );
   }
 
+  console.log(`💰 Successfully created ${createdPlans.length} pricing plans`);
   return createdPlans;
-} 
+}

@@ -50,6 +50,70 @@ export class CO2FootprintService {
     error?: string;
   }> {
     try {
+
+
+      // Check if we have a recent calculation (within 24 hours)
+      // TEMPORARILY DISABLED FOR DEBUGGING
+      /*
+      const recentCalculation = await prisma.co2eRecord.findFirst({
+        where: {
+          assetId: assetId,
+          itemType: "Asset",
+          createdAt: {
+            gte: new Date(Date.now() - 24 * 60 * 60 * 1000), // 24 hours ago
+          },
+        },
+        orderBy: { createdAt: "desc" },
+      });
+
+      if (recentCalculation && recentCalculation.details) {
+        try {
+          const existingData = JSON.parse(recentCalculation.details as string);
+
+          // Convert any Decimal fields to numbers to avoid serialization issues
+          if (
+            existingData.emissionFactor &&
+            typeof existingData.emissionFactor === "object"
+          ) {
+            existingData.emissionFactor = Number(existingData.emissionFactor);
+          }
+
+          console.log(
+            `♻️ Using recent calculation from ${recentCalculation.createdAt.toLocaleString()}`,
+          );
+          console.log(
+            `   Total CO2e: ${existingData.totalCo2e} ${existingData.units}`,
+          );
+          console.log("   Scope breakdown structure:", {
+            hasScope1: !!existingData.scopeBreakdown?.scope1,
+            hasScope2: !!existingData.scopeBreakdown?.scope2,
+            hasScope3: !!existingData.scopeBreakdown?.scope3,
+            scope1Total: existingData.scopeBreakdown?.scope1?.total,
+            scope2Total: existingData.scopeBreakdown?.scope2?.total,
+            scope3Total: existingData.scopeBreakdown?.scope3?.total,
+          });
+
+          // Validate that cached data has complete scope breakdown
+          if (
+            !existingData.scopeBreakdown ||
+            typeof existingData.scopeBreakdown.scope1?.total !== "number" ||
+            typeof existingData.scopeBreakdown.scope2?.total !== "number" ||
+            typeof existingData.scopeBreakdown.scope3?.total !== "number"
+          ) {
+            console.log(
+              "⚠️ Cached data has incomplete scope breakdown, generating fresh calculation",
+            );
+          } else {
+            return { success: true, data: existingData };
+          }
+        } catch (parseError) {
+          console.log(
+            `⚠️ Could not parse existing calculation, generating new one`,
+          );
+        }
+      }
+      */
+
       // Get asset details
       const asset = await prisma.asset.findUnique({
         where: { id: assetId },
@@ -63,15 +127,21 @@ export class CO2FootprintService {
       });
 
       if (!asset) {
+        console.error(`❌ Asset not found: ${assetId}`);
         return { success: false, error: "Asset not found" };
       }
 
       if (!asset.model?.manufacturer) {
+        console.error(
+          `❌ Asset model or manufacturer missing for: ${asset.name}`,
+        );
         return {
           success: false,
           error: "Asset model or manufacturer not found",
         };
       }
+
+
 
       // Calculate CO2 using AI service
       const co2Result = await calculateAssetCo2(
@@ -80,19 +150,39 @@ export class CO2FootprintService {
         asset.model.name,
       );
 
-      if (!co2Result.success || !co2Result.data) {
+      if (!co2Result.success) {
+        console.error(`❌ AI service returned error:`, co2Result.error);
         return {
           success: false,
           error: co2Result.error || "Failed to calculate CO2",
         };
       }
 
-      // The save operation is now decoupled.
-      // await createCo2eRecord(assetId, co2Result.data);
+      if (!co2Result.data) {
+        console.error(`❌ AI service returned no data`);
+        return {
+          success: false,
+          error: "AI service returned no data",
+        };
+      }
+
+      // Validate the returned data
+      if (!co2Result.data.totalCo2e || co2Result.data.totalCo2e === 0) {
+        console.error(
+          `❌ AI service returned invalid CO2e value:`,
+          co2Result.data.totalCo2e,
+        );
+        return {
+          success: false,
+          error: `Invalid CO2e value returned: ${co2Result.data.totalCo2e}`,
+        };
+      }
+
+
 
       return { success: true, data: co2Result.data };
     } catch (error: any) {
-      console.error("Error calculating asset CO2:", error);
+      console.error("❌ Error calculating asset CO2:", error);
       return { success: false, error: error.message };
     }
   }
@@ -109,13 +199,15 @@ export class CO2FootprintService {
         where: { assetId: assetId, itemType: "Asset" },
       });
 
+      const stringifiedData = JSON.stringify(co2Data);
+
       const recordData = {
         co2e: co2Data.totalCo2e,
         units: co2Data.units,
         sourceOrActivity: co2Data.sources.map((s) => s.name).join(", "),
         co2eType: "Lifecycle",
         description: co2Data.description,
-        details: JSON.stringify(co2Data),
+        details: stringifiedData,
 
         // New scope classification fields
         scope: co2Data.primaryScope,

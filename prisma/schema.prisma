@@ -118,7 +118,7 @@ model License {
   lastUsageAudit   DateTime?                     // Last time usage was audited
   utilizationRate  Decimal? @db.Decimal(5, 4)   // Current utilization percentage
   costCenter       String?                       // Cost center for accounting
-  budgetCode       String?                       // Budget allocation code
+  budgetCode       String?                        // Budget allocation code
   
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
@@ -130,13 +130,13 @@ model License {
   department         Department?         @relation(fields: [departmentId], references: [id], onDelete: SetNull)
   departmentLocation DepartmentLocation? @relation(fields: [locationId], references: [id], onDelete: SetNull)
   inventory          Inventory?          @relation(fields: [inventoryId], references: [id], onDelete: SetNull)
-  userItems          UserItem[]          @relation("LicenseToUserItem")
   LicenseSeat        LicenseSeat[]
   Asset              Asset[]
   PurchaseOrder      PurchaseOrder?      @relation(fields: [purchaseOrderId], references: [id])
   purchaseOrderId    String?
   Manufacturer       Manufacturer?       @relation(fields: [manufacturerId], references: [id])
   manufacturerId     String?
+  userItems          UserItem[]
 }
 
 model PurchaseOrder {
@@ -215,9 +215,9 @@ model Accessory {
   category           Category?           @relation(fields: [categoryId], references: [id])
   PurchaseOrder      PurchaseOrder?      @relation(fields: [purchaseOrderId], references: [id])
   purchaseOrderId    String?
-  userItems          UserItem[]          @relation("AccessoryToUserItem")
   AccessoryStock     AccessoryStock[]
   Co2eRecord         Co2eRecord[]
+  userItems          UserItem[]
 
   @@unique([poNumber, companyId])
   @@unique([serialNumber, companyId])
@@ -315,12 +315,13 @@ model UserItem {
 
   user      User       @relation(fields: [userId], references: [id])
   company   Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  license   License?   @relation("LicenseToUserItem", fields: [itemId], references: [id], map: "license_to_user_item")
-  accessory Accessory? @relation("AccessoryToUserItem", fields: [itemId], references: [id], map: "accessory_to_user_item")
-
+  license   License?   @relation(fields: [itemId], references: [id], map: "UserItem_license_fkey")
+  accessory Accessory? @relation(fields: [itemId], references: [id], map: "UserItem_accessory_fkey")
+  
   @@unique([userId, itemId, itemType])
   @@index([userId])
   @@index([companyId])
+  @@index([itemId, itemType])
 }
 
 enum ItemType {
@@ -353,10 +354,11 @@ model Role {
   id          String   @id @default(cuid())
   name        String
   active      Boolean  @default(true)
-  companyId   String
+  companyId   String?  // Made optional for global roles
+  isGlobal    Boolean  @default(false) // Flag for global roles
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company     Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
   users       User[]
   invitations Invitation[]
   isDefault   Boolean  @default(false)
@@ -365,6 +367,7 @@ model Role {
 
   @@unique([name, companyId])
   @@index([companyId])
+  @@index([isGlobal])
 }
 
 model Company {
@@ -383,7 +386,7 @@ model Company {
   dataRetentionPolicy   String?
   disasterRecoveryPlan  String?
   securityContact       String?
-  primaryContactEmail   String   @unique
+  primaryContactEmail   String?
   primaryContactName    String?
   primaryContactPhone   String?
   billingContactEmail   String?
