@@ -531,24 +531,24 @@ export const AssetDetailView: React.FC<{
                           <Leaf className="h-4 w-4 text-green-600" />
                           CO2 Footprint
                         </CardTitle>
-                        {latestCo2Record && (
-                          <Badge 
-                            variant={
-                              Number(latestCo2Record.co2e) < 50 
-                                ? "default" 
-                                : Number(latestCo2Record.co2e) < 200 
-                                ? "secondary" 
-                                : "destructive"
-                            }
-                            className="text-xs"
-                          >
-                            {Number(latestCo2Record.co2e) < 50 
-                              ? "Low Impact" 
-                              : Number(latestCo2Record.co2e) < 200 
-                              ? "Medium Impact" 
-                              : "High Impact"}
-                          </Badge>
-                        )}
+                                                 {latestCo2Record && (
+                           <Badge 
+                             variant={
+                               Number(latestCo2Record.co2e) <= 500 
+                                 ? "default" 
+                                 : Number(latestCo2Record.co2e) <= 1000 
+                                 ? "secondary" 
+                                 : "destructive"
+                             }
+                             className="text-xs"
+                           >
+                             {Number(latestCo2Record.co2e) <= 500 
+                               ? "Low Impact" 
+                               : Number(latestCo2Record.co2e) <= 1000 
+                               ? "Medium Impact" 
+                               : "High Impact"}
+                           </Badge>
+                         )}
                       </div>
                     </CardHeader>
                     <CardContent className="pt-0">
