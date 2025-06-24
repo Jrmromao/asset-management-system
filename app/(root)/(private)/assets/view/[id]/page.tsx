@@ -98,10 +98,10 @@ export default function AssetPage({ params }: AssetPageProps) {
         statusLabel: assetData.statusLabel,
         user: assetData.user ? { name: assetData.user.name } : undefined,
         co2Score:
-          (assetData.Co2eRecord as any)?.length > 0
+          (assetData.co2eRecords as any)?.length > 0
             ? {
-                co2e: Number(assetData.Co2eRecord[0].co2e),
-                units: assetData.Co2eRecord[0].units,
+                co2e: Number(assetData.co2eRecords[0].co2e),
+                units: assetData.co2eRecords[0].units,
               }
             : undefined,
         model: assetData.model,
@@ -119,7 +119,7 @@ export default function AssetPage({ params }: AssetPageProps) {
         userId: assetData.user?.id,
         createdAt: assetData.createdAt,
         updatedAt: assetData.updatedAt,
-        Co2eRecord: assetData.Co2eRecord,
+        co2eRecords: assetData.co2eRecords,
         energyConsumption: assetData.energyConsumption
           ? Number(assetData.energyConsumption)
           : undefined,

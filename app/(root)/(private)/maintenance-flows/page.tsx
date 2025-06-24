@@ -47,6 +47,7 @@ import { MaintenanceFlowBuilder } from "@/components/maintenance/MaintenanceFlow
 import { MaintenanceTypeManager } from "@/components/maintenance/MaintenanceTypeManager";
 import { MaintenanceFlow } from "@/lib/actions/maintenanceFlow.actions";
 import { EmptyStateCard } from "@/components/EmptyStateCard";
+import { DocumentationAnnouncement } from "@/components/announcements/DocumentationAnnouncement";
 
 // Constants for better maintainability
 const SEARCH_DEBOUNCE_MS = 300;
@@ -69,15 +70,14 @@ const useDebounce = (value: string, delay: number) => {
 };
 
 // Optimized search function
-const searchFlows = (flows: MaintenanceFlow[], searchTerm: string): MaintenanceFlow[] => {
+const searchFlows = (
+  flows: MaintenanceFlow[],
+  searchTerm: string,
+): MaintenanceFlow[] => {
   if (!searchTerm.trim()) return flows;
 
   const searchLower = searchTerm.toLowerCase();
-  const searchableFields = [
-    "name",
-    "description", 
-    "trigger",
-  ];
+  const searchableFields = ["name", "description", "trigger"];
 
   return flows.filter((flow) => {
     return searchableFields.some((field) => {
@@ -179,11 +179,11 @@ const MaintenanceFlowsPage = () => {
 
   // Memoized columns to prevent unnecessary re-renders
   const columns = useMemo(() => {
-    return maintenanceFlowColumns({ 
-      onDelete, 
-      onView: handleView, 
+    return maintenanceFlowColumns({
+      onDelete,
+      onView: handleView,
       onEdit: handleEdit,
-      onToggleActive 
+      onToggleActive,
     }) as ColumnDef<MaintenanceFlow>[];
   }, [onDelete, handleView, handleEdit, onToggleActive]);
 
@@ -193,16 +193,18 @@ const MaintenanceFlowsPage = () => {
   // Memoized computed values
   const filteredData = useMemo(() => {
     let filtered = searchFlows(flows, debouncedSearchTerm);
-    
+
     // Apply filters
     if (filters.priority) {
-      filtered = filtered.filter(flow => flow.priority === parseInt(filters.priority));
+      filtered = filtered.filter(
+        (flow) => flow.priority === parseInt(filters.priority),
+      );
     }
     if (filters.status) {
       const isActive = filters.status === "active";
-      filtered = filtered.filter(flow => flow.isActive === isActive);
+      filtered = filtered.filter((flow) => flow.isActive === isActive);
     }
-    
+
     return filtered;
   }, [flows, debouncedSearchTerm, filters]);
 
@@ -264,41 +266,71 @@ const MaintenanceFlowsPage = () => {
       {
         title: "Total Flows",
         value: stats?.totalFlows ? stats.totalFlows.toString() : "—",
-        subtitle: stats?.totalFlows === 0 ? "Create your first automation flow" : 
-                 stats?.totalFlows === 1 ? "1 flow configured" : `${stats?.totalFlows} flows configured`,
+        subtitle:
+          stats?.totalFlows === 0
+            ? "Create your first automation flow"
+            : stats?.totalFlows === 1
+              ? "1 flow configured"
+              : `${stats?.totalFlows} flows configured`,
         color: "info" as const,
         icon: <Workflow className="w-4 h-4" />,
       },
       {
         title: "Active Flows",
         value: stats?.activeFlows ? stats.activeFlows.toString() : "—",
-        subtitle: stats?.totalFlows === 0 ? "No flows created yet" :
-                 stats?.activeFlows === 0 ? "All flows are inactive" :
-                 stats?.activeFlows === stats?.totalFlows ? "All flows are active" :
-                 `${(stats?.totalFlows || 0) - (stats?.activeFlows || 0)} inactive`,
-        color: stats?.activeFlows && stats.activeFlows > 0 ? "success" as const : "default" as const,
+        subtitle:
+          stats?.totalFlows === 0
+            ? "No flows created yet"
+            : stats?.activeFlows === 0
+              ? "All flows are inactive"
+              : stats?.activeFlows === stats?.totalFlows
+                ? "All flows are active"
+                : `${(stats?.totalFlows || 0) - (stats?.activeFlows || 0)} inactive`,
+        color:
+          stats?.activeFlows && stats.activeFlows > 0
+            ? ("success" as const)
+            : ("default" as const),
         icon: <Activity className="w-4 h-4" />,
       },
       {
         title: "Success Rate",
         value: stats?.averageSuccessRate ? `${stats.averageSuccessRate}%` : "—",
-        subtitle: stats?.totalFlows === 0 ? "No flows to measure" :
-                 stats?.averageSuccessRate === undefined ? "No executions yet" :
-                 stats.averageSuccessRate >= 95 ? "Excellent performance" :
-                 stats.averageSuccessRate >= 80 ? "Good performance" :
-                 stats.averageSuccessRate >= 60 ? "Needs attention" : "Requires optimization",
-        color: !stats?.averageSuccessRate ? "default" as const :
-               stats.averageSuccessRate >= 90 ? "success" as const : 
-               stats.averageSuccessRate >= 70 ? "warning" as const : "danger" as const,
+        subtitle:
+          stats?.totalFlows === 0
+            ? "No flows to measure"
+            : stats?.averageSuccessRate === undefined
+              ? "No executions yet"
+              : stats.averageSuccessRate >= 95
+                ? "Excellent performance"
+                : stats.averageSuccessRate >= 80
+                  ? "Good performance"
+                  : stats.averageSuccessRate >= 60
+                    ? "Needs attention"
+                    : "Requires optimization",
+        color: !stats?.averageSuccessRate
+          ? ("default" as const)
+          : stats.averageSuccessRate >= 90
+            ? ("success" as const)
+            : stats.averageSuccessRate >= 70
+              ? ("warning" as const)
+              : ("danger" as const),
         icon: <BarChart3 className="w-4 h-4" />,
       },
       {
         title: "Recent Executions",
-        value: stats?.recentExecutions ? stats.recentExecutions.toString() : "—",
-        subtitle: stats?.recentExecutions === 0 ? "No recent activity" :
-                 stats?.recentExecutions === 1 ? "1 execution this week" :
-                 `${stats?.recentExecutions} executions this week`,
-        color: stats?.recentExecutions && stats.recentExecutions > 0 ? "info" as const : "default" as const,
+        value: stats?.recentExecutions
+          ? stats.recentExecutions.toString()
+          : "—",
+        subtitle:
+          stats?.recentExecutions === 0
+            ? "No recent activity"
+            : stats?.recentExecutions === 1
+              ? "1 execution this week"
+              : `${stats?.recentExecutions} executions this week`,
+        color:
+          stats?.recentExecutions && stats.recentExecutions > 0
+            ? ("info" as const)
+            : ("default" as const),
         icon: <Clock className="w-4 h-4" />,
       },
     ],
@@ -329,7 +361,10 @@ const MaintenanceFlowsPage = () => {
         {/* Status Cards Skeleton */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {[...Array(4)].map((_, i) => (
-            <Card key={i} className="dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+            <Card
+              key={i}
+              className="dark:bg-gray-800 border-gray-200 dark:border-gray-700"
+            >
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div className="w-4 h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
@@ -351,7 +386,7 @@ const MaintenanceFlowsPage = () => {
               <div
                 key={i}
                 className={`flex-1 h-10 rounded-md ${
-                  i === 0 ? 'bg-white dark:bg-gray-700' : 'bg-transparent'
+                  i === 0 ? "bg-white dark:bg-gray-700" : "bg-transparent"
                 } animate-pulse`}
               >
                 <div className="flex items-center justify-center h-full space-x-2">
@@ -384,13 +419,19 @@ const MaintenanceFlowsPage = () => {
                       <div
                         key={i}
                         className={`h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse ${
-                          i === 0 ? 'w-32' : i === 1 ? 'w-24' : i === 2 ? 'w-20' : 'w-16'
+                          i === 0
+                            ? "w-32"
+                            : i === 1
+                              ? "w-24"
+                              : i === 2
+                                ? "w-20"
+                                : "w-16"
                         }`}
                       />
                     ))}
                   </div>
                 </div>
-                
+
                 {/* Table Rows */}
                 {[...Array(5)].map((_, rowIndex) => (
                   <div key={rowIndex} className="px-6 py-4">
@@ -399,7 +440,13 @@ const MaintenanceFlowsPage = () => {
                         <div
                           key={colIndex}
                           className={`h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse ${
-                            colIndex === 0 ? 'w-32' : colIndex === 1 ? 'w-24' : colIndex === 2 ? 'w-20' : 'w-16'
+                            colIndex === 0
+                              ? "w-32"
+                              : colIndex === 1
+                                ? "w-24"
+                                : colIndex === 2
+                                  ? "w-20"
+                                  : "w-16"
                           }`}
                         />
                       ))}
@@ -446,7 +493,11 @@ const MaintenanceFlowsPage = () => {
 
       <StatusCards cards={cardData} columns={4} />
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+      <Tabs
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="space-y-6"
+      >
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="flows" className="flex items-center space-x-2">
             <Workflow className="w-4 h-4" />
@@ -507,4 +558,4 @@ const MaintenanceFlowsPage = () => {
   );
 };
 
-export default MaintenanceFlowsPage; 
+export default MaintenanceFlowsPage;
