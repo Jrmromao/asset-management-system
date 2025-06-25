@@ -1,7 +1,7 @@
 "use server";
 
 import { withAuth } from "@/lib/middleware/withAuth";
-import { smartCleanupEngine } from "@/lib/services/smart-cleanup-engine.service";
+import { smartCleanupEngine } from "@/lib/services/smart-cleanup-engine-simple.service";
 
 interface CleanupPolicy {
   format: string;

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { executeSmartCleanup, analyzeStoragePatterns } from "@/lib/services/smart-cleanup-engine.service";
+import { executeSmartCleanup, analyzeStoragePatterns } from "@/lib/actions/smart-cleanup.actions";
 
 // GET: Analyze storage patterns and get insights
 export async function GET(request: NextRequest) {
