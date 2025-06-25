@@ -38,8 +38,8 @@ import StatusCards from "@/components/StatusCards";
 import StatusCardPlaceholder from "@/components/StatusCardPlaceholder";
 import { DataTableHeader } from "@/components/tables/TableHeader";
 import { EmptyStateCard } from "@/components/EmptyStateCard";
-import { 
-  Calendar, 
+import {
+  Calendar,
   CheckCircle,
   Clock,
   AlertTriangle,
@@ -47,7 +47,7 @@ import {
   AlertCircle,
   RefreshCw,
   Download,
-  Plus
+  Plus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useMaintenance } from "@/hooks/useMaintenance";
@@ -78,13 +78,16 @@ export default function MaintenancePage() {
   const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [isPending, startTransition] = useTransition();
-  
+
   const debouncedSearchTerm = useDebounce(searchTerm, SEARCH_DEBOUNCE_MS);
 
   // Use the maintenance hook with filters
-  const filters = useMemo(() => ({
-    search: debouncedSearchTerm,
-  }), [debouncedSearchTerm]);
+  const filters = useMemo(
+    () => ({
+      search: debouncedSearchTerm,
+    }),
+    [debouncedSearchTerm],
+  );
 
   // Memoized columns to prevent unnecessary re-renders
   const columns = useMemo(() => {
@@ -323,33 +326,35 @@ export default function MaintenancePage() {
         ) : (
           <Card className="dark:bg-gray-800 border-gray-200 dark:border-gray-700">
             <CardContent className="p-0">
-                          <DataTable
-              columns={columns}
-              data={maintenance}
-              isLoading={isLoading || isPending}
-            />
+              <DataTable
+                columns={columns}
+                data={maintenance}
+                isLoading={isLoading || isPending}
+              />
             </CardContent>
           </Card>
         )}
       </div>
 
-             {/* Schedule Maintenance Dialog */}
-       <Dialog open={isScheduleDialogOpen} onOpenChange={setIsScheduleDialogOpen}>
-         <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
-           <DialogHeader>
-             <DialogTitle>Schedule New Maintenance</DialogTitle>
-             <DialogDescription>
-               Fill out the details below to schedule a new maintenance event for an asset.
-               This will help track maintenance costs, carbon footprint, and asset health.
-             </DialogDescription>
-           </DialogHeader>
-           <div className="py-4">
-             <MaintenanceForm 
-               onSuccess={handleScheduleSuccess}
-             />
-           </div>
-         </DialogContent>
-       </Dialog>
+      {/* Schedule Maintenance Dialog */}
+      <Dialog
+        open={isScheduleDialogOpen}
+        onOpenChange={setIsScheduleDialogOpen}
+      >
+        <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Schedule New Maintenance</DialogTitle>
+            <DialogDescription>
+              Fill out the details below to schedule a new maintenance event for
+              an asset. This will help track maintenance costs, carbon
+              footprint, and asset health.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <MaintenanceForm onSuccess={handleScheduleSuccess} />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
-} 
+}

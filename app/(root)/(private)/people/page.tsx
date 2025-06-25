@@ -33,7 +33,10 @@ import { DataTable } from "@/components/tables/DataTable/data-table";
 import { useUserQuery } from "@/hooks/queries/useUserQuery";
 import { toast } from "sonner";
 import { usePermissions } from "@/hooks/usePermissions";
-import { PermissionGuard, UserActions } from "@/components/auth/PermissionGuard";
+import {
+  PermissionGuard,
+  UserActions,
+} from "@/components/auth/PermissionGuard";
 import type {
   ColumnDef,
   ColumnFiltersState,
@@ -73,7 +76,10 @@ const useDebounce = (value: string, delay: number) => {
 };
 
 // Optimized search function
-const searchUsers = (users: UserWithRole[], searchTerm: string): UserWithRole[] => {
+const searchUsers = (
+  users: UserWithRole[],
+  searchTerm: string,
+): UserWithRole[] => {
   if (!searchTerm.trim()) return users;
 
   const searchLower = searchTerm.toLowerCase();
@@ -217,8 +223,6 @@ const People = () => {
     return searchFiltered;
   }, [activeUsers, debouncedSearchTerm]);
 
-
-
   const table = useReactTable({
     data: filteredData,
     columns,
@@ -272,43 +276,40 @@ const People = () => {
   }, []);
 
   // Memoized card data using metrics from the hook
-  const cardData = useMemo(
-    () => {
-      const hasUsers = totalUsers > 0;
-      
-      const data = [
-        {
-          title: "Total Employees",
-          value: totalUsers,
-          subtitle: hasUsers ? "Active team members" : "No employees yet",
-          color: "info" as const,
-        },
-        {
-          title: "New This Month",
-          value: newThisMonth,
-          subtitle: hasUsers ? "New employees" : "Start inviting team members",
-          color: "success" as const,
-        },
-        {
-          title: "Unique Roles",
-          value: uniqueRoles,
-          subtitle: hasUsers ? "Different positions" : "Set up roles first",
-          color: "warning" as const,
-        },
-      ];
-        
-      if (process.env.NODE_ENV === 'development') {
-        console.log("🔍 [People] - Card data:", {
-          totalUsers,
-          newThisMonth,
-          uniqueRoles,
-          cardData: data
-        });
-      }
-      return data;
-    },
-    [totalUsers, newThisMonth, uniqueRoles],
-  );
+  const cardData = useMemo(() => {
+    const hasUsers = totalUsers > 0;
+
+    const data = [
+      {
+        title: "Total Employees",
+        value: totalUsers,
+        subtitle: hasUsers ? "Active team members" : "No employees yet",
+        color: "info" as const,
+      },
+      {
+        title: "New This Month",
+        value: newThisMonth,
+        subtitle: hasUsers ? "New employees" : "Start inviting team members",
+        color: "success" as const,
+      },
+      {
+        title: "Unique Roles",
+        value: uniqueRoles,
+        subtitle: hasUsers ? "Different positions" : "Set up roles first",
+        color: "warning" as const,
+      },
+    ];
+
+    if (process.env.NODE_ENV === "development") {
+      console.log("🔍 [People] - Card data:", {
+        totalUsers,
+        newThisMonth,
+        uniqueRoles,
+        cardData: data,
+      });
+    }
+    return data;
+  }, [totalUsers, newThisMonth, uniqueRoles]);
 
   // Loading state
   if (isLoading) {
@@ -363,19 +364,21 @@ const People = () => {
       />
 
       <StatusCards cards={cardData} columns={3} />
-      
+
       {/* Debug info - remove in production */}
-      {process.env.NODE_ENV === 'development' && (
+      {process.env.NODE_ENV === "development" && (
         <div className="p-4 bg-yellow-100 dark:bg-yellow-900 rounded-lg">
-          <h4 className="font-semibold text-yellow-800 dark:text-yellow-200">Debug Info:</h4>
+          <h4 className="font-semibold text-yellow-800 dark:text-yellow-200">
+            Debug Info:
+          </h4>
           <p className="text-sm text-yellow-700 dark:text-yellow-300">
-            Users array length: {users?.length || 0} | 
-            Active users: {activeUsers?.length || 0} | 
-            Loading: {isLoading ? 'Yes' : 'No'}
+            Users array length: {users?.length || 0} | Active users:{" "}
+            {activeUsers?.length || 0} | Loading: {isLoading ? "Yes" : "No"}
           </p>
           {users?.length === 0 && !isLoading && (
             <p className="text-sm text-red-600 dark:text-red-400 mt-2">
-              No users found. Check console for detailed logs or visit /api/debug/users
+              No users found. Check console for detailed logs or visit
+              /api/debug/users
             </p>
           )}
         </div>
@@ -403,7 +406,8 @@ const People = () => {
                   No team members yet
                 </h3>
                 <p className="text-gray-500 dark:text-gray-400 mb-6 max-w-md">
-                  Start building your team by inviting employees to join your organization.
+                  Start building your team by inviting employees to join your
+                  organization.
                 </p>
                 <UserActions action="invite">
                   <button

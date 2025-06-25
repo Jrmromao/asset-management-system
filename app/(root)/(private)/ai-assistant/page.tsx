@@ -1,19 +1,25 @@
 "use client";
 
 import React, { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Brain, 
-  TrendingUp, 
-  Wrench, 
-  AlertTriangle, 
+import {
+  Brain,
+  TrendingUp,
+  Wrench,
+  AlertTriangle,
   DollarSign,
   BarChart3,
   Lightbulb,
-  Zap
+  Zap,
 } from "lucide-react";
 import { AIInsightsDashboard } from "@/components/ai/AIInsightsDashboard";
 import { CostOptimizationDashboard } from "@/components/ai/CostOptimizationDashboard";
@@ -34,29 +40,34 @@ export default function AIAssistantPage() {
   const testAIFunctionality = async () => {
     console.log("🧪 Testing AI functionality...");
     toast.info("Testing AI functionality - check console for logs");
-    
+
     try {
       // Test AI Insights
       console.log("🔬 Testing AI Insights API");
-      const insightsResponse = await fetch('/api/ai/insights', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ analysisType: 'comprehensive' }),
+      const insightsResponse = await fetch("/api/ai/insights", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ analysisType: "comprehensive" }),
       });
       const insightsResult = await insightsResponse.json();
       console.log("📊 AI Insights Test Result:", insightsResult);
 
       // Test Cost Optimization
       console.log("🔬 Testing Cost Optimization API");
-      const costResponse = await fetch('/api/ai/cost-optimization', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ analysisType: 'license', timeframe: 'quarterly' }),
+      const costResponse = await fetch("/api/ai/cost-optimization", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          analysisType: "license",
+          timeframe: "quarterly",
+        }),
       });
       const costResult = await costResponse.json();
       console.log("💰 Cost Optimization Test Result:", costResult);
 
-      toast.success("AI functionality test completed - check console for detailed logs");
+      toast.success(
+        "AI functionality test completed - check console for detailed logs",
+      );
     } catch (error) {
       console.error("❌ AI Test Error:", error);
       toast.error("AI test failed - check console for details");
@@ -71,35 +82,35 @@ export default function AIAssistantPage() {
       color: "text-green-600",
       bgColor: "bg-green-50",
       value: "Up to 30% savings",
-      tab: "cost-optimization"
+      tab: "cost-optimization",
     },
     {
-      title: "Predictive Maintenance", 
+      title: "Predictive Maintenance",
       description: "Predict asset failures before they happen",
       icon: Wrench,
       color: "text-blue-600",
       bgColor: "bg-blue-50",
       value: "85% accuracy",
-      tab: "maintenance"
+      tab: "maintenance",
     },
     {
       title: "Asset Insights",
       description: "Deep analytics on asset performance and utilization",
       icon: BarChart3,
-      color: "text-purple-600", 
+      color: "text-purple-600",
       bgColor: "bg-purple-50",
       value: "Real-time analysis",
-      tab: "insights"
+      tab: "insights",
     },
     {
       title: "Anomaly Detection",
       description: "Identify unusual patterns and potential issues",
       icon: AlertTriangle,
       color: "text-orange-600",
-      bgColor: "bg-orange-50", 
+      bgColor: "bg-orange-50",
       value: "24/7 monitoring",
-      tab: "anomalies"
-    }
+      tab: "anomalies",
+    },
   ];
 
   return (
@@ -125,11 +136,12 @@ export default function AIAssistantPage() {
             AI Assistant
           </h1>
           <p className="text-muted-foreground">
-            Leverage artificial intelligence to optimize your asset management operations
+            Leverage artificial intelligence to optimize your asset management
+            operations
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button 
+          <Button
             onClick={testAIFunctionality}
             variant="outline"
             size="sm"
@@ -149,7 +161,7 @@ export default function AIAssistantPage() {
         {aiCapabilities.map((capability) => {
           const Icon = capability.icon;
           return (
-            <Card 
+            <Card
               key={capability.title}
               className="cursor-pointer hover:shadow-md transition-shadow"
               onClick={() => setActiveTab(capability.tab)}
@@ -176,7 +188,11 @@ export default function AIAssistantPage() {
       </div>
 
       {/* AI Functionality Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+      <Tabs
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="space-y-6"
+      >
         <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="cost-optimization">Cost Optimization</TabsTrigger>
@@ -193,17 +209,21 @@ export default function AIAssistantPage() {
                 AI Assistant Overview
               </CardTitle>
               <CardDescription>
-                Your AI assistant provides intelligent insights and recommendations to optimize your asset management operations.
+                Your AI assistant provides intelligent insights and
+                recommendations to optimize your asset management operations.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">What AI Can Do For You</h3>
+                  <h3 className="text-lg font-semibold">
+                    What AI Can Do For You
+                  </h3>
                   <ul className="space-y-2 text-sm text-muted-foreground">
                     <li className="flex items-center gap-2">
                       <div className="h-2 w-2 bg-green-500 rounded-full" />
-                      Analyze cost optimization opportunities across licenses and accessories
+                      Analyze cost optimization opportunities across licenses
+                      and accessories
                     </li>
                     <li className="flex items-center gap-2">
                       <div className="h-2 w-2 bg-blue-500 rounded-full" />
@@ -211,7 +231,8 @@ export default function AIAssistantPage() {
                     </li>
                     <li className="flex items-center gap-2">
                       <div className="h-2 w-2 bg-purple-500 rounded-full" />
-                      Provide deep insights into asset utilization and performance
+                      Provide deep insights into asset utilization and
+                      performance
                     </li>
                     <li className="flex items-center gap-2">
                       <div className="h-2 w-2 bg-orange-500 rounded-full" />
@@ -222,7 +243,7 @@ export default function AIAssistantPage() {
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold">Getting Started</h3>
                   <div className="space-y-3">
-                    <Button 
+                    <Button
                       onClick={() => setActiveTab("cost-optimization")}
                       className="w-full justify-start"
                       variant="outline"
@@ -230,7 +251,7 @@ export default function AIAssistantPage() {
                       <DollarSign className="h-4 w-4 mr-2" />
                       Run Cost Analysis
                     </Button>
-                    <Button 
+                    <Button
                       onClick={() => setActiveTab("insights")}
                       className="w-full justify-start"
                       variant="outline"
@@ -238,7 +259,7 @@ export default function AIAssistantPage() {
                       <BarChart3 className="h-4 w-4 mr-2" />
                       View Asset Insights
                     </Button>
-                    <Button 
+                    <Button
                       onClick={() => setActiveTab("maintenance")}
                       className="w-full justify-start"
                       variant="outline"
@@ -265,15 +286,19 @@ export default function AIAssistantPage() {
                 Predictive Maintenance
               </CardTitle>
               <CardDescription>
-                AI-powered maintenance recommendations based on asset condition and usage patterns.
+                AI-powered maintenance recommendations based on asset condition
+                and usage patterns.
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="text-center py-8">
                 <Wrench className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Predictive Maintenance Coming Soon</h3>
+                <h3 className="text-lg font-semibold mb-2">
+                  Predictive Maintenance Coming Soon
+                </h3>
                 <p className="text-muted-foreground mb-4">
-                  AI-powered maintenance predictions will help you prevent asset failures before they happen.
+                  AI-powered maintenance predictions will help you prevent asset
+                  failures before they happen.
                 </p>
                 <Button disabled>
                   <Brain className="h-4 w-4 mr-2" />
@@ -296,15 +321,19 @@ export default function AIAssistantPage() {
                 Anomaly Detection
               </CardTitle>
               <CardDescription>
-                Identify unusual patterns and potential issues in your asset data.
+                Identify unusual patterns and potential issues in your asset
+                data.
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="text-center py-8">
                 <AlertTriangle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Anomaly Detection Coming Soon</h3>
+                <h3 className="text-lg font-semibold mb-2">
+                  Anomaly Detection Coming Soon
+                </h3>
                 <p className="text-muted-foreground mb-4">
-                  AI will continuously monitor your assets for unusual patterns and alert you to potential issues.
+                  AI will continuously monitor your assets for unusual patterns
+                  and alert you to potential issues.
                 </p>
                 <Button disabled>
                   <Brain className="h-4 w-4 mr-2" />

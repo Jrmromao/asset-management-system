@@ -82,11 +82,7 @@ const searchLicenses = (licenses: License[], searchTerm: string): License[] => {
   if (!searchTerm.trim()) return licenses;
 
   const searchLower = searchTerm.toLowerCase();
-  const searchableFields = [
-    "name",
-    "licensedEmail",
-    "statusLabel.name",
-  ];
+  const searchableFields = ["name", "licensedEmail", "statusLabel.name"];
 
   return licenses.filter((license) => {
     return searchableFields.some((field) => {
@@ -102,11 +98,7 @@ const getNestedValue = (obj: any, path: string): any => {
 };
 
 const Licenses = () => {
-  const {
-    licenses,
-    isLoading,
-    deleteItem,
-  } = useLicenseQuery();
+  const { licenses, isLoading, deleteItem } = useLicenseQuery();
 
   const [openDialog, closeDialog, isOpen] = useDialogStore((state) => [
     state.onOpen,
@@ -271,7 +263,10 @@ const Licenses = () => {
       {
         title: "Available Licenses",
         value: availableLicenses.length,
-        percentage: allLicenses.length > 0 ? (availableLicenses.length / allLicenses.length) * 100 : 0,
+        percentage:
+          allLicenses.length > 0
+            ? (availableLicenses.length / allLicenses.length) * 100
+            : 0,
         total: allLicenses.length,
         color: "success" as const,
       },
@@ -361,7 +356,8 @@ const Licenses = () => {
                   No licenses yet
                 </h3>
                 <p className="text-gray-500 dark:text-gray-400 mb-6 max-w-md">
-                  Start managing your software licenses by adding your first license.
+                  Start managing your software licenses by adding your first
+                  license.
                 </p>
                 <button
                   onClick={handleCreateNew}

@@ -10,8 +10,8 @@ export default function CO2FootprintPage() {
           Track and analyze the environmental impact of your assets
         </p>
       </div>
-      
+
       <CO2FootprintDashboard companyId="cmc80pcez00048oa5v3px063c" />
     </div>
   );
-} 
+}

@@ -44,7 +44,12 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "postcss";
 import { Button } from "react-day-picker";
 
@@ -82,7 +87,10 @@ const useDebounce = (value: string, delay: number) => {
 };
 
 // Optimized search function
-const searchAccessories = (accessories: Accessory[], searchTerm: string): Accessory[] => {
+const searchAccessories = (
+  accessories: Accessory[],
+  searchTerm: string,
+): Accessory[] => {
   if (!searchTerm.trim()) return accessories;
 
   const searchLower = searchTerm.toLowerCase();
@@ -107,11 +115,7 @@ const getNestedValue = (obj: any, path: string): any => {
 };
 
 const Accessories = () => {
-  const {
-    accessories,
-    isLoading,
-    deleteItem,
-  } = useAccessoryQuery();
+  const { accessories, isLoading, deleteItem } = useAccessoryQuery();
 
   const [openDialog, closeDialog, isOpen] = useDialogStore((state) => [
     state.onOpen,
@@ -179,7 +183,10 @@ const Accessories = () => {
 
   // Memoized columns to prevent unnecessary re-renders
   const columns = useMemo(() => {
-    return accessoriesColumns({ onDelete, onView }) as ColumnDef<Accessory, any>[];
+    return accessoriesColumns({ onDelete, onView }) as ColumnDef<
+      Accessory,
+      any
+    >[];
   }, [onDelete, onView]);
 
   // Memoized computed values
@@ -192,7 +199,8 @@ const Accessories = () => {
   const availableAccessories = useMemo(
     () =>
       allAccessories.filter(
-        (accessory) => accessory.statusLabel?.name.toUpperCase() === "AVAILABLE",
+        (accessory) =>
+          accessory.statusLabel?.name.toUpperCase() === "AVAILABLE",
       ),
     [allAccessories],
   );
@@ -268,7 +276,10 @@ const Accessories = () => {
       {
         title: "Available Accessories",
         value: availableAccessories.length,
-        percentage: allAccessories.length > 0 ? (availableAccessories.length / allAccessories.length) * 100 : 0,
+        percentage:
+          allAccessories.length > 0
+            ? (availableAccessories.length / allAccessories.length) * 100
+            : 0,
         total: allAccessories.length,
         color: "success" as const,
       },
@@ -358,7 +369,8 @@ const Accessories = () => {
                   No accessories yet
                 </h3>
                 <p className="text-gray-500 dark:text-gray-400 mb-6 max-w-md">
-                  Start managing your accessories by adding your first accessory.
+                  Start managing your accessories by adding your first
+                  accessory.
                 </p>
                 <button
                   onClick={handleCreateNew}

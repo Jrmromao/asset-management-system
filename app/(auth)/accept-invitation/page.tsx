@@ -4,7 +4,13 @@ import { useEffect, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { useAuth, useSignUp } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { InvitationRegistrationForm } from "@/components/forms/InvitationRegistrationForm";
 
 interface InvitationData {
@@ -20,7 +26,9 @@ export default function AcceptInvitationPage() {
   const searchParams = useSearchParams();
   const { isLoaded, signUp } = useSignUp();
   const { isSignedIn } = useAuth();
-  const [invitationData, setInvitationData] = useState<InvitationData | null>(null);
+  const [invitationData, setInvitationData] = useState<InvitationData | null>(
+    null,
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -35,7 +43,7 @@ export default function AcceptInvitationPage() {
       });
 
       const result = await response.json();
-      
+
       if (result.success) {
         setInvitationData(result.data);
       } else {
@@ -80,8 +88,8 @@ export default function AcceptInvitationPage() {
             <CardDescription>{error}</CardDescription>
           </CardHeader>
           <CardContent>
-            <Button 
-              onClick={() => window.location.href = "/sign-in"}
+            <Button
+              onClick={() => (window.location.href = "/sign-in")}
               className="w-full"
             >
               Go to Sign In
@@ -98,23 +106,27 @@ export default function AcceptInvitationPage() {
         <CardHeader>
           <CardTitle>Complete Your Registration</CardTitle>
           <CardDescription>
-            You've been invited to join <strong>{invitationData?.companyName}</strong> as a <strong>{invitationData?.roleName}</strong>
+            You've been invited to join{" "}
+            <strong>{invitationData?.companyName}</strong> as a{" "}
+            <strong>{invitationData?.roleName}</strong>
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <InvitationRegistrationForm 
-            invitationData={invitationData || {
-              companyName: "",
-              roleName: "",
-              email: "",
-              roleId: "",
-              companyId: "",
-              invitationId: "",
-            }}
+          <InvitationRegistrationForm
+            invitationData={
+              invitationData || {
+                companyName: "",
+                roleName: "",
+                email: "",
+                roleId: "",
+                companyId: "",
+                invitationId: "",
+              }
+            }
             token={token || ""}
           />
         </CardContent>
       </Card>
     </div>
   );
-} 
+}

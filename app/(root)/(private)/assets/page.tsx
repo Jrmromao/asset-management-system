@@ -127,6 +127,20 @@ const getActiveAssets = (assets: Asset[]): Asset[] => {
   return assets.filter((asset) => asset.status !== ACTIVE_STATUS);
 };
 
+const normalizeAssets = (assets: any[]) =>
+  assets.map((asset) => ({
+    ...asset,
+    co2eRecords: asset.co2eRecords?.map((rec: any) => ({
+      ...rec,
+      co2e:
+        typeof rec.co2e === "object" &&
+        rec.co2e !== null &&
+        "toNumber" in rec.co2e
+          ? rec.co2e.toNumber()
+          : Number(rec.co2e),
+    })),
+  }));
+
 const Assets = () => {
   const {
     isLoading,
@@ -209,7 +223,10 @@ const Assets = () => {
   const debouncedSearchTerm = useDebounce(searchTerm, SEARCH_DEBOUNCE_MS);
 
   // Memoized computed values
-  const activeAssets = useMemo(() => getActiveAssets(assets), [assets]);
+  const activeAssets = useMemo(
+    () => getActiveAssets(normalizeAssets(assets)),
+    [assets],
+  );
 
   const filteredData = useMemo(() => {
     const searchFiltered = searchAssets(activeAssets, debouncedSearchTerm);
@@ -377,6 +394,7 @@ const Assets = () => {
           filterPlaceholder="Search assets..."
           className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm"
           showFilter={false}
+          searchColumnId="name"
         />
 
         <Card className="dark:bg-gray-800 border-gray-200 dark:border-gray-700">

@@ -8,15 +8,15 @@ const SignIn = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { isSignedIn, isLoaded } = useAuth();
-  
-  const isFromInvitation = searchParams?.get('invitation') === 'true';
+
+  const isFromInvitation = searchParams?.get("invitation") === "true";
 
   useEffect(() => {
     // Wait for auth to load
     if (!isLoaded) return;
-    
+
     if (isFromInvitation && isSignedIn) {
-      router.push('/dashboard?welcome=true');
+      router.push("/dashboard?welcome=true");
     }
   }, [isFromInvitation, isSignedIn, isLoaded, router]);
 

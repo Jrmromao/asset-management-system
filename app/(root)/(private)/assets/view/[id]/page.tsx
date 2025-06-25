@@ -254,8 +254,8 @@ export default function AssetPage({ params }: AssetPageProps) {
         }
       />
 
-      <AlertDialog 
-        open={showUnassignDialog} 
+      <AlertDialog
+        open={showUnassignDialog}
         onOpenChange={() => setShowUnassignDialog(false)}
       >
         <AlertDialogContent>

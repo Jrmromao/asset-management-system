@@ -65,7 +65,8 @@ export default function DashboardPage() {
         const privateMetadata = (session?.user as any)?.privateMetadata;
         const hasOnboardingFlag = publicMetadata?.onboardingComplete === true;
         const hasUserId = publicMetadata?.userId;
-        const hasCompanyId = publicMetadata?.companyId || privateMetadata?.companyId;
+        const hasCompanyId =
+          publicMetadata?.companyId || privateMetadata?.companyId;
 
         console.log("Dashboard onboarding check:", {
           hasOnboardingFlag,
@@ -84,7 +85,9 @@ export default function DashboardPage() {
 
         // If no onboarding indicators found, but user is signed in, allow access (fail open)
         // This prevents infinite loading if metadata isn't set properly
-        console.log("Dashboard: No onboarding metadata found, allowing access anyway");
+        console.log(
+          "Dashboard: No onboarding metadata found, allowing access anyway",
+        );
         setIsCheckingOnboarding(false);
       } catch (error) {
         console.error("Error checking onboarding status:", error);
