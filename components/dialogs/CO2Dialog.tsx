@@ -30,10 +30,7 @@ import {
   Globe,
 } from "lucide-react";
 import { CO2CalculationResult } from "@/types/co2";
-import {
-  calculateAssetCO2Action,
-  saveAssetCO2Action,
-} from "@/lib/actions/co2.actions";
+import { saveAssetCO2Action } from "@/lib/actions/co2.actions";
 import { useToast } from "@/hooks/use-toast";
 
 interface CO2DialogProps {
@@ -75,27 +72,6 @@ const CO2Dialog: React.FC<CO2DialogProps> = ({
   });
 
   useEffect(() => {
-    console.log("🔍 CO2Dialog received initialResult:", initialResult);
-    console.log("🔍 CO2Dialog initialResult type:", typeof initialResult);
-    console.log(
-      "🔍 CO2Dialog initialResult keys:",
-      initialResult ? Object.keys(initialResult) : "no data",
-    );
-    console.log("🔍 CO2Dialog scope breakdown:", initialResult?.scopeBreakdown);
-    console.log(
-      "🔍 CO2Dialog scope breakdown type:",
-      typeof initialResult?.scopeBreakdown,
-    );
-    console.log(
-      "🔍 CO2Dialog scope breakdown JSON:",
-      JSON.stringify(initialResult?.scopeBreakdown, null, 2),
-    );
-    console.log("🔍 CO2Dialog scope totals:", {
-      scope1: initialResult?.scopeBreakdown?.scope1?.total,
-      scope2: initialResult?.scopeBreakdown?.scope2?.total,
-      scope3: initialResult?.scopeBreakdown?.scope3?.total,
-    });
-    console.log("🔍 CO2Dialog isNewCalculation:", isNewCalculation);
     setCurrentResult(initialResult);
     setIsEditing(isNewCalculation);
   }, [initialResult, isNewCalculation]);
@@ -103,8 +79,21 @@ const CO2Dialog: React.FC<CO2DialogProps> = ({
   const handleRecalculate = async () => {
     setIsRecalculating(true);
     try {
-      const result = await calculateAssetCO2Action(assetId);
-      if (result.success && "data" in result && result.data) {
+      const response = await fetch("/api/co2/calculate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ assetId }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      if (result.success && result.data) {
         setCurrentResult(result.data);
         toast({
           title: "Recalculation Complete",

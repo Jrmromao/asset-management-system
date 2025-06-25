@@ -62,8 +62,8 @@ type ActionResponse<T> = {
   success: boolean;
 };
 
-const getSession = () => {
-  const cookieStore = cookies();
+const getSession = async () => {
+  const cookieStore = await cookies();
   return {
     accessToken: cookieStore.get("sb-access-token")?.value,
     refreshToken: cookieStore.get("sb-refresh-token")?.value,
@@ -90,7 +90,7 @@ export const getAll = withAuth(
 
 // Wrapper function for client-side use
 export async function getAllCompanies(): Promise<ActionResponse<Company[]>> {
-  const session = getSession();
+  const session = await getSession();
   return getAll();
 }
 
@@ -120,7 +120,6 @@ export async function updateCompany(
   id: string,
   name: string,
 ): Promise<ActionResponse<Company>> {
-  const session = getSession();
   return update(id, name);
 }
 
@@ -148,22 +147,17 @@ export const remove = withAuth(
 export async function deleteCompany(
   id: string,
 ): Promise<ActionResponse<Company>> {
-  const session = getSession();
   return remove(id);
 }
 
 export async function registerCompany(
   data: RegistrationData,
 ): Promise<{ success: boolean; redirectUrl?: string; error?: string }> {
-  console.log("Starting company registration for:", data.companyName);
   const state: RegistrationState = { bucketCreated: false };
   let company;
 
   try {
-    console.log("Clerk client initialized.");
-
     // 1. Create company in Prisma
-    console.log("Step 1: Creating company in Prisma...");
     company = await prisma.company.create({
       data: {
         name: data.companyName,
@@ -172,10 +166,8 @@ export async function registerCompany(
       },
     });
     state.companyId = company.id;
-    console.log("Company created successfully with ID:", company.id);
 
     // 2. Create an Admin role
-    console.log("Step 2: Creating Admin role...");
     const adminRole = await prisma.role.create({
       data: {
         name: "Admin",
@@ -183,10 +175,8 @@ export async function registerCompany(
         isAdmin: true, // Mark as admin role
       },
     });
-    console.log("Admin role created with ID:", adminRole.id);
 
     // 3. Create the user in Prisma DB
-    console.log("Step 3: Creating user in Prisma...");
     if (!data.clerkUserId) {
       throw new Error("Clerk User ID is missing.");
     }
@@ -206,12 +196,8 @@ export async function registerCompany(
     if (!prismaUser) {
       throw new Error("Failed to create a user in the database.");
     }
-    console.log("Prisma user created successfully with ID:", prismaUser.id);
 
     // 4. Find or create a Clerk organization for the company
-    console.log(
-      "Step 4: Finding or creating a Clerk organization for the company...",
-    );
     let organization;
     const clerk = await clerkClient();
     const orgListResponse = await clerk.organizations.getOrganizationList({
@@ -223,18 +209,11 @@ export async function registerCompany(
 
     if (existingOrg) {
       organization = existingOrg;
-      console.log(
-        `Found existing organization for "${data.companyName}" with ID: ${organization.id}`,
-      );
     } else {
-      console.log(
-        `No organization found for "${data.companyName}", creating a new one...`,
-      );
       organization = await clerk.organizations.createOrganization({
         name: data.companyName,
         createdBy: data.clerkUserId,
       });
-      console.log("Clerk organization created with ID:", organization.id);
     }
 
     // Ensure the user is an admin in the organization
@@ -253,28 +232,21 @@ export async function registerCompany(
         userId: data.clerkUserId,
         role: "org:admin",
       });
-      console.log("User added to organization as admin.");
     } else if (membership.role !== "org:admin") {
       await clerk.organizations.updateOrganizationMembership({
         organizationId: organization.id,
         userId: data.clerkUserId,
         role: "org:admin",
       });
-      console.log("User membership updated to admin.");
-    } else {
-      console.log("User is already an admin of the organization.");
     }
 
     // 5. Update company with Clerk organization ID
-    console.log("Step 5: Updating company with Clerk organization ID...");
     await prisma.company.update({
       where: { id: company.id },
       data: { clerkOrgId: organization.id },
     });
-    console.log("Company updated with organization ID.");
 
     // 6. Update Clerk user metadata (SECURE - companyId in private metadata only)
-    console.log("Step 6: Updating Clerk user metadata...");
     await clerk.users.updateUserMetadata(data.clerkUserId, {
       publicMetadata: {
         userId: prismaUser.id,
@@ -287,10 +259,8 @@ export async function registerCompany(
         clerkOrgId: organization.id,
       },
     });
-    console.log("User metadata updated securely.");
 
     // 7. Send welcome email
-    console.log("Step 7: Sending welcome email...");
     try {
       await EmailService.sendEmail({
         to: data.email,
@@ -301,14 +271,12 @@ export async function registerCompany(
           companyName: data.companyName,
         },
       });
-      console.log("Welcome email sent successfully.");
     } catch (emailError) {
       console.warn("Failed to send welcome email:", emailError);
       // Don't fail the entire registration for email issues
     }
 
     // 8. Create Stripe Subscription
-    console.log("Step 8: Creating Stripe subscription...");
     const subscriptionResponse = await createSubscription(
       company.id,
       data.email,
@@ -325,34 +293,25 @@ export async function registerCompany(
     // For free plans, there might be no redirect URL
     const redirectUrl =
       subscriptionResponse.url || `/dashboard?subscription_success=true`;
-    console.log(
-      "Subscription created successfully. Redirect URL:",
-      redirectUrl,
-    );
 
     // 9. Initialize S3 Storage
-    console.log("Step 9: Initializing S3 storage...");
     try {
       const s3Service = S3Service.getInstance();
       await s3Service.initializeCompanyStorage(company.id);
       state.bucketCreated = true;
-      console.log("S3 storage initialized.");
     } catch (s3Error) {
       console.warn("Failed to initialize S3 storage:", s3Error);
       // Don't fail the entire registration for S3 issues
     }
 
     // 10. Bulk Insert Templates
-    console.log("Step 10: Bulk inserting templates...");
     try {
       await bulkInsertTemplates(company.id);
-      console.log("Templates inserted.");
     } catch (templateError) {
       console.warn("Failed to insert templates:", templateError);
       // Don't fail the entire registration for template issues
     }
 
-    console.log("Company registration completed successfully.");
     return { success: true, redirectUrl };
   } catch (error) {
     console.error("Error during company registration:", error);
@@ -365,7 +324,6 @@ export async function registerCompany(
           : "An unknown error occurred during registration",
     };
   } finally {
-    console.log("Disconnecting Prisma client.");
     await prisma.$disconnect();
   }
 }

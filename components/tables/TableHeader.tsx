@@ -78,7 +78,7 @@ export function DataTableHeader<TData>({
         <div className="flex items-center space-x-3">
           {showSearch && (() => {
             const nameColumn = table.getColumn("name");
-            const titleColumn = table.getColumn("title");
+            const titleColumn = nameColumn ? null : table.getColumn("title");
             const searchColumn = nameColumn || titleColumn;
             
             if (!searchColumn) return null;
@@ -94,7 +94,7 @@ export function DataTableHeader<TData>({
           })()}
           {(() => {
             const nameColumn = table.getColumn("name");
-            const titleColumn = table.getColumn("title");
+            const titleColumn = nameColumn ? null : table.getColumn("title");
             const searchColumn = nameColumn || titleColumn;
             const hasFilterValue = searchColumn && Boolean(searchColumn.getFilterValue());
             

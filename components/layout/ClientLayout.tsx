@@ -27,6 +27,7 @@ const ClientLayout = ({ children }: { children: React.ReactNode }) => {
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
+          storageKey="asset-management-theme"
         >
           <Toaster richColors />
           {showGA && process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID && (

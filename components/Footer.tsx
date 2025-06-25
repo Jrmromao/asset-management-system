@@ -64,8 +64,24 @@ const Footer = ({ isCollapsed = false }: { isCollapsed?: boolean }) => {
   }, []);
 
   if (!isLoaded || !user) {
-    // Show nothing until user data is loaded to prevent hydration mismatch
-    return null;
+    // Show consistent placeholder during loading to prevent hydration mismatch
+    return (
+      <div className="relative w-full">
+        <div
+          className={cn(
+            "flex items-center gap-3 w-full p-2 rounded-lg",
+            { "justify-center": isCollapsed }
+          )}
+        >
+          <div className="size-10 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse" />
+          {!isCollapsed && (
+            <div className="flex-1 min-w-0">
+              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+            </div>
+          )}
+        </div>
+      </div>
+    );
   }
 
   const username = formatUsername(user);

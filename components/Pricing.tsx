@@ -57,7 +57,7 @@ export default function PricingTable() {
       assetOveragePrice: 0.02, // $0.02 per additional asset per month
       features: [
         "Physical assets, licenses & accessories",
-        "Asset tracking & QR codes",
+        "Asset tracking & QR code generation",
         "Basic maintenance tracking",
         "Basic reporting & analytics",
         "Web-based dashboard",
@@ -79,12 +79,12 @@ export default function PricingTable() {
         "Everything in Launch, plus:",
         "License compliance tracking",
         "Accessory inventory management",
-        "AI-powered cost optimization",
+        "AI-powered cost optimization & insights",
         "Advanced analytics & dashboards",
-        "CO2 impact tracking",
-        "Automated reporting",
-        "Advanced maintenance scheduling",
-        "API access",
+        "CO2 footprint tracking & analysis",
+        "Automated reporting & scheduling",
+        "Advanced maintenance workflows",
+        "REST API access",
         "Priority email support"
       ],
       badge: "Most Popular",
@@ -100,14 +100,14 @@ export default function PricingTable() {
       assetOveragePrice: 0.01, // $0.01 per additional asset per month
       features: [
         "Everything in Scale, plus:",
-        "Advanced AI analytics",
-        "Multi-company management",
+        "Advanced AI analytics & insights",
         "Custom reporting & dashboards",
         "Advanced user permissions",
         "Dedicated email support",
         "Advanced API features",
         "Data export & backup",
         "Priority feature requests",
+        "Coming soon: Multi-company management",
         "Coming soon: SSO integration",
         "Coming soon: Custom branding",
         "Coming soon: Phone support"
@@ -543,7 +543,7 @@ export default function PricingTable() {
           </div>
           <div>
             <h4 className="font-semibold text-gray-900 mb-2">What AI features are currently available?</h4>
-            <p className="text-sm text-gray-600">AI-powered cost optimization analysis for licenses and accessories, CO2 impact tracking, and automated recommendations to reduce expenses and improve efficiency.</p>
+            <p className="text-sm text-gray-600">AI-powered cost optimization analysis, CO2 footprint calculation and tracking, automated maintenance recommendations, and intelligent insights for asset lifecycle management.</p>
           </div>
           <div>
             <h4 className="font-semibold text-gray-900 mb-2">What types of items can I track?</h4>
@@ -551,7 +551,7 @@ export default function PricingTable() {
           </div>
           <div>
             <h4 className="font-semibold text-gray-900 mb-2">How does maintenance tracking work?</h4>
-            <p className="text-sm text-gray-600">Schedule maintenance events, track costs, assign technicians, and monitor asset health. The system includes automated CO2 impact analysis for maintenance activities.</p>
+            <p className="text-sm text-gray-600">Schedule maintenance events, track costs, assign technicians, monitor asset health, and analyze environmental impact. Includes automated CO2 footprint calculation for maintenance activities.</p>
           </div>
           <div>
             <h4 className="font-semibold text-gray-900 mb-2">Is there an API available?</h4>
