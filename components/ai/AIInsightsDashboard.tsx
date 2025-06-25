@@ -136,13 +136,13 @@ export function AIInsightsDashboard() {
         });
         setData(result.data);
         toast.success(
-          `AI analysis complete! Generated ${result.data.insights.length} insights.`,
+          `AI analysis complete! Generated ${result.data?.insights?.length || 0} insights.`,
         );
       } else {
         console.log("❌ AI Dashboard: Analysis failed", {
           error: result.error,
         });
-        toast.error(result.error || "Analysis failed");
+        toast.error(result.error || "Analysis failed. Please check your AI provider configuration.");
       }
     } catch (error) {
       console.error("💥 AI Dashboard: Analysis error:", error);

@@ -1,5 +1,3 @@
-"use server";
-
 import {
   S3Client,
   ListObjectsV2Command,
