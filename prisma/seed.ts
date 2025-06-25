@@ -41,19 +41,20 @@ async function main() {
       id: "cmcavp31o000x8ozo07zcd7mu",
     };
 
-    await seedStatusLabels(prisma, company.id);
-    await seedCategories(prisma, company.id);
-    await seedDepartments(prisma, company.id);
-    await seedLocations(prisma, company.id);
-    await seedInventories(prisma, company.id);
-    await seedSuppliers(prisma, company.id);
-    await seedManufacturers(prisma);
-    await seedModels(prisma, company.id);
-    await seedFormTemplates(prisma, company.id);
+    // await seedStatusLabels(prisma, company.id);
+    // await seedCategories(prisma, company.id);
+    // await seedDepartments(prisma, company.id);
+    // await seedLocations(prisma, company.id);
+    // await seedInventories(prisma, company.id);
+    // await seedSuppliers(prisma, company.id);
+    // await seedManufacturers(prisma);
+    // await seedModels(prisma, company.id);
+    // await seedFormTemplates(prisma, company.id);
+
     await seedAssets(prisma, company.id);
-    await seedLicenses(prisma, company.id);
-    await seedAccessories(prisma, company.id);
-    await seedUserItems(prisma, company.id);
+    // await seedLicenses(prisma, company.id);
+    // await seedAccessories(prisma, company.id);
+    // await seedUserItems(prisma, company.id);
 
     console.log("🎉 Database seeding completed successfully!");
     console.log("📊 Summary:");

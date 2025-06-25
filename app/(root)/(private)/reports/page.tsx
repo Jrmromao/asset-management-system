@@ -286,55 +286,8 @@ const UnifiedReportsPage = () => {
             </p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm">
-              <Share2 className="h-4 w-4 mr-2" />
-              Share
-            </Button>
-            <Button variant="outline" size="sm">
-              <Download className="h-4 w-4 mr-2" />
-              Export
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={async () => {
-                try {
-                  const response = await fetch('/api/reports/test', { method: 'POST' });
-                  const result = await response.json();
-                  if (result.success) {
-                    window.location.reload(); // Refresh to show the new test report
-                  } else {
-                    alert('Error creating test report: ' + result.error);
-                  }
-                } catch (error) {
-                  alert('Failed to create test report');
-                }
-              }}
-            >
-              <FileText className="h-4 w-4 mr-2" />
-              Test Report
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={async () => {
-                try {
-                  const response = await fetch('/api/reports/fix-paths', { method: 'POST' });
-                  const result = await response.json();
-                  if (result.success) {
-                    alert(`Fixed ${result.data.reportsFixed} report paths`);
-                    window.location.reload(); // Refresh to show the updated reports
-                  } else {
-                    alert('Error fixing paths: ' + result.error);
-                  }
-                } catch (error) {
-                  alert('Failed to fix report paths');
-                }
-              }}
-            >
-              <Settings2 className="h-4 w-4 mr-2" />
-              Fix Paths
-            </Button>
+    
+       
             <ReportBuilder />
           </div>
         </div>

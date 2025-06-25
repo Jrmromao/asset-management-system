@@ -255,6 +255,9 @@ const CO2FootprintCell = ({ row }: { row: any }) => {
           initialResult={calculationResult}
           isNewCalculation={isNewCalculation}
           onSave={handleSaveResult}
+          manufacturerName={row.original.model?.manufacturer?.name}
+          manufacturerUrl={row.original.model?.manufacturer?.url}
+          manufacturerSupportUrl={row.original.model?.manufacturer?.supportUrl}
         />
       )}
     </>

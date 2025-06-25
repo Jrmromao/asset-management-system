@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -79,6 +79,9 @@ const ReportBuilder = () => {
   const [open, setOpen] = useState(false);
   const [companyId, setCompanyId] = useState<string>("");
   const [step, setStep] = useState<"configure" | "preview" | "generating">("configure");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const generatingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const dialogWasClosedDuringGeneration = useRef(false);
 
   const { toast } = useToast();
   const createConfiguration = useCreateReportConfiguration();
@@ -269,6 +272,8 @@ const ReportBuilder = () => {
     if (!isValid) return;
 
     setStep("generating");
+    setIsGenerating(true);
+    dialogWasClosedDuringGeneration.current = false;
 
     // First save the configuration
     const formData = form.getValues();
@@ -293,7 +298,6 @@ const ReportBuilder = () => {
 
     try {
       const configResult = await createConfiguration.mutateAsync(configuration);
-      
       // Then generate the report
       const generateResult = await generateReport.mutateAsync({
         configurationId: configResult.data.id,
@@ -305,13 +309,17 @@ const ReportBuilder = () => {
         description: `Your report is being generated. Estimated completion: ${generateResult.data.estimatedCompletion}`,
       });
 
-      setTimeout(() => {
-        toast({
-          title: "Report Generated Successfully",
-          description: "Your custom report has been generated and is available in the Recent Reports section.",
-        });
+      // Simulate async report generation (replace with real polling if needed)
+      generatingTimeoutRef.current = setTimeout(() => {
+        setIsGenerating(false);
+        setStep("configure");
         resetForm();
-        setOpen(false);
+        if (open || dialogWasClosedDuringGeneration.current) {
+          toast({
+            title: "Report Generated Successfully",
+            description: "Your custom report has been generated and is available in the Recent Reports section.",
+          });
+        }
       }, 3000);
 
     } catch (error) {
@@ -321,6 +329,7 @@ const ReportBuilder = () => {
         variant: "destructive",
       });
       setStep("configure");
+      setIsGenerating(false);
     }
   };
 
@@ -330,8 +339,13 @@ const ReportBuilder = () => {
   };
 
   const handleClose = () => {
+    if (isGenerating) {
+      dialogWasClosedDuringGeneration.current = true;
+    }
     setOpen(false);
-    resetForm();
+    if (!isGenerating) {
+      resetForm();
+    }
   };
 
   const getSelectedMetricsDetails = () => {
@@ -364,8 +378,20 @@ const ReportBuilder = () => {
     { id: "quarterly", name: "Quarterly" },
   ];
 
+  // Clean up timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (generatingTimeoutRef.current) {
+        clearTimeout(generatingTimeoutRef.current);
+      }
+    };
+  }, []);
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(val) => {
+      if (!val) handleClose();
+      else setOpen(true);
+    }}>
       <DialogTrigger asChild>
         <Button className="bg-emerald-600 hover:bg-emerald-700">
           <Plus className="h-4 w-4 mr-2" />
@@ -394,6 +420,9 @@ const ReportBuilder = () => {
                 <Clock className="h-4 w-4" />
                 <span>Estimated completion: 2-3 minutes</span>
               </div>
+              <Button variant="outline" onClick={handleClose} type="button">
+                Close
+              </Button>
             </div>
           ) : (
             <Form {...form}>

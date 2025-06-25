@@ -37,7 +37,7 @@ export class CO2ConsistencyService {
   /**
    * Normalize asset data to handle different ways of describing the same asset
    */
-  private static normalizeAssetData(asset: AssetFingerprint): NormalizedAsset {
+  private static normalizeAssetData(asset: AssetFingerprint): Omit<NormalizedAsset, "fingerprint"> {
     // Normalize manufacturer names
     const normalizedManufacturer = this.normalizeManufacturer(
       asset.manufacturer,
@@ -54,19 +54,11 @@ export class CO2ConsistencyService {
     // Determine asset type from name/model
     const assetType = this.determineAssetType(asset.type, asset.model);
 
-    const fingerprint = this.createAssetFingerprint({
-      manufacturer: normalizedManufacturer,
-      model: normalizedModel,
-      category: normalizedCategory,
-      type: assetType,
-    });
-
     return {
       manufacturer: normalizedManufacturer,
       model: normalizedModel,
       category: normalizedCategory,
       type: assetType,
-      fingerprint,
     };
   }
 

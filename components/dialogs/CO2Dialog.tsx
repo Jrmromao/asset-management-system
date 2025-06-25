@@ -41,6 +41,9 @@ interface CO2DialogProps {
   initialResult: CO2CalculationResult;
   isNewCalculation?: boolean;
   onSave?: (result: CO2CalculationResult) => void;
+  manufacturerName?: string;
+  manufacturerUrl?: string;
+  manufacturerSupportUrl?: string;
 }
 
 interface RefinementParams {
@@ -58,6 +61,9 @@ const CO2Dialog: React.FC<CO2DialogProps> = ({
   initialResult,
   isNewCalculation = false,
   onSave,
+  manufacturerName,
+  manufacturerUrl,
+  manufacturerSupportUrl,
 }) => {
   const { toast } = useToast();
   const [isRecalculating, setIsRecalculating] = useState(false);
@@ -198,6 +204,34 @@ const CO2Dialog: React.FC<CO2DialogProps> = ({
           <DialogDescription>
             Comprehensive carbon footprint analysis for {assetName}
           </DialogDescription>
+          {manufacturerName && (manufacturerUrl || manufacturerSupportUrl) && (
+            <div className="mt-2 flex flex-wrap gap-4 items-center text-sm">
+              <span className="font-medium">Manufacturer:</span>
+              <span className="font-semibold text-gray-900">{manufacturerName}</span>
+              {manufacturerUrl && (
+                <a
+                  href={manufacturerUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-blue-600 hover:underline"
+                >
+                  Website
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 3h7m0 0v7m0-7L10 14m-7 7h7a2 2 0 002-2v-7" /></svg>
+                </a>
+              )}
+              {manufacturerSupportUrl && (
+                <a
+                  href={manufacturerSupportUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-blue-600 hover:underline"
+                >
+                  Support
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 3h7m0 0v7m0-7L10 14m-7 7h7a2 2 0 002-2v-7" /></svg>
+                </a>
+              )}
+            </div>
+          )}
         </DialogHeader>
 
         <Tabs defaultValue="overview" className="w-full">

@@ -5,11 +5,13 @@ import {
   Monitor,
   Smartphone,
   HardDrive,
+  Server,
+  Printer,
+  Tablet,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AssetTypeCard } from "@/components/dashboard/AssetTypeCard";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
 import {
   Card,
   CardContent,
@@ -17,52 +19,25 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { AssetTypeCardProps } from "@/components/dashboard/types/dashboard";
 import { Skeleton } from "@/components/ui/skeleton";
-
-interface AssetOverviewData {
-  name: string;
-  count: number;
-  usage: number;
-  status: AssetTypeCardProps["status"];
-}
-
-const mockAssetOverviewData: AssetOverviewData[] = [
-  {
-    name: "Laptops",
-    count: 128,
-    usage: 85,
-    status: "Healthy",
-  },
-  {
-    name: "Monitors",
-    count: 256,
-    usage: 92,
-    status: "Healthy",
-  },
-  {
-    name: "Mobile Devices",
-    count: 64,
-    usage: 70,
-    status: "Warning",
-  },
-];
+import { useAssetDistribution } from "@/hooks/queries/useAssetDistribution";
 
 export const AssetOverview = () => {
   const navigate = useRouter();
-  const [overviewData, setOverviewData] = useState<AssetOverviewData[]>(
-    mockAssetOverviewData,
-  );
-  const [isLoading, setIsLoading] = useState(false);
+  const { data: distributionData, isLoading, error } = useAssetDistribution();
 
   const getIconForAsset = (assetName: string) => {
     const lowerCaseName = assetName.toLowerCase();
+    
     if (lowerCaseName.includes("laptop")) return <Laptop className="h-5 w-5" />;
-    if (lowerCaseName.includes("monitor"))
-      return <Monitor className="h-5 w-5" />;
-    if (lowerCaseName.includes("mobile")) {
+    if (lowerCaseName.includes("monitor")) return <Monitor className="h-5 w-5" />;
+    if (lowerCaseName.includes("mobile") || lowerCaseName.includes("phone")) {
       return <Smartphone className="h-5 w-5" />;
     }
+    if (lowerCaseName.includes("tablet")) return <Tablet className="h-5 w-5" />;
+    if (lowerCaseName.includes("server")) return <Server className="h-5 w-5" />;
+    if (lowerCaseName.includes("printer")) return <Printer className="h-5 w-5" />;
+    
     return <HardDrive className="h-5 w-5" />;
   };
 
@@ -70,8 +45,8 @@ export const AssetOverview = () => {
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
-          <CardTitle>Asset by Type</CardTitle>
-          <CardDescription>A breakdown of your assets by type.</CardDescription>
+          <CardTitle>Asset Distribution</CardTitle>
+          <CardDescription>A breakdown of your assets by category.</CardDescription>
         </div>
         <Button
           variant="outline"
@@ -88,18 +63,30 @@ export const AssetOverview = () => {
               <Skeleton key={i} className="h-16 w-full" />
             ))}
           </div>
-        ) : (
+        ) : error ? (
+          <div className="text-center py-8 text-red-500">
+            <HardDrive className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <p>Error loading asset data</p>
+            <p className="text-sm">{error}</p>
+          </div>
+        ) : distributionData.length > 0 ? (
           <div className="space-y-4">
-            {overviewData.map((asset) => (
+            {distributionData.map((asset) => (
               <AssetTypeCard
                 key={asset.name}
                 icon={getIconForAsset(asset.name)}
                 name={asset.name}
                 devices={asset.count}
-                usage={asset.usage}
+                usage={asset.utilization}
                 status={asset.status}
               />
             ))}
+          </div>
+        ) : (
+          <div className="text-center py-8 text-gray-500">
+            <HardDrive className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <p>No assets found</p>
+            <p className="text-sm">Add your first asset to see the distribution</p>
           </div>
         )}
       </CardContent>

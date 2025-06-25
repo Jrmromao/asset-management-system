@@ -916,3 +916,87 @@ export const exportAssetsToCSV = withAuth(
     }
   },
 );
+
+export const getAssetDistribution = withAuth(
+  async (user): Promise<{ success: boolean; data: any[]; error?: string }> => {
+    try {
+      const companyId = user.privateMetadata?.companyId as string;
+      if (!companyId) {
+        return {
+          success: false,
+          data: [],
+          error: "User is not associated with a company",
+        };
+      }
+
+      // Get assets grouped by category with counts
+      const assetsByCategory = await prisma.asset.groupBy({
+        by: ["categoryId"],
+        where: { companyId },
+        _count: {
+          id: true,
+        },
+      });
+
+      // Get category details
+      const categoryIds = assetsByCategory
+        .map((item) => item.categoryId)
+        .filter((id): id is string => !!id);
+
+      const categories = await prisma.category.findMany({
+        where: { id: { in: categoryIds } },
+      });
+
+      const categoryMap = new Map(
+        categories.map((cat) => [cat.id, cat.name])
+      );
+
+      // Get total assets for percentage calculation
+      const totalAssets = await prisma.asset.count({ where: { companyId } });
+
+      // Calculate utilization (assigned vs unassigned)
+      const assignedAssets = await prisma.asset.count({
+        where: { companyId, userId: { not: null } },
+      });
+
+      const utilizationRate = totalAssets > 0 ? (assignedAssets / totalAssets) * 100 : 0;
+
+      // Build distribution data
+      const distributionData = assetsByCategory.map((item) => {
+        const categoryName = item.categoryId 
+          ? categoryMap.get(item.categoryId) || "Uncategorized"
+          : "Uncategorized";
+        
+        const count = item._count.id;
+        const percentage = totalAssets > 0 ? (count / totalAssets) * 100 : 0;
+
+        // Determine status based on utilization and category health
+        let status: "Healthy" | "Warning" | "Critical" = "Healthy";
+        if (percentage < 10) {
+          status = "Warning";
+        } else if (percentage < 5) {
+          status = "Critical";
+        }
+
+        return {
+          name: categoryName,
+          count,
+          percentage: Math.round(percentage),
+          status,
+          utilization: Math.round(utilizationRate),
+        };
+      });
+
+      // Sort by count descending
+      distributionData.sort((a, b) => b.count - a.count);
+
+      return { success: true, data: distributionData };
+    } catch (error) {
+      return {
+        success: false,
+        data: [],
+        error: error instanceof Error ? error.message : "An unknown error occurred",
+      };
+    }
+  },
+);
