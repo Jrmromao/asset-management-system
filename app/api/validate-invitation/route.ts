@@ -7,9 +7,9 @@ export async function POST(request: Request) {
     const { token } = await request.json();
 
     if (!token) {
-      return NextResponse.json({ 
-        success: false, 
-        error: "Missing invitation token" 
+      return NextResponse.json({
+        success: false,
+        error: "Missing invitation token",
       });
     }
 
@@ -23,25 +23,25 @@ export async function POST(request: Request) {
     });
 
     if (!invitation) {
-      return NextResponse.json({ 
-        success: false, 
-        error: "Invalid invitation link" 
+      return NextResponse.json({
+        success: false,
+        error: "Invalid invitation link",
       });
     }
 
     // Check if expired
     if (invitation.expiresAt && invitation.expiresAt < new Date()) {
-      return NextResponse.json({ 
-        success: false, 
-        error: "Invitation has expired" 
+      return NextResponse.json({
+        success: false,
+        error: "Invitation has expired",
       });
     }
 
     // Check if already used
     if (invitation.status !== "PENDING") {
-      return NextResponse.json({ 
-        success: false, 
-        error: "Invitation has already been used" 
+      return NextResponse.json({
+        success: false,
+        error: "Invitation has already been used",
       });
     }
 
@@ -58,9 +58,9 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error("Validation error:", error);
-    return NextResponse.json({ 
-      success: false, 
-      error: "Failed to validate invitation" 
+    return NextResponse.json({
+      success: false,
+      error: "Failed to validate invitation",
     });
   }
-} 
+}

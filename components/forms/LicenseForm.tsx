@@ -23,9 +23,21 @@ import { useLocationQuery } from "@/hooks/queries/useLocationQuery";
 
 // UI Components
 import { Card, CardContent } from "@/components/ui/card";
-import { Form, FormControl, FormField, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { SelectWithButton } from "@/components/SelectWithButton";
 import CustomInput from "@/components/CustomInput";
 import CustomPriceInput from "@/components/CustomPriceInput";
@@ -217,7 +229,10 @@ const LicenseForm = () => {
     },
     {
       name: "Pricing Information",
-      isValid: !!form.watch("purchasePrice") || !!form.watch("monthlyPrice") || !!form.watch("annualPrice"),
+      isValid:
+        !!form.watch("purchasePrice") ||
+        !!form.watch("monthlyPrice") ||
+        !!form.watch("annualPrice"),
     },
     {
       name: "Cost Management",
@@ -365,7 +380,7 @@ const LicenseForm = () => {
                             form={form}
                           />
                         </div>
-                        
+
                         <div className="grid grid-cols-3 gap-6">
                           <CustomPriceInput
                             name="monthlyPrice"
@@ -396,14 +411,23 @@ const LicenseForm = () => {
                                 <div>
                                   <FormLabel>Billing Cycle</FormLabel>
                                   <FormControl>
-                                    <Select onValueChange={field.onChange} value={field.value}>
+                                    <Select
+                                      onValueChange={field.onChange}
+                                      value={field.value}
+                                    >
                                       <SelectTrigger>
                                         <SelectValue placeholder="Select billing cycle" />
                                       </SelectTrigger>
                                       <SelectContent>
-                                        <SelectItem value="monthly">Monthly</SelectItem>
-                                        <SelectItem value="annual">Annual</SelectItem>
-                                        <SelectItem value="one-time">One-time</SelectItem>
+                                        <SelectItem value="monthly">
+                                          Monthly
+                                        </SelectItem>
+                                        <SelectItem value="annual">
+                                          Annual
+                                        </SelectItem>
+                                        <SelectItem value="one-time">
+                                          One-time
+                                        </SelectItem>
                                       </SelectContent>
                                     </Select>
                                   </FormControl>

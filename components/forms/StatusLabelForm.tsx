@@ -104,6 +104,7 @@ export default function StatusLabelForm({
                 <CustomInput
                   {...field}
                   control={form.control}
+                  label="Name"
                   placeholder="Enter status label name"
                   disabled={isLoading}
                   required

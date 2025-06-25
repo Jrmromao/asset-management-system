@@ -44,7 +44,7 @@ const UserForm = () => {
           if (result.invitationUrl) {
             toast.success(
               `Invitation created! Share this link: ${result.invitationUrl}`,
-              { duration: 10000 }
+              { duration: 10000 },
             );
           } else {
             toast.success(result.message || "Invitation sent successfully!");

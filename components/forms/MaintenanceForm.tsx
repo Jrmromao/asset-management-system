@@ -41,7 +41,10 @@ interface MaintenanceFormProps {
   preselectedAssetId?: string;
 }
 
-export const MaintenanceForm = ({ onSuccess, preselectedAssetId }: MaintenanceFormProps) => {
+export const MaintenanceForm = ({
+  onSuccess,
+  preselectedAssetId,
+}: MaintenanceFormProps) => {
   const [assets, setAssets] = useState<SearchableSelectItem[]>([]);
   const [statusLabels, setStatusLabels] = useState<SearchableSelectItem[]>([]);
 

@@ -1,8 +1,4 @@
-import {
-  getRoleById,
-  remove,
-  update,
-} from "@/lib/actions/role.actions";
+import { getRoleById, remove, update } from "@/lib/actions/role.actions";
 import { NextResponse } from "next/server";
 
 export async function GET(

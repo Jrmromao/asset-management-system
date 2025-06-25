@@ -12,23 +12,23 @@ export const DashboardHeader = () => {
   // Get username from public metadata or fallback to firstName/lastName
   const getDisplayName = () => {
     if (!user) return "";
-    
+
     // Try to get username from public metadata first
     const publicMetadata = user.publicMetadata as any;
     if (publicMetadata?.username) {
       return `, ${publicMetadata.username}`;
     }
-    
+
     // Fallback to firstName if available
     if (user.firstName) {
       return `, ${user.firstName}`;
     }
-    
+
     // Fallback to username field if available
     if (user.username) {
       return `, ${user.username}`;
     }
-    
+
     return "";
   };
 

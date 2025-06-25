@@ -25,38 +25,51 @@ import {
 const CareersPage = () => {
   const [selectedDepartment, setSelectedDepartment] = useState("All");
 
-  const departments = ["All", "Engineering", "Product", "Sales", "Marketing", "Customer Success"];
+  const departments = [
+    "All",
+    "Engineering",
+    "Product",
+    "Sales",
+    "Marketing",
+    "Customer Success",
+  ];
 
   const benefits = [
     {
       icon: Heart,
       title: "Health & Wellness",
-      description: "Comprehensive health, dental, and vision insurance plus wellness stipend",
+      description:
+        "Comprehensive health, dental, and vision insurance plus wellness stipend",
     },
     {
       icon: Coffee,
       title: "Flexible Work",
-      description: "Remote-first culture with flexible hours and co-working space allowance",
+      description:
+        "Remote-first culture with flexible hours and co-working space allowance",
     },
     {
       icon: Laptop,
       title: "Equipment & Setup",
-      description: "Latest MacBook Pro, monitor, and $1,000 home office setup budget",
+      description:
+        "Latest MacBook Pro, monitor, and $1,000 home office setup budget",
     },
     {
       icon: TrendingUp,
       title: "Growth & Learning",
-      description: "$2,000 annual learning budget for courses, conferences, and certifications",
+      description:
+        "$2,000 annual learning budget for courses, conferences, and certifications",
     },
     {
       icon: Plane,
       title: "Time Off",
-      description: "Unlimited PTO policy plus company-wide retreat twice per year",
+      description:
+        "Unlimited PTO policy plus company-wide retreat twice per year",
     },
     {
       icon: DollarSign,
       title: "Equity & Compensation",
-      description: "Competitive salary, equity package, and annual performance bonuses",
+      description:
+        "Competitive salary, equity package, and annual performance bonuses",
     },
   ];
 
@@ -68,7 +81,8 @@ const CareersPage = () => {
       location: "Remote (US/EU)",
       type: "Full-time",
       salary: "$140,000 - $180,000",
-      description: "Build scalable web applications using Next.js, TypeScript, and modern cloud infrastructure. Work on our core asset management platform serving thousands of users.",
+      description:
+        "Build scalable web applications using Next.js, TypeScript, and modern cloud infrastructure. Work on our core asset management platform serving thousands of users.",
       requirements: [
         "5+ years of full-stack development experience",
         "Expert in React, Node.js, and TypeScript",
@@ -85,7 +99,8 @@ const CareersPage = () => {
       location: "San Francisco, CA / Remote",
       type: "Full-time",
       salary: "$160,000 - $200,000",
-      description: "Develop and deploy machine learning models for carbon footprint calculation, asset lifecycle prediction, and intelligent automation features.",
+      description:
+        "Develop and deploy machine learning models for carbon footprint calculation, asset lifecycle prediction, and intelligent automation features.",
       requirements: [
         "MS/PhD in Computer Science, Machine Learning, or related field",
         "3+ years of production ML experience",
@@ -102,7 +117,8 @@ const CareersPage = () => {
       location: "Remote",
       type: "Full-time",
       salary: "$130,000 - $160,000",
-      description: "Lead product strategy for our sustainability features including carbon tracking, ESG reporting, and regulatory compliance tools.",
+      description:
+        "Lead product strategy for our sustainability features including carbon tracking, ESG reporting, and regulatory compliance tools.",
       requirements: [
         "4+ years of product management experience",
         "Background in sustainability, ESG, or environmental science",
@@ -119,7 +135,8 @@ const CareersPage = () => {
       location: "New York, NY / Remote",
       type: "Full-time",
       salary: "$120,000 - $150,000 + Commission",
-      description: "Drive revenue growth by selling our platform to Fortune 500 companies. Manage full sales cycle from lead generation to contract negotiation.",
+      description:
+        "Drive revenue growth by selling our platform to Fortune 500 companies. Manage full sales cycle from lead generation to contract negotiation.",
       requirements: [
         "5+ years of enterprise B2B sales experience",
         "Track record of exceeding sales quotas",
@@ -136,7 +153,8 @@ const CareersPage = () => {
       location: "Remote",
       type: "Full-time",
       salary: "$110,000 - $140,000",
-      description: "Design intuitive user experiences for complex enterprise workflows. Lead design systems and collaborate closely with engineering teams.",
+      description:
+        "Design intuitive user experiences for complex enterprise workflows. Lead design systems and collaborate closely with engineering teams.",
       requirements: [
         "5+ years of UX design experience",
         "Strong portfolio demonstrating B2B SaaS design",
@@ -153,7 +171,8 @@ const CareersPage = () => {
       location: "Remote",
       type: "Full-time",
       salary: "$90,000 - $120,000",
-      description: "Create compelling content that educates our audience about asset management and sustainability. Build thought leadership in the industry.",
+      description:
+        "Create compelling content that educates our audience about asset management and sustainability. Build thought leadership in the industry.",
       requirements: [
         "3+ years of content marketing experience",
         "Excellent writing and storytelling skills",
@@ -170,7 +189,8 @@ const CareersPage = () => {
       location: "Remote",
       type: "Full-time",
       salary: "$85,000 - $110,000",
-      description: "Ensure customer success and drive expansion revenue. Work closely with enterprise clients to maximize value from our platform.",
+      description:
+        "Ensure customer success and drive expansion revenue. Work closely with enterprise clients to maximize value from our platform.",
       requirements: [
         "3+ years of customer success experience",
         "Experience with enterprise SaaS customers",
@@ -187,7 +207,8 @@ const CareersPage = () => {
       location: "Remote",
       type: "Full-time",
       salary: "$130,000 - $160,000",
-      description: "Build and maintain our cloud infrastructure. Ensure high availability, security, and scalability of our platform.",
+      description:
+        "Build and maintain our cloud infrastructure. Ensure high availability, security, and scalability of our platform.",
       requirements: [
         "4+ years of DevOps/Infrastructure experience",
         "Expertise in AWS/GCP and Infrastructure as Code",
@@ -199,9 +220,10 @@ const CareersPage = () => {
     },
   ];
 
-  const filteredJobs = selectedDepartment === "All" 
-    ? jobs 
-    : jobs.filter(job => job.department === selectedDepartment);
+  const filteredJobs =
+    selectedDepartment === "All"
+      ? jobs
+      : jobs.filter((job) => job.department === selectedDepartment);
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
@@ -211,16 +233,28 @@ const CareersPage = () => {
           <div className="flex items-center gap-8">
             <HeaderIcon />
             <nav className="hidden md:flex gap-8">
-              <Link href="/" className="text-sm font-medium hover:text-green-600 transition-colors">
+              <Link
+                href="/"
+                className="text-sm font-medium hover:text-green-600 transition-colors"
+              >
                 Home
               </Link>
-              <Link href="/about" className="text-sm font-medium hover:text-green-600 transition-colors">
+              <Link
+                href="/about"
+                className="text-sm font-medium hover:text-green-600 transition-colors"
+              >
                 About
               </Link>
-              <Link href="/careers" className="text-sm font-medium text-green-600">
+              <Link
+                href="/careers"
+                className="text-sm font-medium text-green-600"
+              >
                 Careers
               </Link>
-              <Link href="/contact" className="text-sm font-medium hover:text-green-600 transition-colors">
+              <Link
+                href="/contact"
+                className="text-sm font-medium hover:text-green-600 transition-colors"
+              >
                 Contact
               </Link>
             </nav>
@@ -253,8 +287,9 @@ const CareersPage = () => {
               <span className="text-green-600">Sustainable Future</span>
             </h1>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
-              We're looking for passionate individuals who want to make a real impact 
-              on how organizations manage their assets and environmental footprint.
+              We're looking for passionate individuals who want to make a real
+              impact on how organizations manage their assets and environmental
+              footprint.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button size="lg" className="bg-green-600 hover:bg-green-700">
@@ -272,10 +307,12 @@ const CareersPage = () => {
       <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-3xl lg:text-4xl font-bold mb-6 text-gray-900">Why Work at EcoKeepr?</h2>
+            <h2 className="text-3xl lg:text-4xl font-bold mb-6 text-gray-900">
+              Why Work at EcoKeepr?
+            </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              We offer competitive benefits and a culture that values work-life balance, 
-              continuous learning, and making a positive impact.
+              We offer competitive benefits and a culture that values work-life
+              balance, continuous learning, and making a positive impact.
             </p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -283,7 +320,9 @@ const CareersPage = () => {
               <Card key={index} className="h-full">
                 <CardContent className="p-6">
                   <benefit.icon className="w-12 h-12 text-green-600 mb-4" />
-                  <h3 className="text-xl font-semibold mb-3 text-gray-900">{benefit.title}</h3>
+                  <h3 className="text-xl font-semibold mb-3 text-gray-900">
+                    {benefit.title}
+                  </h3>
                   <p className="text-gray-600">{benefit.description}</p>
                 </CardContent>
               </Card>
@@ -296,12 +335,14 @@ const CareersPage = () => {
       <section className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-3xl lg:text-4xl font-bold mb-6 text-gray-900">Open Positions</h2>
+            <h2 className="text-3xl lg:text-4xl font-bold mb-6 text-gray-900">
+              Open Positions
+            </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
-              We're growing fast and looking for talented people to join our team. 
-              Don't see the perfect role? Send us your resume anyway!
+              We're growing fast and looking for talented people to join our
+              team. Don't see the perfect role? Send us your resume anyway!
             </p>
-            
+
             {/* Department Filter */}
             <div className="flex flex-wrap justify-center gap-2 mb-8">
               {departments.map((dept) => (
@@ -310,7 +351,11 @@ const CareersPage = () => {
                   variant={selectedDepartment === dept ? "default" : "outline"}
                   size="sm"
                   onClick={() => setSelectedDepartment(dept)}
-                  className={selectedDepartment === dept ? "bg-green-600 hover:bg-green-700" : ""}
+                  className={
+                    selectedDepartment === dept
+                      ? "bg-green-600 hover:bg-green-700"
+                      : ""
+                  }
                 >
                   {dept}
                 </Button>
@@ -325,7 +370,9 @@ const CareersPage = () => {
                 <CardHeader>
                   <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                     <div>
-                      <CardTitle className="text-xl text-gray-900 mb-2">{job.title}</CardTitle>
+                      <CardTitle className="text-xl text-gray-900 mb-2">
+                        {job.title}
+                      </CardTitle>
                       <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
                         <div className="flex items-center gap-1">
                           <Briefcase className="w-4 h-4" />
@@ -356,7 +403,9 @@ const CareersPage = () => {
                 <CardContent>
                   <p className="text-gray-600 mb-4">{job.description}</p>
                   <div>
-                    <h4 className="font-semibold text-gray-900 mb-2">Requirements:</h4>
+                    <h4 className="font-semibold text-gray-900 mb-2">
+                      Requirements:
+                    </h4>
                     <ul className="text-sm text-gray-600 space-y-1">
                       {job.requirements.map((req, index) => (
                         <li key={index} className="flex items-start gap-2">
@@ -373,7 +422,9 @@ const CareersPage = () => {
 
           {filteredJobs.length === 0 && (
             <div className="text-center py-12">
-              <p className="text-gray-600">No positions found for the selected department.</p>
+              <p className="text-gray-600">
+                No positions found for the selected department.
+              </p>
             </div>
           )}
         </div>
@@ -386,14 +437,22 @@ const CareersPage = () => {
             Don't See the Perfect Role?
           </h2>
           <p className="text-xl text-green-100 mb-8 max-w-3xl mx-auto">
-            We're always interested in connecting with talented individuals who share 
-            our passion for sustainability and technology. Send us your resume!
+            We're always interested in connecting with talented individuals who
+            share our passion for sustainability and technology. Send us your
+            resume!
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" className="bg-white text-green-600 hover:bg-green-50">
+            <Button
+              size="lg"
+              className="bg-white text-green-600 hover:bg-green-50"
+            >
               Send Resume
             </Button>
-            <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-green-600">
+            <Button
+              size="lg"
+              variant="outline"
+              className="border-white text-white hover:bg-white hover:text-green-600"
+            >
               Learn More About Us
             </Button>
           </div>
@@ -405,4 +464,4 @@ const CareersPage = () => {
   );
 };
 
-export default CareersPage; 
+export default CareersPage;

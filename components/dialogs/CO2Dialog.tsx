@@ -92,7 +92,7 @@ const CO2Dialog: React.FC<CO2DialogProps> = ({
       }
 
       const result = await response.json();
-      
+
       if (result.success && result.data) {
         setCurrentResult(result.data);
         toast({
@@ -264,7 +264,6 @@ const CO2Dialog: React.FC<CO2DialogProps> = ({
           </TabsContent>
 
           <TabsContent value="scopes" className="space-y-4">
-
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Scope 1 */}
               <Card className="border-l-4 border-l-red-500">

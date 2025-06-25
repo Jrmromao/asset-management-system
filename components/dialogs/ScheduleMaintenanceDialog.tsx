@@ -36,12 +36,13 @@ export const ScheduleMaintenanceDialog = ({
         <DialogHeader>
           <DialogTitle>Schedule New Maintenance</DialogTitle>
           <DialogDescription>
-            Fill out the details below to schedule a new maintenance event for an asset.
-            This will help track maintenance costs, carbon footprint, and asset health.
+            Fill out the details below to schedule a new maintenance event for
+            an asset. This will help track maintenance costs, carbon footprint,
+            and asset health.
           </DialogDescription>
         </DialogHeader>
         <div className="py-4">
-          <MaintenanceForm 
+          <MaintenanceForm
             onSuccess={handleSuccess}
             preselectedAssetId={preselectedAssetId}
           />

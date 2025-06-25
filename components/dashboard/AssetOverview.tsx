@@ -58,7 +58,8 @@ export const AssetOverview = () => {
   const getIconForAsset = (assetName: string) => {
     const lowerCaseName = assetName.toLowerCase();
     if (lowerCaseName.includes("laptop")) return <Laptop className="h-5 w-5" />;
-    if (lowerCaseName.includes("monitor")) return <Monitor className="h-5 w-5" />;
+    if (lowerCaseName.includes("monitor"))
+      return <Monitor className="h-5 w-5" />;
     if (lowerCaseName.includes("mobile")) {
       return <Smartphone className="h-5 w-5" />;
     }

@@ -20,7 +20,8 @@ export const ESGReportingCard = () => {
       </CardHeader>
       <CardContent>
         <p className="text-sm text-gray-600 mb-4">
-          Generate and view detailed reports on your asset portfolio's environmental impact and lifecycle.
+          Generate and view detailed reports on your asset portfolio's
+          environmental impact and lifecycle.
         </p>
         <Button
           variant="outline"
@@ -33,4 +34,4 @@ export const ESGReportingCard = () => {
       </CardContent>
     </Card>
   );
-}; 
+};

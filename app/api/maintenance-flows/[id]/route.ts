@@ -1,10 +1,10 @@
 "use server";
 
 import { NextRequest, NextResponse } from "next/server";
-import { 
-  updateMaintenanceFlow, 
+import {
+  updateMaintenanceFlow,
   deleteMaintenanceFlow,
-  type UpdateMaintenanceFlowParams 
+  type UpdateMaintenanceFlowParams,
 } from "@/lib/actions/maintenanceFlow.actions";
 import { auth } from "@clerk/nextjs/server";
 
@@ -38,7 +38,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     console.error("Error updating maintenance flow:", error);
     return NextResponse.json(
       { error: "Failed to update maintenance flow" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -56,7 +56,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     console.error("Error deleting maintenance flow:", error);
     return NextResponse.json(
       { error: "Failed to delete maintenance flow" },
-      { status: 500 }
+      { status: 500 },
     );
   }
-} 
+}

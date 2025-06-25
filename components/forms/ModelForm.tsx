@@ -22,7 +22,8 @@ import CustomSwitch from "@/components/CustomSwitch";
 
 const ModelForm = ({ initialData, onSubmitSuccess }: FormProps<Model>) => {
   const { createModel, isCreating, updateModel, isUpdating } = useModelsQuery();
-  const { manufacturers, isLoading: isLoadingManufacturers } = useManufacturerQuery();
+  const { manufacturers, isLoading: isLoadingManufacturers } =
+    useManufacturerQuery();
   const { onClose } = useModelUIStore();
   const {
     isOpen: isManufacturerModalOpen,

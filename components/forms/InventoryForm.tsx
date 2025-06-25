@@ -38,11 +38,14 @@ const InventoryForm = ({
 
   async function onSubmit(data: z.infer<typeof inventorySchema>) {
     console.log("🔍 [InventoryForm] onSubmit - Starting with data:", data);
-    
+
     startTransition(async () => {
       try {
         if (initialData && initialData.id) {
-          console.log("🔍 [InventoryForm] onSubmit - Updating existing inventory:", initialData.id);
+          console.log(
+            "🔍 [InventoryForm] onSubmit - Updating existing inventory:",
+            initialData.id,
+          );
           await updateInventory(
             initialData.id,
             { ...data },
@@ -55,7 +58,10 @@ const InventoryForm = ({
                 onSubmitSuccess?.();
               },
               onError: (error: any) => {
-                console.error("❌ [InventoryForm] onSubmit - Update error:", error);
+                console.error(
+                  "❌ [InventoryForm] onSubmit - Update error:",
+                  error,
+                );
                 toast.error("Failed to update inventory");
               },
             },
@@ -72,7 +78,10 @@ const InventoryForm = ({
               onSubmitSuccess?.();
             },
             onError: (error) => {
-              console.error("❌ [InventoryForm] onSubmit - Create error:", error);
+              console.error(
+                "❌ [InventoryForm] onSubmit - Create error:",
+                error,
+              );
               toast.error("Failed to create inventory");
             },
           });

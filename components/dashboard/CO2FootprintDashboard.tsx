@@ -1,20 +1,38 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { CO2FootprintService, CO2FootprintStats } from "@/lib/services/co2Footprint.service";
-import { Leaf, TrendingUp, TrendingDown, BarChart3, Users, Package } from "lucide-react";
+import {
+  CO2FootprintService,
+  CO2FootprintStats,
+} from "@/lib/services/co2Footprint.service";
+import {
+  Leaf,
+  TrendingUp,
+  TrendingDown,
+  BarChart3,
+  Users,
+  Package,
+} from "lucide-react";
 import { withAuth } from "@/lib/middleware/withAuth";
 
 interface CO2FootprintDashboardProps {
   companyId: string;
 }
 
-export function CO2FootprintDashboard({ companyId }: CO2FootprintDashboardProps) {
+export function CO2FootprintDashboard({
+  companyId,
+}: CO2FootprintDashboardProps) {
   const [stats, setStats] = useState<CO2FootprintStats | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
@@ -25,7 +43,8 @@ export function CO2FootprintDashboard({ companyId }: CO2FootprintDashboardProps)
 
   const loadStats = async () => {
     try {
-      const response = await CO2FootprintService.getCO2FootprintStats(companyId);
+      const response =
+        await CO2FootprintService.getCO2FootprintStats(companyId);
       if (response.success && response.data) {
         setStats(response.data);
       }
@@ -79,7 +98,9 @@ export function CO2FootprintDashboard({ companyId }: CO2FootprintDashboardProps)
             <Leaf className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalCO2e.toFixed(1)} kg</div>
+            <div className="text-2xl font-bold">
+              {stats.totalCO2e.toFixed(1)} kg
+            </div>
             <p className="text-xs text-muted-foreground">
               Total carbon footprint
             </p>
@@ -88,7 +109,9 @@ export function CO2FootprintDashboard({ companyId }: CO2FootprintDashboardProps)
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Assets with CO2 Data</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Assets with CO2 Data
+            </CardTitle>
             <Package className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
@@ -102,14 +125,16 @@ export function CO2FootprintDashboard({ companyId }: CO2FootprintDashboardProps)
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Average CO2e per Asset</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Average CO2e per Asset
+            </CardTitle>
             <BarChart3 className="h-4 w-4 text-orange-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.averageCO2ePerAsset.toFixed(1)} kg</div>
-            <p className="text-xs text-muted-foreground">
-              Per asset with data
-            </p>
+            <div className="text-2xl font-bold">
+              {stats.averageCO2ePerAsset.toFixed(1)} kg
+            </div>
+            <p className="text-xs text-muted-foreground">Per asset with data</p>
           </CardContent>
         </Card>
 
@@ -119,7 +144,9 @@ export function CO2FootprintDashboard({ companyId }: CO2FootprintDashboardProps)
             <TrendingUp className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{coveragePercentage.toFixed(1)}%</div>
+            <div className="text-2xl font-bold">
+              {coveragePercentage.toFixed(1)}%
+            </div>
             <p className="text-xs text-muted-foreground">
               Assets with CO2 data
             </p>
@@ -133,12 +160,17 @@ export function CO2FootprintDashboard({ companyId }: CO2FootprintDashboardProps)
         <Card>
           <CardHeader>
             <CardTitle>CO2 by Category</CardTitle>
-            <CardDescription>Carbon footprint breakdown by asset category</CardDescription>
+            <CardDescription>
+              Carbon footprint breakdown by asset category
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               {stats.co2ByCategory.map((category) => (
-                <div key={category.category} className="flex items-center justify-between">
+                <div
+                  key={category.category}
+                  className="flex items-center justify-between"
+                >
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 bg-green-500 rounded-full" />
                     <span className="text-sm">{category.category}</span>
@@ -159,12 +191,17 @@ export function CO2FootprintDashboard({ companyId }: CO2FootprintDashboardProps)
         <Card>
           <CardHeader>
             <CardTitle>CO2 by Department</CardTitle>
-            <CardDescription>Carbon footprint breakdown by department</CardDescription>
+            <CardDescription>
+              Carbon footprint breakdown by department
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               {stats.co2ByDepartment.map((dept) => (
-                <div key={dept.department} className="flex items-center justify-between">
+                <div
+                  key={dept.department}
+                  className="flex items-center justify-between"
+                >
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 bg-blue-500 rounded-full" />
                     <span className="text-sm">{dept.department}</span>
@@ -186,19 +223,29 @@ export function CO2FootprintDashboard({ companyId }: CO2FootprintDashboardProps)
       <Card>
         <CardHeader>
           <CardTitle>Top Emitting Assets</CardTitle>
-          <CardDescription>Assets with the highest carbon footprint</CardDescription>
+          <CardDescription>
+            Assets with the highest carbon footprint
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
             {stats.topEmittingAssets.map((asset, index) => (
-              <div key={asset.name} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+              <div
+                key={asset.name}
+                className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
+              >
                 <div className="flex items-center gap-3">
-                  <Badge variant="outline" className="w-6 h-6 p-0 flex items-center justify-center">
+                  <Badge
+                    variant="outline"
+                    className="w-6 h-6 p-0 flex items-center justify-center"
+                  >
                     {index + 1}
                   </Badge>
                   <div>
                     <div className="font-medium">{asset.name}</div>
-                    <div className="text-sm text-muted-foreground">{asset.category}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {asset.category}
+                    </div>
                   </div>
                 </div>
                 <Badge variant="destructive">
@@ -219,4 +266,4 @@ export function CO2FootprintDashboard({ companyId }: CO2FootprintDashboardProps)
       </div>
     </div>
   );
-} 
+}

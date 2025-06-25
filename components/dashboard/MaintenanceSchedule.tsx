@@ -2,7 +2,14 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, Leaf, AlertTriangle, CheckCircle, Play } from "lucide-react";
+import {
+  Calendar,
+  Clock,
+  Leaf,
+  AlertTriangle,
+  CheckCircle,
+  Play,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { getMaintenanceSchedule } from "@/lib/actions/inventory.actions";
 import { updateMaintenanceStatus } from "@/lib/actions/maintenance.actions";
@@ -54,7 +61,7 @@ const MaintenanceItem = ({
 
   const handleStatusUpdate = async (newStatus: string) => {
     if (!maintenanceId) return;
-    
+
     setIsUpdating(true);
     try {
       const response = await updateMaintenanceStatus(maintenanceId, newStatus);
@@ -136,7 +143,10 @@ export const MaintenanceScheduleCard = () => {
         if (response.success && response.data) {
           setSchedule(response.data);
         } else {
-          console.error("Failed to fetch maintenance schedule:", response.error);
+          console.error(
+            "Failed to fetch maintenance schedule:",
+            response.error,
+          );
           // Fallback to empty array if API fails
           setSchedule([]);
         }
@@ -153,7 +163,7 @@ export const MaintenanceScheduleCard = () => {
 
   const handleScheduleSuccess = () => {
     // Refresh the schedule after new maintenance is created
-    setRefreshKey(prev => prev + 1);
+    setRefreshKey((prev) => prev + 1);
   };
 
   return (
@@ -188,7 +198,9 @@ export const MaintenanceScheduleCard = () => {
           <div className="text-center py-8 text-gray-500">
             <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-300" />
             <p className="text-sm">No maintenance scheduled</p>
-            <p className="text-xs">Click "Schedule New" to add maintenance tasks</p>
+            <p className="text-xs">
+              Click "Schedule New" to add maintenance tasks
+            </p>
           </div>
         )}
       </CardContent>

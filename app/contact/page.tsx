@@ -6,7 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import HeaderIcon from "@/components/page/HeaderIcon";
 import Footer from "@/components/page/Footer";
@@ -40,7 +46,7 @@ const ContactPage = () => {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<{
-    type: 'success' | 'error' | null;
+    type: "success" | "error" | null;
     message: string;
   }>({ type: null, message: "" });
 
@@ -62,8 +68,9 @@ const ContactPage = () => {
 
       if (response.ok) {
         setSubmitStatus({
-          type: 'success',
-          message: "Thank you for your message! We'll get back to you within 24 hours."
+          type: "success",
+          message:
+            "Thank you for your message! We'll get back to you within 24 hours.",
         });
         // Reset form
         setFormData({
@@ -78,15 +85,15 @@ const ContactPage = () => {
         });
       } else {
         setSubmitStatus({
-          type: 'error',
-          message: data.message || "Failed to send message. Please try again."
+          type: "error",
+          message: data.message || "Failed to send message. Please try again.",
         });
       }
     } catch (error) {
       console.error("Contact form error:", error);
       setSubmitStatus({
-        type: 'error',
-        message: "Network error. Please check your connection and try again."
+        type: "error",
+        message: "Network error. Please check your connection and try again.",
       });
     } finally {
       setIsSubmitting(false);
@@ -94,7 +101,7 @@ const ContactPage = () => {
   };
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const contactMethods = [
@@ -146,16 +153,28 @@ const ContactPage = () => {
           <div className="flex items-center gap-8">
             <HeaderIcon />
             <nav className="hidden md:flex gap-8">
-              <Link href="/" className="text-sm font-medium hover:text-green-600 transition-colors">
+              <Link
+                href="/"
+                className="text-sm font-medium hover:text-green-600 transition-colors"
+              >
                 Home
               </Link>
-              <Link href="/about" className="text-sm font-medium hover:text-green-600 transition-colors">
+              <Link
+                href="/about"
+                className="text-sm font-medium hover:text-green-600 transition-colors"
+              >
                 About
               </Link>
-              <Link href="/careers" className="text-sm font-medium hover:text-green-600 transition-colors">
+              <Link
+                href="/careers"
+                className="text-sm font-medium hover:text-green-600 transition-colors"
+              >
                 Careers
               </Link>
-              <Link href="/contact" className="text-sm font-medium text-green-600">
+              <Link
+                href="/contact"
+                className="text-sm font-medium text-green-600"
+              >
                 Contact
               </Link>
             </nav>
@@ -184,12 +203,12 @@ const ContactPage = () => {
           </div>
           <div className="text-center">
             <h1 className="text-4xl lg:text-6xl font-bold mb-6 text-gray-900">
-              Get in Touch with{" "}
-              <span className="text-green-600">Our Team</span>
+              Get in Touch with <span className="text-green-600">Our Team</span>
             </h1>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
-              Have questions about EcoKeepr? Want to see a demo? Our team is here 
-              to help you discover how we can transform your asset management.
+              Have questions about EcoKeepr? Want to see a demo? Our team is
+              here to help you discover how we can transform your asset
+              management.
             </p>
           </div>
         </div>
@@ -199,19 +218,28 @@ const ContactPage = () => {
       <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-3xl lg:text-4xl font-bold mb-6 text-gray-900">How Can We Help?</h2>
+            <h2 className="text-3xl lg:text-4xl font-bold mb-6 text-gray-900">
+              How Can We Help?
+            </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
               Choose the best way to reach us based on your needs.
             </p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {contactMethods.map((method, index) => (
-              <Card key={index} className="text-center h-full hover:shadow-lg transition-shadow">
+              <Card
+                key={index}
+                className="text-center h-full hover:shadow-lg transition-shadow"
+              >
                 <CardContent className="p-6">
                   <method.icon className="w-12 h-12 text-green-600 mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold mb-3 text-gray-900">{method.title}</h3>
+                  <h3 className="text-xl font-semibold mb-3 text-gray-900">
+                    {method.title}
+                  </h3>
                   <p className="text-gray-600 mb-4">{method.description}</p>
-                  <div className="text-sm font-medium text-green-600 mb-4">{method.contact}</div>
+                  <div className="text-sm font-medium text-green-600 mb-4">
+                    {method.contact}
+                  </div>
                   <Button variant="outline" size="sm" asChild>
                     <a href={method.action}>Get Started</a>
                   </Button>
@@ -229,27 +257,36 @@ const ContactPage = () => {
             {/* Contact Form */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-2xl text-gray-900">Send Us a Message</CardTitle>
+                <CardTitle className="text-2xl text-gray-900">
+                  Send Us a Message
+                </CardTitle>
                 <p className="text-gray-600">
-                  Fill out the form below and we'll get back to you within 24 hours.
+                  Fill out the form below and we'll get back to you within 24
+                  hours.
                 </p>
               </CardHeader>
               <CardContent>
                 {/* Success/Error Alerts */}
                 {submitStatus.type && (
-                  <Alert className={`mb-6 ${
-                    submitStatus.type === 'success' 
-                      ? 'border-green-200 bg-green-50' 
-                      : 'border-red-200 bg-red-50'
-                  }`}>
-                    {submitStatus.type === 'success' ? (
+                  <Alert
+                    className={`mb-6 ${
+                      submitStatus.type === "success"
+                        ? "border-green-200 bg-green-50"
+                        : "border-red-200 bg-red-50"
+                    }`}
+                  >
+                    {submitStatus.type === "success" ? (
                       <CheckCircle className="h-4 w-4 text-green-600" />
                     ) : (
                       <AlertCircle className="h-4 w-4 text-red-600" />
                     )}
-                    <AlertDescription className={
-                      submitStatus.type === 'success' ? 'text-green-800' : 'text-red-800'
-                    }>
+                    <AlertDescription
+                      className={
+                        submitStatus.type === "success"
+                          ? "text-green-800"
+                          : "text-red-800"
+                      }
+                    >
                       {submitStatus.message}
                     </AlertDescription>
                   </Alert>
@@ -265,7 +302,9 @@ const ContactPage = () => {
                         required
                         disabled={isSubmitting}
                         value={formData.firstName}
-                        onChange={(e) => handleInputChange("firstName", e.target.value)}
+                        onChange={(e) =>
+                          handleInputChange("firstName", e.target.value)
+                        }
                       />
                     </div>
                     <div>
@@ -276,11 +315,13 @@ const ContactPage = () => {
                         required
                         disabled={isSubmitting}
                         value={formData.lastName}
-                        onChange={(e) => handleInputChange("lastName", e.target.value)}
+                        onChange={(e) =>
+                          handleInputChange("lastName", e.target.value)
+                        }
                       />
                     </div>
                   </div>
-                  
+
                   <div>
                     <label className="text-sm font-medium text-gray-700 mb-2 block">
                       Work Email *
@@ -290,7 +331,9 @@ const ContactPage = () => {
                       required
                       disabled={isSubmitting}
                       value={formData.email}
-                      onChange={(e) => handleInputChange("email", e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange("email", e.target.value)
+                      }
                     />
                   </div>
 
@@ -303,7 +346,9 @@ const ContactPage = () => {
                         required
                         disabled={isSubmitting}
                         value={formData.company}
-                        onChange={(e) => handleInputChange("company", e.target.value)}
+                        onChange={(e) =>
+                          handleInputChange("company", e.target.value)
+                        }
                       />
                     </div>
                     <div>
@@ -313,7 +358,9 @@ const ContactPage = () => {
                       <Input
                         disabled={isSubmitting}
                         value={formData.jobTitle}
-                        onChange={(e) => handleInputChange("jobTitle", e.target.value)}
+                        onChange={(e) =>
+                          handleInputChange("jobTitle", e.target.value)
+                        }
                       />
                     </div>
                   </div>
@@ -327,7 +374,9 @@ const ContactPage = () => {
                       disabled={isSubmitting}
                       placeholder="+1 (555) 123-4567"
                       value={formData.phoneNumber}
-                      onChange={(e) => handleInputChange("phoneNumber", e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange("phoneNumber", e.target.value)
+                      }
                     />
                   </div>
 
@@ -335,20 +384,30 @@ const ContactPage = () => {
                     <label className="text-sm font-medium text-gray-700 mb-2 block">
                       How can we help? *
                     </label>
-                    <Select 
+                    <Select
                       disabled={isSubmitting}
                       value={formData.inquiryType}
-                      onValueChange={(value) => handleInputChange("inquiryType", value)}
+                      onValueChange={(value) =>
+                        handleInputChange("inquiryType", value)
+                      }
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select inquiry type" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="demo">Request a Demo</SelectItem>
-                        <SelectItem value="pricing">Pricing Information</SelectItem>
-                        <SelectItem value="integration">Integration Questions</SelectItem>
-                        <SelectItem value="support">Technical Support</SelectItem>
-                        <SelectItem value="partnership">Partnership Opportunities</SelectItem>
+                        <SelectItem value="pricing">
+                          Pricing Information
+                        </SelectItem>
+                        <SelectItem value="integration">
+                          Integration Questions
+                        </SelectItem>
+                        <SelectItem value="support">
+                          Technical Support
+                        </SelectItem>
+                        <SelectItem value="partnership">
+                          Partnership Opportunities
+                        </SelectItem>
                         <SelectItem value="other">Other</SelectItem>
                       </SelectContent>
                     </Select>
@@ -364,12 +423,14 @@ const ContactPage = () => {
                       disabled={isSubmitting}
                       placeholder="Tell us more about your needs..."
                       value={formData.message}
-                      onChange={(e) => handleInputChange("message", e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange("message", e.target.value)
+                      }
                     />
                   </div>
 
-                  <Button 
-                    type="submit" 
+                  <Button
+                    type="submit"
                     disabled={isSubmitting}
                     className="w-full bg-green-600 hover:bg-green-700 disabled:opacity-50"
                   >
@@ -392,7 +453,9 @@ const ContactPage = () => {
             {/* Office Information */}
             <div className="space-y-8">
               <div>
-                <h3 className="text-2xl font-bold mb-6 text-gray-900">Our Offices</h3>
+                <h3 className="text-2xl font-bold mb-6 text-gray-900">
+                  Our Offices
+                </h3>
                 <div className="space-y-6">
                   {offices.map((office, index) => (
                     <Card key={index}>
@@ -401,7 +464,9 @@ const ContactPage = () => {
                           <MapPin className="w-6 h-6 text-green-600 mt-1 flex-shrink-0" />
                           <div>
                             <div className="flex items-center gap-2 mb-2">
-                              <h4 className="text-lg font-semibold text-gray-900">{office.city}</h4>
+                              <h4 className="text-lg font-semibold text-gray-900">
+                                {office.city}
+                              </h4>
                               <span className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded">
                                 {office.type}
                               </span>
@@ -421,7 +486,9 @@ const ContactPage = () => {
                 <CardContent className="p-6">
                   <div className="flex items-center gap-3 mb-4">
                     <Clock className="w-6 h-6 text-green-600" />
-                    <h4 className="text-lg font-semibold text-gray-900">Support Hours</h4>
+                    <h4 className="text-lg font-semibold text-gray-900">
+                      Support Hours
+                    </h4>
                   </div>
                   <div className="space-y-2 text-gray-600">
                     <div className="flex justify-between">
@@ -448,45 +515,59 @@ const ContactPage = () => {
       <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-3xl lg:text-4xl font-bold mb-6 text-gray-900">Quick Answers</h2>
+            <h2 className="text-3xl lg:text-4xl font-bold mb-6 text-gray-900">
+              Quick Answers
+            </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Find answers to common questions or contact us for more information.
+              Find answers to common questions or contact us for more
+              information.
             </p>
           </div>
           <div className="grid md:grid-cols-2 gap-8">
             <Card>
               <CardContent className="p-6">
-                <h4 className="text-lg font-semibold mb-3 text-gray-900">How quickly can we get started?</h4>
+                <h4 className="text-lg font-semibold mb-3 text-gray-900">
+                  How quickly can we get started?
+                </h4>
                 <p className="text-gray-600">
-                  Most customers are up and running within 2-4 weeks. Our implementation team 
-                  works closely with you to ensure a smooth onboarding process.
+                  Most customers are up and running within 2-4 weeks. Our
+                  implementation team works closely with you to ensure a smooth
+                  onboarding process.
                 </p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-6">
-                <h4 className="text-lg font-semibold mb-3 text-gray-900">Do you offer custom integrations?</h4>
+                <h4 className="text-lg font-semibold mb-3 text-gray-900">
+                  Do you offer custom integrations?
+                </h4>
                 <p className="text-gray-600">
-                  Yes! We offer custom integrations with your existing systems including ERP, 
-                  IoT platforms, and other business applications.
+                  Yes! We offer custom integrations with your existing systems
+                  including ERP, IoT platforms, and other business applications.
                 </p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-6">
-                <h4 className="text-lg font-semibold mb-3 text-gray-900">Is my data secure?</h4>
+                <h4 className="text-lg font-semibold mb-3 text-gray-900">
+                  Is my data secure?
+                </h4>
                 <p className="text-gray-600">
-                  Absolutely. We use enterprise-grade security with SOC 2 Type II compliance, 
-                  end-to-end encryption, and regular security audits.
+                  Absolutely. We use enterprise-grade security with SOC 2 Type
+                  II compliance, end-to-end encryption, and regular security
+                  audits.
                 </p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-6">
-                <h4 className="text-lg font-semibold mb-3 text-gray-900">What support do you provide?</h4>
+                <h4 className="text-lg font-semibold mb-3 text-gray-900">
+                  What support do you provide?
+                </h4>
                 <p className="text-gray-600">
-                  We offer 24/7 support for enterprise customers, comprehensive documentation, 
-                  training sessions, and a dedicated customer success manager.
+                  We offer 24/7 support for enterprise customers, comprehensive
+                  documentation, training sessions, and a dedicated customer
+                  success manager.
                 </p>
               </CardContent>
             </Card>
@@ -501,14 +582,21 @@ const ContactPage = () => {
             Ready to See EcoKeepr in Action?
           </h2>
           <p className="text-xl text-green-100 mb-8 max-w-3xl mx-auto">
-            Schedule a personalized demo and discover how EcoKeepr can transform 
+            Schedule a personalized demo and discover how EcoKeepr can transform
             your asset management and sustainability reporting.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" className="bg-white text-green-600 hover:bg-green-50">
+            <Button
+              size="lg"
+              className="bg-white text-green-600 hover:bg-green-50"
+            >
               Schedule Demo
             </Button>
-            <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-green-600">
+            <Button
+              size="lg"
+              variant="outline"
+              className="border-white text-white hover:bg-white hover:text-green-600"
+            >
               Start Free Trial
             </Button>
           </div>
@@ -520,4 +608,4 @@ const ContactPage = () => {
   );
 };
 
-export default ContactPage; 
+export default ContactPage;

@@ -1,56 +1,59 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { auth, clerkClient } from '@clerk/nextjs/server';
-import { prisma } from '@/app/db';
+import { NextRequest, NextResponse } from "next/server";
+import { auth, clerkClient } from "@clerk/nextjs/server";
+import { prisma } from "@/app/db";
 
 export async function POST(req: NextRequest) {
   try {
-    console.log('🔄 [Sync User Metadata] Starting sync...');
-    
+    console.log("🔄 [Sync User Metadata] Starting sync...");
+
     const { userId } = await auth();
     if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    console.log('🔍 [Sync User Metadata] User ID:', userId);
+    console.log("🔍 [Sync User Metadata] User ID:", userId);
 
     // Find the user in the database
     const dbUser = await prisma.user.findFirst({
       where: { oauthId: userId },
       include: {
         company: true,
-        role: true
-      }
+        role: true,
+      },
     });
 
-    console.log('🔍 [Sync User Metadata] DB User found:', !!dbUser);
+    console.log("🔍 [Sync User Metadata] DB User found:", !!dbUser);
 
     if (!dbUser) {
       // If user doesn't exist in DB, find the first company to associate them with
       const firstCompany = await prisma.company.findFirst({
         include: {
           roles: {
-            where: { name: 'Admin' }
-          }
-        }
+            where: { name: "Admin" },
+          },
+        },
       });
 
       if (!firstCompany) {
-        return NextResponse.json({ error: 'No company found' }, { status: 404 });
+        return NextResponse.json(
+          { error: "No company found" },
+          { status: 404 },
+        );
       }
 
-      console.log('🔍 [Sync User Metadata] First company:', firstCompany.id);
+      console.log("🔍 [Sync User Metadata] First company:", firstCompany.id);
 
       // Create user in database
       const newUser = await prisma.user.create({
         data: {
           oauthId: userId,
-          email: 'admin@example.com', // This should be updated with real email
-          firstName: 'Admin',
-          lastName: 'User',
-          name: 'Admin User',
-          roleId: firstCompany.roles[0]?.id || '',
+          email: "admin@example.com", // This should be updated with real email
+          firstName: "Admin",
+          lastName: "User",
+          name: "Admin User",
+          roleId: firstCompany.roles[0]?.id || "",
           companyId: firstCompany.id,
-        }
+        },
       });
 
       // Update Clerk metadata
@@ -59,7 +62,7 @@ export async function POST(req: NextRequest) {
         publicMetadata: {
           userId: newUser.id,
           companyId: firstCompany.id,
-          role: 'Admin',
+          role: "Admin",
           onboardingComplete: true,
         },
         privateMetadata: {
@@ -67,13 +70,15 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      console.log('✅ [Sync User Metadata] Created new user and synced metadata');
-      
-      return NextResponse.json({ 
-        success: true, 
-        message: 'User created and metadata synced',
+      console.log(
+        "✅ [Sync User Metadata] Created new user and synced metadata",
+      );
+
+      return NextResponse.json({
+        success: true,
+        message: "User created and metadata synced",
         companyId: firstCompany.id,
-        userId: newUser.id
+        userId: newUser.id,
       });
     }
 
@@ -91,20 +96,19 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    console.log('✅ [Sync User Metadata] Synced existing user metadata');
+    console.log("✅ [Sync User Metadata] Synced existing user metadata");
 
-    return NextResponse.json({ 
-      success: true, 
-      message: 'User metadata synced',
+    return NextResponse.json({
+      success: true,
+      message: "User metadata synced",
       companyId: dbUser.companyId,
-      userId: dbUser.id
+      userId: dbUser.id,
     });
-
   } catch (error) {
-    console.error('❌ [Sync User Metadata] Error:', error);
+    console.error("❌ [Sync User Metadata] Error:", error);
     return NextResponse.json(
-      { error: 'Failed to sync user metadata' },
-      { status: 500 }
+      { error: "Failed to sync user metadata" },
+      { status: 500 },
     );
   }
-} 
+}

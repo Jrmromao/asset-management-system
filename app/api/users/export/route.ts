@@ -6,11 +6,11 @@ export const dynamic = "force-dynamic";
 export async function POST(req: NextRequest) {
   try {
     const result = await getAllUsersWithService();
-    
+
     if (!result.success || !result.data) {
       return NextResponse.json(
         { error: result.error || "Failed to fetch users" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
     const headers = [
       "ID",
       "Name",
-      "Email", 
+      "Email",
       "First Name",
       "Last Name",
       "Title",
@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
       "Role",
       "Status",
       "Created At",
-      "Updated At"
+      "Updated At",
     ];
 
     // Convert users to CSV rows
@@ -42,13 +42,15 @@ export async function POST(req: NextRequest) {
       user.employeeId || "",
       user.role?.name || "",
       user.status || "ACTIVE",
-      new Date(user.createdAt).toISOString().split('T')[0],
-      new Date(user.updatedAt).toISOString().split('T')[0]
+      new Date(user.createdAt).toISOString().split("T")[0],
+      new Date(user.updatedAt).toISOString().split("T")[0],
     ]);
 
     // Combine headers and rows
     const csvContent = [headers, ...csvRows]
-      .map((row: string[]) => row.map((field: string) => `"${field}"`).join(","))
+      .map((row: string[]) =>
+        row.map((field: string) => `"${field}"`).join(","),
+      )
       .join("\n");
 
     // Return CSV as downloadable file
@@ -56,14 +58,14 @@ export async function POST(req: NextRequest) {
       status: 200,
       headers: {
         "Content-Type": "text/csv",
-        "Content-Disposition": `attachment; filename="users-${new Date().toISOString().split('T')[0]}.csv"`,
+        "Content-Disposition": `attachment; filename="users-${new Date().toISOString().split("T")[0]}.csv"`,
       },
     });
   } catch (error) {
     console.error("Error exporting users:", error);
     return NextResponse.json(
       { error: "Failed to export users" },
-      { status: 500 }
+      { status: 500 },
     );
   }
-} 
+}

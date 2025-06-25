@@ -4,16 +4,16 @@ import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { 
-  BookOpen, 
-  Zap, 
-  Wrench, 
+import {
+  BookOpen,
+  Zap,
+  Wrench,
   ExternalLink,
   HelpCircle,
   Video,
   MessageCircle,
   Mail,
-  ArrowRight
+  ArrowRight,
 } from "lucide-react";
 
 interface HelpResource {
@@ -42,7 +42,7 @@ const defaultResources: HelpResource[] = [
     href: "/docs/maintenance-flows-quickstart.md",
     type: "documentation",
     time: "10 min",
-    badge: "Beginner"
+    badge: "Beginner",
   },
   {
     icon: <BookOpen className="w-4 h-4" />,
@@ -51,7 +51,7 @@ const defaultResources: HelpResource[] = [
     href: "/docs/maintenance-flows-guide.md",
     type: "documentation",
     time: "25 min",
-    badge: "Complete"
+    badge: "Complete",
   },
   {
     icon: <Wrench className="w-4 h-4" />,
@@ -60,7 +60,7 @@ const defaultResources: HelpResource[] = [
     href: "/docs/maintenance-flows-troubleshooting.md",
     type: "documentation",
     time: "5 min",
-    badge: "Problem Solver"
+    badge: "Problem Solver",
   },
   {
     icon: <Video className="w-4 h-4" />,
@@ -68,7 +68,7 @@ const defaultResources: HelpResource[] = [
     description: "Watch step-by-step visual guides",
     href: "#",
     type: "video",
-    badge: "Coming Soon"
+    badge: "Coming Soon",
   },
   {
     icon: <MessageCircle className="w-4 h-4" />,
@@ -76,7 +76,7 @@ const defaultResources: HelpResource[] = [
     description: "Get instant help from our team",
     href: "#",
     type: "support",
-    badge: "Instant"
+    badge: "Instant",
   },
   {
     icon: <Mail className="w-4 h-4" />,
@@ -84,8 +84,8 @@ const defaultResources: HelpResource[] = [
     description: "Detailed technical assistance",
     href: "mailto:support@yourcompany.com",
     type: "support",
-    badge: "24h Response"
-  }
+    badge: "24h Response",
+  },
 ];
 
 const getTypeColor = (type: string) => {
@@ -108,7 +108,7 @@ export const HelpSection: React.FC<HelpSectionProps> = ({
   subtitle = "Get started with our comprehensive guides and support resources",
   resources = defaultResources,
   compact = false,
-  showAllResources = true
+  showAllResources = true,
 }) => {
   const displayResources = showAllResources ? resources : resources.slice(0, 3);
 
@@ -128,14 +128,16 @@ export const HelpSection: React.FC<HelpSectionProps> = ({
                 key={index}
                 variant="outline"
                 className="h-auto p-3 justify-start"
-                onClick={() => window.open(resource.href, '_blank')}
+                onClick={() => window.open(resource.href, "_blank")}
               >
                 <div className="flex items-center space-x-2 w-full">
                   <div className="text-blue-500">{resource.icon}</div>
                   <div className="text-left flex-1">
                     <div className="font-medium text-sm">{resource.title}</div>
                     {resource.time && (
-                      <div className="text-xs text-gray-500">{resource.time}</div>
+                      <div className="text-xs text-gray-500">
+                        {resource.time}
+                      </div>
                     )}
                   </div>
                   <ArrowRight className="w-3 h-3 text-gray-400" />
@@ -161,37 +163,37 @@ export const HelpSection: React.FC<HelpSectionProps> = ({
           </div>
         </div>
       </CardHeader>
-      
+
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {displayResources.map((resource, index) => (
             <div
               key={index}
               className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer group"
-              onClick={() => window.open(resource.href, '_blank')}
+              onClick={() => window.open(resource.href, "_blank")}
             >
               <div className="flex items-start justify-between mb-3">
                 <div className="text-blue-500 group-hover:text-blue-600 transition-colors">
                   {resource.icon}
                 </div>
                 {resource.badge && (
-                  <Badge 
-                    variant="secondary" 
+                  <Badge
+                    variant="secondary"
                     className={`text-xs ${getTypeColor(resource.type)}`}
                   >
                     {resource.badge}
                   </Badge>
                 )}
               </div>
-              
+
               <h4 className="font-semibold text-gray-900 dark:text-white mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                 {resource.title}
               </h4>
-              
+
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
                 {resource.description}
               </p>
-              
+
               <div className="flex items-center justify-between">
                 {resource.time && (
                   <span className="text-xs text-gray-500 flex items-center">
@@ -214,17 +216,19 @@ export const HelpSection: React.FC<HelpSectionProps> = ({
               </span>
             </div>
             <div className="flex space-x-2">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 size="sm"
-                onClick={() => window.open('/docs/README.md', '_blank')}
+                onClick={() => window.open("/docs/README.md", "_blank")}
               >
                 <BookOpen className="w-4 h-4 mr-1" />
                 All Documentation
               </Button>
-              <Button 
+              <Button
                 size="sm"
-                onClick={() => window.open('mailto:support@yourcompany.com', '_blank')}
+                onClick={() =>
+                  window.open("mailto:support@yourcompany.com", "_blank")
+                }
               >
                 <Mail className="w-4 h-4 mr-1" />
                 Contact Support
@@ -235,4 +239,4 @@ export const HelpSection: React.FC<HelpSectionProps> = ({
       </CardContent>
     </Card>
   );
-}; 
+};

@@ -81,19 +81,22 @@ export const StatsGrid = () => {
         const licenses = licensesResponse.data || [];
         const accessories = accessoriesResponse.data || [];
         const quota = quotaResponse.data || 50;
-        
+
         // Fix: Check for userId instead of assignee
         const assignedAssets = assets.reduce(
           (sum, asset) => sum + (asset.userId ? 1 : 0),
           0,
         );
-        
-        const calculatedUsageRate = assets.length > 0 ? (assignedAssets / assets.length) * 100 : 0;
+
+        const calculatedUsageRate =
+          assets.length > 0 ? (assignedAssets / assets.length) * 100 : 0;
 
         // Use the utilization stats response for more accurate data
         const utilizationData = utilizationStatsResponse.data;
-        const displayUtilizationRate = utilizationData?.utilizationRate || calculatedUsageRate;
-        const displayAssignedAssets = utilizationData?.assignedAssets || assignedAssets;
+        const displayUtilizationRate =
+          utilizationData?.utilizationRate || calculatedUsageRate;
+        const displayAssignedAssets =
+          utilizationData?.assignedAssets || assignedAssets;
 
         // FIXED: Actual unified item counting
         const itemsBreakdown = {
@@ -102,7 +105,10 @@ export const StatsGrid = () => {
           accessories: accessories.length,
         };
 
-        const totalItems = itemsBreakdown.assets + itemsBreakdown.licenses + itemsBreakdown.accessories;
+        const totalItems =
+          itemsBreakdown.assets +
+          itemsBreakdown.licenses +
+          itemsBreakdown.accessories;
 
         setStats({
           totalItems,
@@ -114,8 +120,8 @@ export const StatsGrid = () => {
             percentage: Math.round((totalItems / quota) * 100),
           },
           maintenanceDue: maintenanceDueResponse.data || 0,
-          co2Savings: co2SavingsResponse.data as number || 0,
-          co2Trend: co2TrendResponse.data as number || 0,
+          co2Savings: (co2SavingsResponse.data as number) || 0,
+          co2Trend: (co2TrendResponse.data as number) || 0,
           utilizationRate: displayUtilizationRate,
           assignedAssets: displayAssignedAssets,
         });
@@ -158,9 +164,12 @@ export const StatsGrid = () => {
     return "text-emerald-600";
   };
 
-  const quotaIcon = stats.quota.percentage >= 90 
-    ? <AlertTriangle className="h-5 w-5 text-red-600" />
-    : <Box className="h-5 w-5 text-emerald-600" />;
+  const quotaIcon =
+    stats.quota.percentage >= 90 ? (
+      <AlertTriangle className="h-5 w-5 text-red-600" />
+    ) : (
+      <Box className="h-5 w-5 text-emerald-600" />
+    );
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

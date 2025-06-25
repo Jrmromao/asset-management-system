@@ -11,18 +11,20 @@ import { toast } from "sonner";
 import CustomInput from "@/components/CustomInput";
 import { completeInvitationRegistration } from "@/lib/actions/invitation.actions";
 
-const registrationSchema = z.object({
-  firstName: z.string().min(2, "First name must be at least 2 characters"),
-  lastName: z.string().min(2, "Last name must be at least 2 characters"),
-  phone: z.string().optional(),
-  title: z.string().optional(),
-  employeeId: z.string().optional(),
-  password: z.string().min(8, "Password must be at least 8 characters"),
-  confirmPassword: z.string(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"],
-});
+const registrationSchema = z
+  .object({
+    firstName: z.string().min(2, "First name must be at least 2 characters"),
+    lastName: z.string().min(2, "Last name must be at least 2 characters"),
+    phone: z.string().optional(),
+    title: z.string().optional(),
+    employeeId: z.string().optional(),
+    password: z.string().min(8, "Password must be at least 8 characters"),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
+  });
 
 type RegistrationFormValues = z.infer<typeof registrationSchema>;
 
@@ -38,9 +40,9 @@ interface InvitationRegistrationFormProps {
   token: string;
 }
 
-export function InvitationRegistrationForm({ 
-  invitationData, 
-  token 
+export function InvitationRegistrationForm({
+  invitationData,
+  token,
 }: InvitationRegistrationFormProps) {
   const [isPending, startTransition] = useTransition();
   const [step, setStep] = useState(1);
@@ -93,13 +95,15 @@ export function InvitationRegistrationForm({
           if (registrationResult.success) {
             // Set the session active
             await setActive({ session: signUpAttempt.createdSessionId });
-            
+
             toast.success("Registration completed successfully!");
-            
+
             // Redirect to dashboard
             window.location.href = "/dashboard";
           } else {
-            toast.error(registrationResult.error || "Failed to complete registration");
+            toast.error(
+              registrationResult.error || "Failed to complete registration",
+            );
           }
         } else {
           // Handle verification if needed
@@ -131,7 +135,7 @@ export function InvitationRegistrationForm({
               disabled={isPending}
             />
           </div>
-          
+
           <CustomInput
             name="phone"
             label="Phone Number"
@@ -139,21 +143,21 @@ export function InvitationRegistrationForm({
             type="tel"
             disabled={isPending}
           />
-          
+
           <CustomInput
             name="title"
             label="Job Title"
             control={form.control}
             disabled={isPending}
           />
-          
+
           <CustomInput
             name="employeeId"
             label="Employee ID"
             control={form.control}
             disabled={isPending}
           />
-          
+
           <div className="grid grid-cols-2 gap-4">
             <CustomInput
               name="password"
@@ -174,14 +178,10 @@ export function InvitationRegistrationForm({
           </div>
         </div>
 
-        <Button
-          type="submit"
-          disabled={isPending}
-          className="w-full"
-        >
+        <Button type="submit" disabled={isPending} className="w-full">
           {isPending ? "Creating Account..." : "Complete Registration"}
         </Button>
       </form>
     </Form>
   );
-} 
+}

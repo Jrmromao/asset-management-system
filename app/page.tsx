@@ -107,7 +107,10 @@ const LandingPage = () => {
       <Industries />
 
       {/* Pricing Section */}
-      <section id="pricing" className="py-20 bg-gradient-to-br from-emerald-50 to-blue-50">
+      <section
+        id="pricing"
+        className="py-20 bg-gradient-to-br from-emerald-50 to-blue-50"
+      >
         <div className="max-w-7xl mx-auto px-4">
           <PricingTable />
         </div>

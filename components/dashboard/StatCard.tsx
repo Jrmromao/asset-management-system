@@ -1,9 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { 
-  Tooltip, 
-  TooltipContent, 
-  TooltipProvider, 
-  TooltipTrigger 
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
 } from "@/components/ui/tooltip";
 
 interface StatCardProps {
@@ -15,13 +15,13 @@ interface StatCardProps {
   tooltip?: string;
 }
 
-export const StatCard = ({ 
-  title, 
-  mainValue, 
-  subValue, 
-  subtitle, 
+export const StatCard = ({
+  title,
+  mainValue,
+  subValue,
+  subtitle,
   icon,
-  tooltip 
+  tooltip,
 }: StatCardProps) => {
   const content = (
     <Card className="hover:shadow-md transition-shadow cursor-pointer">
@@ -47,9 +47,7 @@ export const StatCard = ({
     return (
       <TooltipProvider>
         <Tooltip>
-          <TooltipTrigger asChild>
-            {content}
-          </TooltipTrigger>
+          <TooltipTrigger asChild>{content}</TooltipTrigger>
           <TooltipContent>
             <p>{tooltip}</p>
           </TooltipContent>

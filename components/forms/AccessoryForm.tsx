@@ -334,7 +334,7 @@ const AccessoryForm = () => {
                             form={form}
                           />
                         </div>
-                        
+
                         <div className="grid gap-4 md:grid-cols-3">
                           <CustomPriceInput
                             name="totalValue"
@@ -505,19 +505,25 @@ const AccessoryForm = () => {
                     },
                     {
                       name: "Purchase Information",
-                      isValid: !!form.watch("poNumber") || !!form.watch("purchaseDate"),
+                      isValid:
+                        !!form.watch("poNumber") ||
+                        !!form.watch("purchaseDate"),
                     },
                     {
                       name: "Pricing Information",
-                      isValid: !!form.watch("price") || !!form.watch("unitCost"),
+                      isValid:
+                        !!form.watch("price") || !!form.watch("unitCost"),
                     },
                     {
                       name: "Cost Management",
-                      isValid: !!form.watch("costCenter") || !!form.watch("budgetCode"),
+                      isValid:
+                        !!form.watch("costCenter") ||
+                        !!form.watch("budgetCode"),
                     },
                     {
                       name: "Physical Properties",
-                      isValid: !!form.watch("material") || !!form.watch("weight"),
+                      isValid:
+                        !!form.watch("material") || !!form.watch("weight"),
                     },
                     {
                       name: "Inventory Management",
