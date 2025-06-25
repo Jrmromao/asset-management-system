@@ -37,4 +37,3 @@ class CO2Store {
 }
 
 export const co2Store = CO2Store.getInstance();
- 

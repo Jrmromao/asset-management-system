@@ -1,12 +1,14 @@
 import { prisma } from "@/app/db";
 
-export async function getUserCompanyId(clerkUserId: string): Promise<string | null> {
+export async function getUserCompanyId(
+  clerkUserId: string,
+): Promise<string | null> {
   try {
     const user = await prisma.user.findUnique({
       where: { oauthId: clerkUserId },
       select: { companyId: true },
     });
-    
+
     return user?.companyId || null;
   } catch (error) {
     console.error("Error getting user company ID:", error);
@@ -21,14 +23,14 @@ export async function validateUserCompany(clerkUserId: string): Promise<{
 }> {
   try {
     const companyId = await getUserCompanyId(clerkUserId);
-    
+
     if (!companyId) {
       return {
         success: false,
         error: "User is not associated with a company",
       };
     }
-    
+
     return {
       success: true,
       companyId,
@@ -40,4 +42,4 @@ export async function validateUserCompany(clerkUserId: string): Promise<{
       error: "Failed to validate user company",
     };
   }
-} 
+}

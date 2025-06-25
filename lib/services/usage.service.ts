@@ -35,10 +35,8 @@ async function getItemUsage(companyId: string): Promise<{
   };
 }
 
-export async function checkItemLimit(
-  companyId: string,
-): Promise<{ 
-  allowed: boolean; 
+export async function checkItemLimit(companyId: string): Promise<{
+  allowed: boolean;
   usage: {
     total: number;
     assets: number;
@@ -61,11 +59,11 @@ export async function checkItemLimit(
     };
   } catch (error) {
     console.error(`Error checking item limit:`, error);
-    return { 
-      allowed: true, 
+    return {
+      allowed: true,
       usage: { total: 0, assets: 0, licenses: 0, accessories: 0 },
       limit: 100,
-      remaining: 100
+      remaining: 100,
     };
   }
 }
@@ -98,7 +96,7 @@ export async function getQuotaInfo(companyId: string): Promise<{
 }> {
   try {
     const result = await checkItemLimit(companyId);
-    
+
     return {
       success: true,
       data: {
@@ -116,7 +114,8 @@ export async function getQuotaInfo(companyId: string): Promise<{
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Failed to get quota info",
+      error:
+        error instanceof Error ? error.message : "Failed to get quota info",
     };
   }
 }

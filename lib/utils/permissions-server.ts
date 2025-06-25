@@ -21,15 +21,17 @@ export interface ServerPermissionResult {
  * Get user role from database (server-side only)
  * This is the source of truth for permissions
  */
-export async function getUserRoleFromDB(userId: string): Promise<string | null> {
+export async function getUserRoleFromDB(
+  userId: string,
+): Promise<string | null> {
   try {
     const user = await prisma.user.findUnique({
       where: { oauthId: userId },
       select: {
         role: {
-          select: { name: true }
-        }
-      }
+          select: { name: true },
+        },
+      },
     });
 
     return user?.role?.name || null;
@@ -43,14 +45,16 @@ export async function getUserRoleFromDB(userId: string): Promise<string | null> 
  * Verify user has permission (server-side)
  * Use this in API routes and server actions
  */
-export async function verifyPermission(permission: Permission): Promise<ServerPermissionResult> {
+export async function verifyPermission(
+  permission: Permission,
+): Promise<ServerPermissionResult> {
   try {
     const { userId } = await auth();
 
     if (!userId) {
       return {
         success: false,
-        error: "Authentication required"
+        error: "Authentication required",
       };
     }
 
@@ -60,7 +64,7 @@ export async function verifyPermission(permission: Permission): Promise<ServerPe
       return {
         success: false,
         error: "User role not found",
-        userId
+        userId,
       };
     }
 
@@ -71,20 +75,20 @@ export async function verifyPermission(permission: Permission): Promise<ServerPe
         success: false,
         error: `Insufficient permissions. Required: ${permission}`,
         userRole,
-        userId
+        userId,
       };
     }
 
     return {
       success: true,
       userRole,
-      userId
+      userId,
     };
   } catch (error) {
     console.error("Permission verification error:", error);
     return {
       success: false,
-      error: "Permission verification failed"
+      error: "Permission verification failed",
     };
   }
 }
@@ -93,8 +97,8 @@ export async function verifyPermission(permission: Permission): Promise<ServerPe
  * Verify user has multiple permissions
  */
 export async function verifyPermissions(
-  permissions: Permission[], 
-  requireAll: boolean = true
+  permissions: Permission[],
+  requireAll: boolean = true,
 ): Promise<ServerPermissionResult> {
   try {
     const { userId } = await auth();
@@ -102,7 +106,7 @@ export async function verifyPermissions(
     if (!userId) {
       return {
         success: false,
-        error: "Authentication required"
+        error: "Authentication required",
       };
     }
 
@@ -112,17 +116,17 @@ export async function verifyPermissions(
       return {
         success: false,
         error: "User role not found",
-        userId
+        userId,
       };
     }
 
-    const permissionChecks = permissions.map(permission => 
-      hasPermission(userRole, permission)
+    const permissionChecks = permissions.map((permission) =>
+      hasPermission(userRole, permission),
     );
 
-    const hasAccess = requireAll 
-      ? permissionChecks.every(check => check)
-      : permissionChecks.some(check => check);
+    const hasAccess = requireAll
+      ? permissionChecks.every((check) => check)
+      : permissionChecks.some((check) => check);
 
     if (!hasAccess) {
       const operator = requireAll ? "ALL" : "ANY";
@@ -130,20 +134,20 @@ export async function verifyPermissions(
         success: false,
         error: `Insufficient permissions. Required ${operator} of: ${permissions.join(", ")}`,
         userRole,
-        userId
+        userId,
       };
     }
 
     return {
       success: true,
       userRole,
-      userId
+      userId,
     };
   } catch (error) {
     console.error("Permission verification error:", error);
     return {
       success: false,
-      error: "Permission verification failed"
+      error: "Permission verification failed",
     };
   }
 }
@@ -160,7 +164,14 @@ export async function verifyAdmin(): Promise<ServerPermissionResult> {
  */
 export async function verifyAction(
   action: "view" | "create" | "edit" | "delete" | "assign" | "export",
-  resource: "assets" | "users" | "roles" | "categories" | "reports" | "company" | "audit"
+  resource:
+    | "assets"
+    | "users"
+    | "roles"
+    | "categories"
+    | "reports"
+    | "company"
+    | "audit",
 ): Promise<ServerPermissionResult> {
   const permission = `${resource}.${action}` as Permission;
   return verifyPermission(permission);
@@ -182,8 +193,8 @@ export async function getCurrentUserWithRole() {
       where: { oauthId: userId },
       include: {
         role: true,
-        company: true
-      }
+        company: true,
+      },
     });
 
     return user;
@@ -198,7 +209,10 @@ export async function getCurrentUserWithRole() {
  */
 export function withPermission(permission: Permission) {
   return async function permissionMiddleware(
-    handler: (req: Request, context: { userRole: string; userId: string }) => Promise<Response>
+    handler: (
+      req: Request,
+      context: { userRole: string; userId: string },
+    ) => Promise<Response>,
   ) {
     return async function protectedHandler(req: Request): Promise<Response> {
       const verification = await verifyPermission(permission);
@@ -206,13 +220,15 @@ export function withPermission(permission: Permission) {
       if (!verification.success) {
         return Response.json(
           { error: verification.error },
-          { status: verification.error?.includes("Authentication") ? 401 : 403 }
+          {
+            status: verification.error?.includes("Authentication") ? 401 : 403,
+          },
         );
       }
 
       return handler(req, {
         userRole: verification.userRole!,
-        userId: verification.userId!
+        userId: verification.userId!,
       });
     };
   };
@@ -223,7 +239,7 @@ export function withPermission(permission: Permission) {
  */
 export function requirePermission<T extends any[], R>(
   permission: Permission,
-  action: (...args: T) => Promise<R>
+  action: (...args: T) => Promise<R>,
 ) {
   return async function protectedAction(...args: T): Promise<R> {
     const verification = await verifyPermission(permission);
@@ -244,7 +260,7 @@ export async function logPermissionCheck(
   permission: Permission,
   granted: boolean,
   userId?: string,
-  context?: string
+  context?: string,
 ) {
   try {
     // In production, you might want to log to a dedicated audit service
@@ -254,7 +270,7 @@ export async function logPermissionCheck(
       granted,
       userId,
       context,
-      ip: "TODO: get IP from request"
+      ip: "TODO: get IP from request",
     });
 
     // Optionally store in database for compliance
@@ -281,23 +297,23 @@ export async function checkRateLimit(
   userId: string,
   permission: Permission,
   maxAttempts: number = 10,
-  windowMs: number = 60000 // 1 minute
+  windowMs: number = 60000, // 1 minute
 ): Promise<boolean> {
   const key = `${userId}:${permission}`;
   const now = Date.now();
-  
+
   const current = rateLimitMap.get(key);
-  
+
   if (!current || now > current.resetTime) {
     rateLimitMap.set(key, { count: 1, resetTime: now + windowMs });
     return true;
   }
-  
+
   if (current.count >= maxAttempts) {
     await logPermissionCheck(permission, false, userId, "RATE_LIMITED");
     return false;
   }
-  
+
   current.count++;
   return true;
 }
@@ -307,10 +323,10 @@ export async function checkRateLimit(
  */
 export async function verifyPermissionWithRateLimit(
   permission: Permission,
-  maxAttempts?: number
+  maxAttempts?: number,
 ): Promise<ServerPermissionResult> {
   const verification = await verifyPermission(permission);
-  
+
   if (!verification.success) {
     return verification;
   }
@@ -318,23 +334,23 @@ export async function verifyPermissionWithRateLimit(
   // Apply rate limiting for sensitive operations
   const sensitivePermissions: Permission[] = [
     "users.delete",
-    "assets.delete", 
+    "assets.delete",
     "company.settings",
-    "roles.delete"
+    "roles.delete",
   ];
 
   if (sensitivePermissions.includes(permission)) {
     const rateLimitPassed = await checkRateLimit(
       verification.userId!,
       permission,
-      maxAttempts
+      maxAttempts,
     );
 
     if (!rateLimitPassed) {
       return {
         success: false,
         error: "Rate limit exceeded for sensitive operation",
-        userId: verification.userId
+        userId: verification.userId,
       };
     }
   }
@@ -343,4 +359,4 @@ export async function verifyPermissionWithRateLimit(
   await logPermissionCheck(permission, true, verification.userId, "API_ACCESS");
 
   return verification;
-} 
+}
