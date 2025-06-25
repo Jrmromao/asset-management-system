@@ -1,5 +1,5 @@
 "use client";
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState, useEffect } from "react";
 import {
   BadgeCheck,
   Boxes,
@@ -9,8 +9,25 @@ import {
   MapPin,
   Tags,
   Warehouse,
+  HardDrive,
+  Settings,
+  Sparkles,
+  ChevronRight,
+  Search,
+  Plus,
+  Filter,
+  MoreHorizontal,
+  Target,
+  Brain,
+  Zap,
 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import TableHeader from "@/components/tables/TableHeader";
 import { DialogContainer } from "@/components/dialogs/DialogContainer";
 import {
@@ -63,6 +80,9 @@ import {
   Inventory,
   Manufacturer,
 } from "@prisma/client";
+import ReportStorageSettings from "@/components/settings/ReportStorageSettings";
+import SustainabilityTargets from "@/components/settings/SustainabilityTargets";
+import { aiService } from "@/lib/services/ai-multi-provider.service";
 
 interface Tab {
   id: TabId;
@@ -71,14 +91,16 @@ interface Tab {
   description: string;
 }
 
-type TabId =
+type TabId = 
   | "models"
   | "manufacturers"
   | "locations"
   | "departments"
   | "status-label"
   | "inventories"
-  | "asset-categories";
+  | "asset-categories"
+  | "sustainability-targets"
+  | "report-storage";
 
 interface ModalConfig {
   id: TabId;
@@ -94,43 +116,55 @@ const TABS: Tab[] = [
     id: "models",
     label: "Models",
     icon: Boxes,
-    description: "Manage and configure your models",
+    description: "Device and equipment models in your inventory",
   },
   {
     id: "manufacturers",
     label: "Manufacturers",
     icon: Factory,
-    description: "Manage and configure your manufacturers",
+    description: "Companies and brands that produce your assets",
   },
   {
     id: "locations",
     label: "Locations",
     icon: MapPin,
-    description: "Manage and configure your locations",
+    description: "Physical and virtual locations for asset placement",
   },
   {
     id: "departments",
     label: "Departments",
     icon: Building2,
-    description: "Manage and configure your departments",
+    description: "Organizational units and teams managing assets",
   },
   {
     id: "status-label",
     label: "Status Labels",
     icon: BadgeCheck,
-    description: "Manage and configure your status labels",
+    description: "Asset lifecycle states and condition tracking",
   },
   {
     id: "inventories",
     label: "Inventories",
     icon: Warehouse,
-    description: "Manage and configure your inventories",
+    description: "Stock levels and inventory management zones",
   },
   {
     id: "asset-categories",
     label: "Asset Categories",
     icon: Tags,
-    description: "Manage and configure your asset categories",
+    description: "Classification system for asset organization",
+  },
+  {
+    id: "sustainability-targets",
+    label: "Sustainability Targets",
+    icon: Target,
+    description: "Energy efficiency and carbon reduction goals",
+  },
+  {
+    id: "report-storage",
+    label: "Report Storage",
+    icon: HardDrive,
+    description: "Intelligent storage policies and cleanup automation",
   },
 ];
 
@@ -142,6 +176,12 @@ const AdminSettings = () => {
   const [activeTab, setActiveTab] = useState<TabId>("models");
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [llmStatus, setLlmStatus] = useState<{
+    available: number;
+    total: number;
+    providers: string[];
+  } | null>(null);
   const [editingInventory, setEditingInventory] = useState<Inventory | null>(
     null,
   );
@@ -237,6 +277,26 @@ const AdminSettings = () => {
     deleteFormTemplate,
   } = useFormTemplatesQuery();
 
+  // Load LLM status on component mount
+  useEffect(() => {
+    try {
+      const status = aiService.getProviderStatus();
+      const availableProviders = aiService.getAvailableProviders();
+      setLlmStatus({
+        available: availableProviders.length,
+        total: Object.keys(status).length,
+        providers: availableProviders,
+      });
+    } catch (error) {
+      console.warn("Failed to check LLM status:", error);
+      setLlmStatus({
+        available: 0,
+        total: 3,
+        providers: [],
+      });
+    }
+  }, []);
+
   const handleDelete = async (id: string) => {
     switch (activeTab) {
       case "models":
@@ -259,6 +319,9 @@ const AdminSettings = () => {
         break;
       case "asset-categories":
         await deleteFormTemplate(id);
+        break;
+      case "report-storage":
+        // No delete action needed for report storage settings
         break;
       default:
         return null;
@@ -385,7 +448,6 @@ const AdminSettings = () => {
       FormComponent: () => (
         <StatusLabelForm
           initialData={editingStatusLabel || undefined}
-          onClose={closeStatusLabel}
           onSubmitSuccess={() => {
             closeStatusLabel();
             setEditingStatusLabel(null);
@@ -508,6 +570,8 @@ const AdminSettings = () => {
     "status-label": labelsLoading,
     inventories: inventoriesLoading,
     "asset-categories": formTemplatesLoading,
+    "sustainability-targets": false,
+    "report-storage": false,
   };
 
   const handleCreateNew = (activeTab: string) => {
@@ -532,6 +596,9 @@ const AdminSettings = () => {
         break;
       case "asset-categories":
         onFormTemplateOpen();
+        break;
+      case "report-storage":
+        // No modal needed for report storage settings
         break;
       default:
         return null;
@@ -566,7 +633,9 @@ const AdminSettings = () => {
           />
         );
       case "locations":
-        return <DataTable columns={columns.locations} data={locations as any} />;
+        return (
+          <DataTable columns={columns.locations} data={locations as any} />
+        );
       case "departments":
         return (
           <DataTable columns={columns.departments} data={departments as any} />
@@ -591,6 +660,9 @@ const AdminSettings = () => {
           />
         );
 
+      case "report-storage":
+        return <ReportStorageSettings />;
+
       default:
         return null;
     }
@@ -606,7 +678,7 @@ const AdminSettings = () => {
   });
 
   return (
-    <div className="min-h-screen w-full">
+    <div className="min-h-screen bg-gray-50/30">
       {/* Modals */}
       {MODAL_CONFIGS.map((config) => {
         const { id, title, description, FormComponent, isOpen, onClose } =
@@ -623,73 +695,254 @@ const AdminSettings = () => {
         );
       })}
 
-      <div className="w-full mx-auto py-8 px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col lg:flex-row gap-8">
-          {/* Sidebar */}
-          <div className="w-full lg:w-64 space-y-1 bg-white p-3 rounded-lg border border-gray-200">
-            {TABS.map((tab) => {
-              const Icon = tab.icon;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`w-full flex items-center px-4 py-3 text-sm rounded-md transition-colors ${
-                    activeTab === tab.id
-                      ? "bg-green-50 text-green-700 font-medium"
-                      : "text-gray-600 hover:bg-gray-50"
-                  }`}
-                >
-                  <Icon className="w-5 h-5 mr-3" />
-                  <div className="text-left">
-                    <span className="block font-medium">{tab.label}</span>
-                  </div>
-                </button>
-              );
-            })}
+      <div className="max-w-8xl mx-auto">
+        {/* Header Section */}
+        <div className="px-6 py-8">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-slate-900 to-slate-700 rounded-xl flex items-center justify-center shadow-lg">
+                <Settings className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-semibold text-gray-900">System Configuration</h1>
+                <p className="text-sm text-gray-600">Manage your application settings and master data</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 px-3 py-1.5 bg-emerald-50 border border-emerald-200 rounded-lg">
+                <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+                <span className="text-xs font-medium text-emerald-700">System Healthy</span>
+              </div>
+              {llmStatus && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className={`flex items-center gap-1 px-3 py-1.5 rounded-lg border cursor-help ${
+                        llmStatus.available > 0 
+                          ? 'bg-blue-50 border-blue-200' 
+                          : 'bg-amber-50 border-amber-200'
+                      }`}>
+                        <Brain className={`w-3 h-3 ${
+                          llmStatus.available > 0 ? 'text-blue-600' : 'text-amber-600'
+                        }`} />
+                        <span className={`text-xs font-medium ${
+                          llmStatus.available > 0 ? 'text-blue-700' : 'text-amber-700'
+                        }`}>
+                          AI: {llmStatus.available}/{llmStatus.total}
+                        </span>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="max-w-xs">
+                      <div className="space-y-2">
+                        <div className="font-medium">AI Provider Status</div>
+                        <div className="text-sm text-gray-600">
+                          {llmStatus.available > 0 
+                            ? `${llmStatus.available} of ${llmStatus.total} AI providers are available`
+                            : `No AI providers are configured`
+                          }
+                        </div>
+                        {llmStatus.providers.length > 0 && (
+                          <div className="text-xs">
+                            <div className="font-medium mb-1">Active providers:</div>
+                            <div className="space-y-0.5">
+                              {llmStatus.providers.map((provider) => (
+                                <div key={provider} className="flex items-center gap-1">
+                                  <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                                  <span className="capitalize">{provider}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {llmStatus.available === 0 && (
+                          <div className="text-xs text-amber-600">
+                            Configure API keys in .env.local to enable AI features
+                          </div>
+                        )}
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+            </div>
           </div>
+        </div>
 
-          {/* Main content */}
-          <div className="flex-1">
-            <div className="bg-white rounded-lg border border-gray-200">
-              <div className="p-6 border-b border-gray-200">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                  <div>
-                    <h2 className="text-lg font-semibold text-gray-900">
-                      {activeTabConfig?.label}
-                    </h2>
-                    <p className="text-sm text-gray-500">
-                      {activeTabConfig?.description}
-                    </p>
-                  </div>
+        <div className="px-6 pb-8">
+          <div className="flex flex-col xl:flex-row gap-6">
+            {/* Navigation Sidebar */}
+            <div className="xl:w-80 space-y-2">
+              <div className="bg-white rounded-2xl border border-gray-200/60 shadow-sm overflow-hidden sticky top-6">
+                <div className="p-4 border-b border-gray-100">
+                  <h3 className="font-medium flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-slate-600" />
+                    <span className="text-gray-900 font-medium">Configuration Areas</span>
+                  </h3>
+                </div>
+                <div className="p-2">
+                  {TABS.map((tab) => {
+                    const Icon = tab.icon;
+                    const isActive = activeTab === tab.id;
+                    return (
+                      <button
+                        key={tab.id}
+                        onClick={() => setActiveTab(tab.id)}
+                        className={`w-full group flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 ${
+                          isActive
+                            ? "bg-slate-900 text-white shadow-lg shadow-slate-900/20"
+                            : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+                        }`}
+                      >
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+                          isActive 
+                            ? "bg-white/20" 
+                            : "bg-gray-100 group-hover:bg-gray-200"
+                        }`}>
+                          <Icon className={`w-4 h-4 ${isActive ? "text-white" : "text-gray-600"}`} />
+                        </div>
+                        {!sidebarCollapsed && (
+                          <>
+                            <div className="flex-1 text-left">
+                              <div className={`font-medium text-sm ${isActive ? "text-white" : "text-gray-900"}`}>
+                                {tab.label}
+                              </div>
+                              <div className={`text-xs leading-tight ${
+                                isActive ? "text-white/70" : "text-gray-500"
+                              }`}>
+                                {tab.description}
+                              </div>
+                            </div>
+                            {isActive && (
+                              <ChevronRight className="w-4 h-4 text-white/70" />
+                            )}
+                          </>
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
+            </div>
 
-              <div className="p-6">
-                {modelsError && (
-                  <Alert variant="destructive" className="mb-4">
-                    <AlertDescription>
-                      Failed to load data. Please try again later.
-                    </AlertDescription>
-                  </Alert>
-                )}
+            {/* Main Content Area */}
+            <div className="flex-1">
+              <div className="bg-white rounded-2xl border border-gray-200/60 shadow-sm overflow-hidden">
+                {/* Content Header */}
+                <div className="p-6 border-b border-gray-100">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center border border-gray-200">
+                        {activeTabConfig && <activeTabConfig.icon className="w-6 h-6 text-gray-700" />}
+                      </div>
+                      <div>
+                        <h2 className="text-xl font-semibold text-gray-900">
+                          {activeTabConfig?.label}
+                        </h2>
+                        <p className="text-sm text-gray-600 mt-0.5">
+                          {activeTabConfig?.description}
+                        </p>
+                      </div>
+                    </div>
+                    {activeTab !== "report-storage" && activeTab !== "sustainability-targets" && (
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleCreateNew(activeTab)}
+                          className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors text-sm font-medium"
+                        >
+                          <Plus className="w-4 h-4" />
+                          Add New
+                        </button>
+                        <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
+                          <MoreHorizontal className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
 
-                {isLoadingData ? (
-                  <>
-                    <TableHeaderSkeleton />
-                    <TableSkeleton columns={4} rows={5} />
-                  </>
-                ) : (
-                  <>
-                    <TableHeader
-                      onSearch={handleSearch}
-                      onFilter={handleFilter}
-                      onImport={handleImport}
-                      onAddNew={() => handleCreateNew(activeTab)}
-                      table={table}
-                    />
-                    {renderDataTable()}
-                  </>
-                )}
+                {/* Content Body */}
+                <div className="p-6">
+                  {modelsError && (
+                    <Alert variant="destructive" className="mb-6 border-red-200 bg-red-50">
+                      <AlertDescription className="text-red-800">
+                        Failed to load data. Please try again later.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+
+                  {isLoadingData ? (
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div className="h-10 bg-gray-200 rounded-lg w-80 animate-pulse"></div>
+                        <div className="flex gap-2">
+                          <div className="h-10 w-24 bg-gray-200 rounded-lg animate-pulse"></div>
+                          <div className="h-10 w-24 bg-gray-200 rounded-lg animate-pulse"></div>
+                        </div>
+                      </div>
+                      <div className="border border-gray-200 rounded-xl overflow-hidden">
+                        <div className="bg-gray-50 p-4 border-b border-gray-200">
+                          <div className="flex gap-4">
+                            {Array.from({ length: 4 }).map((_, i) => (
+                              <div key={i} className="h-4 bg-gray-200 rounded w-20 animate-pulse"></div>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="p-4 space-y-3">
+                          {Array.from({ length: 5 }).map((_, i) => (
+                            <div key={i} className="flex gap-4">
+                              {Array.from({ length: 4 }).map((_, j) => (
+                                <div key={j} className="h-4 bg-gray-200 rounded flex-1 animate-pulse"></div>
+                              ))}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  ) : activeTab === "report-storage" ? (
+                    <ReportStorageSettings />
+                  ) : activeTab === "sustainability-targets" ? (
+                    <SustainabilityTargets />
+                  ) : (
+                    <div className="space-y-6">
+                      {/* Enhanced Table Header */}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="relative">
+                            <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+                            <input
+                              type="text"
+                              placeholder="Search..."
+                              value={searchQuery}
+                              onChange={(e) => handleSearch(e.target.value)}
+                              className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent outline-none transition-all text-sm w-64"
+                            />
+                          </div>
+                          <button
+                            onClick={handleFilter}
+                            className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors text-sm"
+                          >
+                            <Filter className="w-4 h-4" />
+                            Filter
+                          </button>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={handleImport}
+                            disabled={isLoading}
+                            className="px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors text-sm font-medium border border-gray-200"
+                          >
+                            Import
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Enhanced Data Table */}
+                      <div className="border border-gray-200 rounded-xl overflow-hidden bg-white">
+                        {renderDataTable()}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>

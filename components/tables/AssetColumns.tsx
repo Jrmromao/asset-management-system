@@ -128,14 +128,21 @@ const CO2FootprintCell = ({ row }: { row: any }) => {
                     endOfLife: "N/A",
                   },
                   sources: details.sources || [],
-                  description: details.description || (record as any).description || "",
+                  description:
+                    details.description || (record as any).description || "",
                   scopeBreakdown: details.scopeBreakdown || {
                     scope1: { total: 0, categories: {} },
-                    scope2: { total: 0, locationBased: 0, marketBased: 0, electricity: 0 },
+                    scope2: {
+                      total: 0,
+                      locationBased: 0,
+                      marketBased: 0,
+                      electricity: 0,
+                    },
                     scope3: { total: 0, categories: {} },
                   },
                   primaryScope: details.primaryScope || 3,
-                  primaryScopeCategory: details.primaryScopeCategory || "Unknown",
+                  primaryScopeCategory:
+                    details.primaryScopeCategory || "Unknown",
                   emissionFactors: details.emissionFactors || [],
                   methodology: details.methodology || "Historical data",
                   activityData: details.activityData || {},
@@ -155,7 +162,12 @@ const CO2FootprintCell = ({ row }: { row: any }) => {
                   description: (record as any).description || "",
                   scopeBreakdown: {
                     scope1: { total: 0, categories: {} },
-                    scope2: { total: 0, locationBased: 0, marketBased: 0, electricity: 0 },
+                    scope2: {
+                      total: 0,
+                      locationBased: 0,
+                      marketBased: 0,
+                      electricity: 0,
+                    },
                     scope3: { total: 0, categories: {} },
                   },
                   primaryScope: 3,
@@ -180,9 +192,14 @@ const CO2FootprintCell = ({ row }: { row: any }) => {
                 description: (record as any).description || "",
                 scopeBreakdown: {
                   scope1: { total: 0, categories: {} },
-                  scope2: { total: 0, locationBased: 0, marketBased: 0, electricity: 0 },
+                  scope2: {
+                    total: 0,
+                    locationBased: 0,
+                    marketBased: 0,
+                    electricity: 0,
+                  },
                   scope3: { total: 0, categories: {} },
-                },  
+                },
                 primaryScope: 3,
                 primaryScopeCategory: "Unknown",
                 emissionFactors: [],

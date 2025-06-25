@@ -3,15 +3,15 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { 
-  MoreHorizontal, 
-  Calendar, 
-  CheckCircle, 
-  Play, 
-  AlertTriangle, 
+import {
+  MoreHorizontal,
+  Calendar,
+  CheckCircle,
+  Play,
+  AlertTriangle,
   Leaf,
   Clock,
-  Loader2
+  Loader2,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -28,7 +28,8 @@ import {
 } from "@/components/ui/tooltip";
 import { formatDistanceToNow, format } from "date-fns";
 import { useMaintenance } from "@/hooks/useMaintenance";
-import { memo } from "react";
+import { memo, useState, useEffect } from "react";
+import ConfirmationDialog from "@/components/ConfirmationDialog";
 
 export type MaintenanceRow = {
   id: string;
@@ -71,15 +72,30 @@ const StatusBadge = memo(({ status }: { status: string }) => {
     const lowerStatus = status.toLowerCase();
     switch (lowerStatus) {
       case "scheduled":
-        return { className: "bg-blue-100 text-blue-800 border-0", dot: "bg-blue-500" };
+        return {
+          className: "bg-blue-100 text-blue-800 border-0",
+          dot: "bg-blue-500",
+        };
       case "in progress":
-        return { className: "bg-amber-100 text-amber-800 border-0", dot: "bg-amber-500" };
+        return {
+          className: "bg-amber-100 text-amber-800 border-0",
+          dot: "bg-amber-500",
+        };
       case "completed":
-        return { className: "bg-green-100 text-green-800 border-0", dot: "bg-green-500" };
+        return {
+          className: "bg-green-100 text-green-800 border-0",
+          dot: "bg-green-500",
+        };
       case "overdue":
-        return { className: "bg-red-100 text-red-800 border-0", dot: "bg-red-500" };
+        return {
+          className: "bg-red-100 text-red-800 border-0",
+          dot: "bg-red-500",
+        };
       default:
-        return { className: "bg-gray-100 text-gray-800 border-0", dot: "bg-gray-500" };
+        return {
+          className: "bg-gray-100 text-gray-800 border-0",
+          dot: "bg-gray-500",
+        };
     }
   };
 
@@ -101,8 +117,11 @@ const CO2Display = memo(({ co2eRecords }: { co2eRecords?: any[] }) => {
     return <span className="text-xs text-gray-400">No data</span>;
   }
 
-  const totalCO2 = co2eRecords.reduce((sum, record) => sum + Number(record.co2e), 0);
-  
+  const totalCO2 = co2eRecords.reduce(
+    (sum, record) => sum + Number(record.co2e),
+    0,
+  );
+
   const getColor = (co2e: number) => {
     if (co2e <= 5) return "text-green-600";
     if (co2e <= 15) return "text-amber-600";
@@ -123,7 +142,9 @@ const CO2Display = memo(({ co2eRecords }: { co2eRecords?: any[] }) => {
         <TooltipContent>
           <div className="text-xs">
             {co2eRecords.map((record, i) => (
-              <div key={i}>{record.co2eType}: {Number(record.co2e).toFixed(1)}kg</div>
+              <div key={i}>
+                {record.co2eType}: {Number(record.co2e).toFixed(1)}kg
+              </div>
             ))}
           </div>
         </TooltipContent>
@@ -137,110 +158,137 @@ CO2Display.displayName = "CO2Display";
 // Enhanced Actions Cell with Custom Hook Integration
 const ActionsCell = memo(({ row }: { row: any }) => {
   const maintenance = row.original;
-  const { updateStatus, deleteMaintenance, isUpdating, isDeleting } = useMaintenance();
+  const { updateStatus, deleteMaintenance, isUpdating, isDeleting } =
+    useMaintenance();
+
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const handleStatusUpdate = async (newStatus: string) => {
     updateStatus(maintenance.id, newStatus);
   };
 
-  const handleDelete = async () => {
-    if (confirm("Are you sure you want to delete this maintenance record?")) {
-      deleteMaintenance(maintenance.id);
+  const handleDelete = () => {
+    setDeleteId(maintenance.id);
+  };
+
+  const confirmDelete = async () => {
+    if (deleteId) {
+      await deleteMaintenance(deleteId);
+      setDeleteId(null);
     }
   };
 
   const isLoading = isUpdating || isDeleting;
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          className="h-8 w-8 p-0" 
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <MoreHorizontal className="h-4 w-4" />
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0"
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <MoreHorizontal className="h-4 w-4" />
+            )}
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          {maintenance.statusLabel.name === "Scheduled" && (
+            <>
+              <DropdownMenuItem
+                onClick={() => handleStatusUpdate("In Progress")}
+                disabled={isLoading}
+              >
+                <Play className="h-4 w-4 mr-2" />
+                Start
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => handleStatusUpdate("Completed")}
+                disabled={isLoading}
+              >
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Complete
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+            </>
           )}
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        {maintenance.statusLabel.name === "Scheduled" && (
-          <>
-            <DropdownMenuItem 
-              onClick={() => handleStatusUpdate("In Progress")}
-              disabled={isLoading}
-            >
-              <Play className="h-4 w-4 mr-2" />
-              Start
-            </DropdownMenuItem>
-            <DropdownMenuItem 
-              onClick={() => handleStatusUpdate("Completed")}
-              disabled={isLoading}
-            >
-              <CheckCircle className="h-4 w-4 mr-2" />
-              Complete
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-          </>
-        )}
-        {maintenance.statusLabel.name === "In Progress" && (
-          <>
-            <DropdownMenuItem 
-              onClick={() => handleStatusUpdate("Completed")}
-              disabled={isLoading}
-            >
-              <CheckCircle className="h-4 w-4 mr-2" />
-              Complete
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-          </>
-        )}
-        <DropdownMenuItem 
-          onClick={handleDelete} 
-          className="text-red-600"
-          disabled={isLoading}
-        >
-          Delete
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+          {maintenance.statusLabel.name === "In Progress" && (
+            <>
+              <DropdownMenuItem
+                onClick={() => handleStatusUpdate("Completed")}
+                disabled={isLoading}
+              >
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Complete
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+            </>
+          )}
+          <DropdownMenuItem
+            onClick={handleDelete}
+            className="text-red-600"
+            disabled={isLoading}
+          >
+            Delete
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      {deleteId && (
+        <ConfirmationDialog
+          title="Delete Maintenance Record"
+          description="Are you sure you want to delete this maintenance record? This action cannot be undone."
+          confirmText="Delete"
+          cancelText="Cancel"
+          variant="danger"
+          onConfirm={confirmDelete}
+          onCancel={() => setDeleteId(null)}
+          open={!!deleteId}
+          onOpenChange={(open) => {
+            if (!open) setDeleteId(null);
+          }}
+        />
+      )}
+    </>
   );
 });
 
 ActionsCell.displayName = "ActionsCell";
 
 // Memoized Maintenance Title Cell
-const MaintenanceTitleCell = memo(({ title, notes }: { title: string; notes?: string }) => (
-  <TooltipProvider>
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <div className="max-w-[180px] cursor-help">
-          <div className="font-medium text-sm truncate">{title}</div>
-          {notes && (
-            <div className="text-xs text-gray-500 truncate">{notes}</div>
-          )}
-        </div>
-      </TooltipTrigger>
-      {notes && (
-        <TooltipContent>
-          <div className="max-w-xs">
-            <div className="font-medium">{title}</div>
-            <div className="text-sm text-gray-600 mt-1">{notes}</div>
+const MaintenanceTitleCell = memo(
+  ({ title, notes }: { title: string; notes?: string }) => (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div className="max-w-[180px] cursor-help">
+            <div className="font-medium text-sm truncate">{title}</div>
+            {notes && (
+              <div className="text-xs text-gray-500 truncate">{notes}</div>
+            )}
           </div>
-        </TooltipContent>
-      )}
-    </Tooltip>
-  </TooltipProvider>
-));
+        </TooltipTrigger>
+        {notes && (
+          <TooltipContent>
+            <div className="max-w-xs">
+              <div className="font-medium">{title}</div>
+              <div className="text-sm text-gray-600 mt-1">{notes}</div>
+            </div>
+          </TooltipContent>
+        )}
+      </Tooltip>
+    </TooltipProvider>
+  ),
+);
 
 MaintenanceTitleCell.displayName = "MaintenanceTitleCell";
 
 // Memoized Asset Cell
-const AssetCell = memo(({ asset }: { asset: MaintenanceRow['asset'] }) => (
+const AssetCell = memo(({ asset }: { asset: MaintenanceRow["asset"] }) => (
   <div className="max-w-[160px]">
     <div className="font-medium text-sm truncate">{asset.name}</div>
     <div className="flex items-center gap-2 mt-0.5">
@@ -257,53 +305,68 @@ const AssetCell = memo(({ asset }: { asset: MaintenanceRow['asset'] }) => (
 AssetCell.displayName = "AssetCell";
 
 // Memoized Date Cell
-const DateCell = memo(({ date, isOverdue = false }: { date: string; isOverdue?: boolean }) => {
-  const dateObj = new Date(date);
-  
-  return (
-    <div className="text-sm">
-      <div className={isOverdue ? "text-red-600 font-medium" : "text-gray-900"}>
-        {format(dateObj, "MMM dd, yyyy")}
+const DateCell = memo(
+  ({ date, isOverdue = false }: { date: string; isOverdue?: boolean }) => {
+    const dateObj = new Date(date);
+    const [relative, setRelative] = useState("");
+
+    useEffect(() => {
+      setRelative(formatDistanceToNow(dateObj, { addSuffix: true }));
+    }, [date]);
+
+    return (
+      <div className="text-sm">
+        <div
+          className={isOverdue ? "text-red-600 font-medium" : "text-gray-900"}
+        >
+          {format(dateObj, "MMM dd, yyyy")}
+        </div>
+        <div className="text-xs text-gray-500">{relative}</div>
+        {isOverdue && (
+          <Badge variant="destructive" className="text-xs mt-1">
+            Overdue
+          </Badge>
+        )}
       </div>
-      <div className="text-xs text-gray-500">
-        {formatDistanceToNow(dateObj, { addSuffix: true })}
-      </div>
-      {isOverdue && (
-        <Badge variant="destructive" className="text-xs mt-1">
-          Overdue
-        </Badge>
-      )}
-    </div>
-  );
-});
+    );
+  },
+);
 
 DateCell.displayName = "DateCell";
 
 // Memoized Cost Cell
-const CostCell = memo(({ cost, totalCost, isWarranty }: { 
-  cost?: number; 
-  totalCost?: number; 
-  isWarranty: boolean; 
-}) => {
-  const finalCost = totalCost || cost;
-  
-  if (isWarranty) {
-    return (
-      <div>
-        <Badge className="bg-green-100 text-green-800 border-0 text-xs">
-          Warranty
-        </Badge>
-        <div className="text-xs text-gray-500 mt-0.5">No cost</div>
-      </div>
+const CostCell = memo(
+  ({
+    cost,
+    totalCost,
+    isWarranty,
+  }: {
+    cost?: number;
+    totalCost?: number;
+    isWarranty: boolean;
+  }) => {
+    const finalCost = totalCost || cost;
+
+    if (isWarranty) {
+      return (
+        <div>
+          <Badge className="bg-green-100 text-green-800 border-0 text-xs">
+            Warranty
+          </Badge>
+          <div className="text-xs text-gray-500 mt-0.5">No cost</div>
+        </div>
+      );
+    }
+
+    return finalCost ? (
+      <span className="text-sm font-medium">
+        ${Number(finalCost).toFixed(2)}
+      </span>
+    ) : (
+      <span className="text-gray-400">-</span>
     );
-  }
-  
-  return finalCost ? (
-    <span className="text-sm font-medium">${Number(finalCost).toFixed(2)}</span>
-  ) : (
-    <span className="text-gray-400">-</span>
-  );
-});
+  },
+);
 
 CostCell.displayName = "CostCell";
 
@@ -330,9 +393,10 @@ export const maintenanceColumns: ColumnDef<MaintenanceRow>[] = [
       const now = new Date();
       const isCompleted = row.original.completionDate;
       const status = statusLabel.name.toLowerCase();
-      
-      const isOverdue = startDate < now && !isCompleted && status !== "completed";
-      
+
+      const isOverdue =
+        startDate < now && !isCompleted && status !== "completed";
+
       return <StatusBadge status={isOverdue ? "Overdue" : statusLabel.name} />;
     },
   },
@@ -344,9 +408,10 @@ export const maintenanceColumns: ColumnDef<MaintenanceRow>[] = [
       const now = new Date();
       const isCompleted = row.original.completionDate;
       const status = row.original.statusLabel.name.toLowerCase();
-      
-      const isOverdue = new Date(startDate) < now && !isCompleted && status !== "completed";
-      
+
+      const isOverdue =
+        new Date(startDate) < now && !isCompleted && status !== "completed";
+
       return <DateCell date={startDate} isOverdue={isOverdue} />;
     },
   },
@@ -363,7 +428,7 @@ export const maintenanceColumns: ColumnDef<MaintenanceRow>[] = [
           </div>
         );
       }
-      
+
       return <DateCell date={completionDate} />;
     },
   },
@@ -372,7 +437,9 @@ export const maintenanceColumns: ColumnDef<MaintenanceRow>[] = [
     header: "Cost",
     cell: ({ row }) => {
       const { cost, totalCost, isWarranty } = row.original;
-      return <CostCell cost={cost} totalCost={totalCost} isWarranty={isWarranty} />;
+      return (
+        <CostCell cost={cost} totalCost={totalCost} isWarranty={isWarranty} />
+      );
     },
   },
   {
@@ -386,7 +453,9 @@ export const maintenanceColumns: ColumnDef<MaintenanceRow>[] = [
     cell: ({ row }) => {
       const supplier = row.original.supplier;
       return supplier ? (
-        <span className="text-sm truncate max-w-[100px] block">{supplier.name}</span>
+        <span className="text-sm truncate max-w-[100px] block">
+          {supplier.name}
+        </span>
       ) : (
         <span className="text-gray-400">-</span>
       );
@@ -396,4 +465,4 @@ export const maintenanceColumns: ColumnDef<MaintenanceRow>[] = [
     id: "actions",
     cell: ({ row }) => <ActionsCell row={row} />,
   },
-]; 
+];

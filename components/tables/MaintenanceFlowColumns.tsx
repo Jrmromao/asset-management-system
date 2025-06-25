@@ -57,7 +57,7 @@ export const maintenanceFlowColumns = ({
         if (priority > 200) return "MEDIUM";
         return "LOW";
       };
-      
+
       const getVariant = (level: string) => {
         switch (level) {
           case "HIGH":
@@ -141,9 +141,7 @@ export const maintenanceFlowColumns = ({
     cell: ({ row }) => {
       const lastExecuted = row.getValue("lastExecuted") as Date | undefined;
       if (!lastExecuted) {
-        return (
-          <span className="text-gray-500 dark:text-gray-400">Never</span>
-        );
+        return <span className="text-gray-500 dark:text-gray-400">Never</span>;
       }
       return (
         <span className="text-sm text-gray-600 dark:text-gray-300">
@@ -223,4 +221,4 @@ export const maintenanceFlowColumns = ({
       );
     },
   },
-]; 
+];

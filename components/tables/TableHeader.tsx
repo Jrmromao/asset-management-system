@@ -39,6 +39,7 @@ interface DataTableHeaderProps<TData> {
   showSearch?: boolean;
   showFilter?: boolean;
   showAddNew?: boolean;
+  searchColumnId?: string;
   children?: React.ReactNode;
 }
 
@@ -60,6 +61,7 @@ export function DataTableHeader<TData>({
   showSearch = true,
   showFilter = true,
   showAddNew = true,
+  searchColumnId = "title",
   children,
 }: DataTableHeaderProps<TData>) {
   return (
@@ -76,30 +78,26 @@ export function DataTableHeader<TData>({
           )}
         </div>
         <div className="flex items-center space-x-3">
-          {showSearch && (() => {
-            const nameColumn = table.getColumn("name");
-            const titleColumn = nameColumn ? null : table.getColumn("title");
-            const searchColumn = nameColumn || titleColumn;
-            
-            if (!searchColumn) return null;
-            
-            return (
-              <Input
-                placeholder={searchPlaceholder}
-                value={(searchColumn.getFilterValue() as string) ?? ""}
-                onChange={(event) => searchColumn.setFilterValue(event.target.value)}
-                className="h-9 w-[150px] lg:w-[250px] dark:bg-gray-800 dark:border-gray-700 dark:placeholder-gray-400"
-              />
-            );
-          })()}
+          {showSearch &&
+            (() => {
+              const searchColumn = table.getColumn(searchColumnId);
+              if (!searchColumn) return null;
+              return (
+                <Input
+                  placeholder={searchPlaceholder}
+                  value={(searchColumn.getFilterValue() as string) ?? ""}
+                  onChange={(event) =>
+                    searchColumn.setFilterValue(event.target.value)
+                  }
+                  className="h-9 w-[150px] lg:w-[250px] dark:bg-gray-800 dark:border-gray-700 dark:placeholder-gray-400"
+                />
+              );
+            })()}
           {(() => {
-            const nameColumn = table.getColumn("name");
-            const titleColumn = nameColumn ? null : table.getColumn("title");
-            const searchColumn = nameColumn || titleColumn;
-            const hasFilterValue = searchColumn && Boolean(searchColumn.getFilterValue());
-            
+            const searchColumn = table.getColumn(searchColumnId);
+            const hasFilterValue =
+              searchColumn && Boolean(searchColumn.getFilterValue());
             if (!hasFilterValue) return null;
-            
             return (
               <Button
                 variant="ghost"

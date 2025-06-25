@@ -1,10 +1,10 @@
 "use client";
 
-import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertTriangle, RefreshCw, Home, MessageCircle } from 'lucide-react';
-import { toast } from 'sonner';
+import React, { Component, ErrorInfo, ReactNode } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AlertTriangle, RefreshCw, Home, MessageCircle } from "lucide-react";
+import { toast } from "sonner";
 
 interface Props {
   children: ReactNode;
@@ -46,15 +46,15 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     // Log the error for monitoring
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
-    
+    console.error("ErrorBoundary caught an error:", error, errorInfo);
+
     this.setState({
       error,
       errorInfo,
     });
 
     // Report to error monitoring service (e.g., Sentry)
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       // Simulate error reporting - replace with actual service
       const eventId = this.reportError(error, errorInfo);
       this.setState({ eventId });
@@ -64,7 +64,7 @@ export class ErrorBoundary extends Component<Props, State> {
     this.props.onError?.(error, errorInfo);
 
     // Show toast notification
-    toast.error('Something went wrong. The error has been reported.');
+    toast.error("Something went wrong. The error has been reported.");
   }
 
   componentDidUpdate(prevProps: Props) {
@@ -72,12 +72,20 @@ export class ErrorBoundary extends Component<Props, State> {
     const { hasError } = this.state;
 
     if (hasError && prevProps.resetKeys !== resetKeys) {
-      if (resetKeys?.some((resetKey, idx) => resetKey !== prevProps.resetKeys?.[idx])) {
+      if (
+        resetKeys?.some(
+          (resetKey, idx) => resetKey !== prevProps.resetKeys?.[idx],
+        )
+      ) {
         this.resetErrorBoundary();
       }
     }
 
-    if (hasError && resetOnPropsChange && prevProps.children !== this.props.children) {
+    if (
+      hasError &&
+      resetOnPropsChange &&
+      prevProps.children !== this.props.children
+    ) {
       this.resetErrorBoundary();
     }
   }
@@ -85,7 +93,7 @@ export class ErrorBoundary extends Component<Props, State> {
   private reportError = (error: Error, errorInfo: ErrorInfo): string => {
     // Simulate error reporting - replace with actual error monitoring
     const eventId = Math.random().toString(36).substring(7);
-    
+
     // Example: Send to monitoring service
     const errorReport = {
       message: error.message,
@@ -94,13 +102,13 @@ export class ErrorBoundary extends Component<Props, State> {
       timestamp: new Date().toISOString(),
       userAgent: navigator.userAgent,
       url: window.location.href,
-      userId: 'user-id', // Get from auth context
-      sessionId: 'session-id', // Get from session
+      userId: "user-id", // Get from auth context
+      sessionId: "session-id", // Get from session
     };
 
     // In production, send to error monitoring service
     // Example: Sentry.captureException(error, { contexts: { react: errorInfo } });
-    console.error('Error Report:', errorReport);
+    console.error("Error Report:", errorReport);
 
     return eventId;
   };
@@ -122,12 +130,12 @@ export class ErrorBoundary extends Component<Props, State> {
 
   private handleRetry = () => {
     this.resetErrorBoundary();
-    toast.success('Retrying...');
+    toast.success("Retrying...");
   };
 
   private handleReportIssue = () => {
     const { error, eventId } = this.state;
-    const subject = `Error Report - ${error?.name || 'Unknown Error'}`;
+    const subject = `Error Report - ${error?.name || "Unknown Error"}`;
     const body = `
 Error ID: ${eventId}
 Error Message: ${error?.message}
@@ -137,9 +145,9 @@ Timestamp: ${new Date().toISOString()}
 Please describe what you were doing when this error occurred:
 
 `;
-    
+
     const mailtoLink = `mailto:support@yourapp.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    window.open(mailtoLink, '_blank');
+    window.open(mailtoLink, "_blank");
   };
 
   render() {
@@ -189,24 +197,25 @@ Please describe what you were doing when this error occurred:
             <CardContent className="space-y-4">
               <div className="text-center text-gray-600">
                 <p className="text-sm">
-                  We're sorry, but something unexpected happened. The error has been
-                  automatically reported to our team.
+                  We're sorry, but something unexpected happened. The error has
+                  been automatically reported to our team.
                 </p>
                 {eventId && (
                   <p className="text-xs text-gray-500 mt-2">
-                    Error ID: <code className="bg-gray-100 px-1 rounded">{eventId}</code>
+                    Error ID:{" "}
+                    <code className="bg-gray-100 px-1 rounded">{eventId}</code>
                   </p>
                 )}
               </div>
 
-              {process.env.NODE_ENV === 'development' && error && (
+              {process.env.NODE_ENV === "development" && error && (
                 <details className="bg-gray-100 p-3 rounded text-xs">
                   <summary className="cursor-pointer font-medium text-gray-700">
                     Error Details (Development)
                   </summary>
                   <pre className="mt-2 text-red-600 whitespace-pre-wrap overflow-auto">
                     {error.message}
-                    {'\n\n'}
+                    {"\n\n"}
                     {error.stack}
                   </pre>
                 </details>
@@ -217,17 +226,17 @@ Please describe what you were doing when this error occurred:
                   <RefreshCw className="h-4 w-4 mr-2" />
                   Try Again
                 </Button>
-                
+
                 <div className="flex gap-2">
                   <Button
-                    onClick={() => window.location.href = '/'}
+                    onClick={() => (window.location.href = "/")}
                     variant="outline"
                     className="flex-1"
                   >
                     <Home className="h-4 w-4 mr-2" />
                     Go Home
                   </Button>
-                  
+
                   <Button
                     onClick={this.handleReportIssue}
                     variant="outline"
@@ -251,7 +260,7 @@ Please describe what you were doing when this error occurred:
 // Higher-order component for easy wrapping
 export function withErrorBoundary<P extends object>(
   Component: React.ComponentType<P>,
-  errorBoundaryProps?: Omit<Props, 'children'>
+  errorBoundaryProps?: Omit<Props, "children">,
 ) {
   const WrappedComponent = (props: P) => (
     <ErrorBoundary {...errorBoundaryProps}>
@@ -268,4 +277,4 @@ export function useErrorHandler() {
   return (error: Error, errorInfo?: ErrorInfo) => {
     throw error;
   };
-} 
+}

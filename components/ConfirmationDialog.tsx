@@ -21,6 +21,8 @@ interface ConfirmationDialogProps {
   onCancel?: () => void;
   children?: React.ReactNode;
   variant?: "warning" | "danger" | "info";
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 const ConfirmationDialog = ({
@@ -32,6 +34,8 @@ const ConfirmationDialog = ({
   onCancel,
   children,
   variant = "warning",
+  open,
+  onOpenChange,
 }: ConfirmationDialogProps) => {
   const getVariantStyles = () => {
     switch (variant) {
@@ -56,10 +60,8 @@ const ConfirmationDialog = ({
   const { icon, confirmClass } = getVariantStyles();
 
   return (
-    <AlertDialog>
-      <AlertDialogTrigger asChild>
-        {children || <Button variant="outline">Open</Button>}
-      </AlertDialogTrigger>
+    <AlertDialog {...(open !== undefined ? { open, onOpenChange } : {})}>
+      {children && <AlertDialogTrigger asChild>{children}</AlertDialogTrigger>}
       <AlertDialogContent className="sm:max-w-[425px] bg-white">
         <AlertDialogHeader>
           <AlertDialogTitle className="flex gap-2 items-center">

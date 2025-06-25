@@ -93,8 +93,8 @@ export default function UserDetailsView({
 
   // Determine user status based on active field or other status indicators
   const userStatus = user.active ? "Active" : "Inactive";
-  const statusColor = user.active 
-    ? "bg-green-100 text-green-800" 
+  const statusColor = user.active
+    ? "bg-green-100 text-green-800"
     : "bg-red-100 text-red-800";
 
   return (
@@ -250,12 +250,19 @@ export default function UserDetailsView({
             {user?.userItem && user.userItem.length > 0 ? (
               <div className="space-y-3">
                 {user.userItem.map((item, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 border rounded-lg bg-gray-50">
+                  <div
+                    key={index}
+                    className="flex items-center justify-between p-4 border rounded-lg bg-gray-50"
+                  >
                     <div className="flex items-center gap-3">
                       <Monitor className="h-5 w-5 text-gray-400" />
                       <div>
-                        <p className="font-medium">{item.accessory?.name || "Accessory"}</p>
-                        <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
+                        <p className="font-medium">
+                          {item.accessory?.name || "Accessory"}
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          Quantity: {item.quantity}
+                        </p>
                       </div>
                     </div>
                     <span className="text-xs text-gray-500">
@@ -267,10 +274,15 @@ export default function UserDetailsView({
             ) : (
               <div className="text-center py-12">
                 <Monitor className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No Accessories</h3>
-                <p className="text-gray-600 mb-4">This user hasn't been assigned any accessories yet.</p>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  No Accessories
+                </h3>
+                <p className="text-gray-600 mb-4">
+                  This user hasn't been assigned any accessories yet.
+                </p>
                 <p className="text-sm text-gray-500">
-                  <strong>Coming Soon:</strong> Full accessory management with tracking, requests, and more.
+                  <strong>Coming Soon:</strong> Full accessory management with
+                  tracking, requests, and more.
                 </p>
               </div>
             )}
@@ -282,16 +294,22 @@ export default function UserDetailsView({
             {user?.licenses && user.licenses.length > 0 ? (
               <div className="space-y-3">
                 {user.licenses.map((license, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 border rounded-lg bg-gray-50">
+                  <div
+                    key={index}
+                    className="flex items-center justify-between p-4 border rounded-lg bg-gray-50"
+                  >
                     <div className="flex items-center gap-3">
                       <Key className="h-5 w-5 text-gray-400" />
                       <div>
                         <p className="font-medium">{license.name}</p>
-                        <p className="text-sm text-gray-600">Seats: {license.seats}</p>
+                        <p className="text-sm text-gray-600">
+                          Seats: {license.seats}
+                        </p>
                       </div>
                     </div>
                     <span className="text-xs text-gray-500">
-                      Expires: {new Date(license.renewalDate).toLocaleDateString()}
+                      Expires:{" "}
+                      {new Date(license.renewalDate).toLocaleDateString()}
                     </span>
                   </div>
                 ))}
@@ -299,10 +317,15 @@ export default function UserDetailsView({
             ) : (
               <div className="text-center py-12">
                 <Key className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No Licenses</h3>
-                <p className="text-gray-600 mb-4">This user hasn't been assigned any software licenses yet.</p>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  No Licenses
+                </h3>
+                <p className="text-gray-600 mb-4">
+                  This user hasn't been assigned any software licenses yet.
+                </p>
                 <p className="text-sm text-gray-500">
-                  <strong>Coming Soon:</strong> Complete license management with renewals, compliance tracking, and cost optimization.
+                  <strong>Coming Soon:</strong> Complete license management with
+                  renewals, compliance tracking, and cost optimization.
                 </p>
               </div>
             )}

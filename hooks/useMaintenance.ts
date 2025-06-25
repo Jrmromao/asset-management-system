@@ -221,6 +221,7 @@ export function useMaintenance(options: UseMaintenanceOptions = {}) {
     onSuccess: (data, { status }) => {
       toast.success(`Status updated to ${status}`);
       // Invalidate stats to refresh counts
+      queryClient.invalidateQueries({ queryKey: MAINTENANCE_QUERY_KEYS.lists() });
       queryClient.invalidateQueries({ queryKey: MAINTENANCE_QUERY_KEYS.stats() });
     },
   });
@@ -255,6 +256,7 @@ export function useMaintenance(options: UseMaintenanceOptions = {}) {
     },
     onSuccess: () => {
       toast.success('Maintenance record deleted');
+      queryClient.invalidateQueries({ queryKey: MAINTENANCE_QUERY_KEYS.lists() });
       queryClient.invalidateQueries({ queryKey: MAINTENANCE_QUERY_KEYS.stats() });
     },
   });

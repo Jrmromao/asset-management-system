@@ -89,4 +89,4 @@ const CustomCurrencySelect: React.FC<CustomCurrencySelectProps> = ({
   );
 };
 
-export default CustomCurrencySelect; 
+export default CustomCurrencySelect;
