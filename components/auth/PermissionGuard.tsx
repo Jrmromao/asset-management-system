@@ -4,26 +4,33 @@ import { Permission, PERMISSION_GROUPS } from "@/lib/utils/permissions";
 
 interface PermissionGuardProps {
   children: React.ReactNode;
-  
+
   // Permission-based access
   permission?: Permission;
   permissions?: Permission[];
   requireAll?: boolean; // true = user needs ALL permissions, false = user needs ANY permission
-  
+
   // Role-based access
   roles?: string[];
   adminOnly?: boolean;
-  
+
   // Permission group access
   permissionGroup?: keyof typeof PERMISSION_GROUPS;
-  
+
   // Action-based access (shorthand)
   action?: "view" | "create" | "edit" | "delete" | "assign" | "export";
-  resource?: "assets" | "users" | "roles" | "categories" | "reports" | "company" | "audit";
-  
+  resource?:
+    | "assets"
+    | "users"
+    | "roles"
+    | "categories"
+    | "reports"
+    | "company"
+    | "audit";
+
   // Fallback content when access is denied
   fallback?: React.ReactNode;
-  
+
   // Loading state
   showLoadingFallback?: boolean;
   loadingFallback?: React.ReactNode;
@@ -70,10 +77,10 @@ export function PermissionGuard({
 
   // Check multiple permissions
   if (permissions && permissions.length > 0) {
-    const hasAccess = requireAll 
+    const hasAccess = requireAll
       ? userPermissions.hasAllPermissions(permissions)
       : userPermissions.hasAnyPermission(permissions);
-    
+
     if (!hasAccess) {
       return <>{fallback}</>;
     }
@@ -85,7 +92,11 @@ export function PermissionGuard({
   }
 
   // Check action-based permission
-  if (action && resource && !userPermissions.canPerformAction(action, resource)) {
+  if (
+    action &&
+    resource &&
+    !userPermissions.canPerformAction(action, resource)
+  ) {
     return <>{fallback}</>;
   }
 
@@ -94,7 +105,13 @@ export function PermissionGuard({
 }
 
 // Convenience components for common use cases
-export function AdminOnly({ children, fallback }: { children: React.ReactNode; fallback?: React.ReactNode }) {
+export function AdminOnly({
+  children,
+  fallback,
+}: {
+  children: React.ReactNode;
+  fallback?: React.ReactNode;
+}) {
   return (
     <PermissionGuard adminOnly fallback={fallback}>
       {children}
@@ -102,12 +119,12 @@ export function AdminOnly({ children, fallback }: { children: React.ReactNode; f
   );
 }
 
-export function AssetActions({ 
-  children, 
-  action, 
-  fallback 
-}: { 
-  children: React.ReactNode; 
+export function AssetActions({
+  children,
+  action,
+  fallback,
+}: {
+  children: React.ReactNode;
   action: "view" | "create" | "edit" | "delete" | "assign" | "export";
   fallback?: React.ReactNode;
 }) {
@@ -118,18 +135,18 @@ export function AssetActions({
   );
 }
 
-export function UserActions({ 
-  children, 
-  action, 
-  fallback 
-}: { 
-  children: React.ReactNode; 
+export function UserActions({
+  children,
+  action,
+  fallback,
+}: {
+  children: React.ReactNode;
   action: "view" | "invite" | "edit" | "delete" | "export";
   fallback?: React.ReactNode;
 }) {
   return (
-    <PermissionGuard 
-      permission={`users.${action}` as Permission} 
+    <PermissionGuard
+      permission={`users.${action}` as Permission}
       fallback={fallback}
     >
       {children}
@@ -140,31 +157,48 @@ export function UserActions({
 // Hook for conditional rendering in components
 export function useConditionalRender() {
   const permissions = usePermissions();
-  
+
   return {
     // Render content based on permission
-    renderIf: (condition: boolean, content: React.ReactNode, fallback?: React.ReactNode) => {
-      return condition ? content : (fallback || null);
+    renderIf: (
+      condition: boolean,
+      content: React.ReactNode,
+      fallback?: React.ReactNode,
+    ) => {
+      return condition ? content : fallback || null;
     },
-    
+
     // Render content if user has permission
-    renderIfPermission: (permission: Permission, content: React.ReactNode, fallback?: React.ReactNode) => {
-      return permissions.hasPermission(permission) ? content : (fallback || null);
+    renderIfPermission: (
+      permission: Permission,
+      content: React.ReactNode,
+      fallback?: React.ReactNode,
+    ) => {
+      return permissions.hasPermission(permission) ? content : fallback || null;
     },
-    
+
     // Render content if user is admin
     renderIfAdmin: (content: React.ReactNode, fallback?: React.ReactNode) => {
-      return permissions.isAdmin ? content : (fallback || null);
+      return permissions.isAdmin ? content : fallback || null;
     },
-    
+
     // Render content if user can perform action
     renderIfCanPerform: (
       action: "view" | "create" | "edit" | "delete" | "assign" | "export",
-      resource: "assets" | "users" | "roles" | "categories" | "reports" | "company" | "audit",
+      resource:
+        | "assets"
+        | "users"
+        | "roles"
+        | "categories"
+        | "reports"
+        | "company"
+        | "audit",
       content: React.ReactNode,
-      fallback?: React.ReactNode
+      fallback?: React.ReactNode,
     ) => {
-      return permissions.canPerformAction(action, resource) ? content : (fallback || null);
+      return permissions.canPerformAction(action, resource)
+        ? content
+        : fallback || null;
     },
   };
-} 
+}

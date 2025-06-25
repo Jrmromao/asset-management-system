@@ -1,35 +1,35 @@
 "use client";
 
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { 
-  TrendingDown, 
-  DollarSign, 
-  AlertTriangle, 
-  CheckCircle, 
+import React, { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import {
+  TrendingDown,
+  DollarSign,
+  AlertTriangle,
+  CheckCircle,
   Clock,
   Brain,
   Lightbulb,
   Target,
   Zap,
   Leaf,
-  BarChart3
-} from 'lucide-react';
-import { toast } from 'sonner';
-import { useUser } from '@clerk/nextjs';
+  BarChart3,
+} from "lucide-react";
+import { toast } from "sonner";
+import { useUser } from "@clerk/nextjs";
 
 interface CostRecommendation {
   id: string;
-  type: 'license' | 'accessory' | 'workflow';
+  type: "license" | "accessory" | "workflow";
   category: string;
   title: string;
   description: string;
   potentialSavings: number;
   confidenceScore: number;
-  implementationEffort: 'low' | 'medium' | 'high';
+  implementationEffort: "low" | "medium" | "high";
   timeToValue: number;
   affectedAssets: string[];
   actionItems: string[];
@@ -49,7 +49,7 @@ interface EnvironmentalImpact {
     action: string;
     co2Reduction: number;
     costSavings: number;
-    feasibility: 'low' | 'medium' | 'high';
+    feasibility: "low" | "medium" | "high";
   }>;
 }
 
@@ -57,10 +57,10 @@ interface CostOptimizationAnalysis {
   totalPotentialSavings: number;
   recommendations: CostRecommendation[];
   riskAssessment: {
-    overall: 'low' | 'medium' | 'high';
+    overall: "low" | "medium" | "high";
     factors: Array<{
       category: string;
-      severity: 'low' | 'medium' | 'high';
+      severity: "low" | "medium" | "high";
       description: string;
       likelihood: number;
     }>;
@@ -79,28 +79,32 @@ interface CostOptimizationAnalysis {
 
 export function CostOptimizationDashboard() {
   const { user } = useUser();
-  const [analysis, setAnalysis] = useState<CostOptimizationAnalysis | null>(null);
+  const [analysis, setAnalysis] = useState<CostOptimizationAnalysis | null>(
+    null,
+  );
   const [isLoading, setIsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'licenses' | 'accessories'>('licenses');
+  const [activeTab, setActiveTab] = useState<"licenses" | "accessories">(
+    "licenses",
+  );
 
-  const runAnalysis = async (type: 'license' | 'accessory') => {
+  const runAnalysis = async (type: "license" | "accessory") => {
     if (!user) {
-      toast.error('User not authenticated');
+      toast.error("User not authenticated");
       return;
     }
 
     setIsLoading(true);
-    setActiveTab(type === 'license' ? 'licenses' : 'accessories');
-    
+    setActiveTab(type === "license" ? "licenses" : "accessories");
+
     try {
-      const response = await fetch('/api/ai/cost-optimization', {
-        method: 'POST',
+      const response = await fetch("/api/ai/cost-optimization", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           analysisType: type,
-          timeframe: 'quarterly'
+          timeframe: "quarterly",
         }),
       });
 
@@ -109,13 +113,15 @@ export function CostOptimizationDashboard() {
       if (result.success && result.data) {
         setAnalysis(result.data);
         const recommendationCount = result.data.recommendations?.length || 0;
-        toast.success(`AI analysis complete! Found ${recommendationCount} optimization opportunities.`);
+        toast.success(
+          `AI analysis complete! Found ${recommendationCount} optimization opportunities.`,
+        );
       } else {
-        toast.error(result.error || 'Analysis failed');
+        toast.error(result.error || "Analysis failed");
       }
     } catch (error) {
-      console.error('Analysis error:', error);
-      toast.error('Failed to run analysis');
+      console.error("Analysis error:", error);
+      toast.error("Failed to run analysis");
     } finally {
       setIsLoading(false);
     }
@@ -123,19 +129,27 @@ export function CostOptimizationDashboard() {
 
   const getEffortColor = (effort: string) => {
     switch (effort) {
-      case 'low': return 'bg-green-100 text-green-800';
-      case 'medium': return 'bg-yellow-100 text-yellow-800';
-      case 'high': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case "low":
+        return "bg-green-100 text-green-800";
+      case "medium":
+        return "bg-yellow-100 text-yellow-800";
+      case "high":
+        return "bg-red-100 text-red-800";
+      default:
+        return "bg-gray-100 text-gray-800";
     }
   };
 
   const getRiskColor = (risk: string) => {
     switch (risk) {
-      case 'low': return 'text-green-600';
-      case 'medium': return 'text-yellow-600';
-      case 'high': return 'text-red-600';
-      default: return 'text-gray-600';
+      case "low":
+        return "text-green-600";
+      case "medium":
+        return "text-yellow-600";
+      case "high":
+        return "text-red-600";
+      default:
+        return "text-gray-600";
     }
   };
 
@@ -152,15 +166,15 @@ export function CostOptimizationDashboard() {
             Intelligent recommendations to reduce costs and optimize spending
           </p>
         </div>
-        
+
         <div className="flex gap-2">
           <Button
-            onClick={() => runAnalysis('license')}
+            onClick={() => runAnalysis("license")}
             disabled={isLoading}
-            variant={activeTab === 'licenses' ? 'default' : 'outline'}
+            variant={activeTab === "licenses" ? "default" : "outline"}
             className="flex items-center gap-2"
           >
-            {isLoading && activeTab === 'licenses' ? (
+            {isLoading && activeTab === "licenses" ? (
               <>
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                 Analyzing...
@@ -173,12 +187,12 @@ export function CostOptimizationDashboard() {
             )}
           </Button>
           <Button
-            onClick={() => runAnalysis('accessory')}
+            onClick={() => runAnalysis("accessory")}
             disabled={isLoading}
-            variant={activeTab === 'accessories' ? 'default' : 'outline'}
+            variant={activeTab === "accessories" ? "default" : "outline"}
             className="flex items-center gap-2"
           >
-            {isLoading && activeTab === 'accessories' ? (
+            {isLoading && activeTab === "accessories" ? (
               <>
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                 Analyzing...
@@ -198,17 +212,26 @@ export function CostOptimizationDashboard() {
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Brain className="h-16 w-16 text-gray-400 mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Ready for Cost Analysis</h3>
+            <h3 className="text-lg font-semibold mb-2">
+              Ready for Cost Analysis
+            </h3>
             <p className="text-gray-600 text-center mb-6 max-w-md">
-              Choose to analyze your licenses or accessories to discover cost optimization opportunities 
-              powered by AI insights.
+              Choose to analyze your licenses or accessories to discover cost
+              optimization opportunities powered by AI insights.
             </p>
             <div className="flex gap-2">
-              <Button onClick={() => runAnalysis('license')} className="flex items-center gap-2">
+              <Button
+                onClick={() => runAnalysis("license")}
+                className="flex items-center gap-2"
+              >
                 <Zap className="h-4 w-4" />
                 Analyze Licenses
               </Button>
-              <Button onClick={() => runAnalysis('accessory')} variant="outline" className="flex items-center gap-2">
+              <Button
+                onClick={() => runAnalysis("accessory")}
+                variant="outline"
+                className="flex items-center gap-2"
+              >
                 <Zap className="h-4 w-4" />
                 Analyze Accessories
               </Button>
@@ -243,7 +266,9 @@ export function CostOptimizationDashboard() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Potential Savings</p>
+                    <p className="text-sm font-medium text-gray-600">
+                      Potential Savings
+                    </p>
                     <p className="text-2xl font-bold text-green-600">
                       ${(analysis.totalPotentialSavings || 0).toLocaleString()}
                     </p>
@@ -257,8 +282,12 @@ export function CostOptimizationDashboard() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Recommendations</p>
-                    <p className="text-2xl font-bold">{analysis.recommendations?.length || 0}</p>
+                    <p className="text-sm font-medium text-gray-600">
+                      Recommendations
+                    </p>
+                    <p className="text-2xl font-bold">
+                      {analysis.recommendations?.length || 0}
+                    </p>
                   </div>
                   <Lightbulb className="h-8 w-8 text-blue-600" />
                 </div>
@@ -269,12 +298,20 @@ export function CostOptimizationDashboard() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Risk Level</p>
-                    <p className={`text-2xl font-bold ${getRiskColor(analysis.riskAssessment?.overall || 'low')}`}>
-                      {(analysis.riskAssessment?.overall || 'low').toUpperCase()}
+                    <p className="text-sm font-medium text-gray-600">
+                      Risk Level
+                    </p>
+                    <p
+                      className={`text-2xl font-bold ${getRiskColor(analysis.riskAssessment?.overall || "low")}`}
+                    >
+                      {(
+                        analysis.riskAssessment?.overall || "low"
+                      ).toUpperCase()}
                     </p>
                   </div>
-                  <AlertTriangle className={`h-8 w-8 ${getRiskColor(analysis.riskAssessment?.overall || 'low')}`} />
+                  <AlertTriangle
+                    className={`h-8 w-8 ${getRiskColor(analysis.riskAssessment?.overall || "low")}`}
+                  />
                 </div>
               </CardContent>
             </Card>
@@ -283,8 +320,12 @@ export function CostOptimizationDashboard() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Implementation Phases</p>
-                    <p className="text-2xl font-bold">{analysis.implementationPriority?.length || 0}</p>
+                    <p className="text-sm font-medium text-gray-600">
+                      Implementation Phases
+                    </p>
+                    <p className="text-2xl font-bold">
+                      {analysis.implementationPriority?.length || 0}
+                    </p>
                   </div>
                   <Target className="h-8 w-8 text-purple-600" />
                 </div>
@@ -316,20 +357,31 @@ export function CostOptimizationDashboard() {
                         <p className="text-2xl font-bold text-green-600">
                           ${(rec.potentialSavings || 0).toLocaleString()}
                         </p>
-                        <p className="text-sm text-gray-600">potential savings</p>
+                        <p className="text-sm text-gray-600">
+                          potential savings
+                        </p>
                       </div>
                     </div>
-                    
+
                     <p className="text-gray-700 mb-3">{rec.description}</p>
-                    
+
                     <div className="flex items-center gap-4 mb-3">
-                      <Badge className={getEffortColor(rec.implementationEffort)}>
+                      <Badge
+                        className={getEffortColor(rec.implementationEffort)}
+                      >
                         {rec.implementationEffort} effort
                       </Badge>
                       <div className="flex items-center gap-1">
-                        <span className="text-sm text-gray-600">Confidence:</span>
-                        <Progress value={rec.confidenceScore || 0} className="w-20 h-2" />
-                        <span className="text-sm font-medium">{rec.confidenceScore || 0}%</span>
+                        <span className="text-sm text-gray-600">
+                          Confidence:
+                        </span>
+                        <Progress
+                          value={rec.confidenceScore || 0}
+                          className="w-20 h-2"
+                        />
+                        <span className="text-sm font-medium">
+                          {rec.confidenceScore || 0}%
+                        </span>
                       </div>
                       <span className="text-sm text-gray-600">
                         Time to value: {rec.timeToValue || 0} days
@@ -378,23 +430,29 @@ export function CostOptimizationDashboard() {
                         <p className="font-bold text-green-600">
                           ${(phase.expectedSavings || 0).toLocaleString()}
                         </p>
-                        <p className="text-sm text-gray-600">{phase.duration || 0} days</p>
+                        <p className="text-sm text-gray-600">
+                          {phase.duration || 0} days
+                        </p>
                       </div>
                     </div>
-                    
+
                     <div className="grid md:grid-cols-2 gap-4">
                       <div>
-                        <h5 className="font-medium text-sm mb-2">Recommendations:</h5>
+                        <h5 className="font-medium text-sm mb-2">
+                          Recommendations:
+                        </h5>
                         <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
                           {(phase.recommendations || []).map((rec, index) => (
                             <li key={index}>{rec}</li>
                           ))}
                         </ul>
                       </div>
-                      
+
                       {(phase.dependencies?.length || 0) > 0 && (
                         <div>
-                          <h5 className="font-medium text-sm mb-2">Dependencies:</h5>
+                          <h5 className="font-medium text-sm mb-2">
+                            Dependencies:
+                          </h5>
                           <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
                             {(phase.dependencies || []).map((dep, index) => (
                               <li key={index}>{dep}</li>
@@ -425,43 +483,66 @@ export function CostOptimizationDashboard() {
                     <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                       <div className="flex items-center gap-2 mb-2">
                         <Leaf className="h-4 w-4 text-green-600" />
-                        <span className="text-sm font-medium text-green-700">Total CO2 Emissions</span>
+                        <span className="text-sm font-medium text-green-700">
+                          Total CO2 Emissions
+                        </span>
                       </div>
                       <p className="text-2xl font-bold text-green-800">
-                        {(analysis.environmentalImpact?.totalCO2Emissions || 0).toFixed(1)} kg
+                        {(
+                          analysis.environmentalImpact?.totalCO2Emissions || 0
+                        ).toFixed(1)}{" "}
+                        kg
                       </p>
                       <p className="text-xs text-green-600">CO2 equivalent</p>
                     </div>
-                    
+
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                       <div className="flex items-center gap-2 mb-2">
                         <TrendingDown className="h-4 w-4 text-blue-600" />
-                        <span className="text-sm font-medium text-blue-700">Potential Savings</span>
+                        <span className="text-sm font-medium text-blue-700">
+                          Potential Savings
+                        </span>
                       </div>
                       <p className="text-2xl font-bold text-blue-800">
-                        {(analysis.environmentalImpact?.potentialCO2Savings || 0).toFixed(1)} kg
+                        {(
+                          analysis.environmentalImpact?.potentialCO2Savings || 0
+                        ).toFixed(1)}{" "}
+                        kg
                       </p>
-                      <p className="text-xs text-blue-600">CO2 reduction possible</p>
+                      <p className="text-xs text-blue-600">
+                        CO2 reduction possible
+                      </p>
                     </div>
-                    
+
                     <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
                       <div className="flex items-center gap-2 mb-2">
                         <BarChart3 className="h-4 w-4 text-purple-600" />
-                        <span className="text-sm font-medium text-purple-700">Footprint Reduction</span>
+                        <span className="text-sm font-medium text-purple-700">
+                          Footprint Reduction
+                        </span>
                       </div>
                       <p className="text-2xl font-bold text-purple-800">
-                        {(analysis.environmentalImpact?.carbonFootprintReduction || 0).toFixed(1)}%
+                        {(
+                          analysis.environmentalImpact
+                            ?.carbonFootprintReduction || 0
+                        ).toFixed(1)}
+                        %
                       </p>
-                      <p className="text-xs text-purple-600">potential reduction</p>
+                      <p className="text-xs text-purple-600">
+                        potential reduction
+                      </p>
                     </div>
-                    
+
                     <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                       <div className="flex items-center gap-2 mb-2">
                         <Target className="h-4 w-4 text-yellow-600" />
-                        <span className="text-sm font-medium text-yellow-700">Sustainability Score</span>
+                        <span className="text-sm font-medium text-yellow-700">
+                          Sustainability Score
+                        </span>
                       </div>
                       <p className="text-2xl font-bold text-yellow-800">
-                        {analysis.environmentalImpact?.sustainabilityScore || 0}/100
+                        {analysis.environmentalImpact?.sustainabilityScore || 0}
+                        /100
                       </p>
                       <p className="text-xs text-yellow-600">current rating</p>
                     </div>
@@ -475,25 +556,37 @@ export function CostOptimizationDashboard() {
                         Emissions by Category
                       </h4>
                       <div className="space-y-3">
-                        {(analysis.environmentalImpact?.emissionsByCategory || []).map((category, index) => (
-                          <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        {(
+                          analysis.environmentalImpact?.emissionsByCategory ||
+                          []
+                        ).map((category, index) => (
+                          <div
+                            key={index}
+                            className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                          >
                             <div className="flex-1">
-                                                              <span className="font-medium text-gray-800">{category.category || 'Unknown'}</span>
-                                <div className="flex items-center gap-2 mt-1">
-                                  <div className="w-full bg-gray-200 rounded-full h-2">
-                                    <div 
-                                      className="bg-green-500 h-2 rounded-full" 
-                                      style={{ width: `${category.percentage || 0}%` }}
-                                    ></div>
-                                  </div>
-                                  <span className="text-sm text-gray-600 min-w-[50px]">
-                                    {(category.percentage || 0).toFixed(1)}%
-                                  </span>
+                              <span className="font-medium text-gray-800">
+                                {category.category || "Unknown"}
+                              </span>
+                              <div className="flex items-center gap-2 mt-1">
+                                <div className="w-full bg-gray-200 rounded-full h-2">
+                                  <div
+                                    className="bg-green-500 h-2 rounded-full"
+                                    style={{
+                                      width: `${category.percentage || 0}%`,
+                                    }}
+                                  ></div>
                                 </div>
+                                <span className="text-sm text-gray-600 min-w-[50px]">
+                                  {(category.percentage || 0).toFixed(1)}%
+                                </span>
                               </div>
-                              <div className="text-right ml-4">
-                                <p className="font-bold text-gray-800">{(category.emissions || 0).toFixed(1)} kg</p>
-                              </div>
+                            </div>
+                            <div className="text-right ml-4">
+                              <p className="font-bold text-gray-800">
+                                {(category.emissions || 0).toFixed(1)} kg
+                              </p>
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -506,31 +599,51 @@ export function CostOptimizationDashboard() {
                         Sustainability Actions
                       </h4>
                       <div className="space-y-3">
-                        {(analysis.environmentalImpact?.recommendations || []).map((rec, index) => (
-                          <div key={index} className="border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow">
+                        {(
+                          analysis.environmentalImpact?.recommendations || []
+                        ).map((rec, index) => (
+                          <div
+                            key={index}
+                            className="border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow"
+                          >
                             <div className="flex items-start justify-between mb-3">
                               <div className="flex-1">
-                                <p className="font-medium text-gray-800 mb-2">{rec.action || 'No action specified'}</p>
+                                <p className="font-medium text-gray-800 mb-2">
+                                  {rec.action || "No action specified"}
+                                </p>
                                 <div className="flex items-center gap-2">
-                                  <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
-                                    (rec.feasibility || 'low') === 'high' ? 'bg-green-100 text-green-800' :
-                                    (rec.feasibility || 'low') === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-                                    'bg-red-100 text-red-800'
-                                  }`}>
-                                    {rec.feasibility || 'low'} feasibility
+                                  <span
+                                    className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
+                                      (rec.feasibility || "low") === "high"
+                                        ? "bg-green-100 text-green-800"
+                                        : (rec.feasibility || "low") ===
+                                            "medium"
+                                          ? "bg-yellow-100 text-yellow-800"
+                                          : "bg-red-100 text-red-800"
+                                    }`}
+                                  >
+                                    {rec.feasibility || "low"} feasibility
                                   </span>
                                 </div>
                               </div>
                             </div>
-                            
+
                             <div className="grid grid-cols-2 gap-4 text-sm">
                               <div className="bg-green-50 p-2 rounded">
-                                <span className="text-green-600 font-medium">CO2 Reduction:</span>
-                                <p className="font-bold text-green-800">{(rec.co2Reduction || 0).toFixed(1)} kg</p>
+                                <span className="text-green-600 font-medium">
+                                  CO2 Reduction:
+                                </span>
+                                <p className="font-bold text-green-800">
+                                  {(rec.co2Reduction || 0).toFixed(1)} kg
+                                </p>
                               </div>
                               <div className="bg-blue-50 p-2 rounded">
-                                <span className="text-blue-600 font-medium">Cost Savings:</span>
-                                <p className="font-bold text-blue-800">${(rec.costSavings || 0).toLocaleString()}</p>
+                                <span className="text-blue-600 font-medium">
+                                  Cost Savings:
+                                </span>
+                                <p className="font-bold text-blue-800">
+                                  ${(rec.costSavings || 0).toLocaleString()}
+                                </p>
                               </div>
                             </div>
                           </div>
@@ -556,17 +669,26 @@ export function CostOptimizationDashboard() {
                 {/* Overall Risk Level */}
                 <div className="bg-gray-50 rounded-lg p-4">
                   <div className="flex items-center gap-3">
-                    <AlertTriangle className={`h-6 w-6 ${getRiskColor(analysis.riskAssessment?.overall || 'low')}`} />
+                    <AlertTriangle
+                      className={`h-6 w-6 ${getRiskColor(analysis.riskAssessment?.overall || "low")}`}
+                    />
                     <div>
-                      <p className="text-sm font-medium text-gray-600 mb-1">Overall Risk Level:</p>
-                      <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-bold ${
-                        (analysis.riskAssessment?.overall || 'low') === 'low' 
-                          ? 'bg-green-100 text-green-800 border border-green-200' 
-                          : (analysis.riskAssessment?.overall || 'low') === 'medium'
-                          ? 'bg-yellow-100 text-yellow-800 border border-yellow-200'
-                          : 'bg-red-100 text-red-800 border border-red-200'
-                      }`}>
-                        {(analysis.riskAssessment?.overall || 'low').toUpperCase()}
+                      <p className="text-sm font-medium text-gray-600 mb-1">
+                        Overall Risk Level:
+                      </p>
+                      <div
+                        className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-bold ${
+                          (analysis.riskAssessment?.overall || "low") === "low"
+                            ? "bg-green-100 text-green-800 border border-green-200"
+                            : (analysis.riskAssessment?.overall || "low") ===
+                                "medium"
+                              ? "bg-yellow-100 text-yellow-800 border border-yellow-200"
+                              : "bg-red-100 text-red-800 border border-red-200"
+                        }`}
+                      >
+                        {(
+                          analysis.riskAssessment?.overall || "low"
+                        ).toUpperCase()}
                       </div>
                     </div>
                   </div>
@@ -580,48 +702,64 @@ export function CostOptimizationDashboard() {
                       Risk Factors
                     </h4>
                     <div className="space-y-3">
-                      {(analysis.riskAssessment?.factors || []).map((factor, index) => (
-                        <div key={index} className="border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow">
-                          <div className="flex items-start justify-between mb-2">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-2">
-                                <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800 capitalize">
-                                  {factor.category || 'General'}
-                                </span>
-                                <div className={`inline-flex items-center px-2 py-1 rounded text-xs font-bold ${
-                                  (factor.severity || 'low') === 'low' 
-                                    ? 'bg-green-100 text-green-800' 
-                                    : (factor.severity || 'low') === 'medium'
-                                    ? 'bg-yellow-100 text-yellow-800'
-                                    : 'bg-red-100 text-red-800'
-                                }`}>
-                                  {(factor.severity || 'low').toUpperCase()}
+                      {(analysis.riskAssessment?.factors || []).map(
+                        (factor, index) => (
+                          <div
+                            key={index}
+                            className="border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow"
+                          >
+                            <div className="flex items-start justify-between mb-2">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800 capitalize">
+                                    {factor.category || "General"}
+                                  </span>
+                                  <div
+                                    className={`inline-flex items-center px-2 py-1 rounded text-xs font-bold ${
+                                      (factor.severity || "low") === "low"
+                                        ? "bg-green-100 text-green-800"
+                                        : (factor.severity || "low") ===
+                                            "medium"
+                                          ? "bg-yellow-100 text-yellow-800"
+                                          : "bg-red-100 text-red-800"
+                                    }`}
+                                  >
+                                    {(factor.severity || "low").toUpperCase()}
+                                  </div>
                                 </div>
+                                <p className="text-sm text-gray-700 leading-relaxed mb-2">
+                                  {factor.description ||
+                                    "No description available"}
+                                </p>
                               </div>
-                              <p className="text-sm text-gray-700 leading-relaxed mb-2">
-                                {factor.description || 'No description available'}
-                              </p>
                             </div>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs text-gray-500">Likelihood:</span>
-                            <div className="flex items-center gap-2">
-                              <div className="w-16 bg-gray-200 rounded-full h-2">
-                                <div 
-                                  className={`h-2 rounded-full ${
-                                    (factor.likelihood || 0) >= 0.8 ? 'bg-red-500' : 
-                                    (factor.likelihood || 0) >= 0.5 ? 'bg-yellow-500' : 'bg-green-500'
-                                  }`}
-                                  style={{ width: `${(factor.likelihood || 0) * 100}%` }}
-                                ></div>
-                              </div>
-                              <span className="text-xs font-medium text-gray-700">
-                                {((factor.likelihood || 0) * 100).toFixed(1)}%
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-gray-500">
+                                Likelihood:
                               </span>
+                              <div className="flex items-center gap-2">
+                                <div className="w-16 bg-gray-200 rounded-full h-2">
+                                  <div
+                                    className={`h-2 rounded-full ${
+                                      (factor.likelihood || 0) >= 0.8
+                                        ? "bg-red-500"
+                                        : (factor.likelihood || 0) >= 0.5
+                                          ? "bg-yellow-500"
+                                          : "bg-green-500"
+                                    }`}
+                                    style={{
+                                      width: `${(factor.likelihood || 0) * 100}%`,
+                                    }}
+                                  ></div>
+                                </div>
+                                <span className="text-xs font-medium text-gray-700">
+                                  {((factor.likelihood || 0) * 100).toFixed(1)}%
+                                </span>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        ),
+                      )}
                     </div>
                   </div>
 
@@ -632,12 +770,21 @@ export function CostOptimizationDashboard() {
                       Mitigation Strategies
                     </h4>
                     <div className="space-y-3">
-                      {(analysis.riskAssessment?.mitigationStrategies || []).map((strategy, index) => (
-                        <div key={index} className="flex items-start gap-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                      {(
+                        analysis.riskAssessment?.mitigationStrategies || []
+                      ).map((strategy, index) => (
+                        <div
+                          key={index}
+                          className="flex items-start gap-3 p-3 bg-green-50 border border-green-200 rounded-lg"
+                        >
                           <div className="flex-shrink-0 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center mt-0.5">
-                            <span className="text-white text-xs font-bold">{index + 1}</span>
+                            <span className="text-white text-xs font-bold">
+                              {index + 1}
+                            </span>
                           </div>
-                          <p className="text-sm text-gray-700 leading-relaxed">{strategy}</p>
+                          <p className="text-sm text-gray-700 leading-relaxed">
+                            {strategy}
+                          </p>
                         </div>
                       ))}
                     </div>
@@ -650,4 +797,4 @@ export function CostOptimizationDashboard() {
       )}
     </div>
   );
-} 
+}

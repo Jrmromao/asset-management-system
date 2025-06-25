@@ -1,17 +1,17 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  BarChart3, 
-  TrendingUp, 
+import React, { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  BarChart3,
+  TrendingUp,
   TrendingDown,
-  AlertTriangle, 
-  CheckCircle, 
+  AlertTriangle,
+  CheckCircle,
   Brain,
   Zap,
   Eye,
@@ -19,17 +19,17 @@ import {
   PieChart,
   Users,
   Calendar,
-  DollarSign
-} from 'lucide-react';
-import { toast } from 'sonner';
-import { useUser } from '@clerk/nextjs';
+  DollarSign,
+} from "lucide-react";
+import { toast } from "sonner";
+import { useUser } from "@clerk/nextjs";
 
 interface AssetInsight {
   id: string;
-  type: 'utilization' | 'lifecycle' | 'performance' | 'cost' | 'maintenance';
+  type: "utilization" | "lifecycle" | "performance" | "cost" | "maintenance";
   title: string;
   description: string;
-  severity: 'low' | 'medium' | 'high';
+  severity: "low" | "medium" | "high";
   impact: number;
   recommendation: string;
   affectedAssets: number;
@@ -41,7 +41,7 @@ interface UtilizationMetric {
   category: string;
   utilized: number;
   total: number;
-  trend: 'up' | 'down' | 'stable';
+  trend: "up" | "down" | "stable";
   value: number;
 }
 
@@ -65,7 +65,7 @@ interface AIAnalyticsData {
     id: string;
     assetName: string;
     anomalyType: string;
-    severity: 'low' | 'medium' | 'high';
+    severity: "low" | "medium" | "high";
     description: string;
     detectedAt: string;
   }>;
@@ -82,64 +82,71 @@ export function AIInsightsDashboard() {
   const { user } = useUser();
   const [data, setData] = useState<AIAnalyticsData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState("overview");
 
   const runAnalysis = async () => {
     console.log("🚀 AI Dashboard: Starting analysis");
-    
+
     if (!user) {
       console.log("❌ AI Dashboard: User not authenticated");
-      toast.error('User not authenticated');
+      toast.error("User not authenticated");
       return;
     }
 
     console.log("👤 AI Dashboard: User authenticated", { userId: user.id });
     setIsLoading(true);
-    
+
     try {
       const requestBody = {
-        analysisType: 'comprehensive',
+        analysisType: "comprehensive",
         includeUtilization: true,
         includeLifecycle: true,
-        includeAnomalies: true
+        includeAnomalies: true,
       };
-      
-      console.log("📤 AI Dashboard: Sending request to /api/ai/insights", requestBody);
-      
-      const response = await fetch('/api/ai/insights', {
-        method: 'POST',
+
+      console.log(
+        "📤 AI Dashboard: Sending request to /api/ai/insights",
+        requestBody,
+      );
+
+      const response = await fetch("/api/ai/insights", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(requestBody),
       });
 
-      console.log("📥 AI Dashboard: Response received", { 
-        status: response.status, 
-        ok: response.ok 
+      console.log("📥 AI Dashboard: Response received", {
+        status: response.status,
+        ok: response.ok,
       });
 
       const result = await response.json();
-      console.log("📊 AI Dashboard: Response parsed", { 
-        success: result.success, 
+      console.log("📊 AI Dashboard: Response parsed", {
+        success: result.success,
         hasData: !!result.data,
-        error: result.error 
+        error: result.error,
       });
 
       if (result.success) {
         console.log("✅ AI Dashboard: Analysis successful", {
           insightsCount: result.data?.insights?.length || 0,
-          utilizationCount: result.data?.utilization?.length || 0
+          utilizationCount: result.data?.utilization?.length || 0,
         });
         setData(result.data);
-        toast.success(`AI analysis complete! Generated ${result.data.insights.length} insights.`);
+        toast.success(
+          `AI analysis complete! Generated ${result.data.insights.length} insights.`,
+        );
       } else {
-        console.log("❌ AI Dashboard: Analysis failed", { error: result.error });
-        toast.error(result.error || 'Analysis failed');
+        console.log("❌ AI Dashboard: Analysis failed", {
+          error: result.error,
+        });
+        toast.error(result.error || "Analysis failed");
       }
     } catch (error) {
-      console.error('💥 AI Dashboard: Analysis error:', error);
-      toast.error('Failed to run AI analysis');
+      console.error("💥 AI Dashboard: Analysis error:", error);
+      toast.error("Failed to run AI analysis");
     } finally {
       setIsLoading(false);
       console.log("🏁 AI Dashboard: Analysis completed");
@@ -148,18 +155,25 @@ export function AIInsightsDashboard() {
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
-      case 'low': return 'bg-green-100 text-green-800 border-green-200';
-      case 'medium': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'high': return 'bg-red-100 text-red-800 border-red-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+      case "low":
+        return "bg-green-100 text-green-800 border-green-200";
+      case "medium":
+        return "bg-yellow-100 text-yellow-800 border-yellow-200";
+      case "high":
+        return "bg-red-100 text-red-800 border-red-200";
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-200";
     }
   };
 
   const getTrendIcon = (trend: string) => {
     switch (trend) {
-      case 'up': return <TrendingUp className="h-4 w-4 text-green-600" />;
-      case 'down': return <TrendingDown className="h-4 w-4 text-red-600" />;
-      default: return <Activity className="h-4 w-4 text-gray-600" />;
+      case "up":
+        return <TrendingUp className="h-4 w-4 text-green-600" />;
+      case "down":
+        return <TrendingDown className="h-4 w-4 text-red-600" />;
+      default:
+        return <Activity className="h-4 w-4 text-gray-600" />;
     }
   };
 
@@ -173,10 +187,11 @@ export function AIInsightsDashboard() {
             AI Asset Insights
           </h2>
           <p className="text-gray-600">
-            Deep analytics and intelligent recommendations for your asset portfolio
+            Deep analytics and intelligent recommendations for your asset
+            portfolio
           </p>
         </div>
-        
+
         <Button
           onClick={runAnalysis}
           disabled={isLoading}
@@ -200,10 +215,12 @@ export function AIInsightsDashboard() {
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Brain className="h-16 w-16 text-gray-400 mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Ready for AI Analysis</h3>
+            <h3 className="text-lg font-semibold mb-2">
+              Ready for AI Analysis
+            </h3>
             <p className="text-gray-600 text-center mb-6 max-w-md">
-              Click "Run AI Analysis" to generate intelligent insights about your assets, 
-              utilization patterns, and optimization opportunities.
+              Click "Run AI Analysis" to generate intelligent insights about
+              your assets, utilization patterns, and optimization opportunities.
             </p>
             <Button onClick={runAnalysis} className="flex items-center gap-2">
               <Zap className="h-4 w-4" />
@@ -237,8 +254,12 @@ export function AIInsightsDashboard() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Total Assets</p>
-                    <p className="text-2xl font-bold">{data.summary.totalAssets}</p>
+                    <p className="text-sm font-medium text-gray-600">
+                      Total Assets
+                    </p>
+                    <p className="text-2xl font-bold">
+                      {data.summary.totalAssets}
+                    </p>
                   </div>
                   <BarChart3 className="h-8 w-8 text-blue-600" />
                 </div>
@@ -249,7 +270,9 @@ export function AIInsightsDashboard() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Utilization Rate</p>
+                    <p className="text-sm font-medium text-gray-600">
+                      Utilization Rate
+                    </p>
                     <p className="text-2xl font-bold text-green-600">
                       {data.summary.utilizationRate}%
                     </p>
@@ -263,8 +286,12 @@ export function AIInsightsDashboard() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Active Assets</p>
-                    <p className="text-2xl font-bold text-blue-600">{data.summary.activeAssets}</p>
+                    <p className="text-sm font-medium text-gray-600">
+                      Active Assets
+                    </p>
+                    <p className="text-2xl font-bold text-blue-600">
+                      {data.summary.activeAssets}
+                    </p>
                   </div>
                   <Activity className="h-8 w-8 text-blue-600" />
                 </div>
@@ -275,7 +302,9 @@ export function AIInsightsDashboard() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Cost Opportunities</p>
+                    <p className="text-sm font-medium text-gray-600">
+                      Cost Opportunities
+                    </p>
                     <p className="text-2xl font-bold text-orange-600">
                       {data.summary.costOptimizationOpportunities}
                     </p>
@@ -289,8 +318,12 @@ export function AIInsightsDashboard() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Maintenance Alerts</p>
-                    <p className="text-2xl font-bold text-red-600">{data.summary.maintenanceAlerts}</p>
+                    <p className="text-sm font-medium text-gray-600">
+                      Maintenance Alerts
+                    </p>
+                    <p className="text-2xl font-bold text-red-600">
+                      {data.summary.maintenanceAlerts}
+                    </p>
                   </div>
                   <AlertTriangle className="h-8 w-8 text-red-600" />
                 </div>
@@ -325,11 +358,15 @@ export function AIInsightsDashboard() {
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-2">
                             <h4 className="font-semibold">{insight.title}</h4>
-                            <Badge className={getSeverityColor(insight.severity)}>
+                            <Badge
+                              className={getSeverityColor(insight.severity)}
+                            >
                               {insight.severity}
                             </Badge>
                           </div>
-                          <p className="text-gray-600 text-sm mb-2">{insight.description}</p>
+                          <p className="text-gray-600 text-sm mb-2">
+                            {insight.description}
+                          </p>
                           <p className="text-blue-600 text-sm font-medium">
                             💡 {insight.recommendation}
                           </p>
@@ -338,7 +375,8 @@ export function AIInsightsDashboard() {
                             <span>Impact: {insight.impact}/10</span>
                             {insight.potentialSavings && (
                               <span className="text-green-600 font-medium">
-                                Potential savings: ${insight.potentialSavings.toLocaleString()}
+                                Potential savings: $
+                                {insight.potentialSavings.toLocaleString()}
                               </span>
                             )}
                           </div>
@@ -361,7 +399,9 @@ export function AIInsightsDashboard() {
                       <div key={index} className="space-y-2">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <span className="font-medium">{metric.category}</span>
+                            <span className="font-medium">
+                              {metric.category}
+                            </span>
                             {getTrendIcon(metric.trend)}
                           </div>
                           <span className="text-sm text-gray-600">
@@ -389,10 +429,12 @@ export function AIInsightsDashboard() {
                         className="flex items-center justify-between p-4 border rounded-lg"
                       >
                         <div>
-                          <h4 className="font-semibold">{prediction.assetName}</h4>
+                          <h4 className="font-semibold">
+                            {prediction.assetName}
+                          </h4>
                           <p className="text-sm text-gray-600">
-                            Age: {prediction.currentAge} years | 
-                            Remaining: {prediction.predictedRemainingLife} years
+                            Age: {prediction.currentAge} years | Remaining:{" "}
+                            {prediction.predictedRemainingLife} years
                           </p>
                           <p className="text-xs text-blue-600 mt-1">
                             {prediction.replacementRecommendation.reasoning}
@@ -400,7 +442,8 @@ export function AIInsightsDashboard() {
                         </div>
                         <div className="text-right">
                           <Badge variant="outline">
-                            {prediction.replacementRecommendation.confidence}% confidence
+                            {prediction.replacementRecommendation.confidence}%
+                            confidence
                           </Badge>
                           <p className="text-sm text-gray-600 mt-1">
                             {prediction.replacementRecommendation.timeframe}
@@ -425,7 +468,9 @@ export function AIInsightsDashboard() {
                   {data.anomalies.length === 0 ? (
                     <div className="text-center py-8">
                       <CheckCircle className="h-12 w-12 text-green-600 mx-auto mb-4" />
-                      <h3 className="text-lg font-semibold mb-2">No Anomalies Detected</h3>
+                      <h3 className="text-lg font-semibold mb-2">
+                        No Anomalies Detected
+                      </h3>
                       <p className="text-gray-600">
                         Your assets are operating within normal parameters.
                       </p>
@@ -439,8 +484,12 @@ export function AIInsightsDashboard() {
                         >
                           <div>
                             <div className="flex items-center gap-2 mb-2">
-                              <h4 className="font-semibold">{anomaly.assetName}</h4>
-                              <Badge className={getSeverityColor(anomaly.severity)}>
+                              <h4 className="font-semibold">
+                                {anomaly.assetName}
+                              </h4>
+                              <Badge
+                                className={getSeverityColor(anomaly.severity)}
+                              >
                                 {anomaly.severity}
                               </Badge>
                             </div>
@@ -464,4 +513,4 @@ export function AIInsightsDashboard() {
       )}
     </div>
   );
-} 
+}
