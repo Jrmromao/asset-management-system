@@ -7,6 +7,7 @@ import { z } from "zod";
 import type { Inventory } from "@prisma/client";
 import { prisma } from "@/app/db";
 import { revalidatePath } from "next/cache";
+import { createAuditLog } from "@/lib/actions/auditLog.actions";
 
 interface PaginationParams {
   page?: number;
@@ -84,6 +85,14 @@ export const insert = withAuth(
         inventory,
       );
       revalidatePath("/inventories");
+      // --- AUDIT LOG ---
+      await createAuditLog({
+        companyId,
+        action: "INVENTORY_CREATED",
+        entity: "INVENTORY",
+        entityId: inventory.id,
+        details: `Inventory created: ${inventory.name} by user ${user.id}`,
+      });
       return { success: true, data: parseStringify(inventory) };
     } catch (error) {
       console.error("❌ [inventory.actions] insert - Database error:", error);
@@ -145,6 +154,14 @@ export const update = withAuth(
         },
       });
       revalidatePath("/inventories");
+      // --- AUDIT LOG ---
+      await createAuditLog({
+        companyId,
+        action: "INVENTORY_UPDATED",
+        entity: "INVENTORY",
+        entityId: id,
+        details: `Inventory updated: ${updated.name} by user ${user.id}`,
+      });
       return { success: true, data: parseStringify(updated) };
     } catch (error) {
       console.error("Update inventory error:", error);
@@ -376,6 +393,14 @@ export const remove = withAuth(
         },
       });
       revalidatePath("/inventories");
+      // --- AUDIT LOG ---
+      await createAuditLog({
+        companyId,
+        action: "INVENTORY_DELETED",
+        entity: "INVENTORY",
+        entityId: id,
+        details: `Inventory deleted: ${inventory.name} by user ${user.id}`,
+      });
       return { success: true, data: parseStringify(inventory) };
     } catch (error) {
       console.error("Delete inventory error:", error);

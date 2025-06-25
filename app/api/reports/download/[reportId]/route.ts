@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/app/db";
 import { auth } from "@clerk/nextjs/server";
 import S3Service from "@/services/aws/S3";
+import { createAuditLog } from "@/lib/actions/auditLog.actions";
 
 export async function GET(
   request: NextRequest,
@@ -141,6 +142,15 @@ export async function GET(
           contentType = "application/octet-stream";
           fileName = `${generatedReport.title.replace(/[^a-zA-Z0-9]/g, '_')}.txt`;
       }
+
+      // --- AUDIT LOG ---
+      await createAuditLog({
+        companyId: generatedReport.configuration.companyId,
+        action: "REPORT_EXPORTED",
+        entity: "GENERATED_REPORT",
+        entityId: generatedReport.id,
+        details: `Report exported: ${generatedReport.title} (${generatedReport.format}) by user ${userId}`,
+      });
 
       // Return the file content
       return new NextResponse(buffer, {

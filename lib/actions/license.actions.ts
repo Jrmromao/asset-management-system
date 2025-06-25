@@ -2,7 +2,7 @@
 import { parseStringify } from "@/lib/utils";
 import { z } from "zod";
 import { assignmentSchema, licenseSchema } from "@/lib/schemas";
-import { getAuditLog } from "@/lib/actions/auditLog.actions";
+import { getAuditLog, createAuditLog } from "@/lib/actions/auditLog.actions";
 import { prisma } from "@/app/db";
 import { withAuth, type AuthResponse } from "@/lib/middleware/withAuth";
 
@@ -197,10 +197,54 @@ export const findById = withAuth(
 );
 
 export const update = withAuth(
-  async (user, data: License, id: string): Promise<AuthResponse<License>> => {
+  async (user, data: z.infer<typeof licenseSchema>, id: string): Promise<AuthResponse<License>> => {
     try {
-      // Implement update logic here, using user.user_metadata?.companyId
-      return { success: true, data: parseStringify({}) };
+      const companyId = user.user_metadata?.companyId;
+      if (!companyId) {
+        return { success: false, error: "User is not associated with a company" };
+      }
+      // Update license
+      const updatedLicense = await prisma.license.update({
+        where: { id, companyId },
+        data: {
+          name: data.licenseName,
+          licensedEmail: data.licensedEmail,
+          poNumber: data.poNumber || "",
+          statusLabelId: data.statusLabelId,
+          supplierId: data.supplierId || null,
+          departmentId: data.departmentId,
+          locationId: data.locationId,
+          inventoryId: data.inventoryId,
+          renewalDate: data.renewalDate || new Date(),
+          purchaseDate: data.purchaseDate || new Date(),
+          purchaseNotes: data.notes || null,
+          minSeatsAlert: parseInt(data.minSeatsAlert),
+          alertRenewalDays: parseInt(data.alertRenewalDays),
+          seats: parseInt(data.seats),
+          purchasePrice: data.purchasePrice ? parseFloat(data.purchasePrice) : 0,
+          renewalPrice: data.renewalPrice ? parseFloat(data.renewalPrice) : null,
+          monthlyPrice: data.monthlyPrice ? parseFloat(data.monthlyPrice) : null,
+          annualPrice: data.annualPrice ? parseFloat(data.annualPrice) : null,
+          pricePerSeat: data.pricePerSeat ? parseFloat(data.pricePerSeat) : null,
+          billingCycle: data.billingCycle || "annual",
+          currency: data.currency || "USD",
+          discountPercent: data.discountPercent ? parseFloat(data.discountPercent) : null,
+          taxRate: data.taxRate ? parseFloat(data.taxRate) : null,
+          lastUsageAudit: data.lastUsageAudit || null,
+          utilizationRate: data.utilizationRate ? parseFloat(data.utilizationRate) : null,
+          costCenter: data.costCenter || null,
+          budgetCode: data.budgetCode || null,
+        },
+      });
+      // --- AUDIT LOG ---
+      await createAuditLog({
+        companyId,
+        action: "LICENSE_UPDATED",
+        entity: "LICENSE",
+        entityId: id,
+        details: `License updated: ${updatedLicense.name} (${updatedLicense.seats} seats) by user ${user.id}`,
+      });
+      return { success: true, data: parseStringify(updatedLicense) };
     } catch (error) {
       console.log(error);
       return { success: false, error: "Failed to update license" };
@@ -213,13 +257,27 @@ export const update = withAuth(
 export const remove = withAuth(
   async (user, id: string): Promise<AuthResponse<License>> => {
     try {
-      const licenseTool = await prisma.license.delete({
+      const companyId = user.user_metadata?.companyId;
+      if (!companyId) {
+        return { success: false, error: "User is not associated with a company" };
+      }
+      // Get license info before deletion for audit log
+      const license = await prisma.license.findUnique({ where: { id, companyId } });
+      const deletedLicense = await prisma.license.delete({
         where: {
           id: id,
-          companyId: user.user_metadata?.companyId,
+          companyId,
         },
       });
-      return { success: true, data: parseStringify(licenseTool) };
+      // --- AUDIT LOG ---
+      await createAuditLog({
+        companyId,
+        action: "LICENSE_DELETED",
+        entity: "LICENSE",
+        entityId: id,
+        details: license ? `License deleted: ${license.name} (${license.seats} seats) by user ${user.id}` : `License deleted (ID: ${id}) by user ${user.id}`,
+      });
+      return { success: true, data: parseStringify(deletedLicense) };
     } catch (error) {
       return { success: false, error: "Failed to delete license" };
     } finally {

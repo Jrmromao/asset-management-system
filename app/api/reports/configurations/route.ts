@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/app/db";
 import { auth } from "@clerk/nextjs/server";
+import { createAuditLog } from "@/lib/actions/auditLog.actions";
 
 export async function POST(request: NextRequest) {
   try {
@@ -50,6 +51,15 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // --- AUDIT LOG ---
+    await createAuditLog({
+      companyId,
+      action: "REPORT_CREATED",
+      entity: "REPORT_CONFIGURATION",
+      entityId: reportConfiguration.id,
+      details: `Report configuration created: ${name} (${format}) by user ${userId}`,
+    });
+
     return NextResponse.json({
       success: true,
       data: reportConfiguration,
@@ -94,6 +104,14 @@ export async function GET(request: NextRequest) {
         },
       },
       orderBy: { createdAt: "desc" },
+    });
+
+    // --- AUDIT LOG ---
+    await createAuditLog({
+      companyId,
+      action: "REPORT_CONFIG_VIEWED",
+      entity: "REPORT_CONFIGURATION",
+      details: `Report configurations viewed by user ${userId}`,
     });
 
     return NextResponse.json({

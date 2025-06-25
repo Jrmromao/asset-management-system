@@ -9,6 +9,7 @@ import { auth } from "@clerk/nextjs/server";
 import { CO2FootprintService } from "@/lib/services/co2Footprint.service";
 import { CO2CalculationResult } from "@/types/co2";
 import { co2Store } from "@/lib/stores/co2Store";
+import { createAuditLog } from "@/lib/actions/auditLog.actions";
 
 export async function generateCo2eForAsset(
   assetId: string,
@@ -282,6 +283,16 @@ export async function saveAssetCO2Action(
   co2Data: CO2CalculationResult,
 ) {
   try {
+    // Get current user for audit log
+    const { sessionClaims } = await auth();
+    const companyId = (sessionClaims?.privateMetadata as { companyId?: string })?.companyId as string;
+    // Check if there is an existing CO2 record for this asset
+    const existingRecord = await prisma.co2eRecord.findFirst({
+      where: { assetId, itemType: "Asset" },
+      orderBy: { createdAt: "desc" },
+    });
+
+    // Save the new CO2 record
     const result = await CO2FootprintService.saveAssetCO2(assetId, co2Data);
 
     if (result.success && result.data) {
@@ -321,6 +332,16 @@ export async function saveAssetCO2Action(
           serializedRecord.details = record.details;
         }
       }
+      // --- AUDIT LOG ---
+      const action = existingRecord ? "CO2_OVERRIDDEN" : "CO2_CALCULATED";
+      const details = `CO2e: ${serializedRecord.co2e}, Confidence: ${co2Data.confidenceScore}`;
+      await createAuditLog({
+        companyId,
+        action,
+        entity: "ASSET",
+        entityId: assetId,
+        details,
+      });
       return {
         ...result,
         data: serializedRecord,

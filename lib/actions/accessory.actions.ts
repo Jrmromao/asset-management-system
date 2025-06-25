@@ -4,7 +4,7 @@ import { prisma } from "@/app/db";
 import { parseStringify, processRecordContents } from "@/lib/utils";
 import { z } from "zod";
 import { accessorySchema, assignmentSchema } from "@/lib/schemas";
-import { getAuditLog } from "@/lib/actions/auditLog.actions";
+import { getAuditLog, createAuditLog } from "@/lib/actions/auditLog.actions";
 import { revalidatePath } from "next/cache";
 import { ItemType, Prisma } from "@prisma/client";
 import { cookies } from "next/headers";
@@ -333,17 +333,31 @@ export const remove = withAuth(
         };
       }
 
-      const accessory = await prisma.accessory.delete({
+      // Get accessory info before deletion for audit log
+      const accessory = await prisma.accessory.findUnique({
+        where: { id, companyId },
+      });
+
+      const deletedAccessory = await prisma.accessory.delete({
         where: {
           id,
           companyId,
         },
       });
 
+      // --- AUDIT LOG ---
+      await createAuditLog({
+        companyId,
+        action: "ACCESSORY_DELETED",
+        entity: "ACCESSORY",
+        entityId: id,
+        details: accessory ? `Accessory deleted: ${accessory.name} (${accessory.serialNumber}) by user ${user.id}` : `Accessory deleted (ID: ${id}) by user ${user.id}`,
+      });
+
       revalidatePath("/accessories");
       return {
         success: true,
-        data: parseStringify(accessory),
+        data: parseStringify(deletedAccessory),
       };
     } catch (error) {
       console.error("Error deleting accessory:", error);
@@ -397,6 +411,15 @@ export const update = withAuth(
           inventoryId: data.inventoryId,
           categoryId: data.categoryId,
         },
+      });
+
+      // --- AUDIT LOG ---
+      await createAuditLog({
+        companyId,
+        action: "ACCESSORY_UPDATED",
+        entity: "ACCESSORY",
+        entityId: id,
+        details: `Accessory updated: ${accessory.name} (${accessory.serialNumber}) by user ${user.id}`,
       });
 
       revalidatePath("/accessories");
@@ -511,17 +534,36 @@ export const checkout = withAuth(
   async (
     user,
     values: z.infer<typeof assignmentSchema>,
-  ): Promise<ActionResponse<Accessory>> => {
+  ): Promise<ActionResponse<any>> => {
     try {
-      const validation = assignmentSchema.safeParse(values);
-      if (!validation.success) {
-        return { success: false, error: validation.error.errors[0].message };
+      // Basic validation
+      const basicValidation = z
+        .object({
+          userId: z.string().min(1, "User ID is required"),
+          itemId: z.string().min(1, "Item ID is required"),
+          type: z.enum(["asset", "license", "accessory", "consumable"]),
+        })
+        .safeParse(values);
+
+      if (!basicValidation.success) {
+        return {
+          success: false,
+          error: basicValidation.error.errors[0].message,
+        };
+      }
+
+      const companyId = user.privateMetadata?.companyId as string;
+      if (!companyId) {
+        return {
+          success: false,
+          error: "User is not associated with a company",
+        };
       }
 
       const result = await prisma.$transaction(async (tx) => {
         // Find the internal user record for audit logging
         const internalUser = await tx.user.findFirst({
-          where: { oauthId: user.id, companyId: user.user_metadata?.companyId },
+          where: { oauthId: user.id, companyId },
           select: { id: true },
         });
 
@@ -529,93 +571,77 @@ export const checkout = withAuth(
           throw new Error("Internal user record not found for audit logging");
         }
 
-        // Get the current stock of the accessory
+        // Verify the user exists in the company
+        const assigneeUser = await tx.user.findFirst({
+          where: { id: values.userId, companyId },
+          select: { id: true, name: true, email: true },
+        });
+
+        if (!assigneeUser) {
+          throw new Error("Assignee user not found in company");
+        }
+
+        // Get the accessory
         const accessory = await tx.accessory.findUnique({
-          where: { id: values.itemId },
-          select: { totalQuantityCount: true },
+          where: { id: values.itemId, companyId },
         });
 
         if (!accessory) {
           throw new Error("Accessory not found");
         }
 
-        // Calculate available quantity
-        const assignments = await tx.userItem.count({
+        // Check if user already has this accessory assigned
+        const existingAssignment = await tx.userItem.findFirst({
           where: {
-            itemId: values.itemId,
-            itemType: ItemType.ACCESSORY,
-          },
-        });
-
-        const availableQuantity = accessory.totalQuantityCount - assignments;
-        const requestedQuantity = 1; // Always 1 for accessory checkout
-
-        if (availableQuantity < requestedQuantity) {
-          throw new Error(
-            `Not enough quantity available. Requested: ${requestedQuantity}, Available: ${availableQuantity}`,
-          );
-        }
-
-        await tx.userItem.create({
-          data: {
-            itemType: ItemType.ACCESSORY,
             userId: values.userId,
             itemId: values.itemId,
-            companyId: user.user_metadata?.companyId,
+            itemType: "ACCESSORY",
+            companyId,
           },
         });
 
-        await tx.accessoryStock.create({
+        if (existingAssignment) {
+          throw new Error("Accessory is already assigned to this user");
+        }
+
+        // Create the assignment
+        const userItem = await tx.userItem.create({
           data: {
-            accessoryId: values.itemId,
-            quantity: -requestedQuantity,
-            type: "assignment",
-            companyId: user.user_metadata?.companyId,
-            notes: `Assigned ${requestedQuantity} units to user ${values.userId}`,
+            userId: values.userId,
+            itemId: values.itemId,
+            itemType: "ACCESSORY",
+            companyId: companyId,
           },
         });
 
+        // Create audit log
         await tx.auditLog.create({
           data: {
-            action: "ACCESSORY_CHECKOUT",
+            action: "ACCESSORY_ASSIGNED",
             entity: "ACCESSORY",
-            entityId: values.itemId,
+            entityId: accessory.id,
             userId: internalUser.id,
-            companyId: user.user_metadata?.companyId,
-            details: `Assigned ${requestedQuantity} units to user ${values.userId}`,
+            companyId: companyId,
+            details: `Accessory ${accessory.name} assigned to user ${assigneeUser.name || assigneeUser.email}`,
           },
         });
 
-        const updatedAccessory = await tx.accessory.findUnique({
-          where: { id: values.itemId },
-          include: {
-            userItems: {
-              include: {
-                user: {
-                  select: {
-                    id: true,
-                    name: true,
-                    email: true,
-                  },
-                },
-              },
-            },
+        return {
+          ...userItem,
+          user: assigneeUser,
+          accessory: {
+            id: accessory.id,
+            name: accessory.name,
           },
-        });
-
-        return updatedAccessory;
+        };
       });
 
-      return {
-        success: true,
-        data: parseStringify(result),
-      };
+      return { success: true, data: parseStringify(result) };
     } catch (error) {
-      console.error("Error assigning Accessory:", error);
+      console.error("Error assigning accessory:", error);
       return {
         success: false,
-        error:
-          error instanceof Error ? error.message : "Failed to assign Accessory",
+        error: error instanceof Error ? error.message : String(error),
       };
     } finally {
       await prisma.$disconnect();
@@ -626,120 +652,83 @@ export const checkout = withAuth(
 // Wrapper function for client-side use
 export async function checkoutAccessory(
   values: z.infer<typeof assignmentSchema>,
-): Promise<ActionResponse<Accessory>> {
+): Promise<ActionResponse<any>> {
   const session = getSession();
   return checkout(values);
 }
 
 export const checkin = withAuth(
   async (user, userAccessoryId: string): Promise<ActionResponse<Accessory>> => {
-    let retries = 0;
-
-    while (retries < MAX_RETRIES) {
-      try {
-        const result = await prisma.$transaction(
-          async (tx) => {
-            const currentAssignment = await tx.userItem.findFirst({
-              where: {
-                id: userAccessoryId,
-                companyId: user.user_metadata?.companyId,
-              },
-            });
-
-            if (!currentAssignment) {
-              throw new Error(
-                "No active assignment found for this user and accessory",
-              );
-            }
-
-            await tx.userItem.delete({
-              where: {
-                id: currentAssignment.id,
-              },
-            });
-
-            await tx.accessoryStock.create({
-              data: {
-                accessoryId: currentAssignment.itemId,
-                quantity: 1,
-                type: "return",
-                companyId: user.user_metadata?.companyId,
-                notes: `Returned 1 unit from user ${currentAssignment.userId}`,
-              },
-            });
-
-            // TODO: Add audit log
-
-            // await tx.auditLog.create({
-            //   data: {
-            //     action: "ACCESSORY_CHECKIN",
-            //     entity: "ACCESSORY",
-            //     entityId: currentAssignment.itemId,
-            //     companyId: user.user_metadata?.companyId,
-            //     details: `Unassigned 1 unit from user ${currentAssignment.userId}`,
-            //   },
-            // });
-
-            const updatedAccessory = await tx.accessory.findUnique({
-              where: { id: currentAssignment.itemId },
-              include: {
-                userItems: {
-                  include: {
-                    user: {
-                      select: {
-                        id: true,
-                        name: true,
-                        email: true,
-                      },
-                    },
-                  },
-                },
-                AccessoryStock: {
-                  orderBy: {
-                    date: "desc",
-                  },
-                  take: 5,
-                },
-              },
-            });
-
-            return updatedAccessory;
-          },
-          {
-            maxWait: 5000,
-            timeout: 10000,
-          },
-        );
-
+    try {
+      const companyId = user.privateMetadata?.companyId as string;
+      if (!companyId) {
         return {
-          success: true,
-          data: parseStringify(result),
+          success: false,
+          error: "User is not associated with a company",
         };
-      } catch (error) {
-        console.error(`Attempt ${retries + 1} failed:`, error);
-
-        if (
-          !(error instanceof Error) ||
-          !error.message.includes("Transaction not found")
-        ) {
-          throw error;
-        }
-
-        retries++;
-
-        if (retries === MAX_RETRIES) {
-          console.error("All retries failed");
-          throw error;
-        }
-
-        await sleep(RETRY_DELAY * retries);
       }
-    }
 
-    return {
-      success: false,
-      error: "Failed to complete check-in after all retries",
-    };
+      const result = await prisma.$transaction(async (tx) => {
+        // Find the internal user record for audit logging
+        const internalUser = await tx.user.findFirst({
+          where: { oauthId: user.id, companyId },
+          select: { id: true },
+        });
+
+        if (!internalUser) {
+          throw new Error("Internal user record not found for audit logging");
+        }
+
+        // Find and delete the user item assignment
+        const userItem = await tx.userItem.findUnique({
+          where: { id: userAccessoryId },
+          include: {
+            user: { select: { name: true, email: true } },
+          },
+        });
+
+        if (!userItem || userItem.companyId !== companyId) {
+          throw new Error("Assignment not found or not authorized");
+        }
+
+        await tx.userItem.delete({
+          where: { id: userAccessoryId },
+        });
+
+        // Get the updated accessory
+        const accessory = await tx.accessory.findUnique({
+          where: { id: userItem.itemId },
+        });
+
+        if (!accessory) {
+          throw new Error("Accessory not found");
+        }
+
+        // Create audit log
+        await tx.auditLog.create({
+          data: {
+            action: "ACCESSORY_CHECKIN",
+            entity: "ACCESSORY",
+            entityId: accessory.id,
+            userId: internalUser.id,
+            companyId: companyId,
+            details: `Accessory ${accessory.name} checked in from user ${userItem.user?.name || userItem.user?.email}`,
+          },
+        });
+
+        return accessory;
+      });
+
+      return { success: true, data: parseStringify(result) };
+    } catch (error) {
+      console.error("Error checking in accessory:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    } finally {
+      await prisma.$disconnect();
+    }
   },
 );
 

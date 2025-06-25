@@ -12,6 +12,7 @@ import { auth, currentUser } from "@clerk/nextjs/server";
 import { z } from "zod";
 import { prisma } from "@/app/db";
 import { Prisma } from "@prisma/client";
+import { createAuditLog } from "@/lib/actions/auditLog.actions";
 
 type CSVResponse = {
   success: boolean;
@@ -213,6 +214,14 @@ export const createAsset = withAuth(
       }
 
       revalidatePath("/assets");
+      // --- AUDIT LOG ---
+      await createAuditLog({
+        companyId,
+        action: "ASSET_CREATED",
+        entity: "ASSET",
+        entityId: asset.id,
+        details: `Asset created: ${asset.name} (${asset.assetTag}) by user ${user.id}`,
+      });
       return {
         success: true,
         data: [parseStringify(serializeAsset(asset))],
@@ -384,11 +393,21 @@ export const removeAsset = withAuth(
         };
       }
 
+      // Get asset info before deletion for audit log
+      const asset = await prisma.asset.findUnique({ where: { id, companyId } });
       await prisma.asset.deleteMany({
         where: {
           id,
           companyId,
         },
+      });
+      // --- AUDIT LOG ---
+      await createAuditLog({
+        companyId,
+        action: "ASSET_DELETED",
+        entity: "ASSET",
+        entityId: id,
+        details: asset ? `Asset deleted: ${asset.name} (${asset.assetTag}) by user ${user.id}` : `Asset deleted (ID: ${id}) by user ${user.id}`,
       });
       revalidatePath("/assets");
       return { success: true, data: [] };
@@ -435,7 +454,14 @@ export const updateAsset = withAuth(
           co2eRecords: true,
         },
       });
-
+      // --- AUDIT LOG ---
+      await createAuditLog({
+        companyId,
+        action: "ASSET_UPDATED",
+        entity: "ASSET",
+        entityId: id,
+        details: `Asset updated: ${updatedAsset.name} (${updatedAsset.assetTag}) by user ${user.id}`,
+      });
       revalidatePath(`/assets/${id}`);
       return {
         success: true,
@@ -889,6 +915,13 @@ export const processAssetCSV = withAuth(
   async (user, csvContent: string): Promise<AssetResponse> => {
     // Add your CSV processing logic here
     // For now, return a placeholder
+    // --- AUDIT LOG (placeholder, only log if import is successful) ---
+    // await createAuditLog({
+    //   companyId: user.privateMetadata?.companyId as string,
+    //   action: "ASSET_IMPORTED",
+    //   entity: "ASSET",
+    //   details: `Asset import attempted by user ${user.id}`,
+    // });
     return {
       success: false,
       data: [],
@@ -928,6 +961,14 @@ export const exportAssetsToCSV = withAuth(
             `"${asset.name}","${asset.assetTag}","${asset.statusLabel?.name || ""}","${asset.category?.name || ""}","${asset.user?.name || ""}"`,
         )
         .join("\n");
+
+      // --- AUDIT LOG ---
+      await createAuditLog({
+        companyId,
+        action: "ASSET_EXPORTED",
+        entity: "ASSET",
+        details: `Assets exported to CSV by user ${user.id}`,
+      });
 
       return {
         success: true,
