@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,48 +36,44 @@ import {
   Zap,
   Shield,
   Hammer,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
+import {
+  useMaintenanceCategories,
+  useCreateMaintenanceCategory,
+  useUpdateMaintenanceCategory,
+  useDeleteMaintenanceCategory,
+  useMaintenanceTypes,
+  useCreateMaintenanceType,
+  useUpdateMaintenanceType,
+  useDeleteMaintenanceType,
+} from "@/hooks/queries/useMaintenanceTypeQuery";
+import {
+  type MaintenanceType,
+  type MaintenanceCategory,
+  type CreateMaintenanceTypeParams,
+  type CreateMaintenanceCategoryParams,
+} from "@/lib/actions/maintenanceType.actions";
+import ConfirmationDialog from "@/components/ConfirmationDialog";
 
-// Types for maintenance management
-interface MaintenanceType {
-  id: string;
-  name: string;
-  description: string;
-  category: string;
-  priority: "Low" | "Medium" | "High" | "Critical";
-  estimatedDuration: number; // in hours
-  requiredSkills: string[];
-  defaultCost: number;
-  isActive: boolean;
-  color: string;
-  icon: string;
-  checklist: ChecklistItem[];
-  customFields: CustomField[];
-}
-
+// Types for maintenance management (keeping local types for compatibility)
 interface ChecklistItem {
   id: string;
-  text: string;
-  required: boolean;
+  title: string;
+  description?: string;
+  isRequired: boolean;
   order: number;
 }
 
 interface CustomField {
   id: string;
   name: string;
-  type: "text" | "number" | "date" | "select" | "boolean";
-  required: boolean;
-  options?: string[]; // for select type
+  type: "text" | "number" | "boolean" | "select" | "date";
+  isRequired: boolean;
+  options?: string[];
   defaultValue?: any;
-}
-
-interface MaintenanceCategory {
-  id: string;
-  name: string;
-  description: string;
-  color: string;
-  isActive: boolean;
+  order: number;
 }
 
 // Available icons
@@ -94,57 +90,47 @@ const ICONS = [
 
 // Main Maintenance Type Manager Component
 export const MaintenanceTypeManager: React.FC = () => {
-  const [categories, setCategories] = useState<MaintenanceCategory[]>([]);
-  const [maintenanceTypes, setMaintenanceTypes] = useState<MaintenanceType[]>(
-    [],
-  );
+  // Queries
+  const { data: categories = [], isLoading: categoriesLoading } =
+    useMaintenanceCategories();
+  const { data: maintenanceTypes = [], isLoading: typesLoading } =
+    useMaintenanceTypes();
+
+  // Mutations
+  const createCategoryMutation = useCreateMaintenanceCategory();
+  const updateCategoryMutation = useUpdateMaintenanceCategory();
+  const deleteCategoryMutation = useDeleteMaintenanceCategory();
+  const createTypeMutation = useCreateMaintenanceType();
+  const updateTypeMutation = useUpdateMaintenanceType();
+  const deleteTypeMutation = useDeleteMaintenanceType();
+
+  // State
   const [isEditingType, setIsEditingType] = useState(false);
   const [isEditingCategory, setIsEditingCategory] = useState(false);
-  const [currentType, setCurrentType] = useState<Partial<MaintenanceType>>({});
-  const [currentCategory, setCurrentCategory] = useState<
-    Partial<MaintenanceCategory>
+  const [currentType, setCurrentType] = useState<
+    Partial<CreateMaintenanceTypeParams>
   >({});
-
-  useEffect(() => {
-    // Load initial data - this would come from your API
-    const defaultCategories = [
-      {
-        id: "1",
-        name: "Preventive",
-        description: "Scheduled maintenance to prevent issues",
-        color: "#22C55E",
-        isActive: true,
-      },
-      {
-        id: "2",
-        name: "Corrective",
-        description: "Maintenance to fix existing problems",
-        color: "#F59E0B",
-        isActive: true,
-      },
-      {
-        id: "3",
-        name: "Emergency",
-        description: "Urgent maintenance to restore operations",
-        color: "#EF4444",
-        isActive: true,
-      },
-    ];
-    setCategories(defaultCategories);
-  }, []);
+  const [currentCategory, setCurrentCategory] = useState<
+    Partial<CreateMaintenanceCategoryParams>
+  >({});
+  const [editingTypeId, setEditingTypeId] = useState<string | null>(null);
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(
+    null,
+  );
+  const [deleteTypeId, setDeleteTypeId] = useState<string | null>(null);
+  const [deleteCategoryId, setDeleteCategoryId] = useState<string | null>(null);
 
   const saveType = async () => {
-    if (!currentType.name || !currentType.category) {
+    if (!currentType.name || !currentType.categoryId) {
       toast.error("Please fill in required fields");
       return;
     }
 
     try {
-      const newType: MaintenanceType = {
-        id: currentType.id || Date.now().toString(),
+      const typeData: CreateMaintenanceTypeParams = {
         name: currentType.name!,
         description: currentType.description || "",
-        category: currentType.category!,
+        categoryId: currentType.categoryId!,
         priority: currentType.priority || "Medium",
         estimatedDuration: currentType.estimatedDuration || 1,
         requiredSkills: currentType.requiredSkills || [],
@@ -156,19 +142,20 @@ export const MaintenanceTypeManager: React.FC = () => {
         customFields: currentType.customFields || [],
       };
 
-      if (currentType.id) {
-        setMaintenanceTypes((prev) =>
-          prev.map((t) => (t.id === currentType.id ? newType : t)),
-        );
+      if (editingTypeId) {
+        await updateTypeMutation.mutateAsync({
+          id: editingTypeId,
+          data: typeData,
+        });
       } else {
-        setMaintenanceTypes((prev) => [...prev, newType]);
+        await createTypeMutation.mutateAsync(typeData);
       }
 
       setIsEditingType(false);
       setCurrentType({});
-      toast.success("Maintenance type saved successfully!");
+      setEditingTypeId(null);
     } catch (error) {
-      toast.error("Failed to save maintenance type");
+      // Error is handled by the mutation
     }
   };
 
@@ -179,44 +166,106 @@ export const MaintenanceTypeManager: React.FC = () => {
     }
 
     try {
-      const newCategory: MaintenanceCategory = {
-        id: currentCategory.id || Date.now().toString(),
+      const categoryData: CreateMaintenanceCategoryParams = {
         name: currentCategory.name!,
         description: currentCategory.description || "",
         color: currentCategory.color || "#3B82F6",
         isActive: currentCategory.isActive ?? true,
       };
 
-      if (currentCategory.id) {
-        setCategories((prev) =>
-          prev.map((c) => (c.id === currentCategory.id ? newCategory : c)),
-        );
+      if (editingCategoryId) {
+        await updateCategoryMutation.mutateAsync({
+          id: editingCategoryId,
+          data: categoryData,
+        });
       } else {
-        setCategories((prev) => [...prev, newCategory]);
+        await createCategoryMutation.mutateAsync(categoryData);
       }
 
       setIsEditingCategory(false);
       setCurrentCategory({});
-      toast.success("Category saved successfully!");
+      setEditingCategoryId(null);
     } catch (error) {
-      toast.error("Failed to save category");
+      // Error is handled by the mutation
     }
   };
 
   const editType = (type: MaintenanceType) => {
-    setCurrentType(type);
+    setCurrentType({
+      name: type.name,
+      description: type.description,
+      categoryId: type.categoryId,
+      priority: type.priority,
+      estimatedDuration: type.estimatedDuration,
+      requiredSkills: type.requiredSkills,
+      defaultCost: type.defaultCost,
+      isActive: type.isActive,
+      color: type.color,
+      icon: type.icon,
+      checklist: type.checklist,
+      customFields: type.customFields,
+    });
+    setEditingTypeId(type.id);
     setIsEditingType(true);
   };
 
   const editCategory = (category: MaintenanceCategory) => {
-    setCurrentCategory(category);
+    setCurrentCategory({
+      name: category.name,
+      description: category.description,
+      color: category.color,
+      isActive: category.isActive,
+    });
+    setEditingCategoryId(category.id);
     setIsEditingCategory(true);
+  };
+
+  const handleDeleteType = async () => {
+    if (deleteTypeId) {
+      try {
+        await deleteTypeMutation.mutateAsync(deleteTypeId);
+      } catch (error) {
+        // Error is handled by the mutation
+      } finally {
+        setDeleteTypeId(null);
+      }
+    }
+  };
+
+  const handleDeleteCategory = async () => {
+    if (deleteCategoryId) {
+      try {
+        await deleteCategoryMutation.mutateAsync(deleteCategoryId);
+      } catch (error) {
+        // Error is handled by the mutation
+      } finally {
+        setDeleteCategoryId(null);
+      }
+    }
   };
 
   const getIconComponent = (iconName: string) => {
     const iconData = ICONS.find((i) => i.value === iconName);
     return iconData?.icon || Wrench;
   };
+
+  const getCategoryName = (categoryId: string) => {
+    const category = categories.find(
+      (c: MaintenanceCategory) => c.id === categoryId,
+    );
+    return category?.name || "Unknown Category";
+  };
+
+  if (categoriesLoading || typesLoading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <Loader2 className="h-8 w-8 animate-spin" />
+        <span className="ml-2">
+          Loading maintenance types and categories...
+        </span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -233,6 +282,7 @@ export const MaintenanceTypeManager: React.FC = () => {
             variant="outline"
             onClick={() => {
               setCurrentCategory({});
+              setEditingCategoryId(null);
               setIsEditingCategory(true);
             }}
           >
@@ -242,6 +292,7 @@ export const MaintenanceTypeManager: React.FC = () => {
           <Button
             onClick={() => {
               setCurrentType({});
+              setEditingTypeId(null);
               setIsEditingType(true);
             }}
           >
@@ -258,7 +309,7 @@ export const MaintenanceTypeManager: React.FC = () => {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {categories.map((category) => (
+            {categories.map((category: MaintenanceCategory) => (
               <div
                 key={category.id}
                 className="p-4 border rounded-lg hover:shadow-md transition-shadow"
@@ -286,6 +337,13 @@ export const MaintenanceTypeManager: React.FC = () => {
                   >
                     <Edit className="h-4 w-4" />
                   </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setDeleteCategoryId(category.id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
             ))}
@@ -300,85 +358,87 @@ export const MaintenanceTypeManager: React.FC = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {maintenanceTypes.map((type) => {
+            {maintenanceTypes.map((type: MaintenanceType) => {
               const IconComponent = getIconComponent(type.icon);
               return (
                 <div
                   key={type.id}
                   className="p-4 border rounded-lg hover:shadow-md transition-shadow"
                 >
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-start gap-3 flex-1">
-                      <div
-                        className="p-2 rounded-lg"
-                        style={{
-                          backgroundColor: `${type.color}20`,
-                          color: type.color,
-                        }}
-                      >
-                        <IconComponent className="h-5 w-5" />
+                  <div className="flex items-start gap-4">
+                    <div
+                      className="p-2 rounded-lg"
+                      style={{ backgroundColor: type.color + "20" }}
+                    >
+                      <IconComponent
+                        className="h-6 w-6"
+                        style={{ color: type.color }}
+                      />
+                    </div>
+
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h4 className="font-medium">{type.name}</h4>
+                        <Badge variant="outline">
+                          {getCategoryName(type.categoryId)}
+                        </Badge>
+                        <Badge
+                          variant={
+                            type.priority === "Critical"
+                              ? "destructive"
+                              : type.priority === "High"
+                                ? "default"
+                                : "secondary"
+                          }
+                        >
+                          {type.priority}
+                        </Badge>
                       </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h4 className="font-medium">{type.name}</h4>
-                          <Badge variant="outline">{type.category}</Badge>
-                          <Badge
-                            variant={
-                              type.priority === "Critical"
-                                ? "destructive"
-                                : type.priority === "High"
-                                  ? "default"
-                                  : "secondary"
-                            }
-                          >
-                            {type.priority}
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-gray-600 mb-2">
-                          {type.description}
-                        </p>
-                        <div className="flex gap-4 text-sm text-gray-500">
-                          <span>Duration: {type.estimatedDuration}h</span>
-                          <span>Cost: ${type.defaultCost}</span>
-                          <span>Skills: {type.requiredSkills.length}</span>
-                          <span>Checklist: {type.checklist.length} items</span>
-                        </div>
+                      <p className="text-sm text-gray-600 mb-2">
+                        {type.description}
+                      </p>
+                      <div className="flex gap-4 text-sm text-gray-500">
+                        <span>Duration: {type.estimatedDuration}h</span>
+                        <span>Cost: ${type.defaultCost}</span>
+                        <span>Skills: {type.requiredSkills.length}</span>
+                        <span>Checklist: {type.checklist.length} items</span>
                       </div>
                     </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => editType(type)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                    </div>
+                  </div>
+                  <div className="flex gap-2 mt-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => editType(type)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setDeleteTypeId(type.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
               );
             })}
-            {maintenanceTypes.length === 0 && (
-              <div className="text-center py-8 text-gray-500">
-                No maintenance types created yet. Create your first type to get
-                started.
-              </div>
-            )}
           </div>
         </CardContent>
       </Card>
 
       {/* Edit Type Dialog */}
       <Dialog open={isEditingType} onOpenChange={setIsEditingType}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {currentType.id
+              {editingTypeId
                 ? "Edit Maintenance Type"
                 : "Create Maintenance Type"}
             </DialogTitle>
             <DialogDescription>
-              Define the properties and workflow for this maintenance type
+              Configure the maintenance type settings
             </DialogDescription>
           </DialogHeader>
 
@@ -401,9 +461,9 @@ export const MaintenanceTypeManager: React.FC = () => {
               <div>
                 <Label>Category *</Label>
                 <Select
-                  value={currentType.category || ""}
+                  value={currentType.categoryId || ""}
                   onValueChange={(value) =>
-                    setCurrentType((prev) => ({ ...prev, category: value }))
+                    setCurrentType((prev) => ({ ...prev, categoryId: value }))
                   }
                 >
                   <SelectTrigger>
@@ -411,9 +471,9 @@ export const MaintenanceTypeManager: React.FC = () => {
                   </SelectTrigger>
                   <SelectContent>
                     {categories
-                      .filter((c) => c.isActive)
-                      .map((cat) => (
-                        <SelectItem key={cat.id} value={cat.name}>
+                      .filter((c: MaintenanceCategory) => c.isActive)
+                      .map((cat: MaintenanceCategory) => (
+                        <SelectItem key={cat.id} value={cat.id}>
                           {cat.name}
                         </SelectItem>
                       ))}
@@ -436,14 +496,14 @@ export const MaintenanceTypeManager: React.FC = () => {
               />
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Priority</Label>
                 <Select
                   value={currentType.priority || "Medium"}
-                  onValueChange={(value: any) =>
-                    setCurrentType((prev) => ({ ...prev, priority: value }))
-                  }
+                  onValueChange={(
+                    value: "Low" | "Medium" | "High" | "Critical",
+                  ) => setCurrentType((prev) => ({ ...prev, priority: value }))}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -456,32 +516,57 @@ export const MaintenanceTypeManager: React.FC = () => {
                   </SelectContent>
                 </Select>
               </div>
+
               <div>
-                <Label>Duration (hours)</Label>
+                <Label>Estimated Duration (hours)</Label>
                 <Input
                   type="number"
-                  value={currentType.estimatedDuration || ""}
+                  min="0"
+                  step="0.5"
+                  value={currentType.estimatedDuration || 1}
                   onChange={(e) =>
                     setCurrentType((prev) => ({
                       ...prev,
-                      estimatedDuration: Number(e.target.value),
+                      estimatedDuration: parseFloat(e.target.value) || 1,
                     }))
                   }
                 />
               </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Default Cost ($)</Label>
                 <Input
                   type="number"
-                  value={currentType.defaultCost || ""}
+                  min="0"
+                  step="0.01"
+                  value={currentType.defaultCost || 0}
                   onChange={(e) =>
                     setCurrentType((prev) => ({
                       ...prev,
-                      defaultCost: Number(e.target.value),
+                      defaultCost: parseFloat(e.target.value) || 0,
                     }))
                   }
                 />
               </div>
+
+              <div>
+                <Label>Color</Label>
+                <Input
+                  type="color"
+                  value={currentType.color || "#3B82F6"}
+                  onChange={(e) =>
+                    setCurrentType((prev) => ({
+                      ...prev,
+                      color: e.target.value,
+                    }))
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Icon</Label>
                 <Select
@@ -505,6 +590,16 @@ export const MaintenanceTypeManager: React.FC = () => {
                   </SelectContent>
                 </Select>
               </div>
+
+              <div className="flex items-center space-x-2 pt-6">
+                <Switch
+                  checked={currentType.isActive ?? true}
+                  onCheckedChange={(checked) =>
+                    setCurrentType((prev) => ({ ...prev, isActive: checked }))
+                  }
+                />
+                <Label>Active</Label>
+              </div>
             </div>
 
             <div>
@@ -525,7 +620,16 @@ export const MaintenanceTypeManager: React.FC = () => {
             </div>
 
             <div className="flex gap-3 pt-6 border-t">
-              <Button onClick={saveType}>
+              <Button
+                onClick={saveType}
+                disabled={
+                  createTypeMutation.isPending || updateTypeMutation.isPending
+                }
+              >
+                {(createTypeMutation.isPending ||
+                  updateTypeMutation.isPending) && (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                )}
                 <CheckCircle className="h-4 w-4 mr-2" />
                 Save Type
               </Button>
@@ -542,7 +646,7 @@ export const MaintenanceTypeManager: React.FC = () => {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {currentCategory.id ? "Edit Category" : "Create Category"}
+              {editingCategoryId ? "Edit Category" : "Create Category"}
             </DialogTitle>
             <DialogDescription>
               Configure the category settings
@@ -603,7 +707,17 @@ export const MaintenanceTypeManager: React.FC = () => {
             </div>
 
             <div className="flex gap-3 pt-4 border-t">
-              <Button onClick={saveCategory}>
+              <Button
+                onClick={saveCategory}
+                disabled={
+                  createCategoryMutation.isPending ||
+                  updateCategoryMutation.isPending
+                }
+              >
+                {(createCategoryMutation.isPending ||
+                  updateCategoryMutation.isPending) && (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                )}
                 <CheckCircle className="h-4 w-4 mr-2" />
                 Save Category
               </Button>
@@ -617,6 +731,36 @@ export const MaintenanceTypeManager: React.FC = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Confirmation Dialog for deleting a category */}
+      <ConfirmationDialog
+        title="Delete Category"
+        description="Are you sure you want to delete this maintenance category? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+        onConfirm={handleDeleteCategory}
+        onCancel={() => setDeleteCategoryId(null)}
+        open={!!deleteCategoryId}
+        onOpenChange={(open) => {
+          if (!open) setDeleteCategoryId(null);
+        }}
+      />
+
+      {/* Confirmation Dialog for deleting a type */}
+      <ConfirmationDialog
+        title="Delete Maintenance Type"
+        description="Are you sure you want to delete this maintenance type? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+        onConfirm={handleDeleteType}
+        onCancel={() => setDeleteTypeId(null)}
+        open={!!deleteTypeId}
+        onOpenChange={(open) => {
+          if (!open) setDeleteTypeId(null);
+        }}
+      />
     </div>
   );
 };
