@@ -755,6 +755,10 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
 
                         {/* Environmental & Lifecycle */}
                         <FormSection title="Environmental & Lifecycle">
+                          {/* User guidance message for CO2 accuracy */}
+                          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 text-blue-800 rounded text-sm">
+                            <strong>Tip:</strong> The more technical details you provide (like energy consumption, lifespan, or end-of-life plan), the more accurate your CO2 calculation will be. If any information is missing, we'll use typical values for your asset type/model.
+                          </div>
                           <CustomInput
                             name="energyConsumption"
                             label="Energy Consumption (Watts)"

@@ -204,10 +204,6 @@ export class CO2FootprintService {
     co2Data: CO2CalculationResult,
   ): Promise<{ success: boolean; data?: any; error?: string }> {
     try {
-      const existingRecord = await prisma.co2eRecord.findFirst({
-        where: { assetId: assetId, itemType: "Asset" },
-      });
-
       const stringifiedData = JSON.stringify(co2Data);
 
       const recordData = {
@@ -228,28 +224,28 @@ export class CO2FootprintService {
         activityData: co2Data.activityData
           ? (co2Data.activityData as Prisma.InputJsonValue)
           : Prisma.JsonNull,
+
+        // --- New lifecycle and amortized fields ---
+        lifecycleManufacturing: co2Data.lifecycleBreakdown?.manufacturing ?? null,
+        lifecycleTransport: co2Data.lifecycleBreakdown?.transport ?? null,
+        lifecycleUse: co2Data.lifecycleBreakdown?.use ?? null,
+        lifecycleEndOfLife: co2Data.lifecycleBreakdown?.endOfLife ?? null,
+        expectedLifespanYears: co2Data.expectedLifespanYears ?? co2Data.activityData?.expectedLifespan ?? null,
+        amortizedMonthlyCo2e: co2Data.amortizedMonthlyCo2e ?? null,
+        amortizedAnnualCo2e: co2Data.amortizedAnnualCo2e ?? null,
       };
 
-      if (existingRecord) {
-        // Update existing record
-        const updatedRecord = await prisma.co2eRecord.update({
-          where: { id: existingRecord.id },
-          data: recordData,
-        });
-        return { success: true, data: updatedRecord };
-      } else {
-        // Create new record
-        const newRecord = await prisma.co2eRecord.create({
-          data: {
-            itemType: "Asset",
-            ...recordData,
-            asset: {
-              connect: { id: assetId },
-            },
+      // Always create a new record for history
+      const newRecord = await prisma.co2eRecord.create({
+        data: {
+          itemType: "Asset",
+          ...recordData,
+          asset: {
+            connect: { id: assetId },
           },
-        });
-        return { success: true, data: newRecord };
-      }
+        },
+      });
+      return { success: true, data: newRecord };
     } catch (error: any) {
       console.error("Error saving asset CO2:", error);
       return { success: false, error: error.message };

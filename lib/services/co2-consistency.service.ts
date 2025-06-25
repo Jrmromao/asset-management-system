@@ -2,6 +2,13 @@ import { prisma } from "@/app/db";
 import { calculateAssetCo2 } from "./ai-multi-provider.service";
 import { CO2CalculationResult } from "@/types/co2";
 import crypto from "crypto";
+import { Redis } from "@upstash/redis";
+
+// Initialize Upstash Redis client
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL!,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+});
 
 interface AssetFingerprint {
   manufacturer: string;
@@ -234,11 +241,20 @@ export class CO2ConsistencyService {
     model: string,
     category?: string,
     forceRecalculate = false,
+    assetDetails?: {
+      energyConsumption?: number;
+      expectedLifespan?: number;
+      dailyOperationHours?: number;
+      weight?: number;
+      yearOfManufacture?: number;
+      transportDistance?: number;
+      endOfLifePlan?: string;
+    },
   ): Promise<{
     success: boolean;
     data?: CO2CalculationResult;
     error?: string;
-    source: "cache" | "calculation";
+    source: "cache" | "calculation" | "redis";
     fingerprint: string;
   }> {
     try {
@@ -250,7 +266,29 @@ export class CO2ConsistencyService {
         type: assetName,
       });
 
-      // Check for existing calculation with the same fingerprint
+      // --- 1. Try Redis cache first ---
+      if (!forceRecalculate) {
+        const redisKey = `co2:${assetFingerprint}`;
+        const redisCached = await redis.get(redisKey);
+        if (redisCached) {
+          try {
+            const cachedData = JSON.parse(redisCached as string);
+            if (this.validateCO2Data(cachedData) && cachedData.confidenceScore >= 0.8) {
+              console.log(`♻️ [REDIS] Using cached HIGH-CONFIDENCE CO2 for fingerprint: ${assetFingerprint}`);
+              return {
+                success: true,
+                data: cachedData,
+                source: "redis",
+                fingerprint: assetFingerprint,
+              };
+            }
+          } catch (e) {
+            console.warn("[REDIS] Failed to parse cached CO2 data, falling back to DB.");
+          }
+        }
+      }
+
+      // --- 2. Fallback to DB cache (as before) ---
       if (!forceRecalculate) {
         const existingCalculation = await prisma.co2eRecord.findFirst({
           where: {
@@ -270,15 +308,25 @@ export class CO2ConsistencyService {
 
             // Validate cached data has all required fields
             if (this.validateCO2Data(cachedData)) {
-              console.log(
-                `♻️ Using cached CO2 calculation for fingerprint: ${assetFingerprint}`,
-              );
-              return {
-                success: true,
-                data: cachedData,
-                source: "cache",
-                fingerprint: assetFingerprint,
-              };
+              // Only use cached value if confidence is high
+              if (cachedData.confidenceScore >= 0.8) {
+                // Also update Redis for future fast lookups
+                await redis.set(`co2:${assetFingerprint}`, JSON.stringify(cachedData));
+                console.log(
+                  `♻️ Using cached HIGH-CONFIDENCE CO2 calculation for fingerprint: ${assetFingerprint}`,
+                );
+                return {
+                  success: true,
+                  data: cachedData,
+                  source: "cache",
+                  fingerprint: assetFingerprint,
+                };
+              } else {
+                console.log(
+                  `⚠️ Cached CO2 calculation for fingerprint ${assetFingerprint} has low confidence (${cachedData.confidenceScore}). Recalculating...`,
+                );
+                // Continue to recalculate below
+              }
             }
           } catch (parseError) {
             console.warn(`⚠️ Could not parse cached CO2 data, recalculating`);
@@ -299,12 +347,18 @@ export class CO2ConsistencyService {
       );
       console.log(`📝 Normalized asset:`, normalized);
 
+      // Prepare detailed options for AI calculation
+      const options: any = {
+        category: normalized.category,
+        ...assetDetails,
+      };
+
       // Calculate CO2 using normalized data with deterministic parameters
       const co2Result = await calculateAssetCo2(
         normalized.type,
         normalized.manufacturer,
         normalized.model,
-        "openai", // Use consistent provider for deterministic results
+        options,
       );
 
       if (!co2Result.success || !co2Result.data) {
@@ -325,7 +379,12 @@ export class CO2ConsistencyService {
         deterministic: true,
       };
 
-      // Store the calculation for future use
+      // --- 3. Store in Redis if high confidence ---
+      if (enhancedData.confidenceScore >= 0.8) {
+        await redis.set(`co2:${assetFingerprint}`, JSON.stringify(enhancedData));
+      }
+
+      // Store the calculation for future use in DB
       await this.storeCO2Calculation(assetFingerprint, enhancedData);
 
       return {

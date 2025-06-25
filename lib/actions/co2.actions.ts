@@ -262,6 +262,21 @@ export async function calculateAssetCO2Action(assetId: string) {
   }
 }
 
+// Utility to deeply convert Decimal-like objects to numbers
+function deepConvertDecimals(obj: any): any {
+  if (obj === null || obj === undefined) return obj;
+  if (typeof obj === 'object') {
+    if (typeof obj.toNumber === 'function') return obj.toNumber();
+    if (Array.isArray(obj)) return obj.map(deepConvertDecimals);
+    const result: any = {};
+    for (const key in obj) {
+      result[key] = deepConvertDecimals(obj[key]);
+    }
+    return result;
+  }
+  return obj;
+}
+
 export async function saveAssetCO2Action(
   assetId: string,
   co2Data: CO2CalculationResult,
@@ -271,15 +286,44 @@ export async function saveAssetCO2Action(
 
     if (result.success && result.data) {
       // Convert all Decimal fields to numbers to prevent serialization issues
+      const record = result.data;
+      const serializedRecord = {
+        ...record,
+        co2e: record.co2e ? Number(record.co2e) : null,
+        emissionFactor: record.emissionFactor ? Number(record.emissionFactor) : null,
+        lifecycleManufacturing: record.lifecycleManufacturing ? Number(record.lifecycleManufacturing) : null,
+        lifecycleTransport: record.lifecycleTransport ? Number(record.lifecycleTransport) : null,
+        lifecycleUse: record.lifecycleUse ? Number(record.lifecycleUse) : null,
+        lifecycleEndOfLife: record.lifecycleEndOfLife ? Number(record.lifecycleEndOfLife) : null,
+        amortizedMonthlyCo2e: record.amortizedMonthlyCo2e ? Number(record.amortizedMonthlyCo2e) : null,
+        amortizedAnnualCo2e: record.amortizedAnnualCo2e ? Number(record.amortizedAnnualCo2e) : null,
+        expectedLifespanYears: record.expectedLifespanYears ? Number(record.expectedLifespanYears) : null,
+      };
+      // Recursively convert Decimals in activityData
+      if (record.activityData) {
+        try {
+          if (typeof record.activityData === 'string') {
+            const parsed = JSON.parse(record.activityData);
+            serializedRecord.activityData = deepConvertDecimals(parsed);
+          } else {
+            serializedRecord.activityData = deepConvertDecimals(record.activityData);
+          }
+        } catch {
+          serializedRecord.activityData = record.activityData;
+        }
+      }
+      // Parse and serialize the details JSON to handle any Decimal objects
+      if (record.details) {
+        try {
+          const parsedDetails = typeof record.details === 'string' ? JSON.parse(record.details) : record.details;
+          serializedRecord.details = JSON.stringify(deepConvertDecimals(parsedDetails));
+        } catch (parseError) {
+          serializedRecord.details = record.details;
+        }
+      }
       return {
         ...result,
-        data: {
-          ...result.data,
-          co2e: Number(result.data.co2e),
-          emissionFactor: result.data.emissionFactor
-            ? Number(result.data.emissionFactor)
-            : null,
-        },
+        data: serializedRecord,
       };
     }
 

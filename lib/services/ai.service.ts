@@ -15,197 +15,111 @@ console.log(
 
 // Function to calculate CO2 emission for an asset
 export async function calculateAssetCo2(
-  assetName: string,
+  assetType: string, // normalized type/category, e.g., 'laptop'
   manufacturer: string,
   model: string,
+  options?: {
+    category?: string;
+    energyConsumption?: number;
+    expectedLifespan?: number;
+    dailyOperationHours?: number;
+    weight?: number;
+    yearOfManufacture?: number;
+    transportDistance?: number;
+    endOfLifePlan?: string;
+    energyConsumptionKwhPerYear?: number;
+  }
 ): Promise<{ success: boolean; data?: any; error?: string }> {
   try {
-    console.log(
-      `🔍 Calculating CO2 for: ${assetName} (${manufacturer} ${model})`,
-    );
+    // Build up asset details dynamically
+    const assetDetails: string[] = [];
+    if (options?.category) assetDetails.push(`Category: ${options.category}`);
+    if (assetType) assetDetails.push(`Type: ${assetType}`);
+    if (manufacturer) assetDetails.push(`Manufacturer: ${manufacturer}`);
+    if (model) assetDetails.push(`Model: ${model}`);
 
+    // Energy consumption logic
+    let annualKwh: number | undefined = undefined;
+    if (options?.energyConsumptionKwhPerYear !== undefined) {
+      annualKwh = options.energyConsumptionKwhPerYear;
+      assetDetails.push(`Energy Consumption: ${annualKwh} kWh/year`);
+    } else if (
+      options?.energyConsumption !== undefined &&
+      options?.dailyOperationHours !== undefined
+    ) {
+      // Estimate kWh/year from Watts and hours/day
+      annualKwh = (options.energyConsumption * options.dailyOperationHours * 365) / 1000;
+      assetDetails.push(`Energy Consumption: ${annualKwh.toFixed(1)} kWh/year (estimated from ${options.energyConsumption}W × ${options.dailyOperationHours}h/day)`);
+    } else if (options?.energyConsumption !== undefined) {
+      assetDetails.push(`Power Rating: ${options.energyConsumption} Watts`);
+    } else {
+      assetDetails.push(`Energy Consumption: (use typical/average for this type/model)`);
+    }
+    if (options?.expectedLifespan !== undefined) {
+      assetDetails.push(`Expected Lifespan: ${options.expectedLifespan} years`);
+    } else {
+      assetDetails.push(`Expected Lifespan: (use typical/average for this type/model)`);
+    }
+    if (options?.dailyOperationHours !== undefined) {
+      assetDetails.push(`Daily Operation Hours: ${options.dailyOperationHours} hours/day`);
+    } else {
+      assetDetails.push(`Daily Operation Hours: (use typical/average for this type/model)`);
+    }
+    if (options?.weight !== undefined) {
+      assetDetails.push(`Weight: ${options.weight} kg`);
+    } else {
+      assetDetails.push(`Weight: (use typical/average for this type/model)`);
+    }
+    if (options?.yearOfManufacture !== undefined) {
+      assetDetails.push(`Year of Manufacture: ${options.yearOfManufacture}`);
+    } else {
+      assetDetails.push(`Year of Manufacture: (use typical/average for this type/model)`);
+    }
+    if (options?.transportDistance !== undefined) {
+      assetDetails.push(`Transport Distance: ${options.transportDistance} km`);
+    } else {
+      assetDetails.push(`Transport Distance: (use typical/average for this type/model)`);
+    }
+    if (options?.endOfLifePlan) {
+      assetDetails.push(`End of Life Plan: ${options.endOfLifePlan}`);
+    } else {
+      assetDetails.push(`End of Life Plan: (use typical/average for this type/model)`);
+    }
+
+    const assetDetailsBlock = assetDetails.length > 0
+      ? `**Asset Details:**\n${assetDetails.join("\n")}`
+      : "";
+
+    console.log("🔍 Calculating CO2 for:", {
+      assetType,
+      manufacturer,
+      model,
+      ...options,
+    });
+
+    // Log the full prompt for transparency
     const prompt = `
       You are an expert in Life Cycle Assessment (LCA), carbon footprint analysis, and GHG Protocol Scope 1/2/3 classification for electronic devices and IT assets.
-      Your task is to provide an accurate and well-documented estimation of the carbon footprint (CO2e) with proper GHG scope classification.
-
-      **Asset Details:**
-      - **Type:** ${assetName}
-      - **Manufacturer:** ${manufacturer}
-      - **Model:** ${model}
-
-      **Instructions:**
-      1. **Calculate the total CO2e (in kg)** across the entire lifecycle of the asset
-      2. **Break down by lifecycle stages**: Manufacturing, Transportation, Use Phase, End-of-Life
-      3. **Classify emissions by GHG Protocol Scopes**:
-         - **Scope 1**: Direct emissions (typically 0 for IT assets unless fuel-powered)
-         - **Scope 2**: Indirect emissions from purchased electricity (use phase energy consumption)
-         - **Scope 3**: All other indirect emissions (manufacturing, transport, end-of-life)
-      4. **Determine the primary scope** for this asset type (usually Scope 3 for IT assets)
-      5. **Provide specific Scope 3 categories** following GHG Protocol:
-         - Category 1: Purchased goods and services (manufacturing)
-         - Category 2: Capital goods (if applicable)
-         - Category 4: Upstream transportation (shipping)
-         - Category 11: Use of sold products (if applicable)
-         - Category 12: End-of-life treatment
-      6. **Include activity data** used for calculations (weight, power consumption, lifespan)
-      7. **Provide confidence score** (0-1) and cite data sources
-      8. **Include uncertainty range** (±%) to indicate calculation precision
-      9. **Use deterministic methodology** - prefer official manufacturer LCA data when available
-
-      **JSON Output Format:**
-      {
-        "totalCo2e": number,
-        "units": "kgCO2e",
-        "confidenceScore": number,
-        "uncertaintyRange": number, // Percentage uncertainty (e.g., 15 for ±15%)
-        "primaryScope": 1 | 2 | 3,
-        "primaryScopeCategory": "string describing main category",
-        "methodology": "Brief description of calculation methodology",
-        "lifecycleBreakdown": {
-          "manufacturing": number | "N/A",
-          "transport": number | "N/A", 
-          "use": number | "N/A",
-          "endOfLife": number | "N/A"
-        },
-        "scopeBreakdown": {
-          "scope1": {
-            "total": number,
-            "categories": {
-              "stationaryCombustion": number,
-              "mobileCombustion": number,
-              "processEmissions": number,
-              "fugitiveEmissions": number
-            }
-          },
-          "scope2": {
-            "total": number,
-            "locationBased": number,
-            "marketBased": number,
-            "electricity": number,
-            "heating": number,
-            "cooling": number,
-            "steam": number
-          },
-          "scope3": {
-            "total": number,
-            "categories": {
-              "purchasedGoods": number,
-              "capitalGoods": number,
-              "fuelEnergyActivities": number,
-              "upstreamTransport": number,
-              "wasteGenerated": number,
-              "businessTravel": number,
-              "employeeCommuting": number,
-              "upstreamAssets": number,
-              "downstreamTransport": number,
-              "processingProducts": number,
-              "useOfProducts": number,
-              "endOfLifeTreatment": number,
-              "downstreamAssets": number,
-              "franchises": number,
-              "investments": number
-            }
-          }
-        },
-        "activityData": {
-          "weight": number,
-          "energyConsumption": number,
-          "expectedLifespan": number,
-          "transportDistance": number
-        },
-        "emissionFactors": [
-          {
-            "name": "Source name",
-            "version": "2024",
-            "url": "URL if available",
-            "region": "Global/US/EU",
-            "lastUpdated": "2024-01-01"
-          }
-        ],
-        "sources": [
-          { "name": "Source Name", "url": "Source URL or identifier" }
-        ],
-        "description": "Brief summary of the methodology and assumptions made."
-      }
-
-      **Example for MacBook Pro 14-inch:**
-      {
-        "totalCo2e": 384.2,
-        "units": "kgCO2e",
-        "confidenceScore": 0.94,
-        "uncertaintyRange": 15,
-        "primaryScope": 3,
-        "primaryScopeCategory": "Purchased goods and services (manufacturing)",
-        "methodology": "Based on Apple's official LCA using process-based methodology with hybrid approach for upstream impacts",
-        "lifecycleBreakdown": {
-          "manufacturing": 270.8,
-          "transport": 18.4,
-          "use": 85.0,
-          "endOfLife": 10.0
-        },
-        "scopeBreakdown": {
-          "scope1": {
-            "total": 0,
-            "categories": {
-              "stationaryCombustion": 0,
-              "mobileCombustion": 0,
-              "processEmissions": 0,
-              "fugitiveEmissions": 0
-            }
-          },
-          "scope2": {
-            "total": 85.0,
-            "locationBased": 85.0,
-            "marketBased": 75.2,
-            "electricity": 85.0,
-            "heating": 0,
-            "cooling": 0,
-            "steam": 0
-          },
-          "scope3": {
-            "total": 299.2,
-            "categories": {
-              "purchasedGoods": 270.8,
-              "capitalGoods": 0,
-              "fuelEnergyActivities": 0,
-              "upstreamTransport": 18.4,
-              "wasteGenerated": 0,
-              "businessTravel": 0,
-              "employeeCommuting": 0,
-              "upstreamAssets": 0,
-              "downstreamTransport": 0,
-              "processingProducts": 0,
-              "useOfProducts": 0,
-              "endOfLifeTreatment": 10.0,
-              "downstreamAssets": 0,
-              "franchises": 0,
-              "investments": 0
-            }
-          }
-        },
-        "activityData": {
-          "weight": 1.6,
-          "energyConsumption": 65,
-          "expectedLifespan": 4,
-          "transportDistance": 8000
-        },
-        "emissionFactors": [
-          {
-            "name": "IEA Electricity Grid Factors",
-            "version": "2023",
-            "url": "https://www.iea.org/data-and-statistics",
-            "region": "Global",
-            "lastUpdated": "2023-12-01"
-          }
-        ],
-        "sources": [
-          { "name": "Apple Product Environmental Report for MacBook Pro 14-inch", "url": "https://www.apple.com/environment/pdf/products/notebooks/14-inch_MacBook_Pro_PER_Oct2023.pdf" }
-        ],
-        "description": "Comprehensive LCA based on Apple's official environmental report with GHG Protocol scope classification. Manufacturing represents 70% of total emissions (Scope 3), use phase 22% (Scope 2), transport 5% (Scope 3)."
-      }
-
-      Now, provide the detailed JSON object for the requested asset with proper GHG scope classification.
-      `;
+      Your task is to provide an accurate and well-documented estimation of the carbon footprint (CO2e) with proper GHG Protocol classification for the following asset:
+      
+      Asset Details:
+      ${assetDetails.join("\n      ")}
+      
+      Please provide:
+      1. The total CO2e (in kg) for each lifecycle stage: manufacturing, transport, use phase, and end-of-life.
+      2. The expected lifespan of the asset in years (or use a typical value if not provided).
+      3. A clear breakdown of the CO2e for each stage, so that monthly and annual amortized values can be calculated for reporting purposes.
+      
+      If any value is missing, use a typical or average value for this asset type/model and clearly state your assumptions.
+      
+      Respond with a JSON object containing:
+      - co2e_kg: Estimated total CO2e in kilograms (sum of all stages)
+      - expected_lifespan_years: Number of years
+      - breakdown: { manufacturing, transport, use, end_of_life }
+      - scope: GHG Protocol scope (1, 2, or 3)
+      - documentation: Brief explanation and sources used
+    `;
+    console.log("🔍 AI Prompt:", prompt);
 
     const response = await openai.chat.completions.create({
       model: "gpt-4o-mini",

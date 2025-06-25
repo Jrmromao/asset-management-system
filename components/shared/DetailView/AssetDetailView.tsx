@@ -615,6 +615,69 @@ export const AssetDetailView: React.FC<{
               </div>
             </TabsContent>
             <TabsContent value="history">
+              {/* CO2 Calculation History */}
+              {asset.co2eRecords && asset.co2eRecords.length > 1 && (
+                <Card className="mb-6">
+                  <CardHeader>
+                    <CardTitle className="text-md font-semibold flex items-center gap-2">
+                      <Leaf className="h-4 w-4 text-green-600" />
+                      CO2 Calculation History
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full text-sm border">
+                        <thead>
+                          <tr className="bg-muted/50">
+                            <th className="px-3 py-2 text-left">Date</th>
+                            <th className="px-3 py-2 text-left">Total CO2e</th>
+                            <th className="px-3 py-2 text-left">Units</th>
+                            <th className="px-3 py-2 text-left">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {asset.co2eRecords
+                            .slice()
+                            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                            .map((record, idx) => (
+                              <tr key={record.id} className={idx === 0 ? "font-semibold bg-green-50" : ""}>
+                                <td className="px-3 py-2">
+                                  {new Date(record.createdAt).toLocaleString()}
+                                </td>
+                                <td className="px-3 py-2">
+                                  {Number(record.co2e).toFixed(2)}
+                                </td>
+                                <td className="px-3 py-2">{record.units}</td>
+                                <td className="px-3 py-2">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => {
+                                      try {
+                                        const details = typeof record.details === 'string' ? JSON.parse(record.details) : record.details;
+                                        setCo2Result(details);
+                                        setIsNewCo2Calculation(false);
+                                        setCo2DialogOpen(true);
+                                      } catch (e) {
+                                        toast({
+                                          title: "Could not load CO2 details",
+                                          description: "There was an error loading this calculation.",
+                                          variant: "destructive",
+                                        });
+                                      }
+                                    }}
+                                  >
+                                    View Details
+                                  </Button>
+                                </td>
+                              </tr>
+                            ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
               <div className="space-y-6">
                 {/* Asset History */}
                 <Card>

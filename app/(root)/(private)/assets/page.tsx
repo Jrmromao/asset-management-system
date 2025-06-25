@@ -165,6 +165,26 @@ const Assets = () => {
     inventory: "",
   });
 
+  // --- Add local state for assets to allow real-time updates ---
+  const [localAssets, setLocalAssets] = useState<any[]>([]);
+  useEffect(() => {
+    setLocalAssets(assets);
+  }, [assets]);
+
+  // --- Real-time CO2 update handler ---
+  const handleCo2Update = useCallback((assetId: string, newCo2Record: any) => {
+    setLocalAssets((prevAssets) =>
+      prevAssets.map((asset) =>
+        asset.id === assetId
+          ? {
+              ...asset,
+              co2eRecords: [newCo2Record, ...(asset.co2eRecords?.filter((r: any) => r.id !== newCo2Record.id) || [])],
+            }
+          : asset
+      )
+    );
+  }, []);
+
   // Event handlers
   const handleView = useCallback(
     (id: string) => {
@@ -216,16 +236,16 @@ const Assets = () => {
 
   // Memoized columns to prevent unnecessary re-renders
   const columns = useMemo(() => {
-    return assetColumns({ onDelete, onView }) as ColumnDef<Asset>[];
-  }, [onDelete, onView]);
+    return assetColumns({ onDelete, onView, onCo2Update: handleCo2Update }) as ColumnDef<Asset>[];
+  }, [onDelete, onView, handleCo2Update]);
 
   // Debounced search term
   const debouncedSearchTerm = useDebounce(searchTerm, SEARCH_DEBOUNCE_MS);
 
   // Memoized computed values
   const activeAssets = useMemo(
-    () => getActiveAssets(normalizeAssets(assets)),
-    [assets],
+    () => getActiveAssets(normalizeAssets(localAssets)),
+    [localAssets],
   );
 
   const filteredData = useMemo(() => {

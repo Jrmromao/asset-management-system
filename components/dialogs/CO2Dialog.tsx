@@ -28,10 +28,13 @@ import {
   Target,
   BarChart3,
   Globe,
+  CheckCircle,
+  Info,
 } from "lucide-react";
 import { CO2CalculationResult } from "@/types/co2";
 import { saveAssetCO2Action } from "@/lib/actions/co2.actions";
 import { useToast } from "@/hooks/use-toast";
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 
 interface CO2DialogProps {
   isOpen: boolean;
@@ -70,6 +73,7 @@ const CO2Dialog: React.FC<CO2DialogProps> = ({
   const [currentResult, setCurrentResult] =
     useState<CO2CalculationResult>(initialResult);
   const [isEditing, setIsEditing] = useState(isNewCalculation);
+  const [isUnsaved, setIsUnsaved] = useState(false);
   const [refinementParams, setRefinementParams] = useState<RefinementParams>({
     lifespan: 4,
     energyConsumption: 100,
@@ -80,6 +84,7 @@ const CO2Dialog: React.FC<CO2DialogProps> = ({
   useEffect(() => {
     setCurrentResult(initialResult);
     setIsEditing(isNewCalculation);
+    setIsUnsaved(false);
   }, [initialResult, isNewCalculation]);
 
   const handleRecalculate = async () => {
@@ -101,6 +106,7 @@ const CO2Dialog: React.FC<CO2DialogProps> = ({
 
       if (result.success && result.data) {
         setCurrentResult(result.data);
+        setIsUnsaved(true);
         toast({
           title: "Recalculation Complete",
           description:
@@ -131,6 +137,7 @@ const CO2Dialog: React.FC<CO2DialogProps> = ({
         title: "CO2 Data Saved",
         description: "The CO2 footprint data has been saved to the database.",
       });
+      setIsUnsaved(false);
       onSave?.(currentResult);
     } else {
       toast({
@@ -253,6 +260,23 @@ const CO2Dialog: React.FC<CO2DialogProps> = ({
                     <p className="text-3xl font-bold text-green-600">
                       {currentResult.totalCo2e} {currentResult.units}
                     </p>
+               
+                    {/* Amortized Values */}
+                    {typeof currentResult.amortizedAnnualCo2e === 'number' && (
+                      <p className="text-sm text-blue-700 mt-2">
+                        <strong>Amortized Annual CO2e:</strong> {currentResult.amortizedAnnualCo2e.toFixed(2)} {currentResult.units}/year
+                      </p>
+                    )}
+                    {typeof currentResult.amortizedMonthlyCo2e === 'number' && (
+                      <p className="text-sm text-blue-700 mt-1">
+                        <strong>Amortized Monthly CO2e:</strong> {currentResult.amortizedMonthlyCo2e.toFixed(2)} {currentResult.units}/month
+                      </p>
+                    )}
+                    {typeof currentResult.expectedLifespanYears === 'number' && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        <strong>Expected Lifespan:</strong> {currentResult.expectedLifespanYears} years
+                      </p>
+                    )}
                   </div>
                   <div className="text-right">
                     <p className="text-sm text-muted-foreground">
@@ -284,10 +308,36 @@ const CO2Dialog: React.FC<CO2DialogProps> = ({
                       {(currentResult.confidenceScore * 100).toFixed(0)}%
                     </span>
                   </div>
-                  <Progress
-                    value={currentResult.confidenceScore * 100}
-                    className="h-2"
-                  />
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div>
+                          <Progress
+                            value={currentResult.confidenceScore * 100}
+                            className="h-2"
+                            indicatorClassName={
+                              currentResult.confidenceScore < 0.6
+                                ? 'bg-red-600'
+                                : currentResult.confidenceScore < 0.8
+                                ? 'bg-yellow-400'
+                                : 'bg-green-600'
+                            }
+                          />
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <span>
+                          This score reflects how much technical data was available for this calculation.<br/>
+                          <b>Higher confidence</b> means more accurate and consistent results.<br/>
+                          {currentResult.confidenceScore < 0.8 && (
+                            <>
+                              <br/><b>Tip:</b> Provide more technical details (e.g., energy consumption, weight, year, etc.) for higher accuracy.
+                            </>
+                          )}
+                        </span>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                   <p className="text-xs text-muted-foreground">
                     Based on {currentResult.sources?.length || 0} data sources
                     and {currentResult.methodology}
@@ -295,6 +345,10 @@ const CO2Dialog: React.FC<CO2DialogProps> = ({
                 </div>
               </CardContent>
             </Card>
+
+            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 text-blue-800 rounded text-sm">
+              <strong>Tip:</strong> The more technical details you provide for this asset, the more accurate your CO2 calculation will be. If any information is missing, we'll use typical values for your asset type/model.
+            </div>
           </TabsContent>
 
           <TabsContent value="scopes" className="space-y-4">
@@ -424,7 +478,8 @@ const CO2Dialog: React.FC<CO2DialogProps> = ({
           </TabsContent>
 
           <TabsContent value="lifecycle" className="space-y-4">
-            {/* Lifecycle Breakdown */}
+    
+            {/* Premium Lifecycle Breakdown Grid */}
             <div className="grid grid-cols-2 gap-3">
               <div className="flex items-center gap-2 p-3 bg-blue-50 rounded border">
                 <Factory className="h-4 w-4 text-blue-600" />
@@ -433,7 +488,7 @@ const CO2Dialog: React.FC<CO2DialogProps> = ({
                     Manufacturing
                   </div>
                   <div className="font-medium">
-                    {formatCO2e(currentResult.lifecycleBreakdown.manufacturing)}
+                    {formatCO2e(currentResult.lifecycleManufacturing ?? currentResult.lifecycleBreakdown?.manufacturing)}
                   </div>
                 </div>
               </div>
@@ -442,7 +497,7 @@ const CO2Dialog: React.FC<CO2DialogProps> = ({
                 <div>
                   <div className="text-xs text-muted-foreground">Transport</div>
                   <div className="font-medium">
-                    {formatCO2e(currentResult.lifecycleBreakdown.transport)}
+                    {formatCO2e(currentResult.lifecycleTransport ?? currentResult.lifecycleBreakdown?.transport)}
                   </div>
                 </div>
               </div>
@@ -451,7 +506,7 @@ const CO2Dialog: React.FC<CO2DialogProps> = ({
                 <div>
                   <div className="text-xs text-muted-foreground">Use Phase</div>
                   <div className="font-medium">
-                    {formatCO2e(currentResult.lifecycleBreakdown.use)}
+                    {formatCO2e(currentResult.lifecycleUse ?? currentResult.lifecycleBreakdown?.use)}
                   </div>
                 </div>
               </div>
@@ -462,12 +517,11 @@ const CO2Dialog: React.FC<CO2DialogProps> = ({
                     End of Life
                   </div>
                   <div className="font-medium">
-                    {formatCO2e(currentResult.lifecycleBreakdown.endOfLife)}
+                    {formatCO2e(currentResult.lifecycleEndOfLife ?? currentResult.lifecycleBreakdown?.endOfLife)}
                   </div>
                 </div>
               </div>
             </div>
-
             {/* Activity Data */}
             {currentResult.activityData && (
               <Card>
@@ -475,43 +529,122 @@ const CO2Dialog: React.FC<CO2DialogProps> = ({
                   <CardTitle className="text-sm">Activity Data Used</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    {currentResult.activityData.weight && (
-                      <div>
-                        <span className="text-muted-foreground">Weight:</span>
-                        <span className="font-medium ml-2">
-                          {currentResult.activityData.weight} kg
-                        </span>
-                      </div>
-                    )}
-                    {currentResult.activityData.energyConsumption && (
-                      <div>
-                        <span className="text-muted-foreground">Energy:</span>
-                        <span className="font-medium ml-2">
-                          {currentResult.activityData.energyConsumption}{" "}
-                          kWh/year
-                        </span>
-                      </div>
-                    )}
-                    {currentResult.activityData.expectedLifespan && (
-                      <div>
-                        <span className="text-muted-foreground">Lifespan:</span>
-                        <span className="font-medium ml-2">
-                          {currentResult.activityData.expectedLifespan} years
-                        </span>
-                      </div>
-                    )}
-                    {currentResult.activityData.transportDistance && (
-                      <div>
-                        <span className="text-muted-foreground">
-                          Transport:
-                        </span>
-                        <span className="font-medium ml-2">
-                          {currentResult.activityData.transportDistance} km
-                        </span>
-                      </div>
-                    )}
-                  </div>
+                  <TooltipProvider>
+                    <div className="mb-2 text-xs text-muted-foreground flex items-center gap-3">
+                      <span className="flex items-center gap-1">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <CheckCircle className="h-3 w-3 text-green-600" />
+                          </TooltipTrigger>
+                          <TooltipContent>Provided by you</TooltipContent>
+                        </Tooltip>
+                        provided by you
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-3 w-3 text-gray-400" />
+                          </TooltipTrigger>
+                          <TooltipContent>Typical/average value used</TooltipContent>
+                        </Tooltip>
+                        typical/average value used
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      {typeof currentResult.activityData.weight !== 'undefined' && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-muted-foreground">Weight:</span>
+                          <span className={currentResult.activityData._userProvided?.weight ? "font-medium ml-2" : "font-medium ml-2 text-gray-500 italic"}>
+                            {currentResult.activityData.weight} kg
+                          </span>
+                          {currentResult.activityData._userProvided?.weight ? (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <CheckCircle className="h-4 w-4 text-green-600" />
+                              </TooltipTrigger>
+                              <TooltipContent>Provided by you</TooltipContent>
+                            </Tooltip>
+                          ) : (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Info className="h-4 w-4 text-gray-400" />
+                              </TooltipTrigger>
+                              <TooltipContent>Typical/average value used</TooltipContent>
+                            </Tooltip>
+                          )}
+                        </div>
+                      )}
+                      {typeof currentResult.activityData.energyConsumption !== 'undefined' && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-muted-foreground">Energy:</span>
+                          <span className={currentResult.activityData._userProvided?.energyConsumption ? "font-medium ml-2" : "font-medium ml-2 text-gray-500 italic"}>
+                            {currentResult.activityData.energyConsumption} kWh/year
+                          </span>
+                          {currentResult.activityData._userProvided?.energyConsumption ? (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <CheckCircle className="h-4 w-4 text-green-600" />
+                              </TooltipTrigger>
+                              <TooltipContent>Provided by you</TooltipContent>
+                            </Tooltip>
+                          ) : (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Info className="h-4 w-4 text-gray-400" />
+                              </TooltipTrigger>
+                              <TooltipContent>Typical/average value used</TooltipContent>
+                            </Tooltip>
+                          )}
+                        </div>
+                      )}
+                      {typeof currentResult.activityData.expectedLifespan !== 'undefined' && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-muted-foreground">Lifespan:</span>
+                          <span className={currentResult.activityData._userProvided?.expectedLifespan ? "font-medium ml-2" : "font-medium ml-2 text-gray-500 italic"}>
+                            {currentResult.activityData.expectedLifespan} years
+                          </span>
+                          {currentResult.activityData._userProvided?.expectedLifespan ? (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <CheckCircle className="h-4 w-4 text-green-600" />
+                              </TooltipTrigger>
+                              <TooltipContent>Provided by you</TooltipContent>
+                            </Tooltip>
+                          ) : (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Info className="h-4 w-4 text-gray-400" />
+                              </TooltipTrigger>
+                              <TooltipContent>Typical/average value used</TooltipContent>
+                            </Tooltip>
+                          )}
+                        </div>
+                      )}
+                      {typeof currentResult.activityData.transportDistance !== 'undefined' && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-muted-foreground">Transport:</span>
+                          <span className={currentResult.activityData._userProvided?.transportDistance ? "font-medium ml-2" : "font-medium ml-2 text-gray-500 italic"}>
+                            {currentResult.activityData.transportDistance} km
+                          </span>
+                          {currentResult.activityData._userProvided?.transportDistance ? (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <CheckCircle className="h-4 w-4 text-green-600" />
+                              </TooltipTrigger>
+                              <TooltipContent>Provided by you</TooltipContent>
+                            </Tooltip>
+                          ) : (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Info className="h-4 w-4 text-gray-400" />
+                              </TooltipTrigger>
+                              <TooltipContent>Typical/average value used</TooltipContent>
+                            </Tooltip>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </TooltipProvider>
                 </CardContent>
               </Card>
             )}
@@ -519,39 +652,48 @@ const CO2Dialog: React.FC<CO2DialogProps> = ({
         </Tabs>
 
         {/* Action Buttons */}
-        <div className="flex justify-between pt-4 border-t">
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleRecalculate}
-              disabled={isRecalculating}
-            >
-              {isRecalculating ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Recalculating...
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                  Recalculate
-                </>
-              )}
-            </Button>
-          </div>
-
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={onClose}>
-              <X className="mr-2 h-4 w-4" />
-              Close
-            </Button>
-            {isNewCalculation && (
-              <Button onClick={handleSave}>
-                <Save className="mr-2 h-4 w-4" />
-                Save Results
+        <div className="pt-4 border-t">
+          {(!isNewCalculation && isUnsaved) && (
+            <div className="flex justify-center mb-2">
+              <div className="p-2 bg-yellow-50 border border-yellow-300 text-yellow-800 rounded text-xs flex items-center gap-2 max-w-xl w-full justify-center">
+                <Info className="h-4 w-4 text-yellow-600" />
+                <span>Saving will override the previous CO2 calculation for this asset.</span>
+              </div>
+            </div>
+          )}
+          <div className="flex justify-between items-center gap-2">
+            <div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRecalculate}
+                disabled={isRecalculating}
+              >
+                {isRecalculating ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Recalculating...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Recalculate
+                  </>
+                )}
               </Button>
-            )}
+            </div>
+            <div className="flex gap-2">
+              {(isUnsaved || isNewCalculation) && (
+                <Button onClick={handleSave}>
+                  <Save className="mr-2 h-4 w-4" />
+                  Save Results
+                </Button>
+              )}
+              <Button variant="outline" onClick={() => { setIsUnsaved(false); onClose(); }}>
+                <X className="mr-2 h-4 w-4" />
+                Close
+              </Button>
+            </div>
           </div>
         </div>
       </DialogContent>

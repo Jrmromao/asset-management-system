@@ -718,7 +718,16 @@ model Co2eRecord {
   emissionFactor   Decimal? @db.Decimal(15, 6) // kg CO2e per unit
   emissionFactorSource String? // Source of emission factor (e.g., "IEA 2023", "EPA 2024")
   activityData     Json?    // Store activity data used for calculation
-  
+
+  // --- Lifecycle breakdown for amortized reporting ---
+  lifecycleManufacturing Decimal? @db.Decimal(15, 2) // Manufacturing stage CO2e
+  lifecycleTransport    Decimal? @db.Decimal(15, 2) // Transport stage CO2e
+  lifecycleUse          Decimal? @db.Decimal(15, 2) // Use phase CO2e
+  lifecycleEndOfLife    Decimal? @db.Decimal(15, 2) // End-of-life stage CO2e
+  expectedLifespanYears Int? // Expected lifespan in years
+  amortizedMonthlyCo2e  Decimal? @db.Decimal(15, 4) // Total lifecycle CO2e amortized per month
+  amortizedAnnualCo2e   Decimal? @db.Decimal(15, 4) // Total lifecycle CO2e amortized per year
+
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 

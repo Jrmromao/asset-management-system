@@ -61,6 +61,12 @@ export interface CO2CalculationResult {
     endOfLife: number | "N/A";
   };
 
+  // Direct DB lifecycle fields (optional)
+  lifecycleManufacturing?: number | "N/A";
+  lifecycleTransport?: number | "N/A";
+  lifecycleUse?: number | "N/A";
+  lifecycleEndOfLife?: number | "N/A";
+
   // New GHG Scope breakdown
   scopeBreakdown: GHGScopeBreakdown;
 
@@ -83,4 +89,9 @@ export interface CO2CalculationResult {
     transportDistance?: number; // km
     [key: string]: any;
   };
+
+  // --- Amortized and lifespan fields ---
+  amortizedMonthlyCo2e?: number;
+  amortizedAnnualCo2e?: number;
+  expectedLifespanYears?: number;
 }

@@ -13,13 +13,13 @@ import { Co2eRecord } from "@prisma/client";
 import { CO2CalculationResult } from "@/types/co2";
 import { Asset } from "@/types/asset";
 
-// const navigate = useRouter() cannot use hook in a non hook component
 interface AssetColumnsProps {
   onDelete: (value: Asset) => void;
   onView: (value: Asset) => void;
+  onCo2Update: (assetId: string, newCo2Record: any) => void;
 }
 
-const CO2FootprintCell = ({ row }: { row: any }) => {
+const CO2FootprintCell = ({ row, onCo2Update }: { row: any; onCo2Update: (assetId: string, newCo2Record: any) => void }) => {
   const { toast } = useToast();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -79,8 +79,15 @@ const CO2FootprintCell = ({ row }: { row: any }) => {
   };
 
   const handleSaveResult = (result: CO2CalculationResult) => {
-    // The result is already saved by the action, just refresh the page
-    router.refresh();
+    // The result is already saved by the action, update the table in real time
+    const newCo2Record = {
+      ...result,
+      co2e: result.totalCo2e,
+      id: Date.now().toString(), // Temporary ID, ideally use the real one from backend
+      createdAt: new Date().toISOString(),
+      units: result.units,
+    };
+    onCo2Update(row.original.id, newCo2Record);
     setDialogOpen(false);
   };
 
@@ -267,6 +274,7 @@ const CO2FootprintCell = ({ row }: { row: any }) => {
 export const assetColumns = ({
   onDelete,
   onView,
+  onCo2Update,
 }: AssetColumnsProps): ColumnDef<Asset>[] => [
   {
     accessorKey: "name",
@@ -336,7 +344,7 @@ export const assetColumns = ({
   },
   {
     header: "CO2 Footprint",
-    cell: ({ row }) => <CO2FootprintCell row={row} />,
+    cell: ({ row }) => <CO2FootprintCell row={row} onCo2Update={onCo2Update} />,
   },
   {
     header: "Purchase Date",
