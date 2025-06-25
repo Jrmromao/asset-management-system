@@ -18,18 +18,19 @@ const contactSchema = z.object({
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    
+
     // Validate the request body
     const validatedData = contactSchema.parse(body);
-    
+
     // Get client IP address and user agent
-    const ipAddress = request.headers.get("x-forwarded-for") || 
-      request.headers.get("x-forwarded-for")?.split(",")[0] || 
-      request.headers.get("x-real-ip") || 
+    const ipAddress =
+      request.headers.get("x-forwarded-for") ||
+      request.headers.get("x-forwarded-for")?.split(",")[0] ||
+      request.headers.get("x-real-ip") ||
       "unknown";
-    
+
     const userAgent = request.headers.get("user-agent") || "unknown";
-    
+
     // Save to database
     const contactSubmission = await prisma.contactSubmission.create({
       data: {
@@ -38,7 +39,7 @@ export async function POST(request: NextRequest) {
         userAgent,
       },
     });
-    
+
     // Send email notifications
     try {
       // Send confirmation email to user
@@ -51,7 +52,7 @@ export async function POST(request: NextRequest) {
           inquiryType: validatedData.inquiryType,
         },
       });
-      
+
       // Send notification email to admin
       await EmailService.sendEmail({
         to: "joao.romao@ecokeepr.com", // Replace with your admin email
@@ -74,16 +75,15 @@ export async function POST(request: NextRequest) {
       console.error("Failed to send email notifications:", emailError);
       // Don't fail the entire request if email fails
     }
-    
+
     return NextResponse.json({
       success: true,
       message: "Contact form submitted successfully",
       submissionId: contactSubmission.id,
     });
-    
   } catch (error) {
     console.error("Contact form submission error:", error);
-    
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         {
@@ -91,16 +91,16 @@ export async function POST(request: NextRequest) {
           message: "Validation error",
           errors: error.errors,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
-    
+
     return NextResponse.json(
       {
         success: false,
         message: "Failed to submit contact form",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -113,14 +113,14 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get("limit") || "10");
     const unreadOnly = searchParams.get("unread") === "true";
     const inquiryType = searchParams.get("inquiryType");
-    
+
     const skip = (page - 1) * limit;
-    
+
     const where = {
       ...(unreadOnly && { isRead: false }),
       ...(inquiryType && { inquiryType }),
     };
-    
+
     const [submissions, total] = await Promise.all([
       prisma.contactSubmission.findMany({
         where,
@@ -130,7 +130,7 @@ export async function GET(request: NextRequest) {
       }),
       prisma.contactSubmission.count({ where }),
     ]);
-    
+
     return NextResponse.json({
       success: true,
       data: submissions,
@@ -141,16 +141,15 @@ export async function GET(request: NextRequest) {
         pages: Math.ceil(total / limit),
       },
     });
-    
   } catch (error) {
     console.error("Failed to fetch contact submissions:", error);
-    
+
     return NextResponse.json(
       {
         success: false,
         message: "Failed to fetch contact submissions",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
-} 
+}

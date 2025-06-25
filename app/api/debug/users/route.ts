@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest) {
   try {
     console.log("🔍 [Debug Users API] Starting debug...");
-    
+
     // Get auth state
     const { orgId, userId } = await auth();
     console.log("🔍 [Debug Users API] Auth state:", { orgId, userId });
@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
         const clerk = await clerkClient();
         clerkUserInfo = await clerk.users.getUser(userId);
         clerkOrganizations = await clerk.users.getOrganizationMembershipList({
-          userId: userId
+          userId: userId,
         });
       } catch (error) {
         console.error("Error fetching Clerk info:", error);
@@ -39,11 +39,11 @@ export async function GET(req: NextRequest) {
         role: {
           select: {
             id: true,
-            name: true
-          }
-        }
+            name: true,
+          },
+        },
       },
-      take: 10
+      take: 10,
     });
 
     // Get current user specifically
@@ -53,8 +53,8 @@ export async function GET(req: NextRequest) {
         where: { oauthId: userId },
         include: {
           role: true,
-          company: true
-        }
+          company: true,
+        },
       });
     }
 
@@ -66,10 +66,10 @@ export async function GET(req: NextRequest) {
         clerkOrgId: true,
         _count: {
           select: {
-            users: true
-          }
-        }
-      }
+            users: true,
+          },
+        },
+      },
     });
 
     // Get all roles
@@ -80,30 +80,33 @@ export async function GET(req: NextRequest) {
         companyId: true,
         _count: {
           select: {
-            users: true
-          }
-        }
-      }
+            users: true,
+          },
+        },
+      },
     });
 
     const debugInfo = {
       auth: {
         orgId,
         userId,
-        hasAuth: !!(orgId && userId)
+        hasAuth: !!(orgId && userId),
       },
       clerk: {
-        userInfo: clerkUserInfo ? {
-          id: clerkUserInfo.id,
-          emailAddresses: clerkUserInfo.emailAddresses,
-          publicMetadata: clerkUserInfo.publicMetadata,
-          privateMetadata: clerkUserInfo.privateMetadata
-        } : null,
-        organizations: clerkOrganizations?.data?.map((org: any) => ({
-          id: org.organization.id,
-          name: org.organization.name,
-          role: org.role
-        })) || []
+        userInfo: clerkUserInfo
+          ? {
+              id: clerkUserInfo.id,
+              emailAddresses: clerkUserInfo.emailAddresses,
+              publicMetadata: clerkUserInfo.publicMetadata,
+              privateMetadata: clerkUserInfo.privateMetadata,
+            }
+          : null,
+        organizations:
+          clerkOrganizations?.data?.map((org: any) => ({
+            id: org.organization.id,
+            name: org.organization.name,
+            role: org.role,
+          })) || [],
       },
       currentUser,
       database: {
@@ -112,8 +115,8 @@ export async function GET(req: NextRequest) {
         totalRoles: roles.length,
         users: allUsers,
         companies,
-        roles
-      }
+        roles,
+      },
     };
 
     console.log("🔍 [Debug Users API] Debug info:", debugInfo);
@@ -122,8 +125,11 @@ export async function GET(req: NextRequest) {
   } catch (error) {
     console.error("❌ [Debug Users API] Error:", error);
     return NextResponse.json(
-      { error: "Debug failed", details: error instanceof Error ? error.message : "Unknown error" },
-      { status: 500 }
+      {
+        error: "Debug failed",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 },
     );
   }
-} 
+}
