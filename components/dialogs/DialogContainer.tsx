@@ -14,6 +14,8 @@ interface IProps {
   title: string;
   description: string;
   form: any;
+  className?: string;
+  body?: React.ReactNode;
 }
 
 export function DialogContainer({
@@ -22,6 +24,8 @@ export function DialogContainer({
   title,
   description,
   form,
+  className,
+  body,
 }: IProps) {
   return (
     <div className={"asset-dialog"}>
@@ -33,7 +37,7 @@ export function DialogContainer({
               {description}
             </DialogDescription>
           </DialogHeader>
-          {form}
+          {body}
         </DialogContent>
       </Dialog>
     </div>

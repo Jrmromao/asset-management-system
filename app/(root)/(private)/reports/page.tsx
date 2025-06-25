@@ -15,6 +15,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from "@/components/ui/card";
 import {
   ArrowDownRight,
@@ -64,6 +65,10 @@ import {
   TooltipProvider as UiTooltipProvider,
   TooltipTrigger as UiTooltipTrigger,
 } from "@/components/ui/tooltip";
+import AllReportsModal from "@/components/reports/AllReportsModal";
+import { useAllReports } from "@/hooks/queries/useAllReports";
+import { useToast } from "@/hooks/use-toast";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const COLORS = ["#10B981", "#3B82F6", "#F59E0B", "#6B7280"];
 
@@ -104,6 +109,8 @@ const UnifiedReportsPage = () => {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [dateRange, setDateRange] = useState("last6Months");
   const [activeTab, setActiveTab] = useState("charts");
+  const [showAllReports, setShowAllReports] = useState(false);
+  const { toast } = useToast();
 
   // Fetch report data from API
   const {
@@ -112,6 +119,13 @@ const UnifiedReportsPage = () => {
     error,
   } = useReportData(selectedCategory, dateRange);
   const apiData = reportData?.data || {};
+
+  // Add this hook for fetching all reports
+  const {
+    data: allReportsData,
+    isLoading: allReportsLoading,
+    error: allReportsError,
+  } = useAllReports();
 
   // Filter logic for premium UX (expand as real data is available)
   const showESG = selectedCategory === "all" || selectedCategory === "esg";
@@ -211,6 +225,54 @@ const UnifiedReportsPage = () => {
     },
   ];
 
+  // Update the allReports mapping to include filePath
+  const allReports = (allReportsData?.data || []).map((r: any, idx: number) => ({
+    id: r.id || `report-${idx}`,
+    name: r.name || r.title || "Untitled",
+    createdAt: r.createdAt || r.date || r.generatedAt || new Date().toISOString(),
+    sizeMB: r.sizeMB || r.size || r.fileSize || 0,
+    status: r.status || "active",
+    scheduledDeletionAt: r.scheduledDeletionAt || null,
+    filePath: r.filePath || null,
+  }));
+
+  // Updated action handlers with toaster notifications
+  const handleArchive = (id: string) => {
+    // TODO: Implement actual archive functionality
+    console.log(`Archive report ${id}`);
+    toast({
+      title: "Archive Action",
+      description: `Report ${id} archive functionality will be implemented soon.`,
+    });
+  };
+
+  const handleRestore = (id: string) => {
+    // TODO: Implement actual restore functionality
+    console.log(`Restore report ${id}`);
+    toast({
+      title: "Restore Action",
+      description: `Report ${id} restore functionality will be implemented soon.`,
+    });
+  };
+
+  const handleDelete = (id: string) => {
+    // TODO: Implement actual delete functionality
+    console.log(`Delete report ${id}`);
+    toast({
+      title: "Delete Action",
+      description: `Report ${id} delete functionality will be implemented soon.`,
+    });
+  };
+
+  const handleScheduleDeletion = (id: string, date: string) => {
+    // TODO: Implement actual schedule deletion functionality
+    console.log(`Schedule deletion for report ${id} on ${date}`);
+    toast({
+      title: "Schedule Deletion Action",
+      description: `Report ${id} schedule deletion functionality will be implemented soon.`,
+    });
+  };
+
   return (
     <div className="p-8 h-full">
       {/* Report Hub Header */}
@@ -294,38 +356,48 @@ const UnifiedReportsPage = () => {
         </div>
         {/* Quick Stats Row (always visible) */}
         <div className="grid grid-cols-4 gap-4 mb-6">
-          {statCards.map((stat, index) => (
-            <Card key={index} className="bg-white/50 backdrop-blur-sm">
-              <CardContent className="pt-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-gray-500 flex items-center">
-                    {stat.label}
-                    {stat.tooltip && stat.tooltip}
-                  </span>
-                  <stat.icon className="h-4 w-4 text-gray-400" />
-                </div>
-                <div className="flex items-baseline justify-between">
-                  <span className="text-2xl font-bold">{stat.value}</span>
-                  <div
-                    className={`flex items-center text-sm ${
-                      stat.trend === "up"
-                        ? "text-emerald-600"
-                        : stat.trend === "down"
-                          ? "text-red-600"
-                          : "text-gray-600"
-                    }`}
-                  >
-                    {stat.trend === "up" ? (
-                      <ArrowUpRight className="h-4 w-4" />
-                    ) : stat.trend === "down" ? (
-                      <ArrowDownRight className="h-4 w-4" />
-                    ) : null}
-                    {stat.change}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+          {isLoading
+            ? [...Array(4)].map((_, i) => (
+                <Card key={i} className="bg-white/50 backdrop-blur-sm">
+                  <CardContent className="pt-4">
+                    <Skeleton className="h-4 w-24 mb-2" />
+                    <Skeleton className="h-8 w-20 mb-2" />
+                    <Skeleton className="h-4 w-16" />
+                  </CardContent>
+                </Card>
+              ))
+            : statCards.map((stat, index) => (
+                <Card key={index} className="bg-white/50 backdrop-blur-sm">
+                  <CardContent className="pt-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm text-gray-500 flex items-center">
+                        {stat.label}
+                        {stat.tooltip && stat.tooltip}
+                      </span>
+                      <stat.icon className="h-4 w-4 text-gray-400" />
+                    </div>
+                    <div className="flex items-baseline justify-between">
+                      <span className="text-2xl font-bold">{stat.value}</span>
+                      <div
+                        className={`flex items-center text-sm ${
+                          stat.trend === "up"
+                            ? "text-emerald-600"
+                            : stat.trend === "down"
+                            ? "text-red-600"
+                            : "text-gray-600"
+                        }`}
+                      >
+                        {stat.trend === "up" ? (
+                          <ArrowUpRight className="h-4 w-4" />
+                        ) : stat.trend === "down" ? (
+                          <ArrowDownRight className="h-4 w-4" />
+                        ) : null}
+                        {stat.change}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
         </div>
       </div>
 
@@ -391,7 +463,10 @@ const UnifiedReportsPage = () => {
             </CardHeader>
             <CardContent>
               {isLoading ? (
-                renderLoading()
+                <div className="flex flex-col items-center justify-center h-[300px] w-full">
+                  <Skeleton className="h-6 w-1/2 mb-4" />
+                  <Skeleton className="h-48 w-full rounded-lg" />
+                </div>
               ) : error ? (
                 renderError()
               ) : apiData.energyUsage ? (
@@ -450,7 +525,18 @@ const UnifiedReportsPage = () => {
             </CardHeader>
             <CardContent>
               {isLoading ? (
-                renderLoading()
+                <div className="flex flex-col items-center justify-center h-[300px] w-full">
+                  <Skeleton className="h-6 w-1/2 mb-4" />
+                  <div className="flex gap-2 w-full items-end justify-center mt-8">
+                    {/* Varying bar heights for realism */}
+                    <Skeleton className="h-32 w-8 rounded" />
+                    <Skeleton className="h-24 w-8 rounded" />
+                    <Skeleton className="h-40 w-8 rounded" />
+                    <Skeleton className="h-28 w-8 rounded" />
+                    <Skeleton className="h-36 w-8 rounded" />
+                    <Skeleton className="h-20 w-8 rounded" />
+                  </div>
+                </div>
               ) : error ? (
                 renderError()
               ) : apiData.carbonEmissions ? (
@@ -497,7 +583,29 @@ const UnifiedReportsPage = () => {
               </div>
             </CardHeader>
             <CardContent>
-              {apiData.assetDistribution ? (
+              {isLoading ? (
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Pie chart skeleton */}
+                  <div className="flex flex-col items-center justify-center h-[300px]">
+                    <Skeleton className="rounded-full w-40 h-40 mb-4" />
+                  </div>
+                  {/* Legend skeletons */}
+                  <div className="space-y-4 mt-8">
+                    {[...Array(4)].map((_, i) => (
+                      <div key={i} className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Skeleton className="w-3 h-3 rounded-full" />
+                          <Skeleton className="h-4 w-24" />
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Skeleton className="h-4 w-8" />
+                          <Skeleton className="h-4 w-8" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : apiData.assetDistribution ? (
                 <div className="grid grid-cols-2 gap-4">
                   <div className="h-[300px]">
                     <ResponsiveContainer width="100%" height="100%">
@@ -586,116 +694,150 @@ const UnifiedReportsPage = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {apiData.recentReports && apiData.recentReports.length > 0 ? (
-                  apiData.recentReports.map((report: any, index: number) => (
+              {isLoading ? (
+                <div className="space-y-4">
+                  {/* Loading skeleton for 3 report items */}
+                  {[1, 2, 3].map((index) => (
                     <div
                       key={index}
-                      className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors duration-200"
+                      className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-lg bg-white flex items-center justify-center">
-                          <FileText className="h-5 w-5 text-gray-500" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-sm text-gray-900">
-                            {report.name}
-                          </p>
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className="text-xs text-gray-500">
-                              {report.date}
-                            </span>
-                            <span className="text-xs text-gray-400">•</span>
-                            <span className="text-xs text-gray-500">
-                              {report.type}
-                            </span>
-                            <span className="text-xs text-gray-400">•</span>
-                            <span className="text-xs text-gray-500">
-                              {report.size}
-                            </span>
+                        <Skeleton className="h-10 w-10 rounded-lg" />
+                        <div className="space-y-2">
+                          <Skeleton className="h-4 w-32" />
+                          <div className="flex items-center gap-2">
+                            <Skeleton className="h-3 w-16" />
+                            <Skeleton className="h-3 w-3 rounded-full" />
+                            <Skeleton className="h-3 w-12" />
+                            <Skeleton className="h-3 w-3 rounded-full" />
+                            <Skeleton className="h-3 w-16" />
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        {report.status === "processing" ? (
-                          <Badge
-                            variant="secondary"
-                            className="bg-blue-50 text-blue-600"
-                          >
-                            Processing
-                          </Badge>
-                        ) : (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-gray-600"
-                            onClick={async () => {
-                              if (!report.filePath) {
-                                alert('Download not available');
-                                return;
-                              }
-                              
-                              try {
-                                const response = await fetch(report.filePath);
-                                
-                                if (response.status === 202) {
-                                  alert('Report is still being generated. Please try again in a few moments.');
-                                  return;
-                                }
-                                
-                                if (!response.ok) {
-                                  const errorData = await response.json().catch(() => ({ error: 'Download failed' }));
-                                  alert(errorData.error || 'Download failed');
-                                  return;
-                                }
-                                
-                                // Check if it's a JSON response (dashboard format)
-                                const contentType = response.headers.get('content-type');
-                                if (contentType && contentType.includes('application/json')) {
-                                  const jsonData = await response.json();
-                                  console.log('Dashboard data:', jsonData);
-                                  alert('Dashboard data logged to console (feature coming soon)');
-                                  return;
-                                }
-                                
-                                // For file downloads, create a blob and download
-                                const blob = await response.blob();
-                                const url = window.URL.createObjectURL(blob);
-                                const a = document.createElement('a');
-                                a.href = url;
-                                
-                                // Extract filename from Content-Disposition header or use default
-                                const disposition = response.headers.get('content-disposition');
-                                let filename = 'report';
-                                if (disposition && disposition.includes('filename=')) {
-                                  filename = disposition.split('filename=')[1].replace(/"/g, '');
-                                }
-                                
-                                a.download = filename;
-                                document.body.appendChild(a);
-                                a.click();
-                                window.URL.revokeObjectURL(url);
-                                document.body.removeChild(a);
-                              } catch (error) {
-                                console.error('Download error:', error);
-                                alert('Failed to download report');
-                              }
-                            }}
-                          >
-                            <Download className="h-4 w-4 mr-2" />
-                            Download
-                          </Button>
-                        )}
-                      </div>
+                      <Skeleton className="h-8 w-20" />
                     </div>
-                  ))
-                ) : (
-                  <div className="text-gray-400 text-center py-12">
-                    No recent reports available.
-                  </div>
-                )}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {apiData.recentReports && apiData.recentReports.length > 0 ? (
+                    apiData.recentReports.map((report: any, index: number) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors duration-200"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-lg bg-white flex items-center justify-center">
+                            <FileText className="h-5 w-5 text-gray-500" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-sm text-gray-900">
+                              {report.name}
+                            </p>
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className="text-xs text-gray-500">
+                                {report.date}
+                              </span>
+                              <span className="text-xs text-gray-400">•</span>
+                              <span className="text-xs text-gray-500">
+                                {report.type}
+                              </span>
+                              <span className="text-xs text-gray-400">•</span>
+                              <span className="text-xs text-gray-500">
+                                {report.size}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {report.status === "processing" ? (
+                            <Badge
+                              variant="secondary"
+                              className="bg-blue-50 text-blue-600"
+                            >
+                              Processing
+                            </Badge>
+                          ) : (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-gray-600"
+                              onClick={async () => {
+                                if (!report.filePath) {
+                                  alert('Download not available');
+                                  return;
+                                }
+                                try {
+                                  const response = await fetch(report.filePath);
+                                  if (response.status === 202) {
+                                    alert('Report is still being generated. Please try again in a few moments.');
+                                    return;
+                                  }
+                                  if (!response.ok) {
+                                    const errorData = await response.json().catch(() => ({ error: 'Download failed' }));
+                                    alert(errorData.error || 'Download failed');
+                                    return;
+                                  }
+                                  const contentType = response.headers.get('content-type');
+                                  if (contentType && contentType.includes('application/json')) {
+                                    const jsonData = await response.json();
+                                    console.log('Dashboard data:', jsonData);
+                                    alert('Dashboard data logged to console (feature coming soon)');
+                                    return;
+                                  }
+                                  const blob = await response.blob();
+                                  const url = window.URL.createObjectURL(blob);
+                                  const a = document.createElement('a');
+                                  a.href = url;
+                                  const disposition = response.headers.get('content-disposition');
+                                  let filename = 'report';
+                                  if (disposition && disposition.includes('filename=')) {
+                                    filename = disposition.split('filename=')[1].replace(/"/g, '');
+                                  }
+                                  a.download = filename;
+                                  document.body.appendChild(a);
+                                  a.click();
+                                  window.URL.revokeObjectURL(url);
+                                  document.body.removeChild(a);
+                                } catch (error) {
+                                  console.error('Download error:', error);
+                                  alert('Failed to download report');
+                                }
+                              }}
+                            >
+                              <Download className="h-4 w-4 mr-2" />
+                              Download
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-gray-400 text-center py-12">
+                      No recent reports available.
+                    </div>
+                  )}
+                </div>
+              )}
             </CardContent>
+            <CardFooter>
+              <button
+                className="mt-2 text-emerald-700 hover:underline text-sm font-medium"
+                onClick={() => setShowAllReports(true)}
+              >
+                📄 View All Reports
+              </button>
+              <AllReportsModal
+                open={showAllReports}
+                onOpenChange={() => setShowAllReports(false)}
+                reports={allReports}
+                onArchive={handleArchive}
+                onRestore={handleRestore}
+                onDelete={handleDelete}
+                onScheduleDeletion={handleScheduleDeletion}
+              />
+            </CardFooter>
           </Card>
         )}
         </div>
