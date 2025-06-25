@@ -263,5 +263,3 @@ export async function createCo2eRecord(
     return { success: false, error: error.message };
   }
 }
-
-

@@ -13,7 +13,10 @@ export async function POST(request: NextRequest) {
     const result = await getAllAccessories();
 
     if (!result.success || !result.data || result.data.length === 0) {
-      return NextResponse.json({ error: "No accessories found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "No accessories found" },
+        { status: 404 },
+      );
     }
 
     // Create CSV headers
@@ -44,8 +47,12 @@ export async function POST(request: NextRequest) {
       accessory.statusLabel?.name || "",
       accessory.supplier?.name || "",
       accessory.inventory?.name || "",
-      accessory.createdAt ? new Date(accessory.createdAt).toLocaleDateString() : "",
-      accessory.updatedAt ? new Date(accessory.updatedAt).toLocaleDateString() : "",
+      accessory.createdAt
+        ? new Date(accessory.createdAt).toLocaleDateString()
+        : "",
+      accessory.updatedAt
+        ? new Date(accessory.updatedAt).toLocaleDateString()
+        : "",
     ]);
 
     // Combine headers and rows
@@ -65,7 +72,7 @@ export async function POST(request: NextRequest) {
     console.error("Error exporting accessories:", error);
     return NextResponse.json(
       { error: "Failed to export accessories" },
-      { status: 500 }
+      { status: 500 },
     );
   }
-} 
+}

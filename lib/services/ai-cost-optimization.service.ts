@@ -5,7 +5,7 @@ import { prisma } from "@/app/db";
 console.log("🔧 AI Cost Optimization Service: Environment check", {
   hasOpenAIKey: !!process.env.OPENAI_API_KEY,
   hasDeepSeekURL: !!process.env.DEEPSEEK_API_URL,
-  openAIKeyLength: process.env.OPENAI_API_KEY?.length || 0
+  openAIKeyLength: process.env.OPENAI_API_KEY?.length || 0,
 });
 
 const openai = new OpenAI({
@@ -37,33 +37,33 @@ interface EnvironmentalImpact {
     action: string;
     co2Reduction: number;
     costSavings: number;
-    feasibility: 'low' | 'medium' | 'high';
+    feasibility: "low" | "medium" | "high";
   }>;
 }
 
 interface CostRecommendation {
   id: string;
-  type: 'license' | 'accessory' | 'workflow';
+  type: "license" | "accessory" | "workflow";
   category: string;
   title: string;
   description: string;
   potentialSavings: number;
   confidenceScore: number;
-  implementationEffort: 'low' | 'medium' | 'high';
+  implementationEffort: "low" | "medium" | "high";
   timeToValue: number; // days
   affectedAssets: string[];
   actionItems: string[];
 }
 
 interface RiskAssessment {
-  overall: 'low' | 'medium' | 'high';
+  overall: "low" | "medium" | "high";
   factors: RiskFactor[];
   mitigationStrategies: string[];
 }
 
 interface RiskFactor {
   category: string;
-  severity: 'low' | 'medium' | 'high';
+  severity: "low" | "medium" | "high";
   description: string;
   likelihood: number;
 }
@@ -78,7 +78,7 @@ interface ImplementationPlan {
 }
 
 interface ComplianceAnalysis {
-  impactLevel: 'none' | 'low' | 'medium' | 'high';
+  impactLevel: "none" | "low" | "medium" | "high";
   affectedPolicies: string[];
   requiredApprovals: string[];
   complianceChecklist: string[];
@@ -89,31 +89,42 @@ interface ComplianceAnalysis {
  */
 export async function analyzeLicenseCostOptimization(
   userId: string,
-  timeframe: 'monthly' | 'quarterly' | 'yearly' = 'quarterly'
-): Promise<{ success: boolean; data?: CostOptimizationAnalysis; error?: string }> {
+  timeframe: "monthly" | "quarterly" | "yearly" = "quarterly",
+): Promise<{
+  success: boolean;
+  data?: CostOptimizationAnalysis;
+  error?: string;
+}> {
   try {
     // Get user's company ID
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { companyId: true }
+      select: { companyId: true },
     });
 
     if (!user?.companyId) {
-      return { success: false, error: 'User not associated with a company' };
+      return { success: false, error: "User not associated with a company" };
     }
 
     // Fetch comprehensive license data
-    console.log(`🌱 License Analysis: Fetching license data for company ${user.companyId}`);
-    const licenseData = await getLicenseAnalyticsData(user.companyId, timeframe);
-    
-    console.log(`🌱 License Analysis: Fetching CO2 data for company ${user.companyId}`);
+    console.log(
+      `🌱 License Analysis: Fetching license data for company ${user.companyId}`,
+    );
+    const licenseData = await getLicenseAnalyticsData(
+      user.companyId,
+      timeframe,
+    );
+
+    console.log(
+      `🌱 License Analysis: Fetching CO2 data for company ${user.companyId}`,
+    );
     const co2Data = await getCO2AnalyticsData(user.companyId);
-    console.log(`🌱 License Analysis: CO2 data retrieved`, { 
-      totalEmissions: co2Data.totalCO2Emissions, 
+    console.log(`🌱 License Analysis: CO2 data retrieved`, {
+      totalEmissions: co2Data.totalCO2Emissions,
       recordCount: co2Data.recordCount,
-      categories: co2Data.emissionsByCategory.length 
+      categories: co2Data.emissionsByCategory.length,
     });
-    
+
     const prompt = `
     You are an expert IT Asset Management consultant specializing in software license optimization, cost reduction, and environmental sustainability.
     Analyze the following license data and provide actionable cost optimization recommendations that also consider environmental impact.
@@ -213,17 +224,17 @@ export async function analyzeLicenseCostOptimization(
       temperature: 0.3, // Lower temperature for more consistent recommendations
     });
 
-    const analysis = JSON.parse(response.choices[0].message.content || '{}');
-    
+    const analysis = JSON.parse(response.choices[0].message.content || "{}");
+
     // Store the analysis for tracking and reporting
-    await storeCostOptimizationAnalysis(user.companyId, analysis, 'license');
-    
+    await storeCostOptimizationAnalysis(user.companyId, analysis, "license");
+
     return { success: true, data: analysis };
   } catch (error) {
-    console.error('Error in license cost optimization analysis:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Unknown error' 
+    console.error("Error in license cost optimization analysis:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
     };
   }
 }
@@ -233,30 +244,38 @@ export async function analyzeLicenseCostOptimization(
  */
 export async function analyzeAccessoryCostOptimization(
   userId: string,
-  timeframe: 'monthly' | 'quarterly' | 'yearly' = 'quarterly'
-): Promise<{ success: boolean; data?: CostOptimizationAnalysis; error?: string }> {
+  timeframe: "monthly" | "quarterly" | "yearly" = "quarterly",
+): Promise<{
+  success: boolean;
+  data?: CostOptimizationAnalysis;
+  error?: string;
+}> {
   try {
     // Get user's company ID
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { companyId: true }
+      select: { companyId: true },
     });
 
     if (!user?.companyId) {
-      return { success: false, error: 'User not associated with a company' };
+      return { success: false, error: "User not associated with a company" };
     }
 
-    console.log(`🌱 Accessory Analysis: Fetching accessory data for company ${user.companyId}`);
+    console.log(
+      `🌱 Accessory Analysis: Fetching accessory data for company ${user.companyId}`,
+    );
     const accessoryData = await getAccessoryAnalyticsData(user.companyId);
-    
-    console.log(`🌱 Accessory Analysis: Fetching CO2 data for company ${user.companyId}`);
+
+    console.log(
+      `🌱 Accessory Analysis: Fetching CO2 data for company ${user.companyId}`,
+    );
     const co2Data = await getCO2AnalyticsData(user.companyId);
-    console.log(`🌱 Accessory Analysis: CO2 data retrieved`, { 
-      totalEmissions: co2Data.totalCO2Emissions, 
+    console.log(`🌱 Accessory Analysis: CO2 data retrieved`, {
+      totalEmissions: co2Data.totalCO2Emissions,
       recordCount: co2Data.recordCount,
-      categories: co2Data.emissionsByCategory.length 
+      categories: co2Data.emissionsByCategory.length,
     });
-    
+
     const prompt = `
     You are an expert in inventory management, procurement optimization, and environmental sustainability.
     Analyze the following accessory inventory data and provide cost optimization recommendations that also consider environmental impact.
@@ -364,17 +383,17 @@ export async function analyzeAccessoryCostOptimization(
       temperature: 0.3,
     });
 
-    const analysis = JSON.parse(response.choices[0].message.content || '{}');
-    
+    const analysis = JSON.parse(response.choices[0].message.content || "{}");
+
     // Store the analysis for tracking and reporting
-    await storeCostOptimizationAnalysis(user.companyId, analysis, 'accessory');
-    
+    await storeCostOptimizationAnalysis(user.companyId, analysis, "accessory");
+
     return { success: true, data: analysis };
   } catch (error) {
-    console.error('Error in accessory cost optimization analysis:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Unknown error' 
+    console.error("Error in accessory cost optimization analysis:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
     };
   }
 }
@@ -384,12 +403,12 @@ export async function analyzeAccessoryCostOptimization(
  */
 export async function generateCostForecast(
   companyId: string,
-  forecastPeriod: 12 | 24 | 36 = 12 // months
+  forecastPeriod: 12 | 24 | 36 = 12, // months
 ): Promise<{ success: boolean; data?: any; error?: string }> {
   try {
     const historicalData = await getHistoricalCostData(companyId);
     const currentTrends = await getCurrentTrends(companyId);
-    
+
     const prompt = `
     You are a financial analyst specializing in IT cost forecasting and budget planning.
     Analyze historical spending patterns and current trends to generate accurate cost forecasts.
@@ -454,17 +473,17 @@ export async function generateCostForecast(
       temperature: 0.2,
     });
 
-    const forecast = JSON.parse(response.choices[0].message.content || '{}');
-    
+    const forecast = JSON.parse(response.choices[0].message.content || "{}");
+
     // Store forecast for tracking
     await storeCostForecast(companyId, forecast, forecastPeriod);
-    
+
     return { success: true, data: forecast };
   } catch (error) {
-    console.error('Error generating cost forecast:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Unknown error' 
+    console.error("Error generating cost forecast:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
     };
   }
 }
@@ -474,12 +493,12 @@ export async function generateCostForecast(
  */
 export async function generateVendorNegotiationStrategy(
   companyId: string,
-  vendorId: string
+  vendorId: string,
 ): Promise<{ success: boolean; data?: any; error?: string }> {
   try {
     const vendorData = await getVendorAnalyticsData(companyId, vendorId);
     const marketBenchmarks = await getMarketBenchmarkData(vendorId);
-    
+
     const prompt = `
     You are an expert procurement negotiator specializing in IT vendor relationships and contract optimization.
     Analyze vendor performance and market data to develop effective negotiation strategies.
@@ -555,14 +574,14 @@ export async function generateVendorNegotiationStrategy(
       temperature: 0.3,
     });
 
-    const strategy = JSON.parse(response.choices[0].message.content || '{}');
-    
+    const strategy = JSON.parse(response.choices[0].message.content || "{}");
+
     return { success: true, data: strategy };
   } catch (error) {
-    console.error('Error generating vendor negotiation strategy:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Unknown error' 
+    console.error("Error generating vendor negotiation strategy:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
     };
   }
 }
@@ -576,49 +595,66 @@ async function getLicenseAnalyticsData(companyId: string, timeframe: string) {
       Asset: {
         include: {
           user: true,
-          statusLabel: true
-        }
+          statusLabel: true,
+        },
       },
       Manufacturer: true,
-      statusLabel: true
-    }
+      statusLabel: true,
+    },
   });
 
   return {
     totalLicenses: licenses.length,
-    licensesByType: licenses.reduce((acc, license) => {
-      const type = license.name.split(' ')[0] || 'Unknown'; // Extract type from name
-      acc[type] = (acc[type] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>),
+    licensesByType: licenses.reduce(
+      (acc, license) => {
+        const type = license.name.split(" ")[0] || "Unknown"; // Extract type from name
+        acc[type] = (acc[type] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    ),
     costBreakdown: {
-      totalAnnualCost: licenses.reduce((sum, l) => sum + Number(l.annualPrice || 0), 0),
-      totalMonthlyCost: licenses.reduce((sum, l) => sum + Number(l.monthlyPrice || 0), 0),
-      averageCostPerLicense: licenses.length > 0 ? 
-        licenses.reduce((sum, l) => sum + Number(l.annualPrice || 0), 0) / licenses.length : 0
+      totalAnnualCost: licenses.reduce(
+        (sum, l) => sum + Number(l.annualPrice || 0),
+        0,
+      ),
+      totalMonthlyCost: licenses.reduce(
+        (sum, l) => sum + Number(l.monthlyPrice || 0),
+        0,
+      ),
+      averageCostPerLicense:
+        licenses.length > 0
+          ? licenses.reduce((sum, l) => sum + Number(l.annualPrice || 0), 0) /
+            licenses.length
+          : 0,
     },
-    utilizationData: licenses.map(license => ({
+    utilizationData: licenses.map((license) => ({
       id: license.id,
       name: license.name,
-      type: license.name.split(' ')[0],
+      type: license.name.split(" ")[0],
       totalSeats: license.seats || 1,
       assignedAssets: license.Asset.length,
-      utilizationRate: license.seats ? (license.Asset.length / license.seats) * 100 : 100,
+      utilizationRate: license.seats
+        ? (license.Asset.length / license.seats) * 100
+        : 100,
       annualCost: Number(license.annualPrice || 0),
-      costPerSeat: license.seats && license.annualPrice ? 
-        Number(license.annualPrice) / license.seats : Number(license.annualPrice || 0),
+      costPerSeat:
+        license.seats && license.annualPrice
+          ? Number(license.annualPrice) / license.seats
+          : Number(license.annualPrice || 0),
       renewalDate: license.renewalDate,
-      vendor: license.Manufacturer?.name || 'Unknown',
+      vendor: license.Manufacturer?.name || "Unknown",
       billingCycle: license.billingCycle,
-      activeUsers: license.Asset.filter((asset: any) => asset.user).length
+      activeUsers: license.Asset.filter((asset: any) => asset.user).length,
     })),
-    complianceStatus: licenses.map(license => ({
+    complianceStatus: licenses.map((license) => ({
       id: license.id,
       name: license.name,
       isCompliant: license.Asset.length <= (license.seats || 1),
       overallocation: Math.max(0, license.Asset.length - (license.seats || 1)),
-      complianceRisk: license.Asset.length > (license.seats || 1) ? 'high' : 'low'
-    }))
+      complianceRisk:
+        license.Asset.length > (license.seats || 1) ? "high" : "low",
+    })),
   };
 }
 
@@ -628,53 +664,68 @@ async function getAccessoryAnalyticsData(companyId: string) {
     include: {
       statusLabel: true,
       category: true,
-      userItems: true
-    }
+      userItems: true,
+    },
   });
 
   return {
     totalAccessories: accessories.length,
-    inventoryValue: accessories.reduce((sum, acc) => sum + Number(acc.totalValue || 0), 0),
-    accessoriesByCategory: accessories.reduce((acc, accessory) => {
-      const category = accessory.category?.name || 'Uncategorized';
-      acc[category] = (acc[category] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>),
-    stockAnalysis: accessories.map(accessory => {
+    inventoryValue: accessories.reduce(
+      (sum, acc) => sum + Number(acc.totalValue || 0),
+      0,
+    ),
+    accessoriesByCategory: accessories.reduce(
+      (acc, accessory) => {
+        const category = accessory.category?.name || "Uncategorized";
+        acc[category] = (acc[category] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    ),
+    stockAnalysis: accessories.map((accessory) => {
       const assignedQuantity = accessory.userItems.length;
       const availableQuantity = accessory.totalQuantityCount - assignedQuantity;
-      
+
       return {
         id: accessory.id,
         name: accessory.name,
-        category: accessory.category?.name || 'Uncategorized',
+        category: accessory.category?.name || "Uncategorized",
         totalQuantity: accessory.totalQuantityCount || 0,
         availableQuantity: availableQuantity,
-        utilizationRate: accessory.totalQuantityCount ? 
-          (assignedQuantity / accessory.totalQuantityCount) * 100 : 0,
+        utilizationRate: accessory.totalQuantityCount
+          ? (assignedQuantity / accessory.totalQuantityCount) * 100
+          : 0,
         unitCost: Number(accessory.unitCost || 0),
         totalValue: Number(accessory.totalValue || 0),
         reorderLevel: accessory.reorderPoint || 0,
         needsReorder: availableQuantity <= (accessory.reorderPoint || 0),
         lastPurchasePrice: Number(accessory.lastPurchasePrice || 0),
-        status: accessory.statusLabel?.name || 'Unknown'
+        status: accessory.statusLabel?.name || "Unknown",
       };
     }),
     costMetrics: {
-      averageUnitCost: accessories.length > 0 ? 
-        accessories.reduce((sum, acc) => sum + Number(acc.unitCost || 0), 0) / accessories.length : 0,
+      averageUnitCost:
+        accessories.length > 0
+          ? accessories.reduce(
+              (sum, acc) => sum + Number(acc.unitCost || 0),
+              0,
+            ) / accessories.length
+          : 0,
       totalCarryingCost: accessories.reduce((sum, acc) => {
         const assignedQuantity = acc.userItems.length;
         const availableQuantity = acc.totalQuantityCount - assignedQuantity;
-        return sum + (Number(acc.unitCost || 0) * availableQuantity);
+        return sum + Number(acc.unitCost || 0) * availableQuantity;
       }, 0),
-      turnoverRate: accessories.length > 0 ? 
-        accessories.filter(acc => {
-          const assignedQuantity = acc.userItems.length;
-          const availableQuantity = acc.totalQuantityCount - assignedQuantity;
-          return availableQuantity < acc.totalQuantityCount;
-        }).length / accessories.length : 0
-    }
+      turnoverRate:
+        accessories.length > 0
+          ? accessories.filter((acc) => {
+              const assignedQuantity = acc.userItems.length;
+              const availableQuantity =
+                acc.totalQuantityCount - assignedQuantity;
+              return availableQuantity < acc.totalQuantityCount;
+            }).length / accessories.length
+          : 0,
+    },
   };
 }
 
@@ -685,7 +736,7 @@ async function getHistoricalCostData(companyId: string) {
     monthlySpend: [], // Last 12 months of spending data
     yearOverYearGrowth: 0,
     seasonalPatterns: {},
-    majorCostEvents: []
+    majorCostEvents: [],
   };
 }
 
@@ -693,44 +744,51 @@ async function getCurrentTrends(companyId: string) {
   return {
     industryGrowthRate: 0.05,
     inflationRate: 0.03,
-    marketTrends: ['cloud migration', 'remote work tools'],
-    vendorPriceChanges: []
+    marketTrends: ["cloud migration", "remote work tools"],
+    vendorPriceChanges: [],
   };
 }
 
 async function getVendorAnalyticsData(companyId: string, vendorId: string) {
   return {
-    vendorName: 'Sample Vendor',
+    vendorName: "Sample Vendor",
     totalSpend: 0,
     contractTerms: {},
     performanceMetrics: {},
-    relationshipHistory: []
+    relationshipHistory: [],
   };
 }
 
 async function getMarketBenchmarkData(vendorId: string) {
   return {
-    marketPosition: 'competitive',
+    marketPosition: "competitive",
     pricingBenchmarks: {},
     alternativeVendors: [],
-    marketTrends: []
+    marketTrends: [],
   };
 }
 
 async function storeCostOptimizationAnalysis(
-  companyId: string, 
-  analysis: CostOptimizationAnalysis, 
-  type: 'license' | 'accessory'
+  companyId: string,
+  analysis: CostOptimizationAnalysis,
+  type: "license" | "accessory",
 ) {
   try {
-    console.log(`Storing ${type} cost optimization analysis for company ${companyId}`);
-    
+    console.log(
+      `Storing ${type} cost optimization analysis for company ${companyId}`,
+    );
+
     // Calculate total potential savings from recommendations if not provided
-    const totalSavings = analysis.totalPotentialSavings || 
-      (analysis.recommendations?.reduce((sum, rec) => sum + (rec.potentialSavings || 0), 0) || 0);
-    
+    const totalSavings =
+      analysis.totalPotentialSavings ||
+      analysis.recommendations?.reduce(
+        (sum, rec) => sum + (rec.potentialSavings || 0),
+        0,
+      ) ||
+      0;
+
     console.log(`💰 Total potential savings calculated: $${totalSavings}`);
-    
+
     // Store the main analysis record
     const analysisRecord = await prisma.costOptimizationAnalysis.create({
       data: {
@@ -738,18 +796,25 @@ async function storeCostOptimizationAnalysis(
         analysisType: type,
         totalPotentialSavings: totalSavings,
         confidence: 0.85, // Default confidence score
-        status: 'completed',
+        status: "completed",
         analysisData: analysis as any, // Store full analysis as JSON
-      }
+      },
     });
 
     // Store individual recommendations
     if (analysis.recommendations && analysis.recommendations.length > 0) {
-      console.log(`📊 Processing ${analysis.recommendations.length} recommendations for storage`);
+      console.log(
+        `📊 Processing ${analysis.recommendations.length} recommendations for storage`,
+      );
       const recommendations = analysis.recommendations.map((rec, index) => {
-        const convertedConfidence = rec.confidenceScore > 1 ? rec.confidenceScore / 100 : rec.confidenceScore;
-        console.log(`📊 Rec ${index}: confidence ${rec.confidenceScore} → ${convertedConfidence}, savings: $${rec.potentialSavings}`);
-        
+        const convertedConfidence =
+          rec.confidenceScore > 1
+            ? rec.confidenceScore / 100
+            : rec.confidenceScore;
+        console.log(
+          `📊 Rec ${index}: confidence ${rec.confidenceScore} → ${convertedConfidence}, savings: $${rec.potentialSavings}`,
+        );
+
         return {
           analysisId: analysisRecord.id,
           recommendationId: rec.id || `${type}-${index}`,
@@ -768,34 +833,46 @@ async function storeCostOptimizationAnalysis(
       });
 
       await prisma.costOptimizationRecommendation.createMany({
-        data: recommendations
+        data: recommendations,
       });
     }
 
-    console.log(`✅ Stored ${type} cost optimization analysis with ${analysis.recommendations?.length || 0} recommendations`);
+    console.log(
+      `✅ Stored ${type} cost optimization analysis with ${analysis.recommendations?.length || 0} recommendations`,
+    );
     return analysisRecord;
   } catch (error) {
-    console.error('Error storing cost optimization analysis:', error);
+    console.error("Error storing cost optimization analysis:", error);
     throw error;
   }
 }
 
 async function getCO2AnalyticsData(companyId: string) {
-  console.log(`🌱 getCO2AnalyticsData: Starting analysis for company ${companyId}`);
-  
+  console.log(
+    `🌱 getCO2AnalyticsData: Starting analysis for company ${companyId}`,
+  );
+
   // Get all users and assets for the company first
-  const companyUsers = await prisma.user.findMany({ where: { companyId }, select: { id: true } });
-  const companyAssets = await prisma.asset.findMany({ where: { companyId }, select: { id: true } });
-  
-  console.log(`🌱 getCO2AnalyticsData: Found ${companyUsers.length} users and ${companyAssets.length} assets`);
-  
+  const companyUsers = await prisma.user.findMany({
+    where: { companyId },
+    select: { id: true },
+  });
+  const companyAssets = await prisma.asset.findMany({
+    where: { companyId },
+    select: { id: true },
+  });
+
+  console.log(
+    `🌱 getCO2AnalyticsData: Found ${companyUsers.length} users and ${companyAssets.length} assets`,
+  );
+
   // Get all CO2 records for the company
   const co2Records = await prisma.co2eRecord.findMany({
     where: {
       OR: [
-        { userId: { in: companyUsers.map(u => u.id) } },
-        { assetId: { in: companyAssets.map(a => a.id) } }
-      ]
+        { userId: { in: companyUsers.map((u) => u.id) } },
+        { assetId: { in: companyAssets.map((a) => a.id) } },
+      ],
     },
     include: {
       asset: {
@@ -803,58 +880,78 @@ async function getCO2AnalyticsData(companyId: string) {
           category: true,
           model: {
             include: {
-              manufacturer: true
-            }
-          }
-        }
-      }
-    }
+              manufacturer: true,
+            },
+          },
+        },
+      },
+    },
   });
 
   console.log(`🌱 getCO2AnalyticsData: Found ${co2Records.length} CO2 records`);
-  
-  const totalEmissions = co2Records.reduce((sum, record) => sum + Number(record.co2e), 0);
-  
-  console.log(`🌱 getCO2AnalyticsData: Total emissions: ${totalEmissions} kg CO2e`);
-  
+
+  const totalEmissions = co2Records.reduce(
+    (sum, record) => sum + Number(record.co2e),
+    0,
+  );
+
+  console.log(
+    `🌱 getCO2AnalyticsData: Total emissions: ${totalEmissions} kg CO2e`,
+  );
+
   // Group emissions by category
-  const emissionsByCategory = co2Records.reduce((acc, record) => {
-    const category = record.asset?.category?.name || record.co2eType || 'Unknown';
-    acc[category] = (acc[category] || 0) + Number(record.co2e);
-    return acc;
-  }, {} as Record<string, number>);
-  
-  console.log(`🌱 getCO2AnalyticsData: Emissions by category:`, emissionsByCategory);
+  const emissionsByCategory = co2Records.reduce(
+    (acc, record) => {
+      const category =
+        record.asset?.category?.name || record.co2eType || "Unknown";
+      acc[category] = (acc[category] || 0) + Number(record.co2e);
+      return acc;
+    },
+    {} as Record<string, number>,
+  );
+
+  console.log(
+    `🌱 getCO2AnalyticsData: Emissions by category:`,
+    emissionsByCategory,
+  );
 
   // Convert to percentage format
-  const categoryBreakdown = Object.entries(emissionsByCategory).map(([category, emissions]) => ({
-    category,
-    emissions,
-    percentage: totalEmissions > 0 ? (emissions / totalEmissions) * 100 : 0
-  }));
+  const categoryBreakdown = Object.entries(emissionsByCategory).map(
+    ([category, emissions]) => ({
+      category,
+      emissions,
+      percentage: totalEmissions > 0 ? (emissions / totalEmissions) * 100 : 0,
+    }),
+  );
 
   return {
     totalCO2Emissions: totalEmissions,
     emissionsByCategory: categoryBreakdown,
     recordCount: co2Records.length,
-    averageEmissionPerAsset: co2Records.length > 0 ? totalEmissions / co2Records.length : 0,
-    scopeBreakdown: co2Records.reduce((acc, record) => {
-      const scope = `Scope ${record.scope}`;
-      acc[scope] = (acc[scope] || 0) + Number(record.co2e);
-      return acc;
-    }, {} as Record<string, number>)
+    averageEmissionPerAsset:
+      co2Records.length > 0 ? totalEmissions / co2Records.length : 0,
+    scopeBreakdown: co2Records.reduce(
+      (acc, record) => {
+        const scope = `Scope ${record.scope}`;
+        acc[scope] = (acc[scope] || 0) + Number(record.co2e);
+        return acc;
+      },
+      {} as Record<string, number>,
+    ),
   };
 }
 
 async function storeCostForecast(
-  companyId: string, 
-  forecast: any, 
-  period: number
+  companyId: string,
+  forecast: any,
+  period: number,
 ) {
   try {
-    console.log(`Storing cost forecast for company ${companyId}, period: ${period} months`);
+    console.log(
+      `Storing cost forecast for company ${companyId}, period: ${period} months`,
+    );
     // Implementation would store forecast in database
   } catch (error) {
-    console.error('Error storing cost forecast:', error);
+    console.error("Error storing cost forecast:", error);
   }
-} 
+}

@@ -26,13 +26,6 @@ const SettingsPage = (): JSX.Element => {
           <BreadcrumbSeparator />
         </BreadcrumbList>
       </Breadcrumb>
-
-      <HeaderBox
-        title="Settings"
-        subtitle="Configure your application settings and manage master data"
-        icon={<Settings className="w-4 h-4" />}
-      />
-
       <AdminSettings />
     </div>
   );

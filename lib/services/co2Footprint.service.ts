@@ -52,8 +52,6 @@ export class CO2FootprintService {
     error?: string;
   }> {
     try {
-
-
       // Check if we have a recent calculation (within 24 hours)
       // TEMPORARILY DISABLED FOR DEBUGGING
       /*
@@ -149,11 +147,14 @@ export class CO2FootprintService {
         asset.model.manufacturer.name,
         asset.model.name,
         asset.category?.name,
-        false // Use cached results when available
+        false, // Use cached results when available
       );
 
       if (!co2Result.success) {
-        console.error(`❌ Consistency service returned error:`, co2Result.error);
+        console.error(
+          `❌ Consistency service returned error:`,
+          co2Result.error,
+        );
         return {
           success: false,
           error: co2Result.error || "Failed to calculate CO2",
@@ -181,10 +182,12 @@ export class CO2FootprintService {
       }
 
       // Log whether result came from cache or new calculation
-      console.log(`${co2Result.source === 'cache' ? '♻️' : '🔄'} CO2 calculation ${co2Result.source} for fingerprint: ${co2Result.fingerprint}`);
-      console.log(`📊 Total CO2e: ${co2Result.data.totalCo2e} ${co2Result.data.units}`);
-
-
+      console.log(
+        `${co2Result.source === "cache" ? "♻️" : "🔄"} CO2 calculation ${co2Result.source} for fingerprint: ${co2Result.fingerprint}`,
+      );
+      console.log(
+        `📊 Total CO2e: ${co2Result.data.totalCo2e} ${co2Result.data.units}`,
+      );
 
       return { success: true, data: co2Result.data };
     } catch (error: any) {

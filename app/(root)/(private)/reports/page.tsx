@@ -29,10 +29,18 @@ import {
   PieChart,
   Search,
   Share2,
+  BarChart,
+  DollarSign,
+  Activity,
+  Shield,
+  Info,
+  Zap,
+  Leaf,
+  Settings2,
 } from "lucide-react";
 import {
   Bar,
-  BarChart,
+  BarChart as RechartsBarChart,
   CartesianGrid,
   Cell,
   Line,
@@ -47,58 +55,173 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ReportBuilder from "@/components/reports/ReportBuilder";
-
-// Enhanced sample data with trends
-const energyData = [
-  { month: "Jan", usage: 320, target: 300, previous: 340 },
-  { month: "Feb", usage: 300, target: 300, previous: 320 },
-  { month: "Mar", usage: 340, target: 300, previous: 310 },
-  { month: "Apr", usage: 280, target: 300, previous: 330 },
-  { month: "May", usage: 290, target: 300, previous: 300 },
-  { month: "Jun", usage: 310, target: 300, previous: 290 },
-];
-
-const assetDistribution = [
-  { name: "Laptops", value: 45, trend: "up", change: "+5%" },
-  { name: "Monitors", value: 30, trend: "down", change: "-2%" },
-  { name: "Mobile Devices", value: 15, trend: "up", change: "+3%" },
-  { name: "Others", value: 10, trend: "stable", change: "0%" },
-];
-
-const carbonData = [
-  { month: "Jan", emissions: 25, target: 22 },
-  { month: "Feb", emissions: 23, target: 22 },
-  { month: "Mar", emissions: 26, target: 22 },
-  { month: "Apr", emissions: 22, target: 22 },
-  { month: "May", emissions: 21, target: 22 },
-  { month: "Jun", emissions: 20, target: 22 },
-];
+import ReportTemplates from "@/components/reports/ReportTemplates";
+import { ReportCategoryCard } from "@/components/reports/ReportCategoryCard";
+import { useReportData } from "@/hooks/queries/useReportData";
+import {
+  Tooltip as UiTooltip,
+  TooltipContent as UiTooltipContent,
+  TooltipProvider as UiTooltipProvider,
+  TooltipTrigger as UiTooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const COLORS = ["#10B981", "#3B82F6", "#F59E0B", "#6B7280"];
 
-const ReportsPage = () => {
+const CATEGORY_CONFIG = [
+  {
+    key: "all",
+    icon: <Folder className="h-8 w-8 text-gray-600" />,
+    title: "All Reports",
+    description: "Overview of all reporting categories.",
+  },
+  {
+    key: "esg",
+    icon: <BarChart className="h-8 w-8 text-emerald-600" />,
+    title: "ESG & Environmental",
+    description: "CO₂ emissions, energy, lifecycle sustainability.",
+  },
+  {
+    key: "financial",
+    icon: <DollarSign className="h-8 w-8 text-blue-600" />,
+    title: "Financial",
+    description: "Depreciation, TCO, asset valuation.",
+  },
+  {
+    key: "operational",
+    icon: <Activity className="h-8 w-8 text-amber-600" />,
+    title: "Operational",
+    description: "Maintenance, utilization, audits.",
+  },
+  {
+    key: "compliance",
+    icon: <Shield className="h-8 w-8 text-red-600" />,
+    title: "Compliance",
+    description: "License compliance, warranty expirations.",
+  },
+];
+
+const UnifiedReportsPage = () => {
+  const [selectedCategory, setSelectedCategory] = useState("all");
   const [dateRange, setDateRange] = useState("last6Months");
-  const [reportType, setReportType] = useState("all");
   const [activeTab, setActiveTab] = useState("charts");
+
+  // Fetch report data from API
+  const {
+    data: reportData,
+    isLoading,
+    error,
+  } = useReportData(selectedCategory, dateRange);
+  const apiData = reportData?.data || {};
+
+  // Filter logic for premium UX (expand as real data is available)
+  const showESG = selectedCategory === "all" || selectedCategory === "esg";
+  const showFinancial =
+    selectedCategory === "all" || selectedCategory === "financial";
+  const showOperational =
+    selectedCategory === "all" || selectedCategory === "operational";
+  const showCompliance =
+    selectedCategory === "all" || selectedCategory === "compliance";
+
+  // Loading and error UI
+  const renderLoading = () => (
+    <div className="flex items-center justify-center h-[300px] w-full">
+      <span className="text-gray-400 animate-pulse">Loading...</span>
+    </div>
+  );
+  const renderError = () => (
+    <div className="flex items-center justify-center h-[300px] w-full">
+      <span className="text-red-500">Failed to load data.</span>
+    </div>
+  );
+
+  // Stat card data from API
+  const statCards = [
+    {
+      label: "Total Reports",
+      value: apiData.totalReports ?? "-",
+      change: apiData.totalReportsChange ?? "",
+      trend: apiData.totalReportsChange?.includes("-") ? "down" : "up",
+      icon: Folder,
+    },
+    {
+      label: "Energy Efficiency",
+      value: apiData.energyEfficiency ? `${apiData.energyEfficiency}%` : "-",
+      change: apiData.energyEfficiencyChange ?? "",
+      trend: apiData.energyEfficiencyChange?.includes("-") ? "down" : "up",
+      icon: Zap,
+      tooltip: (
+        <UiTooltipProvider>
+          <UiTooltip>
+            <UiTooltipTrigger asChild>
+              <Info className="ml-1 h-4 w-4 text-gray-400 cursor-pointer" />
+            </UiTooltipTrigger>
+            <UiTooltipContent className="max-w-xs">
+              <div className="text-xs text-gray-700">
+                Energy Efficiency: 100% when at/below target, decreases when
+                over target
+                <br />
+                <span className="font-medium">Target:</span>{" "}
+                {apiData.targetEnergy
+                  ? `${apiData.targetEnergy} kWh`
+                  : "Not set"}
+                <br />
+                <span className="font-medium">Actual Used:</span>{" "}
+                {apiData.totalEnergy ?? 0} kWh
+              </div>
+            </UiTooltipContent>
+          </UiTooltip>
+        </UiTooltipProvider>
+      ),
+    },
+    {
+      label: "Carbon Reduction",
+      value: apiData.carbonReduction ? `${apiData.carbonReduction} t` : "-",
+      change: apiData.carbonReductionChange ?? "",
+      trend: apiData.carbonReductionChange?.includes("-") ? "down" : "up",
+      icon: Leaf,
+      tooltip: (
+        <UiTooltipProvider>
+          <UiTooltip>
+            <UiTooltipTrigger asChild>
+              <Info className="ml-1 h-4 w-4 text-gray-400 cursor-pointer" />
+            </UiTooltipTrigger>
+            <UiTooltipContent className="max-w-xs">
+              <div className="text-xs text-gray-700">
+                Total CO₂ emissions saved through asset management
+                <br />
+                <span className="font-medium">Target:</span>{" "}
+                {apiData.targetCarbonReduction
+                  ? `${apiData.targetCarbonReduction} t`
+                  : "Not set"}
+                <br />
+                <span className="font-medium">Actual Saved:</span>{" "}
+                {apiData.carbonReduction ?? 0} t
+              </div>
+            </UiTooltipContent>
+          </UiTooltip>
+        </UiTooltipProvider>
+      ),
+    },
+    {
+      label: "Active Assets",
+      value: apiData.activeAssets ?? "-",
+      change: apiData.activeAssetsChange ?? "",
+      trend: apiData.activeAssetsChange?.includes("-") ? "down" : "up",
+      icon: PieChart,
+    },
+  ];
 
   return (
     <div className="p-8 h-full">
-      {/* Enhanced Header with Stats */}
+      {/* Report Hub Header */}
       <div className="mb-8">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-2xl font-semibold text-gray-900">Reports</h1>
-            <div className="flex items-center gap-3 mt-1">
-              <p className="text-sm text-gray-500">
-                View and analyze your asset and environmental data
-              </p>
-              <Badge
-                variant="secondary"
-                className="bg-emerald-50 text-emerald-600"
-              >
-                15% below target
-              </Badge>
-            </div>
+            <h1 className="text-2xl font-semibold text-gray-900">Report Hub</h1>
+            <p className="text-sm text-gray-500 mt-1">
+              Generate, analyze, and manage all your asset and environmental
+              reports in one place.
+            </p>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" size="sm">
@@ -109,46 +232,76 @@ const ReportsPage = () => {
               <Download className="h-4 w-4 mr-2" />
               Export
             </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={async () => {
+                try {
+                  const response = await fetch('/api/reports/test', { method: 'POST' });
+                  const result = await response.json();
+                  if (result.success) {
+                    window.location.reload(); // Refresh to show the new test report
+                  } else {
+                    alert('Error creating test report: ' + result.error);
+                  }
+                } catch (error) {
+                  alert('Failed to create test report');
+                }
+              }}
+            >
+              <FileText className="h-4 w-4 mr-2" />
+              Test Report
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={async () => {
+                try {
+                  const response = await fetch('/api/reports/fix-paths', { method: 'POST' });
+                  const result = await response.json();
+                  if (result.success) {
+                    alert(`Fixed ${result.data.reportsFixed} report paths`);
+                    window.location.reload(); // Refresh to show the updated reports
+                  } else {
+                    alert('Error fixing paths: ' + result.error);
+                  }
+                } catch (error) {
+                  alert('Failed to fix report paths');
+                }
+              }}
+            >
+              <Settings2 className="h-4 w-4 mr-2" />
+              Fix Paths
+            </Button>
             <ReportBuilder />
           </div>
         </div>
-
-        {/* Quick Stats Row */}
+        {/* Category Cards as Filters */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
+          {CATEGORY_CONFIG.map((cat) => (
+            <div key={cat.key} onClick={() => setSelectedCategory(cat.key)}>
+              <ReportCategoryCard
+                icon={cat.icon}
+                title={cat.title}
+                description={cat.description}
+                link="#"
+              />
+              {selectedCategory === cat.key && (
+                <div className="h-1 bg-emerald-600 rounded-b" />
+              )}
+            </div>
+          ))}
+        </div>
+        {/* Quick Stats Row (always visible) */}
         <div className="grid grid-cols-4 gap-4 mb-6">
-          {[
-            {
-              label: "Total Reports",
-              value: "128",
-              change: "+12%",
-              trend: "up",
-              icon: Folder,
-            },
-            {
-              label: "Energy Efficiency",
-              value: "92%",
-              change: "+5%",
-              trend: "up",
-              icon: LineChart,
-            },
-            {
-              label: "Carbon Reduction",
-              value: "15.2t",
-              change: "-8%",
-              trend: "down",
-              icon: BarChart3,
-            },
-            {
-              label: "Active Assets",
-              value: "1,284",
-              change: "+3%",
-              trend: "up",
-              icon: PieChart,
-            },
-          ].map((stat, index) => (
+          {statCards.map((stat, index) => (
             <Card key={index} className="bg-white/50 backdrop-blur-sm">
               <CardContent className="pt-4">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-gray-500">{stat.label}</span>
+                  <span className="text-sm text-gray-500 flex items-center">
+                    {stat.label}
+                    {stat.tooltip && stat.tooltip}
+                  </span>
                   <stat.icon className="h-4 w-4 text-gray-400" />
                 </div>
                 <div className="flex items-baseline justify-between">
@@ -176,7 +329,7 @@ const ReportsPage = () => {
         </div>
       </div>
 
-      {/* Enhanced Filters with Tabs */}
+      {/* Filters and Tabs */}
       <div className="mb-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
           <div className="flex items-center justify-between">
@@ -213,286 +366,372 @@ const ReportsPage = () => {
         </Tabs>
       </div>
 
-      {/* Enhanced Reports Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Enhanced Energy Usage Chart */}
-        <Card className="hover:shadow-lg transition-shadow duration-200">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Energy Usage</CardTitle>
-                <CardDescription className="flex items-center gap-2">
-                  Monthly consumption in kWh
-                  <Badge
-                    variant="secondary"
-                    className="bg-emerald-50 text-emerald-600"
-                  >
-                    -8% vs last month
-                  </Badge>
-                </CardDescription>
-              </div>
-              <LineChart className="h-4 w-4 text-gray-400" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <RechartsLineChart data={energyData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                  <XAxis dataKey="month" stroke="#6b7280" />
-                  <YAxis stroke="#6b7280" />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "white",
-                      border: "none",
-                      borderRadius: "8px",
-                      boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
-                    }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="usage"
-                    stroke="#10B981"
-                    strokeWidth={2}
-                    dot={{ fill: "#10B981", strokeWidth: 2 }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="target"
-                    stroke="#6B7280"
-                    strokeDasharray="5 5"
-                    strokeWidth={1}
-                  />
-                </RechartsLineChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Enhanced Carbon Emissions Chart */}
-        <Card className="hover:shadow-lg transition-shadow duration-200">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Carbon Emissions</CardTitle>
-                <CardDescription className="flex items-center gap-2">
-                  Monthly CO₂ emissions in tons
-                  <Badge
-                    variant="secondary"
-                    className="bg-emerald-50 text-emerald-600"
-                  >
-                    On target
-                  </Badge>
-                </CardDescription>
-              </div>
-              <BarChart3 className="h-4 w-4 text-gray-400" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={carbonData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                  <XAxis dataKey="month" stroke="#6b7280" />
-                  <YAxis stroke="#6b7280" />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "white",
-                      border: "none",
-                      borderRadius: "8px",
-                      boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
-                    }}
-                  />
-                  <Bar
-                    dataKey="emissions"
-                    fill="#10B981"
-                    radius={[4, 4, 0, 0]}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="target"
-                    stroke="#6B7280"
-                    strokeDasharray="5 5"
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Enhanced Asset Distribution Chart */}
-        <Card className="hover:shadow-lg transition-shadow duration-200">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Asset Distribution</CardTitle>
-                <CardDescription>By device category</CardDescription>
-              </div>
-              <PieChart className="h-4 w-4 text-gray-400" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <RechartsPieChart>
-                    <Pie
-                      data={assetDistribution}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={80}
-                      fill="#8884d8"
-                      paddingAngle={5}
-                      dataKey="value"
+      {/* Tab Content */}
+      {activeTab === "charts" && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* ESG & Environmental */}
+        {showESG && (
+          <Card className="hover:shadow-lg transition-shadow duration-200">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Energy Usage</CardTitle>
+                  <CardDescription className="flex items-center gap-2">
+                    Monthly consumption in kWh
+                    <Badge
+                      variant="secondary"
+                      className="bg-emerald-50 text-emerald-600"
                     >
-                      {assetDistribution.map((entry, index) => (
-                        <Cell
-                          key={`cell-${index}`}
-                          fill={COLORS[index % COLORS.length]}
-                        />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: "white",
-                        border: "none",
-                        borderRadius: "8px",
-                        boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
-                      }}
-                    />
-                  </RechartsPieChart>
-                </ResponsiveContainer>
+                      -8% vs last month
+                    </Badge>
+                  </CardDescription>
+                </div>
+                <LineChart className="h-4 w-4 text-gray-400" />
               </div>
-              <div className="space-y-4">
-                {assetDistribution.map((item, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between"
-                  >
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="w-3 h-3 rounded-full"
-                        style={{
-                          backgroundColor: COLORS[index % COLORS.length],
-                        }}
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                renderLoading()
+              ) : error ? (
+                renderError()
+              ) : apiData.energyUsage ? (
+                <div className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <RechartsLineChart data={apiData.energyUsage}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                      <XAxis dataKey="month" stroke="#6b7280" />
+                      <YAxis stroke="#6b7280" />
+                      <Tooltip />
+                      <Line
+                        type="monotone"
+                        dataKey="usage"
+                        stroke="#10B981"
+                        strokeWidth={2}
+                        dot={{ fill: "#10B981", strokeWidth: 2 }}
                       />
-                      <span className="text-sm font-medium">{item.name}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-bold">{item.value}%</span>
-                      <span
-                        className={`text-xs ${
-                          item.trend === "up"
-                            ? "text-emerald-600"
-                            : item.trend === "down"
-                              ? "text-red-600"
-                              : "text-gray-600"
-                        }`}
-                      >
-                        {item.change}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+                      <Line
+                        type="monotone"
+                        dataKey="target"
+                        stroke="#6B7280"
+                        strokeDasharray="5 5"
+                        strokeWidth={1}
+                      />
+                    </RechartsLineChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <div className="text-gray-400 text-center py-12">
+                  No data available.
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
-        {/* Enhanced Recent Reports */}
-        <Card className="hover:shadow-lg transition-shadow duration-200">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Recent Reports</CardTitle>
-                <CardDescription>Latest generated reports</CardDescription>
+        {/* Carbon Emissions (ESG) */}
+        {showESG && (
+          <Card className="hover:shadow-lg transition-shadow duration-200">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Carbon Emissions</CardTitle>
+                  <CardDescription className="flex items-center gap-2">
+                    Monthly CO₂ emissions in tons
+                    <Badge
+                      variant="secondary"
+                      className="bg-emerald-50 text-emerald-600"
+                    >
+                      On target
+                    </Badge>
+                  </CardDescription>
+                </div>
+                <BarChart3 className="h-4 w-4 text-gray-400" />
               </div>
-              <FileText className="h-4 w-4 text-gray-400" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {[
-                {
-                  name: "Monthly Energy Report",
-                  date: "2024-01-05",
-                  type: "PDF",
-                  status: "completed",
-                  size: "2.4 MB",
-                  icon: FileText,
-                },
-                {
-                  name: "Asset Inventory",
-                  date: "2024-01-03",
-                  type: "XLSX",
-                  status: "completed",
-                  size: "1.8 MB",
-                  icon: FileText,
-                },
-                {
-                  name: "Carbon Footprint Analysis",
-                  date: "2024-01-01",
-                  type: "PDF",
-                  status: "processing",
-                  size: "3.2 MB",
-                  icon: FileText,
-                },
-              ].map((report, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors duration-200"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-lg bg-white flex items-center justify-center">
-                      <report.icon className="h-5 w-5 text-gray-500" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-sm text-gray-900">
-                        {report.name}
-                      </p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="text-xs text-gray-500">
-                          {report.date}
-                        </span>
-                        <span className="text-xs text-gray-400">•</span>
-                        <span className="text-xs text-gray-500">
-                          {report.type}
-                        </span>
-                        <span className="text-xs text-gray-400">•</span>
-                        <span className="text-xs text-gray-500">
-                          {report.size}
-                        </span>
-                      </div>
-                    </div>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                renderLoading()
+              ) : error ? (
+                renderError()
+              ) : apiData.carbonEmissions ? (
+                <div className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <RechartsBarChart data={apiData.carbonEmissions}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                      <XAxis dataKey="month" stroke="#6b7280" />
+                      <YAxis stroke="#6b7280" />
+                      <Tooltip />
+                      <Bar
+                        dataKey="emissions"
+                        fill="#10B981"
+                        radius={[4, 4, 0, 0]}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="target"
+                        stroke="#6B7280"
+                        strokeDasharray="5 5"
+                      />
+                    </RechartsBarChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <div className="text-gray-400 text-center py-12">
+                  No data available.
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Asset Distribution (Operational) - Placeholder for now */}
+        {showOperational && (
+          <Card className="hover:shadow-lg transition-shadow duration-200">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Asset Distribution</CardTitle>
+                  <CardDescription>By device category</CardDescription>
+                </div>
+                <PieChart className="h-4 w-4 text-gray-400" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              {apiData.assetDistribution ? (
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="h-[300px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <RechartsPieChart>
+                        <Pie
+                          data={apiData.assetDistribution}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={60}
+                          outerRadius={80}
+                          fill="#8884d8"
+                          paddingAngle={5}
+                          dataKey="value"
+                        >
+                          {apiData.assetDistribution.map(
+                            (entry: any, index: number) => (
+                              <Cell
+                                key={`cell-${index}`}
+                                fill={COLORS[index % COLORS.length]}
+                              />
+                            ),
+                          )}
+                        </Pie>
+                        <Tooltip />
+                      </RechartsPieChart>
+                    </ResponsiveContainer>
                   </div>
-                  <div className="flex items-center gap-2">
-                    {report.status === "processing" ? (
-                      <Badge
-                        variant="secondary"
-                        className="bg-blue-50 text-blue-600"
-                      >
-                        Processing
-                      </Badge>
-                    ) : (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-gray-600"
-                      >
-                        <Download className="h-4 w-4 mr-2" />
-                        Download
-                      </Button>
+                  <div className="space-y-4">
+                    {apiData.assetDistribution.map(
+                      (item: any, index: number) => (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between"
+                        >
+                          <div className="flex items-center gap-2">
+                            <div
+                              className="w-3 h-3 rounded-full"
+                              style={{
+                                backgroundColor: COLORS[index % COLORS.length],
+                              }}
+                            />
+                            <span className="text-sm font-medium">
+                              {item.name}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-bold">
+                              {item.value}%
+                            </span>
+                            <span
+                              className={`text-xs ${
+                                item.trend === "up"
+                                  ? "text-emerald-600"
+                                  : item.trend === "down"
+                                    ? "text-red-600"
+                                    : "text-gray-600"
+                              }`}
+                            >
+                              {item.change}
+                            </span>
+                          </div>
+                        </div>
+                      ),
                     )}
                   </div>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+              ) : (
+                <div className="h-[300px] flex items-center justify-center text-gray-400">
+                  Coming soon
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Recent Reports (All) */}
+        {selectedCategory === "all" && (
+          <Card className="hover:shadow-lg transition-shadow duration-200">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Recent Reports</CardTitle>
+                  <CardDescription>Latest generated reports</CardDescription>
+                </div>
+                <FileText className="h-4 w-4 text-gray-400" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {apiData.recentReports && apiData.recentReports.length > 0 ? (
+                  apiData.recentReports.map((report: any, index: number) => (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors duration-200"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-lg bg-white flex items-center justify-center">
+                          <FileText className="h-5 w-5 text-gray-500" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-sm text-gray-900">
+                            {report.name}
+                          </p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-xs text-gray-500">
+                              {report.date}
+                            </span>
+                            <span className="text-xs text-gray-400">•</span>
+                            <span className="text-xs text-gray-500">
+                              {report.type}
+                            </span>
+                            <span className="text-xs text-gray-400">•</span>
+                            <span className="text-xs text-gray-500">
+                              {report.size}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {report.status === "processing" ? (
+                          <Badge
+                            variant="secondary"
+                            className="bg-blue-50 text-blue-600"
+                          >
+                            Processing
+                          </Badge>
+                        ) : (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-gray-600"
+                            onClick={async () => {
+                              if (!report.filePath) {
+                                alert('Download not available');
+                                return;
+                              }
+                              
+                              try {
+                                const response = await fetch(report.filePath);
+                                
+                                if (response.status === 202) {
+                                  alert('Report is still being generated. Please try again in a few moments.');
+                                  return;
+                                }
+                                
+                                if (!response.ok) {
+                                  const errorData = await response.json().catch(() => ({ error: 'Download failed' }));
+                                  alert(errorData.error || 'Download failed');
+                                  return;
+                                }
+                                
+                                // Check if it's a JSON response (dashboard format)
+                                const contentType = response.headers.get('content-type');
+                                if (contentType && contentType.includes('application/json')) {
+                                  const jsonData = await response.json();
+                                  console.log('Dashboard data:', jsonData);
+                                  alert('Dashboard data logged to console (feature coming soon)');
+                                  return;
+                                }
+                                
+                                // For file downloads, create a blob and download
+                                const blob = await response.blob();
+                                const url = window.URL.createObjectURL(blob);
+                                const a = document.createElement('a');
+                                a.href = url;
+                                
+                                // Extract filename from Content-Disposition header or use default
+                                const disposition = response.headers.get('content-disposition');
+                                let filename = 'report';
+                                if (disposition && disposition.includes('filename=')) {
+                                  filename = disposition.split('filename=')[1].replace(/"/g, '');
+                                }
+                                
+                                a.download = filename;
+                                document.body.appendChild(a);
+                                a.click();
+                                window.URL.revokeObjectURL(url);
+                                document.body.removeChild(a);
+                              } catch (error) {
+                                console.error('Download error:', error);
+                                alert('Failed to download report');
+                              }
+                            }}
+                          >
+                            <Download className="h-4 w-4 mr-2" />
+                            Download
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-gray-400 text-center py-12">
+                    No recent reports available.
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+        </div>
+      )}
+
+      {/* Templates Tab */}
+      {activeTab === "templates" && (
+        <div className="space-y-6">
+          <ReportTemplates />
+        </div>
+      )}
+
+      {/* Saved Reports Tab - Placeholder */}
+      {activeTab === "reports" && (
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Saved Reports</CardTitle>
+              <CardDescription>
+                All your generated reports organized by date and category
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-12 text-gray-500">
+                <FileText className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                <p className="text-lg font-medium mb-2">Saved Reports Coming Soon</p>
+                <p className="text-sm">
+                  This section will display all your generated reports with advanced filtering and search capabilities.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 };
 
-export default ReportsPage;
+export default UnifiedReportsPage;

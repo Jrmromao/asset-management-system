@@ -10,13 +10,13 @@ export async function GET(request: NextRequest) {
     }
 
     const anomalies = await detectAssetAnomalies(userId);
-    
+
     return NextResponse.json(anomalies);
   } catch (error) {
     console.error("Error detecting anomalies:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
-} 
+}
