@@ -20,8 +20,8 @@ type AuthResponse<T> = {
 
 export type TCreateInput = z.infer<typeof createTemplateSchema>;
 
-const getSession = () => {
-  const cookieStore = cookies();
+const getSession = async () => {
+  const cookieStore = await cookies();
   return {
     accessToken: cookieStore.get("sb-access-token")?.value,
     refreshToken: cookieStore.get("sb-refresh-token")?.value,

@@ -158,15 +158,17 @@ export class ReportCleanupService {
     }, {} as Record<string, any[]>);
 
     for (const [configId, configReports] of Object.entries(reportsByConfig)) {
+      const typedConfigReports = configReports as any[];
+      
       // Rule 1: Delete reports older than maxAgeInDays
-      const oldReports = configReports.filter(
-        report => new Date(report.generatedAt) < cutoffDate
+      const oldReports = typedConfigReports.filter(
+        (report: any) => new Date(report.generatedAt) < cutoffDate
       );
       reportsToDelete.push(...oldReports);
 
       // Rule 2: Keep only maxReportsPerConfiguration most recent reports
-      const recentReports = configReports.filter(
-        report => new Date(report.generatedAt) >= cutoffDate
+      const recentReports = typedConfigReports.filter(
+        (report: any) => new Date(report.generatedAt) >= cutoffDate
       );
       
       if (recentReports.length > policy.maxReportsPerConfiguration) {
@@ -190,7 +192,7 @@ export class ReportCleanupService {
       }
     }
 
-    return [...new Set(reportsToDelete)]; // Remove duplicates
+    return Array.from(new Set(reportsToDelete)); // Remove duplicates
   }
 
   /**

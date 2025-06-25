@@ -60,7 +60,8 @@ export default function PricingTable() {
         "Physical assets, licenses & accessories",
         "Asset tracking & QR code generation",
         "Basic maintenance tracking",
-        "Basic reporting & analytics",
+        "Standard reporting & analytics",
+        "Traditional cleanup policies",
         "Web-based dashboard",
         "Email support",
         "CSV import/export",
@@ -78,9 +79,11 @@ export default function PricingTable() {
       assetOveragePrice: 0.015, // $0.015 per additional asset per month
       features: [
         "Everything in Launch, plus:",
+        "🤖 AI-powered Smart Cleanup Engine",
+        "🛡️ Intelligent file protection system",
+        "📊 AI cost optimization & insights",
         "License compliance tracking",
         "Accessory inventory management",
-        "AI-powered cost optimization & insights",
         "Advanced analytics & dashboards",
         "CO2 footprint tracking & analysis",
         "Automated reporting & scheduling",
@@ -101,13 +104,14 @@ export default function PricingTable() {
       assetOveragePrice: 0.01, // $0.01 per additional asset per month
       features: [
         "Everything in Scale, plus:",
-        "Advanced AI analytics & insights",
-        "Custom reporting & dashboards",
-        "Advanced user permissions",
-        "Dedicated email support",
-        "Advanced API features",
-        "Data export & backup",
-        "Priority feature requests",
+        "🚀 Enterprise AI analytics & insights",
+        "🎯 Advanced Smart Cleanup policies",
+        "📈 Custom reporting & dashboards",
+        "🔐 Advanced user permissions",
+        "💬 Dedicated email support",
+        "⚡ Advanced API features",
+        "💾 Data export & backup",
+        "🎪 Priority feature requests",
         "Coming soon: Multi-company management",
         "Coming soon: SSO integration",
         "Coming soon: Custom branding",
@@ -605,9 +609,7 @@ export default function PricingTable() {
               What AI features are currently available?
             </h4>
             <p className="text-sm text-gray-600">
-              AI-powered cost optimization analysis, CO2 footprint calculation
-              and tracking, automated maintenance recommendations, and
-              intelligent insights for asset lifecycle management.
+              Smart Cleanup Engine with intelligent file protection, AI-powered cost optimization analysis, CO2 footprint calculation and tracking, automated maintenance recommendations, and intelligent insights for asset lifecycle management.
             </p>
           </div>
           <div>
@@ -638,6 +640,14 @@ export default function PricingTable() {
               Yes, we provide REST API access for integrating with your existing
               systems. API documentation is available for Scale and Transform
               plans.
+            </p>
+          </div>
+          <div>
+            <h4 className="font-semibold text-gray-900 mb-2">
+              How does the Smart Cleanup Engine work?
+            </h4>
+            <p className="text-sm text-gray-600">
+              Our AI analyzes your reports and files to recommend optimal cleanup actions while protecting important documents. You can permanently protect critical files with one click, and the system learns from your preferences.
             </p>
           </div>
           <div>
