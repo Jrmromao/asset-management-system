@@ -19,7 +19,7 @@ export default function QueryClientProvider({ children }: QueryProviderProps) {
         // 
       )} */}
 
-<ReactQueryDevtools initialIsOpen={false} />
+      <ReactQueryDevtools initialIsOpen={false} />
     </QCP>
   );
 }
