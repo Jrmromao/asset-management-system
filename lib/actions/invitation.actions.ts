@@ -3,7 +3,7 @@
 import { clerkClient, auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/app/db";
-import { randomBytes } from 'crypto';
+import { randomBytes } from "crypto";
 import { EmailService } from "@/services/email";
 
 interface InviteUserParams {
@@ -13,10 +13,16 @@ interface InviteUserParams {
 
 export async function inviteUser({ email, roleId }: InviteUserParams) {
   try {
-    console.log("🚀 [inviteUser] Starting invitation process:", { email, roleId });
-    
+    console.log("🚀 [inviteUser] Starting invitation process:", {
+      email,
+      roleId,
+    });
+
     const { orgId, userId } = await auth();
-    console.log("🔍 [inviteUser] Auth result:", { orgId: !!orgId, userId: !!userId });
+    console.log("🔍 [inviteUser] Auth result:", {
+      orgId: !!orgId,
+      userId: !!userId,
+    });
 
     if (!userId) {
       console.error("❌ [inviteUser] No userId found");
@@ -25,7 +31,9 @@ export async function inviteUser({ email, roleId }: InviteUserParams) {
 
     // TEMPORARY: For testing, if orgId is missing, try to proceed with userId only
     if (!orgId) {
-      console.warn("⚠️ [inviteUser] No orgId found, but continuing with userId");
+      console.warn(
+        "⚠️ [inviteUser] No orgId found, but continuing with userId",
+      );
     }
 
     const currentUser = await prisma.user.findFirst({
@@ -33,7 +41,10 @@ export async function inviteUser({ email, roleId }: InviteUserParams) {
       select: { companyId: true, id: true },
     });
 
-    console.log("🔍 [inviteUser] Current user:", { found: !!currentUser, companyId: currentUser?.companyId });
+    console.log("🔍 [inviteUser] Current user:", {
+      found: !!currentUser,
+      companyId: currentUser?.companyId,
+    });
 
     if (!currentUser || !currentUser.companyId) {
       return {
@@ -50,7 +61,10 @@ export async function inviteUser({ email, roleId }: InviteUserParams) {
       select: { clerkOrgId: true, name: true },
     });
 
-    console.log("🔍 [inviteUser] Company details:", { found: !!company, clerkOrgId: company?.clerkOrgId });
+    console.log("🔍 [inviteUser] Company details:", {
+      found: !!company,
+      clerkOrgId: company?.clerkOrgId,
+    });
 
     if (!company) {
       return {
@@ -61,10 +75,12 @@ export async function inviteUser({ email, roleId }: InviteUserParams) {
 
     // TEMPORARY: For testing, if no clerkOrgId, simulate success
     if (!company.clerkOrgId) {
-      console.warn("⚠️ [inviteUser] No clerkOrgId found, simulating success for testing");
-      return { 
-        success: true, 
-        message: "Invitation simulated (no Clerk org configured)" 
+      console.warn(
+        "⚠️ [inviteUser] No clerkOrgId found, simulating success for testing",
+      );
+      return {
+        success: true,
+        message: "Invitation simulated (no Clerk org configured)",
       };
     }
 
@@ -76,10 +92,13 @@ export async function inviteUser({ email, roleId }: InviteUserParams) {
       const existingUsers = await clerk.users.getUserList({
         emailAddress: [email],
       });
-      
+
       if (existingUsers.data.length > 0) {
-        console.log("⚠️ [inviteUser] User already exists in Clerk:", existingUsers.data[0].id);
-        
+        console.log(
+          "⚠️ [inviteUser] User already exists in Clerk:",
+          existingUsers.data[0].id,
+        );
+
         // If user exists, try to add them to the organization
         try {
           await clerk.organizations.createOrganizationMembership({
@@ -88,47 +107,63 @@ export async function inviteUser({ email, roleId }: InviteUserParams) {
             role: "org:member",
           });
           console.log("✅ [inviteUser] Added existing user to organization");
-          return { 
-            success: true, 
-            message: "User already exists and has been added to the organization" 
+          return {
+            success: true,
+            message:
+              "User already exists and has been added to the organization",
           };
         } catch (membershipError) {
-          console.error("❌ [inviteUser] Failed to add user to organization:", membershipError);
+          console.error(
+            "❌ [inviteUser] Failed to add user to organization:",
+            membershipError,
+          );
         }
       }
     } catch (userCheckError) {
-      console.log("🔍 [inviteUser] User doesn't exist in Clerk, proceeding with invitation");
+      console.log(
+        "🔍 [inviteUser] User doesn't exist in Clerk, proceeding with invitation",
+      );
     }
 
     console.log("🔐 [inviteUser] Checking user permissions...");
     try {
-      const membershipList = await clerk.organizations.getOrganizationMembershipList({
-        organizationId: company.clerkOrgId,
-      });
-      
-      const userMembership = membershipList.data.find(m => m.publicUserData?.userId === userId);
-      
+      const membershipList =
+        await clerk.organizations.getOrganizationMembershipList({
+          organizationId: company.clerkOrgId,
+        });
+
+      const userMembership = membershipList.data.find(
+        (m) => m.publicUserData?.userId === userId,
+      );
+
       if (!userMembership) {
         return {
           success: false,
-          error: "You don't have permission to invite users to this organization.",
+          error:
+            "You don't have permission to invite users to this organization.",
         };
       }
-      
+
       console.log("👤 [inviteUser] User membership details:", {
         role: userMembership.role,
         permissions: userMembership.permissions,
       });
-      
+
       // Check if user has admin role
       if (userMembership.role !== "org:admin") {
-        console.warn("⚠️ [inviteUser] User is not an org admin, this might cause issues");
+        console.warn(
+          "⚠️ [inviteUser] User is not an org admin, this might cause issues",
+        );
       }
     } catch (membershipError) {
-      console.error("❌ [inviteUser] Failed to get user membership:", membershipError);
+      console.error(
+        "❌ [inviteUser] Failed to get user membership:",
+        membershipError,
+      );
       return {
         success: false,
-        error: "You don't have permission to invite users to this organization.",
+        error:
+          "You don't have permission to invite users to this organization.",
       };
     }
 
@@ -139,15 +174,15 @@ export async function inviteUser({ email, roleId }: InviteUserParams) {
     try {
       invitation = await clerk.organizations.createOrganizationInvitation({
         organizationId: company.clerkOrgId,
-      inviterUserId: userId,
-      emailAddress: email,
+        inviterUserId: userId,
+        emailAddress: email,
         redirectUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/accept-invitation`,
-      publicMetadata: {
-        companyId: companyId,
-        roleId: roleId,
-      },
-      role: "org:member",
-    });
+        publicMetadata: {
+          companyId: companyId,
+          roleId: roleId,
+        },
+        role: "org:member",
+      });
       console.log("✅ [inviteUser] Clerk invitation created:", invitation.id);
     } catch (clerkError: any) {
       console.error("❌ [inviteUser] Clerk invitation failed:", {
@@ -156,17 +191,20 @@ export async function inviteUser({ email, roleId }: InviteUserParams) {
         errors: clerkError.errors,
         clerkTraceId: clerkError.clerkTraceId,
       });
-      
+
       // Check if it's a permissions issue
       if (clerkError.status === 403) {
         // Try to get user's role in the organization
         try {
-          const membershipList = await clerk.organizations.getOrganizationMembershipList({
-            organizationId: company.clerkOrgId,
-          });
-          
-          const userMembership = membershipList.data.find(m => m.publicUserData?.userId === userId);
-          
+          const membershipList =
+            await clerk.organizations.getOrganizationMembershipList({
+              organizationId: company.clerkOrgId,
+            });
+
+          const userMembership = membershipList.data.find(
+            (m) => m.publicUserData?.userId === userId,
+          );
+
           if (userMembership) {
             console.log("👤 [inviteUser] User membership:", {
               role: userMembership.role,
@@ -174,10 +212,13 @@ export async function inviteUser({ email, roleId }: InviteUserParams) {
             });
           }
         } catch (membershipError) {
-          console.error("❌ [inviteUser] Cannot get user membership:", membershipError);
+          console.error(
+            "❌ [inviteUser] Cannot get user membership:",
+            membershipError,
+          );
         }
       }
-      
+
       throw clerkError;
     }
 
@@ -192,14 +233,22 @@ export async function inviteUser({ email, roleId }: InviteUserParams) {
           companyId,
           invitedBy: currentUser.id,
           clerkInvitationId: invitation.id,
-          token: randomBytes(32).toString('hex'),
+          token: randomBytes(32).toString("hex"),
           status: "PENDING",
-          expiresAt: invitation.expiresAt ? new Date(invitation.expiresAt) : null,
+          expiresAt: invitation.expiresAt
+            ? new Date(invitation.expiresAt)
+            : null,
         },
       });
-      console.log("✅ [inviteUser] Invitation saved to database:", invitationRecord.id);
+      console.log(
+        "✅ [inviteUser] Invitation saved to database:",
+        invitationRecord.id,
+      );
     } catch (dbError) {
-      console.warn("⚠️ [inviteUser] Failed to save invitation to database:", dbError);
+      console.warn(
+        "⚠️ [inviteUser] Failed to save invitation to database:",
+        dbError,
+      );
       // Don't fail the whole process if database save fails
     }
 
@@ -216,8 +265,8 @@ export async function inviteUser({ email, roleId }: InviteUserParams) {
 
     revalidatePath("/people");
 
-    return { 
-      success: true, 
+    return {
+      success: true,
       invitationId: invitation.id,
       invitationUrl: invitation.url,
       message: "Invitation sent successfully!",
@@ -226,7 +275,8 @@ export async function inviteUser({ email, roleId }: InviteUserParams) {
     console.error("❌ [inviteUser] Failed to invite user:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "An unknown error occurred.",
+      error:
+        error instanceof Error ? error.message : "An unknown error occurred.",
     };
   }
 }
@@ -253,7 +303,9 @@ export async function completeInvitationRegistration({
   token: string;
 }) {
   try {
-    console.log("🎯 [completeInvitationRegistration] Starting completion process");
+    console.log(
+      "🎯 [completeInvitationRegistration] Starting completion process",
+    );
 
     // Create user in database
     const user = await prisma.user.create({
@@ -275,7 +327,7 @@ export async function completeInvitationRegistration({
     // Update invitation status
     await prisma.invitation.update({
       where: { clerkInvitationId: invitationId },
-      data: { 
+      data: {
         status: "ACCEPTED",
         acceptedAt: new Date(),
       },
@@ -294,7 +346,9 @@ export async function completeInvitationRegistration({
       },
     });
 
-    console.log("✅ [completeInvitationRegistration] User created successfully");
+    console.log(
+      "✅ [completeInvitationRegistration] User created successfully",
+    );
 
     return { success: true, user };
   } catch (error) {
@@ -307,7 +361,10 @@ export async function completeInvitationRegistration({
 }
 
 // Replace the invitation creation with direct approach
-export async function inviteUserAlternative({ email, roleId }: InviteUserParams) {
+export async function inviteUserAlternative({
+  email,
+  roleId,
+}: InviteUserParams) {
   try {
     const { userId } = await auth();
     if (!userId) {
@@ -320,7 +377,10 @@ export async function inviteUserAlternative({ email, roleId }: InviteUserParams)
     });
 
     if (!currentUser || !currentUser.companyId) {
-      return { success: false, error: "Could not find the associated company." };
+      return {
+        success: false,
+        error: "Could not find the associated company.",
+      };
     }
 
     const { companyId } = currentUser;
@@ -332,7 +392,7 @@ export async function inviteUserAlternative({ email, roleId }: InviteUserParams)
         roleId,
         companyId,
         invitedBy: currentUser.id,
-        token: randomBytes(32).toString('hex'),
+        token: randomBytes(32).toString("hex"),
         status: "PENDING",
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
       },
@@ -358,8 +418,11 @@ export async function inviteUserAlternative({ email, roleId }: InviteUserParams)
 
 export async function inviteUserSecure({ email, roleId }: InviteUserParams) {
   try {
-    console.log("🚀 [inviteUserSecure] Starting secure invitation process:", { email, roleId });
-    
+    console.log("🚀 [inviteUserSecure] Starting secure invitation process:", {
+      email,
+      roleId,
+    });
+
     const { userId } = await auth();
     if (!userId) {
       return { success: false, error: "User is not authenticated." };
@@ -368,17 +431,20 @@ export async function inviteUserSecure({ email, roleId }: InviteUserParams) {
     // Get current user with name
     const currentUser = await prisma.user.findFirst({
       where: { oauthId: userId },
-      select: { 
-        companyId: true, 
-        id: true, 
+      select: {
+        companyId: true,
+        id: true,
         name: true,
         firstName: true,
-        lastName: true 
+        lastName: true,
       },
     });
 
     if (!currentUser?.companyId) {
-      return { success: false, error: "Could not find the associated company." };
+      return {
+        success: false,
+        error: "Could not find the associated company.",
+      };
     }
 
     // Get company and role details for email
@@ -394,12 +460,15 @@ export async function inviteUserSecure({ email, roleId }: InviteUserParams) {
     ]);
 
     if (!company || !role) {
-      return { success: false, error: "Could not find company or role details." };
+      return {
+        success: false,
+        error: "Could not find company or role details.",
+      };
     }
 
     // Generate secure random token
-    const invitationToken = randomBytes(32).toString('hex');
-    
+    const invitationToken = randomBytes(32).toString("hex");
+
     // Create invitation with secure token
     const invitation = await prisma.invitation.create({
       data: {
@@ -414,7 +483,7 @@ export async function inviteUserSecure({ email, roleId }: InviteUserParams) {
     });
 
     const invitationUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/accept-invitation?token=${invitationToken}`;
-    
+
     // Send invitation email
     try {
       const emailResult = await EmailService.sendEmail({
@@ -425,12 +494,17 @@ export async function inviteUserSecure({ email, roleId }: InviteUserParams) {
           companyName: company.name,
           roleName: role.name,
           invitationUrl,
-          inviterName: currentUser.name || `${currentUser.firstName} ${currentUser.lastName}`,
+          inviterName:
+            currentUser.name ||
+            `${currentUser.firstName} ${currentUser.lastName}`,
         },
       });
 
       if (!emailResult.success) {
-        console.warn("⚠️ [inviteUserSecure] Failed to send email:", emailResult.error);
+        console.warn(
+          "⚠️ [inviteUserSecure] Failed to send email:",
+          emailResult.error,
+        );
       } else {
         console.log("✅ [inviteUserSecure] Invitation email sent successfully");
       }
@@ -439,7 +513,10 @@ export async function inviteUserSecure({ email, roleId }: InviteUserParams) {
       // Don't fail the whole process if email fails
     }
 
-    console.log("✅ [inviteUserSecure] Secure invitation created:", invitationUrl);
+    console.log(
+      "✅ [inviteUserSecure] Secure invitation created:",
+      invitationUrl,
+    );
 
     revalidatePath("/people");
 

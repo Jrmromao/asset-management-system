@@ -17,7 +17,7 @@ type ActionResponse<T> = {
 
 // Client-side wrapper functions
 export async function getAllManufacturers(params?: { search?: string }) {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const session = {
     accessToken: cookieStore.get("sb-access-token")?.value,
     refreshToken: cookieStore.get("sb-refresh-token")?.value,
@@ -28,11 +28,6 @@ export async function getAllManufacturers(params?: { search?: string }) {
 export async function createManufacturer(
   data: z.infer<typeof manufacturerSchema>,
 ) {
-  const cookieStore = cookies();
-  const session = {
-    accessToken: cookieStore.get("sb-access-token")?.value,
-    refreshToken: cookieStore.get("sb-refresh-token")?.value,
-  };
   return await insert(data);
 }
 
@@ -40,7 +35,7 @@ export async function updateManufacturer(
   id: string,
   data: Partial<z.infer<typeof manufacturerSchema>>,
 ) {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const session = {
     accessToken: cookieStore.get("sb-access-token")?.value,
     refreshToken: cookieStore.get("sb-refresh-token")?.value,
@@ -49,11 +44,6 @@ export async function updateManufacturer(
 }
 
 export async function deleteManufacturer(id: string) {
-  const cookieStore = cookies();
-  const session = {
-    accessToken: cookieStore.get("sb-access-token")?.value,
-    refreshToken: cookieStore.get("sb-refresh-token")?.value,
-  };
   return await remove(id);
 }
 

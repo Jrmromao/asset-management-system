@@ -8,7 +8,9 @@ import { handleError } from "@/lib/utils";
  * @param prompt - The prompt to send to the LLM.
  * @returns The content of the LLM's response.
  */
-export const analyzeWithLlm = async (prompt: string): Promise<AuthResponse<string>> => {
+export const analyzeWithLlm = async (
+  prompt: string,
+): Promise<AuthResponse<string>> => {
   try {
     const response = await fetch(process.env.OPENAI_API_URL!, {
       method: "POST",
@@ -38,6 +40,6 @@ export const analyzeWithLlm = async (prompt: string): Promise<AuthResponse<strin
     return {
       data: null as any,
       success: false,
-    }
+    };
   }
 };

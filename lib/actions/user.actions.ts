@@ -492,11 +492,11 @@ export async function syncUserMetadata(clerkUserId: string): Promise<{
 }> {
   try {
     console.log("🔄 [syncUserMetadata] - Starting sync for user:", clerkUserId);
-    
+
     const dbUser = await prisma.user.findUnique({
       where: { oauthId: clerkUserId },
-      select: { 
-        id: true, 
+      select: {
+        id: true,
         companyId: true,
         role: {
           select: {
@@ -507,7 +507,10 @@ export async function syncUserMetadata(clerkUserId: string): Promise<{
     });
 
     if (!dbUser) {
-      console.warn("⚠️ [syncUserMetadata] - User not found in database:", clerkUserId);
+      console.warn(
+        "⚠️ [syncUserMetadata] - User not found in database:",
+        clerkUserId,
+      );
       return {
         success: false,
         error: "User not found in database",
@@ -516,7 +519,7 @@ export async function syncUserMetadata(clerkUserId: string): Promise<{
     }
 
     const clerk = await clerkClient();
-    
+
     // Update Clerk metadata with current database values
     await clerk.users.updateUserMetadata(clerkUserId, {
       publicMetadata: {
@@ -530,12 +533,15 @@ export async function syncUserMetadata(clerkUserId: string): Promise<{
       },
     });
 
-    console.log("✅ [syncUserMetadata] - Successfully synced metadata for user:", {
-      clerkUserId,
-      userId: dbUser.id,
-      companyId: dbUser.companyId,
-      role: dbUser.role.name,
-    });
+    console.log(
+      "✅ [syncUserMetadata] - Successfully synced metadata for user:",
+      {
+        clerkUserId,
+        userId: dbUser.id,
+        companyId: dbUser.companyId,
+        role: dbUser.role.name,
+      },
+    );
 
     return {
       success: true,
@@ -562,11 +568,14 @@ export async function syncCompanyUserMetadata(companyId: string): Promise<{
   totalCount: number;
 }> {
   try {
-    console.log("🔄 [syncCompanyUserMetadata] - Starting sync for company:", companyId);
-    
+    console.log(
+      "🔄 [syncCompanyUserMetadata] - Starting sync for company:",
+      companyId,
+    );
+
     const users = await prisma.user.findMany({
       where: { companyId },
-      select: { 
+      select: {
         oauthId: true,
         id: true,
         companyId: true,
@@ -591,7 +600,10 @@ export async function syncCompanyUserMetadata(companyId: string): Promise<{
 
     for (const user of users) {
       if (!user.oauthId) {
-        console.warn("⚠️ [syncCompanyUserMetadata] - User has no oauthId:", user.id);
+        console.warn(
+          "⚠️ [syncCompanyUserMetadata] - User has no oauthId:",
+          user.id,
+        );
         continue;
       }
 
@@ -609,7 +621,11 @@ export async function syncCompanyUserMetadata(companyId: string): Promise<{
         });
         syncedCount++;
       } catch (error) {
-        console.error("❌ [syncCompanyUserMetadata] - Failed to sync user:", user.id, error);
+        console.error(
+          "❌ [syncCompanyUserMetadata] - Failed to sync user:",
+          user.id,
+          error,
+        );
       }
     }
 
@@ -625,10 +641,16 @@ export async function syncCompanyUserMetadata(companyId: string): Promise<{
       totalCount: users.length,
     };
   } catch (error) {
-    console.error("❌ [syncCompanyUserMetadata] - Error syncing company metadata:", error);
+    console.error(
+      "❌ [syncCompanyUserMetadata] - Error syncing company metadata:",
+      error,
+    );
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Failed to sync company metadata",
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to sync company metadata",
       syncedCount: 0,
       totalCount: 0,
     };
@@ -661,15 +683,17 @@ export async function ensureUserMetadataSync(clerkUserId: string): Promise<{
     // Check if metadata needs syncing by getting current Clerk user
     const clerk = await clerkClient();
     const clerkUser = await clerk.users.getUser(clerkUserId);
-    
+
     // Look for companyId in private metadata (more secure)
     const currentCompanyId = clerkUser.privateMetadata?.companyId;
-    
+
     // If metadata is missing or doesn't match, sync it
     if (!currentCompanyId || currentCompanyId !== dbUser.companyId) {
-      console.log("🔄 [ensureUserMetadataSync] - Metadata out of sync, syncing...");
+      console.log(
+        "🔄 [ensureUserMetadataSync] - Metadata out of sync, syncing...",
+      );
       const syncResult = await syncUserMetadata(clerkUserId);
-      
+
       if (!syncResult.success) {
         return {
           success: false,
@@ -683,10 +707,16 @@ export async function ensureUserMetadataSync(clerkUserId: string): Promise<{
       companyId: dbUser.companyId,
     };
   } catch (error) {
-    console.error("❌ [ensureUserMetadataSync] - Error ensuring metadata sync:", error);
+    console.error(
+      "❌ [ensureUserMetadataSync] - Error ensuring metadata sync:",
+      error,
+    );
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Failed to ensure metadata sync",
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to ensure metadata sync",
     };
   }
 }
@@ -734,7 +764,8 @@ export async function inviteUserWithService(data: {
     console.error("Failed to invite user:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "An unknown error occurred.",
+      error:
+        error instanceof Error ? error.message : "An unknown error occurred.",
     };
   }
 }
@@ -746,73 +777,93 @@ export async function inviteUserWithService(data: {
 export const getAllUsersWithService = async (): Promise<{
   success: boolean;
   error?: string;
-  data: { users: PrismaUser[]; totalUsers: number; newThisMonth: number; uniqueRoles: number };
+  data: {
+    users: PrismaUser[];
+    totalUsers: number;
+    newThisMonth: number;
+    uniqueRoles: number;
+  };
 }> => {
   try {
     console.log("🔍 [getAllUsersWithService] Starting user fetch...");
     const { orgId, userId } = await auth();
-    
-    console.log("🔍 [getAllUsersWithService] Auth result:", { 
-      userId: !!userId, 
+
+    console.log("🔍 [getAllUsersWithService] Auth result:", {
+      userId: !!userId,
       orgId: !!orgId,
       userIdValue: userId,
-      orgIdValue: orgId 
+      orgIdValue: orgId,
     });
 
     // We need at least userId
     if (!userId) {
       console.log("❌ [getAllUsersWithService] Missing userId");
-      return { 
-        success: false, 
+      return {
+        success: false,
         error: "Unauthorized - No user ID",
-        data: { users: [], totalUsers: 0, newThisMonth: 0, uniqueRoles: 0 }
+        data: { users: [], totalUsers: 0, newThisMonth: 0, uniqueRoles: 0 },
       };
     }
 
-    console.log("🔍 [getAllUsersWithService] Looking for current user with oauthId:", userId);
+    console.log(
+      "🔍 [getAllUsersWithService] Looking for current user with oauthId:",
+      userId,
+    );
     const currentUser = await prisma.user.findFirst({
       where: { oauthId: userId },
-      select: { 
-        companyId: true, 
-        id: true, 
-        email: true, 
+      select: {
+        companyId: true,
+        id: true,
+        email: true,
         name: true,
         company: {
           select: {
             id: true,
             name: true,
-            clerkOrgId: true
-          }
-        }
+            clerkOrgId: true,
+          },
+        },
       },
     });
 
     console.log("🔍 [getAllUsersWithService] Current user found:", currentUser);
 
     if (!currentUser || !currentUser.companyId) {
-      console.log("❌ [getAllUsersWithService] No current user or company ID:", {
-        userFound: !!currentUser,
-        companyId: currentUser?.companyId
-      });
-      
+      console.log(
+        "❌ [getAllUsersWithService] No current user or company ID:",
+        {
+          userFound: !!currentUser,
+          companyId: currentUser?.companyId,
+        },
+      );
+
       // Let's also check if there are any users in the database at all
       const allUsers = await prisma.user.findMany({
-        select: { id: true, email: true, oauthId: true, companyId: true, status: true },
-        take: 5
+        select: {
+          id: true,
+          email: true,
+          oauthId: true,
+          companyId: true,
+          status: true,
+        },
+        take: 5,
       });
-      console.log("🔍 [getAllUsersWithService] All users in DB (first 5):", allUsers);
-      
+      console.log(
+        "🔍 [getAllUsersWithService] All users in DB (first 5):",
+        allUsers,
+      );
+
       return {
         success: false,
         error: "Could not find the associated company.",
-        data: { users: [], totalUsers: 0, newThisMonth: 0, uniqueRoles: 0 }
+        data: { users: [], totalUsers: 0, newThisMonth: 0, uniqueRoles: 0 },
       };
     }
 
     console.log("🔍 [getAllUsersWithService] Fetching users for company:", {
       companyId: currentUser.companyId,
       companyName: currentUser.company?.name,
-      clerkOrgId: currentUser.company?.clerkOrgId
+      clerkOrgId: currentUser.company?.clerkOrgId,
     });
 
     const userService = UserService.getInstance();
@@ -821,37 +872,37 @@ export const getAllUsersWithService = async (): Promise<{
     console.log("🔍 [getAllUsersWithService] UserService result:", {
       success: result.success,
       userCount: result.data?.length || 0,
-      error: result.error
+      error: result.error,
     });
 
     if (!result.success || !result.data) {
       return {
         success: false,
         error: result.error || "Failed to fetch users",
-        data: { users: [], totalUsers: 0, newThisMonth: 0, uniqueRoles: 0 }
+        data: { users: [], totalUsers: 0, newThisMonth: 0, uniqueRoles: 0 },
       };
     }
 
     // Calculate metrics
     const users = result.data;
     const totalUsers = users.length;
-    
+
     // Calculate new users this month
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const newThisMonth = users.filter(user => {
+    const newThisMonth = users.filter((user) => {
       const createdDate = new Date(user.createdAt);
       return createdDate >= startOfMonth;
     }).length;
 
     // Calculate unique roles
-    const uniqueRoles = new Set(users.map(user => user.roleId)).size;
+    const uniqueRoles = new Set(users.map((user) => user.roleId)).size;
 
     console.log("✅ [getAllUsersWithService] Success:", {
       totalUsers,
       newThisMonth,
       uniqueRoles,
-      userStatuses: users.map(u => ({ email: u.email, status: u.status }))
+      userStatuses: users.map((u) => ({ email: u.email, status: u.status })),
     });
 
     return {
@@ -860,15 +911,15 @@ export const getAllUsersWithService = async (): Promise<{
         users,
         totalUsers,
         newThisMonth,
-        uniqueRoles
-      }
+        uniqueRoles,
+      },
     };
   } catch (error) {
     console.error("❌ [getAllUsersWithService] Error:", error);
     return {
       success: false,
       error: "Failed to fetch users",
-      data: { users: [], totalUsers: 0, newThisMonth: 0, uniqueRoles: 0 }
+      data: { users: [], totalUsers: 0, newThisMonth: 0, uniqueRoles: 0 },
     };
   }
 };

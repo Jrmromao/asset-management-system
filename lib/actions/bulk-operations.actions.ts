@@ -16,7 +16,7 @@ interface BulkOperationResult {
   failed: number;
   details: Array<{
     id: string;
-    status: 'success' | 'failed';
+    status: "success" | "failed";
     error?: string;
   }>;
 }
@@ -38,7 +38,10 @@ interface SmartAssignmentRecommendation {
  * to recommend optimal asset assignments
  */
 export const generateSmartAssignmentRecommendations = withAuth(
-  async (user, assetIds: string[]): Promise<{
+  async (
+    user,
+    assetIds: string[],
+  ): Promise<{
     success: boolean;
     data?: SmartAssignmentRecommendation[];
     error?: string;
@@ -50,7 +53,7 @@ export const generateSmartAssignmentRecommendations = withAuth(
       }
 
       // Fetch assets with detailed information
-      const assets = await prisma.asset.findMany({
+      const assets = (await prisma.asset.findMany({
         where: {
           id: { in: assetIds },
           companyId,
@@ -61,10 +64,10 @@ export const generateSmartAssignmentRecommendations = withAuth(
           department: true,
           category: true,
         },
-      }) as any[];
+      })) as any[];
 
       // Fetch available users with their profiles and assigned assets
-      const users = await prisma.user.findMany({
+      const users = (await prisma.user.findMany({
         where: {
           companyId,
           active: true,
@@ -74,36 +77,40 @@ export const generateSmartAssignmentRecommendations = withAuth(
           role: true,
           assets: true,
         },
-      }) as any[];
+      })) as any[];
 
       // Prepare data for AI analysis
       const analysisData = {
         assets: assets.map((asset: any) => ({
           id: asset.id,
           name: asset.name,
-          category: asset.category?.name || 'Unknown',
-          manufacturer: asset.model?.name || 'Unknown',
-          modelName: asset.model?.name || 'Unknown',
-          department: asset.department?.name || 'Unassigned',
+          category: asset.category?.name || "Unknown",
+          manufacturer: asset.model?.name || "Unknown",
+          modelName: asset.model?.name || "Unknown",
+          department: asset.department?.name || "Unassigned",
           specifications: {},
         })),
         users: users.map((user: any) => ({
           id: user.id,
-          name: user.name || 'Unknown User',
+          name: user.name || "Unknown User",
           email: user.email,
-          department: user.department?.name || 'Unassigned',
-          role: user.role?.name || 'Unknown Role',
-          title: user.title || 'Unknown Title',
+          department: user.department?.name || "Unassigned",
+          role: user.role?.name || "Unknown Role",
+          title: user.title || "Unknown Title",
           currentAssets: (user.assets || []).map((asset: any) => ({
-            category: 'Unknown',
-            name: asset.name || 'Unknown',
+            category: "Unknown",
+            name: asset.name || "Unknown",
           })),
           assetCount: (user.assets || []).length,
         })),
         organizationalContext: {
           totalUsers: users.length,
-          departments: Array.from(new Set(users.map((u: any) => u.department?.name).filter(Boolean))),
-          roles: Array.from(new Set(users.map((u: any) => u.role?.name).filter(Boolean))),
+          departments: Array.from(
+            new Set(users.map((u: any) => u.department?.name).filter(Boolean)),
+          ),
+          roles: Array.from(
+            new Set(users.map((u: any) => u.role?.name).filter(Boolean)),
+          ),
         },
       };
 
@@ -174,27 +181,33 @@ export const generateSmartAssignmentRecommendations = withAuth(
         temperature: 0.3,
       });
 
-      const analysis = JSON.parse(response.choices[0].message.content || '{}');
-      
+      const analysis = JSON.parse(response.choices[0].message.content || "{}");
+
       return {
         success: true,
         data: analysis.recommendations || [],
       };
     } catch (error) {
-      console.error("Error generating smart assignment recommendations:", error);
+      console.error(
+        "Error generating smart assignment recommendations:",
+        error,
+      );
       return {
         success: false,
         error: error instanceof Error ? error.message : "Unknown error",
       };
     }
-  }
+  },
 );
 
 /**
  * Bulk assign assets to users
  */
 export const bulkAssignAssets = withAuth(
-  async (user, assignments: Array<{ assetId: string; userId: string }>): Promise<BulkOperationResult> => {
+  async (
+    user,
+    assignments: Array<{ assetId: string; userId: string }>,
+  ): Promise<BulkOperationResult> => {
     try {
       const companyId = user.privateMetadata?.companyId as string;
       if (!companyId) {
@@ -207,7 +220,11 @@ export const bulkAssignAssets = withAuth(
         };
       }
 
-      const results: Array<{ id: string; status: 'success' | 'failed'; error?: string }> = [];
+      const results: Array<{
+        id: string;
+        status: "success" | "failed";
+        error?: string;
+      }> = [];
       let processed = 0;
       let failed = 0;
 
@@ -226,8 +243,8 @@ export const bulkAssignAssets = withAuth(
             if (!asset) {
               results.push({
                 id: assignment.assetId,
-                status: 'failed',
-                error: 'Asset not found or access denied',
+                status: "failed",
+                error: "Asset not found or access denied",
               });
               failed++;
               continue;
@@ -244,8 +261,8 @@ export const bulkAssignAssets = withAuth(
             if (!targetUser) {
               results.push({
                 id: assignment.assetId,
-                status: 'failed',
-                error: 'User not found or access denied',
+                status: "failed",
+                error: "User not found or access denied",
               });
               failed++;
               continue;
@@ -288,14 +305,14 @@ export const bulkAssignAssets = withAuth(
 
             results.push({
               id: assignment.assetId,
-              status: 'success',
+              status: "success",
             });
             processed++;
           } catch (error) {
             results.push({
               id: assignment.assetId,
-              status: 'failed',
-              error: error instanceof Error ? error.message : 'Unknown error',
+              status: "failed",
+              error: error instanceof Error ? error.message : "Unknown error",
             });
             failed++;
           }
@@ -303,7 +320,7 @@ export const bulkAssignAssets = withAuth(
       });
 
       revalidatePath("/assets");
-      
+
       return {
         success: true,
         processed,
@@ -317,21 +334,25 @@ export const bulkAssignAssets = withAuth(
         error: error instanceof Error ? error.message : "Unknown error",
         processed: 0,
         failed: assignments.length,
-        details: assignments.map(a => ({
+        details: assignments.map((a) => ({
           id: a.assetId,
-          status: 'failed' as const,
-          error: 'Transaction failed',
+          status: "failed" as const,
+          error: "Transaction failed",
         })),
       };
     }
-  }
+  },
 );
 
 /**
  * Bulk update asset status
  */
 export const bulkUpdateAssetStatus = withAuth(
-  async (user, assetIds: string[], statusLabelId: string): Promise<BulkOperationResult> => {
+  async (
+    user,
+    assetIds: string[],
+    statusLabelId: string,
+  ): Promise<BulkOperationResult> => {
     try {
       const companyId = user.privateMetadata?.companyId as string;
       if (!companyId) {
@@ -344,7 +365,11 @@ export const bulkUpdateAssetStatus = withAuth(
         };
       }
 
-      const results: Array<{ id: string; status: 'success' | 'failed'; error?: string }> = [];
+      const results: Array<{
+        id: string;
+        status: "success" | "failed";
+        error?: string;
+      }> = [];
       let processed = 0;
       let failed = 0;
 
@@ -358,8 +383,8 @@ export const bulkUpdateAssetStatus = withAuth(
             if (!asset) {
               results.push({
                 id: assetId,
-                status: 'failed',
-                error: 'Asset not found',
+                status: "failed",
+                error: "Asset not found",
               });
               failed++;
               continue;
@@ -389,13 +414,13 @@ export const bulkUpdateAssetStatus = withAuth(
               });
             }
 
-            results.push({ id: assetId, status: 'success' });
+            results.push({ id: assetId, status: "success" });
             processed++;
           } catch (error) {
             results.push({
               id: assetId,
-              status: 'failed',
-              error: error instanceof Error ? error.message : 'Unknown error',
+              status: "failed",
+              error: error instanceof Error ? error.message : "Unknown error",
             });
             failed++;
           }
@@ -403,7 +428,7 @@ export const bulkUpdateAssetStatus = withAuth(
       });
 
       revalidatePath("/assets");
-      
+
       return {
         success: true,
         processed,
@@ -417,14 +442,14 @@ export const bulkUpdateAssetStatus = withAuth(
         error: error instanceof Error ? error.message : "Unknown error",
         processed: 0,
         failed: assetIds.length,
-        details: assetIds.map(id => ({
+        details: assetIds.map((id) => ({
           id,
-          status: 'failed' as const,
-          error: 'Transaction failed',
+          status: "failed" as const,
+          error: "Transaction failed",
         })),
       };
     }
-  }
+  },
 );
 
 /**
@@ -444,7 +469,11 @@ export const bulkCheckinAssets = withAuth(
         };
       }
 
-      const results: Array<{ id: string; status: 'success' | 'failed'; error?: string }> = [];
+      const results: Array<{
+        id: string;
+        status: "success" | "failed";
+        error?: string;
+      }> = [];
       let processed = 0;
       let failed = 0;
 
@@ -459,8 +488,8 @@ export const bulkCheckinAssets = withAuth(
             if (!asset) {
               results.push({
                 id: assetId,
-                status: 'failed',
-                error: 'Asset not found',
+                status: "failed",
+                error: "Asset not found",
               });
               failed++;
               continue;
@@ -485,7 +514,7 @@ export const bulkCheckinAssets = withAuth(
                   entityId: assetId,
                   userId: internalUser.id,
                   companyId,
-                  details: `Asset checked in via bulk operation${asset.userId ? ` from user ${asset.userId}` : ''}`,
+                  details: `Asset checked in via bulk operation${asset.userId ? ` from user ${asset.userId}` : ""}`,
                 },
               });
 
@@ -494,18 +523,18 @@ export const bulkCheckinAssets = withAuth(
                   assetId,
                   type: "return",
                   companyId,
-                  notes: `Bulk check-in operation${asset.userId ? ` from user ${asset.userId}` : ''}`,
+                  notes: `Bulk check-in operation${asset.userId ? ` from user ${asset.userId}` : ""}`,
                 },
               });
             }
 
-            results.push({ id: assetId, status: 'success' });
+            results.push({ id: assetId, status: "success" });
             processed++;
           } catch (error) {
             results.push({
               id: assetId,
-              status: 'failed',
-              error: error instanceof Error ? error.message : 'Unknown error',
+              status: "failed",
+              error: error instanceof Error ? error.message : "Unknown error",
             });
             failed++;
           }
@@ -513,7 +542,7 @@ export const bulkCheckinAssets = withAuth(
       });
 
       revalidatePath("/assets");
-      
+
       return {
         success: true,
         processed,
@@ -527,14 +556,14 @@ export const bulkCheckinAssets = withAuth(
         error: error instanceof Error ? error.message : "Unknown error",
         processed: 0,
         failed: assetIds.length,
-        details: assetIds.map(id => ({
+        details: assetIds.map((id) => ({
           id,
-          status: 'failed' as const,
-          error: 'Transaction failed',
+          status: "failed" as const,
+          error: "Transaction failed",
         })),
       };
     }
-  }
+  },
 );
 
-export type { BulkOperationResult, SmartAssignmentRecommendation }; 
+export type { BulkOperationResult, SmartAssignmentRecommendation };

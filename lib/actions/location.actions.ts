@@ -9,7 +9,6 @@ import { prisma } from "@/app/db";
 import { withAuth, type AuthResponse } from "@/lib/middleware/withAuth";
 import type { DepartmentLocation } from "@prisma/client";
 
-
 export const insert = withAuth(
   async (
     user,
@@ -66,8 +65,6 @@ export const insert = withAuth(
     }
   },
 );
-
-
 
 export const getAll = withAuth(
   async (
@@ -143,8 +140,6 @@ export const findById = withAuth(
   },
 );
 
-
-
 export const remove = withAuth(
   async (user, id: string): Promise<AuthResponse<DepartmentLocation>> => {
     try {
@@ -177,8 +172,6 @@ export const remove = withAuth(
     }
   },
 );
-
-
 
 type CreateLocationInput = z.infer<typeof locationSchema>;
 
@@ -239,5 +232,3 @@ export const update = withAuth(
     }
   },
 );
-
-

@@ -197,6 +197,93 @@ export async function registerCompany(
       throw new Error("Failed to create a user in the database.");
     }
 
+    // --- DEFAULT MAINTENANCE CATEGORIES & TYPES (IDEMPOTENT) ---
+    const defaultCategories = [
+      {
+        name: "Preventive",
+        description: "Scheduled maintenance to prevent issues",
+        color: "#22C55E",
+      },
+      {
+        name: "Corrective",
+        description: "Fix existing problems",
+        color: "#F59E0B",
+      },
+      {
+        name: "Emergency",
+        description: "Urgent maintenance",
+        color: "#EF4444",
+      },
+    ];
+    const defaultTypes = [
+      {
+        name: "Oil Change",
+        description: "Regular engine oil replacement",
+        categoryName: "Preventive",
+        priority: "Medium",
+        color: "#3B82F6",
+        icon: "wrench",
+      },
+      {
+        name: "Filter Replacement",
+        description: "Replace air or oil filters",
+        categoryName: "Preventive",
+        priority: "Low",
+        color: "#22C55E",
+        icon: "tool",
+      },
+      {
+        name: "Breakdown Repair",
+        description: "Fix equipment breakdowns",
+        categoryName: "Corrective",
+        priority: "High",
+        color: "#EF4444",
+        icon: "alert",
+      },
+    ];
+    // 1. Create default categories if not exist
+    for (const cat of defaultCategories) {
+      const exists = await prisma.maintenanceCategory.findFirst({
+        where: { name: cat.name, companyId: company.id },
+      });
+      if (!exists) {
+        await prisma.maintenanceCategory.create({
+          data: { ...cat, companyId: company.id },
+        });
+      }
+    }
+    // 2. Create default types if not exist, linking to the right category
+    for (const type of defaultTypes) {
+      // Find the category (should exist now)
+      const category = await prisma.maintenanceCategory.findFirst({
+        where: { name: type.categoryName, companyId: company.id },
+      });
+      if (!category) continue;
+      const exists = await prisma.maintenanceType.findFirst({
+        where: { name: type.name, companyId: company.id },
+      });
+      if (!exists) {
+        await prisma.maintenanceType.create({
+          data: {
+            name: type.name,
+            description: type.description,
+            categoryId: category.id,
+            priority: type.priority,
+            color: type.color,
+            icon: type.icon,
+            companyId: company.id,
+            requiredSkills: [],
+            checklist: [],
+            customFields: [],
+            estimatedDuration: 1,
+            defaultCost: 0,
+            isActive: true,
+          },
+        });
+      }
+    }
+    // --- END DEFAULT MAINTENANCE CATEGORIES & TYPES ---
+
     // 4. Find or create a Clerk organization for the company
     let organization;
     const clerk = await clerkClient();

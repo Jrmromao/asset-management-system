@@ -90,8 +90,6 @@ export const insert = withAuth(
   },
 );
 
-
-
 export const getAll = withAuth(
   async (
     user,
@@ -143,8 +141,6 @@ export const getAll = withAuth(
   },
 );
 
-
-
 export const findById = withAuth(
   async (user, id: string): Promise<AuthResponse<Department>> => {
     try {
@@ -190,8 +186,6 @@ export const findById = withAuth(
     }
   },
 );
-
-
 
 export const update = withAuth(
   async (
@@ -256,8 +250,6 @@ export const update = withAuth(
   },
 );
 
-
-
 export const remove = withAuth(
   async (user, id: string): Promise<AuthResponse<Department>> => {
     try {
@@ -305,5 +297,3 @@ export const remove = withAuth(
     }
   },
 );
-
-

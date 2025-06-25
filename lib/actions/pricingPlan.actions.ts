@@ -9,13 +9,16 @@ const pricingPlanSchema = z.object({
   description: z.string().optional(),
   stripePriceId: z.string().min(1, "Stripe Price ID is required"),
   planType: z.nativeEnum(PlanType),
+  assetQuota: z.number().int().positive("Asset quota must be positive"),
   pricePerAsset: z.number().positive("Price per asset must be positive"),
-  minAssets: z.number().int().min(1, "Minimum assets must be at least 1"),
-  maxAssets: z.number().int().positive().optional(),
-  trialDays: z.number().int().min(0, "Trial days must be non-negative"),
+  billingCycle: z.string().min(1, "Billing cycle is required"),
+  trialDays: z
+    .number()
+    .int()
+    .min(0, "Trial days must be non-negative")
+    .default(30),
   isActive: z.boolean().default(true),
   features: z.array(z.string()).min(1, "At least one feature is required"),
-  metadata: z.record(z.any()).optional(),
 });
 
 export type PricingPlanInput = z.infer<typeof pricingPlanSchema>;
@@ -27,5 +30,29 @@ interface ActionResponse<T> {
 }
 
 export async function createPricingPlan(
-  data: PricingPlanInput
-):
+  data: PricingPlanInput,
+): Promise<ActionResponse<any>> {
+  try {
+    const validatedData = pricingPlanSchema.parse(data);
+
+    const pricingPlan = await prisma.pricingPlan.create({
+      data: {
+        ...validatedData,
+        assetQuota: validatedData.assetQuota,
+        billingCycle: "monthly",
+      },
+    });
+
+    return { success: true, data: pricingPlan };
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to create pricing plan",
+    };
+  } finally {
+    await prisma.$disconnect();
+  }
+}

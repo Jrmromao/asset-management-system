@@ -180,7 +180,7 @@ export async function getCO2DataFromStore(storeKey: string) {
   try {
     console.log("🔍 Attempting to retrieve data with key:", storeKey);
     console.log("🔍 Current store keys:", co2Store.getAllKeys());
-    
+
     const data = co2Store.get(storeKey);
     if (!data) {
       console.log("❌ Data not found for key:", storeKey);
@@ -239,7 +239,7 @@ export async function calculateAssetCO2Action(assetId: string) {
         units: result.data.units,
         confidenceScore: result.data.confidenceScore,
         storeKey: storeKey,
-        testField: "THIS_IS_A_TEST_TO_VERIFY_CLIENT_RECEIVES_NEW_FORMAT"
+        testField: "THIS_IS_A_TEST_TO_VERIFY_CLIENT_RECEIVES_NEW_FORMAT",
       };
 
       console.log("🔍 Minimal data object:", minimalData);
@@ -276,7 +276,9 @@ export async function saveAssetCO2Action(
         data: {
           ...result.data,
           co2e: Number(result.data.co2e),
-          emissionFactor: result.data.emissionFactor ? Number(result.data.emissionFactor) : null,
+          emissionFactor: result.data.emissionFactor
+            ? Number(result.data.emissionFactor)
+            : null,
         },
       };
     }

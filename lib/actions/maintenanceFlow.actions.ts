@@ -4,6 +4,7 @@ import { prisma as db } from "@/app/db";
 
 import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
+import { clerkClient } from "@clerk/nextjs/server";
 
 export interface MaintenanceFlow {
   id: string;
@@ -55,7 +56,9 @@ export interface MaintenanceFlowStats {
   }>;
 }
 
-export async function getMaintenanceFlows(filters: Record<string, any> = {}): Promise<MaintenanceFlow[]> {
+export async function getMaintenanceFlows(
+  filters: Record<string, any> = {},
+): Promise<MaintenanceFlow[]> {
   try {
     const { userId } = await auth();
     if (!userId) {
@@ -119,9 +122,12 @@ export async function getMaintenanceFlows(filters: Record<string, any> = {}): Pr
       isActive: flow.isActive,
       priority: flow.priority,
       executionCount: flow.executions.length,
-      successRate: flow.executions.length > 0 
-        ? (flow.executions.filter((e: any) => e.success === true).length / flow.executions.length) * 100
-        : 0,
+      successRate:
+        flow.executions.length > 0
+          ? (flow.executions.filter((e: any) => e.success === true).length /
+              flow.executions.length) *
+            100
+          : 0,
       lastExecuted: flow.executions[0]?.executedAt,
       createdAt: flow.createdAt,
       updatedAt: flow.updatedAt,
@@ -133,7 +139,9 @@ export async function getMaintenanceFlows(filters: Record<string, any> = {}): Pr
   }
 }
 
-export async function createMaintenanceFlow(data: CreateMaintenanceFlowParams): Promise<MaintenanceFlow> {
+export async function createMaintenanceFlow(
+  data: CreateMaintenanceFlowParams,
+): Promise<MaintenanceFlow> {
   try {
     const { userId } = await auth();
     if (!userId) {
@@ -205,7 +213,7 @@ export async function createMaintenanceFlow(data: CreateMaintenanceFlowParams): 
 
 export async function updateMaintenanceFlow(
   id: string,
-  data: UpdateMaintenanceFlowParams
+  data: UpdateMaintenanceFlowParams,
 ): Promise<MaintenanceFlow> {
   try {
     const { userId } = await auth();
@@ -299,9 +307,12 @@ export async function updateMaintenanceFlow(
       isActive: flow.isActive,
       priority: flow.priority,
       executionCount: flow.executions.length,
-      successRate: flow.executions.length > 0 
-        ? (flow.executions.filter((e: any) => e.success === true).length / flow.executions.length) * 100
-        : 0,
+      successRate:
+        flow.executions.length > 0
+          ? (flow.executions.filter((e: any) => e.success === true).length /
+              flow.executions.length) *
+            100
+          : 0,
       lastExecuted: flow.executions[0]?.executedAt,
       createdAt: flow.createdAt,
       updatedAt: flow.updatedAt,
@@ -377,8 +388,53 @@ export async function getMaintenanceFlowStats(): Promise<MaintenanceFlowStats> {
       select: { id: true, companyId: true },
     });
 
-    if (!user?.companyId) {
-      throw new Error("User company not found");
+    if (!user) {
+      console.error("❌ User not found in database for userId:", userId);
+      throw new Error("User not found in database");
+    }
+
+    if (!user.companyId) {
+      console.error("❌ User has no companyId:", { userId, dbUserId: user.id });
+
+      // Try to sync user metadata and get company ID
+      try {
+        console.log("🔄 Attempting to sync user metadata...");
+        const clerk = await clerkClient();
+        const clerkUser = await clerk.users.getUser(userId);
+
+        // Check if company ID exists in Clerk metadata
+        const companyIdFromClerk = clerkUser.privateMetadata
+          ?.companyId as string;
+
+        if (companyIdFromClerk) {
+          console.log(
+            "✅ Found company ID in Clerk metadata, updating database...",
+          );
+
+          // Update the user's company ID in the database
+          const updatedUser = await db.user.update({
+            where: { id: user.id },
+            data: { companyId: companyIdFromClerk },
+            select: { companyId: true },
+          });
+
+          console.log("✅ Updated user company ID:", updatedUser.companyId);
+
+          // Continue with the updated company ID
+          user.companyId = updatedUser.companyId;
+        } else {
+          // No company ID in Clerk metadata either
+          console.error("❌ No company ID found in Clerk metadata either");
+          throw new Error(
+            "User company not found. Please complete company registration or contact support.",
+          );
+        }
+      } catch (syncError) {
+        console.error("❌ Failed to sync user metadata:", syncError);
+        throw new Error(
+          "User company not found and metadata sync failed. Please contact support.",
+        );
+      }
     }
 
     const [flows, executions] = await Promise.all([
@@ -411,25 +467,33 @@ export async function getMaintenanceFlowStats(): Promise<MaintenanceFlowStats> {
     const activeFlows = flows.filter((f: any) => f.isActive).length;
     const inactiveFlows = totalFlows - activeFlows;
     const totalExecutions = executions.length;
-    const successfulExecutions = executions.filter((e: any) => e.success === true).length;
-    const averageSuccessRate = totalExecutions > 0 ? (successfulExecutions / totalExecutions) * 100 : 0;
+    const successfulExecutions = executions.filter(
+      (e: any) => e.success === true,
+    ).length;
+    const averageSuccessRate =
+      totalExecutions > 0 ? (successfulExecutions / totalExecutions) * 100 : 0;
 
     // Recent executions (last 7 days)
     const recentExecutions = executions.filter(
-      (e: any) => e.executedAt >= new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+      (e: any) =>
+        e.executedAt >= new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
     ).length;
 
     // Group by priority
-    const flowsByPriority = flows.reduce((acc: Array<{ priority: string; count: number }>, flow: any) => {
-      const priorityLevel = flow.priority > 300 ? "HIGH" : flow.priority > 200 ? "MEDIUM" : "LOW";
-      const existing = acc.find(item => item.priority === priorityLevel);
-      if (existing) {
-        existing.count++;
-      } else {
-        acc.push({ priority: priorityLevel, count: 1 });
-      }
-      return acc;
-    }, []);
+    const flowsByPriority = flows.reduce(
+      (acc: Array<{ priority: string; count: number }>, flow: any) => {
+        const priorityLevel =
+          flow.priority > 300 ? "HIGH" : flow.priority > 200 ? "MEDIUM" : "LOW";
+        const existing = acc.find((item) => item.priority === priorityLevel);
+        if (existing) {
+          existing.count++;
+        } else {
+          acc.push({ priority: priorityLevel, count: 1 });
+        }
+        return acc;
+      },
+      [],
+    );
 
     return {
       totalFlows,
@@ -444,4 +508,4 @@ export async function getMaintenanceFlowStats(): Promise<MaintenanceFlowStats> {
     console.error("Error fetching maintenance flow stats:", error);
     throw new Error("Failed to fetch maintenance flow stats");
   }
-} 
+}

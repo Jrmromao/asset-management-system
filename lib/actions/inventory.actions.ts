@@ -29,10 +29,16 @@ export const insert = withAuth(
 
     try {
       const validation = inventorySchema.safeParse(values);
-      console.log(" [inventory.actions] insert - Validation result:", validation);
+      console.log(
+        " [inventory.actions] insert - Validation result:",
+        validation,
+      );
 
       if (!validation.success) {
-        console.error("❌ [inventory.actions] insert - Validation failed:", validation.error.errors);
+        console.error(
+          "❌ [inventory.actions] insert - Validation failed:",
+          validation.error.errors,
+        );
         return {
           success: false,
           data: null as any,
@@ -44,10 +50,13 @@ export const insert = withAuth(
       const companyId = user.privateMetadata?.companyId;
 
       if (!companyId) {
-        console.error("❌ [inventory.actions] insert - User missing companyId in private metadata:", {
-          user: user?.id,
-          privateMetadata: user?.privateMetadata,
-        });
+        console.error(
+          "❌ [inventory.actions] insert - User missing companyId in private metadata:",
+          {
+            user: user?.id,
+            privateMetadata: user?.privateMetadata,
+          },
+        );
         return {
           success: false,
           data: null as any,
@@ -55,10 +64,13 @@ export const insert = withAuth(
         };
       }
 
-      console.log("✅ [inventory.actions] insert - Creating inventory with data:", {
-        ...validation.data,
-        companyId,
-      });
+      console.log(
+        "✅ [inventory.actions] insert - Creating inventory with data:",
+        {
+          ...validation.data,
+          companyId,
+        },
+      );
 
       const inventory = await prisma.inventory.create({
         data: {
@@ -67,7 +79,10 @@ export const insert = withAuth(
         },
       });
 
-      console.log("✅ [inventory.actions] insert - Inventory created successfully:", inventory);
+      console.log(
+        "✅ [inventory.actions] insert - Inventory created successfully:",
+        inventory,
+      );
       revalidatePath("/inventories");
       return { success: true, data: parseStringify(inventory) };
     } catch (error) {
@@ -87,7 +102,10 @@ export const insert = withAuth(
 export async function createInventory(
   values: z.infer<typeof inventorySchema>,
 ): Promise<AuthResponse<Inventory>> {
-  console.log(" [inventory.actions] createInventory - Called with values:", values);
+  console.log(
+    " [inventory.actions] createInventory - Called with values:",
+    values,
+  );
   return insert(values);
 }
 

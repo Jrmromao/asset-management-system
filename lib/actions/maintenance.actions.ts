@@ -12,14 +12,15 @@ import { revalidatePath } from "next/cache";
 const flowRulesService = new FlowRulesService();
 
 // Define a type for the maintenance event with its relations
-const maintenanceWithDetails = Prisma.validator<Prisma.MaintenanceDefaultArgs>()({
-  include: {
-    asset: { include: { user: true, category: true } },
-    statusLabel: true,
-    supplier: true,
-    co2eRecords: true,
-  },
-});
+const maintenanceWithDetails =
+  Prisma.validator<Prisma.MaintenanceDefaultArgs>()({
+    include: {
+      asset: { include: { user: true, category: true } },
+      statusLabel: true,
+      supplier: true,
+      co2eRecords: true,
+    },
+  });
 type MaintenanceWithDetails = Prisma.MaintenanceGetPayload<
   typeof maintenanceWithDetails
 >;
@@ -135,7 +136,7 @@ export const createMaintenanceEvent = withAuth(
 
       revalidatePath("/dashboard");
       revalidatePath("/maintenance");
-      
+
       return { success: true, data: parseStringify(newEvent) };
     } catch (error) {
       return handleError(error, {} as MaintenanceWithDetails);
@@ -178,7 +179,10 @@ export const getAllMaintenance = withAuth(
 
 // READ: Get maintenance events by asset
 export const getMaintenanceByAsset = withAuth(
-  async (user, assetId: string): Promise<AuthResponse<MaintenanceWithDetails[]>> => {
+  async (
+    user,
+    assetId: string,
+  ): Promise<AuthResponse<MaintenanceWithDetails[]>> => {
     try {
       const companyId = user.privateMetadata?.companyId as string;
       if (!companyId) {
@@ -327,7 +331,10 @@ export const completeMaintenance = withAuth(
 
       // Trigger AI analysis for completion notes
       if (validation.data.notes) {
-        analyzeAndRecordCarbonFootprint(validation.data.id, validation.data.notes);
+        analyzeAndRecordCarbonFootprint(
+          validation.data.id,
+          validation.data.notes,
+        );
       }
 
       revalidatePath("/dashboard");
@@ -438,15 +445,19 @@ export const deleteMaintenance = withAuth(
  */
 // STATS: Get maintenance statistics for dashboard
 export const getMaintenanceStats = withAuth(
-  async (user): Promise<AuthResponse<{
-    scheduled: number;
-    inProgress: number;
-    completed: number;
-    overdue: number;
-    totalCost: number;
-    avgCost: number;
-    co2Impact: number;
-  }>> => {
+  async (
+    user,
+  ): Promise<
+    AuthResponse<{
+      scheduled: number;
+      inProgress: number;
+      completed: number;
+      overdue: number;
+      totalCost: number;
+      avgCost: number;
+      co2Impact: number;
+    }>
+  > => {
     try {
       const companyId = user.privateMetadata?.companyId as string;
       if (!companyId) {
@@ -469,13 +480,13 @@ export const getMaintenanceStats = withAuth(
       const [statusCounts, costStats, co2Stats] = await Promise.all([
         // Get status counts
         prisma.maintenance.groupBy({
-          by: ['statusLabelId'],
+          by: ["statusLabelId"],
           where: {
             asset: { companyId },
           },
           _count: true,
         }),
-        
+
         // Get cost statistics
         prisma.maintenance.aggregate({
           where: {
@@ -492,7 +503,7 @@ export const getMaintenanceStats = withAuth(
           },
           _count: true,
         }),
-        
+
         // Get CO2 impact
         prisma.co2eRecord.aggregate({
           where: {
@@ -513,19 +524,24 @@ export const getMaintenanceStats = withAuth(
         select: { id: true, name: true },
       });
 
-      const statusMap = statusLabels.reduce((acc, label) => {
-        acc[label.id] = label.name.toLowerCase();
-        return acc;
-      }, {} as Record<string, string>);
+      const statusMap = statusLabels.reduce(
+        (acc, label) => {
+          acc[label.id] = label.name.toLowerCase();
+          return acc;
+        },
+        {} as Record<string, string>,
+      );
 
       // Calculate status counts
-      let scheduled = 0, inProgress = 0, completed = 0;
-      
+      let scheduled = 0,
+        inProgress = 0,
+        completed = 0;
+
       statusCounts.forEach(({ statusLabelId, _count }) => {
         const statusName = statusMap[statusLabelId];
-        if (statusName === 'scheduled') scheduled = _count;
-        else if (statusName === 'in progress') inProgress = _count;
-        else if (statusName === 'completed') completed = _count;
+        if (statusName === "scheduled") scheduled = _count;
+        else if (statusName === "in progress") inProgress = _count;
+        else if (statusName === "completed") completed = _count;
       });
 
       // Calculate overdue count
@@ -535,13 +551,17 @@ export const getMaintenanceStats = withAuth(
           startDate: { lt: new Date() },
           completionDate: null,
           statusLabel: {
-            name: { not: 'Completed' },
+            name: { not: "Completed" },
           },
         },
       });
 
-      const totalCost = Number(costStats._sum.totalCost || costStats._sum.cost || 0);
-      const avgCost = Number(costStats._avg.totalCost || costStats._avg.cost || 0);
+      const totalCost = Number(
+        costStats._sum.totalCost || costStats._sum.cost || 0,
+      );
+      const avgCost = Number(
+        costStats._avg.totalCost || costStats._avg.cost || 0,
+      );
       const co2Impact = Number(co2Stats._sum.co2e || 0);
 
       return {
@@ -572,7 +592,14 @@ export const getMaintenanceStats = withAuth(
 
 // BATCH OPERATIONS: Update multiple maintenance records
 export const batchUpdateMaintenance = withAuth(
-  async (user, updates: Array<{ id: string; statusLabelId?: string; completionDate?: Date }>): Promise<AuthResponse<number>> => {
+  async (
+    user,
+    updates: Array<{
+      id: string;
+      statusLabelId?: string;
+      completionDate?: Date;
+    }>,
+  ): Promise<AuthResponse<number>> => {
     try {
       const companyId = user.privateMetadata?.companyId as string;
       if (!companyId) {
@@ -584,7 +611,7 @@ export const batchUpdateMaintenance = withAuth(
       }
 
       // Verify all maintenance records belong to the company
-      const maintenanceIds = updates.map(u => u.id);
+      const maintenanceIds = updates.map((u) => u.id);
       const validRecords = await prisma.maintenance.findMany({
         where: {
           id: { in: maintenanceIds },
@@ -593,8 +620,8 @@ export const batchUpdateMaintenance = withAuth(
         select: { id: true },
       });
 
-      const validIds = new Set(validRecords.map(r => r.id));
-      const validUpdates = updates.filter(u => validIds.has(u.id));
+      const validIds = new Set(validRecords.map((r) => r.id));
+      const validUpdates = updates.filter((u) => validIds.has(u.id));
 
       if (validUpdates.length === 0) {
         return {
@@ -606,16 +633,20 @@ export const batchUpdateMaintenance = withAuth(
 
       // Perform batch updates in transaction
       const results = await prisma.$transaction(
-        validUpdates.map(update => 
+        validUpdates.map((update) =>
           prisma.maintenance.update({
             where: { id: update.id },
             data: {
-              ...(update.statusLabelId && { statusLabelId: update.statusLabelId }),
-              ...(update.completionDate && { completionDate: update.completionDate }),
+              ...(update.statusLabelId && {
+                statusLabelId: update.statusLabelId,
+              }),
+              ...(update.completionDate && {
+                completionDate: update.completionDate,
+              }),
               updatedAt: new Date(),
             },
-          })
-        )
+          }),
+        ),
       );
 
       revalidatePath("/maintenance");
@@ -630,21 +661,26 @@ export const batchUpdateMaintenance = withAuth(
 
 // PAGINATION: Get maintenance with pagination and filters
 export const getMaintenancePaginated = withAuth(
-  async (user, options: {
-    page?: number;
-    pageSize?: number;
-    status?: string[];
-    assetId?: string;
-    search?: string;
-    sortBy?: string;
-    sortOrder?: 'asc' | 'desc';
-  } = {}): Promise<AuthResponse<{
-    data: MaintenanceWithDetails[];
-    total: number;
-    page: number;
-    pageSize: number;
-    totalPages: number;
-  }>> => {
+  async (
+    user,
+    options: {
+      page?: number;
+      pageSize?: number;
+      status?: string[];
+      assetId?: string;
+      search?: string;
+      sortBy?: string;
+      sortOrder?: "asc" | "desc";
+    } = {},
+  ): Promise<
+    AuthResponse<{
+      data: MaintenanceWithDetails[];
+      total: number;
+      page: number;
+      pageSize: number;
+      totalPages: number;
+    }>
+  > => {
     try {
       const companyId = user.privateMetadata?.companyId as string;
       if (!companyId) {
@@ -661,34 +697,36 @@ export const getMaintenancePaginated = withAuth(
         status,
         assetId,
         search,
-        sortBy = 'startDate',
-        sortOrder = 'desc'
+        sortBy = "startDate",
+        sortOrder = "desc",
       } = options;
 
       // Build where clause
       const where: Prisma.MaintenanceWhereInput = {
         asset: { companyId },
-        ...(status && status.length > 0 && {
-          statusLabel: { name: { in: status } }
-        }),
+        ...(status &&
+          status.length > 0 && {
+            statusLabel: { name: { in: status } },
+          }),
         ...(assetId && { assetId }),
         ...(search && {
           OR: [
-            { title: { contains: search, mode: 'insensitive' } },
-            { notes: { contains: search, mode: 'insensitive' } },
-            { asset: { name: { contains: search, mode: 'insensitive' } } },
-          ]
+            { title: { contains: search, mode: "insensitive" } },
+            { notes: { contains: search, mode: "insensitive" } },
+            { asset: { name: { contains: search, mode: "insensitive" } } },
+          ],
         }),
       };
 
       // Build orderBy clause
       const orderBy: Prisma.MaintenanceOrderByWithRelationInput = {};
-      if (sortBy === 'assetName') {
+      if (sortBy === "assetName") {
         orderBy.asset = { name: sortOrder };
-      } else if (sortBy === 'status') {
+      } else if (sortBy === "status") {
         orderBy.statusLabel = { name: sortOrder };
       } else {
-        orderBy[sortBy as keyof Prisma.MaintenanceOrderByWithRelationInput] = sortOrder;
+        orderBy[sortBy as keyof Prisma.MaintenanceOrderByWithRelationInput] =
+          sortOrder;
       }
 
       // Execute queries in parallel
@@ -721,7 +759,13 @@ export const getMaintenancePaginated = withAuth(
         },
       };
     } catch (error) {
-      return handleError(error, { data: [], total: 0, page: 1, pageSize: 10, totalPages: 0 });
+      return handleError(error, {
+        data: [],
+        total: 0,
+        page: 1,
+        pageSize: 10,
+        totalPages: 0,
+      });
     }
   },
 );
