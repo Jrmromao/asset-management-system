@@ -84,9 +84,7 @@ export const DetailView: React.FC<DetailViewProps> = ({
         <div className="flex justify-between items-center gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-3">
-              <CardTitle className="text-2xl font-semibold">
-                {title}
-              </CardTitle>
+              <CardTitle className="text-2xl font-semibold">{title}</CardTitle>
               {statusLabel && (
                 <Badge
                   style={{

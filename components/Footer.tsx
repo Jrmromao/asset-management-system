@@ -68,10 +68,9 @@ const Footer = ({ isCollapsed = false }: { isCollapsed?: boolean }) => {
     return (
       <div className="relative w-full">
         <div
-          className={cn(
-            "flex items-center gap-3 w-full p-2 rounded-lg",
-            { "justify-center": isCollapsed }
-          )}
+          className={cn("flex items-center gap-3 w-full p-2 rounded-lg", {
+            "justify-center": isCollapsed,
+          })}
         >
           <div className="size-10 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse" />
           {!isCollapsed && (
@@ -175,12 +174,12 @@ const Footer = ({ isCollapsed = false }: { isCollapsed?: boolean }) => {
     <div
       role="menu"
       className={cn(
-        "absolute bg-white dark:bg-gray-900 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700/50 z-50 min-w-[220px] transition-all duration-200 ease-in-out",
+        "fixed bg-white dark:bg-gray-900 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700/50 z-[9999] min-w-[220px] transition-all duration-200 ease-in-out",
         "transform opacity-0 scale-95 pointer-events-none",
         isMenuOpen && "transform opacity-100 scale-100 pointer-events-auto",
         {
-          "left-full bottom-0 ml-2": isCollapsed,
-          "bottom-full left-0 right-0 mb-2": !isCollapsed,
+          "left-20 bottom-4": isCollapsed,
+          "left-4 bottom-20": !isCollapsed,
         },
       )}
     >
@@ -217,7 +216,7 @@ const Footer = ({ isCollapsed = false }: { isCollapsed?: boolean }) => {
   );
 
   return (
-    <div ref={menuRef} className="relative w-full">
+    <div ref={menuRef} className="relative w-full z-[10000]">
       {Menu}
       {AvatarTrigger}
     </div>

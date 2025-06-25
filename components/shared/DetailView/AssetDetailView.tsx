@@ -191,11 +191,12 @@ export const AssetDetailView: React.FC<{
 
   // Sort records to ensure we always have the latest one.
   const latestCo2Record = asset.co2eRecords?.sort(
-    (a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    (a: any, b: any) =>
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
   )[0];
 
   const handleCalculateCo2 = () => {
-    startTransition(async () => {      
+    startTransition(async () => {
       // Test with API route instead of server action
       const response = await fetch(`/api/co2/calculate?t=${Date.now()}`, {
         method: "POST",
@@ -531,47 +532,54 @@ export const AssetDetailView: React.FC<{
                           <Leaf className="h-4 w-4 text-green-600" />
                           CO2 Footprint
                         </CardTitle>
-                                                 {latestCo2Record && (
-                           <Badge 
-                             variant={
-                               Number(latestCo2Record.co2e) <= 500 
-                                 ? "default" 
-                                 : Number(latestCo2Record.co2e) <= 1000 
-                                 ? "secondary" 
-                                 : "destructive"
-                             }
-                             className="text-xs"
-                           >
-                             {Number(latestCo2Record.co2e) <= 500 
-                               ? "Low Impact" 
-                               : Number(latestCo2Record.co2e) <= 1000 
-                               ? "Medium Impact" 
-                               : "High Impact"}
-                           </Badge>
-                         )}
+                        {latestCo2Record && (
+                          <Badge
+                            variant={
+                              Number(latestCo2Record.co2e) <= 500
+                                ? "default"
+                                : Number(latestCo2Record.co2e) <= 1000
+                                  ? "secondary"
+                                  : "destructive"
+                            }
+                            className="text-xs"
+                          >
+                            {Number(latestCo2Record.co2e) <= 500
+                              ? "Low Impact"
+                              : Number(latestCo2Record.co2e) <= 1000
+                                ? "Medium Impact"
+                                : "High Impact"}
+                          </Badge>
+                        )}
                       </div>
                     </CardHeader>
                     <CardContent className="pt-0">
                       <div className="space-y-3">
                         <div
                           className={`text-3xl font-bold transition-colors ${
-                            latestCo2Record 
-                              ? "text-green-700 hover:text-green-800 cursor-pointer" 
+                            latestCo2Record
+                              ? "text-green-700 hover:text-green-800 cursor-pointer"
                               : "text-muted-foreground"
                           }`}
                           onClick={latestCo2Record ? handleViewCo2 : undefined}
-                          title={latestCo2Record ? "Click to view detailed breakdown" : undefined}
+                          title={
+                            latestCo2Record
+                              ? "Click to view detailed breakdown"
+                              : undefined
+                          }
                         >
                           {latestCo2Record
                             ? `${Number(latestCo2Record.co2e).toFixed(2)} ${latestCo2Record.units}`
                             : "N/A"}
                         </div>
-                        
+
                         {latestCo2Record && (
                           <div className="text-xs text-muted-foreground space-y-1">
                             <div className="flex items-center gap-1">
                               <Calendar className="h-3 w-3" />
-                              Calculated on {new Date(latestCo2Record.createdAt).toLocaleDateString()}
+                              Calculated on{" "}
+                              {new Date(
+                                latestCo2Record.createdAt,
+                              ).toLocaleDateString()}
                             </div>
                             <div className="flex items-center gap-1">
                               <RefreshCcw className="h-3 w-3" />
@@ -579,14 +587,14 @@ export const AssetDetailView: React.FC<{
                             </div>
                           </div>
                         )}
-                        
+
                         {!latestCo2Record && (
                           <p className="text-xs text-muted-foreground">
                             Environmental impact not yet calculated
                           </p>
                         )}
                       </div>
-                      
+
                       <Button
                         size="sm"
                         className="w-full mt-4"

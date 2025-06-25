@@ -156,9 +156,12 @@ export function DataTable<TData, TValue>({
               <div className="space-y-3">
                 {row.getVisibleCells().map((cell) => {
                   const header = cell.column.columnDef.header;
-                  const headerText = typeof header === 'function' 
-                    ? String(cell.column.id).replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())
-                    : header;
+                  const headerText =
+                    typeof header === "function"
+                      ? String(cell.column.id)
+                          .replace(/([A-Z])/g, " $1")
+                          .replace(/^./, (str) => str.toUpperCase())
+                      : header;
                   return (
                     <div
                       key={cell.id}

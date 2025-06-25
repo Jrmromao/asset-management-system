@@ -20,66 +20,72 @@ interface SidebarLinkProps {
   isCollapsed: boolean;
 }
 
-const SidebarLink = React.memo(({ item, isActive, isCollapsed }: SidebarLinkProps) => {
-  return (
-    <div className="relative group">
-      <Link
-        href={item.route}
-        className={cn(
-          "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200",
-          {
-            "bg-green-600 text-white shadow-md": isActive,
-            "text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white": !isActive,
-            "justify-center px-3": isCollapsed,
-          }
+const SidebarLink = React.memo(
+  ({ item, isActive, isCollapsed }: SidebarLinkProps) => {
+    return (
+      <div className="relative group">
+        <Link
+          href={item.route}
+          className={cn(
+            "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200",
+            {
+              "bg-green-600 text-white shadow-md": isActive,
+              "text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white":
+                !isActive,
+              "justify-center px-3": isCollapsed,
+            },
+          )}
+          aria-current={isActive ? "page" : undefined}
+        >
+          <div className="relative size-5 flex-shrink-0">
+            <Image
+              src={item.imgURL}
+              alt={`${item.label} icon`}
+              fill
+              className={cn(
+                "object-contain transition-transform duration-200",
+                {
+                  "brightness-[3] invert-0": isActive,
+                  "group-hover:scale-110": !isActive,
+                },
+              )}
+              priority
+            />
+          </div>
+          {!isCollapsed && <span className="font-medium">{item.label}</span>}
+        </Link>
+
+        {/* Enhanced Tooltip for collapsed state */}
+        {isCollapsed && (
+          <div className="absolute left-full ml-3 px-3 py-2 bg-gray-900/95 backdrop-blur-sm text-white text-sm font-medium rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none whitespace-nowrap z-50 shadow-xl border border-gray-700/50 transform scale-95 group-hover:scale-100">
+            {item.label}
+            {/* Enhanced Tooltip arrow */}
+            <div className="absolute left-0 top-1/2 transform -translate-x-1 -translate-y-1/2 w-0 h-0 border-l-4 border-r-0 border-t-4 border-b-4 border-transparent border-r-gray-900/95"></div>
+          </div>
         )}
-        aria-current={isActive ? "page" : undefined}
-      >
-        <div className="relative size-5 flex-shrink-0">
-          <Image
-            src={item.imgURL}
-            alt={`${item.label} icon`}
-            fill
-            className={cn("object-contain transition-transform duration-200", {
-              "brightness-[3] invert-0": isActive,
-              "group-hover:scale-110": !isActive,
-            })}
-            priority
-          />
-        </div>
-        {!isCollapsed && <span className="font-medium">{item.label}</span>}
-      </Link>
-      
-      {/* Enhanced Tooltip for collapsed state */}
-      {isCollapsed && (
-        <div className="absolute left-full ml-3 px-3 py-2 bg-gray-900/95 backdrop-blur-sm text-white text-sm font-medium rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none whitespace-nowrap z-50 shadow-xl border border-gray-700/50 transform scale-95 group-hover:scale-100">
-          {item.label}
-          {/* Enhanced Tooltip arrow */}
-          <div className="absolute left-0 top-1/2 transform -translate-x-1 -translate-y-1/2 w-0 h-0 border-l-4 border-r-0 border-t-4 border-b-4 border-transparent border-r-gray-900/95"></div>
-        </div>
-      )}
-    </div>
-  );
-});
+      </div>
+    );
+  },
+);
 
 SidebarLink.displayName = "SidebarLink";
 
 const Sidebar = () => {
   const pathName = usePathname();
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true);
 
   const toggleSidebar = () => {
     setIsCollapsed(!isCollapsed);
   };
 
   return (
-    <aside 
+    <aside
       className={cn(
-        "bg-white border-r border-gray-100 dark:bg-gray-900 dark:border-gray-800 shadow-sm transition-all duration-300 ease-in-out h-screen sticky top-0",
+        "bg-white border-r border-gray-100 dark:bg-gray-900 dark:border-gray-800 shadow-sm transition-all duration-300 ease-in-out h-screen sticky top-0 z-40",
         {
           "w-20": isCollapsed,
           "w-72": !isCollapsed,
-        }
+        },
       )}
     >
       <div className="flex flex-col h-full">
@@ -94,7 +100,7 @@ const Sidebar = () => {
                 {
                   "ml-auto": !isCollapsed,
                   "mx-auto": isCollapsed,
-                }
+                },
               )}
               aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
             >
@@ -109,13 +115,13 @@ const Sidebar = () => {
 
         {/* Navigation */}
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-       
-          
           {sidebarLinks.map((item) => (
             <SidebarLink
               key={item.label}
               item={item}
-              isActive={pathName === item.route || pathName.startsWith(`${item.route}/`)}
+              isActive={
+                pathName === item.route || pathName.startsWith(`${item.route}/`)
+              }
               isCollapsed={isCollapsed}
             />
           ))}

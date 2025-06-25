@@ -4,16 +4,16 @@ import React, { useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { 
-  BookOpen, 
-  Zap, 
-  Wrench, 
-  ExternalLink, 
-  X, 
+import {
+  BookOpen,
+  Zap,
+  Wrench,
+  ExternalLink,
+  X,
   Sparkles,
   Clock,
   CheckCircle,
-  ArrowRight
+  ArrowRight,
 } from "lucide-react";
 
 interface DocumentationAnnouncementProps {
@@ -21,10 +21,9 @@ interface DocumentationAnnouncementProps {
   showDismiss?: boolean;
 }
 
-export const DocumentationAnnouncement: React.FC<DocumentationAnnouncementProps> = ({ 
-  onDismiss, 
-  showDismiss = true 
-}) => {
+export const DocumentationAnnouncement: React.FC<
+  DocumentationAnnouncementProps
+> = ({ onDismiss, showDismiss = true }) => {
   const [isDismissed, setIsDismissed] = useState(false);
 
   const handleDismiss = () => {
@@ -42,26 +41,26 @@ export const DocumentationAnnouncement: React.FC<DocumentationAnnouncementProps>
       time: "10 min read",
       href: "/docs/maintenance-flows-quickstart.md",
       color: "bg-green-500",
-      highlight: "New User Friendly"
+      highlight: "New User Friendly",
     },
     {
       icon: <BookOpen className="w-5 h-5" />,
       title: "Complete Guide",
       description: "Master every feature with real-world examples",
-      time: "25 min read", 
+      time: "25 min read",
       href: "/docs/maintenance-flows-guide.md",
       color: "bg-blue-500",
-      highlight: "Comprehensive"
+      highlight: "Comprehensive",
     },
     {
       icon: <Wrench className="w-5 h-5" />,
       title: "Troubleshooting",
       description: "Quick solutions to common problems",
       time: "5 min read",
-      href: "/docs/maintenance-flows-troubleshooting.md", 
+      href: "/docs/maintenance-flows-troubleshooting.md",
       color: "bg-orange-500",
-      highlight: "Problem Solver"
-    }
+      highlight: "Problem Solver",
+    },
   ];
 
   return (
@@ -77,7 +76,7 @@ export const DocumentationAnnouncement: React.FC<DocumentationAnnouncementProps>
             <X className="h-4 w-4" />
           </Button>
         )}
-        
+
         <div className="flex items-center space-x-3">
           <div className="flex items-center justify-center w-12 h-12 bg-blue-500 rounded-full">
             <Sparkles className="w-6 h-6 text-white" />
@@ -87,12 +86,16 @@ export const DocumentationAnnouncement: React.FC<DocumentationAnnouncementProps>
               <h3 className="text-xl font-bold text-gray-900 dark:text-white">
                 New Documentation Available!
               </h3>
-              <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+              <Badge
+                variant="secondary"
+                className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+              >
                 Just Released
               </Badge>
             </div>
             <p className="text-gray-600 dark:text-gray-300 mt-1">
-              Master maintenance flows with our comprehensive guides written by experts
+              Master maintenance flows with our comprehensive guides written by
+              experts
             </p>
           </div>
         </div>
@@ -102,11 +105,20 @@ export const DocumentationAnnouncement: React.FC<DocumentationAnnouncementProps>
         {/* Key Benefits */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {[
-            { icon: <Clock className="w-4 h-4" />, text: "Save 2+ hours weekly" },
-            { icon: <CheckCircle className="w-4 h-4" />, text: "Reduce manual errors" },
-            { icon: <Zap className="w-4 h-4" />, text: "Automate workflows" }
+            {
+              icon: <Clock className="w-4 h-4" />,
+              text: "Save 2+ hours weekly",
+            },
+            {
+              icon: <CheckCircle className="w-4 h-4" />,
+              text: "Reduce manual errors",
+            },
+            { icon: <Zap className="w-4 h-4" />, text: "Automate workflows" },
           ].map((benefit, index) => (
-            <div key={index} className="flex items-center space-x-2 text-gray-700 dark:text-gray-300">
+            <div
+              key={index}
+              className="flex items-center space-x-2 text-gray-700 dark:text-gray-300"
+            >
               <div className="text-green-500">{benefit.icon}</div>
               <span className="text-sm font-medium">{benefit.text}</span>
             </div>
@@ -119,7 +131,7 @@ export const DocumentationAnnouncement: React.FC<DocumentationAnnouncementProps>
             <div
               key={index}
               className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:shadow-md transition-shadow cursor-pointer group"
-              onClick={() => window.open(guide.href, '_blank')}
+              onClick={() => window.open(guide.href, "_blank")}
             >
               <div className="flex items-start justify-between mb-3">
                 <div className={`p-2 rounded-lg ${guide.color} text-white`}>
@@ -129,15 +141,15 @@ export const DocumentationAnnouncement: React.FC<DocumentationAnnouncementProps>
                   {guide.highlight}
                 </Badge>
               </div>
-              
+
               <h4 className="font-semibold text-gray-900 dark:text-white mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                 {guide.title}
               </h4>
-              
+
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-3 line-clamp-2">
                 {guide.description}
               </p>
-              
+
               <div className="flex items-center justify-between">
                 <span className="text-xs text-gray-500 dark:text-gray-500 flex items-center">
                   <Clock className="w-3 h-3 mr-1" />
@@ -164,20 +176,22 @@ export const DocumentationAnnouncement: React.FC<DocumentationAnnouncementProps>
               </p>
             </div>
           </div>
-          
+
           <div className="flex space-x-2">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               size="sm"
-              onClick={() => window.open('/docs/README.md', '_blank')}
+              onClick={() => window.open("/docs/README.md", "_blank")}
               className="flex items-center space-x-1"
             >
               <BookOpen className="w-4 h-4" />
               <span>Browse All Docs</span>
             </Button>
-            <Button 
+            <Button
               size="sm"
-              onClick={() => window.open('/docs/maintenance-flows-quickstart.md', '_blank')}
+              onClick={() =>
+                window.open("/docs/maintenance-flows-quickstart.md", "_blank")
+              }
               className="flex items-center space-x-1 bg-blue-600 hover:bg-blue-700"
             >
               <Zap className="w-4 h-4" />
@@ -194,16 +208,32 @@ export const DocumentationAnnouncement: React.FC<DocumentationAnnouncementProps>
           </h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {[
-              { name: "High-Value Asset Protection", desc: "Auto-require approval for expensive equipment" },
-              { name: "Emergency Response", desc: "Fast-track critical maintenance" },
-              { name: "Preventive Maintenance Loop", desc: "Never miss scheduled maintenance" },
-              { name: "Budget Alert System", desc: "Flag when costs exceed limits" }
+              {
+                name: "High-Value Asset Protection",
+                desc: "Auto-require approval for expensive equipment",
+              },
+              {
+                name: "Emergency Response",
+                desc: "Fast-track critical maintenance",
+              },
+              {
+                name: "Preventive Maintenance Loop",
+                desc: "Never miss scheduled maintenance",
+              },
+              {
+                name: "Budget Alert System",
+                desc: "Flag when costs exceed limits",
+              },
             ].map((template, index) => (
               <div key={index} className="flex items-start space-x-2 text-sm">
                 <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
                 <div>
-                  <span className="font-medium text-gray-900 dark:text-white">{template.name}</span>
-                  <p className="text-gray-600 dark:text-gray-400 text-xs">{template.desc}</p>
+                  <span className="font-medium text-gray-900 dark:text-white">
+                    {template.name}
+                  </span>
+                  <p className="text-gray-600 dark:text-gray-400 text-xs">
+                    {template.desc}
+                  </p>
                 </div>
               </div>
             ))}
@@ -212,4 +242,4 @@ export const DocumentationAnnouncement: React.FC<DocumentationAnnouncementProps>
       </CardContent>
     </Card>
   );
-}; 
+};
