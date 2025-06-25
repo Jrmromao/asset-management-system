@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
     if (!assetId) {
       return NextResponse.json(
         { success: false, error: "Asset ID is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     console.error("❌ API ROUTE Error:", error);
     return NextResponse.json(
       { success: false, error: error.message },
-      { status: 500 }
+      { status: 500 },
     );
   }
-} 
+}

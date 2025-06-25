@@ -23,11 +23,12 @@ export async function POST(request: NextRequest) {
         if (!assetIds || !Array.isArray(assetIds)) {
           return NextResponse.json(
             { error: "assetIds array is required" },
-            { status: 400 }
+            { status: 400 },
           );
         }
 
-        const recommendations = await generateSmartAssignmentRecommendations(assetIds);
+        const recommendations =
+          await generateSmartAssignmentRecommendations(assetIds);
         return NextResponse.json(recommendations);
 
       case "bulk_assign":
@@ -35,7 +36,7 @@ export async function POST(request: NextRequest) {
         if (!assignments || !Array.isArray(assignments)) {
           return NextResponse.json(
             { error: "assignments array is required" },
-            { status: 400 }
+            { status: 400 },
           );
         }
 
@@ -44,7 +45,7 @@ export async function POST(request: NextRequest) {
           if (!assignment.assetId || !assignment.userId) {
             return NextResponse.json(
               { error: "Each assignment must have assetId and userId" },
-              { status: 400 }
+              { status: 400 },
             );
           }
         }
@@ -54,14 +55,21 @@ export async function POST(request: NextRequest) {
 
       case "bulk_status_update":
         const { assetIds: statusAssetIds, statusLabelId } = data;
-        if (!statusAssetIds || !Array.isArray(statusAssetIds) || !statusLabelId) {
+        if (
+          !statusAssetIds ||
+          !Array.isArray(statusAssetIds) ||
+          !statusLabelId
+        ) {
           return NextResponse.json(
             { error: "assetIds array and statusLabelId are required" },
-            { status: 400 }
+            { status: 400 },
           );
         }
 
-        const statusResult = await bulkUpdateAssetStatus(statusAssetIds, statusLabelId);
+        const statusResult = await bulkUpdateAssetStatus(
+          statusAssetIds,
+          statusLabelId,
+        );
         return NextResponse.json(statusResult);
 
       case "bulk_checkin":
@@ -69,7 +77,7 @@ export async function POST(request: NextRequest) {
         if (!checkinAssetIds || !Array.isArray(checkinAssetIds)) {
           return NextResponse.json(
             { error: "assetIds array is required" },
-            { status: 400 }
+            { status: 400 },
           );
         }
 
@@ -79,14 +87,14 @@ export async function POST(request: NextRequest) {
       default:
         return NextResponse.json(
           { error: "Invalid operation" },
-          { status: 400 }
+          { status: 400 },
         );
     }
   } catch (error) {
     console.error("Error in bulk operations:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
-} 
+}
