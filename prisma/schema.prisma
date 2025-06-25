@@ -171,6 +171,7 @@ model Accessory {
   alertEmail         String
   serialNumber       String              @default("")
   reorderPoint       Int
+  energyConsumption  Decimal?
   totalQuantityCount Int
   purchaseDate       DateTime?
   notes              String?
@@ -399,6 +400,8 @@ model Company {
   updatedAt             DateTime @updatedAt
   status                String   @default("ACTIVE")
   active                Boolean  @default(true)
+  targetEnergy          Decimal? @db.Decimal(12, 2) // Company-defined energy efficiency target (kWh)
+  targetCarbonReduction Decimal? @db.Decimal(12, 2) // Company-defined carbon reduction target (tons)
 
   // Relations
   users                        User[]
@@ -429,6 +432,13 @@ model Company {
   purchaseOrders               PurchaseOrder[]
   costOptimizationAnalyses     CostOptimizationAnalysis[]
   costBudgets                  CostBudget[]
+  maintenanceCategories        MaintenanceCategory[]
+  maintenanceTypes             MaintenanceType[]
+  reportDownloads              ReportDownload[]
+  reportCleanupLogs            ReportCleanupLog[]
+  fileProtectionRules          FileProtectionRule[]
+  cleanupPolicies              CleanupPolicy[]
+  storageAnalytics             StorageAnalytics[]
 
   @@unique([name])
 }
@@ -1007,6 +1017,54 @@ model Maintenance {
   @@index([statusLabelId])
 }
 
+// Maintenance Types and Categories
+model MaintenanceCategory {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  color       String   @default("#3B82F6")
+  isActive    Boolean  @default(true)
+  companyId   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  company         Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  maintenanceTypes MaintenanceType[]
+
+  @@unique([name, companyId])
+  @@index([companyId])
+  @@index([isActive])
+}
+
+model MaintenanceType {
+  id                String   @id @default(cuid())
+  name              String
+  description       String?
+  categoryId        String   // References MaintenanceCategory.id
+  priority          String   @default("Medium") // "Low", "Medium", "High", "Critical"
+  estimatedDuration Int      @default(1) // in hours
+  requiredSkills    Json     @default("[]") // Array of strings
+  defaultCost       Decimal  @default(0) @db.Decimal(10, 2)
+  isActive          Boolean  @default(true)
+  color             String   @default("#3B82F6")
+  icon              String   @default("wrench")
+  checklist         Json     @default("[]") // Array of ChecklistItem objects
+  customFields      Json     @default("[]") // Array of CustomField objects
+  companyId         String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  company           Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  maintenanceCategory MaintenanceCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  @@unique([name, companyId])
+  @@index([companyId])
+  @@index([categoryId])
+  @@index([isActive])
+}
+
 // Flow Rules System
 model FlowRule {
   id          String   @id @default(cuid())
@@ -1187,4 +1245,105 @@ model CostBudget {
   @@index([companyId])
   @@index([budgetYear])
   @@index([category])
+}
+
+// Smart Cleanup Engine Models
+
+// Track report downloads for analytics
+model ReportDownload {
+  id           String   @id @default(cuid())
+  companyId    String
+  filePath     String
+  userId       String?
+  downloadedAt DateTime @default(now())
+  fileSize     Int?
+  format       String?
+  reportType   String?
+
+  // Relations
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, filePath])
+  @@index([downloadedAt])
+  @@index([companyId])
+}
+
+// Track cleanup operations and decisions
+model ReportCleanupLog {
+  id          String   @id @default(cuid())
+  companyId   String
+  filePath    String
+  action      String   // DELETE, ARCHIVE, COMPRESS, PROTECT
+  spaceSaved  Int      @default(0)
+  reasoning   String?
+  confidence  Float?   // 0-1 confidence score
+  executedAt  DateTime @default(now())
+  executedBy  String?  // user ID or 'SYSTEM'
+
+  // Relations
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, executedAt])
+  @@index([companyId])
+}
+
+// Store file protection rules and metadata
+model FileProtectionRule {
+  id             String    @id @default(cuid())
+  companyId      String
+  filePath       String?
+  filePattern    String?   // regex pattern for matching files
+  protectionType String    // PERMANENT, TEMPORARY, CONDITIONAL
+  reason         String?
+  expiresAt      DateTime?
+  createdAt      DateTime  @default(now())
+  createdBy      String?
+
+  // Relations
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, filePath])
+  @@index([companyId])
+}
+
+// Store cleanup policies per company
+model CleanupPolicy {
+  id           String   @id @default(cuid())
+  companyId    String
+  name         String
+  format       String   // pdf, xlsx, csv, etc.
+  retentionDays Int
+  maxFiles     Int?
+  maxSizeGB    Float?
+  priority     String   @default("medium") // low, medium, high
+  enabled      Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([name, companyId])
+  @@index([companyId, format])
+  @@index([companyId])
+}
+
+// Store smart cleanup analytics and insights
+model StorageAnalytics {
+  id                   String   @id @default(cuid())
+  companyId            String
+  analysisDate         DateTime @default(now())
+  totalFiles           Int
+  totalSizeBytes       BigInt
+  averageFileAge       Int?     // days
+  duplicateFiles       Int?
+  unusedFiles          Int?
+  compressionPotential Float?   // percentage
+  insights             String?  // JSON string with detailed insights
+
+  // Relations
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([analysisDate])
 }

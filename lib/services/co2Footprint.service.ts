@@ -1,7 +1,9 @@
 import { prisma } from "@/app/db";
-import { calculateAssetCo2, createCo2eRecord } from "./ai.service";
+import { calculateAssetCo2 } from "./ai-multi-provider.service";
+import { createCo2eRecord } from "./ai.service";
 import { CO2CalculationResult } from "@/types/co2";
 import { Prisma } from "@prisma/client";
+import { CO2ConsistencyService } from "./co2-consistency.service";
 
 export interface CO2FootprintStats {
   totalAssets: number;
@@ -141,17 +143,17 @@ export class CO2FootprintService {
         };
       }
 
-
-
-      // Calculate CO2 using AI service
-      const co2Result = await calculateAssetCo2(
+      // Calculate CO2 using consistency service for deterministic results
+      const co2Result = await CO2ConsistencyService.calculateConsistentCO2(
         asset.name,
         asset.model.manufacturer.name,
         asset.model.name,
+        asset.category?.name,
+        false // Use cached results when available
       );
 
       if (!co2Result.success) {
-        console.error(`❌ AI service returned error:`, co2Result.error);
+        console.error(`❌ Consistency service returned error:`, co2Result.error);
         return {
           success: false,
           error: co2Result.error || "Failed to calculate CO2",
@@ -159,17 +161,17 @@ export class CO2FootprintService {
       }
 
       if (!co2Result.data) {
-        console.error(`❌ AI service returned no data`);
+        console.error(`❌ Consistency service returned no data`);
         return {
           success: false,
-          error: "AI service returned no data",
+          error: "Consistency service returned no data",
         };
       }
 
       // Validate the returned data
       if (!co2Result.data.totalCo2e || co2Result.data.totalCo2e === 0) {
         console.error(
-          `❌ AI service returned invalid CO2e value:`,
+          `❌ Consistency service returned invalid CO2e value:`,
           co2Result.data.totalCo2e,
         );
         return {
@@ -177,6 +179,10 @@ export class CO2FootprintService {
           error: `Invalid CO2e value returned: ${co2Result.data.totalCo2e}`,
         };
       }
+
+      // Log whether result came from cache or new calculation
+      console.log(`${co2Result.source === 'cache' ? '♻️' : '🔄'} CO2 calculation ${co2Result.source} for fingerprint: ${co2Result.fingerprint}`);
+      console.log(`📊 Total CO2e: ${co2Result.data.totalCo2e} ${co2Result.data.units}`);
 
 
 
