@@ -54,7 +54,7 @@ export const sidebarLinks = [
     visibleTo: [roles.ADMIN],
   },
   {
-    imgURL: "/icons/maintenance-icon.svg",
+    imgURL: "/icons/maintenance-flows-icon.svg",
     route: "/maintenance-flows",
     label: "Maintenance Flows",
     visibleTo: [roles.ADMIN],

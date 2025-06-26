@@ -9,14 +9,7 @@ import { cookies } from "next/headers";
 import { z } from "zod";
 import { statusLabelSchema } from "@/lib/schemas";
 import type { StatusLabel } from "@prisma/client";
-
-const getSession = () => {
-  const cookieStore = cookies();
-  return {
-    accessToken: cookieStore.get("sb-access-token")?.value,
-    refreshToken: cookieStore.get("sb-refresh-token")?.value,
-  };
-};
+import { createAuditLog } from "@/lib/actions/auditLog.actions";
 
 export const insert = withAuth(
   async (
@@ -60,6 +53,14 @@ export const insert = withAuth(
           allowLoan: data.allowLoan ?? true,
           companyId: user.user_metadata.companyId,
         },
+      });
+
+      await createAuditLog({
+        companyId: user.user_metadata.companyId,
+        action: "STATUS_LABEL_CREATED",
+        entity: "STATUS_LABEL",
+        entityId: result.id,
+        details: `Status label created: ${result.name} by user ${user.id}`,
       });
 
       console.log("Database insert successful:", result);
@@ -201,6 +202,14 @@ export const remove = withAuth(
         },
       });
 
+      await createAuditLog({
+        companyId: user.user_metadata.companyId,
+        action: "STATUS_LABEL_DELETED",
+        entity: "STATUS_LABEL",
+        entityId: label.id,
+        details: `Status label deleted: ${label.name} by user ${user.id}`,
+      });
+
       revalidatePath("/status-labels");
       return { success: true, data: parseStringify(label) };
     } catch (error) {
@@ -260,6 +269,14 @@ export const update = withAuth(
           allowLoan: data.allowLoan,
           description: data.description,
         },
+      });
+
+      await createAuditLog({
+        companyId: user.user_metadata.companyId,
+        action: "STATUS_LABEL_UPDATED",
+        entity: "STATUS_LABEL",
+        entityId: label.id,
+        details: `Status label updated: ${label.name} by user ${user.id}`,
       });
 
       revalidatePath("/status-labels");

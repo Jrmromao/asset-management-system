@@ -1,5 +1,6 @@
 import { prisma } from "@/app/db";
 import S3Service from "@/services/aws/S3";
+import { createAuditLog } from "@/lib/actions/auditLog.actions";
 
 interface CleanupStats {
   deletedReports: number;
@@ -111,6 +112,13 @@ export class ReportCleanupService {
             await this.deleteReport(companyId, report.id);
             stats.deletedReports++;
             stats.freedSpace += report.fileSize;
+            await createAuditLog({
+              companyId: companyId,
+              action: 'REPORT_DELETED',
+              entity: 'REPORT_CLEANUP',
+              entityId: report.id,
+              details: `Report ${report.id} deleted during cleanup for company ${companyId}`,
+            });
           } catch (error) {
             stats.errors.push(`Failed to delete report ${report.id}: ${error}`);
           }
@@ -123,6 +131,13 @@ export class ReportCleanupService {
         try {
           await this.s3Service.deleteFile(companyId, fileKey);
           stats.deletedFiles++;
+          await createAuditLog({
+            companyId: companyId,
+            action: 'ORPHANED_FILE_DELETED',
+            entity: 'REPORT_CLEANUP',
+            entityId: fileKey,
+            details: `Orphaned file ${fileKey} deleted during cleanup for company ${companyId}`,
+          });
         } catch (error) {
           stats.errors.push(`Failed to delete orphaned file ${fileKey}: ${error}`);
         }
@@ -219,6 +234,13 @@ export class ReportCleanupService {
         if (file.Key) {
           const fileKey = file.Key.replace(`companies/${companyId}/`, '');
           await this.s3Service.deleteFile(companyId, fileKey);
+          await createAuditLog({
+            companyId: companyId,
+            action: 'ORPHANED_FILE_DELETED',
+            entity: 'REPORT_CLEANUP',
+            entityId: fileKey,
+            details: `Orphaned file ${fileKey} deleted during cleanup for company ${companyId}`,
+          });
         }
       }
     } catch (s3Error) {
@@ -254,6 +276,13 @@ export class ReportCleanupService {
           await this.deleteReport(report.companyId, report.id);
           stats.deletedReports++;
           stats.freedSpace += report.fileSize;
+          await createAuditLog({
+            companyId: report.companyId,
+            action: 'REPORTS_DELETED_FOR_CONFIGURATION',
+            entity: 'REPORT_CLEANUP',
+            entityId: configurationId,
+            details: `Reports deleted for configuration ${configurationId} (company ${report.companyId})`,
+          });
         } catch (error) {
           stats.errors.push(`Failed to delete report ${report.id}: ${error}`);
         }
@@ -295,6 +324,13 @@ export class ReportCleanupService {
           if (file.Key) {
             const fileKey = file.Key.replace(`companies/${companyId}/`, '');
             await this.s3Service.deleteFile(companyId, fileKey);
+            await createAuditLog({
+              companyId: companyId,
+              action: 'ORPHANED_FILE_DELETED',
+              entity: 'REPORT_CLEANUP',
+              entityId: fileKey,
+              details: `Orphaned file ${fileKey} deleted during cleanup for company ${companyId}`,
+            });
           }
         }
       } catch (s3Error) {
@@ -307,6 +343,13 @@ export class ReportCleanupService {
       });
       
       stats.deletedReports = deleteResult.count;
+      await createAuditLog({
+        companyId: companyId,
+        action: 'ALL_REPORTS_DELETED',
+        entity: 'REPORT_CLEANUP',
+        entityId: companyId,
+        details: `All reports deleted for company ${companyId}`,
+      });
 
     } catch (error) {
       stats.errors.push(`Failed to delete company reports: ${error}`);

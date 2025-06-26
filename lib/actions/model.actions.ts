@@ -10,6 +10,7 @@ import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import type { ModelWithRelations } from "@/types/model";
 import { Model } from "@prisma/client";
+import { createAuditLog } from "@/lib/actions/auditLog.actions";
 
 type ActionResponse<T> = {
   data?: T;
@@ -71,6 +72,14 @@ export const insert = withAuth(
           data: null as unknown as ModelWithRelations,
         };
       }
+
+      await createAuditLog({
+        companyId: user.user_metadata.companyId,
+        action: "MODEL_CREATED",
+        entity: "MODEL",
+        entityId: model.id,
+        details: `Model created: ${model.name} by user ${user.id}`,
+      });
 
       revalidatePath("/models");
       return {
@@ -179,6 +188,14 @@ export const remove = withAuth(
         },
       });
 
+      await createAuditLog({
+        companyId: user.user_metadata?.companyId,
+        action: "MODEL_DELETED",
+        entity: "MODEL",
+        entityId: id,
+        details: `Model deleted: ${id} by user ${user.id}`,
+      });
+
       revalidatePath("/models");
       return {
         success: true,
@@ -235,6 +252,14 @@ export const update = withAuth(
           data: null as unknown as ModelWithRelations,
         };
       }
+
+      await createAuditLog({
+        companyId: user.user_metadata.companyId,
+        action: "MODEL_UPDATED",
+        entity: "MODEL",
+        entityId: model.id,
+        details: `Model updated: ${model.name} by user ${user.id}`,
+      });
 
       revalidatePath("/models");
       return {

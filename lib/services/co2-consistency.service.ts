@@ -3,6 +3,7 @@ import { calculateAssetCo2 } from "./ai-multi-provider.service";
 import { CO2CalculationResult } from "@/types/co2";
 import crypto from "crypto";
 import { Redis } from "@upstash/redis";
+import { createAuditLog } from "@/lib/actions/auditLog.actions";
 
 // Initialize Upstash Redis client
 const redis = new Redis({
@@ -236,6 +237,7 @@ export class CO2ConsistencyService {
    * Calculate CO2 with consistency checks
    */
   static async calculateConsistentCO2(
+    companyId: string,
     assetName: string,
     manufacturer: string,
     model: string,
@@ -275,6 +277,13 @@ export class CO2ConsistencyService {
             const cachedData = JSON.parse(redisCached as string);
             if (this.validateCO2Data(cachedData) && cachedData.confidenceScore >= 0.8) {
               console.log(`♻️ [REDIS] Using cached HIGH-CONFIDENCE CO2 for fingerprint: ${assetFingerprint}`);
+              await createAuditLog({
+                companyId,
+                action: 'CO2_CALCULATED',
+                entity: 'CO2_CALCULATION',
+                entityId: assetName || assetFingerprint,
+                details: `CO2 calculated for asset ${assetName} (${manufacturer} ${model})`,
+              });
               return {
                 success: true,
                 data: cachedData,
@@ -315,6 +324,13 @@ export class CO2ConsistencyService {
                 console.log(
                   `♻️ Using cached HIGH-CONFIDENCE CO2 calculation for fingerprint: ${assetFingerprint}`,
                 );
+                await createAuditLog({
+                  companyId,
+                  action: 'CO2_CALCULATED',
+                  entity: 'CO2_CALCULATION',
+                  entityId: assetName || assetFingerprint,
+                  details: `CO2 calculated for asset ${assetName} (${manufacturer} ${model})`,
+                });
                 return {
                   success: true,
                   data: cachedData,
@@ -385,7 +401,15 @@ export class CO2ConsistencyService {
       }
 
       // Store the calculation for future use in DB
-      await this.storeCO2Calculation(assetFingerprint, enhancedData);
+      await this.storeCO2Calculation(companyId, assetFingerprint, enhancedData);
+
+      await createAuditLog({
+        companyId,
+        action: 'CO2_CALCULATED',
+        entity: 'CO2_CALCULATION',
+        entityId: assetName || assetFingerprint,
+        details: `CO2 calculated for asset ${assetName} (${manufacturer} ${model})`,
+      });
 
       return {
         success: true,
@@ -408,6 +432,7 @@ export class CO2ConsistencyService {
    * Store CO2 calculation for future reuse
    */
   private static async storeCO2Calculation(
+    companyId: string,
     fingerprint: string,
     co2Data: any,
   ): Promise<void> {
@@ -432,6 +457,13 @@ export class CO2ConsistencyService {
       });
 
       console.log(`💾 Stored CO2 calculation for fingerprint: ${fingerprint}`);
+      await createAuditLog({
+        companyId,
+        action: 'CO2_CALCULATION_STORED',
+        entity: 'CO2_CALCULATION',
+        entityId: fingerprint,
+        details: `CO2 calculation stored for fingerprint ${fingerprint}`,
+      });
     } catch (error) {
       console.warn(`⚠️ Failed to store CO2 calculation:`, error);
       // Don't fail the main calculation if storage fails
@@ -528,6 +560,7 @@ export class CO2ConsistencyService {
    * Clear cached CO2 calculations (for admin use)
    */
   static async clearCO2Cache(
+    companyId: string,
     fingerprint?: string,
   ): Promise<{ success: boolean; deletedCount: number }> {
     try {
@@ -543,6 +576,14 @@ export class CO2ConsistencyService {
 
       const result = await prisma.co2eRecord.deleteMany({
         where: whereClause,
+      });
+
+      await createAuditLog({
+        companyId,
+        action: 'CO2_CACHE_CLEARED',
+        entity: 'CO2_CACHE',
+        entityId: fingerprint,
+        details: `CO2 cache cleared for fingerprint ${fingerprint}`,
       });
 
       return { success: true, deletedCount: result.count };

@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import { prisma } from "@/app/db";
+import { createAuditLog } from "@/lib/actions/auditLog.actions";
 
 // Check environment variables
 console.log("🔧 AI Cost Optimization Service: Environment check", {
@@ -229,6 +230,14 @@ export async function analyzeLicenseCostOptimization(
     // Store the analysis for tracking and reporting
     await storeCostOptimizationAnalysis(user.companyId, analysis, "license");
 
+    await createAuditLog({
+      companyId: user.companyId,
+      action: 'LICENSE_COST_OPTIMIZED',
+      entity: 'COST_OPTIMIZATION',
+      entityId: user.companyId,
+      details: `License cost optimization analysis performed for company ${user.companyId}`,
+    });
+
     return { success: true, data: analysis };
   } catch (error) {
     console.error("Error in license cost optimization analysis:", error);
@@ -388,6 +397,14 @@ export async function analyzeAccessoryCostOptimization(
     // Store the analysis for tracking and reporting
     await storeCostOptimizationAnalysis(user.companyId, analysis, "accessory");
 
+    await createAuditLog({
+      companyId: user.companyId,
+      action: 'ACCESSORY_COST_OPTIMIZED',
+      entity: 'COST_OPTIMIZATION',
+      entityId: user.companyId,
+      details: `Accessory cost optimization analysis performed for company ${user.companyId}`,
+    });
+
     return { success: true, data: analysis };
   } catch (error) {
     console.error("Error in accessory cost optimization analysis:", error);
@@ -477,6 +494,14 @@ export async function generateCostForecast(
 
     // Store forecast for tracking
     await storeCostForecast(companyId, forecast, forecastPeriod);
+
+    await createAuditLog({
+      companyId: companyId,
+      action: 'COST_FORECAST_GENERATED',
+      entity: 'COST_OPTIMIZATION',
+      entityId: companyId,
+      details: `Cost forecast generated for company ${companyId}`,
+    });
 
     return { success: true, data: forecast };
   } catch (error) {
@@ -840,6 +865,13 @@ async function storeCostOptimizationAnalysis(
     console.log(
       `✅ Stored ${type} cost optimization analysis with ${analysis.recommendations?.length || 0} recommendations`,
     );
+    await createAuditLog({
+      companyId: companyId,
+      action: 'COST_OPTIMIZATION_ANALYSIS_STORED',
+      entity: 'COST_OPTIMIZATION',
+      entityId: companyId,
+      details: `Cost optimization analysis stored for company ${companyId}`,
+    });
     return analysisRecord;
   } catch (error) {
     console.error("Error storing cost optimization analysis:", error);
@@ -951,6 +983,13 @@ async function storeCostForecast(
       `Storing cost forecast for company ${companyId}, period: ${period} months`,
     );
     // Implementation would store forecast in database
+    await createAuditLog({
+      companyId: companyId,
+      action: 'COST_FORECAST_STORED',
+      entity: 'COST_OPTIMIZATION',
+      entityId: companyId,
+      details: `Cost forecast stored for company ${companyId}`,
+    });
   } catch (error) {
     console.error("Error storing cost forecast:", error);
   }

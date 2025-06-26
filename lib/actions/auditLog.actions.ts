@@ -81,6 +81,14 @@ export const getAuditLog = withAuth(async (user, entityId: string) => {
       return { success: false, error: "Audit log not found" };
     }
 
+    await createAuditLog({
+      companyId: user.user_metadata?.companyId,
+      action: "AUDIT_LOG_VIEWED",
+      entity: "AUDIT_LOG",
+      entityId,
+      details: `Audit log viewed by user ${user.id} for entityId ${entityId}`,
+    });
+
     return {
       success: true,
       data: auditLog,
@@ -137,6 +145,13 @@ export const getAuditLogs = withAuth(
         },
         skip: (page - 1) * limit,
         take: limit,
+      });
+
+      await createAuditLog({
+        companyId: user.user_metadata?.companyId,
+        action: "AUDIT_LOG_VIEWED",
+        entity: "AUDIT_LOG",
+        details: `Audit logs viewed by user ${user.id} with filters: ${JSON.stringify(filters)}`,
       });
 
       return {

@@ -44,14 +44,6 @@ export async function createPricingPlan(
       },
     });
 
-    await createAuditLog({
-      companyId: undefined, // Set companyId if available in your context
-      action: "PRICING_PLAN_CREATED",
-      entity: "PRICING_PLAN",
-      entityId: pricingPlan.id,
-      details: `Pricing plan created: ${pricingPlan.name}`,
-    });
-
     return { success: true, data: pricingPlan };
   } catch (error) {
     return {

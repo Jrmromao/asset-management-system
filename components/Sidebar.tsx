@@ -9,6 +9,8 @@ import React, { useState } from "react";
 import HeaderIcon from "@/components/page/HeaderIcon";
 import Footer from "./Footer";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
+import * as TooltipPrimitive from "@radix-ui/react-tooltip";
 
 interface SidebarLinkProps {
   item: {
@@ -23,47 +25,52 @@ interface SidebarLinkProps {
 const SidebarLink = React.memo(
   ({ item, isActive, isCollapsed }: SidebarLinkProps) => {
     return (
-      <div className="relative group">
-        <Link
-          href={item.route}
-          className={cn(
-            "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200",
-            {
-              "bg-green-600 text-white shadow-md": isActive,
-              "text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white":
-                !isActive,
-              "justify-center px-3": isCollapsed,
-            },
-          )}
-          aria-current={isActive ? "page" : undefined}
-        >
-          <div className="relative size-5 flex-shrink-0">
-            <Image
-              src={item.imgURL}
-              alt={`${item.label} icon`}
-              fill
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Link
+              href={item.route}
               className={cn(
-                "object-contain transition-transform duration-200",
+                "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200",
                 {
-                  "brightness-[3] invert-0": isActive,
-                  "group-hover:scale-110": !isActive,
+                  "bg-green-600 text-white shadow-md": isActive,
+                  "text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white":
+                    !isActive,
+                  "justify-center px-3": isCollapsed,
                 },
               )}
-              priority
-            />
-          </div>
-          {!isCollapsed && <span className="font-medium">{item.label}</span>}
-        </Link>
-
-        {/* Enhanced Tooltip for collapsed state */}
-        {isCollapsed && (
-          <div className="absolute left-full ml-3 px-3 py-2 bg-gray-900/95 backdrop-blur-sm text-white text-sm font-medium rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none whitespace-nowrap z-50 shadow-xl border border-gray-700/50 transform scale-95 group-hover:scale-100">
-            {item.label}
-            {/* Enhanced Tooltip arrow */}
-            <div className="absolute left-0 top-1/2 transform -translate-x-1 -translate-y-1/2 w-0 h-0 border-l-4 border-r-0 border-t-4 border-b-4 border-transparent border-r-gray-900/95"></div>
-          </div>
-        )}
-      </div>
+              aria-current={isActive ? "page" : undefined}
+            >
+              <div className="relative size-5 flex-shrink-0">
+                <Image
+                  src={item.imgURL}
+                  alt={`${item.label} icon`}
+                  fill
+                  className={cn(
+                    "object-contain transition-transform duration-200",
+                    {
+                      "brightness-[3] invert-0": isActive,
+                      "group-hover:scale-110": !isActive,
+                    },
+                  )}
+                  priority
+                />
+              </div>
+              {!isCollapsed && <span className="font-medium">{item.label}</span>}
+            </Link>
+          </TooltipTrigger>
+          {isCollapsed && (
+            <TooltipContent
+              side="right"
+              sideOffset={8}
+              className="bg-green-700 text-white px-4 py-2 rounded-xl shadow-lg font-semibold border border-green-800 transition-all duration-200 scale-95 data-[state=open]:scale-100"
+            >
+              {item.label}
+              <TooltipPrimitive.Arrow className="fill-green-700" />
+            </TooltipContent>
+          )}
+        </Tooltip>
+      </TooltipProvider>
     );
   },
 );
@@ -81,7 +88,7 @@ const Sidebar = () => {
   return (
     <aside
       className={cn(
-        "bg-white border-r border-gray-100 dark:bg-gray-900 dark:border-gray-800 shadow-sm transition-all duration-300 ease-in-out h-screen sticky top-0 z-40",
+        "bg-white border-r border-gray-100 dark:bg-gray-900 dark:border-gray-800 shadow-sm transition-all duration-300 ease-in-out h-screen sticky top-0 z-40 overflow-visible",
         {
           "w-20": isCollapsed,
           "w-72": !isCollapsed,

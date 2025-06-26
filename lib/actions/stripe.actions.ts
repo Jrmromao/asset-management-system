@@ -2,6 +2,7 @@
 
 import Stripe from "stripe";
 import { prisma } from "@/app/db";
+import { createAuditLog } from "@/lib/actions/auditLog.actions";
 
 // Validate all required environment variables
 const requiredEnvVars = {
@@ -75,6 +76,14 @@ export async function createCheckoutSession({
       },
       success_url: `${process.env.NEXTAUTH_URL}/onboarding-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.NEXTAUTH_URL}/`,
+    });
+
+    await createAuditLog({
+      companyId,
+      action: "CHECKOUT_SESSION_CREATED",
+      entity: "STRIPE_CHECKOUT",
+      entityId: session.id,
+      details: `Stripe checkout session created for ${email} (assets: ${assetCount}, billing: ${billingCycle})`,
     });
 
     return { success: true, session };

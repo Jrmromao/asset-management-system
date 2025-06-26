@@ -3,6 +3,7 @@
 import { withAuth } from "@/lib/middleware/withAuth";
 import { smartCleanupEngine } from "@/lib/services/smart-cleanup-engine-simple.service";
 import { prisma } from "@/app/db";
+import { createAuditLog } from "@/lib/actions/auditLog.actions";
 
 interface CleanupPolicy {
   format: string;
@@ -182,6 +183,13 @@ export const executeSingleRecommendation = withAuth(async (user, recommendation:
             executedBy: user.id,
           }
         });
+        await createAuditLog({
+          companyId,
+          action: 'PROTECT',
+          entity: 'REPORT_CLEANUP',
+          entityId: protectionRule.id,
+          details: `File protected: ${recommendation.filePath} by user ${user.id}. Reason: ${recommendation.reasoning}`,
+        });
 
         result = {
           ...result,
@@ -204,6 +212,13 @@ export const executeSingleRecommendation = withAuth(async (user, recommendation:
             confidence: recommendation.confidence,
             executedBy: user.id,
           }
+        });
+        await createAuditLog({
+          companyId,
+          action: 'DELETE',
+          entity: 'REPORT_CLEANUP',
+          entityId: recommendation.filePath,
+          details: `File deleted: ${recommendation.filePath} by user ${user.id}. Reason: ${recommendation.reasoning}`,
         });
 
         result = {
@@ -292,7 +307,7 @@ export const executeAllRecommendations = withAuth(async (user, recommendations: 
 
     for (const rec of recommendations) {
       try {
-        const singleResult = await executeSingleRecommendation(user, rec);
+        const singleResult = await executeSingleRecommendation(rec);
         
         if (singleResult.success && singleResult.data.executed) {
           executedCount++;

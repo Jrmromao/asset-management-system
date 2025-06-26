@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/app/db";
 import { randomBytes } from "crypto";
 import { EmailService } from "@/services/email";
+import { createAuditLog } from "@/lib/actions/auditLog.actions";
 
 interface InviteUserParams {
   email: string;
@@ -107,6 +108,13 @@ export async function inviteUser({ email, roleId }: InviteUserParams) {
             role: "org:member",
           });
           console.log("✅ [inviteUser] Added existing user to organization");
+          await createAuditLog({
+            companyId: companyId,
+            action: "INVITATION_SENT",
+            entity: "INVITATION",
+            entityId: existingUsers.data[0].id,
+            details: `Existing user ${existingUsers.data[0].id} added to organization ${company.name}`,
+          });
           return {
             success: true,
             message:
@@ -184,6 +192,13 @@ export async function inviteUser({ email, roleId }: InviteUserParams) {
         role: "org:member",
       });
       console.log("✅ [inviteUser] Clerk invitation created:", invitation.id);
+      await createAuditLog({
+        companyId: companyId,
+        action: "INVITATION_SENT",
+        entity: "INVITATION",
+        entityId: invitation.id,
+        details: `Invitation sent to ${email} by user ${userId}`,
+      });
     } catch (clerkError: any) {
       console.error("❌ [inviteUser] Clerk invitation failed:", {
         status: clerkError.status,
@@ -350,6 +365,14 @@ export async function completeInvitationRegistration({
       "✅ [completeInvitationRegistration] User created successfully",
     );
 
+    await createAuditLog({
+      companyId: userData.companyId,
+      action: "INVITATION_COMPLETED",
+      entity: "INVITATION",
+      entityId: invitationId,
+      details: `Invitation completed for ${userData.email} (userId: ${clerkUserId})`,
+    });
+
     return { success: true, user };
   } catch (error) {
     console.error("❌ [completeInvitationRegistration] Error:", error);
@@ -400,6 +423,14 @@ export async function inviteUserAlternative({
 
     const invitationUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/accept-invitation?id=${invitationRecord.id}`;
     console.log("📧 Invitation URL:", invitationUrl);
+
+    await createAuditLog({
+      companyId: companyId,
+      action: "INVITATION_SENT",
+      entity: "INVITATION",
+      entityId: invitationRecord.id,
+      details: `Alternative invitation sent to ${email} by user ${userId}`,
+    });
 
     return {
       success: true,
@@ -517,6 +548,14 @@ export async function inviteUserSecure({ email, roleId }: InviteUserParams) {
       "✅ [inviteUserSecure] Secure invitation created:",
       invitationUrl,
     );
+
+    await createAuditLog({
+      companyId: currentUser.companyId,
+      action: "INVITATION_SENT",
+      entity: "INVITATION",
+      entityId: invitation.id,
+      details: `Secure invitation sent to ${email} by user ${userId}`,
+    });
 
     revalidatePath("/people");
 

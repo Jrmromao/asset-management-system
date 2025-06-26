@@ -3,6 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import { withAuth } from "@/lib/middleware/withAuth";
 import { revalidatePath } from "next/cache";
 import OpenAI from "openai";
+import { createAuditLog } from "@/lib/actions/auditLog.actions";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -321,6 +322,14 @@ export const bulkAssignAssets = withAuth(
 
       revalidatePath("/assets");
 
+      await createAuditLog({
+        companyId: user.privateMetadata?.companyId,
+        action: 'BULK_OPERATION',
+        entity: 'BULK',
+        entityId: undefined,
+        details: `Bulk operation performed by user ${user.id}. Details: ${JSON.stringify(results)}`,
+      });
+
       return {
         success: true,
         processed,
@@ -428,6 +437,14 @@ export const bulkUpdateAssetStatus = withAuth(
       });
 
       revalidatePath("/assets");
+
+      await createAuditLog({
+        companyId: user.privateMetadata?.companyId,
+        action: 'BULK_OPERATION',
+        entity: 'BULK',
+        entityId: undefined,
+        details: `Bulk operation performed by user ${user.id}. Details: ${JSON.stringify(results)}`,
+      });
 
       return {
         success: true,
@@ -542,6 +559,14 @@ export const bulkCheckinAssets = withAuth(
       });
 
       revalidatePath("/assets");
+
+      await createAuditLog({
+        companyId: user.privateMetadata?.companyId,
+        action: 'BULK_OPERATION',
+        entity: 'BULK',
+        entityId: undefined,
+        details: `Bulk operation performed by user ${user.id}. Details: ${JSON.stringify(results)}`,
+      });
 
       return {
         success: true,

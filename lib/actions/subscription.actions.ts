@@ -3,6 +3,7 @@
 import { prisma } from "@/app/db";
 import Stripe from "stripe";
 import { PlanType } from "@prisma/client";
+import { createAuditLog } from "@/lib/actions/auditLog.actions";
 
 // Validate required environment variables
 const requiredEnvVars = {
@@ -74,6 +75,14 @@ export async function createSubscription(
             assetQuota: plan.assetQuota,
             pricingPlanId: plan.id,
           },
+        });
+
+        await createAuditLog({
+          companyId,
+          action: "SUBSCRIPTION_CREATED",
+          entity: "SUBSCRIPTION",
+          entityId: subscription.id,
+          details: `Free subscription created for company ${companyId}`,
         });
 
         // Create usage record for free plan
@@ -190,6 +199,14 @@ export async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
       },
     });
     console.log("Subscription record created:", subscription.id);
+
+    await createAuditLog({
+      companyId,
+      action: "SUBSCRIPTION_CREATED",
+      entity: "SUBSCRIPTION",
+      entityId: subscription.id,
+      details: `Paid subscription created for company ${companyId} via Stripe session ${session.id}`,
+    });
 
     // Create usage record
     await tx.usageRecord.create({
@@ -316,9 +333,17 @@ export async function updateAssetQuota(
     });
 
     // Update the asset quota in your database
-    await prisma.subscription.update({
-      where: { id: subscription.id },
+    const updated = await prisma.subscription.updateMany({
+      where: { companyId },
       data: { assetQuota: newAssetQuota },
+    });
+
+    await createAuditLog({
+      companyId,
+      action: "SUBSCRIPTION_ASSET_QUOTA_UPDATED",
+      entity: "SUBSCRIPTION",
+      entityId: undefined,
+      details: `Asset quota updated to ${newAssetQuota} for company ${companyId}`,
     });
 
     return { success: true };

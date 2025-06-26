@@ -10,7 +10,7 @@ if (!process.env.STRIPE_SECRET_KEY || !process.env.STRIPE_PRICE_ID) {
 }
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2025-02-24.acacia",
+  apiVersion: "2024-06-20",
 });
 
 interface ActionResponse<T> {
