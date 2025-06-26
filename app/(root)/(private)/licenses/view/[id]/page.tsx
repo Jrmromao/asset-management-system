@@ -327,6 +327,7 @@ export default function View({ params }: AssetPageProps) {
             type="license"
             seatsRequested={1}
             assignAction={checkout}
+            availableSeats={license ? Math.max(license.seats - license.seatsAllocated, 0) : 0}
             onOptimisticUpdate={(formData) => {
               setLicense((prev: EnhancedLicenseType | undefined) => {
                 if (!prev) return undefined;

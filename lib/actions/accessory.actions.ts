@@ -537,8 +537,9 @@ export const checkout = withAuth(
       const basicValidation = z
         .object({
           userId: z.string().min(1, "User ID is required"),
-          itemId: z.string().min(1, "Item ID is required"),
-          type: z.enum(["asset", "license", "accessory", "consumable"]),
+          itemId: z.string().min(1, "Accessory ID is required"),
+          type: z.enum(["accessory"]),
+          quantity: z.number().optional().default(1),
         })
         .safeParse(values);
 
@@ -587,31 +588,51 @@ export const checkout = withAuth(
           throw new Error("Accessory not found");
         }
 
+        // Check total assigned quantity for this accessory
+        const assignedUnits = await tx.userItem.aggregate({
+          where: {
+            accessoryId: values.itemId,
+            itemType: "ACCESSORY",
+            companyId,
+          },
+          _sum: { quantity: true },
+        });
+        const totalAssigned = assignedUnits._sum.quantity || 0;
+        const availableUnits = accessory.totalQuantityCount - totalAssigned;
+        const requestedUnits = values.quantity || 1;
+
+        if (requestedUnits > availableUnits) {
+          throw new Error(
+            `Not enough units available. Requested: ${requestedUnits}, Available: ${availableUnits}`,
+          );
+        }
+
         // Check if user already has this accessory assigned
-        const existingAssignment = await tx.userItem.findFirst({
+        const userAlreadyAssigned = await tx.userItem.findFirst({
           where: {
             userId: values.userId,
-            itemId: values.itemId,
+            accessoryId: values.itemId,
             itemType: "ACCESSORY",
             companyId,
           },
         });
 
-        if (existingAssignment) {
+        if (userAlreadyAssigned) {
           throw new Error("Accessory is already assigned to this user");
         }
 
-        // Create the assignment
+        // Create the assignment with quantity
         const userItem = await tx.userItem.create({
           data: {
             userId: values.userId,
-            itemId: values.itemId,
+            accessoryId: values.itemId,
             itemType: "ACCESSORY",
+            quantity: requestedUnits,
             companyId: companyId,
           },
         });
 
-        return { userItem, assigneeUser, accessory, internalUserId: internalUser.id };
+        return { accessory, internalUserId: internalUser.id, assigneeUser };
       });
 
       await createAuditLog({
@@ -619,7 +640,7 @@ export const checkout = withAuth(
         action: "ACCESSORY_ASSIGNED",
         entity: "ACCESSORY",
         entityId: result.accessory.id,
-        details: `Accessory ${result.accessory.name} assigned to user ${result.assigneeUser.name || result.assigneeUser.email}`,
+        details: `Accessory ${result.accessory.name} assigned to user ${result.assigneeUser.name || result.assigneeUser.email} by internal user ID ${result.internalUserId}`,
       });
 
       return { success: true, data: parseStringify(result) };
@@ -683,7 +704,7 @@ export const checkin = withAuth(
 
         // Get the updated accessory
         const accessory = await tx.accessory.findUnique({
-          where: { id: userItem.itemId },
+          where: { id: userItem.accessoryId || "" },
         });
 
         if (!accessory) {

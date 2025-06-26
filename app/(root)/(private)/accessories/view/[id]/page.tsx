@@ -393,6 +393,7 @@ export default function Page({ params }: AssetPageProps) {
             itemId={id}
             type="accessory"
             assignAction={checkout}
+            availableQuantity={accessory ? Math.max(accessory.totalQuantity - accessory.unitsAllocated, 0) : 0}
             onOptimisticUpdate={() => {
               setAccessory((prev) =>
                 prev

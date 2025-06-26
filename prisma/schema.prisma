@@ -312,10 +312,11 @@ model FormTemplateValue {
 model UserItem {
   id        String   @id @default(cuid())
   userId    String
-  licenseId String? // Only for LICENSE assignments
-  accessoryId String? // Only for ACCESSORY assignments
-  assetId   String? // Only for ASSET assignments
+  licenseId String? // For LICENSE assignments
+  accessoryId String? // For ACCESSORY assignments
+  assetId   String? // For ASSET assignments (future use)
   itemType  ItemType
+  quantity  Int      @default(1) // For LICENSE (seats) and ACCESSORY (units)
   companyId String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -634,6 +635,7 @@ model Asset {
   flowExecutions     FlowExecution[]
   purchaseOrder      PurchaseOrder?      @relation(fields: [purchaseOrderId], references: [id])
   purchaseOrderId    String?
+  userItems          UserItem[]
 
   @@unique([name, companyId])
   @@index([companyId])

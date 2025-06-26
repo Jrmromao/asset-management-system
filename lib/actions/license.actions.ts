@@ -296,8 +296,8 @@ export const checkout = withAuth(
       const basicValidation = z
         .object({
           userId: z.string().min(1, "User ID is required"),
-          itemId: z.string().min(1, "Item ID is required"),
-          type: z.enum(["asset", "license", "accessory", "consumable"]),
+          licenseId: z.string().min(1, "License ID is required"),
+          type: z.enum(["license"]),
           seatsRequested: z.number().optional().default(1),
         })
         .safeParse(values);
@@ -338,9 +338,12 @@ export const checkout = withAuth(
           throw new Error("Assignee user not found in company");
         }
 
+        // Use itemId as licenseId for compatibility
+        const licenseId = values.itemId;
+
         // Get the license to check available seats
         const license = await tx.license.findUnique({
-          where: { id: values.itemId, companyId },
+          where: { id: licenseId, companyId },
         });
 
         if (!license) {
@@ -348,39 +351,45 @@ export const checkout = withAuth(
         }
 
         // Check existing assignments for this license
-        const existingAssignments = await tx.userItem.findMany({
+        const assignedSeats = await tx.userItem.aggregate({
           where: {
-            itemId: values.itemId,
+            licenseId: licenseId,
+            itemType: "LICENSE",
+            companyId,
+          },
+          _sum: { quantity: true },
+        });
+        const totalAssigned = assignedSeats._sum.quantity || 0;
+        const availableSeats = license.seats - totalAssigned;
+        const requestedSeats = values.seatsRequested || 1;
+
+        if (requestedSeats > availableSeats) {
+          throw new Error(
+            `Not enough seats available. Requested: ${requestedSeats}, Available: ${availableSeats}`,
+          );
+        }
+
+        // Check if user already has this license assigned
+        const userAlreadyAssigned = await tx.userItem.findFirst({
+          where: {
+            userId: values.userId,
+            licenseId: licenseId,
             itemType: "LICENSE",
             companyId,
           },
         });
 
-        // Check if user already has this license assigned
-        const userAlreadyAssigned = existingAssignments.some(
-          (assignment) => assignment.userId === values.userId,
-        );
-
         if (userAlreadyAssigned) {
           throw new Error("License is already assigned to this user");
         }
 
-        // Check if there are available seats
-        const assignedSeats = existingAssignments.length;
-        const availableSeats = license.seats - assignedSeats;
-
-        if (availableSeats < (values.seatsRequested || 1)) {
-          throw new Error(
-            `Not enough seats available. Requested: ${values.seatsRequested || 1}, Available: ${availableSeats}`,
-          );
-        }
-
-        // Create the assignment - we'll create it without the problematic foreign key relations
+        // Create the assignment with quantity
         const userItem = await tx.userItem.create({
           data: {
             userId: values.userId,
-            itemId: values.itemId,
+            licenseId: licenseId,
             itemType: "LICENSE",
+            quantity: requestedSeats,
             companyId: companyId,
           },
         });
@@ -449,7 +458,7 @@ export const checkin = withAuth(
 
         // Get the updated license
         const license = await tx.license.findUnique({
-          where: { id: userItem.itemId },
+          where: { id: userItem.licenseId || "" },
           include: {
             company: true,
             statusLabel: true,

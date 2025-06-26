@@ -360,7 +360,23 @@ export const assignmentSchema = z
     itemId: z.string().min(1, "Item ID is required"),
     type: z.enum(["asset", "license", "accessory", "consumable"]),
     seatsRequested: z.number().optional().default(1),
+    quantity: z.number().optional().default(1),
   })
+  .refine(
+    (data) => {
+      if (data.type === "license" && data.seatsRequested <= 0) {
+        return false;
+      }
+      if (data.type === "accessory" && data.quantity <= 0) {
+        return false;
+      }
+      return true;
+    },
+    {
+      message: "No seats or quantity available for assignment.",
+      path: ["seatsRequested"],
+    },
+  )
   .refine(
     async (data) => {
       // Skip validation on server-side or when baseUrl is not available during build

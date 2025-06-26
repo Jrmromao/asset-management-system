@@ -11,6 +11,7 @@ import CustomSelect from "@/components/CustomSelect";
 import { useUserStore } from "@/lib/stores/userStore";
 import * as z from "zod";
 import { assignmentSchema } from "@/lib/schemas";
+import { Input } from "@/components/ui/input";
 
 // Define supported asset types
 export type AssetType = "asset" | "license" | "accessory" | "consumable";
@@ -25,6 +26,8 @@ interface Props {
   onSuccess?: () => void;
   onError?: (previousData?: { userId: string; userName: string }) => void;
   assignAction: (data: AssignmentFormValues) => Promise<{ error?: string }>;
+  availableSeats?: number;
+  availableQuantity?: number;
 }
 
 const AssignmentForm = ({
@@ -35,6 +38,8 @@ const AssignmentForm = ({
   onSuccess,
   onError,
   assignAction,
+  availableSeats,
+  availableQuantity,
 }: Props) => {
   const [error, setError] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -112,6 +117,40 @@ const AssignmentForm = ({
             value={form.watch("userId")}
             required
           />
+
+          {/* Show seats dropdown for licenses using CustomSelect */}
+          {type === "license" && availableSeats && availableSeats > 0 && (
+            <CustomSelect
+              control={form.control}
+              name="seatsRequested"
+              label="Number of Seats"
+              placeholder="Select seats"
+              disabled={isSubmitting}
+              data={Array.from({ length: availableSeats }, (_, i) => ({
+                id: String(i + 1),
+                name: String(i + 1),
+              }))}
+              value={String(form.watch("seatsRequested") ?? "1")}
+              required
+            />
+          )}
+
+          {/* Show quantity dropdown for accessories using CustomSelect */}
+          {type === "accessory" && availableQuantity && availableQuantity > 0 && (
+            <CustomSelect
+              control={form.control}
+              name="quantity"
+              label="Quantity"
+              placeholder="Select quantity"
+              disabled={isSubmitting}
+              data={Array.from({ length: availableQuantity }, (_, i) => ({
+                id: String(i + 1),
+                name: String(i + 1),
+              }))}
+              value={String(form.watch("quantity") ?? "1")}
+              required
+            />
+          )}
 
           <FormError message={error} />
 
