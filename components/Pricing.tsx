@@ -235,7 +235,7 @@ export default function PricingTable() {
       </motion.div>
 
       {/* Annual vs Monthly Toggle - sticky and full width */}
-      <div className="sticky top-0 z-20 bg-white/80 backdrop-blur-md py-4 mb-8 w-full flex justify-center border-b border-gray-100 mt-8">
+      <div className="sticky top-16 z-20 bg-white/80 backdrop-blur-md py-4 mb-8 w-full flex justify-center border-b border-gray-100 shadow">
         <div className="inline-flex items-center gap-4 bg-white/70 backdrop-blur-md shadow-md px-8 py-4 rounded-full border border-gray-200">
           <span className={!isAnnual ? "font-semibold text-gray-900" : "text-gray-500"}>Monthly</span>
           <Switch checked={isAnnual} onCheckedChange={setIsAnnual} />
@@ -455,15 +455,30 @@ export default function PricingTable() {
 
                 <CardContent className="flex flex-col flex-grow">
                   <div className="space-y-3 flex-grow">
-                    {tier.features.map((feature, featureIndex) => (
-                      <div
-                        key={featureIndex}
-                        className="flex items-start gap-3"
-                      >
-                        <CheckCircle2 className="h-5 w-5 text-emerald-500 flex-shrink-0 mt-0.5" />
-                        <span className="text-sm text-gray-700">{feature}</span>
-                      </div>
-                    ))}
+                    {tier.features.map((feature, featureIndex) => {
+                      // Features that are coming soon
+                      const comingSoonFeatures = [
+                        'API access & integrations',
+                        'SSO & advanced security',
+                        'Custom integrations',
+                        'Phone support',
+                      ];
+                      const isComingSoon = comingSoonFeatures.some((soon) => feature.includes(soon));
+                      return (
+                        <div
+                          key={featureIndex}
+                          className="flex items-start gap-3"
+                        >
+                          <CheckCircle2 className="h-5 w-5 text-emerald-500 flex-shrink-0 mt-0.5" />
+                          <span className="text-sm text-gray-700 flex items-center gap-2">
+                            {feature}
+                            {isComingSoon && (
+                              <span className="ml-2 px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-800 text-xs font-semibold border border-yellow-200">Coming Soon</span>
+                            )}
+                          </span>
+                        </div>
+                      );
+                    })}
                   </div>
 
                   <div className="mt-6 pt-4 border-t border-gray-100">

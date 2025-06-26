@@ -167,7 +167,7 @@ export const ValuePropositionSection = () => {
               size="lg"
               className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-4 text-lg font-semibold group"
             >
-              Start 14-Day Free Trial
+              Start 30-Day Free Trial
               <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Button>
 

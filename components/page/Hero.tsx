@@ -93,7 +93,7 @@ const Hero = () => {
                 className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-xl hover:shadow-2xl transition-all duration-300 px-8 py-4 text-lg font-semibold group relative"
                 onClick={() => router.push("/sign-up")}
               >
-                Start 14-Day Free Trial
+                Start 30-Day Free Trial
                 <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Button>
 
@@ -120,7 +120,7 @@ const Hero = () => {
             >
               <div className="flex items-center gap-2">
                 <CheckCircle className="w-4 h-4 text-emerald-500" />
-                <span>14-day free trial</span>
+                <span>30-day free trial</span>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle className="w-4 h-4 text-emerald-500" />
