@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/app/db";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { Role } from "@prisma/client";
+import { createAuditLog } from "@/lib/actions/auditLog.actions";
 
 type AuthResponse<T> = {
   data?: T;
@@ -182,6 +183,14 @@ export async function insert(
       },
     });
 
+    await createAuditLog({
+      companyId: companyId,
+      action: "ROLE_CREATED",
+      entity: "ROLE",
+      entityId: role.id,
+      details: `Role created: ${role.name} by user ${userId}`,
+    });
+
     revalidatePath("/roles");
     return { success: true, data: parseStringify(role) };
   } catch (error) {
@@ -268,6 +277,15 @@ export async function remove(id: string): Promise<AuthResponse<Role>> {
       },
     });
 
+    await createAuditLog({
+      companyId: companyId,
+      action: "ROLE_DELETED",
+      entity: "ROLE",
+      entityId: role.id,
+      details: `Role deleted: ${role.name} by user ${userId}`,
+    });
+
+    revalidatePath("/roles");
     return { success: true, data: parseStringify(role) };
   } catch (error) {
     console.error("Delete role error:", error);
@@ -313,6 +331,15 @@ export async function update(
       },
     });
 
+    await createAuditLog({
+      companyId: companyId,
+      action: "ROLE_UPDATED",
+      entity: "ROLE",
+      entityId: role.id,
+      details: `Role updated: ${role.name} by user ${userId}`,
+    });
+
+    revalidatePath("/roles");
     return { success: true, data: parseStringify(role) };
   } catch (error) {
     console.error("Update role error:", error);

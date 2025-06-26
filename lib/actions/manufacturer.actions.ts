@@ -8,6 +8,7 @@ import { z } from "zod";
 import { prisma } from "@/app/db";
 import { withAuth } from "@/lib/middleware/withAuth";
 import { cookies } from "next/headers";
+import { createAuditLog } from "@/lib/actions/auditLog.actions";
 
 type ActionResponse<T> = {
   data: T | undefined;
@@ -44,7 +45,8 @@ export async function updateManufacturer(
 }
 
 export async function deleteManufacturer(id: string) {
-  return await remove(id);
+  const result = await remove(id);
+  return result;
 }
 
 // Server actions with auth
@@ -104,6 +106,13 @@ export const insert = withAuth(
           supportPhone: values.supportPhone || null,
           supportEmail: values.supportEmail || null,
         },
+      });
+      await createAuditLog({
+        companyId: user.user_metadata?.companyId,
+        action: "MANUFACTURER_CREATED",
+        entity: "MANUFACTURER",
+        entityId: manufacturer.id,
+        details: `Manufacturer created: ${manufacturer.name} by user ${user.id}`,
       });
       revalidatePath("/assets/create");
       return { success: true, data: parseStringify(manufacturer) };
@@ -200,6 +209,13 @@ export const update = withAuth(
           supportEmail: values.supportEmail || null,
         },
       });
+      await createAuditLog({
+        companyId: user.user_metadata?.companyId,
+        action: "MANUFACTURER_UPDATED",
+        entity: "MANUFACTURER",
+        entityId: manufacturer.id,
+        details: `Manufacturer updated: ${manufacturer.name} by user ${user.id}`,
+      });
       revalidatePath("/manufacturers");
       revalidatePath(`/manufacturers/${id}`);
       return { success: true, data: parseStringify(manufacturer) };
@@ -255,6 +271,13 @@ export const remove = withAuth(
       }
       const manufacturer = await prisma.manufacturer.delete({
         where: { id },
+      });
+      await createAuditLog({
+        companyId: user.user_metadata?.companyId,
+        action: "MANUFACTURER_DELETED",
+        entity: "MANUFACTURER",
+        entityId: manufacturer.id,
+        details: `Manufacturer deleted: ${manufacturer.name} by user ${user.id}`,
       });
       revalidatePath("/manufacturers");
       return { success: true, data: parseStringify(manufacturer) };

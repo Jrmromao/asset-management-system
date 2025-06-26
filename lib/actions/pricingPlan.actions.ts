@@ -3,6 +3,7 @@
 import { prisma } from "@/app/db";
 import { PlanType } from "@prisma/client";
 import { z } from "zod";
+import { createAuditLog } from "@/lib/actions/auditLog.actions";
 
 const pricingPlanSchema = z.object({
   name: z.string().min(1, "Plan name is required"),
@@ -41,6 +42,14 @@ export async function createPricingPlan(
         assetQuota: validatedData.assetQuota,
         billingCycle: "monthly",
       },
+    });
+
+    await createAuditLog({
+      companyId: undefined, // Set companyId if available in your context
+      action: "PRICING_PLAN_CREATED",
+      entity: "PRICING_PLAN",
+      entityId: pricingPlan.id,
+      details: `Pricing plan created: ${pricingPlan.name}`,
     });
 
     return { success: true, data: pricingPlan };

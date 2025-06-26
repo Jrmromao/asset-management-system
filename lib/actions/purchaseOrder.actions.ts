@@ -3,6 +3,7 @@
 import { prisma } from "@/app/db";
 import S3Service from "@/services/aws/S3";
 import { revalidatePath } from "next/cache";
+import { createAuditLog } from "@/lib/actions/auditLog.actions";
 
 export async function createPurchaseOrder(formData: FormData) {
   const s3 = S3Service.getInstance();
@@ -30,7 +31,7 @@ export async function createPurchaseOrder(formData: FormData) {
   const notes = formData.get("notes") as string;
   const totalAmount = parseFloat(formData.get("totalAmount") as string);
 
-  await prisma.purchaseOrder.create({
+  const po = await prisma.purchaseOrder.create({
     data: {
       poNumber,
       companyId,
@@ -41,6 +42,14 @@ export async function createPurchaseOrder(formData: FormData) {
       totalAmount,
       documentUrl,
     },
+  });
+
+  await createAuditLog({
+    companyId,
+    action: "PURCHASE_ORDER_CREATED",
+    entity: "PURCHASE_ORDER",
+    entityId: po.id,
+    details: `Purchase order created: ${poNumber} for company ${companyId}`,
   });
 
   revalidatePath("/admin/purchase-orders"); // or wherever you list POs
@@ -74,7 +83,7 @@ export async function updatePurchaseOrder(id: string, formData: FormData) {
   const notes = formData.get("notes") as string;
   const totalAmount = parseFloat(formData.get("totalAmount") as string);
 
-  await prisma.purchaseOrder.update({
+  const po = await prisma.purchaseOrder.update({
     where: { id },
     data: {
       poNumber,
@@ -86,6 +95,14 @@ export async function updatePurchaseOrder(id: string, formData: FormData) {
       totalAmount,
       documentUrl,
     },
+  });
+
+  await createAuditLog({
+    companyId,
+    action: "PURCHASE_ORDER_UPDATED",
+    entity: "PURCHASE_ORDER",
+    entityId: po.id,
+    details: `Purchase order updated: ${poNumber} for company ${companyId}`,
   });
 
   revalidatePath(`/admin/purchase-orders/${id}`);

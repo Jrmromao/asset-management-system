@@ -8,6 +8,7 @@ import { locationSchema } from "@/lib/schemas";
 import { prisma } from "@/app/db";
 import { withAuth, type AuthResponse } from "@/lib/middleware/withAuth";
 import type { DepartmentLocation } from "@prisma/client";
+import { createAuditLog } from "@/lib/actions/auditLog.actions";
 
 export const insert = withAuth(
   async (
@@ -38,6 +39,14 @@ export const insert = withAuth(
           ...validation.data,
           companyId: user.user_metadata.companyId,
         },
+      });
+
+      await createAuditLog({
+        companyId: user.user_metadata.companyId,
+        action: "LOCATION_CREATED",
+        entity: "LOCATION",
+        entityId: location.id,
+        details: `Location created: ${location.name} by user ${user.id}`,
       });
 
       // Fix: Revalidate correct paths
@@ -158,6 +167,15 @@ export const remove = withAuth(
           companyId: user.user_metadata.companyId,
         },
       });
+
+      await createAuditLog({
+        companyId: user.user_metadata.companyId,
+        action: "LOCATION_DELETED",
+        entity: "LOCATION",
+        entityId: existingLocation.id,
+        details: `Location deleted: ${existingLocation.name} by user ${user.id}`,
+      });
+
       revalidatePath("/locations");
       return { success: true, data: parseStringify(existingLocation) };
     } catch (error) {
@@ -198,6 +216,15 @@ export const update = withAuth(
         },
         data,
       });
+
+      await createAuditLog({
+        companyId: user.user_metadata.companyId,
+        action: "LOCATION_UPDATED",
+        entity: "LOCATION",
+        entityId: location.id,
+        details: `Location updated: ${location.name} by user ${user.id}`,
+      });
+
       const paths = [`/locations`, `/locations/${id}`];
       await Promise.all(paths.map((path) => revalidatePath(path)));
       return {
