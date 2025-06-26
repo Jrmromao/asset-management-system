@@ -47,27 +47,17 @@ const SustainabilityTargets = () => {
   const loadTargets = async () => {
     setIsLoading(true);
     try {
-      // This would be replaced with actual API calls
-      // const response = await fetch('/api/company/sustainability-targets');
-      // const data = await response.json();
+      const response = await fetch('/api/company/sustainability-targets');
+      const result = await response.json();
       
-      // Mock data for now
-      const mockTargets = {
-        targetEnergy: 10000,
-        targetCarbonReduction: 100,
-      };
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to load targets');
+      }
       
-      const mockProgress = {
-        currentEnergy: 8500,
-        currentCarbon: 75,
-        energyProgress: 85,
-        carbonProgress: 75,
-        lastUpdated: new Date(),
-      };
-      
-      setTargets(mockTargets);
-      setProgress(mockProgress);
+      setTargets(result.data.targets);
+      setProgress(result.data.progress);
     } catch (error) {
+      console.error('Load targets error:', error);
       toast({
         title: "Error",
         description: "Failed to load sustainability targets",
@@ -82,15 +72,17 @@ const SustainabilityTargets = () => {
   const saveTargets = async () => {
     setIsSaving(true);
     try {
-      // This would be replaced with actual API call
-      // const response = await fetch('/api/company/sustainability-targets', {
-      //   method: 'PUT',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(targets),
-      // });
+      const response = await fetch('/api/company/sustainability-targets', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(targets),
+      });
       
-      // Mock success
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const result = await response.json();
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to save targets');
+      }
       
       toast({
         title: "Success",
@@ -100,6 +92,7 @@ const SustainabilityTargets = () => {
       setHasChanges(false);
       await loadTargets(); // Reload to get updated progress
     } catch (error) {
+      console.error('Save targets error:', error);
       toast({
         title: "Error",
         description: "Failed to save sustainability targets",
@@ -132,6 +125,17 @@ const SustainabilityTargets = () => {
     if (progress >= 50) return { color: 'text-yellow-600', bg: 'bg-yellow-50', icon: AlertTriangle, label: 'Behind' };
     return { color: 'text-red-600', bg: 'bg-red-50', icon: AlertTriangle, label: 'Critical' };
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center py-12">
+        <div className="flex items-center gap-3">
+          <RefreshCw className="w-6 h-6 animate-spin text-slate-600" />
+          <span className="text-slate-600">Loading sustainability targets...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -208,7 +212,7 @@ const SustainabilityTargets = () => {
               <div className="space-y-3">
                 <div className="flex justify-between items-end">
                   <div>
-                    <p className="text-2xl font-bold text-gray-900">{progress.currentCarbon}</p>
+                    <p className="text-2xl font-bold text-gray-900">{progress.currentCarbon.toFixed(1)}</p>
                     <p className="text-sm text-gray-600">tons CO2e saved</p>
                   </div>
                   <div className="text-right">

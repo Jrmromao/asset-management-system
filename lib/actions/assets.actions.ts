@@ -1030,28 +1030,32 @@ export const getAssetDistribution = withAuth(
       // Get total assets for percentage calculation
       const totalAssets = await prisma.asset.count({ where: { companyId } });
 
-      // Calculate utilization (assigned vs unassigned)
-      const assignedAssets = await prisma.asset.count({
+      // --- NEW: Get assigned asset counts per category ---
+      const assignedAssetsByCategory = await prisma.asset.groupBy({
+        by: ["categoryId"],
         where: { companyId, userId: { not: null } },
+        _count: { id: true },
       });
+      const assignedMap = new Map(
+        assignedAssetsByCategory.map((item) => [item.categoryId, item._count.id])
+      );
 
-      const utilizationRate = totalAssets > 0 ? (assignedAssets / totalAssets) * 100 : 0;
-
-      // Build distribution data
+      // Build distribution data with per-category utilization
       const distributionData = assetsByCategory.map((item) => {
         const categoryName = item.categoryId 
           ? categoryMap.get(item.categoryId) || "Uncategorized"
           : "Uncategorized";
-        
         const count = item._count.id;
         const percentage = totalAssets > 0 ? (count / totalAssets) * 100 : 0;
+        const assigned = assignedMap.get(item.categoryId) || 0;
+        const utilization = count > 0 ? Math.round((assigned / count) * 100) : 0;
 
-        // Determine status based on utilization and category health
+        // Industry-standard: Health based on utilization
         let status: "Healthy" | "Warning" | "Critical" = "Healthy";
-        if (percentage < 10) {
-          status = "Warning";
-        } else if (percentage < 5) {
+        if (utilization < 30) {
           status = "Critical";
+        } else if (utilization < 70) {
+          status = "Warning";
         }
 
         return {
@@ -1059,7 +1063,7 @@ export const getAssetDistribution = withAuth(
           count,
           percentage: Math.round(percentage),
           status,
-          utilization: Math.round(utilizationRate),
+          utilization,
         };
       });
 

@@ -12,6 +12,10 @@ import {
   ArrowRight,
   Sparkles,
   Database,
+  Box,
+  Key,
+  PlugZap,
+  Info,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
@@ -29,120 +33,99 @@ import { useRouter } from "next/navigation";
 interface PricingTier {
   name: string;
   description: string;
-  pricePerUser: number;
+  baseMonthlyPrice: number;
   maxAssets: number;
+  assetOveragePrice: number;
   features: string[];
   badge?: string;
   popular?: boolean;
   cta: string;
   savings?: string;
-  assetOveragePrice?: number; // Price per additional asset beyond limit
 }
 
 export default function PricingTable() {
   const [userCount, setUserCount] = useState(5);
-  const [assetCount, setAssetCount] = useState(1000);
-  const [userInputValue, setUserInputValue] = useState("5");
-  const [assetInputValue, setAssetInputValue] = useState("1000");
   const [isAnnual, setIsAnnual] = useState(true);
   const navigate = useRouter();
 
-  // Competitive pricing tiers - per user per month + asset overages
+  // Set minimums for item slider/input
+  const MIN_ITEMS = 1000;
+  const [totalItemCount, setTotalItemCount] = useState(MIN_ITEMS);
+  const [totalItemInputValue, setTotalItemInputValue] = useState(MIN_ITEMS.toString());
+
+  // Premium pricing tiers - per month, unified item count
   const pricingTiers: PricingTier[] = [
     {
-      name: "Launch",
-      description:
-        "Perfect for small teams getting started with asset management",
-      pricePerUser: 25,
+      name: "Core",
+      description: "Essential asset, license, and accessory management for growing teams",
+      baseMonthlyPrice: 249,
       maxAssets: 1000,
-      assetOveragePrice: 0.02, // $0.02 per additional asset per month
+      assetOveragePrice: 0.12, // $0.12 per additional item per month
       features: [
-        "Physical assets, licenses & accessories",
-        "Asset tracking & QR code generation",
-        "Basic maintenance tracking",
-        "Standard reporting & analytics",
-        "Traditional cleanup policies",
-        "Web-based dashboard",
-        "Email support",
+        "Asset, license, and accessory tracking",
+        "Inventory management",
+        "QR/barcode generation",
+        "Basic reporting",
+        "Maintenance scheduling",
         "CSV import/export",
         "User roles & permissions",
-        "Company data isolation",
+        "Unlimited users",
+        "Email support",
+        "Mobile access",
       ],
       cta: "Start Free Trial",
-      savings: "Save 15% annually",
     },
     {
-      name: "Scale",
-      description: "AI-powered optimization for growing businesses",
-      pricePerUser: 45,
+      name: "Optimizer",
+      description: "AI-powered optimization, analytics, and sustainability for scaling organizations",
+      baseMonthlyPrice: 799,
       maxAssets: 10000,
-      assetOveragePrice: 0.015, // $0.015 per additional asset per month
+      assetOveragePrice: 0.09, // $0.09 per additional item per month
       features: [
-        "Everything in Launch, plus:",
-        "🤖 AI-powered Smart Cleanup Engine",
-        "🛡️ Intelligent file protection system",
-        "📊 AI cost optimization & insights",
-        "License compliance tracking",
-        "Accessory inventory management",
-        "Advanced analytics & dashboards",
-        "CO2 footprint tracking & analysis",
-        "Automated reporting & scheduling",
-        "Advanced maintenance workflows",
-        "REST API access",
-        "Priority email support",
+        "Everything in Core, plus:",
+        "AI-powered cost optimization",
+        "AI anomaly detection",
+        "CO₂ tracking & sustainability analytics",
+        "Advanced reporting & dashboards",
+        "Priority support",
+        "API access & integrations",
       ],
-      badge: "Most Popular",
-      popular: true,
       cta: "Start Free Trial",
-      savings: "Save 15% annually",
     },
     {
-      name: "Transform",
-      description: "Enterprise-grade features with dedicated support",
-      pricePerUser: 85,
+      name: "Enterprise",
+      description: "Full automation, custom integrations, and white-glove support for large enterprises",
+      baseMonthlyPrice: 2499,
       maxAssets: 50000,
-      assetOveragePrice: 0.01, // $0.01 per additional asset per month
+      assetOveragePrice: 0.05, // $0.05 per additional item per month
       features: [
-        "Everything in Scale, plus:",
-        "🚀 Enterprise AI analytics & insights",
-        "🎯 Advanced Smart Cleanup policies",
-        "📈 Custom reporting & dashboards",
-        "🔐 Advanced user permissions",
-        "💬 Dedicated email support",
-        "⚡ Advanced API features",
-        "💾 Data export & backup",
-        "🎪 Priority feature requests",
-        "Coming soon: Multi-company management",
-        "Coming soon: SSO integration",
-        "Coming soon: Custom branding",
-        "Coming soon: Phone support",
+        "Everything in Optimizer, plus:",
+        "Custom integrations",
+        "SSO & advanced security",
+        "Custom branding",
+        "Dedicated account manager",
+        "White-glove onboarding",
+        "Phone support",
+        "Custom reporting & dashboards",
       ],
-      badge: "Best Value",
-      cta: "Contact Our Team",
-      savings: "Save 15% annually",
+      cta: "Contact Sales",
     },
   ];
 
-  const calculatePrice = (tier: PricingTier, users: number, assets: number) => {
-    const basePrice = tier.pricePerUser * users;
-    const assetOverage = Math.max(0, assets - tier.maxAssets);
-    const assetOveragePrice = assetOverage * (tier.assetOveragePrice || 0);
-    const monthly = basePrice + assetOveragePrice;
-    const annual = Math.round(monthly * 12 * 0.85); // 15% annual discount
-    return {
-      monthly,
-      annual,
-      basePrice,
-      assetOveragePrice,
-      assetOverage,
-    };
+  // Calculate plan price based on baseMonthlyPrice and overage
+  const calculatePrice = (tier: PricingTier, items: number) => {
+    const included = tier.maxAssets;
+    const overage = items > included ? (items - included) * tier.assetOveragePrice : 0;
+    const monthly = Math.max(tier.baseMonthlyPrice, tier.baseMonthlyPrice + overage);
+    const annual = monthly * 12 * 0.9; // 10% discount for annual
+    return { monthly, annual, baseMonthlyPrice: tier.baseMonthlyPrice, overage };
   };
 
   const getRecommendedTier = () => {
     // Consider both users and assets for recommendation
-    if (assetCount <= 1000 && userCount <= 5) return "Launch";
-    if (assetCount <= 10000 && userCount <= 25) return "Scale";
-    return "Transform";
+    if (totalItemCount <= 1000 && userCount <= 5) return "Core";
+    if (totalItemCount <= 10000 && userCount <= 25) return "Optimizer";
+    return "Enterprise";
   };
 
   const containerVariants = {
@@ -176,29 +159,58 @@ export default function PricingTable() {
 
   const handleUserInputChange = (value: string) => {
     const parsed = parseInt(value);
-    setUserInputValue(value);
-    if (!isNaN(parsed)) {
-      setUserCount(Math.min(Math.max(parsed, 1), 100));
-    }
+    setUserCount(Math.min(Math.max(parsed, 1), 100));
   };
 
-  const handleAssetInputChange = (value: string) => {
+  const handleTotalItemInputChange = (value: string) => {
     const parsed = parseInt(value);
-    setAssetInputValue(value);
+    setTotalItemInputValue(value);
     if (!isNaN(parsed)) {
-      setAssetCount(Math.min(Math.max(parsed, 1), 100000));
+      setTotalItemCount(Math.min(Math.max(parsed, MIN_ITEMS), 100000));
     }
   };
 
+  // Enforce minimum total item count
   useEffect(() => {
-    setUserInputValue(userCount.toString());
-  }, [userCount]);
-
-  useEffect(() => {
-    setAssetInputValue(assetCount.toString());
-  }, [assetCount]);
+    if (totalItemCount < MIN_ITEMS) {
+      const diff = MIN_ITEMS - totalItemCount;
+      setTotalItemCount((prev) => prev + diff);
+      setTotalItemInputValue((prev) => (parseInt(prev) + diff).toString());
+    }
+    // eslint-disable-next-line
+  }, [totalItemCount]);
 
   const recommendedTier = getRecommendedTier();
+
+  // Calculate all plan prices and enforce monotonicity
+  const getTierPrices = (users: number, assets: number, isAnnual: boolean) => {
+    const basePrices = pricingTiers.map((tier) => {
+      const pricing = calculatePrice(tier, assets);
+      return {
+        name: tier.name,
+        price: isAnnual ? pricing.annual : pricing.monthly,
+        pricing,
+      };
+    });
+    // Enforce monotonicity: each higher tier must be at least $1 more than the previous
+    for (let i = 1; i < basePrices.length; i++) {
+      if (basePrices[i].price < basePrices[i - 1].price) {
+        basePrices[i].price = basePrices[i - 1].price + 1;
+      }
+    }
+    return basePrices;
+  };
+
+  // Use getTierPrices for main pricing cards
+  const tierPrices = getTierPrices(userCount, totalItemCount, isAnnual);
+
+  const [currency, setCurrency] = useState<'USD' | 'EUR'>('USD');
+  const conversionRate = 0.92; // 1 USD = 0.92 EUR (example)
+
+  const formatPrice = (price: number) =>
+    currency === 'USD'
+      ? `$${price.toLocaleString()}`
+      : `€${Math.round(price * conversionRate).toLocaleString()}`;
 
   return (
     <div className="w-full max-w-7xl mx-auto py-12">
@@ -222,129 +234,114 @@ export default function PricingTable() {
         </p>
       </motion.div>
 
-      {/* Calculator */}
+      {/* Annual vs Monthly Toggle - sticky and full width */}
+      <div className="sticky top-0 z-20 bg-white/80 backdrop-blur-md py-4 mb-8 w-full flex justify-center border-b border-gray-100 mt-8">
+        <div className="inline-flex items-center gap-4 bg-white/70 backdrop-blur-md shadow-md px-8 py-4 rounded-full border border-gray-200">
+          <span className={!isAnnual ? "font-semibold text-gray-900" : "text-gray-500"}>Monthly</span>
+          <Switch checked={isAnnual} onCheckedChange={setIsAnnual} />
+          <span className={isAnnual ? "font-semibold text-gray-900" : "text-gray-500"}>
+            Annual
+            <Badge variant="secondary" className="ml-2 bg-emerald-100 text-emerald-700 border-emerald-200">
+              Save 15%
+            </Badge>
+          </span>
+        </div>
+      </div>
+
+      {/* Currency Selector */}
+      <div className="flex items-center gap-4 mb-4">
+        <span className="font-semibold">Currency:</span>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                aria-label="Select USD"
+                className={`px-3 py-1 rounded-full border transition-all duration-150 ${currency === 'USD' ? 'bg-emerald-600 text-white border-emerald-700 shadow-md scale-105' : 'bg-gray-200 text-gray-700 border-gray-300 hover:bg-gray-300'}`}
+                onClick={() => setCurrency('USD')}
+              >
+                USD
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <span>Billed in USD. EUR prices are for reference only.</span>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                aria-label="Select EUR"
+                className={`px-3 py-1 rounded-full border transition-all duration-150 ${currency === 'EUR' ? 'bg-emerald-600 text-white border-emerald-700 shadow-md scale-105' : 'bg-gray-200 text-gray-700 border-gray-300 hover:bg-gray-300'}`}
+                onClick={() => setCurrency('EUR')}
+              >
+                EUR
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <span>Billed in USD. EUR prices are for reference only.</span>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
+
+      {/* Calculator - full width */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
-        className="bg-white rounded-2xl shadow-lg border p-8 mb-12"
+        className="flex flex-col items-center justify-center gap-8 bg-white/80 backdrop-blur-lg rounded-2xl shadow-2xl border border-gray-100 p-10 mb-4 w-full max-w-5xl mx-auto"
+        style={{ boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.15)", border: "1.5px solid rgba(255,255,255,0.25)", background: "linear-gradient(135deg, rgba(255,255,255,0.85) 60%, rgba(236,254,255,0.7) 100%)" }}
       >
-        <div className="max-w-4xl mx-auto">
-          <h3 className="text-2xl font-bold text-center mb-8">
-            Calculate Your Pricing
-          </h3>
-
-          <div className="grid md:grid-cols-2 gap-8">
-            {/* Users */}
-            <div className="space-y-6">
-              <div className="flex items-center gap-3 mb-4">
-                <Users className="h-6 w-6 text-emerald-600" />
-                <h4 className="text-lg font-semibold">Team Members</h4>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-700">
-                  Number of users
-                </span>
-                <div className="flex items-center gap-4">
-                  <Input
-                    type="number"
-                    value={userInputValue}
-                    onChange={(e) => handleUserInputChange(e.target.value)}
-                    min={1}
-                    max={100}
-                    className="w-24 text-center"
-                  />
-                  <span className="text-sm text-gray-500">users</span>
-                </div>
-              </div>
-
-              <Slider
-                value={[userCount]}
-                onValueChange={(value) => {
-                  setUserCount(value[0]);
-                  setUserInputValue(value[0].toString());
-                }}
-                min={1}
-                max={100}
-                step={1}
-                className="mb-4"
-              />
-            </div>
-
-            {/* Assets */}
-            <div className="space-y-6">
-              <div className="flex items-center gap-3 mb-4">
-                <Database className="h-6 w-6 text-blue-600" />
-                <h4 className="text-lg font-semibold">Items to Track</h4>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-700">
-                  Assets, licenses & accessories
-                </span>
-                <div className="flex items-center gap-4">
-                  <Input
-                    type="number"
-                    value={assetInputValue}
-                    onChange={(e) => handleAssetInputChange(e.target.value)}
-                    min={1}
-                    max={100000}
-                    className="w-32 text-center"
-                  />
-                  <span className="text-sm text-gray-500">items</span>
-                </div>
-              </div>
-
-              <Slider
-                value={[assetCount]}
-                onValueChange={(value) => {
-                  setAssetCount(value[0]);
-                  setAssetInputValue(value[0].toString());
-                }}
-                min={1}
-                max={100000}
-                step={10}
-                className="mb-4"
-              />
-            </div>
-          </div>
-
-          <div className="mt-8 text-center">
-            <div className="inline-flex items-center gap-4 bg-gray-50 px-6 py-3 rounded-lg">
-              <span
-                className={
-                  !isAnnual ? "font-medium text-gray-900" : "text-gray-500"
-                }
-              >
-                Monthly
-              </span>
-              <Switch checked={isAnnual} onCheckedChange={setIsAnnual} />
-              <span
-                className={
-                  isAnnual ? "font-medium text-gray-900" : "text-gray-500"
-                }
-              >
-                Annual
-                <Badge
-                  variant="secondary"
-                  className="ml-2 bg-emerald-100 text-emerald-700"
-                >
-                  Save 15%
-                </Badge>
-              </span>
-            </div>
-          </div>
-
-          <div className="text-center mt-6">
-            <p className="text-sm text-emerald-600 font-medium">
-              Recommended: <span className="font-bold">{recommendedTier}</span>{" "}
-              plan for {userCount} {userCount === 1 ? "user" : "users"} and{" "}
-              {assetCount.toLocaleString()} items
-            </p>
-          </div>
+        <div className="flex flex-col items-center mb-2">
+          <h4 className="text-3xl font-extrabold text-brand-700 tracking-tight mb-1">Total Items Tracked</h4>
+          <span className="text-base text-brand-500 mt-1 flex items-center gap-1">
+            Assets, licenses, and accessories—all in one place.
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger>
+                  <Info className="h-4 w-4 text-brand-400" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <span>
+                    "Items" are any asset, license, or accessory you track in the platform.
+                  </span>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </span>
+        </div>
+        <div className="flex items-center justify-between w-full max-w-2xl">
+          <span className="text-base font-semibold text-gray-700">Number of items</span>
+          <Input
+            type="number"
+            value={totalItemInputValue}
+            onChange={(e) => handleTotalItemInputChange(e.target.value)}
+            min={MIN_ITEMS}
+            max={100000}
+            className="w-32 text-center text-lg font-bold bg-white/80 border border-gray-200 rounded-lg shadow-sm"
+          />
+        </div>
+        <Slider
+          value={[totalItemCount]}
+          onValueChange={(value) => {
+            setTotalItemCount(value[0]);
+            setTotalItemInputValue(value[0].toString());
+          }}
+          min={MIN_ITEMS}
+          max={100000}
+          step={500}
+          className="mb-4 w-full max-w-2xl"
+        />
+        <div className="text-center mt-4">
+          <span className="text-xl font-extrabold text-emerald-600 drop-shadow-sm">
+            {`Your price: ${formatPrice(tierPrices[0].price)} / ${isAnnual ? 'year' : 'month'}`}
+          </span>
         </div>
       </motion.div>
+      <div className="text-center text-xs text-gray-500 mb-12">
+        All prices exclude VAT. Billed in USD. EUR prices are for reference only.
+      </div>
 
       {/* Pricing Cards */}
       <motion.div
@@ -354,10 +351,14 @@ export default function PricingTable() {
         className="grid md:grid-cols-3 gap-8 mb-12"
       >
         {pricingTiers.map((tier, index) => {
-          const pricing = calculatePrice(tier, userCount, assetCount);
+          const tierPriceObj = tierPrices.find((t) => t.name === tier.name);
+          const price = tierPriceObj ? tierPriceObj.price : 0;
+          const pricing = calculatePrice(tier, totalItemCount);
           const isRecommended = tier.name === recommendedTier;
-          const price = isAnnual ? pricing.annual : pricing.monthly;
           const period = isAnnual ? "year" : "month";
+
+          // Add Best Value badge to Optimizer
+          const showBestValue = tier.name === "Optimizer";
 
           return (
             <motion.div
@@ -365,7 +366,8 @@ export default function PricingTable() {
               custom={index}
               variants={cardVariants}
               whileHover="hover"
-              className="relative"
+              className={`relative ${isRecommended ? 'ring-4 ring-emerald-400 scale-105 shadow-emerald-200 animate-pulse-slow' : ''}`}
+              aria-label={`Pricing card for ${tier.name}`}
             >
               <Card
                 className={`h-full flex flex-col transition-all duration-300 ${
@@ -374,17 +376,25 @@ export default function PricingTable() {
                     : "hover:shadow-lg"
                 }`}
               >
-                {tier.badge && (
-                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                    <Badge
-                      className={`px-4 py-1 ${
-                        tier.popular
-                          ? "bg-emerald-600 hover:bg-emerald-700"
-                          : "bg-blue-600 hover:bg-blue-700"
-                      }`}
-                    >
-                      {tier.badge}
-                    </Badge>
+                {(tier.badge || showBestValue || isRecommended) && (
+                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 flex gap-2">
+                    {tier.badge && (
+                      <Badge
+                        className={`px-4 py-1 ${
+                          tier.popular
+                            ? "bg-emerald-600 hover:bg-emerald-700"
+                            : "bg-blue-600 hover:bg-blue-700"
+                        }`}
+                      >
+                        {tier.badge}
+                      </Badge>
+                    )}
+                    {showBestValue && (
+                      <Badge className="px-4 py-1 bg-amber-400 text-amber-900 font-bold animate-bounce" aria-label="Best Value">Best Value</Badge>
+                    )}
+                    {isRecommended && (
+                      <Badge className="px-4 py-1 bg-emerald-600 text-white font-bold animate-pulse" aria-label="Recommended">Recommended</Badge>
+                    )}
                   </div>
                 )}
 
@@ -395,23 +405,30 @@ export default function PricingTable() {
                   <p className="text-gray-600">{tier.description}</p>
 
                   <div className="mt-4">
-                    {tier.name === "Transform" ? (
+                    {tier.name === "Enterprise" ? (
                       <div className="text-center">
-                        <div className="text-4xl font-bold text-gray-900 mb-2">
+                        {/* <div className="text-4xl font-bold text-gray-900 mb-2">
                           Custom Pricing
-                        </div>
+                        </div> */}
                         <p className="text-sm text-gray-600">
                           Tailored to your organization's needs
                         </p>
                         <p className="text-xs text-gray-500 mt-2">
                           Volume discounts available
                         </p>
+                        {/* <Button
+                          className="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold shadow-md"
+                          aria-label="Contact Sales"
+                          onClick={() => window.open('mailto:sales@yourcompany.com?subject=Enterprise%20Pricing%20Inquiry', '_blank')}
+                        >
+                          Contact Sales
+                        </Button> */}
                       </div>
                     ) : (
                       <>
                         <div className="flex items-baseline justify-center gap-1">
                           <span className="text-4xl font-bold text-gray-900">
-                            ${price.toLocaleString()}
+                            {formatPrice(price)}
                           </span>
                           <span className="text-gray-600">/{period}</span>
                         </div>
@@ -423,10 +440,10 @@ export default function PricingTable() {
 
                         {/* Price Breakdown */}
                         <div className="mt-3 text-xs text-gray-500 space-y-1">
-                          <div>Base: ${pricing.basePrice.toFixed(2)}/month</div>
-                          {pricing.assetOverage > 0 && (
+                          <div>Base: {formatPrice(tierPriceObj && tierPriceObj.pricing ? tierPriceObj.pricing.baseMonthlyPrice : pricing.baseMonthlyPrice)}/month</div>
+                          {((tierPriceObj && tierPriceObj.pricing ? tierPriceObj.pricing.overage : pricing.overage) > 0) && (
                             <div>
-                              Assets: +${pricing.assetOveragePrice.toFixed(2)}
+                              Assets: +{formatPrice(tierPriceObj && tierPriceObj.pricing ? tierPriceObj.pricing.overage : pricing.overage)}
                               /month
                             </div>
                           )}
@@ -455,19 +472,20 @@ export default function PricingTable() {
                       className={`w-full text-white font-semibold py-4 px-6 rounded-lg transition-all duration-300 transform hover:scale-[1.02] hover:shadow-xl ${
                         isRecommended
                           ? "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-200 hover:shadow-emerald-300"
-                          : tier.name === "Transform"
+                          : tier.name === "Enterprise"
                             ? "bg-blue-600 hover:bg-blue-700 shadow-blue-200 hover:shadow-blue-300"
                             : "bg-gray-800 hover:bg-gray-900 shadow-gray-200 hover:shadow-gray-300"
                       }`}
                       onClick={() => {
-                        if (tier.name === "Transform") {
-                          navigate.push("/contact");
+                        if (tier.name === "Enterprise") {
+                          window.open('mailto:sales@yourcompany.com?subject=Enterprise%20Pricing%20Inquiry', '_blank');
                         } else {
                           navigate.push(
-                            `/sign-up?plan=${tier.name.toLowerCase()}&users=${userCount}&assets=${assetCount}&billing=${isAnnual ? "annual" : "monthly"}`,
+                            `/sign-up?plan=${tier.name.toLowerCase()}&users=${userCount}&assets=${totalItemCount}&billing=${isAnnual ? "annual" : "monthly"}`
                           );
                         }
                       }}
+                      aria-label={`Select ${tier.name} plan`}
                     >
                       {tier.cta}
                       <ArrowRight className="ml-2 h-4 w-4" />
@@ -487,52 +505,56 @@ export default function PricingTable() {
         transition={{ delay: 0.3 }}
         className="bg-blue-50 rounded-2xl p-8 mb-12"
       >
-        <h3 className="text-xl font-bold text-center mb-6 text-blue-900">
-          💡 Example: Solo User with 4,000 Items (Assets + Licenses +
-          Accessories)
+        <h3 className="text-xl font-bold text-center mb-2 text-blue-900">
+          💡 Example: Solo User with 4,000 Items
         </h3>
+        <p className="text-center text-sm text-blue-700 mb-6">
+          Items include assets, licenses, and accessories.
+        </p>
         <div className="grid md:grid-cols-3 gap-6">
-          {pricingTiers.map((tier) => {
-            const pricing = calculatePrice(tier, 1, 4000);
-            const monthlyPrice = pricing.monthly;
-
-            return (
-              <div
-                key={tier.name}
-                className="bg-white rounded-lg p-4 text-center"
-              >
-                <h4 className="font-semibold text-gray-900 mb-2">
-                  {tier.name}
-                </h4>
-                {tier.name === "Transform" ? (
-                  <div>
-                    <div className="text-2xl font-bold text-gray-900 mb-1">
-                      Custom Quote
+          {(() => {
+            const exampleTierPrices = getTierPrices(1, 4000, false);
+            return pricingTiers.map((tier) => {
+              const tierPriceObj = exampleTierPrices.find((t) => t.name === tier.name);
+              const monthlyPrice = tierPriceObj ? tierPriceObj.price : 0;
+              const pricing = calculatePrice(tier, 4000);
+              const period = 'month';
+              return (
+                <div
+                  key={tier.name}
+                  className="bg-white rounded-lg p-4 text-center"
+                >
+                  <h4 className="font-semibold text-gray-900 mb-2">
+                    {tier.name}
+                  </h4>
+                  {tier.name === "Enterprise" ? (
+                    <div>
+                      <div className="text-2xl font-bold text-gray-900 mb-1">
+                        Custom Quote
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        Contact sales for pricing
+                      </div>
                     </div>
-                    <div className="text-xs text-gray-500">
-                      Contact sales for pricing
+                  ) : (
+                    <div>
+                      <div className="text-2xl font-bold text-gray-900 mb-1">
+                        {formatPrice(monthlyPrice)}/month
+                      </div>
+                      <div className="text-xs text-gray-500 space-y-1">
+                        <div>Base: {formatPrice(tier.baseMonthlyPrice)}/month</div>
+                        {pricing.overage > 0 && (
+                          <div>
+                            Assets: +{formatPrice(pricing.overage)} /month
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ) : (
-                  <div>
-                    <div className="text-2xl font-bold text-gray-900 mb-1">
-                      ${monthlyPrice.toFixed(2)}/month
-                    </div>
-                    <div className="text-xs text-gray-500 space-y-1">
-                      <div>Base: ${tier.pricePerUser}/month</div>
-                      {pricing.assetOverage > 0 && (
-                        <div>
-                          Assets: {pricing.assetOverage.toLocaleString()} × $
-                          {tier.assetOveragePrice} = $
-                          {pricing.assetOveragePrice.toFixed(2)}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
+                  )}
+                </div>
+              );
+            });
+          })()}
         </div>
       </motion.div>
 
@@ -600,7 +622,7 @@ export default function PricingTable() {
               What's included in the free trial?
             </h4>
             <p className="text-sm text-gray-600">
-              Full access to Scale plan features for 30 days. No credit card
+              Full access to Optimizer plan features for 30 days. No credit card
               required to start.
             </p>
           </div>
@@ -638,8 +660,7 @@ export default function PricingTable() {
             </h4>
             <p className="text-sm text-gray-600">
               Yes, we provide REST API access for integrating with your existing
-              systems. API documentation is available for Scale and Transform
-              plans.
+              systems. API documentation is available for Enterprise plan.
             </p>
           </div>
           <div>

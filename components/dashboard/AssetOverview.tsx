@@ -41,6 +41,24 @@ export const AssetOverview = () => {
     return <HardDrive className="h-5 w-5" />;
   };
 
+  // --- Modern SaaS: Top-N + 'Other' grouping ---
+  const TOP_N = 4;
+  let displayData = distributionData;
+  if (distributionData && distributionData.length > TOP_N) {
+    const top = distributionData.slice(0, TOP_N);
+    const other = distributionData.slice(TOP_N);
+    const otherCount = other.reduce((sum, item) => sum + item.count, 0);
+    const otherPercentage = other.reduce((sum, item) => sum + item.percentage, 0);
+    top.push({
+      name: "Other",
+      count: otherCount,
+      percentage: otherPercentage,
+      status: "Healthy", // Or use logic if needed
+      utilization: 0, // Or average, or leave blank
+    });
+    displayData = top;
+  }
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
@@ -70,18 +88,29 @@ export const AssetOverview = () => {
             <p className="text-sm">{error}</p>
           </div>
         ) : distributionData.length > 0 ? (
-          <div className="space-y-4">
-            {distributionData.map((asset) => (
-              <AssetTypeCard
-                key={asset.name}
-                icon={getIconForAsset(asset.name)}
-                name={asset.name}
-                devices={asset.count}
-                usage={asset.utilization}
-                status={asset.status}
-              />
-            ))}
-          </div>
+          <>
+            <div className="space-y-4">
+              {displayData.map((asset) => (
+                <AssetTypeCard
+                  key={asset.name}
+                  icon={getIconForAsset(asset.name)}
+                  name={asset.name}
+                  devices={asset.count}
+                  usage={asset.utilization}
+                  status={asset.status}
+                />
+              ))}
+            </div>
+            <div className="flex justify-end mt-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate.push("/reports?tab=asset-distribution")}
+              >
+                View Full Distribution
+              </Button>
+            </div>
+          </>
         ) : (
           <div className="text-center py-8 text-gray-500">
             <HardDrive className="h-12 w-12 mx-auto mb-4 opacity-50" />
