@@ -30,66 +30,19 @@ export const userAssetColumns = ({
     },
   },
   {
-    accessorKey: "assigneeId",
-    header: "Assigned",
-    cell: ({ row }) => {
-      const value = row.getValue("assigneeId") as string;
-      return <div>{value ? "Yes" : "No"}</div>;
-    },
-  },
-  {
     accessorKey: "model",
     header: "Model",
     cell: ({ row }) => {
       const value = row.getValue("model") as Model;
-
-      console.log(row.original);
       return <div>{value?.name}</div>;
     },
   },
   {
-    header: "CO2 Footprint",
-    cell: ({ row }) => {
-      return <div>{"-"}</div>;
-    },
-  },
-  {
-    accessorKey: "serialNumber",
-    header: "Serial Number",
-  },
-  {
     accessorKey: "statusLabel",
-    header: "Status Label",
+    header: "Status",
     cell: ({ row }) => {
       const value = row.getValue("statusLabel") as StatusLabel;
-      return (
-        <LinkTableCell value={value?.name} label={value} navigateTo={`#`} />
-      );
-    },
-  },
-  {
-    accessorKey: "endOfLife",
-    header: "Planned End of Life",
-    cell: ({ row }) => {
-      const value = new Date(row.getValue("endOfLife"));
-      const formattedDate = value.toLocaleDateString();
-      return <div>{formattedDate}</div>;
-    },
-  },
-
-  {
-    accessorKey: "category",
-    header: "Category",
-
-    cell: ({ row }) => {
-      const value = row.original.model?.category;
-      return (
-        <LinkTableCell
-          className={"hover:underline hover:text-red-500 hover:decoration-wavy"}
-          value={value?.name}
-          navigateTo={`/assets/view/${row.original.id}`}
-        />
-      );
+      return <div>{value?.name}</div>;
     },
   },
   {
@@ -101,3 +54,4 @@ export const userAssetColumns = ({
     },
   },
 ];
+

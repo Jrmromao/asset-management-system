@@ -33,6 +33,7 @@ import { userAssetColumns } from "@/components/tables/UserAssetColumns";
 import EmptyState from "@/components/EmptyState";
 import UserProfileSkeleton from "@/components/UserProfileSkeleton";
 import { DataTable } from "@/components/tables/DataTable/data-table";
+import { useRouter } from "next/navigation";
 
 const fieldIcons = {
   "Email Address": Mail,
@@ -69,6 +70,7 @@ export default function UserDetailsView({
   user,
   isLoading,
 }: UserDetailsViewProps) {
+  const router = useRouter();
   const fields: DetailFieldType[] = [
     { label: "Email Address", value: user.email || "-", type: "text" },
     { label: "Account Type", value: user.accountType || "-", type: "text" },
@@ -82,9 +84,11 @@ export default function UserDetailsView({
     () =>
       userAssetColumns({
         onDelete: () => {},
-        onView: () => {},
+        onView: (asset) => {
+          router.push(`/assets/view/${asset.id}`);
+        },
       }),
-    [],
+    [router],
   );
 
   if (isLoading) {

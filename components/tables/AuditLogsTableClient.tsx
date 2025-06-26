@@ -3,6 +3,7 @@ import { DataTable } from "@/components/tables/DataTable/data-table";
 import { auditLogColumns } from "@/components/tables/AuditLogColumns";
 import { SimpleAuditLog } from "@/types/audit";
 import React from "react";
+import { toast } from "sonner";
 
 function toCsvValue(value: any): string {
   if (value === null || value === undefined) return "";
@@ -51,7 +52,11 @@ export default function AuditLogsTableClient({ logs }: { logs: SimpleAuditLog[] 
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    alert(`Exported ${logs.length} audit log record${logs.length === 1 ? '' : 's'} as CSV.`);
+    toast.success(
+      `Exported ${logs.length} audit log record${logs.length === 1 ? '' : 's'} as CSV.`, {
+        description: "The CSV file has been downloaded to your device.",
+      },
+    );
   };
 
   return (

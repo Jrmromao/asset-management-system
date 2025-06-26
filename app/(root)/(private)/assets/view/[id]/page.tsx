@@ -30,6 +30,7 @@ import {
   checkoutAsset,
   setMaintenanceStatus,
   findAssetById,
+  updateAssetNotes,
 } from "@/lib/actions/assets.actions";
 import DetailViewSkeleton from "@/components/shared/DetailView/DetailViewSkeleton";
 import { useRouter } from "next/navigation";
@@ -181,6 +182,20 @@ export default function AssetPage({ params }: AssetPageProps) {
     return response;
   };
 
+  const handleNotesUpdate = async (notes: string) => {
+    try {
+      const response = await updateAssetNotes(id, notes);
+      if (response.success) {
+        toast.success("Notes updated successfully");
+        refetch();
+      } else {
+        toast.error(response.error || "Failed to update notes");
+      }
+    } catch (error) {
+      toast.error("Failed to update notes");
+    }
+  };
+
   if (isLoading) {
     return <DetailViewSkeleton />;
   }
@@ -228,6 +243,7 @@ export default function AssetPage({ params }: AssetPageProps) {
             </BreadcrumbList>
           </Breadcrumb>
         }
+        onNotesUpdate={handleNotesUpdate}
       />
 
       <DialogContainer
@@ -235,7 +251,8 @@ export default function AssetPage({ params }: AssetPageProps) {
         onOpenChange={onAssignClose}
         title={`Assign ${asset.name}`}
         description="Assign this asset to a user to track ownership and responsibility."
-        form={
+        form={null}
+        body={
           <AssignmentForm
             itemId={asset.id}
             type={"asset" as AssetType}

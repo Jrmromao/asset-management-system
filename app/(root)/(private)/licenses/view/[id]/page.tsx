@@ -320,7 +320,8 @@ export default function View({ params }: AssetPageProps) {
         open={isAssignOpen}
         onOpenChange={onAssignClose}
         title="Checkout License"
-        form={
+        form={null}
+        body={
           <AssignmentForm
             itemId={license?.id!}
             type="license"

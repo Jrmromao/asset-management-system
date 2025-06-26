@@ -7,8 +7,8 @@ import { createAuditLog } from "@/lib/actions/auditLog.actions";
 
 // Initialize Upstash Redis client
 const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL!,
-  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+  url: "https://stirring-lizard-41234.upstash.io",
+  token: "AaESAAIjcDE3MjQxZjJjNTY4YmI0NmU4ODc3YjU5MWEzNDc3ZGQxZXAxMA",
 });
 
 interface AssetFingerprint {

@@ -62,6 +62,8 @@ import { useRouter } from "next/navigation";
 import { DataTable } from "@/components/tables/DataTable/data-table";
 import { auditLogColumns } from "@/components/tables/AuditLogColumns";
 import { assetHistoryColumns } from "@/components/tables/AsetHistoryColumns";
+import { updateAssetNotes } from "@/lib/actions/assets.actions";
+import { ColumnDef } from "@tanstack/react-table";
 
 // Helper component for individual detail items to reduce repetition
 const DetailItem: React.FC<{
@@ -82,7 +84,8 @@ const DetailItem: React.FC<{
 const NotesSection: React.FC<{
   assetId: string;
   currentNotes?: string;
-}> = ({ assetId, currentNotes }) => {
+  onNotesUpdate?: (notes: string) => void;
+}> = ({ assetId, currentNotes, onNotesUpdate }) => {
   const [notes, setNotes] = useState(currentNotes || "");
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -91,23 +94,34 @@ const NotesSection: React.FC<{
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      // TODO: Implement save notes action
-      // await saveAssetNotes(assetId, notes);
-      toast({
-        title: "Notes saved",
-        description: "Asset notes have been updated successfully.",
-      });
-      setIsEditing(false);
+      const response = await updateAssetNotes(assetId, notes);
+      
+      if (response.success) {
+        toast({
+          title: "Notes saved",
+          description: "Asset notes have been updated successfully.",
+        });
+        setIsEditing(false);
+        // Call the callback to update the parent component
+        onNotesUpdate?.(notes);
+      } else {
+        throw new Error(response.error || "Failed to save notes");
+      }
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to save notes. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to save notes. Please try again.",
         variant: "destructive",
       });
     } finally {
       setIsSaving(false);
     }
   };
+
+  // Update local state when currentNotes prop changes
+  useEffect(() => {
+    setNotes(currentNotes || "");
+  }, [currentNotes]);
 
   return (
     <Card>
@@ -177,7 +191,8 @@ export const AssetDetailView: React.FC<{
   asset: EnhancedAssetType;
   actions: any; // Using `any` to match original props, should be refined
   breadcrumbs?: React.ReactNode;
-}> = ({ asset, actions, breadcrumbs }) => {
+  onNotesUpdate?: (notes: string) => void;
+}> = ({ asset, actions, breadcrumbs, onNotesUpdate }) => {
   const router = useRouter();
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
@@ -190,10 +205,71 @@ export const AssetDetailView: React.FC<{
   const assetHistoryColumnsMemo = useMemo(() => assetHistoryColumns(), []);
 
   // Sort records to ensure we always have the latest one.
-  const latestCo2Record = asset.co2eRecords?.sort(
-    (a: any, b: any) =>
-      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-  )[0];
+  const latestCo2Record = Array.isArray(asset.co2eRecords)
+    ? asset.co2eRecords.slice().sort(
+        (a: any, b: any) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      )[0]
+    : undefined;
+
+  // CO2 History columns (moved here for access to state)
+  const co2HistoryColumnsMemo = useMemo(() => [
+    {
+      id: "date",
+      header: "Date",
+      accessorFn: (row: any) => new Date(row.createdAt).toLocaleString(),
+      cell: ({ getValue }: any) => <span>{getValue() as string}</span>,
+      enableSorting: true,
+    },
+    {
+      id: "co2e",
+      header: "Total CO2e",
+      accessorKey: "co2e",
+      cell: ({ getValue }: any) => <span>{Number(getValue() as number).toFixed(2)}</span>,
+      enableSorting: true,
+    },
+    {
+      id: "units",
+      header: "Units",
+      accessorKey: "units",
+      cell: ({ getValue }: any) => <span>{getValue() as string}</span>,
+    },
+    {
+      id: "current",
+      header: "Current",
+      cell: ({ row }: any) =>
+        row.original.id === latestCo2Record?.id ? (
+          <span className="inline-flex items-center px-2 py-0.5 rounded bg-green-100 text-green-800 text-xs font-semibold">Current</span>
+        ) : null,
+      enableSorting: false,
+    },
+    {
+      id: "actions",
+      header: "Actions",
+      cell: ({ row }: any) => (
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => {
+            try {
+              const details = typeof row.original.details === 'string' ? JSON.parse(row.original.details) : row.original.details;
+              setCo2Result(details);
+              setIsNewCo2Calculation(false);
+              setCo2DialogOpen(true);
+            } catch (e) {
+              toast({
+                title: "Could not load CO2 details",
+                description: "There was an error loading this calculation.",
+                variant: "destructive",
+              });
+            }
+          }}
+        >
+          View Details
+        </Button>
+      ),
+    },
+  ], [toast, latestCo2Record]);
 
   const handleCalculateCo2 = () => {
     startTransition(async () => {
@@ -447,6 +523,7 @@ export const AssetDetailView: React.FC<{
             <TabsList className="mb-4">
               <TabsTrigger value="details">Details</TabsTrigger>
               <TabsTrigger value="history">History</TabsTrigger>
+              <TabsTrigger value="co2-history">CO₂ History</TabsTrigger>
               <TabsTrigger value="notes">Notes</TabsTrigger>
             </TabsList>
             <TabsContent value="details">
@@ -528,8 +605,7 @@ export const AssetDetailView: React.FC<{
                   <Card className="border-l-4 border-l-green-500">
                     <CardHeader className="pb-3">
                       <div className="flex items-center justify-between">
-                        <CardTitle className="text-sm font-medium flex items-center gap-2">
-                          <Leaf className="h-4 w-4 text-green-600" />
+                        <CardTitle className="text-sm font-medium">
                           CO2 Footprint
                         </CardTitle>
                         {latestCo2Record && (
@@ -615,69 +691,6 @@ export const AssetDetailView: React.FC<{
               </div>
             </TabsContent>
             <TabsContent value="history">
-              {/* CO2 Calculation History */}
-              {asset.co2eRecords && asset.co2eRecords.length > 1 && (
-                <Card className="mb-6">
-                  <CardHeader>
-                    <CardTitle className="text-md font-semibold flex items-center gap-2">
-                      <Leaf className="h-4 w-4 text-green-600" />
-                      CO2 Calculation History
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="overflow-x-auto">
-                      <table className="min-w-full text-sm border">
-                        <thead>
-                          <tr className="bg-muted/50">
-                            <th className="px-3 py-2 text-left">Date</th>
-                            <th className="px-3 py-2 text-left">Total CO2e</th>
-                            <th className="px-3 py-2 text-left">Units</th>
-                            <th className="px-3 py-2 text-left">Actions</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {asset.co2eRecords
-                            .slice()
-                            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-                            .map((record, idx) => (
-                              <tr key={record.id} className={idx === 0 ? "font-semibold bg-green-50" : ""}>
-                                <td className="px-3 py-2">
-                                  {new Date(record.createdAt).toLocaleString()}
-                                </td>
-                                <td className="px-3 py-2">
-                                  {Number(record.co2e).toFixed(2)}
-                                </td>
-                                <td className="px-3 py-2">{record.units}</td>
-                                <td className="px-3 py-2">
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => {
-                                      try {
-                                        const details = typeof record.details === 'string' ? JSON.parse(record.details) : record.details;
-                                        setCo2Result(details);
-                                        setIsNewCo2Calculation(false);
-                                        setCo2DialogOpen(true);
-                                      } catch (e) {
-                                        toast({
-                                          title: "Could not load CO2 details",
-                                          description: "There was an error loading this calculation.",
-                                          variant: "destructive",
-                                        });
-                                      }
-                                    }}
-                                  >
-                                    View Details
-                                  </Button>
-                                </td>
-                              </tr>
-                            ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
               <div className="space-y-6">
                 {/* Asset History */}
                 <Card>
@@ -701,7 +714,6 @@ export const AssetDetailView: React.FC<{
                     )}
                   </CardContent>
                 </Card>
-
                 {/* Audit Logs */}
                 <Card>
                   <CardHeader>
@@ -726,8 +738,40 @@ export const AssetDetailView: React.FC<{
                 </Card>
               </div>
             </TabsContent>
+            <TabsContent value="co2-history">
+              {/* CO2 Calculation History (show if at least one record) */}
+              {asset.co2eRecords && asset.co2eRecords.length > 0 ? (
+                <Card className="mb-6">
+                  <CardHeader>
+                    <CardTitle>CO2 Calculation History</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <DataTable columns={co2HistoryColumnsMemo} data={asset.co2eRecords} />
+                  </CardContent>
+                </Card>
+              ) : (
+                <Card className="mb-6">
+                  <CardHeader>
+                    <CardTitle>CO2 Calculation History</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-center py-12 text-gray-500">
+                      <Clock className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                      <p className="text-lg font-medium">No CO2 Calculation History</p>
+                      <p className="text-sm">
+                        No CO2 calculations have been recorded for this asset.
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
             <TabsContent value="notes">
-              <NotesSection assetId={asset.id} currentNotes={asset.notes} />
+              <NotesSection 
+                assetId={asset.id} 
+                currentNotes={asset.notes}
+                onNotesUpdate={onNotesUpdate}
+              />
             </TabsContent>
           </Tabs>
         </CardContent>

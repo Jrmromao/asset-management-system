@@ -312,7 +312,9 @@ model FormTemplateValue {
 model UserItem {
   id        String   @id @default(cuid())
   userId    String
-  itemId    String
+  licenseId String? // Only for LICENSE assignments
+  accessoryId String? // Only for ACCESSORY assignments
+  assetId   String? // Only for ASSET assignments
   itemType  ItemType
   companyId String
   createdAt DateTime @default(now())
@@ -320,18 +322,22 @@ model UserItem {
 
   user      User       @relation(fields: [userId], references: [id])
   company   Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  license   License?   @relation(fields: [itemId], references: [id], map: "UserItem_license_fkey")
-  accessory Accessory? @relation(fields: [itemId], references: [id], map: "UserItem_accessory_fkey")
-  
-  @@unique([userId, itemId, itemType])
+  license   License?   @relation(fields: [licenseId], references: [id])
+  accessory Accessory? @relation(fields: [accessoryId], references: [id])
+  asset     Asset?     @relation(fields: [assetId], references: [id])
+
+  @@unique([userId, licenseId, accessoryId, assetId, itemType])
   @@index([userId])
   @@index([companyId])
-  @@index([itemId, itemType])
+  @@index([licenseId, itemType])
+  @@index([accessoryId, itemType])
+  @@index([assetId, itemType])
 }
 
 enum ItemType {
   LICENSE
   ACCESSORY
+  ASSET
 }
 
 model Account {

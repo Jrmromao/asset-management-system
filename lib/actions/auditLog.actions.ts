@@ -20,9 +20,10 @@ type AuditLogInput = z.infer<typeof auditLogSchema>;
 
 export const createAuditLog = withAuth(async (user, data: AuditLogInput) => {
   try {
-    const validatedData = auditLogSchema.parse(data);
+    // Ensure companyId is set from user if not present in data
+    const companyId = data.companyId ?? user.privateMetadata?.companyId;
+    const validatedData = auditLogSchema.parse({ ...data, companyId });
     const ipAddress = user.ipAddress;
-    const companyId = user.privateMetadata?.companyId as string;
 
     if (!companyId) {
       return { success: false, error: "User is not associated with a company" };

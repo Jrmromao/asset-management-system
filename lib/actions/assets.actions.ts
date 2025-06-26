@@ -369,7 +369,17 @@ export const getAssetById = withAuth(
         };
       }
 
-      return { success: true, data: toArray(parseStringify(asset)) };
+      // Fetch audit logs separately
+      const auditLogs = await prisma.auditLog.findMany({
+        where: { entity: "ASSET", entityId: id, companyId },
+        include: { user: true },
+        orderBy: { createdAt: "desc" },
+      });
+
+      // Attach auditLogs to the asset object
+      const assetWithAuditLogs = { ...asset, auditLogs };
+
+      return { success: true, data: toArray(parseStringify(assetWithAuditLogs)) };
     } catch (error: any) {
       return {
         success: false,
@@ -1062,6 +1072,52 @@ export const getAssetDistribution = withAuth(
         success: false,
         data: [],
         error: error instanceof Error ? error.message : "An unknown error occurred",
+      };
+    }
+  },
+);
+
+export const updateAssetNotes = withAuth(
+  async (user, id: string, notes: string): Promise<AssetResponse> => {
+    try {
+      const companyId = user.privateMetadata?.companyId as string;
+      if (!companyId) {
+        return {
+          success: false,
+          data: [],
+          error: "User is not associated with a company",
+        };
+      }
+
+      const updatedAsset = await prisma.asset.update({
+        where: { id, companyId },
+        data: { notes },
+        include: {
+          model: { include: { manufacturer: true } },
+          statusLabel: true,
+          co2eRecords: true,
+        },
+      });
+
+      // --- AUDIT LOG ---
+      await createAuditLog({
+        companyId,
+        action: "ASSET_NOTES_UPDATED",
+        entity: "ASSET",
+        entityId: id,
+        details: `Asset notes updated for ${updatedAsset.name} (${updatedAsset.assetTag}) by user ${user.id}`,
+      });
+
+      revalidatePath(`/assets/${id}`);
+      return {
+        success: true,
+        data: [parseStringify(serializeAsset(updatedAsset))],
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        data: [],
+        error: error.message,
       };
     }
   },
