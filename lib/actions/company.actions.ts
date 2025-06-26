@@ -11,6 +11,7 @@ import { cookies } from "next/headers";
 import { EmailService } from "@/services/email";
 import { clerkClient } from "@clerk/nextjs/server";
 import { createUserWithCompany } from "./user.actions";
+import { createAuditLog } from "@/lib/actions/auditLog.actions";
 
 interface RegistrationState {
   companyId?: string;
@@ -101,6 +102,13 @@ export const update = withAuth(
         where: { id },
         data: { name },
       });
+      await createAuditLog({
+        companyId: company.id,
+        action: "COMPANY_UPDATED",
+        entity: "COMPANY",
+        entityId: company.id,
+        details: `Company updated: ${company.name} by user ${user.id}`,
+      });
       return { success: true, data: company };
     } catch (error) {
       console.error("Update company error:", error);
@@ -128,6 +136,13 @@ export const remove = withAuth(
     try {
       const company = await prisma.company.delete({
         where: { id },
+      });
+      await createAuditLog({
+        companyId: company.id,
+        action: "COMPANY_DELETED",
+        entity: "COMPANY",
+        entityId: company.id,
+        details: `Company deleted: ${company.name} by user ${user.id}`,
       });
       return { success: true, data: company };
     } catch (error) {
@@ -166,6 +181,14 @@ export async function registerCompany(
       },
     });
     state.companyId = company.id;
+
+    await createAuditLog({
+      companyId: company.id,
+      action: "COMPANY_CREATED",
+      entity: "COMPANY",
+      entityId: company.id,
+      details: `Company registered: ${company.name} by email ${data.email}`,
+    });
 
     // 2. Create an Admin role
     const adminRole = await prisma.role.create({

@@ -8,6 +8,7 @@ import { withAuth, type AuthResponse } from "@/lib/middleware/withAuth";
 import { z } from "zod";
 import { departmentSchema } from "@/lib/schemas";
 import type { Department } from "@prisma/client";
+import { createAuditLog } from "@/lib/actions/auditLog.actions";
 
 export const insert = withAuth(
   async (
@@ -61,6 +62,14 @@ export const insert = withAuth(
           ...validation.data,
           companyId,
         },
+      });
+
+      await createAuditLog({
+        companyId,
+        action: "DEPARTMENT_CREATED",
+        entity: "DEPARTMENT",
+        entityId: department.id,
+        details: `Department created: ${department.name} by user ${user.id}`,
       });
 
       revalidatePath("/departments");
@@ -215,6 +224,14 @@ export const update = withAuth(
         },
       });
 
+      await createAuditLog({
+        companyId,
+        action: "DEPARTMENT_UPDATED",
+        entity: "DEPARTMENT",
+        entityId: department.id,
+        details: `Department updated: ${department.name} by user ${user.id}`,
+      });
+
       revalidatePath("/departments");
       revalidatePath(`/departments/${id}`);
       return {
@@ -269,6 +286,14 @@ export const remove = withAuth(
           id,
           companyId,
         },
+      });
+
+      await createAuditLog({
+        companyId,
+        action: "DEPARTMENT_DELETED",
+        entity: "DEPARTMENT",
+        entityId: department.id,
+        details: `Department deleted: ${department.name} by user ${user.id}`,
       });
 
       revalidatePath("/departments");

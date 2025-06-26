@@ -5,6 +5,7 @@ import { prisma as db } from "@/app/db";
 import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 import { clerkClient } from "@clerk/nextjs/server";
+import { createAuditLog } from "@/lib/actions/auditLog.actions";
 
 export interface MaintenanceFlow {
   id: string;
@@ -190,6 +191,14 @@ export async function createMaintenanceFlow(
 
     revalidatePath("/maintenance-flows");
 
+    await createAuditLog({
+      companyId: user.companyId,
+      action: "MAINTENANCE_FLOW_CREATED",
+      entity: "MAINTENANCE_FLOW",
+      entityId: flow.id,
+      details: `Maintenance flow created: ${flow.name} by user ${userId}`,
+    });
+
     return {
       id: flow.id,
       name: flow.name,
@@ -297,6 +306,14 @@ export async function updateMaintenanceFlow(
 
     revalidatePath("/maintenance-flows");
 
+    await createAuditLog({
+      companyId: user.companyId,
+      action: "MAINTENANCE_FLOW_UPDATED",
+      entity: "MAINTENANCE_FLOW",
+      entityId: flow.id,
+      details: `Maintenance flow updated: ${flow.name} by user ${userId}`,
+    });
+
     return {
       id: flow.id,
       name: flow.name,
@@ -363,6 +380,14 @@ export async function deleteMaintenanceFlow(id: string): Promise<void> {
 
     await db.flowAction.deleteMany({
       where: { flowRuleId: id },
+    });
+
+    await createAuditLog({
+      companyId: user.companyId,
+      action: "MAINTENANCE_FLOW_DELETED",
+      entity: "MAINTENANCE_FLOW",
+      entityId: existingFlow.id,
+      details: `Maintenance flow deleted: ${existingFlow.name} by user ${userId}`,
     });
 
     await db.flowRule.delete({
@@ -437,6 +462,15 @@ export async function getMaintenanceFlowStats(): Promise<MaintenanceFlowStats> {
       }
     }
 
+    // --- AUDIT LOG: Stats viewed ---
+    await createAuditLog({
+      companyId: user.companyId,
+      action: "MAINTENANCE_FLOW_STATS_VIEWED",
+      entity: "MAINTENANCE_FLOW",
+      entityId: undefined,
+      details: `Maintenance flow stats viewed by user ${userId}`,
+    });
+
     const [flows, executions] = await Promise.all([
       db.flowRule.findMany({
         where: { companyId: user.companyId },
@@ -508,4 +542,54 @@ export async function getMaintenanceFlowStats(): Promise<MaintenanceFlowStats> {
     console.error("Error fetching maintenance flow stats:", error);
     throw new Error("Failed to fetch maintenance flow stats");
   }
+}
+
+export async function logMaintenanceFlowExecution({
+  companyId,
+  flowId,
+  flowName,
+  userId,
+  success,
+  executedAt,
+  details = ""
+}: {
+  companyId: string;
+  flowId: string;
+  flowName: string;
+  userId: string;
+  success: boolean;
+  executedAt: Date;
+  details?: string;
+}) {
+  await createAuditLog({
+    companyId,
+    action: "MAINTENANCE_FLOW_EXECUTED",
+    entity: "MAINTENANCE_FLOW",
+    entityId: flowId,
+    details: `Maintenance flow executed: ${flowName} by user ${userId} at ${executedAt.toISOString()} - Success: ${success}. ${details}`,
+  });
+}
+
+export async function logMaintenanceFlowBulkOperation({
+  companyId,
+  userId,
+  action,
+  flowIds = [],
+  flowNames = [],
+  details = ""
+}: {
+  companyId: string;
+  userId: string;
+  action: string; // e.g., "MAINTENANCE_FLOW_BULK_UPDATED"
+  flowIds?: string[];
+  flowNames?: string[];
+  details?: string;
+}) {
+  await createAuditLog({
+    companyId,
+    action,
+    entity: "MAINTENANCE_FLOW",
+    entityId: flowIds.length === 1 ? flowIds[0] : undefined,
+    details: `Bulk operation: ${action} on flows [${flowNames.join(", ")}] by user ${userId}. ${details}`,
+  });
 }

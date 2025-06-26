@@ -476,6 +476,13 @@ export const forgotPassword = async (data: {
 
     // If user exists, we can proceed with Clerk's password reset
     // The actual reset code sending is handled by Clerk in the frontend
+    await createAuditLog({
+      companyId: user.companyId,
+      action: "USER_FORGOT_PASSWORD",
+      entity: "USER",
+      entityId: user.id,
+      details: `User forgot password: ${user.email}`,
+    });
     return;
   } catch (error) {
     console.error("Forgot password error:", error);
@@ -511,7 +518,7 @@ export const resetPassword = async (data: {
     // This function is a placeholder since Clerk handles the actual password reset
     // The real implementation happens in the frontend using Clerk's useSignIn hook
     // We're keeping this for compatibility with existing components
-
+    // For audit log, we can't get userId/email here, so skip unless you want to pass email in data
     return { success: true };
   } catch (error) {
     console.error("Reset password error:", error);
@@ -583,6 +590,14 @@ export async function syncUserMetadata(clerkUserId: string): Promise<{
         role: dbUser.role.name,
       },
     );
+
+    await createAuditLog({
+      companyId: dbUser.companyId,
+      action: "USER_METADATA_SYNCED",
+      entity: "USER",
+      entityId: dbUser.id,
+      details: `User metadata synced for user ${dbUser.id}`,
+    });
 
     return {
       success: true,
@@ -661,19 +676,21 @@ export async function syncCompanyUserMetadata(companyId: string): Promise<{
           },
         });
         syncedCount++;
-      } catch (error) {
-        console.error(
+      } catch (err) {
+        console.warn(
           "❌ [syncCompanyUserMetadata] - Failed to sync user:",
           user.id,
-          error,
+          err,
         );
       }
     }
 
-    console.log("✅ [syncCompanyUserMetadata] - Completed sync:", {
+    await createAuditLog({
       companyId,
-      syncedCount,
-      totalCount: users.length,
+      action: "USER_METADATA_BULK_SYNCED",
+      entity: "USER",
+      entityId: undefined,
+      details: `Bulk user metadata sync completed for company ${companyId}. Synced count: ${syncedCount}`,
     });
 
     return {
@@ -682,16 +699,10 @@ export async function syncCompanyUserMetadata(companyId: string): Promise<{
       totalCount: users.length,
     };
   } catch (error) {
-    console.error(
-      "❌ [syncCompanyUserMetadata] - Error syncing company metadata:",
-      error,
-    );
+    console.error("❌ [syncCompanyUserMetadata] - Error syncing company metadata:", error);
     return {
       success: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : "Failed to sync company metadata",
+      error: error instanceof Error ? error.message : "Failed to sync company metadata",
       syncedCount: 0,
       totalCount: 0,
     };
@@ -708,10 +719,12 @@ export async function ensureUserMetadataSync(clerkUserId: string): Promise<{
   error?: string;
 }> {
   try {
-    // First, try to get the user from database
+    // Check if metadata needs syncing by getting current Clerk user
+    const clerk = await clerkClient();
+    const clerkUser = await clerk.users.getUser(clerkUserId);
     const dbUser = await prisma.user.findUnique({
       where: { oauthId: clerkUserId },
-      select: { companyId: true },
+      select: { id: true, companyId: true },
     });
 
     if (!dbUser) {
@@ -721,43 +734,35 @@ export async function ensureUserMetadataSync(clerkUserId: string): Promise<{
       };
     }
 
-    // Check if metadata needs syncing by getting current Clerk user
-    const clerk = await clerkClient();
-    const clerkUser = await clerk.users.getUser(clerkUserId);
-
-    // Look for companyId in private metadata (more secure)
-    const currentCompanyId = clerkUser.privateMetadata?.companyId;
-
-    // If metadata is missing or doesn't match, sync it
-    if (!currentCompanyId || currentCompanyId !== dbUser.companyId) {
-      console.log(
-        "🔄 [ensureUserMetadataSync] - Metadata out of sync, syncing...",
-      );
-      const syncResult = await syncUserMetadata(clerkUserId);
-
-      if (!syncResult.success) {
-        return {
-          success: false,
-          error: syncResult.error || "Failed to sync metadata",
-        };
-      }
+    // If companyId is missing or out of sync, update Clerk metadata
+    if (
+      !clerkUser.privateMetadata?.companyId ||
+      clerkUser.privateMetadata.companyId !== dbUser.companyId
+    ) {
+      await clerk.users.updateUserMetadata(clerkUserId, {
+        privateMetadata: {
+          companyId: dbUser.companyId,
+        },
+      });
     }
+
+    await createAuditLog({
+      companyId: dbUser.companyId,
+      action: "USER_METADATA_ENSURE_SYNCED",
+      entity: "USER",
+      entityId: dbUser.id,
+      details: `User metadata ensure sync for user ${dbUser.id}`,
+    });
 
     return {
       success: true,
       companyId: dbUser.companyId,
     };
   } catch (error) {
-    console.error(
-      "❌ [ensureUserMetadataSync] - Error ensuring metadata sync:",
-      error,
-    );
+    console.error("❌ [ensureUserMetadataSync] - Error ensuring metadata sync:", error);
     return {
       success: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : "Failed to ensure metadata sync",
+      error: error instanceof Error ? error.message : "Failed to ensure metadata sync",
     };
   }
 }
@@ -798,6 +803,13 @@ export async function inviteUserWithService(data: {
 
     if (result.success) {
       revalidatePath("/people");
+      await createAuditLog({
+        companyId: currentUser.companyId,
+        action: "USER_INVITED",
+        entity: "USER",
+        entityId: undefined,
+        details: `User invited: ${data.email} with role ${data.roleId} by user ${userId}`,
+      });
     }
 
     return result;

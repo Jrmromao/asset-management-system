@@ -9,6 +9,7 @@ import { formTemplates } from "@/helpers/DefaultFormTemplates";
 import { withAuth } from "@/lib/middleware/withAuth";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
+import { createAuditLog } from "@/lib/actions/auditLog.actions";
 
 const prisma = new PrismaClient();
 
@@ -42,6 +43,13 @@ export const insert = async (
             fields: validatedData.fields,
             companyId: user.user_metadata.companyId,
           },
+        });
+        await createAuditLog({
+          companyId: user.user_metadata.companyId,
+          action: "FORM_TEMPLATE_CREATED",
+          entity: "FORM_TEMPLATE",
+          entityId: result.id,
+          details: `Form template created: ${result.name} by user ${user.id}`,
         });
         return { success: true, data: result };
       } catch (error) {
@@ -99,6 +107,14 @@ export const remove = withAuth(
           id,
           companyId: user.user_metadata?.companyId,
         },
+        select: { id: true, name: true },
+      });
+      await createAuditLog({
+        companyId: user.user_metadata.companyId,
+        action: "FORM_TEMPLATE_DELETED",
+        entity: "FORM_TEMPLATE",
+        entityId: template.id,
+        details: `Form template deleted: ${template.name} by user ${user.id}`,
       });
       revalidatePath("/form-templates");
       return {
@@ -131,9 +147,15 @@ export const update = withAuth(
           name: validatedData.name,
           fields: validatedData.fields,
         },
-        select: { id: true },
+        select: { id: true, name: true },
       });
-
+      await createAuditLog({
+        companyId: user.user_metadata.companyId,
+        action: "FORM_TEMPLATE_UPDATED",
+        entity: "FORM_TEMPLATE",
+        entityId: template.id,
+        details: `Form template updated: ${template.name} by user ${user.id}`,
+      });
       revalidatePath("/form-templates");
       return {
         success: true,

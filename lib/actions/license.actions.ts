@@ -385,27 +385,15 @@ export const checkout = withAuth(
           },
         });
 
-        // Create audit log
-        await tx.auditLog.create({
-          data: {
-            action: "LICENSE_ASSIGNED",
-            entity: "LICENSE",
-            entityId: license.id,
-            userId: internalUser.id,
-            companyId: companyId,
-            details: `License ${license.name} assigned to user ${assigneeUser.name || assigneeUser.email}`,
-          },
-        });
+        return { license, internalUserId: internalUser.id, assigneeUser };
+      });
 
-        // Return the created assignment with related data
-        return {
-          ...userItem,
-          user: assigneeUser,
-          license: {
-            id: license.id,
-            name: license.name,
-          },
-        };
+      await createAuditLog({
+        companyId: companyId,
+        action: "LICENSE_ASSIGNED",
+        entity: "LICENSE",
+        entityId: result.license.id,
+        details: `License ${result.license.name} assigned to user ${result.assigneeUser.name || result.assigneeUser.email} by internal user ID ${result.internalUserId}`,
       });
 
       return { success: true, data: parseStringify(result) };
@@ -490,19 +478,15 @@ export const checkin = withAuth(
           throw new Error("License not found");
         }
 
-        // Create audit log
-        await tx.auditLog.create({
-          data: {
-            action: "LICENSE_CHECKIN",
-            entity: "LICENSE",
-            entityId: license.id,
-            userId: internalUser.id,
-            companyId: companyId,
-            details: `License ${license.name} checked in from user ${userItem.user?.name || userItem.user?.email}`,
-          },
-        });
+        return { license, internalUserId: internalUser.id, userItem };
+      });
 
-        return license;
+      await createAuditLog({
+        companyId: companyId,
+        action: "LICENSE_CHECKIN",
+        entity: "LICENSE",
+        entityId: result.license.id,
+        details: `License ${result.license.name} checked in from user ${result.userItem.user?.name || result.userItem.user?.email} by internal user ID ${result.internalUserId}`,
       });
 
       return { success: true, data: parseStringify(result) };
@@ -565,6 +549,13 @@ export const exportLicensesToCSV = withAuth(
           return `"${license.name}","${license.licensedEmail || ""}","${license.seats || 0}","${license.statusLabel?.name || ""}","${license.department?.name || ""}","${license.departmentLocation?.name || ""}","${license.supplier?.name || ""}","${license.purchasePrice || 0}","${license.renewalPrice || ""}","${license.currency || "USD"}","${license.renewalDate ? new Date(license.renewalDate).toLocaleDateString() : ""}","${assignedUsers}"`;
         })
         .join("\n");
+
+      await createAuditLog({
+        companyId,
+        action: "LICENSES_EXPORTED_CSV",
+        entity: "LICENSE",
+        details: `All licenses exported to CSV by user ${user.id}`,
+      });
 
       return {
         success: true,

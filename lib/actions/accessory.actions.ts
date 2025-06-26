@@ -146,18 +146,15 @@ export const insert = withAuth(
           },
         });
 
-        await tx.auditLog.create({
-          data: {
-            action: "ACCESSORY_CREATED",
-            entity: "ACCESSORY",
-            entityId: accessory.id,
-            userId: internalUser.id,
-            companyId: companyId,
-            details: `Created accessory ${values.name} with initial stock of ${values.totalQuantityCount} units`,
-          },
-        });
+        return { accessory, internalUserId: internalUser.id };
+      });
 
-        return accessory;
+      await createAuditLog({
+        companyId: companyId,
+        action: "ACCESSORY_CREATED",
+        entity: "ACCESSORY",
+        entityId: result.accessory.id,
+        details: `Created accessory ${values.name} with initial stock of ${values.totalQuantityCount} units`,
       });
 
       console.log(
@@ -165,7 +162,7 @@ export const insert = withAuth(
       );
       return {
         success: true,
-        data: parseStringify(result),
+        data: parseStringify(result.accessory),
       };
     } catch (error) {
       console.error("❌ [accessory.actions] insert - Error:", error);
@@ -614,26 +611,15 @@ export const checkout = withAuth(
           },
         });
 
-        // Create audit log
-        await tx.auditLog.create({
-          data: {
-            action: "ACCESSORY_ASSIGNED",
-            entity: "ACCESSORY",
-            entityId: accessory.id,
-            userId: internalUser.id,
-            companyId: companyId,
-            details: `Accessory ${accessory.name} assigned to user ${assigneeUser.name || assigneeUser.email}`,
-          },
-        });
+        return { userItem, assigneeUser, accessory, internalUserId: internalUser.id };
+      });
 
-        return {
-          ...userItem,
-          user: assigneeUser,
-          accessory: {
-            id: accessory.id,
-            name: accessory.name,
-          },
-        };
+      await createAuditLog({
+        companyId: companyId,
+        action: "ACCESSORY_ASSIGNED",
+        entity: "ACCESSORY",
+        entityId: result.accessory.id,
+        details: `Accessory ${result.accessory.name} assigned to user ${result.assigneeUser.name || result.assigneeUser.email}`,
       });
 
       return { success: true, data: parseStringify(result) };
@@ -704,22 +690,18 @@ export const checkin = withAuth(
           throw new Error("Accessory not found");
         }
 
-        // Create audit log
-        await tx.auditLog.create({
-          data: {
-            action: "ACCESSORY_CHECKIN",
-            entity: "ACCESSORY",
-            entityId: accessory.id,
-            userId: internalUser.id,
-            companyId: companyId,
-            details: `Accessory ${accessory.name} checked in from user ${userItem.user?.name || userItem.user?.email}`,
-          },
-        });
-
-        return accessory;
+        return { accessory, internalUserId: internalUser.id, userItem };
       });
 
-      return { success: true, data: parseStringify(result) };
+      await createAuditLog({
+        companyId: companyId,
+        action: "ACCESSORY_CHECKIN",
+        entity: "ACCESSORY",
+        entityId: result.accessory.id,
+        details: `Accessory ${result.accessory.name} checked in from user ${result.userItem.user?.name || result.userItem.user?.email}`,
+      });
+
+      return { success: true, data: parseStringify(result.accessory) };
     } catch (error) {
       console.error("Error checking in accessory:", error);
       return {
