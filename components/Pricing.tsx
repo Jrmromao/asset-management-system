@@ -49,7 +49,8 @@ export default function PricingTable() {
   const navigate = useRouter();
 
   // Set minimums for item slider/input
-  const MIN_ITEMS = 1000;
+  const MIN_ITEMS = 500;
+  const MAX_ITEMS = 10000;
   const [totalItemCount, setTotalItemCount] = useState(MIN_ITEMS);
   const [totalItemInputValue, setTotalItemInputValue] = useState(MIN_ITEMS.toString());
 
@@ -59,7 +60,7 @@ export default function PricingTable() {
       name: "Core",
       description: "Essential asset, license, and accessory management for growing teams",
       baseMonthlyPrice: 249,
-      maxAssets: 1000,
+      maxAssets: 500,
       assetOveragePrice: 0.12, // $0.12 per additional item per month
       features: [
         "Asset, license, and accessory tracking",
@@ -166,7 +167,7 @@ export default function PricingTable() {
     const parsed = parseInt(value);
     setTotalItemInputValue(value);
     if (!isNaN(parsed)) {
-      setTotalItemCount(Math.min(Math.max(parsed, MIN_ITEMS), 100000));
+      setTotalItemCount(Math.min(Math.max(parsed, MIN_ITEMS), MAX_ITEMS));
     }
   };
 
@@ -318,9 +319,13 @@ export default function PricingTable() {
             value={totalItemInputValue}
             onChange={(e) => handleTotalItemInputChange(e.target.value)}
             min={MIN_ITEMS}
-            max={100000}
+            max={MAX_ITEMS}
             className="w-32 text-center text-lg font-bold bg-white/80 border border-gray-200 rounded-lg shadow-sm"
           />
+        </div>
+        <div className="text-xs text-gray-500 mt-2 text-center">
+          Minimum: 500 items &nbsp;|&nbsp; Maximum: 10,000 items<br />
+          Core plan includes up to 500 items. Overage applies above this limit.
         </div>
         <Slider
           value={[totalItemCount]}
@@ -329,7 +334,7 @@ export default function PricingTable() {
             setTotalItemInputValue(value[0].toString());
           }}
           min={MIN_ITEMS}
-          max={100000}
+          max={MAX_ITEMS}
           step={500}
           className="mb-4 w-full max-w-2xl"
         />
@@ -341,6 +346,13 @@ export default function PricingTable() {
       </motion.div>
       <div className="text-center text-xs text-gray-500 mb-12">
         All prices exclude VAT. Billed in USD. EUR prices are for reference only.
+      </div>
+
+      {/* Special Deal Banner */}
+      <div className="w-full flex justify-center mb-6">
+        <div className="bg-amber-100 text-amber-800 px-6 py-3 rounded-full font-semibold shadow-md text-center text-base animate-pulse">
+          🎉 Special Deal: 20% off your first year – Use code <span className="font-mono bg-amber-200 px-2 py-1 rounded">LAUNCH20</span> at checkout! <span className="ml-2 text-xs">(Ends August 31)</span>
+        </div>
       </div>
 
       {/* Pricing Cards */}
@@ -359,6 +371,11 @@ export default function PricingTable() {
 
           // Add Best Value badge to Optimizer
           const showBestValue = tier.name === "Optimizer";
+
+          // Special deal: 20% off first year for Core and Optimizer
+          const isSpecialDeal = tier.name === "Core" || tier.name === "Optimizer";
+          const specialDealDiscount = 0.2;
+          const specialDealPrice = Math.round(price * (1 - specialDealDiscount));
 
           return (
             <motion.div
@@ -425,19 +442,31 @@ export default function PricingTable() {
                         </Button> */}
                       </div>
                     ) : (
+                      <div className="flex items-baseline justify-center gap-1">
+                        {isSpecialDeal ? (
+                          <>
+                            <span className="text-lg text-gray-400 line-through mr-2">{formatPrice(price)}</span>
+                            <span className="text-4xl font-bold text-emerald-600">{formatPrice(specialDealPrice)}</span>
+                            <span className="ml-2 bg-amber-200 text-amber-800 px-2 py-0.5 rounded text-xs font-semibold">20% Off First Year</span>
+                            <span className="text-gray-600">/{period}</span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="text-4xl font-bold text-gray-900">
+                              {formatPrice(price)}
+                            </span>
+                            <span className="text-gray-600">/{period}</span>
+                          </>
+                        )}
+                      </div>
+                    )}
+                    {tier.name !== "Enterprise" && (
                       <>
-                        <div className="flex items-baseline justify-center gap-1">
-                          <span className="text-4xl font-bold text-gray-900">
-                            {formatPrice(price)}
-                          </span>
-                          <span className="text-gray-600">/{period}</span>
-                        </div>
                         {isAnnual && (
                           <p className="text-sm text-emerald-600 font-medium mt-1">
                             {tier.savings}
                           </p>
                         )}
-
                         {/* Price Breakdown */}
                         <div className="mt-3 text-xs text-gray-500 space-y-1">
                           <div>Base: {formatPrice(tierPriceObj && tierPriceObj.pricing ? tierPriceObj.pricing.baseMonthlyPrice : pricing.baseMonthlyPrice)}/month</div>
@@ -502,8 +531,18 @@ export default function PricingTable() {
                       }}
                       aria-label={`Select ${tier.name} plan`}
                     >
-                      {tier.cta}
-                      <ArrowRight className="ml-2 h-4 w-4" />
+                      {isSpecialDeal ? (
+                        <>
+                          {tier.cta}
+                          <span className="ml-2 bg-amber-200 text-amber-800 px-2 py-0.5 rounded text-xs font-semibold">20% Off First Year</span>
+                          <ArrowRight className="ml-2 h-4 w-4" />
+                        </>
+                      ) : (
+                        <>
+                          {tier.cta}
+                          <ArrowRight className="ml-2 h-4 w-4" />
+                        </>
+                      )}
                     </Button>
                   </div>
                 </CardContent>
@@ -637,8 +676,7 @@ export default function PricingTable() {
               What's included in the free trial?
             </h4>
             <p className="text-sm text-gray-600">
-              Full access to Optimizer plan features for 30 days. No credit card
-              required to start.
+              Full access to Optimizer plan features for 30 days. A Stripe subscription is required to start your free trial, but you will not be charged until the trial period ends. You can cancel anytime before the trial ends to avoid charges.
             </p>
           </div>
           <div>
@@ -674,8 +712,9 @@ export default function PricingTable() {
               Is there an API available?
             </h4>
             <p className="text-sm text-gray-600">
-              Yes, we provide REST API access for integrating with your existing
-              systems. API documentation is available for Enterprise plan.
+              REST API access for integrating with your existing systems is coming soon.
+              <span className="ml-2 px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-800 text-xs font-semibold border border-yellow-200 align-middle">Coming Soon</span>
+              <br />API documentation will be available for the Enterprise plan.
             </p>
           </div>
           <div>
