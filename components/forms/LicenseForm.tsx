@@ -1,12 +1,19 @@
 "use client";
 
-import React, { useState, useTransition } from "react";
+import React, { useState, useTransition, useEffect, useRef } from "react";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { toast } from "sonner";
 import { ChevronDown, InfoIcon } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogClose,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 // Imports from previous component
 import { licenseSchema } from "@/lib/schemas";
@@ -58,6 +65,16 @@ import { getStatusLocationSection } from "@/components/forms/formSections";
 import { useSupplierUIStore } from "@/lib/stores/useSupplierUIStore";
 
 type LicenseFormValues = z.infer<typeof licenseSchema>;
+
+// Inline type for LicenseFile (from Prisma schema)
+type LicenseFile = {
+  id: string;
+  licenseId: string;
+  fileUrl: string;
+  fileName: string;
+  uploadedAt: string;
+  uploadedBy?: string | null;
+};
 
 // Collapsible Section Component
 const CollapsibleSection = ({
@@ -116,6 +133,8 @@ const LicenseForm = () => {
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
   const [file, setFile] = useState<File | null>(null);
+  const [uploadedFiles, setUploadedFiles] = useState<LicenseFile[]>([]);
+  const [uploading, setUploading] = useState(false);
 
   // State for collapsible sections
   const [expandedSections, setExpandedSections] = useState({
@@ -126,6 +145,11 @@ const LicenseForm = () => {
     notifications: false,
     attachments: false,
   });
+
+  const params = useParams();
+  const licenseId = params?.id as string | undefined;
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [createdLicenseId, setCreatedLicenseId] = useState<string | undefined>(licenseId);
 
   // Queries and UI stores
   const { onOpen: openStatus } = useStatusLabelUIStore();
@@ -140,11 +164,35 @@ const LicenseForm = () => {
   const { onOpen: openLocation } = useLocationUIStore();
   const { onOpen: openSupplier } = useSupplierUIStore();
 
-  // File drop handler
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Helper to get the correct license ID
+  const idToUse = createdLicenseId || licenseId;
+
+  // Enhanced Dropzone handler for multiple files
   const handleDrop = (acceptedFiles: File[]) => {
-    const csvFile = acceptedFiles[0];
-    setFile(csvFile);
+    setSelectedFiles((prev) => [...prev, ...acceptedFiles]);
   };
+
+  // Batch upload handler
+  async function handleBatchUpload() {
+    if (!idToUse || selectedFiles.length === 0) return;
+    setUploading(true);
+    for (const file of selectedFiles) {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("licenseId", idToUse);
+      await fetch("/api/licenses/files/upload", {
+        method: "POST",
+        body: formData,
+      });
+    }
+    setUploading(false);
+    setSelectedFiles([]);
+    fetchFiles();
+    toast.success("Files uploaded!");
+  }
 
   // Section toggle handler
   const toggleSection = (section: keyof typeof expandedSections) => {
@@ -184,14 +232,45 @@ const LicenseForm = () => {
     isLoading: false,
   });
 
+  async function fetchFiles() {
+    if (!idToUse) return;
+    const res = await fetch(`/api/licenses/files/list?licenseId=${idToUse}`);
+    const { data } = await res.json();
+    setUploadedFiles(data);
+  }
+
+  async function handleDownload(fileId: string) {
+    const res = await fetch(`/api/licenses/files/download-url?fileId=${fileId}`);
+    const { data: url } = await res.json();
+    window.open(url, "_blank");
+  }
+
+  async function handleDelete(fileId: string) {
+    await fetch(`/api/licenses/files/delete`, {
+      method: "POST",
+      body: JSON.stringify({ fileId }),
+      headers: { "Content-Type": "application/json" },
+    });
+    fetchFiles();
+    toast.success("File deleted");
+  }
+
+  useEffect(() => {
+    if (idToUse) fetchFiles();
+  }, [idToUse]);
+
   // Submit handler
   async function onSubmit(data: LicenseFormValues) {
     startTransition(async () => {
       try {
         await createLicense(data, {
-          onSuccess: () => {
-            form.reset();
-            router.push("/licenses");
+          onSuccess: (createdLicense) => {
+            const newId = createdLicense?.data?.id;
+            if (newId) {
+              setCreatedLicenseId(newId);
+              setDialogOpen(true);
+              toast.success("License created! You can now upload files.");
+            }
           },
           onError: (error) => {
             console.error("Error creating a License:", error);
@@ -489,30 +568,65 @@ const LicenseForm = () => {
                   </Card>
 
                   {/* Attachments */}
-                  <CollapsibleSection
-                    title="Attachments"
-                    description="Upload license documentation"
-                    isExpanded={expandedSections.attachments}
-                    onToggle={() => toggleSection("attachments")}
-                    isComplete={!!file}
-                  >
-                    <div className="grid grid-cols-2 gap-6">
-                      <Dropzone
-                        onDrop={handleDrop}
-                        accept={{
-                          "text/pdf": [".pdf"],
-                        }}
-                      />
-                      <Alert>
-                        <InfoIcon className="h-4 w-4" />
-                        <AlertTitle>Note</AlertTitle>
-                        <AlertDescription>
-                          Upload license documentation, terms, or related files
-                          (PDF only, max 10 files)
-                        </AlertDescription>
-                      </Alert>
-                    </div>
-                  </CollapsibleSection>
+                  {createdLicenseId && (
+                    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                      <DialogContent>
+                        <DialogTitle>Upload License Files</DialogTitle>
+                        <Dropzone
+                          onDrop={handleDrop}
+                          accept={{
+                            "application/pdf": [".pdf"],
+                            "application/msword": [".doc"],
+                            "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [".docx"],
+                            "image/png": [".png"],
+                            "image/jpeg": [".jpg", ".jpeg"],
+                          }}
+                          multiple={true}
+                        />
+                        <div className="mt-4">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">Selected files:</span>
+                            <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-700 text-sm">{selectedFiles.length}</span>
+                          </div>
+                          {selectedFiles.length > 0 && (
+                            <ul className="mt-2 space-y-1">
+                              {selectedFiles.map((file, idx) => (
+                                <li key={file.name + idx} className="flex items-center gap-2 text-sm">
+                                  <span>{file.name}</span>
+                                  <button type="button" className="text-red-500 hover:underline" onClick={() => setSelectedFiles(selectedFiles.filter((_, i) => i !== idx))}>Remove</button>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                        <div className="mt-6">
+                          <div className="font-medium mb-2">Uploaded Files:</div>
+                          <ul>
+                            {uploadedFiles.map(file => (
+                              <li key={file.id ?? file.fileName} className="flex items-center gap-2">
+                                <span>{file.fileName ?? "Unnamed file"}</span>
+                                {file.id && <button type="button" onClick={() => handleDownload(file.id)}>Download</button>}
+                                {file.id && <button type="button" onClick={() => handleDelete(file.id)}>Delete</button>}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                        <div className="flex justify-end mt-6">
+                          <Button
+                            onClick={async () => {
+                              if (selectedFiles.length > 0) {
+                                await handleBatchUpload();
+                              }
+                              setDialogOpen(false);
+                            }}
+                            disabled={uploading}
+                          >
+                            {uploading ? "Uploading..." : "Done"}
+                          </Button>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  )}
                 </div>
               )}
               {/* Right Sidebar - Form Progress */}

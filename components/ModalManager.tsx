@@ -16,7 +16,8 @@ export const ModalManager = ({ modals }: ModalManagerProps) => {
           open={modal.isOpen}
           onOpenChange={modal.onClose}
           title={modal.title}
-          form={<modal.Component onSuccess={modal.onSuccess} />}
+          form={null}
+          body={<modal.Component onSuccess={modal.onSuccess} />}
         />
       ))}
     </>

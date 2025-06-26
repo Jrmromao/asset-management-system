@@ -5,13 +5,14 @@ import { CloudUpload } from "lucide-react";
 interface DropzoneProps {
   onDrop: (acceptedFiles: File[]) => void;
   accept?: Record<string, string[]>;
+  multiple?: boolean;
 }
 
-const Dropzone: React.FC<DropzoneProps> = ({ onDrop, accept }) => {
+const Dropzone: React.FC<DropzoneProps> = ({ onDrop, accept, multiple = false }) => {
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept,
-    multiple: false,
+    multiple,
   });
 
   return (

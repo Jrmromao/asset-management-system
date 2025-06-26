@@ -33,15 +33,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Map itemId to the correct field for future-proofing
+    let itemField: { licenseId?: string; accessoryId?: string; assetId?: string } = {};
+    if (type === "license") {
+      itemField.licenseId = itemId;
+    } else if (type === "accessory") {
+      itemField.accessoryId = itemId;
+    } else if (type === "asset") {
+      itemField.assetId = itemId;
+    }
+
     let existingAssignment;
 
-    if (type === "asset") {
-      // For assets, check if this specific asset is already assigned
-      existingAssignment = await prisma.asset.findFirst({
+    if (type === "license") {
+      // For licenses, check if user already has a seat for this license
+      existingAssignment = await prisma.userItem.findFirst({
         where: {
-          id: itemId,
+          userId: assigneeUserId,
+          ...itemField,
+          itemType: "LICENSE",
           companyId,
-          userId: { not: null },
         },
       });
     } else if (type === "accessory") {
@@ -49,18 +60,18 @@ export async function POST(request: NextRequest) {
       existingAssignment = await prisma.userItem.findFirst({
         where: {
           userId: assigneeUserId,
-          itemId,
+          ...itemField,
           itemType: "ACCESSORY",
           companyId,
         },
       });
-    } else if (type === "license") {
-      // For licenses, check if user already has a seat for this license
+    } else if (type === "asset") {
+      // For assets, check if user already has this asset assigned
       existingAssignment = await prisma.userItem.findFirst({
         where: {
           userId: assigneeUserId,
-          itemId,
-          itemType: "LICENSE",
+          ...itemField,
+          itemType: "ASSET",
           companyId,
         },
       });

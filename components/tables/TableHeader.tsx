@@ -64,6 +64,17 @@ export function DataTableHeader<TData>({
   searchColumnId = "title",
   children,
 }: DataTableHeaderProps<TData>) {
+  // Bulletproof: auto-detect a valid search column
+  const allColumnIds = table.getAllColumns().map((col) => col.id);
+  let effectiveSearchColumnId = searchColumnId;
+  if (!allColumnIds.includes(searchColumnId)) {
+    if (allColumnIds.includes("name")) {
+      effectiveSearchColumnId = "name";
+    } else {
+      effectiveSearchColumnId = allColumnIds[0];
+    }
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: -20 }}
@@ -80,7 +91,7 @@ export function DataTableHeader<TData>({
         <div className="flex items-center space-x-3">
           {showSearch &&
             (() => {
-              const searchColumn = table.getColumn(searchColumnId);
+              const searchColumn = table.getColumn(effectiveSearchColumnId);
               if (!searchColumn) return null;
               return (
                 <Input
@@ -94,7 +105,7 @@ export function DataTableHeader<TData>({
               );
             })()}
           {(() => {
-            const searchColumn = table.getColumn(searchColumnId);
+            const searchColumn = table.getColumn(effectiveSearchColumnId);
             const hasFilterValue =
               searchColumn && Boolean(searchColumn.getFilterValue());
             if (!hasFilterValue) return null;

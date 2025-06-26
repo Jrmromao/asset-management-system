@@ -64,6 +64,13 @@ const AssignmentForm = ({
   }, [getAllUsers]);
 
   const onSubmit = async (data: AssignmentFormValues) => {
+    // Coerce seatsRequested and quantity to numbers if needed
+    if (typeof data.seatsRequested === "string") {
+      data.seatsRequested = parseInt(data.seatsRequested, 10);
+    }
+    if (typeof data.quantity === "string") {
+      data.quantity = parseInt(data.quantity, 10);
+    }
     const selectedUser = users.find((user) => user.id === data.userId);
 
     if (!selectedUser || !selectedUser.name) {
@@ -90,7 +97,7 @@ const AssignmentForm = ({
 
       onSuccess?.();
     } catch (e) {
-      console.error(`${type} assignment error:`, e);
+      console.error(`${type} assignment error:`, e, data);
       setError(typeof e === "string" ? e : `Failed to assign ${type}`);
       onError?.(optimisticData);
     } finally {

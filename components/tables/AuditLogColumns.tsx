@@ -133,19 +133,22 @@ export const auditLogColumns = (): ColumnDef<SimpleAuditLog>[] => [
     },
     cell: ({ row }) => {
       const data = row.original;
-      const user = data.user as { id: string; name: string; email?: string; role?: string } | undefined;
-      const name = user?.name || data.userId;
-      const email = user?.email;
-      const role = user?.role;
+      const user = data.user as { id: string; name?: string; email?: string; role?: string } | undefined;
+      const name = user?.name || null;
+      const email = user?.email || null;
+      const userId = user?.id || data.userId;
       return (
         <div className="flex items-center">
           <div className="h-8 w-8 bg-gray-100 rounded-full flex items-center justify-center">
             <User className="h-4 w-4 text-gray-500" />
           </div>
           <div className="ml-3">
-            <div className="text-sm font-medium text-gray-900">{name}</div>
+            <div className="text-sm font-medium text-gray-900">
+              {name || email || userId || "Unknown"}
+            </div>
             {email && <div className="text-xs text-gray-500">{email}</div>}
-            {role && <div className="text-xs text-gray-400">{role}</div>}
+            {name && email && <div className="text-xs text-gray-400">{userId}</div>}
+            {user?.role && <div className="text-xs text-gray-400">{user.role}</div>}
           </div>
         </div>
       );

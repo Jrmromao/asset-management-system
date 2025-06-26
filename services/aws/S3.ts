@@ -17,6 +17,7 @@ import {
 } from "@aws-sdk/client-s3";
 import { Upload } from "@aws-sdk/lib-storage";
 import https from "https";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 class S3Service {
   private static instance: S3Service;
@@ -313,6 +314,20 @@ class S3Service {
       console.error("AWS S3Service connection test failed:", error);
       return false;
     }
+  }
+
+  public async getPresignedUrl(
+    companyId: string,
+    key: string,
+    expiresInSeconds: number = 300
+  ): Promise<string> {
+    const prefix = this.getCompanyPrefix(companyId);
+    const fullKey = `${prefix}${key}`;
+    const command = new GetObjectCommand({
+      Bucket: this.mainBucketName,
+      Key: fullKey,
+    });
+    return getSignedUrl(this.s3Client, command, { expiresIn: expiresInSeconds });
   }
 }
 

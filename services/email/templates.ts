@@ -172,4 +172,24 @@ export const emailTemplates = {
       </div>
     </div>
   `,
+  
+  licenseAssignment: ({ userName, licenseName, links }: { userName: string; licenseName: string; links: { name: string; url: string }[] }) => `
+    <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
+      <div style="background-color: #f7f7f7; padding: 20px; text-align: center;">
+        <h1 style="color: #22c55e; margin: 0;">You've been assigned a license!</h1>
+      </div>
+      <div style="padding: 30px;">
+        <h2 style="color: #333;">Hello, ${userName}!</h2>
+        <p>You have been assigned the license <strong>${licenseName}</strong>. You can download the license files below:</p>
+        <ul>
+          ${links.map(link => `<li><a href="${link.url}">${link.name}</a></li>`).join("")}
+        </ul>
+        <p>If you have any questions, please contact your administrator.</p>
+        <p>Best regards,<br>The EcoKeepr Team</p>
+      </div>
+      <div style="background-color: #f7f7f7; padding: 15px; text-align: center; font-size: 12px; color: #777;">
+        <p>&copy; ${new Date().getFullYear()} EcoKeepr. All rights reserved.</p>
+      </div>
+    </div>
+  `,
 };

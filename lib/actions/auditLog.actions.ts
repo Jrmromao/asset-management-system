@@ -73,6 +73,15 @@ export const getAuditLog = withAuth(async (user, entityId: string) => {
         entityId,
         companyId: user.user_metadata?.companyId,
       },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
     });
 
     if (!auditLog) {

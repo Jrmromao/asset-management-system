@@ -388,7 +388,8 @@ export default function Page({ params }: AssetPageProps) {
         open={isAssignOpen}
         onOpenChange={onAssignClose}
         title="Accessory Checkout"
-        form={
+        form={null}
+        body={
           <AssignmentForm
             itemId={id}
             type="accessory"

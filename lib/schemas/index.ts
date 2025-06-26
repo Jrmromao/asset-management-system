@@ -356,8 +356,8 @@ export const unassignSchema = z.object({
 
 export const assignmentSchema = z
   .object({
-    userId: z.string().min(1, "User ID is required"),
-    itemId: z.string().min(1, "Item ID is required"),
+    userId: z.string().min(1, "User is required"),
+    itemId: z.string().min(1, "Item is required"),
     type: z.enum(["asset", "license", "accessory", "consumable"]),
     seatsRequested: z.number().optional().default(1),
     quantity: z.number().optional().default(1),

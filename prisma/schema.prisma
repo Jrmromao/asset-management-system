@@ -103,6 +103,7 @@ model License {
   purchaseDate     DateTime
   purchaseNotes    String?
   licenseUrl       String?
+  
   minSeatsAlert    Int      @default(0)
   alertRenewalDays Int
   seats            Int      @default(0)
@@ -116,16 +117,16 @@ model License {
   billingCycle     String?  @default("annual")   // "monthly", "annual", "one-time"
   currency         String   @default("USD")      // Currency code
   discountPercent  Decimal? @db.Decimal(5, 2)   // Discount percentage applied
-  taxRate          Decimal? @db.Decimal(5, 4)   // Tax rate for calculations
-  
+  taxRate Decimal? @db.Decimal(6, 2)   // Allows up to 9999.99
+utilizationRate Decimal? @db.Decimal(6, 2) // Allows up to 9999.99
   // Usage and optimization fields
   lastUsageAudit   DateTime?                     // Last time usage was audited
-  utilizationRate  Decimal? @db.Decimal(5, 4)   // Current utilization percentage
   costCenter       String?                       // Cost center for accounting
   budgetCode       String?                        // Budget allocation code
   
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
+  licenseFiles     LicenseFile[]
 
   // Relations
   company            Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
@@ -141,6 +142,18 @@ model License {
   Manufacturer       Manufacturer?       @relation(fields: [manufacturerId], references: [id])
   manufacturerId     String?
   userItems          UserItem[]
+}
+
+model LicenseFile {
+  id         String   @id @default(cuid())
+  licenseId  String
+  fileUrl    String   // S3 key or URL
+  fileName   String
+  uploadedAt DateTime @default(now())
+  uploadedBy String?  // User ID or name (optional)
+  license    License  @relation(fields: [licenseId], references: [id], onDelete: Cascade)
+
+  @@index([licenseId])
 }
 
 model PurchaseOrder {

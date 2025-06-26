@@ -19,12 +19,26 @@ import { useAccessoryStore } from "@/lib/stores/accessoryStore";
 import ItemDetailsTabs from "@/components/shared/DetailsTabs/ItemDetailsTabs";
 import { sleep, sumSeatsAssigned } from "@/lib/utils";
 import DetailViewSkeleton from "@/components/shared/DetailView/DetailViewSkeleton";
+import { Badge } from "@/components/ui/badge";
+import Image from "next/image";
+import { Users, AlertTriangle, Factory, Building2, Mail, Phone, Globe, FileText, FileImage, FileArchive, File } from "lucide-react";
+import { LicenseHeader } from "@/components/LicenseHeader";
 
 interface AssetPageProps {
   params: Promise<{
     id: string;
   }>;
 }
+
+// Inline type for LicenseFile (from Prisma schema)
+type LicenseFile = {
+  id: string;
+  licenseId: string;
+  fileUrl: string;
+  fileName: string;
+  uploadedAt: string;
+  uploadedBy?: string | null;
+};
 
 interface EnhancedLicenseType {
   id: string;
@@ -51,11 +65,11 @@ interface EnhancedLicenseType {
   seatsAllocated: number;
   reorderPoint: number;
   seatsAlert: string;
-  supplier: {
-    name: string;
-  };
+  supplier: any; // Accepts object or string fallback
   poNumber: string;
   auditLogs: AuditLog[];
+  Manufacturer?: any; // Accepts object or undefined
+  licenseFiles?: LicenseFile[];
 }
 
 interface LoadingStates {
@@ -63,6 +77,28 @@ interface LoadingStates {
   isCheckingIn: Set<string>;
   isAssigning: boolean;
   isRefreshing: boolean;
+}
+
+function getFileIcon(fileName: string) {
+  const ext = fileName.split('.').pop()?.toLowerCase();
+  switch (ext) {
+    case "pdf":
+      return <FileText className="text-red-500 w-6 h-6" />;
+    case "jpg":
+    case "jpeg":
+    case "png":
+    case "gif":
+      return <FileImage className="text-blue-500 w-6 h-6" />;
+    case "zip":
+    case "rar":
+      return <FileArchive className="text-yellow-500 w-6 h-6" />;
+    case "doc":
+    case "docx":
+    case "txt":
+      return <FileText className="text-indigo-500 w-6 h-6" />;
+    default:
+      return <File className="text-gray-400 w-6 h-6" />;
+  }
 }
 
 export default function View({ params }: AssetPageProps) {
@@ -137,11 +173,11 @@ export default function View({ params }: AssetPageProps) {
         seatsAllocated: sumSeatsAssigned(foundLicense?.users ?? []),
         reorderPoint: foundLicense?.minSeatsAlert ?? 0,
         seatsAlert: foundLicense?.licensedEmail ?? "",
-        supplier: {
-          name: foundLicense?.supplier?.name ?? "",
-        },
+        supplier: foundLicense?.supplier ?? "",
         poNumber: foundLicense?.poNumber ?? "",
         usedBy: foundLicense?.userLicenses ?? [],
+        Manufacturer: (foundLicense as any)?.Manufacturer ?? undefined,
+        licenseFiles: (foundLicense as any)?.licenseFiles ?? [],
       });
     } catch (error) {
       console.error("Error fetching license:", error);
@@ -214,7 +250,20 @@ export default function View({ params }: AssetPageProps) {
     actions[action]();
   };
   const detailViewProps: DetailViewProps = {
-    title: license?.name ?? "Untitled License",
+    title: (
+      <LicenseHeader
+        name={license?.name ?? "Untitled License"}
+        seatsAllocated={license?.seatsAllocated ?? 0}
+        seats={license?.seats ?? 0}
+        belowReorder={
+          !!license &&
+          typeof license.reorderPoint === "number" &&
+          license.reorderPoint > 0 &&
+          license.seatsAllocated > 0 &&
+          license.seatsAllocated <= license.reorderPoint
+        }
+      />
+    ),
     isLoading: false,
     co2Score:
       typeof license?.co2Score === "number"
@@ -269,9 +318,38 @@ export default function View({ params }: AssetPageProps) {
         value: license?.seatsAlert ?? "",
         type: "text",
       },
+      // Supplier details
       {
         label: "Supplier",
-        value: license?.supplier?.name ?? "",
+        value: (typeof license?.supplier === 'object' && license?.supplier?.name) ? (
+          <div className="flex flex-col gap-1">
+            <span className="flex items-center gap-2"><Building2 className="h-4 w-4 text-blue-700" />{license.supplier.name}</span>
+            {"contactName" in license.supplier && license.supplier.contactName && <span className="flex items-center gap-2"><Mail className="h-4 w-4 text-blue-700" />{license.supplier.contactName}</span>}
+            {"email" in license.supplier && license.supplier.email && <span className="flex items-center gap-2"><Mail className="h-4 w-4 text-blue-700" />{license.supplier.email}</span>}
+            {"phoneNum" in license.supplier && license.supplier.phoneNum && <span className="flex items-center gap-2"><Phone className="h-4 w-4 text-blue-700" />{license.supplier.phoneNum}</span>}
+            {"url" in license.supplier && license.supplier.url && <span className="flex items-center gap-2"><Globe className="h-4 w-4 text-blue-700" />
+              <a href={license.supplier.url} target="_blank" rel="noopener noreferrer" className="underline text-blue-700">{license.supplier.url}</a>
+            </span>}
+          </div>
+        ) : "",
+        type: "text",
+      },
+      // Manufacturer details
+      {
+        label: "Manufacturer",
+        value: license?.Manufacturer?.name ? (
+          <div className="flex flex-col gap-1">
+            <span className="flex items-center gap-2"><Factory className="h-4 w-4 text-blue-700" />{license.Manufacturer.name}</span>
+            {"url" in license.Manufacturer && license.Manufacturer.url && <span className="flex items-center gap-2"><Globe className="h-4 w-4 text-blue-700" />
+              <a href={license.Manufacturer.url} target="_blank" rel="noopener noreferrer" className="underline text-blue-700">{license.Manufacturer.url}</a>
+            </span>}
+            {"supportUrl" in license.Manufacturer && license.Manufacturer.supportUrl && <span className="flex items-center gap-2"><Globe className="h-4 w-4 text-blue-700" />
+              <a href={license.Manufacturer.supportUrl} target="_blank" rel="noopener noreferrer" className="underline text-blue-700">Support</a>
+            </span>}
+            {"supportPhone" in license.Manufacturer && license.Manufacturer.supportPhone && <span className="flex items-center gap-2"><Phone className="h-4 w-4 text-blue-700" />{license.Manufacturer.supportPhone}</span>}
+            {"supportEmail" in license.Manufacturer && license.Manufacturer.supportEmail && <span className="flex items-center gap-2"><Mail className="h-4 w-4 text-blue-700" />{license.Manufacturer.supportEmail}</span>}
+          </div>
+        ) : "",
         type: "text",
       },
       { label: "PO Number", value: license?.poNumber ?? "", type: "text" },
@@ -311,9 +389,21 @@ export default function View({ params }: AssetPageProps) {
     sourceData: "license",
   };
 
+  // if (license) {
+  //   // Debug: Show licenseFiles in console
+  //   console.log("licenseFiles", license.licenseFiles);
+  // }
   return (
     <>
-      {license ? <DetailView {...detailViewProps} /> : <DetailViewSkeleton />}
+      {license ? (
+        <>
+          <DetailView {...detailViewProps} />
+          {/* Debug: Render full license object */}
+          {/* <pre style={{ background: '#f8f8f8', padding: 12, fontSize: 12, borderRadius: 4, margin: '16px 0' }}>{JSON.stringify(license, null, 2)}</pre> */}
+        </>
+      ) : (
+        <DetailViewSkeleton />
+      )}
 
       <DialogContainer
         description="Checkout this License to a user"
@@ -326,7 +416,12 @@ export default function View({ params }: AssetPageProps) {
             itemId={license?.id!}
             type="license"
             seatsRequested={1}
-            assignAction={checkout}
+            assignAction={(data) => {
+              if (data.type === "license") {
+                return checkout({ ...(data as any), licenseId: data.itemId });
+              }
+              return checkout(data);
+            }}
             availableSeats={license ? Math.max(license.seats - license.seatsAllocated, 0) : 0}
             onOptimisticUpdate={(formData) => {
               setLicense((prev: EnhancedLicenseType | undefined) => {
@@ -360,16 +455,36 @@ export default function View({ params }: AssetPageProps) {
           />
         }
       />
-      <div className="mt-5">
-        {/* <ItemDetailsTabs
-          handleCheckIn={handleCheckIn}
-          auditLogs={license?.auditLogs ?? []}
-          itemId={id}
-          usedBy={license?.usedBy ?? []}
-          itemType="license"
-          isCheckingIn={loadingStates.isCheckingIn}
-          isRefreshing={loadingStates.isRefreshing}
-        /> */}
+      {/* License Audit Log & UserItem Records */}
+      <div className="mt-8">
+        {license && (
+          <ItemDetailsTabs
+            itemId={license.id}
+            itemType="license"
+            auditLogs={license.auditLogs.map(log => ({
+              ...log,
+              entityId: log.entityId ?? null,
+              details: log.details ?? null,
+              ipAddress: log.ipAddress ?? null,
+              dataAccessed: log.dataAccessed ?? null,
+              company: {
+                ...log.company,
+                name: log.company?.name ?? '',
+              },
+              user: typeof log.user === 'object' && log.user !== null
+                ? {
+                    id: (log.user as any).id ?? '',
+                    name: (log.user as any).name ?? '',
+                  }
+                : { id: '', name: '' },
+            }))}
+            usedBy={license.usedBy}
+            handleCheckIn={handleCheckIn}
+            isCheckingIn={loadingStates.isCheckingIn}
+            isRefreshing={loadingStates.isRefreshing}
+            attachments={license.licenseFiles || []}
+          />
+        )}
       </div>
     </>
   );

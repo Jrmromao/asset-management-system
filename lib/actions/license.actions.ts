@@ -5,6 +5,9 @@ import { assignmentSchema, licenseSchema } from "@/lib/schemas";
 import { getAuditLog, createAuditLog } from "@/lib/actions/auditLog.actions";
 import { prisma } from "@/app/db";
 import { withAuth, type AuthResponse } from "@/lib/middleware/withAuth";
+import S3Service from "@/services/aws/S3";
+import { randomUUID } from "crypto";
+import { EmailService } from "@/services/email";
 
 export const create = withAuth(
   async (
@@ -156,6 +159,15 @@ export const findById = withAuth(
           departmentLocation: true,
           inventory: true,
           LicenseSeat: true,
+          Manufacturer: {
+            select: {
+              name: true,
+              url: true,
+              supportUrl: true,
+              supportPhone: true,
+              supportEmail: true,
+            },
+          },
           userItems: {
             include: {
               user: {
@@ -170,6 +182,7 @@ export const findById = withAuth(
               },
             },
           },
+          licenseFiles: true,
         },
       };
       const [license, auditLogsResult] = await Promise.all([
@@ -405,6 +418,35 @@ export const checkout = withAuth(
         details: `License ${result.license.name} assigned to user ${result.assigneeUser.name || result.assigneeUser.email} by internal user ID ${result.internalUserId}`,
       });
 
+      // Send license files as download links to the assigned user
+      try {
+        // Fetch license files
+        const licenseFiles = await prisma.licenseFile.findMany({
+          where: { licenseId: result.license.id },
+        });
+        const s3 = S3Service.getInstance();
+        const links = await Promise.all(
+          licenseFiles.map(async (file) => ({
+            name: file.fileName,
+            url: await s3.getPresignedUrl(companyId, file.fileUrl),
+          }))
+        );
+        if (links.length > 0) {
+          await EmailService.sendEmail({
+            to: result.assigneeUser.email,
+            subject: `You've been assigned a license: ${result.license.name}`,
+            templateName: "licenseAssignment",
+            templateData: {
+              userName: result.assigneeUser.name || result.assigneeUser.email,
+              licenseName: result.license.name,
+              links,
+            },
+          });
+        }
+      } catch (emailError) {
+        console.error("Failed to send license assignment email:", emailError);
+      }
+
       return { success: true, data: parseStringify(result) };
     } catch (error) {
       console.error("Error assigning license:", error);
@@ -579,4 +621,117 @@ export const exportLicensesToCSV = withAuth(
       await prisma.$disconnect();
     }
   },
+);
+
+export const uploadLicenseFile = withAuth(
+  async (user, licenseId: string, file: { buffer: Buffer; originalname: string; mimetype: string }) => {
+    try {
+      const companyId = user.privateMetadata?.companyId as string;
+      if (!companyId) return { success: false, error: "User is not associated with a company" };
+      // Generate unique S3 key
+      const timestamp = Date.now();
+      const uniqueKey = `licenses/${licenseId}/${timestamp}-${file.originalname}`;
+      // Upload to S3
+      const s3 = S3Service.getInstance();
+      await s3.uploadFile(companyId, uniqueKey, file.buffer, file.mimetype);
+      // Create LicenseFile record
+      const licenseFile = await prisma.licenseFile.create({
+        data: {
+          licenseId,
+          fileUrl: uniqueKey,
+          fileName: file.originalname,
+          uploadedBy: user.id,
+        },
+      });
+      // Audit log
+      await createAuditLog({
+        companyId,
+        action: "LICENSE_FILE_UPLOADED",
+        entity: "LICENSE",
+        entityId: licenseId,
+        details: `License file uploaded: ${file.originalname} by user ${user.id}`,
+      });
+      return { success: true, data: parseStringify(licenseFile) };
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : String(error) };
+    } finally {
+      await prisma.$disconnect();
+    }
+  }
+);
+
+export const listLicenseFiles = withAuth(
+  async (user, licenseId: string) => {
+    try {
+      const companyId = user.privateMetadata?.companyId as string;
+      if (!companyId) return { success: false, error: "User is not associated with a company" };
+      // Check license ownership
+      const license = await prisma.license.findUnique({ where: { id: licenseId, companyId } });
+      if (!license) return { success: false, error: "License not found or not authorized" };
+      const files = await prisma.licenseFile.findMany({ where: { licenseId } });
+      return { success: true, data: parseStringify(files) };
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : String(error) };
+    } finally {
+      await prisma.$disconnect();
+    }
+  }
+);
+
+export const deleteLicenseFile = withAuth(
+  async (user, licenseFileId: string) => {
+    try {
+      const companyId = user.privateMetadata?.companyId as string;
+      if (!companyId) return { success: false, error: "User is not associated with a company" };
+      // Find LicenseFile and License
+      const licenseFile = await prisma.licenseFile.findUnique({ where: { id: licenseFileId }, include: { license: true } });
+      if (!licenseFile || licenseFile.license.companyId !== companyId) return { success: false, error: "File not found or not authorized" };
+      // Delete from S3
+      const s3 = S3Service.getInstance();
+      await s3.deleteFile(companyId, licenseFile.fileUrl);
+      // Delete record
+      await prisma.licenseFile.delete({ where: { id: licenseFileId } });
+      // Audit log
+      await createAuditLog({
+        companyId,
+        action: "LICENSE_FILE_DELETED",
+        entity: "LICENSE",
+        entityId: licenseFile.licenseId,
+        details: `License file deleted: ${licenseFile.fileName} by user ${user.id}`,
+      });
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : String(error) };
+    } finally {
+      await prisma.$disconnect();
+    }
+  }
+);
+
+export const getLicenseFileDownloadUrl = withAuth(
+  async (user, licenseFileId: string) => {
+    try {
+      const companyId = user.privateMetadata?.companyId as string;
+      if (!companyId) return { success: false, error: "User is not associated with a company" };
+      // Find LicenseFile and License
+      const licenseFile = await prisma.licenseFile.findUnique({ where: { id: licenseFileId }, include: { license: true } });
+      if (!licenseFile || licenseFile.license.companyId !== companyId) return { success: false, error: "File not found or not authorized" };
+      // Get presigned URL
+      const s3 = S3Service.getInstance();
+      const url = await s3.getPresignedUrl(companyId, licenseFile.fileUrl, 300);
+      // Audit log
+      await createAuditLog({
+        companyId,
+        action: "LICENSE_FILE_DOWNLOAD_URL_REQUESTED",
+        entity: "LICENSE",
+        entityId: licenseFile.licenseId,
+        details: `License file download URL requested: ${licenseFile.fileName} by user ${user.id}`,
+      });
+      return { success: true, data: url };
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : String(error) };
+    } finally {
+      await prisma.$disconnect();
+    }
+  }
 );

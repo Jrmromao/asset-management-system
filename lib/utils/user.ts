@@ -43,3 +43,18 @@ export async function validateUserCompany(clerkUserId: string): Promise<{
     };
   }
 }
+
+export async function isUserAdminOrManager(clerkUserId: string): Promise<boolean> {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { oauthId: clerkUserId },
+      include: { role: true },
+    });
+    if (!user || !user.role) return false;
+    // Allow Admins and Managers (by name or isAdmin flag)
+    return user.role.isAdmin || ["Admin", "Manager"].includes(user.role.name);
+  } catch (error) {
+    console.error("Error checking user admin/manager role:", error);
+    return false;
+  }
+}

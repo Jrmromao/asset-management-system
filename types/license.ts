@@ -63,4 +63,12 @@ export type License = {
   auditLogs: AuditLog[];
   userLicenses: UserItem[];
   currentAssignments: UserItem[];
+  licenseFiles?: {
+    id: string;
+    licenseId: string;
+    fileUrl: string;
+    fileName: string;
+    uploadedAt: string;
+    uploadedBy?: string | null;
+  }[];
 };
