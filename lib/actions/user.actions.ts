@@ -181,8 +181,14 @@ export async function updateUser(
  */
 export async function deleteUser(clerkId: string) {
   try {
-    const deletedUser = await prisma.user.delete({
+    const deletedUser = await prisma.user.update({
       where: { oauthId: clerkId },
+      data: {
+        isDeleted: true,
+        deletedAt: new Date(),
+        active: false,
+        status: "DISABLED",
+      },
     });
 
     revalidatePath("/");
@@ -190,17 +196,17 @@ export async function deleteUser(clerkId: string) {
     if (deletedUser) {
       await createAuditLog({
         companyId: deletedUser.companyId,
-        action: "USER_DELETED",
+        action: "USER_SOFT_DELETED",
         entity: "USER",
         entityId: deletedUser.id,
-        details: `User deleted: ${deletedUser.email} (${deletedUser.name}) by user ${deletedUser.id}`,
+        details: `User soft-deleted: ${deletedUser.email} (${deletedUser.name}) by Clerk webhook`,
       });
     }
 
     return parseStringify(deletedUser);
   } catch (error) {
-    console.error("Error deleting user:", error);
-    throw new Error("Failed to delete user from database.");
+    console.error("Error soft-deleting user:", error);
+    throw new Error("Failed to soft-delete user in database.");
   }
 }
 

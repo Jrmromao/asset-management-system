@@ -40,6 +40,10 @@ model User {
   lastConsentUpdate     DateTime?
   status                UserStatus    @default(INVITED)
 
+  // Soft delete fields
+  isDeleted             Boolean       @default(false)
+  deletedAt             DateTime?
+
   // Relations
   company           Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
   role              Role          @relation(fields: [roleId], references: [id], onDelete: Restrict)

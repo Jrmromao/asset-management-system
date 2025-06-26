@@ -59,6 +59,12 @@ export const sidebarLinks = [
     label: "Maintenance Flows",
     visibleTo: [roles.ADMIN],
   },
+  {
+    imgURL: "/icons/audit-logs.svg",
+    route: "/audit-logs",
+    label: "Audit Logs",
+    visibleTo: [roles.ADMIN, roles.SUPER_ADMIN],
+  },
 ].sort((a, b) => {
   if (a.label === "Dashboard") return -1;
   if (b.label === "Dashboard") return 1;

@@ -4,6 +4,7 @@ import { WebhookEvent } from "@clerk/nextjs/server";
 import { createUser, deleteUser, updateUser } from "@/lib/actions/user.actions";
 import { clerkClient } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
+import { createAuditLog } from "@/lib/actions/auditLog.actions";
 
 export async function POST(req: Request) {
   // You can find this in the Clerk Dashboard -> Webhooks -> choose the webhook
@@ -86,6 +87,14 @@ export async function POST(req: Request) {
           companyId: newUser.companyId, // companyId in private metadata only
         },
       });
+      // --- Audit log ---
+      await createAuditLog({
+        companyId: newUser.companyId,
+        action: "CLERK_USER_CREATED",
+        entity: "USER",
+        entityId: newUser.id,
+        details: `User created via Clerk webhook: ${newUser.email} (${newUser.name})`,
+      });
       return NextResponse.json({ message: "OK", user: newUser });
     } else {
       // User creation was skipped (likely no company ID yet)
@@ -110,6 +119,17 @@ export async function POST(req: Request) {
 
     const updatedUser = await updateUser(data.id, user);
 
+    // --- Audit log ---
+    if (updatedUser && updatedUser.companyId) {
+      await createAuditLog({
+        companyId: updatedUser.companyId,
+        action: "CLERK_USER_UPDATED",
+        entity: "USER",
+        entityId: updatedUser.id,
+        details: `User updated via Clerk webhook: ${updatedUser.email} (${updatedUser.name})`,
+      });
+    }
+
     return NextResponse.json({ message: "OK", user: updatedUser });
   }
 
@@ -117,6 +137,17 @@ export async function POST(req: Request) {
     const { id } = evt.data;
 
     const deletedUser = await deleteUser(id!);
+
+    // --- Audit log ---
+    if (deletedUser && deletedUser.companyId) {
+      await createAuditLog({
+        companyId: deletedUser.companyId,
+        action: "CLERK_USER_SOFT_DELETED",
+        entity: "USER",
+        entityId: deletedUser.id,
+        details: `User soft-deleted via Clerk webhook: ${deletedUser.email} (${deletedUser.name})`,
+      });
+    }
 
     return NextResponse.json({ message: "OK", user: deletedUser });
   }

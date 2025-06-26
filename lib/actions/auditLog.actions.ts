@@ -1,6 +1,4 @@
 "use server";
-
-import { revalidatePath } from "next/cache";
 import { prisma } from "@/app/db";
 import { z } from "zod";
 import { headers } from "next/headers";
@@ -52,7 +50,6 @@ export const createAuditLog = withAuth(async (user, data: AuditLogInput) => {
       },
     });
 
-    revalidatePath("/audit-logs");
     return {
       success: true,
       data: auditLog,
@@ -193,7 +190,6 @@ export const updateAuditLog = withAuth(
         data: validatedData,
       });
 
-      revalidatePath("/audit-logs");
       return {
         success: true,
         data: updatedLog,
@@ -227,7 +223,6 @@ export const deleteAuditLog = withAuth(async (user, id: string) => {
       where: { id },
     });
 
-    revalidatePath("/audit-logs");
     return { success: true };
   } catch (error) {
     console.error("Error deleting audit log:", error);

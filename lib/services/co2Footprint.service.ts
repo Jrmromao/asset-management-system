@@ -146,8 +146,7 @@ export class CO2FootprintService {
         asset.name,
         asset.model.manufacturer.name,
         asset.model.name,
-        asset.category?.name,
-        false, // Use cached results when available
+        asset.category?.name ?? ""
       );
 
       if (!co2Result.success) {
