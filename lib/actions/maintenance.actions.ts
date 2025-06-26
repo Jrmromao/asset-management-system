@@ -8,6 +8,7 @@ import { analyzeWithLlm } from "./chatGPT.actions";
 import { FlowRulesService } from "../services/flowRulesService";
 import { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
+import { createAuditLog } from "@/lib/actions/auditLog.actions";
 
 const flowRulesService = new FlowRulesService();
 
@@ -136,6 +137,14 @@ export const createMaintenanceEvent = withAuth(
 
       revalidatePath("/dashboard");
       revalidatePath("/maintenance");
+
+      await createAuditLog({
+        companyId,
+        action: "MAINTENANCE_CREATED",
+        entity: "MAINTENANCE",
+        entityId: newEvent.id,
+        details: `Maintenance created: ${newEvent.title} for asset ${newEvent.assetId} by user ${user.id}`,
+      });
 
       return { success: true, data: parseStringify(newEvent) };
     } catch (error) {
@@ -340,6 +349,14 @@ export const completeMaintenance = withAuth(
       revalidatePath("/dashboard");
       revalidatePath("/maintenance");
 
+      await createAuditLog({
+        companyId,
+        action: "MAINTENANCE_COMPLETED",
+        entity: "MAINTENANCE",
+        entityId: updatedMaintenance.id,
+        details: `Maintenance completed: ${updatedMaintenance.title} for asset ${updatedMaintenance.assetId} by user ${user.id}`,
+      });
+
       return { success: true, data: parseStringify(updatedMaintenance) };
     } catch (error) {
       return handleError(error, {} as MaintenanceWithDetails);
@@ -432,6 +449,14 @@ export const deleteMaintenance = withAuth(
 
       revalidatePath("/dashboard");
       revalidatePath("/maintenance");
+
+      await createAuditLog({
+        companyId,
+        action: "MAINTENANCE_DELETED",
+        entity: "MAINTENANCE",
+        entityId: id,
+        details: `Maintenance deleted: ${maintenance.title} for asset ${maintenance.assetId} by user ${user.id}`,
+      });
 
       return { success: true, data: { id } };
     } catch (error) {

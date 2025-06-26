@@ -5,6 +5,7 @@ import { withAuth, type AuthResponse } from "@/lib/middleware/withAuth";
 import { handleError, parseStringify } from "@/lib/utils";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
+import { createAuditLog } from "@/lib/actions/auditLog.actions";
 
 // Types for maintenance types and categories
 export interface MaintenanceType {
@@ -181,6 +182,13 @@ export const createMaintenanceCategory = withAuth(
       });
 
       revalidatePath("/maintenance-flows");
+      await createAuditLog({
+        companyId,
+        action: "MAINTENANCE_CATEGORY_CREATED",
+        entity: "MAINTENANCE_CATEGORY",
+        entityId: category.id,
+        details: `Maintenance category created: ${category.name} by user ${user.id}`,
+      });
       return { success: true, data: parseStringify(category) };
     } catch (error) {
       return handleError(error, {} as MaintenanceCategory);
@@ -250,6 +258,13 @@ export const updateMaintenanceCategory = withAuth(
       });
 
       revalidatePath("/maintenance-flows");
+      await createAuditLog({
+        companyId,
+        action: "MAINTENANCE_CATEGORY_UPDATED",
+        entity: "MAINTENANCE_CATEGORY",
+        entityId: id,
+        details: `Maintenance category updated: ${category.name} by user ${user.id}`,
+      });
       return { success: true, data: parseStringify(category) };
     } catch (error) {
       return handleError(error, {} as MaintenanceCategory);
@@ -301,6 +316,13 @@ export const deleteMaintenanceCategory = withAuth(
       });
 
       revalidatePath("/maintenance-flows");
+      await createAuditLog({
+        companyId,
+        action: "MAINTENANCE_CATEGORY_DELETED",
+        entity: "MAINTENANCE_CATEGORY",
+        entityId: id,
+        details: `Maintenance category deleted: ${existingCategory.name} by user ${user.id}`,
+      });
       return { success: true, data: true };
     } catch (error) {
       return handleError(error, false);
@@ -413,6 +435,13 @@ export const createMaintenanceType = withAuth(
       });
 
       revalidatePath("/maintenance-flows");
+      await createAuditLog({
+        companyId,
+        action: "MAINTENANCE_TYPE_CREATED",
+        entity: "MAINTENANCE_TYPE",
+        entityId: type.id,
+        details: `Maintenance type created: ${type.name} by user ${user.id}`,
+      });
       return { success: true, data: parseStringify(type) };
     } catch (error) {
       return handleError(error, {} as MaintenanceType);
@@ -498,6 +527,13 @@ export const updateMaintenanceType = withAuth(
       });
 
       revalidatePath("/maintenance-flows");
+      await createAuditLog({
+        companyId,
+        action: "MAINTENANCE_TYPE_UPDATED",
+        entity: "MAINTENANCE_TYPE",
+        entityId: id,
+        details: `Maintenance type updated: ${type.name} by user ${user.id}`,
+      });
       return { success: true, data: parseStringify(type) };
     } catch (error) {
       return handleError(error, {} as MaintenanceType);
@@ -536,6 +572,13 @@ export const deleteMaintenanceType = withAuth(
       });
 
       revalidatePath("/maintenance-flows");
+      await createAuditLog({
+        companyId,
+        action: "MAINTENANCE_TYPE_DELETED",
+        entity: "MAINTENANCE_TYPE",
+        entityId: id,
+        details: `Maintenance type deleted: ${existingType.name} by user ${user.id}`,
+      });
       return { success: true, data: true };
     } catch (error) {
       return handleError(error, false);

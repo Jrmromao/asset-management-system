@@ -5,6 +5,7 @@ import { z } from "zod";
 import { categorySchema } from "@/lib/schemas";
 import { Prisma } from "@prisma/client";
 import { withAuth } from "@/lib/middleware/withAuth";
+import { createAuditLog } from "@/lib/actions/auditLog.actions";
 
 export const insert = withAuth(
   async (user, values: z.infer<typeof categorySchema>) => {
@@ -23,9 +24,16 @@ export const insert = withAuth(
       const category = await prisma.category.create({
         data: {
           name: name,
-          type: "",
           companyId: user.user_metadata?.companyId,
         },
+      });
+
+      await createAuditLog({
+        companyId: user.user_metadata?.companyId,
+        action: "CATEGORY_CREATED",
+        entity: "CATEGORY",
+        entityId: category.id,
+        details: `Category created: ${category.name} by user ${user.id}`,
       });
 
       return {
@@ -75,12 +83,6 @@ export const getAll = withAuth(
                     mode: "insensitive",
                   },
                 },
-                {
-                  type: {
-                    contains: options.search,
-                    mode: "insensitive",
-                  },
-                },
               ],
             }
           : {}),
@@ -96,7 +98,6 @@ export const getAll = withAuth(
         select: {
           id: true,
           name: true,
-          type: true,
           companyId: true,
           createdAt: true,
           updatedAt: true,
@@ -129,11 +130,18 @@ export const remove = withAuth(async (user, id: string) => {
       select: {
         id: true,
         name: true,
-        type: true,
         companyId: true,
         createdAt: true,
         updatedAt: true,
       },
+    });
+
+    await createAuditLog({
+      companyId: user.user_metadata?.companyId,
+      action: "CATEGORY_DELETED",
+      entity: "CATEGORY",
+      entityId: category.id,
+      details: `Category deleted: ${category.name} by user ${user.id}`,
     });
 
     return {
@@ -160,6 +168,14 @@ export const update = withAuth(
           companyId: user.user_metadata?.companyId,
         },
         data,
+      });
+
+      await createAuditLog({
+        companyId: user.user_metadata?.companyId,
+        action: "CATEGORY_UPDATED",
+        entity: "CATEGORY",
+        entityId: category.id,
+        details: `Category updated: ${category.name} by user ${user.id}`,
       });
 
       return {

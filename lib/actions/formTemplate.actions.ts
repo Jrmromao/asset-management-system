@@ -49,12 +49,10 @@ export const insert = async (
         return { success: false, error: "Failed to create form template" };
       }
     },
-  )(session, data);
+  )(data);
 };
 
-export const getAll = async (): Promise<AuthResponse<FormTemplate[]>> => {
-  const session = getSession();
-  return withAuth(async (user): Promise<AuthResponse<FormTemplate[]>> => {
+export const getAll = withAuth(async (user): Promise<AuthResponse<FormTemplate[]>> => {
     try {
       const templates = await prisma.formTemplate.findMany({
         where: {
@@ -69,8 +67,7 @@ export const getAll = async (): Promise<AuthResponse<FormTemplate[]>> => {
       console.error("Get form templates error:", error);
       return { success: false, error: "Failed to fetch form templates" };
     }
-  })(session);
-};
+  });
 
 export const getFormTemplateById = withAuth(
   async (user, id: string): Promise<AuthResponse<FormTemplate>> => {

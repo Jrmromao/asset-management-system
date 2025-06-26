@@ -8,6 +8,7 @@ import { z } from "zod";
 import { Prisma, Supplier } from "@prisma/client";
 import { withAuth } from "@/lib/middleware/withAuth";
 import { cookies } from "next/headers";
+import { createAuditLog } from "@/lib/actions/auditLog.actions";
 
 // Standardized response type
 export type ActionResponse<T> = {
@@ -57,6 +58,13 @@ export const insert = withAuth(
       });
 
       revalidatePath("/assets/create");
+      await createAuditLog({
+        companyId: user.user_metadata?.companyId,
+        action: "SUPPLIER_CREATED",
+        entity: "SUPPLIER",
+        entityId: supplier.id,
+        details: `Supplier created: ${supplier.name} by user ${user.id}`,
+      });
       return { success: true, data: parseStringify(supplier) };
     } catch (error) {
       console.error("Create supplier error:", error);
@@ -173,6 +181,13 @@ export const update = withAuth(
       });
 
       revalidatePath("/assets/create");
+      await createAuditLog({
+        companyId: user.user_metadata?.companyId,
+        action: "SUPPLIER_UPDATED",
+        entity: "SUPPLIER",
+        entityId: supplier.id,
+        details: `Supplier updated: ${supplier.name} by user ${user.id}`,
+      });
       return { success: true, data: parseStringify(supplier) };
     } catch (error) {
       console.error("Failed to update supplier:", error);
@@ -195,6 +210,13 @@ export const remove = withAuth(
         where: { id, companyId: user.user_metadata?.companyId },
       });
       revalidatePath("/assets/create");
+      await createAuditLog({
+        companyId: user.user_metadata?.companyId,
+        action: "SUPPLIER_DELETED",
+        entity: "SUPPLIER",
+        entityId: supplier.id,
+        details: `Supplier deleted: ${supplier.name} by user ${user.id}`,
+      });
       return { success: true, data: parseStringify(supplier) };
     } catch (error) {
       console.error("Failed to delete supplier:", error);

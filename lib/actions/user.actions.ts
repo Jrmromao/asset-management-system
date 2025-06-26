@@ -6,6 +6,7 @@ import { clerkClient, auth } from "@clerk/nextjs/server";
 import { prisma } from "@/app/db";
 import { parseStringify } from "@/lib/utils";
 import { UserService } from "@/services/user/userService";
+import { createAuditLog } from "@/lib/actions/auditLog.actions";
 
 /**
  * Creates a new user in the database when a new user signs up via Clerk.
@@ -47,6 +48,16 @@ export async function createUser(user: {
           companyId: updatedUser.companyId, // companyId in private metadata only
         },
       });
+
+      if (updatedUser) {
+        await createAuditLog({
+          companyId: updatedUser.companyId,
+          action: "USER_UPDATED",
+          entity: "USER",
+          entityId: updatedUser.id,
+          details: `User updated: ${updatedUser.email} (${updatedUser.name}) by user ${updatedUser.id}`,
+        });
+      }
 
       return parseStringify(updatedUser);
     }
@@ -105,6 +116,16 @@ export async function createUser(user: {
       },
     });
 
+    if (newUser) {
+      await createAuditLog({
+        companyId: newUser.companyId,
+        action: "USER_CREATED",
+        entity: "USER",
+        entityId: newUser.id,
+        details: `User created: ${newUser.email} (${newUser.name}) by user ${newUser.id}`,
+      });
+    }
+
     return parseStringify(newUser);
   } catch (error) {
     console.error("Error creating user:", error);
@@ -137,6 +158,16 @@ export async function updateUser(
       },
     });
 
+    if (updatedUser) {
+      await createAuditLog({
+        companyId: updatedUser.companyId,
+        action: "USER_UPDATED",
+        entity: "USER",
+        entityId: updatedUser.id,
+        details: `User updated: ${updatedUser.email} (${updatedUser.name}) by user ${updatedUser.id}`,
+      });
+    }
+
     return parseStringify(updatedUser);
   } catch (error) {
     console.error("Error updating user:", error);
@@ -155,6 +186,16 @@ export async function deleteUser(clerkId: string) {
     });
 
     revalidatePath("/");
+
+    if (deletedUser) {
+      await createAuditLog({
+        companyId: deletedUser.companyId,
+        action: "USER_DELETED",
+        entity: "USER",
+        entityId: deletedUser.id,
+        details: `User deleted: ${deletedUser.email} (${deletedUser.name}) by user ${deletedUser.id}`,
+      });
+    }
 
     return parseStringify(deletedUser);
   } catch (error) {
