@@ -44,6 +44,8 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
+import BulkImportDialog from "@/components/forms/BulkImportDialog";
+import { assetImportConfig } from "@/importConfigs/assetImportConfig";
 
 // Constants for better maintainability
 const SEARCH_DEBOUNCE_MS = 300;
@@ -219,14 +221,17 @@ const Assets = () => {
     });
   }, [navigate]);
 
-  const handleImport = useCallback(() => {
-    openDialog();
-  }, [openDialog]);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
 
-  const applyFilters = useCallback(() => {
-    // Filter logic can be implemented here
-    setFilterDialogOpen(false);
-  }, []);
+  const openImportModal = () => {
+    setImportDialogOpen(true);
+  };
+
+  const handleImportSuccess = (data: any[]) => {
+    setImportDialogOpen(false);
+    // Optionally refresh data here or handle the imported data
+    toast.success(`Successfully imported ${data.length} assets`);
+  };
 
   // Table configuration
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -408,7 +413,7 @@ const Assets = () => {
           table={table}
           addNewText="Add Asset"
           onAddNew={handleCreateNew}
-          onImport={handleImport}
+          onImport={openImportModal}
           onExport={handleExport}
           isLoading={isLoading || isPending}
           filterPlaceholder="Search assets..."
@@ -433,16 +438,17 @@ const Assets = () => {
         onOpenChange={setFilterDialogOpen}
         filters={filters}
         setFilters={setFilters}
-        onApplyFilters={applyFilters}
+        onApplyFilters={() => {
+          setFilterDialogOpen(false);
+        }}
         title="Filter Assets"
       />
 
-      <DialogContainer
-        open={isOpen}
-        onOpenChange={closeDialog}
-        title="Import Assets"
-        description="Import assets from a CSV file"
-        form={<FileUploadForm dataType="assets" />}
+      <BulkImportDialog
+        isOpen={importDialogOpen}
+        onClose={() => setImportDialogOpen(false)}
+        config={assetImportConfig}
+        onImport={handleImportSuccess}
       />
     </div>
   );

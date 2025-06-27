@@ -30,7 +30,7 @@ export function DialogContainer({
   return (
     <div className={"asset-dialog"}>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[725px]">
+        <DialogContent className={className ? className + " max-w-3xl w-full" : "max-w-3xl w-full"}>
           <DialogHeader>
             <DialogTitle>{title}</DialogTitle>
             <DialogDescription className="text-gray-500 text-sm">
