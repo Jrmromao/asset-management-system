@@ -51,7 +51,12 @@ const Footer = ({ isCollapsed = false }: { isCollapsed?: boolean }) => {
   const { signOut } = useClerk();
   const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -63,8 +68,8 @@ const Footer = ({ isCollapsed = false }: { isCollapsed?: boolean }) => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  if (!isLoaded || !user) {
-    // Show consistent placeholder during loading to prevent hydration mismatch
+  // Show loading state until both mounted and user data is loaded
+  if (!isMounted || !isLoaded || !user) {
     return (
       <div className="relative w-full">
         <div

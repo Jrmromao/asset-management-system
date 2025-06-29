@@ -30,6 +30,7 @@ import { useEffect, useState } from "react";
 import { Supplier } from "@prisma/client";
 import { getAllSuppliers } from "@/lib/actions/supplier.actions";
 import CustomDatePicker from "@/components/CustomDatePicker";
+import { usePurchaseOrderUIStore } from "@/lib/stores/usePurchaseOrderUIStore";
 
 const formSchema = z.object({
   poNumber: z.string().min(1, "PO Number is required"),
@@ -47,14 +48,17 @@ type PurchaseOrderFormValues = z.infer<typeof formSchema>;
 interface PurchaseOrderFormProps {
   purchaseOrder?: any;
   companyId: string;
+  fromAssetForm?: boolean;
 }
 
 export function PurchaseOrderForm({
   purchaseOrder,
   companyId,
+  fromAssetForm = false,
 }: PurchaseOrderFormProps) {
   const router = useRouter();
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const { onClose } = usePurchaseOrderUIStore();
 
   useEffect(() => {
     async function fetchSuppliers() {
@@ -100,12 +104,23 @@ export function PurchaseOrderForm({
       if (purchaseOrder) {
         formData.append("existingDocumentUrl", purchaseOrder.documentUrl || "");
         await updatePurchaseOrder(purchaseOrder.id, formData);
-        router.push(`/admin/purchase-orders/${purchaseOrder.id}`);
+        if (!fromAssetForm) {
+          router.push(`/admin/purchase-orders/${purchaseOrder.id}`);
+        }
       } else {
         await createPurchaseOrder(formData);
-        router.push("/admin/purchase-orders");
+        if (!fromAssetForm) {
+          router.push("/admin/purchase-orders");
+        } else {
+          // Close the dialog and refresh the page to update the PO list
+          onClose();
+          router.refresh();
+        }
       }
-      router.refresh();
+
+      if (!fromAssetForm) {
+        router.refresh();
+      }
     } catch (error) {
       console.error("Failed to save purchase order:", error);
       // Handle error, e.g., show a toast message

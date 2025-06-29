@@ -1,9 +1,15 @@
 "use client";
 
-import React, { useState, useTransition, useEffect, useRef } from "react";
+import React, {
+  useState,
+  useTransition,
+  useEffect,
+  useRef,
+  useCallback,
+} from "react";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { useRouter, useParams } from "next/navigation";
 import { toast } from "sonner";
 import { ChevronDown, InfoIcon } from "lucide-react";
@@ -56,7 +62,10 @@ import ActionFooter from "@/components/forms/ActionFooter";
 import FormSection from "@/components/forms/FormSection";
 import MainFormSkeleton from "@/components/forms/MainFormSkeleton";
 import FormProgressSkeleton from "@/components/forms/FormProgressSkeleton";
-import { FormProgress } from "@/components/forms/FormProgress";
+import {
+  FormProgress,
+  type SectionStatus,
+} from "@/components/forms/FormProgress";
 import {
   getRequiredFieldCount,
   getRequiredFieldsList,
@@ -149,7 +158,9 @@ const LicenseForm = () => {
   const params = useParams();
   const licenseId = params?.id as string | undefined;
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [createdLicenseId, setCreatedLicenseId] = useState<string | undefined>(licenseId);
+  const [createdLicenseId, setCreatedLicenseId] = useState<string | undefined>(
+    licenseId,
+  );
 
   // Queries and UI stores
   const { onOpen: openStatus } = useStatusLabelUIStore();
@@ -240,7 +251,9 @@ const LicenseForm = () => {
   }
 
   async function handleDownload(fileId: string) {
-    const res = await fetch(`/api/licenses/files/download-url?fileId=${fileId}`);
+    const res = await fetch(
+      `/api/licenses/files/download-url?fileId=${fileId}`,
+    );
     const { data: url } = await res.json();
     window.open(url, "_blank");
   }
@@ -283,43 +296,88 @@ const LicenseForm = () => {
     });
   }
 
-  //
+  // Watch form values for progress tracking
+  const watchedValues = useWatch({
+    control: form.control,
+    name: [
+      "licenseName",
+      "statusLabelId",
+      "locationId",
+      "seats",
+      "minSeatsAlert",
+      "licensedEmail",
+      "alertRenewalDays",
+      "purchaseDate",
+      "poNumber",
+      "purchasePrice",
+      "monthlyPrice",
+      "annualPrice",
+      "costCenter",
+      "budgetCode",
+    ],
+  });
+
+  const [
+    licenseName,
+    statusLabelId,
+    locationId,
+    seats,
+    minSeatsAlert,
+    licensedEmail,
+    alertRenewalDays,
+    purchaseDate,
+    poNumber,
+    purchasePrice,
+    monthlyPrice,
+    annualPrice,
+    costCenter,
+    budgetCode,
+  ] = watchedValues;
+
   const progressFormSection = [
     {
       name: "Basic Information",
-      isValid: !!form.watch("licenseName"),
+      status: (licenseName ? "complete" : "incomplete") as SectionStatus,
     },
     {
       name: "Status & Location",
-      isValid: !!form.watch("statusLabelId") && !!form.watch("locationId"),
+      status: (statusLabelId && locationId
+        ? "complete"
+        : "incomplete") as SectionStatus,
     },
     {
       name: "License Management",
-      isValid: !!form.watch("seats") && !!form.watch("minSeatsAlert"),
+      status: (seats && minSeatsAlert
+        ? "complete"
+        : "incomplete") as SectionStatus,
     },
     {
       name: "Notifications",
-      isValid:
-        !!form.watch("licensedEmail") && !!form.watch("alertRenewalDays"),
+      status: (licensedEmail && alertRenewalDays
+        ? "complete"
+        : "incomplete") as SectionStatus,
     },
     {
       name: "Purchase Information",
-      isValid: !!form.watch("purchaseDate") || !!form.watch("poNumber"),
+      status: (purchaseDate || poNumber
+        ? "complete"
+        : "incomplete") as SectionStatus,
     },
     {
       name: "Pricing Information",
-      isValid:
-        !!form.watch("purchasePrice") ||
-        !!form.watch("monthlyPrice") ||
-        !!form.watch("annualPrice"),
+      status: (purchasePrice || monthlyPrice || annualPrice
+        ? "complete"
+        : "incomplete") as SectionStatus,
     },
     {
       name: "Cost Management",
-      isValid: !!form.watch("costCenter") || !!form.watch("budgetCode"),
+      status: (costCenter || budgetCode
+        ? "complete"
+        : "incomplete") as SectionStatus,
     },
     {
       name: "Attachments",
-      isValid: !!file,
+      status: (file ? "complete" : "incomplete") as SectionStatus,
     },
   ];
 
@@ -577,7 +635,8 @@ const LicenseForm = () => {
                           accept={{
                             "application/pdf": [".pdf"],
                             "application/msword": [".doc"],
-                            "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [".docx"],
+                            "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+                              [".docx"],
                             "image/png": [".png"],
                             "image/jpeg": [".jpg", ".jpeg"],
                           }}
@@ -586,27 +645,63 @@ const LicenseForm = () => {
                         <div className="mt-4">
                           <div className="flex items-center gap-2">
                             <span className="font-medium">Selected files:</span>
-                            <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-700 text-sm">{selectedFiles.length}</span>
+                            <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-700 text-sm">
+                              {selectedFiles.length}
+                            </span>
                           </div>
                           {selectedFiles.length > 0 && (
                             <ul className="mt-2 space-y-1">
                               {selectedFiles.map((file, idx) => (
-                                <li key={file.name + idx} className="flex items-center gap-2 text-sm">
+                                <li
+                                  key={file.name + idx}
+                                  className="flex items-center gap-2 text-sm"
+                                >
                                   <span>{file.name}</span>
-                                  <button type="button" className="text-red-500 hover:underline" onClick={() => setSelectedFiles(selectedFiles.filter((_, i) => i !== idx))}>Remove</button>
+                                  <button
+                                    type="button"
+                                    className="text-red-500 hover:underline"
+                                    onClick={() =>
+                                      setSelectedFiles(
+                                        selectedFiles.filter(
+                                          (_, i) => i !== idx,
+                                        ),
+                                      )
+                                    }
+                                  >
+                                    Remove
+                                  </button>
                                 </li>
                               ))}
                             </ul>
                           )}
                         </div>
                         <div className="mt-6">
-                          <div className="font-medium mb-2">Uploaded Files:</div>
+                          <div className="font-medium mb-2">
+                            Uploaded Files:
+                          </div>
                           <ul>
-                            {uploadedFiles.map(file => (
-                              <li key={file.id ?? file.fileName} className="flex items-center gap-2">
+                            {uploadedFiles.map((file) => (
+                              <li
+                                key={file.id ?? file.fileName}
+                                className="flex items-center gap-2"
+                              >
                                 <span>{file.fileName ?? "Unnamed file"}</span>
-                                {file.id && <button type="button" onClick={() => handleDownload(file.id)}>Download</button>}
-                                {file.id && <button type="button" onClick={() => handleDelete(file.id)}>Delete</button>}
+                                {file.id && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDownload(file.id)}
+                                  >
+                                    Download
+                                  </button>
+                                )}
+                                {file.id && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDelete(file.id)}
+                                  >
+                                    Delete
+                                  </button>
+                                )}
                               </li>
                             ))}
                           </ul>

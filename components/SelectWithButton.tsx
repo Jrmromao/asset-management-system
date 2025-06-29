@@ -30,7 +30,6 @@ export const SelectWithButton = ({
   <div className="flex gap-2 items-start">
     <div className="flex-1">
       <CustomSelect
-        value={form.watch(name)}
         name={name}
         required={required}
         label={label}

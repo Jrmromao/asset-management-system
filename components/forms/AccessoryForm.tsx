@@ -3,7 +3,7 @@
 import React, { useState, useTransition } from "react";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { ChevronDown, Info } from "lucide-react";
@@ -151,6 +151,50 @@ const AccessoryForm = () => {
       categoryId: "",
     },
   });
+
+  // Watch form values for progress tracking
+  const watchedValues = useWatch({
+    control: form.control,
+    name: [
+      "categoryId",
+      "name",
+      "serialNumber",
+      "statusLabelId",
+      "locationId",
+      "poNumber",
+      "purchaseDate",
+      "price",
+      "unitCost",
+      "costCenter",
+      "budgetCode",
+      "material",
+      "weight",
+      "inventoryId",
+      "totalQuantityCount",
+      "reorderPoint",
+      "alertEmail",
+    ],
+  });
+
+  const [
+    categoryId,
+    name,
+    serialNumber,
+    statusLabelId,
+    locationId,
+    poNumber,
+    purchaseDate,
+    price,
+    unitCost,
+    costCenter,
+    budgetCode,
+    material,
+    weight,
+    inventoryId,
+    totalQuantityCount,
+    reorderPoint,
+    alertEmail,
+  ] = watchedValues;
 
   // Submit handler
   const onSubmit = async (data: AccessoryFormValues) => {
@@ -490,48 +534,44 @@ const AccessoryForm = () => {
                   sections={[
                     {
                       name: "Category",
-                      isValid: !!form.watch("categoryId"),
+                      status: categoryId ? "complete" : "incomplete",
                     },
                     {
                       name: "Basic Information",
-                      isValid:
-                        !!form.watch("name") && !!form.watch("serialNumber"),
+                      status: name && serialNumber ? "complete" : "incomplete",
                     },
                     {
                       name: "Status & Location",
-                      isValid:
-                        !!form.watch("statusLabelId") &&
-                        !!form.watch("locationId"),
+                      status:
+                        statusLabelId && locationId ? "complete" : "incomplete",
                     },
                     {
                       name: "Purchase Information",
-                      isValid:
-                        !!form.watch("poNumber") ||
-                        !!form.watch("purchaseDate"),
+                      status:
+                        poNumber || purchaseDate ? "complete" : "incomplete",
                     },
                     {
                       name: "Pricing Information",
-                      isValid:
-                        !!form.watch("price") || !!form.watch("unitCost"),
+                      status: price || unitCost ? "complete" : "incomplete",
                     },
                     {
                       name: "Cost Management",
-                      isValid:
-                        !!form.watch("costCenter") ||
-                        !!form.watch("budgetCode"),
+                      status:
+                        costCenter || budgetCode ? "complete" : "incomplete",
                     },
                     {
                       name: "Physical Properties",
-                      isValid:
-                        !!form.watch("material") || !!form.watch("weight"),
+                      status: material || weight ? "complete" : "incomplete",
                     },
                     {
                       name: "Inventory Management",
-                      isValid:
-                        !!form.watch("inventoryId") &&
-                        !!form.watch("totalQuantityCount") &&
-                        !!form.watch("reorderPoint") &&
-                        !!form.watch("alertEmail"),
+                      status:
+                        inventoryId &&
+                        totalQuantityCount &&
+                        reorderPoint &&
+                        alertEmail
+                          ? "complete"
+                          : "incomplete",
                     },
                   ]}
                 />

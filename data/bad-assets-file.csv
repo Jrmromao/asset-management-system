@@ -1,10 +1,2 @@
-assetTag,name,categoryName,manufacturerName,modelName,purchaseDate,purchasePrice,locationName,departmentName,supplierName,endOfLife,notes
-A1,Printer,Electronics,HP,LaserJet,2023-05-10,-500,Main Office,IT,BestBuy,2022-01-01,Negative price and EOL before purchase
-A1,Printer,Electronics,HP,LaserJet,2023-05-10,100000000,Main Office,IT,BestBuy,2025-01-01,Duplicate assetTag and name, price too high
-@!#,$$$,Electronics,HP,LaserJet,2023-13-40,abc,Main Office,IT,BestBuy,2025-01-01,Invalid assetTag, name, date, price
-AST-001,Monitor,Electronics,Dell,U2412M,2022-03-15,200,Main Office,IT,Amazon,2021-03-15,EOL before purchase
-,Router,Networking,Cisco,RV340,2021-07-01,150,Server Room,IT,Cisco,2026-07-01,Missing assetTag
-AST-002,Printer,Electronics,HP,LaserJet,2023-05-10,300,Main Office,IT,BestBuy,2025-01-01,Duplicate name
-AST-003,Monitor,Electronics,Dell,U2412M,2022-03-15,0,Main Office,IT,Amazon,2025-03-15,Zero price
-AST-004,Camera,Security,Sony,Alpha,2022-02-30,250,Entrance,Security,Sony,2027-02-30,Invalid date
-AST-005,Switch,Networking,Cisco,SG300,2021-07-01,100,Server Room,IT,Cisco,2026-07-01,Valid row
+assetTag,name,categoryName,manufacturerName,modelName,purchaseDate,purchasePrice,locationName,statusLabelName,departmentName,supplierName,endOfLife,notes
+BAD!,Printer,Electronics,HP,LaserJet,2023-05-10,100,Main Office,lol,IT,BestBuy,2025-01-01,Invalid asset tag

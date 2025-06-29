@@ -1,6 +1,12 @@
 import { create } from "zustand";
 
-export type ImportProgress = "idle" | "parsing" | "validating" | "importing" | "done" | "error";
+export type ImportProgress =
+  | "idle"
+  | "parsing"
+  | "validating"
+  | "importing"
+  | "done"
+  | "error";
 
 interface ImportStoreState {
   file: File | null;
@@ -11,6 +17,8 @@ interface ImportStoreState {
   setColumnMapping: (mapping: Record<string, string>) => void;
   errorRows: number[];
   setErrorRows: (rows: number[]) => void;
+  warningRows: number[];
+  setWarningRows: (rows: number[]) => void;
   progress: ImportProgress;
   setProgress: (progress: ImportProgress) => void;
 }
@@ -24,6 +32,8 @@ export const useImportStore = create<ImportStoreState>((set) => ({
   setColumnMapping: (columnMapping) => set({ columnMapping }),
   errorRows: [],
   setErrorRows: (errorRows) => set({ errorRows }),
+  warningRows: [],
+  setWarningRows: (warningRows) => set({ warningRows }),
   progress: "idle",
   setProgress: (progress) => set({ progress }),
-})); 
+}));

@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState } from "react";
 import { BookOpen, Building2, Globe2, Leaf } from "lucide-react";
 import {

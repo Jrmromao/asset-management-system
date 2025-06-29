@@ -121,7 +121,6 @@ const AssignmentForm = ({
             placeholder="Select User"
             disabled={isSubmitting}
             data={users || []}
-            value={form.watch("userId")}
             required
           />
 
@@ -137,27 +136,27 @@ const AssignmentForm = ({
                 id: String(i + 1),
                 name: String(i + 1),
               }))}
-              value={String(form.watch("seatsRequested") ?? "1")}
               required
             />
           )}
 
           {/* Show quantity dropdown for accessories using CustomSelect */}
-          {type === "accessory" && availableQuantity && availableQuantity > 0 && (
-            <CustomSelect
-              control={form.control}
-              name="quantity"
-              label="Quantity"
-              placeholder="Select quantity"
-              disabled={isSubmitting}
-              data={Array.from({ length: availableQuantity }, (_, i) => ({
-                id: String(i + 1),
-                name: String(i + 1),
-              }))}
-              value={String(form.watch("quantity") ?? "1")}
-              required
-            />
-          )}
+          {type === "accessory" &&
+            availableQuantity &&
+            availableQuantity > 0 && (
+              <CustomSelect
+                control={form.control}
+                name="quantity"
+                label="Quantity"
+                placeholder="Select quantity"
+                disabled={isSubmitting}
+                data={Array.from({ length: availableQuantity }, (_, i) => ({
+                  id: String(i + 1),
+                  name: String(i + 1),
+                }))}
+                required
+              />
+            )}
 
           <FormError message={error} />
 

@@ -89,35 +89,30 @@ export function DataTableHeader<TData>({
           )}
         </div>
         <div className="flex items-center space-x-3">
-          {showSearch &&
-            (() => {
-              const searchColumn = table.getColumn(effectiveSearchColumnId);
-              if (!searchColumn) return null;
-              return (
+          {showSearch && (() => {
+            const searchColumn = table.getColumn(effectiveSearchColumnId);
+            if (!searchColumn) return null;
+            const filterValue = (searchColumn.getFilterValue() as string) ?? "";
+            return (
+              <div className="relative w-full max-w-[340px]">
                 <Input
                   placeholder={searchPlaceholder}
-                  value={(searchColumn.getFilterValue() as string) ?? ""}
-                  onChange={(event) =>
-                    searchColumn.setFilterValue(event.target.value)
-                  }
-                  className="h-9 w-[150px] lg:w-[250px] dark:bg-gray-800 dark:border-gray-700 dark:placeholder-gray-400"
+                  value={filterValue}
+                  onChange={(event) => searchColumn.setFilterValue(event.target.value)}
+                  className="h-9 w-full pr-10 pl-4 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition bg-white dark:bg-gray-800 dark:border-gray-700 dark:placeholder-gray-400 shadow-sm"
+                  aria-label="Search assets"
                 />
-              );
-            })()}
-          {(() => {
-            const searchColumn = table.getColumn(effectiveSearchColumnId);
-            const hasFilterValue =
-              searchColumn && Boolean(searchColumn.getFilterValue());
-            if (!hasFilterValue) return null;
-            return (
-              <Button
-                variant="ghost"
-                onClick={() => searchColumn?.setFilterValue("")}
-                className="h-8 px-2 lg:px-3"
-              >
-                Reset
-                <Cross2Icon className="ml-2 h-4 w-4" />
-              </Button>
+                {filterValue && (
+                  <button
+                    type="button"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+                    onClick={() => searchColumn.setFilterValue("")}
+                    aria-label="Clear search"
+                  >
+                    <Cross2Icon className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
             );
           })()}
         </div>

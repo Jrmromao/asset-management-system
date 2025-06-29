@@ -19,17 +19,7 @@ import {
   MoreHorizontal,
   Target,
   Brain,
-  Zap,
 } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import TableHeader from "@/components/tables/TableHeader";
-import { DialogContainer } from "@/components/dialogs/DialogContainer";
 import {
   useDepartmentQuery,
   useInventoryQuery,
@@ -55,9 +45,6 @@ import {
   ModelForm,
   StatusLabelForm,
 } from "@/components/forms";
-import { DataTable } from "@/components/tables/DataTable/data-table";
-import TableSkeleton from "@/components/tables/TableSkeleton";
-import TableHeaderSkeleton from "@/components/tables/TableHeaderSkeleton";
 import {
   useDepartmentUIStore,
   useFormTemplateUIStore,
@@ -70,19 +57,25 @@ import {
 import FormTemplateCreator from "@/components/forms/FormTemplateCreator";
 import { useFormTemplatesQuery } from "@/hooks/queries/useFormTemplatesQuery";
 import { FormTemplate } from "@/types/form";
-import { useReactTable, getCoreRowModel } from "@tanstack/react-table";
 import { ModelWithRelations } from "@/types/model";
 import {
-  Model,
   StatusLabel,
   Department,
   DepartmentLocation,
   Inventory,
   Manufacturer,
 } from "@prisma/client";
+import { aiService } from "@/lib/services/ai-multi-provider.service";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { DialogContainer } from "@/components/dialogs/DialogContainer";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import ReportStorageSettings from "@/components/settings/ReportStorageSettings";
 import SustainabilityTargets from "@/components/settings/SustainabilityTargets";
-import { aiService } from "@/lib/services/ai-multi-provider.service";
 
 interface Tab {
   id: TabId;
@@ -91,7 +84,7 @@ interface Tab {
   description: string;
 }
 
-type TabId = 
+type TabId =
   | "models"
   | "manufacturers"
   | "locations"
@@ -100,7 +93,8 @@ type TabId =
   | "inventories"
   | "asset-categories"
   | "sustainability-targets"
-  | "report-storage";
+  | "report-storage"
+  | "company-settings";
 
 interface ModalConfig {
   id: TabId;
@@ -165,6 +159,12 @@ const TABS: Tab[] = [
     label: "Report Storage",
     icon: HardDrive,
     description: "Intelligent storage policies and cleanup automation",
+  },
+  {
+    id: "company-settings",
+    label: "Company Settings",
+    icon: Building2,
+    description: "Manage company-specific settings",
   },
 ];
 
@@ -572,42 +572,23 @@ const AdminSettings = () => {
     "asset-categories": formTemplatesLoading,
     "sustainability-targets": false,
     "report-storage": false,
+    "company-settings": false,
   };
 
-  const handleCreateNew = (activeTab: string) => {
-    switch (activeTab) {
-      case "models":
-        onModelOpen();
-        break;
-      case "manufacturers":
-        onManufacturerOpen();
-        break;
-      case "locations":
-        onLocationOpen();
-        break;
-      case "departments":
-        onDepartmentOpen();
-        break;
-      case "status-label":
-        onStatusLabelOpen();
-        break;
-      case "inventories":
-        onInventoryOpen();
-        break;
-      case "asset-categories":
-        onFormTemplateOpen();
-        break;
-      case "report-storage":
-        // No modal needed for report storage settings
-        break;
-      default:
-        return null;
-    }
+  const activeTabConfig = TABS.find((tab) => tab.id === activeTab);
+  const isLoadingData = loadingMap[activeTab];
+
+  const handleCreateNew = (activeTab: TabId) => {
+    // Implement logic for creating new items per tab if needed
+  };
+
+  const renderDataTable = () => {
+    // Implement logic for rendering the correct data table or content per tab
+    return null;
   };
 
   const handleSearch = (value: string) => {
     setSearchQuery(value);
-    // Implement search logic
   };
 
   const handleImport = async () => {
@@ -620,62 +601,6 @@ const AdminSettings = () => {
       setIsLoading(false);
     }
   };
-
-  const renderDataTable = () => {
-    switch (activeTab) {
-      case "models":
-        return <DataTable columns={columns.models} data={models as any} />;
-      case "manufacturers":
-        return (
-          <DataTable
-            columns={columns.manufacturers}
-            data={manufacturers || []}
-          />
-        );
-      case "locations":
-        return (
-          <DataTable columns={columns.locations} data={locations as any} />
-        );
-      case "departments":
-        return (
-          <DataTable columns={columns.departments} data={departments as any} />
-        );
-      case "status-label":
-        return (
-          <DataTable
-            columns={columns["status-label"]}
-            data={statusLabels as any}
-          />
-        );
-      case "inventories":
-        return (
-          <DataTable columns={columns.inventories} data={inventories as any} />
-        );
-
-      case "asset-categories":
-        return (
-          <DataTable
-            columns={columns["asset-categories"]}
-            data={formTemplates || []}
-          />
-        );
-
-      case "report-storage":
-        return <ReportStorageSettings />;
-
-      default:
-        return null;
-    }
-  };
-
-  const activeTabConfig = TABS.find((tab) => tab.id === activeTab);
-  const isLoadingData = loadingMap[activeTab];
-
-  const table = useReactTable({
-    data: models as any,
-    columns: columns.models,
-    getCoreRowModel: getCoreRowModel(),
-  });
 
   return (
     <div className="min-h-screen bg-gray-50/30">
@@ -704,30 +629,46 @@ const AdminSettings = () => {
                 <Settings className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-semibold text-gray-900">System Configuration</h1>
-                <p className="text-sm text-gray-600">Manage your application settings and master data</p>
+                <h1 className="text-2xl font-semibold text-gray-900">
+                  System Configuration
+                </h1>
+                <p className="text-sm text-gray-600">
+                  Manage your application settings and master data
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-1 px-3 py-1.5 bg-emerald-50 border border-emerald-200 rounded-lg">
                 <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
-                <span className="text-xs font-medium text-emerald-700">System Healthy</span>
+                <span className="text-xs font-medium text-emerald-700">
+                  System Healthy
+                </span>
               </div>
               {llmStatus && (
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <div className={`flex items-center gap-1 px-3 py-1.5 rounded-lg border cursor-help ${
-                        llmStatus.available > 0 
-                          ? 'bg-blue-50 border-blue-200' 
-                          : 'bg-amber-50 border-amber-200'
-                      }`}>
-                        <Brain className={`w-3 h-3 ${
-                          llmStatus.available > 0 ? 'text-blue-600' : 'text-amber-600'
-                        }`} />
-                        <span className={`text-xs font-medium ${
-                          llmStatus.available > 0 ? 'text-blue-700' : 'text-amber-700'
-                        }`}>
+                      <div
+                        className={`flex items-center gap-1 px-3 py-1.5 rounded-lg border cursor-help ${
+                          llmStatus.available > 0
+                            ? "bg-blue-50 border-blue-200"
+                            : "bg-amber-50 border-amber-200"
+                        }`}
+                      >
+                        <Brain
+                          className={`w-3 h-3 ${
+                            llmStatus.available > 0
+                              ? "text-blue-600"
+                              : "text-amber-600"
+                          }`}
+                        />
+                        <span
+                          className={`text-xs font-medium ${
+                            llmStatus.available > 0
+                              ? "text-blue-700"
+                              : "text-amber-700"
+                          }`}
+                        >
                           AI: {llmStatus.available}/{llmStatus.total}
                         </span>
                       </div>
@@ -736,17 +677,21 @@ const AdminSettings = () => {
                       <div className="space-y-2">
                         <div className="font-medium">AI Provider Status</div>
                         <div className="text-sm text-gray-600">
-                          {llmStatus.available > 0 
+                          {llmStatus.available > 0
                             ? `${llmStatus.available} of ${llmStatus.total} AI providers are available`
-                            : `No AI providers are configured`
-                          }
+                            : `No AI providers are configured`}
                         </div>
                         {llmStatus.providers.length > 0 && (
                           <div className="text-xs">
-                            <div className="font-medium mb-1">Active providers:</div>
+                            <div className="font-medium mb-1">
+                              Active providers:
+                            </div>
                             <div className="space-y-0.5">
                               {llmStatus.providers.map((provider) => (
-                                <div key={provider} className="flex items-center gap-1">
+                                <div
+                                  key={provider}
+                                  className="flex items-center gap-1"
+                                >
                                   <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
                                   <span className="capitalize">{provider}</span>
                                 </div>
@@ -756,7 +701,8 @@ const AdminSettings = () => {
                         )}
                         {llmStatus.available === 0 && (
                           <div className="text-xs text-amber-600">
-                            Configure API keys in .env.local to enable AI features
+                            Configure API keys in .env.local to enable AI
+                            features
                           </div>
                         )}
                       </div>
@@ -776,7 +722,9 @@ const AdminSettings = () => {
                 <div className="p-4 border-b border-gray-100">
                   <h3 className="font-medium flex items-center gap-2">
                     <Sparkles className="w-4 h-4 text-slate-600" />
-                    <span className="text-gray-900 font-medium">Configuration Areas</span>
+                    <span className="text-gray-900 font-medium">
+                      Configuration Areas
+                    </span>
                   </h3>
                 </div>
                 <div className="p-2">
@@ -793,22 +741,30 @@ const AdminSettings = () => {
                             : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
                         }`}
                       >
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
-                          isActive 
-                            ? "bg-white/20" 
-                            : "bg-gray-100 group-hover:bg-gray-200"
-                        }`}>
-                          <Icon className={`w-4 h-4 ${isActive ? "text-white" : "text-gray-600"}`} />
+                        <div
+                          className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+                            isActive
+                              ? "bg-white/20"
+                              : "bg-gray-100 group-hover:bg-gray-200"
+                          }`}
+                        >
+                          <Icon
+                            className={`w-4 h-4 ${isActive ? "text-white" : "text-gray-600"}`}
+                          />
                         </div>
                         {!sidebarCollapsed && (
                           <>
                             <div className="flex-1 text-left">
-                              <div className={`font-medium text-sm ${isActive ? "text-white" : "text-gray-900"}`}>
+                              <div
+                                className={`font-medium text-sm ${isActive ? "text-white" : "text-gray-900"}`}
+                              >
                                 {tab.label}
                               </div>
-                              <div className={`text-xs leading-tight ${
-                                isActive ? "text-white/70" : "text-gray-500"
-                              }`}>
+                              <div
+                                className={`text-xs leading-tight ${
+                                  isActive ? "text-white/70" : "text-gray-500"
+                                }`}
+                              >
                                 {tab.description}
                               </div>
                             </div>
@@ -832,7 +788,9 @@ const AdminSettings = () => {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center border border-gray-200">
-                        {activeTabConfig && <activeTabConfig.icon className="w-6 h-6 text-gray-700" />}
+                        {activeTabConfig && (
+                          <activeTabConfig.icon className="w-6 h-6 text-gray-700" />
+                        )}
                       </div>
                       <div>
                         <h2 className="text-xl font-semibold text-gray-900">
@@ -843,27 +801,31 @@ const AdminSettings = () => {
                         </p>
                       </div>
                     </div>
-                    {activeTab !== "report-storage" && activeTab !== "sustainability-targets" && (
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => handleCreateNew(activeTab)}
-                          className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors text-sm font-medium"
-                        >
-                          <Plus className="w-4 h-4" />
-                          Add New
-                        </button>
-                        <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
-                          <MoreHorizontal className="w-4 h-4" />
-                        </button>
-                      </div>
-                    )}
+                    {activeTab !== "report-storage" &&
+                      activeTab !== "sustainability-targets" && (
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleCreateNew(activeTab)}
+                            className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors text-sm font-medium"
+                          >
+                            <Plus className="w-4 h-4" />
+                            Add New
+                          </button>
+                          <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
+                            <MoreHorizontal className="w-4 h-4" />
+                          </button>
+                        </div>
+                      )}
                   </div>
                 </div>
 
                 {/* Content Body */}
                 <div className="p-6">
                   {modelsError && (
-                    <Alert variant="destructive" className="mb-6 border-red-200 bg-red-50">
+                    <Alert
+                      variant="destructive"
+                      className="mb-6 border-red-200 bg-red-50"
+                    >
                       <AlertDescription className="text-red-800">
                         Failed to load data. Please try again later.
                       </AlertDescription>
@@ -883,7 +845,10 @@ const AdminSettings = () => {
                         <div className="bg-gray-50 p-4 border-b border-gray-200">
                           <div className="flex gap-4">
                             {Array.from({ length: 4 }).map((_, i) => (
-                              <div key={i} className="h-4 bg-gray-200 rounded w-20 animate-pulse"></div>
+                              <div
+                                key={i}
+                                className="h-4 bg-gray-200 rounded w-20 animate-pulse"
+                              ></div>
                             ))}
                           </div>
                         </div>
@@ -891,7 +856,10 @@ const AdminSettings = () => {
                           {Array.from({ length: 5 }).map((_, i) => (
                             <div key={i} className="flex gap-4">
                               {Array.from({ length: 4 }).map((_, j) => (
-                                <div key={j} className="h-4 bg-gray-200 rounded flex-1 animate-pulse"></div>
+                                <div
+                                  key={j}
+                                  className="h-4 bg-gray-200 rounded flex-1 animate-pulse"
+                                ></div>
                               ))}
                             </div>
                           ))}

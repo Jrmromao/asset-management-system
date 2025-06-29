@@ -287,9 +287,9 @@ const CareersPage = () => {
               <span className="text-green-600">Sustainable Future</span>
             </h1>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
-              We're looking for passionate individuals who want to make a real
-              impact on how organizations manage their assets and environmental
-              footprint.
+              We&apos;re looking for passionate individuals who want to make a
+              real impact on how organizations manage their assets and
+              environmental footprint.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button size="lg" className="bg-green-600 hover:bg-green-700">
@@ -339,8 +339,9 @@ const CareersPage = () => {
               Open Positions
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
-              We're growing fast and looking for talented people to join our
-              team. Don't see the perfect role? Send us your resume anyway!
+              We&apos;re growing fast and looking for talented people to join
+              our team. Don&apos;t see the perfect role? Send us your resume
+              anyway!
             </p>
 
             {/* Department Filter */}
@@ -434,12 +435,12 @@ const CareersPage = () => {
       <section className="py-20 bg-green-600">
         <div className="max-w-7xl mx-auto px-4 text-center">
           <h2 className="text-3xl lg:text-4xl font-bold mb-6 text-white">
-            Don't See the Perfect Role?
+            Don&apos;t See the Perfect Role?
           </h2>
           <p className="text-xl text-green-100 mb-8 max-w-3xl mx-auto">
-            We're always interested in connecting with talented individuals who
-            share our passion for sustainability and technology. Send us your
-            resume!
+            We&apos;re always interested in connecting with talented individuals
+            who share our passion for sustainability and technology. Send us
+            your resume!
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button

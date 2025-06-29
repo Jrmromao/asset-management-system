@@ -560,12 +560,12 @@ export const getValidationResult = (field: string, value: string) => {
 export const assetSchema = z.object({
   assetTag: z.string().min(1, "Serial Number is required"),
   name: z.string().min(1, "Asset name is required"),
-  modelId: z.string().min(1, "Model is required"),
-  statusLabelId: z.string().min(1, "Status is required"),
-  departmentId: z.string().min(1, "Department is required"),
-  inventoryId: z.string().min(1, "Inventory is required"),
-  locationId: z.string().min(1, "Location is required"),
-  formTemplateId: z.string().min(1, "Category template is required"),
+  modelId: z.string().optional(),
+  statusLabelId: z.string().optional(),
+  departmentId: z.string().optional(),
+  inventoryId: z.string().optional(),
+  locationId: z.string().optional(),
+  formTemplateId: z.string().optional(),
   templateValues: z.record(z.any()).optional(),
   customFields: z.array(z.any()).optional(),
   purchaseOrderId: z.string().optional(),
@@ -573,10 +573,13 @@ export const assetSchema = z.object({
   energyConsumption: z.number().optional(),
   expectedLifespan: z.number().optional(),
   endOfLifePlan: z.string().optional(),
+  supplierId: z.string().optional(),
+  warrantyEndDate: z.date().optional(),
 });
 
 export const createTemplateSchema = z.object({
   name: z.string().min(1, "Template name is required"),
+  categoryId: z.string().min(1, "Category is required"),
   fields: z.array(
     z.object({
       name: z.string().min(1, "Field name is required"),

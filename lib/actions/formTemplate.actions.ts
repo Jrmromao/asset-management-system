@@ -42,6 +42,7 @@ export const insert = async (
             name: validatedData.name,
             fields: validatedData.fields,
             companyId: user.user_metadata.companyId,
+            categoryId: validatedData.categoryId,
           },
         });
         await createAuditLog({
@@ -60,7 +61,8 @@ export const insert = async (
   )(data);
 };
 
-export const getAll = withAuth(async (user): Promise<AuthResponse<FormTemplate[]>> => {
+export const getAll = withAuth(
+  async (user): Promise<AuthResponse<FormTemplate[]>> => {
     try {
       const templates = await prisma.formTemplate.findMany({
         where: {
@@ -75,7 +77,8 @@ export const getAll = withAuth(async (user): Promise<AuthResponse<FormTemplate[]
       console.error("Get form templates error:", error);
       return { success: false, error: "Failed to fetch form templates" };
     }
-  });
+  },
+);
 
 export const getFormTemplateById = withAuth(
   async (user, id: string): Promise<AuthResponse<FormTemplate>> => {
@@ -170,7 +173,10 @@ export const update = withAuth(
   },
 );
 
-export async function bulkInsertTemplates(companyId: string) {
+export async function bulkInsertTemplates(
+  companyId: string,
+  categoryId: string,
+) {
   try {
     const templates = await prisma.$transaction(
       Object.entries(formTemplates).map(([name, fields]) =>
@@ -179,6 +185,7 @@ export async function bulkInsertTemplates(companyId: string) {
             name,
             fields,
             companyId,
+            categoryId
           },
         }),
       ),
@@ -191,5 +198,63 @@ export async function bulkInsertTemplates(companyId: string) {
     return handleError(error, "Failed to bulk insert templates");
   } finally {
     await prisma.$disconnect();
+  }
+}
+
+/**
+ * Generates a CSV template string for a specific form template
+ * @param templateId The ID of the form template to generate a CSV for
+ * @returns CSV string with headers based on the template fields
+ */
+export async function generateCSVTemplateForFormTemplate(
+  templateId: string,
+): Promise<string> {
+  try {
+    // Get the form template (no include)
+    const formTemplate = await prisma.formTemplate.findUnique({
+      where: { id: templateId },
+    });
+
+    if (!formTemplate) {
+      throw new Error(`Form template with ID ${templateId} not found`);
+    }
+
+    // Handle both string and object for fields
+    let fields: any[];
+    if (Array.isArray(formTemplate.fields)) {
+      fields = formTemplate.fields;
+    } else if (typeof formTemplate.fields === "string") {
+      fields = JSON.parse(formTemplate.fields);
+    } else {
+      throw new Error("Invalid fields format in form template");
+    }
+
+    // Standard asset fields that should be included in every template
+    const standardFields = [
+      "Asset Name",
+      "Asset Tag",
+      "Model",
+      "Status Label",
+      "Department",
+      "Location",
+      "Supplier",
+      "Purchase Date",
+      "Purchase Price",
+      "Notes",
+    ];
+
+    // Add custom fields from the template (just the label)
+    const customFields = fields.map((field: any) => field.label);
+
+    // Combine standard and custom fields
+    const headers = [...standardFields, ...customFields];
+
+    // Create CSV content
+    const csvContent = headers.join(",");
+
+    return csvContent;
+  } catch (error) {
+    console.error("Error generating CSV template:", error);
+    throw new Error("Failed to generate CSV template");
   }
 }

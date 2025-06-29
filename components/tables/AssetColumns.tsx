@@ -304,21 +304,43 @@ export const assetColumns = ({
       </Button>
     ),
     cell: ({ row }) => {
-      const status = row.getValue("status") as string;
+      let status = "";
+      let colorCode = "";
+      if ("statusLabel" in row.original && row.original.statusLabel) {
+        status = (row.original.statusLabel as StatusLabel).name;
+        colorCode = (row.original.statusLabel as StatusLabel).colorCode;
+      }
+
+      if (!status) status = "-";
+
+      // Utility to determine readable text color
+      function getContrastYIQ(hexcolor: string) {
+        if (!hexcolor) return "text-white";
+        let hex = hexcolor.replace("#", "");
+        if (hex.length === 3) {
+          hex = hex.split("").map((x) => x + x).join("");
+        }
+        const r = parseInt(hex.substr(0,2),16);
+        const g = parseInt(hex.substr(2,2),16);
+        const b = parseInt(hex.substr(4,2),16);
+        const yiq = (r*299+g*587+b*114)/1000;
+        return yiq >= 128 ? "text-black" : "text-white";
+      }
 
       return (
         <div className="flex items-center">
           <span
             className={cn(
-              "inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium",
+              "inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border text-white",
               {
-                "bg-green-100 text-green-800": status === "Available",
-                "bg-yellow-100 text-yellow-800": status === "In Use",
-                "bg-blue-100 text-blue-800": status === "In Repair",
-                "bg-red-100 text-red-800": status === "Inactive",
-                "bg-gray-100 text-gray-800": status === "Pending",
-              },
+                "bg-green-100 text-green-800": !colorCode && status === "Available",
+                "bg-yellow-100 text-yellow-800": !colorCode && status === "In Use",
+                "bg-blue-100 text-blue-800": !colorCode && status === "In Repair",
+                "bg-red-100 text-red-800": !colorCode && status === "Inactive",
+                "bg-gray-100 text-gray-800": !colorCode && status === "Pending",
+              }
             )}
+            style={colorCode ? { backgroundColor: colorCode, borderColor: colorCode } : {}}
           >
             {status}
           </span>

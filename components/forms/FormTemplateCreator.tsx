@@ -1,11 +1,16 @@
 "use client";
-import React, { useTransition } from "react";
+import React, { useTransition, useEffect } from "react";
 import { z } from "zod";
-import { useFieldArray, useForm, UseFormReturn } from "react-hook-form";
+import {
+  useFieldArray,
+  useForm,
+  UseFormReturn,
+  useWatch,
+} from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
-import { GripVertical, Loader2, Plus, Trash2 } from "lucide-react";
+import { GripVertical, Loader2, Plus, Trash2, Download } from "lucide-react";
 import { toast } from "sonner";
 import CustomInput from "@/components/CustomInput";
 import {
@@ -35,8 +40,15 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { useFormTemplateUIStore } from "@/lib/stores/useFormTemplateUIStore";
 import { useFormTemplatesQuery } from "@/hooks/queries/useFormTemplatesQuery";
-import { CustomField, FormProps, FormTemplate } from "@/types/form";
+import {
+  CustomField,
+  FormProps,
+  FormTemplate as BaseFormTemplate,
+} from "@/types/form";
 import { createTemplateSchema } from "@/lib/schemas";
+import { useCategoryQuery } from "@/hooks/queries/useCategoryQuery";
+import { SelectWithButton } from "@/components/SelectWithButton";
+import { useCategoryUIStore } from "@/lib/stores/useCategoryUIStore";
 
 const fieldTypes = ["number", "text", "select", "date", "checkbox"] as const;
 
@@ -48,6 +60,7 @@ const formFieldSchema = z.object({
   type: z.enum(["number", "text", "select", "date", "checkbox"]),
   required: z.boolean().default(false),
   options: z.array(z.string()).optional(),
+  categoryId: z.string().min(1, "Category is required"),
   placeholder: z.string().optional(),
   showIf: z.record(z.array(z.string())).optional(),
 });
@@ -55,9 +68,12 @@ const formFieldSchema = z.object({
 const formTemplateSchema = z.object({
   name: z.string().min(1, "Template name is required"),
   fields: z.array(formFieldSchema),
+  categoryId: z.string().min(1, "Category is required"),
 });
 
-type FormTemplateValues = z.infer<typeof createTemplateSchema>;
+type FormTemplateValues = z.infer<typeof createTemplateSchema> & {
+  categoryId: string;
+};
 type FormFieldValues = z.infer<typeof formFieldSchema>;
 
 const FIELD_TYPES = [
@@ -97,27 +113,39 @@ const SortableField = ({
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1,
   };
+
+  // Use useWatch for conditional rendering
+  const fieldType = useWatch({
+    control: form.control,
+    name: `fields.${index}.type`,
+  });
+
+  const fieldOptions = useWatch({
+    control: form.control,
+    name: `fields.${index}.options`,
+  });
+
+  const isRequired = useWatch({
+    control: form.control,
+    name: `fields.${index}.required`,
+  });
 
   return (
     <div
       ref={setNodeRef}
       style={style}
-      className={`relative bg-white border rounded-lg p-6 ${isDragging ? "shadow-lg" : ""}`}
+      className={`border rounded-lg p-4 bg-white ${
+        isDragging ? "opacity-50" : ""
+      }`}
     >
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <button
-              type="button"
-              className="cursor-grab touch-none"
-              {...attributes}
-              {...listeners}
-            >
-              <GripVertical className="w-5 h-5 text-gray-400" />
-            </button>
-            <h3 className="text-lg">Field {index + 1}</h3>
+          <div className="flex items-center gap-2">
+            <div {...attributes} {...listeners} className="cursor-grab">
+              <GripVertical className="w-4 h-4 text-gray-400" />
+            </div>
+            <span className="font-medium">Field {index + 1}</span>
           </div>
           <Button
             type="button"
@@ -125,9 +153,8 @@ const SortableField = ({
             size="sm"
             onClick={onRemove}
             disabled={isPending}
-            className="hover:bg-transparent"
           >
-            <Trash2 className="w-5 h-5 text-gray-500" />
+            <Trash2 className="w-4 h-4 text-red-500" />
           </Button>
         </div>
 
@@ -136,9 +163,10 @@ const SortableField = ({
             <Label>Field Name</Label>
             <CustomInput
               name={`fields.${index}.name`}
+              label="Field Name"
               control={form.control}
               type="text"
-              placeholder="Enter field name"
+              placeholder="Enter Field Name"
               disabled={isPending}
             />
           </div>
@@ -146,7 +174,7 @@ const SortableField = ({
           <div className="space-y-2">
             <Label>Field Type</Label>
             <Select
-              value={form.watch(`fields.${index}.type`)}
+              value={fieldType}
               onValueChange={(value: FieldType) =>
                 form.setValue(`fields.${index}.type`, value)
               }
@@ -170,6 +198,7 @@ const SortableField = ({
             <Label>Placeholder</Label>
             <CustomInput
               name={`fields.${index}.placeholder`}
+              label="Placeholder"
               control={form.control}
               type="text"
               placeholder="Enter Placeholder"
@@ -180,6 +209,7 @@ const SortableField = ({
             <Label>Label</Label>
             <CustomInput
               name={`fields.${index}.label`}
+              label="Label"
               control={form.control}
               type="text"
               placeholder="Enter Label"
@@ -190,7 +220,7 @@ const SortableField = ({
 
         <div className="flex items-center gap-2 pl-1">
           <Switch
-            checked={form.watch(`fields.${index}.required`)}
+            checked={isRequired}
             onCheckedChange={(checked) =>
               form.setValue(`fields.${index}.required`, checked)
             }
@@ -199,7 +229,7 @@ const SortableField = ({
         </div>
 
         {/* Dropdown Options Section */}
-        {form.watch(`fields.${index}.type`) === "select" && (
+        {fieldType === "select" && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <Label>Dropdown Options</Label>
@@ -209,7 +239,7 @@ const SortableField = ({
                 size="sm"
                 onClick={() => {
                   const currentOptions =
-                    form.watch(`fields.${index}.options`) || [];
+                    form.getValues(`fields.${index}.options`) || [];
                   form.setValue(`fields.${index}.options`, [
                     ...currentOptions,
                     "",
@@ -222,11 +252,12 @@ const SortableField = ({
               </Button>
             </div>
             <div className="space-y-2">
-              {(form.watch(`fields.${index}.options`) || []).map(
+              {(fieldOptions || []).map(
                 (option: string, optionIndex: number) => (
                   <div key={optionIndex} className="flex items-center gap-2">
                     <CustomInput
                       name={`fields.${index}.options.${optionIndex}`}
+                      label={`Option ${optionIndex + 1}`}
                       control={form.control}
                       type="text"
                       placeholder="Enter option"
@@ -238,7 +269,7 @@ const SortableField = ({
                       size="sm"
                       onClick={() => {
                         const currentOptions = [
-                          ...(form.watch(`fields.${index}.options`) || []),
+                          ...(form.getValues(`fields.${index}.options`) || []),
                         ];
                         currentOptions.splice(optionIndex, 1);
                         form.setValue(
@@ -261,11 +292,21 @@ const SortableField = ({
   );
 };
 
+type FormTemplate = BaseFormTemplate & { categoryId?: string };
+
 const FormTemplateCreator = ({
   initialData,
   onSubmitSuccess,
 }: FormProps<FormTemplate>) => {
   const [isPending, startTransition] = useTransition();
+
+  const {
+    categories,
+    isLoading: isLoadingCategories,
+    refresh: refreshCategories,
+  } = useCategoryQuery();
+  const { onOpen: openCategoryModal, isOpen: isCategoryModalOpen } =
+    useCategoryUIStore();
 
   const form = useForm<FormTemplateValues>({
     resolver: zodResolver(createTemplateSchema),
@@ -277,6 +318,7 @@ const FormTemplateCreator = ({
           label: field.label ?? "",
           required: field.required ?? false,
         })) ?? [],
+      categoryId: initialData?.categoryId ?? "",
     },
   });
   const handleAddField = () => {
@@ -386,6 +428,13 @@ const FormTemplateCreator = ({
     });
   };
 
+  // Refresh categories when the category modal closes
+  useEffect(() => {
+    if (!isCategoryModalOpen) {
+      refreshCategories();
+    }
+  }, [isCategoryModalOpen, refreshCategories]);
+
   return (
     <Form {...form}>
       <form
@@ -395,14 +444,48 @@ const FormTemplateCreator = ({
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto px-6 py-4">
           <div className="space-y-6">
-            <CustomInput
-              name="name"
-              label="Template Name"
-              control={form.control}
-              type="text"
-              placeholder="Enter template name"
-              disabled={isPending}
+            {/* Category Selector */}
+            <SelectWithButton
+              name="categoryId"
+              label="Category"
+              form={form}
+              data={categories || []}
+              onNew={openCategoryModal}
+              placeholder="Select category"
+              required
+              isPending={isPending || isLoadingCategories}
             />
+            {/* Template Name */}
+            <div className="flex justify-between items-end">
+              <div className="flex-1">
+                <CustomInput
+                  name="name"
+                  label="Template Name"
+                  control={form.control}
+                  type="text"
+                  placeholder="Enter template name"
+                  disabled={isPending}
+                />
+              </div>
+
+              {/* Download CSV Template Button - only show for existing templates */}
+              {initialData?.id && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="ml-4 flex items-center gap-2"
+                  onClick={() => {
+                    window.open(
+                      `/api/form-templates/${initialData.id}/csv-template`,
+                      "_blank",
+                    );
+                  }}
+                >
+                  <Download className="w-4 h-4" />
+                  Download CSV Template
+                </Button>
+              )}
+            </div>
 
             <div className="space-y-4">
               <div className="flex items-center justify-between">

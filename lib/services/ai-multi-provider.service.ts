@@ -103,7 +103,7 @@ class MultiProviderAIService {
           "gemini",
           new GoogleGenerativeAI(this.config.gemini.apiKey),
         );
-        console.log("✅ Gemini provider initialized");
+        // console.log("✅ Gemini provider initialized");
       } catch (error) {
         console.warn("⚠️ Failed to initialize Gemini provider:", error);
       }

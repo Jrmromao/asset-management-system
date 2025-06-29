@@ -184,7 +184,6 @@ const ModelForm = ({ initialData, onSubmitSuccess }: FormProps<Model>) => {
               label="Model Name"
               control={form.control}
               placeholder="Enter model name"
-              tooltip="The display name for this model"
               required
             />
 
@@ -193,7 +192,6 @@ const ModelForm = ({ initialData, onSubmitSuccess }: FormProps<Model>) => {
               label="Model Number"
               control={form.control}
               placeholder="Enter model number"
-              tooltip="Unique identifier for this model"
               required
             />
           </div>
@@ -212,7 +210,6 @@ const ModelForm = ({ initialData, onSubmitSuccess }: FormProps<Model>) => {
                       : "Select manufacturer"
                   }
                   data={manufacturers || []}
-                  value={form.watch("manufacturerId")}
                   isLoading={isLoadingManufacturers}
                   required
                 />

@@ -13,7 +13,11 @@ import { supplierSchema } from "@/lib/schemas";
 import { useSupplierUIStore } from "@/lib/stores/useSupplierUIStore";
 import { useSupplierQuery } from "@/hooks/queries/useSupplierQuery";
 
-const SupplierForm = () => {
+interface SupplierFormProps {
+  onSubmitSuccess?: () => void;
+}
+
+const SupplierForm = ({ onSubmitSuccess }: SupplierFormProps) => {
   const [isPending, startTransition] = useTransition();
   const { onClose } = useSupplierUIStore();
   const { createSupplier } = useSupplierQuery();
@@ -48,6 +52,7 @@ const SupplierForm = () => {
           },
         });
         toast.success("Supplier created successfully");
+        onSubmitSuccess?.();
         onClose();
         form.reset();
       } catch (error) {

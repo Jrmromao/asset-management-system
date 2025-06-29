@@ -52,7 +52,10 @@ export async function createPurchaseOrder(formData: FormData) {
     details: `Purchase order created: ${poNumber} for company ${companyId}`,
   });
 
-  revalidatePath("/admin/purchase-orders"); // or wherever you list POs
+  console.log("Purchase order created:", po);
+
+  revalidatePath("/admin/purchase-orders"); // Revalidate PO list
+  revalidatePath("/assets"); // Revalidate assets list to update PO dropdown
 }
 
 export async function updatePurchaseOrder(id: string, formData: FormData) {
@@ -116,7 +119,12 @@ export async function getPurchaseOrders(companyId: string) {
         createdAt: "desc",
       },
     });
-    return purchaseOrders;
+
+    // Convert Decimal objects to plain numbers for client components
+    return purchaseOrders.map((po) => ({
+      ...po,
+      totalAmount: po.totalAmount ? Number(po.totalAmount) : 0,
+    }));
   } catch (error) {
     console.error("Failed to fetch purchase orders:", error);
     return [];

@@ -46,6 +46,7 @@ import {
 } from "@tanstack/react-table";
 import BulkImportDialog from "@/components/forms/BulkImportDialog";
 import { assetImportConfig } from "@/importConfigs/assetImportConfig";
+import { bulkCreateAssets } from "@/lib/actions/assets.actions";
 
 // Constants for better maintainability
 const SEARCH_DEBOUNCE_MS = 300;
@@ -167,24 +168,9 @@ const Assets = () => {
     inventory: "",
   });
 
-  // --- Add local state for assets to allow real-time updates ---
-  const [localAssets, setLocalAssets] = useState<any[]>([]);
-  useEffect(() => {
-    setLocalAssets(assets);
-  }, [assets]);
-
   // --- Real-time CO2 update handler ---
   const handleCo2Update = useCallback((assetId: string, newCo2Record: any) => {
-    setLocalAssets((prevAssets) =>
-      prevAssets.map((asset) =>
-        asset.id === assetId
-          ? {
-              ...asset,
-              co2eRecords: [newCo2Record, ...(asset.co2eRecords?.filter((r: any) => r.id !== newCo2Record.id) || [])],
-            }
-          : asset
-      )
-    );
+    // No need to update localAssets here, as we're using assets directly
   }, []);
 
   // Event handlers
@@ -227,10 +213,22 @@ const Assets = () => {
     setImportDialogOpen(true);
   };
 
-  const handleImportSuccess = (data: any[]) => {
-    setImportDialogOpen(false);
-    // Optionally refresh data here or handle the imported data
-    toast.success(`Successfully imported ${data.length} assets`);
+  const handleBulkImport = async (data: any[]) => {
+    try {
+      // Call the server action for bulk asset creation
+      const result = await bulkCreateAssets(data);
+      if (result.success) {
+        toast.success(`Assets imported successfully`);
+      } else {
+        toast.error(`Failed to import assets. ${result.error || ''}`);
+      }
+    } catch (err: any) {
+      toast.error(`Bulk import failed: ${err.message || err}`);
+    } finally {
+      setImportDialogOpen(false);
+      // Auto-refresh the table after import
+      navigate.refresh();
+    }
   };
 
   // Table configuration
@@ -249,8 +247,8 @@ const Assets = () => {
 
   // Memoized computed values
   const activeAssets = useMemo(
-    () => getActiveAssets(normalizeAssets(localAssets)),
-    [localAssets],
+    () => getActiveAssets(normalizeAssets(assets)),
+    [assets],
   );
 
   const filteredData = useMemo(() => {
@@ -447,8 +445,11 @@ const Assets = () => {
       <BulkImportDialog
         isOpen={importDialogOpen}
         onClose={() => setImportDialogOpen(false)}
-        config={assetImportConfig}
-        onImport={handleImportSuccess}
+        config={{
+          ...assetImportConfig,
+          companyId: "1",
+        }}
+        onImport={handleBulkImport}
       />
     </div>
   );

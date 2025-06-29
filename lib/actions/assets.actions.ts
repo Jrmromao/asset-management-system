@@ -13,6 +13,7 @@ import { z } from "zod";
 import { prisma } from "@/app/db";
 import { Prisma } from "@prisma/client";
 import { createAuditLog } from "@/lib/actions/auditLog.actions";
+import levenshtein from "js-levenshtein";
 
 type CSVResponse = {
   success: boolean;
@@ -85,8 +86,8 @@ const validateAssetUniqueness = async (
 // Utility to deeply convert Decimal-like objects to numbers
 function deepConvertDecimals(obj: any): any {
   if (obj === null || obj === undefined) return obj;
-  if (typeof obj === 'object') {
-    if (typeof obj.toNumber === 'function') return obj.toNumber();
+  if (typeof obj === "object") {
+    if (typeof obj.toNumber === "function") return obj.toNumber();
     if (Array.isArray(obj)) return obj.map(deepConvertDecimals);
     const result: any = {};
     for (const key in obj) {
@@ -119,24 +120,53 @@ const serializeAsset = (asset: any) => {
       const serializedRecord = {
         ...record,
         co2e: record.co2e ? Number(record.co2e) : null,
-        emissionFactor: record.emissionFactor ? Number(record.emissionFactor) : null,
-        lifecycleManufacturing: record.lifecycleManufacturing ? Number(record.lifecycleManufacturing) : null,
-        lifecycleTransport: record.lifecycleTransport ? Number(record.lifecycleTransport) : null,
+        emissionFactor:
+          record.emissionFactor !== undefined && record.emissionFactor !== null
+            ? Number(record.emissionFactor)
+            : undefined,
+        lifecycleManufacturing:
+          record.lifecycleManufacturing !== undefined &&
+          record.lifecycleManufacturing !== null
+            ? Number(record.lifecycleManufacturing)
+            : undefined,
+        lifecycleTransport:
+          record.lifecycleTransport !== undefined &&
+          record.lifecycleTransport !== null
+            ? Number(record.lifecycleTransport)
+            : undefined,
         lifecycleUse: record.lifecycleUse ? Number(record.lifecycleUse) : null,
-        lifecycleEndOfLife: record.lifecycleEndOfLife ? Number(record.lifecycleEndOfLife) : null,
-        amortizedMonthlyCo2e: record.amortizedMonthlyCo2e ? Number(record.amortizedMonthlyCo2e) : null,
-        amortizedAnnualCo2e: record.amortizedAnnualCo2e ? Number(record.amortizedAnnualCo2e) : null,
-        expectedLifespanYears: record.expectedLifespanYears ? Number(record.expectedLifespanYears) : null,
+        lifecycleEndOfLife:
+          record.lifecycleEndOfLife !== undefined &&
+          record.lifecycleEndOfLife !== null
+            ? Number(record.lifecycleEndOfLife)
+            : undefined,
+        amortizedMonthlyCo2e:
+          record.amortizedMonthlyCo2e !== undefined &&
+          record.amortizedMonthlyCo2e !== null
+            ? Number(record.amortizedMonthlyCo2e)
+            : undefined,
+        amortizedAnnualCo2e:
+          record.amortizedAnnualCo2e !== undefined &&
+          record.amortizedAnnualCo2e !== null
+            ? Number(record.amortizedAnnualCo2e)
+            : undefined,
+        expectedLifespanYears:
+          record.expectedLifespanYears !== undefined &&
+          record.expectedLifespanYears !== null
+            ? Number(record.expectedLifespanYears)
+            : undefined,
       };
 
       // Recursively convert Decimals in activityData
       if (record.activityData) {
         try {
-          if (typeof record.activityData === 'string') {
+          if (typeof record.activityData === "string") {
             const parsed = JSON.parse(record.activityData);
             serializedRecord.activityData = deepConvertDecimals(parsed);
           } else {
-            serializedRecord.activityData = deepConvertDecimals(record.activityData);
+            serializedRecord.activityData = deepConvertDecimals(
+              record.activityData,
+            );
           }
         } catch {
           serializedRecord.activityData = record.activityData;
@@ -146,8 +176,13 @@ const serializeAsset = (asset: any) => {
       // Parse and serialize the details JSON to handle any Decimal objects
       if (record.details) {
         try {
-          const parsedDetails = typeof record.details === 'string' ? JSON.parse(record.details) : record.details;
-          serializedRecord.details = JSON.stringify(deepConvertDecimals(parsedDetails));
+          const parsedDetails =
+            typeof record.details === "string"
+              ? JSON.parse(record.details)
+              : record.details;
+          serializedRecord.details = JSON.stringify(
+            deepConvertDecimals(parsedDetails),
+          );
         } catch (parseError) {
           // If parsing fails, keep the original details
           serializedRecord.details = record.details;
@@ -186,7 +221,7 @@ export const createAsset = withAuth(
           modelId,
           companyId,
           purchaseDate: new Date(),
-          values: templateValues
+          formValues: templateValues
             ? {
                 create: {
                   values: templateValues,
@@ -351,13 +386,13 @@ export const getAssetById = withAuth(
           departmentLocation: true,
           inventory: true,
           category: true,
-          values: true,
+          formValues: true,
           co2eRecords: true,
           assetHistory: true,
           user: true,
           supplier: true,
           purchaseOrder: true,
-          formTemplate: true,
+          // formTemplate: true,
         },
       });
 
@@ -379,7 +414,10 @@ export const getAssetById = withAuth(
       // Attach auditLogs to the asset object
       const assetWithAuditLogs = { ...asset, auditLogs };
 
-      return { success: true, data: toArray(parseStringify(assetWithAuditLogs)) };
+      return {
+        success: true,
+        data: toArray(parseStringify(assetWithAuditLogs)),
+      };
     } catch (error: any) {
       return {
         success: false,
@@ -417,7 +455,9 @@ export const removeAsset = withAuth(
         action: "ASSET_DELETED",
         entity: "ASSET",
         entityId: id,
-        details: asset ? `Asset deleted: ${asset.name} (${asset.assetTag}) by user ${user.id}` : `Asset deleted (ID: ${id}) by user ${user.id}`,
+        details: asset
+          ? `Asset deleted: ${asset.name} (${asset.assetTag}) by user ${user.id}`
+          : `Asset deleted (ID: ${id}) by user ${user.id}`,
       });
       revalidatePath("/assets");
       return { success: true, data: [] };
@@ -448,7 +488,7 @@ export const updateAsset = withAuth(
           ...assetData,
           name,
           assetTag,
-          values: templateValues
+          formValues: templateValues
             ? {
                 deleteMany: { assetId: id },
                 create: {
@@ -627,13 +667,13 @@ export const checkoutAsset = withAuth(
             departmentLocation: true,
             inventory: true,
             category: true,
-            values: true,
+            formValues: true,
             co2eRecords: true,
             assetHistory: true,
             user: true,
             supplier: true,
             purchaseOrder: true,
-            formTemplate: true,
+            // formTemplate: true,
           },
         });
 
@@ -1023,9 +1063,7 @@ export const getAssetDistribution = withAuth(
         where: { id: { in: categoryIds } },
       });
 
-      const categoryMap = new Map(
-        categories.map((cat) => [cat.id, cat.name])
-      );
+      const categoryMap = new Map(categories.map((cat) => [cat.id, cat.name]));
 
       // Get total assets for percentage calculation
       const totalAssets = await prisma.asset.count({ where: { companyId } });
@@ -1037,18 +1075,22 @@ export const getAssetDistribution = withAuth(
         _count: { id: true },
       });
       const assignedMap = new Map(
-        assignedAssetsByCategory.map((item) => [item.categoryId, item._count.id])
+        assignedAssetsByCategory.map((item) => [
+          item.categoryId,
+          item._count.id,
+        ]),
       );
 
       // Build distribution data with per-category utilization
       const distributionData = assetsByCategory.map((item) => {
-        const categoryName = item.categoryId 
+        const categoryName = item.categoryId
           ? categoryMap.get(item.categoryId) || "Uncategorized"
           : "Uncategorized";
         const count = item._count.id;
         const percentage = totalAssets > 0 ? (count / totalAssets) * 100 : 0;
         const assigned = assignedMap.get(item.categoryId) || 0;
-        const utilization = count > 0 ? Math.round((assigned / count) * 100) : 0;
+        const utilization =
+          count > 0 ? Math.round((assigned / count) * 100) : 0;
 
         // Industry-standard: Health based on utilization
         let status: "Healthy" | "Warning" | "Critical" = "Healthy";
@@ -1075,7 +1117,8 @@ export const getAssetDistribution = withAuth(
       return {
         success: false,
         data: [],
-        error: error instanceof Error ? error.message : "An unknown error occurred",
+        error:
+          error instanceof Error ? error.message : "An unknown error occurred",
       };
     }
   },
@@ -1125,4 +1168,164 @@ export const updateAssetNotes = withAuth(
       };
     }
   },
+);
+
+export const bulkCreateAssets = withAuth(
+  async (user, assets: Partial<CreateAssetInput>[]): Promise<{ success: boolean; count: number; error?: string }> => {
+    try {
+      console.log("[BULK IMPORT] Function called");
+      console.log("[BULK IMPORT] User:", user?.id);
+      const companyId = user.privateMetadata?.companyId as string;
+      console.log("[BULK IMPORT] companyId:", companyId);
+      if (!companyId) {
+        console.error("[BULK IMPORT] No companyId found for user");
+        return { success: false, count: 0, error: "User is not associated with a company" };
+      }
+
+      // Log incoming asset data
+      console.log("[BULK IMPORT] Incoming assets:", JSON.stringify(assets, null, 2));
+
+      // Fetch all dependencies for the company
+      console.log("[BULK IMPORT] Fetching dependencies...");
+      const [models, suppliers, statusLabels, categories, departments, locations, inventories, users, formTemplates, licenses, purchaseOrders] = await Promise.all([
+        prisma.model.findMany({ where: { companyId } }),
+        prisma.supplier.findMany({ where: { companyId } }),
+        prisma.statusLabel.findMany({ where: { companyId } }),
+        prisma.category.findMany({ where: { companyId } }),
+        prisma.department.findMany({ where: { companyId } }),
+        prisma.departmentLocation.findMany({ where: { companyId } }),
+        prisma.inventory.findMany({ where: { companyId } }),
+        prisma.user.findMany({ where: { companyId } }),
+        prisma.formTemplate.findMany({ where: { companyId } }),
+        prisma.license.findMany({ where: { companyId } }),
+        prisma.purchaseOrder.findMany({ where: { companyId } }),
+      ]);
+      console.log("[BULK IMPORT] Dependencies fetched.");
+
+      // Helper for fuzzy matching by name (or other fields)
+      function fuzzyFindId(arr: { id: string; name?: string; email?: string; assetTag?: string; poNumber?: string }[], input?: string): string | undefined {
+        if (!input) return undefined;
+        const normalized = input.trim().toLowerCase();
+        // Try name
+        let match = arr.find(item => item.name && item.name.toLowerCase() === normalized);
+        if (match) return match.id;
+        match = arr.find(item => item.name && item.name.toLowerCase().startsWith(normalized));
+        if (match) return match.id;
+        match = arr.find(item => item.name && item.name.toLowerCase().includes(normalized));
+        if (match) return match.id;
+        match = arr.find(item => item.name && levenshtein(item.name.toLowerCase(), normalized) <= 2);
+        if (match) return match.id;
+        // Try email (for user)
+        match = arr.find(item => item.email && item.email.toLowerCase() === normalized);
+        if (match) return match.id;
+        // Try assetTag (for asset)
+        match = arr.find(item => item.assetTag && item.assetTag.toLowerCase() === normalized);
+        if (match) return match.id;
+        // Try poNumber (for purchase order)
+        match = arr.find(item => item.poNumber && item.poNumber.toLowerCase() === normalized);
+        if (match) return match.id;
+        return undefined;
+      }
+      // Helper to get value from multiple possible keys
+      const getField = (obj: any, ...keys: string[]) => {
+        for (const key of keys) {
+          if (obj[key] !== undefined && obj[key] !== null && obj[key] !== "") {
+            return obj[key];
+          }
+        }
+        return undefined;
+      };
+
+      // Map of dependencies to handle
+      const dependencyMap = [
+        { key: "modelId", arr: models, inputKeys: ["modelName", "Model"] },
+        { key: "supplierId", arr: suppliers, inputKeys: ["supplierName", "Supplier"] },
+        { key: "statusLabelId", arr: statusLabels, inputKeys: ["statusLabelName", "Status Label"] },
+        { key: "categoryId", arr: categories, inputKeys: ["categoryName", "Category"] },
+        { key: "departmentId", arr: departments, inputKeys: ["departmentName", "Department"] },
+        { key: "locationId", arr: locations, inputKeys: ["locationName", "Location"] },
+        { key: "inventoryId", arr: inventories, inputKeys: ["inventoryName", "Inventory"] },
+        { key: "userId", arr: users, inputKeys: ["userEmail", "userName", "Assigned To", "User"] },
+        { key: "formTemplateId", arr: formTemplates, inputKeys: ["formTemplateName", "Form Template"] },
+        { key: "licenseId", arr: licenses, inputKeys: ["licenseName", "License"] },
+        { key: "purchaseOrderId", arr: purchaseOrders, inputKeys: ["purchaseOrderNumber", "poNumber", "Purchase Order"] },
+      ];
+
+      console.log("[BULK IMPORT] Mapping assets...");
+      const assetsToCreate: Prisma.AssetCreateManyInput[] = assets
+        .filter(asset => asset.name && asset.assetTag) // Only include valid records
+        .map(asset => {
+          const depIds: Record<string, string | null> = {};
+          for (const dep of dependencyMap) {
+            const value = dep.inputKeys.map(k => getField(asset, k)).find(v => v);
+            depIds[dep.key] = fuzzyFindId(dep.arr, value) || null;
+          }
+          const cleanField = (value: any) => (value === undefined ? null : value);
+
+          return {
+            name: asset.name as string,
+            assetTag: asset.assetTag as string,
+            companyId,
+            ...depIds,
+            purchaseDate: (asset as any)?.purchaseDate ? new Date((asset as any).purchaseDate) : new Date(),
+            notes: cleanField(asset.notes),
+            endOfLifePlan: cleanField(asset.endOfLifePlan),
+            energyConsumption: cleanField(asset.energyConsumption),
+            expectedLifespan: cleanField(asset.expectedLifespan),
+            warrantyEndDate: cleanField(asset.warrantyEndDate),
+            // Add more fields as needed, following the same pattern
+          };
+        });
+
+      // 1. Bulk insert assets
+      console.log("[BULK IMPORT] Creating assets in DB...");
+      await prisma.asset.createMany({
+        data: assetsToCreate,
+        skipDuplicates: true,
+      });
+      console.log("[BULK IMPORT] Asset creation complete.");
+
+      // 2. Fetch inserted assets by assetTag
+      console.log("[BULK IMPORT] Fetching inserted assets...");
+      const assetTags = assetsToCreate.map(a => a.assetTag);
+      const insertedAssets = await prisma.asset.findMany({
+        where: { assetTag: { in: assetTags }, companyId },
+        select: { id: true, assetTag: true },
+      });
+      console.log("[BULK IMPORT] insertedAssets:", JSON.stringify(insertedAssets, null, 2));
+
+      // 3. Prepare FormTemplateValue records
+      console.log("[BULK IMPORT] Mapping form template values...");
+      const formTemplateValuesToCreate = insertedAssets.map(asset => {
+        const original = assets.find(a => a.assetTag === asset.assetTag);
+        if (!original?.templateValues || !original.formTemplateId) return null;
+        return {
+          assetId: asset.id,
+          templateId: original.formTemplateId,
+          values: original.templateValues,
+        };
+      }).filter(Boolean) as { assetId: string; templateId: string; values: any }[];
+      console.log("[BULK IMPORT] formTemplateValuesToCreate:", JSON.stringify(formTemplateValuesToCreate, null, 2));
+
+      // 4. Bulk insert FormTemplateValue
+      if (formTemplateValuesToCreate.length > 0) {
+        console.log("[BULK IMPORT] Creating form template values in DB...");
+        await prisma.formTemplateValue.createMany({ data: formTemplateValuesToCreate });
+        console.log("[BULK IMPORT] Form template value creation complete.");
+      }
+
+      await createAuditLog({
+        companyId,
+        action: "BULK_ASSET_CREATED",
+        entity: "ASSET",
+        details: `Bulk asset creation: ${assetsToCreate.length} assets created by user ${user.id}`,
+      });
+      revalidatePath("/assets");
+      console.log("[BULK IMPORT] Bulk import complete.");
+      return { success: true, count: assetsToCreate.length };
+    } catch (error: any) {
+      console.error("[BULK IMPORT] Error:", error);
+      return { success: false, count: 0, error: error.message };
+    }
+  }
 );

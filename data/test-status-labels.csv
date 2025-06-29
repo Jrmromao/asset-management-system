@@ -1,0 +1,5 @@
+Asset Name,Asset Tag,Model,Category,Status Label,Purchase Date,End of Life,Purchase Price,Supplier,Department,Location,Notes
+Test Asset 1,TAG001,Model1,Category1,In Use,2024-01-01,2025-01-01,1000,Supplier1,IT,Office1,Test note 1
+Test Asset 2,TAG002,Model2,Category2,NON_EXISTENT_STATUS,2024-01-02,2025-01-02,2000,Supplier2,HR,Office2,Test note 2
+Test Asset 3,TAG003,Model3,Category3,,2024-01-03,2025-01-03,3000,Supplier3,Finance,Office3,Test note 3
+Test Asset 4,TAG004,Model4,Category4,Broken,2024-01-04,2025-01-04,4000,Supplier4,Marketing,Office4,Test note 4 

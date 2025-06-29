@@ -139,7 +139,6 @@ const UserForm = () => {
                 />
                 <CustomSelect
                   label="Role"
-                  value={form.watch("roleId")}
                   name="roleId"
                   required
                   control={form.control}

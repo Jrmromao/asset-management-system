@@ -155,7 +155,7 @@ export default clerkMiddleware(async (auth, request) => {
   }
 
   // For all other routes, allow access if user is signed in
-  console.log("✅ User signed in, allowing access to:", url.pathname);
+  // console.log("✅ User signed in, allowing access to:", url.pathname);
   const response = NextResponse.next();
   return addSecurityHeaders(response);
 });

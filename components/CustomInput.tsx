@@ -27,6 +27,7 @@ interface CustomInputProps {
   error?: string;
   isLoading?: boolean;
   disabled?: boolean;
+  tooltip?: string;
 }
 
 const CustomInput = ({
@@ -39,6 +40,7 @@ const CustomInput = ({
   className,
   error,
   isLoading,
+  tooltip,
   disabled,
 }: CustomInputProps) => {
   return (

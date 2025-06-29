@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState, useMemo } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,14 +8,11 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { useAssetQuery } from "@/hooks/queries/useAssetQuery";
 import type { CustomField } from "@/types/form";
-import { Asset, AssetWithRelations } from "@/types/asset";
-import { FormTemplateValue } from "@prisma/client";
 import { CreateAssetInput } from "@/lib/actions/assets.actions";
 import { debounce } from "lodash";
 
 // Components
 import CustomInput from "@/components/CustomInput";
-import { SelectWithButton } from "@/components/SelectWithButton";
 
 // Schema and types
 import { assetSchema } from "@/lib/schemas";
@@ -56,6 +53,8 @@ import { useUser } from "@clerk/nextjs";
 import { EOLPlan, eolPlanOptions } from "@/constants";
 import CustomDatePicker from "../CustomDatePicker";
 import { usePurchaseOrderQuery } from "@/hooks/queries/usePurchaseOrderQuery";
+import type { SectionStatus } from "@/components/forms/FormProgress";
+import { SelectWithButton } from "../SelectWithButton";
 
 type UserWithCompany = User & {
   companyId: string;
@@ -70,12 +69,12 @@ type FormTemplate = {
 const assetFormSchema = z.object({
   name: z.string().min(2, "Asset name must be at least 2 characters."),
   assetTag: z.string().min(1, "Asset Tag is required."),
-  modelId: z.string().min(1, "Model is required."),
-  statusLabelId: z.string().min(1, "Status is required."),
-  departmentId: z.string().min(1, "Department is required."),
-  inventoryId: z.string().min(1, "Inventory is required."),
-  locationId: z.string().min(1, "Location is required."),
-  formTemplateId: z.string().min(1, "Form template is required."),
+  modelId: z.string().optional(),
+  statusLabelId: z.string().optional(),
+  departmentId: z.string().optional(),
+  inventoryId: z.string().optional(),
+  locationId: z.string().optional(),
+  formTemplateId: z.string().optional(),
   templateValues: z.record(z.string(), z.any()).optional(),
   purchaseOrderId: z.string().optional(),
   notes: z.string().optional(),
@@ -121,10 +120,7 @@ const useImprovedAssetValidation = (
         return;
       }
 
-      if (lastValidatedValue === inputValue.trim()) {
-        return;
-      }
-
+      // No need to check lastValidatedValue here as it's handled by the useEffect dependency
       setValidationState((prev) => ({ ...prev, isValidating: true }));
 
       try {
@@ -151,7 +147,7 @@ const useImprovedAssetValidation = (
           error: result.exists ? result.message : null,
         });
 
-        setLastValidatedValue(inputValue.trim());
+        setLastValidatedValue(inputValue.trim()); // Update last validated value on successful validation
       } catch (error) {
         setValidationState({
           isValidating: false,
@@ -160,12 +156,16 @@ const useImprovedAssetValidation = (
         });
       }
     }, 800),
-    [type, excludeId, lastValidatedValue],
+    [type, excludeId], // lastValidatedValue is NOT a dependency here, to prevent infinite re-debounces
   );
 
   useEffect(() => {
-    validate(value);
-  }, [value, validate]);
+    // Only validate if the value has actually changed from the last validated one
+    // or if it's the initial empty state that needs to be cleared.
+    if (value !== lastValidatedValue) {
+      validate(value);
+    }
+  }, [value, validate, lastValidatedValue]); // Include lastValidatedValue to ensure re-validation on actual value change
 
   return validationState;
 };
@@ -173,27 +173,17 @@ const useImprovedAssetValidation = (
 const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
-  const [specialFieldsValid, setSpecialFieldsValid] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<FormTemplate | null>(
     null,
   );
-  const [formSections, setFormSections] = useState([
-    {
-      name: "Asset Category",
-      isValid: false,
-    },
-    {
-      name: "Asset Details",
-      isValid: false,
-    },
-    {
-      name: "Assignment & Location",
-      isValid: false,
-    },
-    {
-      name: "Category-Specific Fields",
-      isValid: false,
-    },
+  const [formSections, setFormSections] = useState<
+    { name: string; status: SectionStatus }[]
+  >([
+    { name: "Asset Category", status: "incomplete" },
+    { name: "Asset Details", status: "incomplete" },
+    { name: "Assignment & Location", status: "incomplete" },
+    { name: "Environmental & Lifecycle", status: "incomplete" },
+    { name: "Category-Specific Fields", status: "incomplete" },
   ]);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
 
@@ -205,17 +195,17 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
 
   const {
     items: assets,
-    isLoading,
+    isLoading, // This isLoading is for the entire asset query
     createItem: createAsset,
     updateItem: updateAsset,
     findItemById,
     isCreating,
-    isUpdating,
+    isUpdating, // This is a specific updating flag from useAssetQuery
   } = useAssetQuery()();
 
   const { items: purchaseOrders } = usePurchaseOrderQuery()();
 
-  const { formTemplates } = useFormTemplatesQuery();
+  const { formTemplates } = useFormTemplatesQuery(); // Ensure this hook returns a stable array reference
   const { locations } = useLocationQuery();
   const { departments } = useDepartmentQuery();
   const { inventories } = useInventoryQuery();
@@ -253,29 +243,64 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
     mode: "onSubmit",
   });
 
+  // Watch form values for validation and progress tracking
+  const watchedAssetName = useWatch({
+    control: form.control,
+    name: "name",
+  });
+
+  const watchedAssetTag = useWatch({
+    control: form.control,
+    name: "assetTag",
+  });
+
+  // Watch environmental fields individually for progress tracking
+  const watchedEnergyConsumption = useWatch({
+    control: form.control,
+    name: "energyConsumption",
+  });
+
+  const watchedExpectedLifespan = useWatch({
+    control: form.control,
+    name: "expectedLifespan",
+  });
+
+  const watchedEndOfLifePlan = useWatch({
+    control: form.control,
+    name: "endOfLifePlan",
+  });
+
   const assetNameValidation = useImprovedAssetValidation(
     "assetName",
-    form.watch("name"),
+    watchedAssetName,
     isUpdate ? id : undefined,
   );
 
   const assetTagValidation = useImprovedAssetValidation(
     "assetTag",
-    form.watch("assetTag"),
+    watchedAssetTag,
     isUpdate ? id : undefined,
   );
 
   // Load existing asset data for updates
   useEffect(() => {
-    if (!isUpdate || !id || isDataLoaded) return;
+    // Crucial guard: Only run if it's an update, ID exists, data hasn't been loaded yet,
+    // AND formTemplates are available (as setSelectedTemplate depends on them).
+    if (
+      !isUpdate ||
+      !id ||
+      isDataLoaded ||
+      !formTemplates ||
+      formTemplates.length === 0
+    ) {
+      return;
+    }
 
     const loadAssetData = async () => {
       try {
-        // Use findItemById to get full asset details
         const asset = await findItemById(id);
 
         if (asset) {
-          // Set form values
           form.reset({
             name: asset.name || "",
             assetTag: asset.assetTag || "",
@@ -295,23 +320,22 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
             expectedLifespan: asset.expectedLifespan || undefined,
             endOfLifePlan: (asset.endOfLifePlan as EOLPlan) || undefined,
             supplierId: asset.supplierId || "",
-            warrantyEndDate: asset.warrantyEndDate || undefined,
+            // FIX: Convert warrantyEndDate to a Date object if it exists
+            warrantyEndDate: asset.warrantyEndDate
+              ? new Date(asset.warrantyEndDate)
+              : undefined,
           });
 
-          // Set selected template if exists and validate fields
-          if (asset.formTemplateId && formTemplates) {
+          // Set selected template if exists based on the formTemplates now available
+          if (asset.formTemplateId) {
             const template = formTemplates.find(
               (t) => t.id === asset.formTemplateId,
             );
             if (template) {
-              setSelectedTemplate(template as any);
-              // Validate the fields after setting the template
-              setTimeout(() => {
-                validateTemplateFields();
-              }, 0);
+              setSelectedTemplate(template as FormTemplate);
             }
           }
-          setIsDataLoaded(true);
+          setIsDataLoaded(true); // Mark data as loaded to prevent re-runs
         }
       } catch (error) {
         console.error("Error loading asset data:", error);
@@ -320,7 +344,12 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
     };
 
     loadAssetData();
-  }, [isUpdate, id, isDataLoaded, form, formTemplates, findItemById]);
+    // Dependencies:
+    // - isUpdate, id, isDataLoaded: Control when the effect should run initially and prevent re-runs.
+    // - findItemById: Stable function from useAssetQuery.
+    // - formTemplates: Crucial for `setSelectedTemplate` and to ensure data is available before proceeding.
+    // - form: Stable object for `form.reset()`.
+  }, [isUpdate, id, isDataLoaded, findItemById, formTemplates, form]);
 
   const statusLocationSection = getStatusLocationSection({
     form,
@@ -340,7 +369,6 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
       form.setValue("formTemplateId", "");
       form.setValue("templateValues", {});
       setSelectedTemplate(null);
-      setSpecialFieldsValid(false);
       return;
     }
 
@@ -351,7 +379,7 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
     }
 
     form.setValue("formTemplateId", formTemplateId);
-    setSelectedTemplate(template as any);
+    setSelectedTemplate(template as FormTemplate);
 
     // Initialize template values with default values based on field type
     const initialValues = template.fields.reduce<Record<string, any>>(
@@ -364,9 +392,8 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
             (typeof existingValue === "boolean" &&
               (field.type === "boolean" || field.type === "checkbox")) ||
             (typeof existingValue === "string" &&
-              (field.type === "text" ||
-                field.type === "select" ||
-                field.type === "date")));
+              (field.type === "text" || field.type === "select")) ||
+            (existingValue instanceof Date && field.type === "date"));
 
         if (shouldKeepValue) {
           acc[field.name] = existingValue;
@@ -380,16 +407,14 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
             defaultValue = "";
             break;
           case "boolean":
+          case "checkbox": // Handle checkbox also as boolean
             defaultValue = false;
             break;
           case "select":
             defaultValue = field.options?.[0] || "";
             break;
           case "date":
-            defaultValue = "";
-            break;
-          case "checkbox":
-            defaultValue = false;
+            defaultValue = undefined; // Use undefined for date picker to clear the value
             break;
           default:
             defaultValue = "";
@@ -405,11 +430,6 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
       shouldValidate: true,
       shouldDirty: true,
     });
-
-    // Validate fields after a short delay to ensure the form has updated
-    setTimeout(() => {
-      validateTemplateFields();
-    }, 0);
   };
 
   const renderCustomFields = () => {
@@ -430,9 +450,7 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
               !field.showIf ||
               Object.entries(field.showIf).every(
                 ([dependentField, allowedValues]) => {
-                  const dependentValue = form.watch(
-                    `templateValues.${dependentField}` as const,
-                  );
+                  const dependentValue = templateValues?.[dependentField];
                   return (
                     Array.isArray(allowedValues) &&
                     allowedValues.includes(dependentValue)
@@ -473,11 +491,18 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
                     }
                     placeholder={`Select ${String(field.label).toLowerCase()}`}
                   />
-                ) : field.type === "boolean" ? (
+                ) : field.type === "boolean" || field.type === "checkbox" ? (
                   <CustomSwitch
                     name={fieldName}
                     label={String(field.label)}
                     control={form.control}
+                    required={field.required}
+                  />
+                ) : field.type === "date" ? (
+                  <CustomDatePicker
+                    name={fieldName}
+                    label={String(field.label)}
+                    form={form}
                     required={field.required}
                   />
                 ) : null}
@@ -492,49 +517,116 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
   const onSubmit = async (data: AssetFormValues) => {
     try {
       setSubmitting(true);
-      toast.loading(id ? "Updating asset..." : "Creating asset...");
       console.log("[FORM_SUBMIT] Initial form data:", data);
 
-      // Validate all required fields
-      const requiredFields = [
-        "name",
-        "assetTag",
-        "modelId",
-        "statusLabelId",
-        "departmentId",
-        "inventoryId",
-        "locationId",
-        "formTemplateId",
-      ] as const;
+      // Validate only required fields specified by the schema for base fields
+      const requiredBaseFields = assetFormSchema.pick({
+        name: true,
+        assetTag: true,
+      });
 
-      const missingFields = requiredFields.filter(
-        (field) => !data[field as keyof AssetFormValues],
-      );
+      try {
+        requiredBaseFields.parse({
+          name: data.name,
+          assetTag: data.assetTag,
+        });
+      } catch (error) {
+        if (error instanceof z.ZodError) {
+          const missingFields = error.errors
+            .map((err) => {
+              if (err.path[0] === "name") return "Asset Title";
+              if (err.path[0] === "assetTag") return "Asset Tag";
+              return null;
+            })
+            .filter(Boolean);
+          if (missingFields.length > 0) {
+            console.log("[FORM_SUBMIT] Missing fields:", missingFields);
+            toast.error(
+              `Please fill in all required fields: ${missingFields.join(", ")}`,
+            );
+            return;
+          }
+        }
+        throw error; // Re-throw if it's not a missing base field error
+      }
 
-      if (missingFields.length > 0) {
-        console.log("[FORM_SUBMIT] Missing fields:", missingFields);
-        toast.error(
-          `Please fill in all required fields: ${missingFields.join(", ")}`,
-        );
-        return;
+      // Validate custom template fields if a template is selected
+      if (selectedTemplate && selectedTemplate.fields.length > 0) {
+        const customFieldsErrors: string[] = [];
+        selectedTemplate.fields.forEach((field: CustomField) => {
+          // Check if field should be shown based on conditions
+          const shouldShowField =
+            !field.showIf ||
+            Object.entries(field.showIf).every(
+              ([dependentField, allowedValues]) => {
+                const dependentValue = data.templateValues?.[dependentField];
+                return (
+                  Array.isArray(allowedValues) &&
+                  allowedValues.includes(dependentValue)
+                );
+              },
+            );
+
+          if (!shouldShowField) return; // Skip validation if field is hidden
+
+          if (field.required) {
+            const value = data.templateValues?.[field.name];
+            let isValid = false;
+            switch (field.type) {
+              case "text":
+                isValid = typeof value === "string" && value.trim() !== "";
+                break;
+              case "number":
+                const numValue = Number(value);
+                isValid = !isNaN(numValue) && value !== "";
+                break;
+              case "select":
+                isValid = !!value && value !== "";
+                break;
+              case "date":
+                isValid = !!value && value instanceof Date;
+                break;
+              case "boolean":
+              case "checkbox":
+                isValid = typeof value === "boolean";
+                break;
+              default:
+                isValid = true;
+            }
+            if (!isValid) {
+              customFieldsErrors.push(String(field.label));
+            }
+          }
+        });
+
+        if (customFieldsErrors.length > 0) {
+          toast.error(
+            `Please fill in all required custom fields: ${customFieldsErrors.join(
+              ", ",
+            )}`,
+          );
+          return;
+        }
       }
 
       // Create the asset data object that matches CreateAssetInput type exactly
       const assetData: CreateAssetInput = {
         name: data.name,
         assetTag: data.assetTag,
-        modelId: data.modelId,
-        statusLabelId: data.statusLabelId,
-        departmentId: data.departmentId,
-        inventoryId: data.inventoryId,
-        locationId: data.locationId,
-        formTemplateId: data.formTemplateId,
+        modelId: data.modelId || undefined,
+        statusLabelId: data.statusLabelId || undefined,
+        departmentId: data.departmentId || undefined,
+        inventoryId: data.inventoryId || undefined,
+        locationId: data.locationId || undefined,
+        formTemplateId: data.formTemplateId || undefined,
         templateValues: data.templateValues || {},
         notes: data.notes || "",
         energyConsumption: data.energyConsumption || undefined,
         expectedLifespan: data.expectedLifespan || undefined,
         endOfLifePlan: data.endOfLifePlan || undefined,
         purchaseOrderId: data.purchaseOrderId || undefined,
+        supplierId: data.supplierId || undefined,
+        warrantyEndDate: data.warrantyEndDate || undefined,
       };
 
       console.log("[FORM_SUBMIT] Submitting asset data:", assetData);
@@ -546,7 +638,6 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
       } else {
         console.log("[FORM_SUBMIT] Creating new asset");
         await createAsset(assetData);
-        toast.success("Asset created successfully!");
       }
 
       router.push("/assets");
@@ -586,18 +677,27 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
     ],
   });
 
-  const validateTemplateFields = useCallback(() => {
-    if (!selectedTemplate?.fields?.length) {
-      setSpecialFieldsValid(false);
-      return;
-    }
+  const specialFieldsValid = useMemo(() => {
+    if (!selectedTemplate?.fields?.length) return true; // If no template or no fields, consider valid.
 
-    const isValid = selectedTemplate.fields.every((field: CustomField) => {
+    return selectedTemplate.fields.every((field: CustomField) => {
+      // Check if field should be shown based on conditions
+      const shouldShowField =
+        !field.showIf ||
+        Object.entries(field.showIf).every(
+          ([dependentField, allowedValues]) => {
+            const dependentValue = templateValues?.[dependentField];
+            return (
+              Array.isArray(allowedValues) &&
+              allowedValues.includes(dependentValue)
+            );
+          },
+        );
+
+      if (!shouldShowField) return true; // If hidden, it doesn't need to be validated for completion
+
       const value = templateValues?.[field.name];
-
-      if (!field.required) {
-        return true;
-      }
+      if (!field.required) return true;
 
       switch (field.type) {
         case "text":
@@ -607,54 +707,93 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
           return !isNaN(numValue) && value !== "";
         case "select":
           return !!value && value !== "";
+        case "date":
+          return !!value && value instanceof Date; // Ensure it's a Date object
+        case "boolean":
+        case "checkbox":
+          return typeof value === "boolean";
         default:
           return true;
       }
     });
-
-    setSpecialFieldsValid(isValid);
   }, [selectedTemplate?.fields, templateValues]);
 
   useEffect(() => {
-    validateTemplateFields();
-  }, [validateTemplateFields, templateValues]);
+    const templateSelected =
+      !!formValues[0] && formTemplates?.some((t) => t.id === formValues[0]);
+    const assetNameFilled = !!formValues[1];
+    const assetTagFilled = !!formValues[2];
+    const assetNameValid = assetNameValidation.isValid === true;
+    const assetTagValid = assetTagValidation.isValid === true;
 
-  useEffect(() => {
+    // Check if any of locationId, departmentId, inventoryId, or statusLabelId are present
+    const assignmentLocationComplete =
+      !!formValues[5] || !!formValues[6] || !!formValues[7] || !!formValues[4];
+
+    // Environmental section is complete if ALL fields have valid values
+    const environmentalComplete =
+      !!watchedEnergyConsumption &&
+      !!watchedExpectedLifespan &&
+      !!watchedEndOfLifePlan;
+
     const newSections = [
       {
         name: "Asset Category",
-        isValid: !!formValues[0], // formTemplateId
+        status: (templateSelected ? "complete" : "incomplete") as SectionStatus,
       },
       {
         name: "Asset Details",
-        isValid:
-          !!formValues[1] && // name
-          !!formValues[2] && // assetTag
-          !!formValues[3] && // modelId
-          assetNameValidation.isValid !== false &&
-          assetTagValidation.isValid !== false,
+        status: (assetNameFilled &&
+        assetTagFilled &&
+        assetNameValid &&
+        assetTagValid
+          ? "complete"
+          : "incomplete") as SectionStatus,
       },
       {
         name: "Assignment & Location",
-        isValid:
-          !!formValues[4] && // statusLabelId
-          !!formValues[5] && // locationId
-          !!formValues[6] && // departmentId
-          !!formValues[7], // inventoryId
+        status: (assignmentLocationComplete
+          ? "complete"
+          : "incomplete") as SectionStatus,
+      },
+      {
+        name: "Environmental & Lifecycle",
+        status: (environmentalComplete
+          ? "complete"
+          : "incomplete") as SectionStatus,
       },
       {
         name: "Category-Specific Fields",
-        isValid: selectedTemplate ? specialFieldsValid : false,
+        status: (templateSelected
+          ? specialFieldsValid
+            ? "complete"
+            : "incomplete"
+          : "incomplete") as SectionStatus,
       },
     ];
 
-    setFormSections(newSections);
+    // Only update if the sections have actually changed to prevent unnecessary re-renders
+    // A shallow comparison for simplicity, though a deep comparison might be more robust
+    const sectionsChanged =
+      newSections.length !== formSections.length ||
+      newSections.some(
+        (section, index) => section.status !== formSections[index]?.status,
+      );
+
+    if (sectionsChanged) {
+      setFormSections(newSections);
+    }
   }, [
     formValues,
     selectedTemplate,
     specialFieldsValid,
     assetNameValidation.isValid,
     assetTagValidation.isValid,
+    formTemplates,
+    formSections,
+    watchedEnergyConsumption,
+    watchedExpectedLifespan,
+    watchedEndOfLifePlan,
   ]);
 
   return (
@@ -668,7 +807,7 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
           <div className="max-w-[1200px] mx-auto px-4 py-6">
             <PurchaseOrderDialog />
             <div className="grid grid-cols-12 gap-6">
-              {isUpdating ? (
+              {(isLoading || isUpdating) && id ? ( // Show skeleton if loading or updating an existing asset
                 <MainFormSkeleton />
               ) : (
                 <>
@@ -720,7 +859,6 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
                             data={models as any}
                             onNew={openModel}
                             placeholder="Select model"
-                            required
                           />
 
                           <SelectWithButton
@@ -757,7 +895,12 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
                         <FormSection title="Environmental & Lifecycle">
                           {/* User guidance message for CO2 accuracy */}
                           <div className="mb-4 p-3 bg-blue-50 border border-blue-200 text-blue-800 rounded text-sm">
-                            <strong>Tip:</strong> The more technical details you provide (like energy consumption, lifespan, or end-of-life plan), the more accurate your CO2 calculation will be. If any information is missing, we'll use typical values for your asset type/model.
+                            <strong>Tip:</strong> The more technical details you
+                            provide (like energy consumption, lifespan, or
+                            end-of-life plan), the more accurate your CO2
+                            calculation will be. If any information is missing,
+                            we&apos;ll use typical values for your asset
+                            type/model.
                           </div>
                           <CustomInput
                             name="energyConsumption"
@@ -799,7 +942,7 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
                 </>
               )}
 
-              {isUpdating ? (
+              {(isLoading || isUpdating) && id ? ( // Show skeleton if loading or updating an existing asset
                 <FormProgressSkeleton />
               ) : (
                 <FormProgress sections={formSections} />
