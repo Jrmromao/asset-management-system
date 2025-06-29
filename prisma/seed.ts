@@ -42,16 +42,15 @@ async function main() {
     };
 
     // await seedStatusLabels(prisma, company.id);
-    // await seedCategories(prisma, company.id);
+    const categories = await seedCategories(prisma, company.id);
+    await seedFormTemplates(prisma, company.id, categories);
     // await seedDepartments(prisma, company.id);
     // await seedLocations(prisma, company.id);
     // await seedInventories(prisma, company.id);
     // await seedSuppliers(prisma, company.id);
     // await seedManufacturers(prisma);
     // await seedModels(prisma, company.id);
-    // await seedFormTemplates(prisma, company.id);
-
-    await seedAssets(prisma, company.id);
+    // await seedAssets(prisma, company.id);
     // await seedLicenses(prisma, company.id);
     // await seedAccessories(prisma, company.id);
     // await seedUserItems(prisma, company.id);

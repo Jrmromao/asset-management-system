@@ -255,28 +255,34 @@ model UserConsent {
 
 // Form Template table to store the template structure
 model FormTemplate {
-  id        String              @id @default(cuid())
-  name      String
-  fields    Json
-  companyId String
-  createdAt DateTime            @default(now())
-  updatedAt DateTime            @updatedAt
-  company   Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  assets    Asset[]
-  values    FormTemplateValue[]
-  active    Boolean             @default(true)
+  id          String              @id @default(cuid())
+  name        String
+  fields      Json                // Array of field definitions
+  companyId   String
+  categoryId  String
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  active      Boolean             @default(true)
+
+  // Relations
+  company     Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  values      FormTemplateValue[]
+  categories  Category[]
 
   @@unique([name, companyId])
   @@index([companyId])
+  @@index([categoryId])
 }
 
 model FormTemplateValue {
   id           String       @id @default(cuid())
-  values       Json
+  values       Json        // Actual field values
   assetId      String
   templateId   String
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
+  
+  // Relations
   asset        Asset        @relation(fields: [assetId], references: [id], onDelete: Cascade)
   formTemplate FormTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
 
@@ -463,6 +469,7 @@ model Company {
   fileProtectionRules          FileProtectionRule[]
   cleanupPolicies              CleanupPolicy[]
   storageAnalytics             StorageAnalytics[]
+  settings                     CompanySettings?
 
   @@unique([name])
 }
@@ -493,20 +500,17 @@ model Model {
   id             String       @id @default(cuid())
   name           String
   modelNo        String
-  // categoryId     String
   manufacturerId String
   companyId      String
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
   notes          String?
-  // category       Category     @relation(fields: [categoryId], references: [id], onDelete: Restrict)
   manufacturer   Manufacturer @relation(fields: [manufacturerId], references: [id], onDelete: Restrict)
   company        Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
   assets         Asset[]
   active         Boolean      @default(true)
 
   @@unique([modelNo, companyId])
-  // @@index([categoryId])
   @@index([manufacturerId])
   @@index([companyId])
 }
@@ -599,47 +603,45 @@ model Supplier {
 model Asset {
   id                 String              @id @default(cuid())
   name               String
-  assetTag           String @unique @map("serialNumber")
+  assetTag           String              @unique @map("serialNumber")
   notes              String?
   reorderPoint       Int?
   purchaseDate       DateTime
   endOfLife          DateTime?
+  endOfLifePlan      String?
+  energyConsumption  Decimal?
+  expectedLifespan   Int?
+  nextMaintenance    DateTime?
+  warrantyEndDate    DateTime?
   companyId          String
-  modelId            String
+  categoryId         String?             // Keep as optional
   statusLabelId      String?
   supplierId         String?
   departmentId       String?
   locationId         String?
   inventoryId        String?
-  categoryId         String?
-  formTemplateId     String?
   userId             String?
-  assignedTo         String?
-  warrantyEndDate    DateTime?
-  depreciationRate   Decimal?
+  modelId            String?             // Make modelId optional
+  formTemplateId     String?
   purchasePrice      Decimal?
   currentValue       Decimal?
-  lastMaintenance    DateTime?
-  nextMaintenance    DateTime?
-  metadata           Json?
+  depreciationRate   Decimal?
   active             Boolean             @default(true)
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
-  energyConsumption  Decimal?
-  expectedLifespan   Int?
-  endOfLifePlan      String?
+  
+  // Relations
   company            Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  model              Model               @relation(fields: [modelId], references: [id])
+  category           Category?           @relation(fields: [categoryId], references: [id])
   statusLabel        StatusLabel?        @relation(fields: [statusLabelId], references: [id], onDelete: SetNull)
   supplier           Supplier?           @relation(fields: [supplierId], references: [id], onDelete: SetNull)
   department         Department?         @relation(fields: [departmentId], references: [id], onDelete: SetNull)
   departmentLocation DepartmentLocation? @relation(fields: [locationId], references: [id], onDelete: SetNull)
   inventory          Inventory?          @relation(fields: [inventoryId], references: [id], onDelete: SetNull)
-  category           Category?           @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  formTemplate       FormTemplate?       @relation(fields: [formTemplateId], references: [id], onDelete: SetNull)
   user               User?               @relation("assignedToUser", fields: [userId], references: [id], onDelete: SetNull)
+  model              Model?              @relation(fields: [modelId], references: [id])
+  formValues         FormTemplateValue[]
   co2eRecords        Co2eRecord[]
-  values             FormTemplateValue[]
   transactions       Transaction[]
   assetHistory       AssetHistory[]
   Maintenance        Maintenance[]
@@ -652,24 +654,30 @@ model Asset {
 
   @@unique([name, companyId])
   @@index([companyId])
-  @@index([modelId])
+  @@index([categoryId])
   @@index([userId])
+  @@index([modelId])
 }
 
 model Category {
-  id          String      @id @default(cuid())
-  name        String
-  description String?
-  companyId   String
-  active      Boolean     @default(true)
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  company     Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  accessories Accessory[]
-  assets      Asset[]
+  id            String    @id @default(cuid())
+  name          String
+  description   String?
+  companyId     String
+  formTemplateId String?  // Link to form template
+  active        Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // Relations
+  company       Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  formTemplate  FormTemplate? @relation(fields: [formTemplateId], references: [id])
+  accessories   Accessory[]
+  assets        Asset[]
 
   @@unique([name, companyId])
   @@index([companyId])
+  @@index([formTemplateId])
 }
 
 model StatusLabel {
@@ -1380,4 +1388,13 @@ model StorageAnalytics {
 
   @@index([companyId])
   @@index([analysisDate])
+}
+
+model CompanySettings {
+  id             String   @id @default(cuid())
+  companyId      String   @unique
+  assetTagFormat String? // Regex or template for asset tags
+  // Add more fields as needed (e.g., namingConvention, defaultLocation, etc.)
+  updatedAt      DateTime @updatedAt
+  company        Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
 }
