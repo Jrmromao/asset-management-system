@@ -1069,3 +1069,7 @@ button:focus {
 [type='range']::-ms-thumb:active {
     @apply bg-primary/80;
 }
+
+body[data-radix-scroll-lock] {
+  overflow: auto !important;
+}

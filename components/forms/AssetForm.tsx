@@ -681,8 +681,9 @@ const AssetForm = ({ id, isUpdate = false, onSuccess, onError, setLoading, setSa
         const newAsset = await createAsset(assetData);
         toast.success("Asset created successfully!");
         onSuccess?.();
-        if (!disableRedirect && newAsset?.id) {
-          router.push(`/assets/view/${newAsset.id}`);
+        const newId = Array.isArray(newAsset?.data) ? newAsset.data[0]?.id : undefined;
+        if (!disableRedirect && newId) {
+          router.push(`/assets/view/${newId}`);
         } else if (!disableRedirect) {
           router.push("/assets");
         }
