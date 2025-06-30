@@ -43,7 +43,22 @@ export type AssetWithRelations = Asset & {
   auditLogs: AuditLog[];
   formTemplate: FormTemplate | null;
   purchaseOrder: PurchaseOrder | null;
-  formValues: FormTemplateValue[];
+  formValues: Array<{
+    id: string;
+    createdAt: string;
+    updatedAt: string;
+    values: any;
+    assetId: string;
+    templateId: string;
+    formTemplate: {
+      id: string;
+      name: string;
+      category: {
+        id: string;
+        name: string;
+      };
+    };
+  }>;
 };
 
 // This is used for the detail view page

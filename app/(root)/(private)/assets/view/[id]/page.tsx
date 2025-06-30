@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
-import Link from "next/link";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   Breadcrumb,
@@ -32,18 +31,15 @@ import {
   findAssetById,
   updateAssetNotes,
 } from "@/lib/actions/assets.actions";
-import DetailViewSkeleton from "@/components/shared/DetailView/DetailViewSkeleton";
 import { useRouter, useParams } from "next/navigation";
-import ItemDetailsTabs from "@/components/shared/DetailsTabs/ItemDetailsTabs";
 import { AssetWithRelations, EnhancedAssetType } from "@/types/asset";
-import { FaEdit, FaTrash, FaTools } from "react-icons/fa";
+import { FaTrash, FaTools } from "react-icons/fa";
 import { GenerateCo2Button } from "@/components/actions/GenerateCo2Button";
 import { AssetDetailView } from "@/components/shared/DetailView/AssetDetailView";
 import * as z from "zod";
 import { assignmentSchema } from "@/lib/schemas";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useUser } from "@clerk/nextjs";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import BrandedSpinner from "@/components/ui/BrandedSpinner";
 
 type AssignmentFormValues = z.infer<typeof assignmentSchema>;
@@ -63,7 +59,6 @@ export default function AssetPage() {
   const queryClient = useQueryClient();
   const [editOpen, setEditOpen] = useState(false);
 
-  console.log('[AssetPage] Rendered', { id, isLoaded, user, asset, editOpen });
 
   const {
     data: fetchedAsset,
@@ -86,10 +81,9 @@ export default function AssetPage() {
     refetchOnReconnect: false,
   });
 
-  console.log('[AssetPage] After useQuery', { fetchedAsset, isLoading, error });
 
   useEffect(() => {
-    console.log('[AssetPage] useEffect - fetchedAsset changed', { fetchedAsset });
+
     if (fetchedAsset) {
       const assetData = fetchedAsset as unknown as AssetWithRelations;
       setAsset({
@@ -107,7 +101,7 @@ export default function AssetPage() {
         purchaseCost: assetData.purchaseOrder?.totalAmount
           ? Number(assetData.purchaseOrder.totalAmount)
           : undefined,
-        category: { name: assetData.model?.name ?? "N/A" },
+        category: { name: assetData.formValues?.[0]?.formTemplate?.category?.name ?? "N/A" },
         statusLabel: assetData.statusLabel,
         user: assetData.user ? { name: assetData.user.name } : undefined,
         co2Score:
@@ -247,6 +241,7 @@ export default function AssetPage() {
     <div>
       <AssetDetailView
         asset={asset}
+        categoryName={asset?.category?.name}
         actions={detailViewActions}
         breadcrumbs={
           <Breadcrumb>

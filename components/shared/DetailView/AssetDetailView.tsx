@@ -198,7 +198,8 @@ export const AssetDetailView: React.FC<{
   onNotesUpdate?: (notes: string) => void;
   setEditOpen?: (open: boolean) => void;
   editOpen?: boolean;
-}> = ({ asset, actions, breadcrumbs, onNotesUpdate, setEditOpen: setEditOpenProp, editOpen: editOpenProp }) => {
+  categoryName?: string;
+}> = ({ asset, actions, breadcrumbs, onNotesUpdate, setEditOpen: setEditOpenProp, editOpen: editOpenProp, categoryName }) => {
   const router = useRouter();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -383,7 +384,7 @@ export const AssetDetailView: React.FC<{
       <DetailItem
         icon={<Laptop className="h-4 w-4" />}
         label="Category"
-        value={asset.category?.name}
+        value={categoryName || asset.formTemplate?.name || asset.category?.name}
       />
       <DetailItem
         icon={<Briefcase className="h-4 w-4" />}

@@ -186,7 +186,7 @@ const useImprovedAssetValidation = (
 };
 
 const AssetForm = ({ id, isUpdate = false, onSuccess, onError, setLoading, setSaving, disableRedirect = false }: AssetFormProps) => {
-  console.log('[AssetForm] Rendered', id, 'isUpdate:', isUpdate);
+
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<FormTemplate | null>(

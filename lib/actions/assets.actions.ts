@@ -386,12 +386,20 @@ export const getAssetById = withAuth(
           departmentLocation: true,
           inventory: true,
           category: true,
-          formValues: true,
+          formValues: {
+            include: {
+              formTemplate: {
+                include: {
+                  category: true,
+                },
+              },
+            },
+          },
           co2eRecords: true,
           assetHistory: true,
           user: true,
           supplier: true,
-          purchaseOrder: true,     
+          purchaseOrder: true,
         },
       });
 

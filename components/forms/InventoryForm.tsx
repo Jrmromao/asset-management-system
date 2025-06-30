@@ -26,10 +26,6 @@ const InventoryForm = ({
     name: initialData?.name ?? "",
   };
 
-  console.log("🔍 [InventoryForm] - Component rendered with:", {
-    initialData,
-    defaultValues,
-  });
 
   const form = useForm<z.infer<typeof inventorySchema>>({
     resolver: zodResolver(inventorySchema),

@@ -267,7 +267,7 @@ model FormTemplate {
   // Relations
   company     Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
   values      FormTemplateValue[]
-  categories  Category[]
+  category    Category            @relation(fields: [categoryId], references: [id])
 
   @@unique([name, companyId])
   @@index([companyId])
@@ -664,20 +664,18 @@ model Category {
   name          String
   description   String?
   companyId     String
-  formTemplateId String?  // Link to form template
   active        Boolean   @default(true)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   
   // Relations
   company       Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  formTemplate  FormTemplate? @relation(fields: [formTemplateId], references: [id])
   accessories   Accessory[]
   assets        Asset[]
+  formTemplates FormTemplate[]
 
   @@unique([name, companyId])
   @@index([companyId])
-  @@index([formTemplateId])
 }
 
 model StatusLabel {
