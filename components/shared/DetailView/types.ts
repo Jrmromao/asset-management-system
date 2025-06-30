@@ -49,6 +49,9 @@ export interface DetailViewProps {
     onEdit?: () => void;
     onPrintLabel?: () => void;
     onSetMaintenance?: () => void;
+    onOpenMaintenanceDialog?: () => void;
+    assetId?: string;
+    onMaintenanceScheduled?: () => void;
   };
   asset?: AssetType;
   checkoutDisabled?: boolean;

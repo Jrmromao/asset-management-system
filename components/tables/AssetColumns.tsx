@@ -384,7 +384,11 @@ export const assetColumns = ({
     accessorKey: "category",
     header: "Category",
     cell: ({ row }) => {
-      const value = (row.original as any).model?.category?.name;
+
+      const modelCategory = (row.original as any).model?.category?.name;
+      const formTemplateCategory = (row.original as any).formValues?.[0]?.formTemplate?.category?.name;
+      const value = formTemplateCategory ?? modelCategory ?? "-";
+
       return <LinkTableCell value={value} />;
     },
   },

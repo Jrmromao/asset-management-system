@@ -41,6 +41,7 @@ import { assignmentSchema } from "@/lib/schemas";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useUser } from "@clerk/nextjs";
 import BrandedSpinner from "@/components/ui/BrandedSpinner";
+import { ScheduleMaintenanceDialog } from "@/components/dialogs/ScheduleMaintenanceDialog";
 
 type AssignmentFormValues = z.infer<typeof assignmentSchema>;
 
@@ -58,6 +59,7 @@ export default function AssetPage() {
   const navigate = useRouter();
   const queryClient = useQueryClient();
   const [editOpen, setEditOpen] = useState(false);
+  const [isMaintenanceDialogOpen, setMaintenanceDialogOpen] = useState(false);
 
 
   const {
@@ -132,7 +134,9 @@ export default function AssetPage() {
           : undefined,
         expectedLifespan: assetData.expectedLifespan ?? undefined,
         endOfLifePlan: assetData.endOfLifePlan ?? undefined,
-        price: 0,
+        price: assetData.purchaseOrder?.totalAmount
+          ? Number(assetData.purchaseOrder.totalAmount)
+          : 0,
         formValues: assetData.formValues,
       });
     }
@@ -219,12 +223,18 @@ export default function AssetPage() {
   const detailViewActions = {
     onAssign: onAssignOpen,
     onUnassign: () => setShowUnassignDialog(true),
-    onSetMaintenance: handleSetMaintenance,
+    assetId: asset.id,
+    onMaintenanceScheduled: () => {
+      toast.success("Maintenance scheduled!");
+      queryClient.invalidateQueries({ queryKey: ["asset", id] });
+      setMaintenanceDialogOpen(false);
+    },
+    onOpenMaintenanceDialog: () => setMaintenanceDialogOpen(true),
     onEdit: () => setEditOpen(true),
     menu: [
       {
         label: "Set to Maintenance",
-        onClick: handleSetMaintenance,
+        onClick: () => setMaintenanceDialogOpen(true),
         icon: <FaTools />,
       },
       {
@@ -259,6 +269,13 @@ export default function AssetPage() {
         onNotesUpdate={handleNotesUpdate}
         setEditOpen={setEditOpen}
         editOpen={editOpen}
+      />
+
+      <ScheduleMaintenanceDialog
+        preselectedAssetId={asset.id}
+        onSuccess={detailViewActions.onMaintenanceScheduled}
+        open={isMaintenanceDialogOpen}
+        onOpenChange={setMaintenanceDialogOpen}
       />
 
       <DialogContainer

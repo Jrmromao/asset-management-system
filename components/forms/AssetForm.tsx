@@ -551,6 +551,21 @@ const AssetForm = ({ id, isUpdate = false, onSuccess, onError, setLoading, setSa
       setSubmitting(true);
       console.log("[FORM_SUBMIT] Initial form data:", data);
 
+      // Defensive: ensure templateValues is always an object
+      let safeTemplateValues = data.templateValues;
+      if (Array.isArray(safeTemplateValues)) {
+        console.warn('[AssetForm] templateValues was an array, converting to object. This should not happen!');
+        safeTemplateValues = {};
+      }
+
+      // Defensive: if templateValues is not empty, formTemplateId must be present
+      if (safeTemplateValues && Object.keys(safeTemplateValues).length > 0 && !data.formTemplateId) {
+        toast.error("A category template must be selected when using custom fields.");
+        setSubmitting(false);
+        setSaving?.(false);
+        return;
+      }
+
       // Validate only required fields specified by the schema for base fields
       const requiredBaseFields = assetFormSchema.pick({
         name: true,
@@ -651,7 +666,7 @@ const AssetForm = ({ id, isUpdate = false, onSuccess, onError, setLoading, setSa
         inventoryId: data.inventoryId || undefined,
         locationId: data.locationId || undefined,
         formTemplateId: data.formTemplateId || undefined,
-        templateValues: data.templateValues || {},
+        templateValues: safeTemplateValues || {},
         notes: data.notes || "",
         energyConsumption: data.energyConsumption || undefined,
         expectedLifespan: data.expectedLifespan || undefined,

@@ -439,7 +439,7 @@ export const AssetDetailView: React.FC<{
                       statusLabelId: asset.statusLabel?.id ?? undefined,
                       locationId: asset.departmentLocation?.id ?? undefined,
                       formTemplateId: asset.formTemplate?.id ?? undefined,
-                      templateValues: asset.formValues ?? undefined,
+                      templateValues: asset.formValues?.[0]?.values ?? {},
                       purchaseOrderId: asset.purchaseOrderNumber ?? undefined,
                       energyConsumption: asset.energyConsumption ?? undefined,
                       expectedLifespan: asset.expectedLifespan ?? undefined,
@@ -577,7 +577,7 @@ export const AssetDetailView: React.FC<{
             <div className="space-y-1">
               <div className="flex items-center gap-3">
                 <CardTitle className="text-2xl font-semibold">
-                  {asset.name}
+                  {asset.name} 
                 </CardTitle>
                 {isEditingStatus ? (
                   <div className="flex items-center gap-2">
@@ -609,7 +609,8 @@ export const AssetDetailView: React.FC<{
                       onClick={async () => {
                         setIsSavingStatus(true);
                         try {
-                          const res = await updateAsset(asset.id, {
+                          const hasTemplate = !!(asset.formTemplate && asset.formTemplate.id && (asset.formValues?.[0]?.values && Object.keys(asset.formValues?.[0]?.values || {}).length > 0));
+                          const updatePayload = {
                             name: asset.name,
                             assetTag: asset.assetTag,
                             notes: asset.notes ?? undefined,
@@ -618,15 +619,16 @@ export const AssetDetailView: React.FC<{
                             modelId: asset.model?.id ?? undefined,
                             statusLabelId: selectedStatus,
                             locationId: asset.departmentLocation?.id ?? undefined,
-                            formTemplateId: asset.formTemplate?.id ?? undefined,
-                            templateValues: asset.formValues ?? undefined,
+                            formTemplateId: hasTemplate ? asset.formTemplate!.id : undefined,
+                            templateValues: hasTemplate ? asset.formValues?.[0]?.values : undefined,
                             purchaseOrderId: asset.purchaseOrderNumber ?? undefined,
                             energyConsumption: asset.energyConsumption ?? undefined,
                             expectedLifespan: asset.expectedLifespan ?? undefined,
                             endOfLifePlan: asset.endOfLifePlan ?? undefined,
                             supplierId: undefined,
                             warrantyEndDate: asset.warrantyEndDate ?? undefined,
-                          });
+                          };
+                          const res = await updateAsset(asset.id, updatePayload);
                           if (res.success) {
                             toast({ title: "Status updated!", description: "Asset status was updated successfully." });
                             setIsEditingStatus(false);

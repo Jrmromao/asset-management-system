@@ -291,6 +291,15 @@ export const getAllAssets = withAuth(
           statusLabel: true,
           co2eRecords: true,
           category: true,
+          formValues: {
+            include: {
+              formTemplate: {
+                include: {
+                  category: true,
+                },
+              },
+            },
+          },
         },
       });
 
@@ -482,6 +491,7 @@ export const updateAsset = withAuth(
     try {
       const companyId = user.privateMetadata?.companyId as string;
       if (!companyId) {
+        console.log(`[updateAsset] User not associated with a company. User: ${user.id}`);
         return {
           success: false,
           data: [],
@@ -492,8 +502,26 @@ export const updateAsset = withAuth(
       // Get asset before update for audit log
       const beforeAsset = await prisma.asset.findUnique({ where: { id, companyId } });
 
-      const { name, assetTag, templateValues, ...assetData } =
+      const { name, assetTag, templateValues, statusLabelId, ...assetData } =
         await assetSchema.parseAsync(data);
+
+      // Explicit validation for statusLabelId
+      let statusLabelChanged = false;
+      if (typeof statusLabelId === "string" && statusLabelId !== beforeAsset?.statusLabelId) {
+        console.log(`[updateAsset] Attempting status label update for asset ${id}: ${beforeAsset?.statusLabelId} -> ${statusLabelId}`);
+        const statusLabel = await prisma.statusLabel.findFirst({
+          where: { id: statusLabelId, companyId },
+        });
+        if (!statusLabel) {
+          console.log(`[updateAsset] Invalid status label: ${statusLabelId} for asset ${id}`);
+          return {
+            success: false,
+            data: [],
+            error: "Invalid status label selected.",
+          };
+        }
+        statusLabelChanged = true;
+      }
 
       const updatedAsset = await prisma.asset.update({
         where: { id, companyId },
@@ -501,12 +529,15 @@ export const updateAsset = withAuth(
           ...assetData,
           name,
           assetTag,
+          statusLabelId,
           formValues: templateValues
             ? {
                 deleteMany: { assetId: id },
                 create: {
                   values: templateValues,
-                  formTemplate: { connect: { id: assetData.formTemplateId } },
+                  formTemplate: assetData.formTemplateId
+                    ? { connect: { id: assetData.formTemplateId } }
+                    : (() => { throw new Error("formTemplateId is required when updating form values"); })(),
                 },
               }
             : undefined,
@@ -517,6 +548,7 @@ export const updateAsset = withAuth(
           co2eRecords: true,
         },
       });
+      console.log(`[updateAsset] Asset updated: ${id}`);
       // --- AUDIT LOG ---
       await createAuditLog({
         companyId,
@@ -526,12 +558,24 @@ export const updateAsset = withAuth(
         details: `Asset updated: ${updatedAsset.name} (${updatedAsset.assetTag}) by user ${user.id}\nBefore: ${JSON.stringify(beforeAsset)}\nAfter: ${JSON.stringify(updatedAsset)}`,
         dataAccessed: { before: beforeAsset, after: updatedAsset },
       });
+      if (statusLabelChanged) {
+        console.log(`[updateAsset] Status label successfully updated for asset ${id}: ${statusLabelId}`);
+        await createAuditLog({
+          companyId,
+          action: "ASSET_STATUS_UPDATED",
+          entity: "ASSET",
+          entityId: id,
+          details: `Asset status changed to ${updatedAsset.statusLabel?.name} (${updatedAsset.statusLabelId}) by user ${user.id}`,
+          dataAccessed: { before: beforeAsset, after: updatedAsset },
+        });
+      }
       revalidatePath(`/assets/${id}`);
       return {
         success: true,
         data: [parseStringify(serializeAsset(updatedAsset))],
       };
     } catch (error: any) {
+      console.error(`[updateAsset] Error updating asset ${id || "unknown"}:`, error);
       return {
         success: false,
         data: [],
@@ -753,15 +797,37 @@ export const setMaintenanceStatus = withAuth(
         };
       }
 
+      // Look up the status label ID for 'Scheduled' for this company
+      const scheduledStatus = await prisma.statusLabel.findFirst({
+        where: { name: { equals: "Scheduled", mode: "insensitive" }, companyId },
+      });
+      if (!scheduledStatus) {
+        return {
+          success: false,
+          data: [],
+          error: "Scheduled status label not found. Please ensure a 'Scheduled' status label exists.",
+        };
+      }
+
       const maintenance = await prisma.maintenance.create({
         data: {
           assetId,
-          statusLabelId: "scheduled",
+          statusLabelId: scheduledStatus.id,
           title: "Scheduled Maintenance",
           startDate: new Date(),
           isWarranty: false,
           notes: "Scheduled maintenance for asset",
         },
+      });
+
+
+
+      await createAuditLog({
+        companyId,
+        action: "ASSET_SET_MAINTENANCE",
+        entity: "ASSET",
+        entityId: assetId,
+        details: `Asset set to maintenance: ${asset.name} (${asset.assetTag}) by user ${user.id}`,
       });
 
       revalidatePath("/assets");
@@ -1222,7 +1288,7 @@ export const bulkCreateAssets = withAuth(
         if (match) return match.id;
         match = arr.find(item => item.name && item.name.toLowerCase().includes(normalized));
         if (match) return match.id;
-        match = arr.find(item => item.name && levenshtein(item.name.toLowerCase(), normalized) <= 2);
+        match = arr.find(item => item.name && item.name.toLowerCase().startsWith(normalized));
         if (match) return match.id;
         // Try email (for user)
         match = arr.find(item => item.email && item.email.toLowerCase() === normalized);

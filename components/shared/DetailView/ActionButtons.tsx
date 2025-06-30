@@ -13,6 +13,7 @@ import {
   FaTools,
 } from "react-icons/fa";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ScheduleMaintenanceDialog } from "@/components/dialogs/ScheduleMaintenanceDialog";
 
 export const ActionButtons: React.FC<{
   actions: NonNullable<DetailViewProps["actions"]>;
@@ -43,11 +44,11 @@ export const ActionButtons: React.FC<{
           Icon={FaArchive}
         />
       )}
-      {actions.onSetMaintenance && (
+      {actions.onOpenMaintenanceDialog && (
         <CustomButton
           size="sm"
           className="w-full sm:w-auto"
-          action={actions.onSetMaintenance}
+          action={actions.onOpenMaintenanceDialog}
           value="Set Maintenance"
           Icon={FaTools}
         />

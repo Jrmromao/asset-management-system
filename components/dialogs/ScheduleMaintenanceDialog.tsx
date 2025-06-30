@@ -12,26 +12,32 @@ import { MaintenanceForm } from "@/components/forms/MaintenanceForm";
 import { type ReactNode, useState } from "react";
 
 interface ScheduleMaintenanceDialogProps {
-  children: ReactNode; // The trigger button
+  children?: ReactNode; // The trigger button
   onSuccess?: () => void;
   preselectedAssetId?: string;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 export const ScheduleMaintenanceDialog = ({
   children,
   onSuccess,
   preselectedAssetId,
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange,
 }: ScheduleMaintenanceDialogProps) => {
-  const [open, setOpen] = useState(false);
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+  const open = controlledOpen !== undefined ? controlledOpen : uncontrolledOpen;
+  const onOpenChange = controlledOnOpenChange || setUncontrolledOpen;
 
   const handleSuccess = () => {
-    setOpen(false);
+    onOpenChange(false);
     onSuccess?.();
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      {children && <DialogTrigger asChild>{children}</DialogTrigger>}
       <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Schedule New Maintenance</DialogTitle>
