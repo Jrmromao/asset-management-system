@@ -8,6 +8,7 @@ interface FormContainerProps {
   children: React.ReactNode;
   requiredFieldsCount: number;
   requiredFields: string[];
+  hideProgress?: boolean;
 }
 
 export const FormContainer = ({
@@ -15,15 +16,18 @@ export const FormContainer = ({
   children,
   requiredFields,
   requiredFieldsCount,
+  hideProgress,
 }: FormContainerProps) => {
   return (
     <div className="min-h-screen bg-slate-50">
       <ModalManager modals={useFormModals(form)} />
-      <ProgressIndicator
-        form={form}
-        requiredFieldsCount={requiredFieldsCount}
-        requiredFields={requiredFields}
-      />
+      {!hideProgress && (
+        <ProgressIndicator
+          form={form}
+          requiredFieldsCount={requiredFieldsCount}
+          requiredFields={requiredFields}
+        />
+      )}
       {children}
     </div>
   );

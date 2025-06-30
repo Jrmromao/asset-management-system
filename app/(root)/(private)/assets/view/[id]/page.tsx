@@ -33,7 +33,7 @@ import {
   updateAssetNotes,
 } from "@/lib/actions/assets.actions";
 import DetailViewSkeleton from "@/components/shared/DetailView/DetailViewSkeleton";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import ItemDetailsTabs from "@/components/shared/DetailsTabs/ItemDetailsTabs";
 import { AssetWithRelations, EnhancedAssetType } from "@/types/asset";
 import { FaEdit, FaTrash, FaTools } from "react-icons/fa";
@@ -43,23 +43,27 @@ import * as z from "zod";
 import { assignmentSchema } from "@/lib/schemas";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useUser } from "@clerk/nextjs";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import BrandedSpinner from "@/components/ui/BrandedSpinner";
 
 type AssignmentFormValues = z.infer<typeof assignmentSchema>;
 
-interface AssetPageProps {
-  params: Promise<{
-    id: string;
-  }>;
+interface EnhancedAssetTypeWithFormValues extends EnhancedAssetType {
+  formValues?: any[];
 }
 
-export default function AssetPage({ params }: AssetPageProps) {
-  const { id } = use(params);
-  const [asset, setAsset] = useState<EnhancedAssetType | undefined>();
+export default function AssetPage() {
+  const params = useParams();
+  const id = params.id as string;
+  const { isLoaded, user } = useUser();
+  const [asset, setAsset] = useState<EnhancedAssetTypeWithFormValues | undefined>();
   const [showUnassignDialog, setShowUnassignDialog] = useState(false);
   const { isAssignOpen, onAssignOpen, onAssignClose } = useAssetStore();
   const navigate = useRouter();
   const queryClient = useQueryClient();
-  const { user } = useUser();
+  const [editOpen, setEditOpen] = useState(false);
+
+  console.log('[AssetPage] Rendered', { id, isLoaded, user, asset, editOpen });
 
   const {
     data: fetchedAsset,
@@ -72,12 +76,20 @@ export default function AssetPage({ params }: AssetPageProps) {
       if (!user) return null;
       const response = await findAssetById(id);
       if (response.error) throw new Error(response.error);
-      return Array.isArray(response.data) ? response.data[0] : undefined;
+      return Array.isArray(response.data) ? response.data[0] : response.data;
     },
-    enabled: !!user,
+    enabled: isLoaded && !!user && !!id,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes (was cacheTime)
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
   });
 
+  console.log('[AssetPage] After useQuery', { fetchedAsset, isLoading, error });
+
   useEffect(() => {
+    console.log('[AssetPage] useEffect - fetchedAsset changed', { fetchedAsset });
     if (fetchedAsset) {
       const assetData = fetchedAsset as unknown as AssetWithRelations;
       setAsset({
@@ -127,6 +139,7 @@ export default function AssetPage({ params }: AssetPageProps) {
         expectedLifespan: assetData.expectedLifespan ?? undefined,
         endOfLifePlan: assetData.endOfLifePlan ?? undefined,
         price: 0,
+        formValues: assetData.formValues,
       });
     }
   }, [fetchedAsset]);
@@ -136,7 +149,8 @@ export default function AssetPage({ params }: AssetPageProps) {
     try {
       await setMaintenanceStatus(asset.id);
       toast.success("Asset is now in maintenance.");
-      refetch();
+      // Invalidate and refetch only when necessary
+      queryClient.invalidateQueries({ queryKey: ["asset", id] });
     } catch (e: any) {
       toast.error(`Failed to set maintenance status: ${e.message}`);
     }
@@ -147,8 +161,9 @@ export default function AssetPage({ params }: AssetPageProps) {
     try {
       await checkinAsset(asset.id);
       toast.success("Asset checked in successfully");
-      refetch();
       setShowUnassignDialog(false);
+      // Invalidate and refetch only when necessary
+      queryClient.invalidateQueries({ queryKey: ["asset", id] });
     } catch (e: any) {
       toast.error(`Failed to check in asset: ${e.message}`);
     }
@@ -187,7 +202,10 @@ export default function AssetPage({ params }: AssetPageProps) {
       const response = await updateAssetNotes(id, notes);
       if (response.success) {
         toast.success("Notes updated successfully");
-        refetch();
+        // Update the local state instead of refetching
+        setAsset(prev => prev ? { ...prev, notes } : undefined);
+        // Invalidate the query cache for future fetches
+        queryClient.invalidateQueries({ queryKey: ["asset", id] });
       } else {
         toast.error(response.error || "Failed to update notes");
       }
@@ -197,7 +215,7 @@ export default function AssetPage({ params }: AssetPageProps) {
   };
 
   if (isLoading) {
-    return <DetailViewSkeleton />;
+    return <BrandedSpinner />;
   }
 
   if (error || !asset) {
@@ -208,7 +226,7 @@ export default function AssetPage({ params }: AssetPageProps) {
     onAssign: onAssignOpen,
     onUnassign: () => setShowUnassignDialog(true),
     onSetMaintenance: handleSetMaintenance,
-    onEdit: () => handleAction("edit"),
+    onEdit: () => setEditOpen(true),
     menu: [
       {
         label: "Set to Maintenance",
@@ -244,6 +262,8 @@ export default function AssetPage({ params }: AssetPageProps) {
           </Breadcrumb>
         }
         onNotesUpdate={handleNotesUpdate}
+        setEditOpen={setEditOpen}
+        editOpen={editOpen}
       />
 
       <DialogContainer
@@ -259,12 +279,11 @@ export default function AssetPage({ params }: AssetPageProps) {
             onOptimisticUpdate={handleOptimisticUpdate}
             onSuccess={() => {
               toast.success("Asset assigned successfully");
-              refetch();
+              queryClient.invalidateQueries({ queryKey: ["asset", id] });
               onAssignClose();
             }}
             onError={() => {
               toast.error("Failed to assign asset");
-              refetch();
             }}
             assignAction={handleAssignAction}
           />

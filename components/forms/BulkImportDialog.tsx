@@ -29,9 +29,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Progress } from "@/components/ui/progress";
 import { useFormTemplatesQuery } from "@/hooks/queries/useFormTemplatesQuery";
 import {
   Select,
@@ -332,13 +330,16 @@ export default function BulkImportDialog({
           mapped[key] = row[key];
         }
       });
+      // Add formTemplateId to each row
+      mapped.formTemplateId = selectedTemplateId;
+
       // Map statusLabel to statusLabelId before import
       if (mapped.statusLabel) {
         const id = findStatusLabelId(mapped.statusLabel);
         if (id) {
           mapped.statusLabelId = id;
           delete mapped.statusLabel;
-        } else {
+      } else {
           // Add validation error for unmatched status label
           setValidationErrors((prev) => [
             ...prev,
@@ -521,7 +522,7 @@ export default function BulkImportDialog({
                   const dependency = config.dependencies.find((d) => d.name === field.name);
                   const suggestions = validationSuggestions[field.name];
                   if (error && dependency && suggestions) {
-                    return (
+          return (
                       <TableCell key={field.name}>
                         <Select
                           defaultValue={cellValue}
@@ -529,7 +530,7 @@ export default function BulkImportDialog({
                             if (newValue === "create-new") {
                               setIsCreatingNew(dependency.label);
                               setCreatingNewContext({ rowIndex, columnName: field.name });
-                            } else {
+                      } else {
                               const selected = suggestions.find((s) => s.id === newValue);
                               if (selected) {
                                 handleCellUpdate(rowIndex, field.name, selected.name);
@@ -560,8 +561,8 @@ export default function BulkImportDialog({
                       {error && (
                         <span className="text-red-500 font-semibold" title={error.message}>
                           {cellValue}
-                        </span>
-                      )}
+                    </span>
+                  )}
                       {!error && cellValue}
                     </TableCell>
                   );
@@ -570,17 +571,17 @@ export default function BulkImportDialog({
             ))}
           </TableBody>
         </Table>
-      </div>
+                </div>
       {parsedData.length > 10 && (
         <div className="text-center mt-2">
           <Button variant="link" size="sm" onClick={() => setShowAllRows((v) => !v)}>
             {showAllRows ? "Show less" : `Show all ${parsedData.length} rows`}
           </Button>
-        </div>
-      )}
+                </div>
+              )}
       <DialogFooter className="mt-6 flex justify-between">
         <Button variant="outline" onClick={() => setStep("upload")}>Back</Button>
-        <Button
+                <Button
           onClick={handleImport}
           disabled={isProcessing || validationErrors.length > 0}
           className="font-bold"
@@ -592,7 +593,7 @@ export default function BulkImportDialog({
           )}
         </Button>
       </DialogFooter>
-    </div>
+            </div>
   );
 
   const renderCreationDialog = () => {
@@ -653,8 +654,8 @@ export default function BulkImportDialog({
           Import More
         </Button>
         <Button onClick={() => { resetState(); onClose(); }}>Close</Button>
-      </div>
-    </div>
+                  </div>
+                </div>
   );
 
   // --- Refined Step 1: Category/Template Select ---
@@ -690,15 +691,15 @@ export default function BulkImportDialog({
         </SelectContent>
       </Select>
       <div className="flex justify-end mt-6">
-        <Button
+                      <Button
           onClick={() => setStep("upload")}
           disabled={!selectedTemplateId}
           className="w-full"
         >
           Next
-        </Button>
-      </div>
-    </div>
+                      </Button>
+                    </div>
+                  </div>
   );
 
   // --- Refined Step 2: Upload ---
@@ -736,9 +737,9 @@ export default function BulkImportDialog({
                 ? "Drop CSV file here or click to upload"
                 : "Please select a template to enable upload"}
             </p>
-          )}
-        </div>
-        <Button
+              )}
+            </div>
+                  <Button
           onClick={handleDownloadTemplate}
           disabled={!selectedTemplateId || isLoadingFormTemplates}
           className="mt-4 w-full"
@@ -746,18 +747,18 @@ export default function BulkImportDialog({
         >
           <Download className="mr-2 h-4 w-4" />
           Download CSV Template for {selectedTemplate ? `"${selectedTemplate.name}"` : "Template"}
-        </Button>
-      </div>
+                  </Button>
+                </div>
       <div className="flex justify-between mt-6">
         <Button variant="outline" onClick={() => setStep("select-category")}>Back</Button>
-        <Button
+                      <Button
           onClick={() => setStep("mapping")}
           disabled={!file}
         >
           Next
-        </Button>
-      </div>
-    </div>
+                      </Button>
+                    </div>
+                  </div>
   );
 
   // --- Mapping Step ---
@@ -776,11 +777,11 @@ export default function BulkImportDialog({
       />
       <div className="flex justify-between mt-6">
         <Button variant="outline" onClick={() => setStep("upload")}>Back</Button>
-      </div>
-    </div>
-  );
+                      </div>
+                      </div>
+                              );
 
-  return (
+                              return (
     <Dialog open={isOpen} onOpenChange={() => { resetState(); onClose(); }}>
       <DialogContent
         className={

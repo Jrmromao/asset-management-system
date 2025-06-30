@@ -47,6 +47,7 @@ import {
 import BulkImportDialog from "@/components/forms/BulkImportDialog";
 import { assetImportConfig } from "@/importConfigs/assetImportConfig";
 import { bulkCreateAssets } from "@/lib/actions/assets.actions";
+import { useQueryClient } from "@tanstack/react-query";
 
 // Constants for better maintainability
 const SEARCH_DEBOUNCE_MS = 300;
@@ -213,21 +214,21 @@ const Assets = () => {
     setImportDialogOpen(true);
   };
 
+  const queryClient = useQueryClient();
+
   const handleBulkImport = async (data: any[]) => {
     try {
-      // Call the server action for bulk asset creation
       const result = await bulkCreateAssets(data);
       if (result.success) {
         toast.success(`Assets imported successfully`);
+        queryClient.invalidateQueries({ queryKey: ["assets"] });
       } else {
         toast.error(`Failed to import assets. ${result.error || ''}`);
       }
     } catch (err: any) {
       toast.error(`Bulk import failed: ${err.message || err}`);
     } finally {
-      setImportDialogOpen(false);
-      // Auto-refresh the table after import
-      navigate.refresh();
+    setImportDialogOpen(false);
     }
   };
 

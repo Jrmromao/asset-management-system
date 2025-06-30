@@ -10,9 +10,13 @@ import { useAssetQuery } from "@/hooks/queries/useAssetQuery";
 import type { CustomField } from "@/types/form";
 import { CreateAssetInput } from "@/lib/actions/assets.actions";
 import { debounce } from "lodash";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tag, Briefcase, Building, User, MapPin, Layers, ClipboardEdit, Info, Star, Lock } from "lucide-react";
 
 // Components
 import CustomInput from "@/components/CustomInput";
+import { ModalManager } from "@/components/ModalManager";
+import { useFormModals } from "@/hooks/useFormModals";
 
 // Schema and types
 import { assetSchema } from "@/lib/schemas";
@@ -48,7 +52,6 @@ import { getPurchaseOrders } from "@/lib/actions/purchaseOrder.actions";
 import { PurchaseOrder } from "@prisma/client";
 import { usePurchaseOrderUIStore } from "@/lib/stores/usePurchaseOrderUIStore";
 import { PurchaseOrderDialog } from "../dialogs/PurchaseOrderDialog";
-import { auth, User } from "@clerk/nextjs/server";
 import { useUser } from "@clerk/nextjs";
 import { EOLPlan, eolPlanOptions } from "@/constants";
 import CustomDatePicker from "../CustomDatePicker";
@@ -83,6 +86,13 @@ const assetFormSchema = z.object({
   endOfLifePlan: z.nativeEnum(EOLPlan).optional(),
   supplierId: z.string().optional(),
   warrantyEndDate: z.date().optional(),
+  purchaseDate: z.date().optional(),
+  purchasePrice: z.coerce.number().optional(),
+  depreciationRate: z.coerce.number().optional(),
+  currentValue: z.coerce.number().optional(),
+  reorderPoint: z.coerce.number().optional(),
+  licenseId: z.string().optional(),
+  userId: z.string().optional(),
 });
 
 type AssetFormValues = z.infer<typeof assetFormSchema>;
@@ -90,6 +100,11 @@ type AssetFormValues = z.infer<typeof assetFormSchema>;
 interface AssetFormProps {
   id?: string;
   isUpdate?: boolean;
+  onSuccess?: () => void;
+  onError?: (err: string) => void;
+  setLoading?: (loading: boolean) => void;
+  setSaving?: (saving: boolean) => void;
+  disableRedirect?: boolean;
 }
 
 const useImprovedAssetValidation = (
@@ -170,7 +185,8 @@ const useImprovedAssetValidation = (
   return validationState;
 };
 
-const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
+const AssetForm = ({ id, isUpdate = false, onSuccess, onError, setLoading, setSaving, disableRedirect = false }: AssetFormProps) => {
+  console.log('[AssetForm] Rendered', id, 'isUpdate:', isUpdate);
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<FormTemplate | null>(
@@ -195,7 +211,6 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
 
   const {
     items: assets,
-    isLoading, // This isLoading is for the entire asset query
     createItem: createAsset,
     updateItem: updateAsset,
     findItemById,
@@ -239,6 +254,13 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
       endOfLifePlan: undefined,
       supplierId: "",
       warrantyEndDate: undefined,
+      purchaseDate: undefined,
+      purchasePrice: undefined,
+      depreciationRate: undefined,
+      currentValue: undefined,
+      reorderPoint: undefined,
+      licenseId: "",
+      userId: "",
     },
     mode: "onSubmit",
   });
@@ -283,73 +305,88 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
   );
 
   // Load existing asset data for updates
+  const [assetDataForUpdate, setAssetDataForUpdate] = useState<any>(null);
   useEffect(() => {
-    // Crucial guard: Only run if it's an update, ID exists, data hasn't been loaded yet,
-    // AND formTemplates are available (as setSelectedTemplate depends on them).
-    if (
-      !isUpdate ||
-      !id ||
-      isDataLoaded ||
-      !formTemplates ||
-      formTemplates.length === 0
-    ) {
+    if (!isUpdate || !id || isDataLoaded) {
       return;
     }
 
     const loadAssetData = async () => {
       try {
+        setLoading?.(true);
+        // Use server action instead of direct API call to avoid auth issues
         const asset = await findItemById(id);
-
-        if (asset) {
-          form.reset({
-            name: asset.name || "",
-            assetTag: asset.assetTag || "",
-            modelId: asset.modelId || "",
-            statusLabelId: asset.statusLabelId || "",
-            departmentId: asset.departmentId || "",
-            inventoryId: asset.inventoryId || "",
-            locationId: asset.departmentLocation?.id || "",
-            formTemplateId: asset.formTemplateId || "",
-            purchaseOrderId: asset.purchaseOrderId || "",
-            templateValues:
-              (asset.values?.[0]?.values as Record<string, any>) || {},
-            notes: asset.notes || "",
-            energyConsumption: asset.energyConsumption
-              ? Number(asset.energyConsumption)
-              : undefined,
-            expectedLifespan: asset.expectedLifespan || undefined,
-            endOfLifePlan: (asset.endOfLifePlan as EOLPlan) || undefined,
-            supplierId: asset.supplierId || "",
-            // FIX: Convert warrantyEndDate to a Date object if it exists
-            warrantyEndDate: asset.warrantyEndDate
-              ? new Date(asset.warrantyEndDate)
-              : undefined,
-          });
-
-          // Set selected template if exists based on the formTemplates now available
-          if (asset.formTemplateId) {
-            const template = formTemplates.find(
-              (t) => t.id === asset.formTemplateId,
-            );
-            if (template) {
-              setSelectedTemplate(template as FormTemplate);
-            }
-          }
-          setIsDataLoaded(true); // Mark data as loaded to prevent re-runs
-        }
+        console.log('[AssetForm][Update] Full asset object:', asset);
+        // Save asset data in a ref so we can use it after formTemplates load
+        setAssetDataForUpdate(asset);
       } catch (error) {
         console.error("Error loading asset data:", error);
         toast.error("Failed to load asset data");
+        onError?.("Failed to load asset data");
+      } finally {
+        setLoading?.(false);
       }
     };
-
     loadAssetData();
-    // Dependencies:
-    // - isUpdate, id, isDataLoaded: Control when the effect should run initially and prevent re-runs.
-    // - findItemById: Stable function from useAssetQuery.
-    // - formTemplates: Crucial for `setSelectedTemplate` and to ensure data is available before proceeding.
-    // - form: Stable object for `form.reset()`.
-  }, [isUpdate, id, isDataLoaded, findItemById, formTemplates, form]);
+  }, [isUpdate, id, isDataLoaded]);
+
+  // New: Wait for both asset data and formTemplates, then set form state and selectedTemplate
+  useEffect(() => {
+    if (!isUpdate || !assetDataForUpdate || !formTemplates || formTemplates.length === 0 || isDataLoaded) return;
+    const asset = assetDataForUpdate;
+    // Prefer nested formTemplate.id, fallback to flat formTemplateId, then formValues[0].templateId
+    const formTemplateId =
+      asset.formTemplate?.id ||
+      asset.formTemplateId ||
+      (asset.formValues?.[0]?.templateId ?? "");
+    console.log('[AssetForm][Update] asset.formTemplateId (resolved):', formTemplateId);
+    console.log('[AssetForm][Update] formTemplates:', formTemplates.map(t => t.id));
+    form.reset({
+      name: asset.name || "",
+      assetTag: asset.assetTag || "",
+      modelId: asset.modelId || "",
+      statusLabelId: asset.statusLabelId || "",
+      departmentId: asset.departmentId || "",
+      inventoryId: asset.inventoryId || "",
+      locationId: asset.departmentLocation?.id || "",
+      formTemplateId: formTemplateId,
+      purchaseOrderId: asset.purchaseOrderId || "",
+      templateValues: (asset.formValues?.[0]?.values as Record<string, any>) || {},
+      notes: asset.notes || "",
+      energyConsumption: asset.energyConsumption ? Number(asset.energyConsumption) : undefined,
+      expectedLifespan: asset.expectedLifespan || undefined,
+      endOfLifePlan: (asset.endOfLifePlan as EOLPlan) || undefined,
+      supplierId: asset.supplierId || "",
+      warrantyEndDate: asset.warrantyEndDate ? new Date(asset.warrantyEndDate) : undefined,
+      purchaseDate: asset.purchaseDate ? new Date(asset.purchaseDate) : undefined,
+      purchasePrice: asset.purchasePrice !== null && asset.purchasePrice !== undefined ? Number(asset.purchasePrice) : undefined,
+      depreciationRate: asset.depreciationRate !== null && asset.depreciationRate !== undefined ? Number(asset.depreciationRate) : undefined,
+      currentValue: asset.currentValue !== null && asset.currentValue !== undefined ? Number(asset.currentValue) : undefined,
+      reorderPoint: asset.reorderPoint || undefined,
+      licenseId: asset.licenseId || undefined,
+      userId: asset.userId || undefined,
+    });
+    if (formTemplateId) {
+      const template = formTemplates.find((t) => t.id === formTemplateId);
+      console.log('[AssetForm][Update] selectedTemplate:', template);
+      if (template) {
+        setSelectedTemplate(template as FormTemplate);
+        const assetTemplateValues = (asset.formValues?.[0]?.values as Record<string, any>) || {};
+        const initialValues = template.fields.reduce<Record<string, any>>((acc, field) => {
+          acc[field.name] = assetTemplateValues[field.name] ?? "";
+          return acc;
+        }, {});
+        form.setValue("templateValues", initialValues);
+      } else {
+        setSelectedTemplate(null);
+        form.setValue("templateValues", {});
+      }
+    } else {
+      setSelectedTemplate(null);
+      form.setValue("templateValues", {});
+    }
+    setIsDataLoaded(true);
+  }, [isUpdate, assetDataForUpdate, formTemplates, isDataLoaded]);
 
   const statusLocationSection = getStatusLocationSection({
     form,
@@ -450,10 +487,10 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
               !field.showIf ||
               Object.entries(field.showIf).every(
                 ([dependentField, allowedValues]) => {
-                  const dependentValue = templateValues?.[dependentField];
+                  const dependentValue1 = form.watch('templateValues')?.[dependentField];
                   return (
                     Array.isArray(allowedValues) &&
-                    allowedValues.includes(dependentValue)
+                    allowedValues.includes(dependentValue1)
                   );
                 },
               );
@@ -464,45 +501,38 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
 
             return (
               <div key={field.name} className="relative">
+                {/* Input component */}
                 {field.type === "text" || field.type === "number" ? (
                   <CustomInput
                     name={fieldName}
-                    label={String(field.label)}
+                    label={field.label}
                     control={form.control}
+                    type={field.type === "number" ? "number" : "text"}
                     required={field.required}
-                    type={field.type}
-                    placeholder={
-                      field.placeholder ||
-                      `Enter ${String(field.label).toLowerCase()}`
-                    }
-                    className="dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 dark:placeholder-gray-400"
+                    placeholder={field.placeholder || ""}
                   />
                 ) : field.type === "select" ? (
                   <CustomSelect
                     name={fieldName}
-                    label={String(field.label)}
+                    label={field.label}
                     control={form.control}
+                    data={(field.options || []).map(opt => ({ id: opt, name: opt }))}
                     required={field.required}
-                    data={
-                      field.options?.map((option) => ({
-                        id: option,
-                        name: option,
-                      })) || []
-                    }
-                    placeholder={`Select ${String(field.label).toLowerCase()}`}
-                  />
-                ) : field.type === "boolean" || field.type === "checkbox" ? (
-                  <CustomSwitch
-                    name={fieldName}
-                    label={String(field.label)}
-                    control={form.control}
-                    required={field.required}
+                    placeholder={field.placeholder || ""}
                   />
                 ) : field.type === "date" ? (
                   <CustomDatePicker
                     name={fieldName}
-                    label={String(field.label)}
+                    label={field.label}
                     form={form}
+                    required={field.required}
+                    placeholder={field.placeholder || ""}
+                  />
+                ) : field.type === "boolean" || field.type === "checkbox" ? (
+                  <CustomSwitch
+                    name={fieldName}
+                    label={field.label}
+                    control={form.control}
                     required={field.required}
                   />
                 ) : null}
@@ -515,6 +545,8 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
   };
 
   const onSubmit = async (data: AssetFormValues) => {
+    console.log('[AssetForm] onSubmit called', data);
+    setSaving?.(true);
     try {
       setSubmitting(true);
       console.log("[FORM_SUBMIT] Initial form data:", data);
@@ -559,10 +591,10 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
             !field.showIf ||
             Object.entries(field.showIf).every(
               ([dependentField, allowedValues]) => {
-                const dependentValue = data.templateValues?.[dependentField];
+                const dependentValue2 = form.watch('templateValues')?.[dependentField];
                 return (
                   Array.isArray(allowedValues) &&
-                  allowedValues.includes(dependentValue)
+                  allowedValues.includes(dependentValue2)
                 );
               },
             );
@@ -627,6 +659,13 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
         purchaseOrderId: data.purchaseOrderId || undefined,
         supplierId: data.supplierId || undefined,
         warrantyEndDate: data.warrantyEndDate || undefined,
+        purchaseDate: data.purchaseDate || undefined,
+        purchasePrice: data.purchasePrice || undefined,
+        depreciationRate: data.depreciationRate || undefined,
+        currentValue: data.currentValue || undefined,
+        reorderPoint: data.reorderPoint || undefined,
+        licenseId: data.licenseId || undefined,
+        userId: data.userId || undefined,
       };
 
       console.log("[FORM_SUBMIT] Submitting asset data:", assetData);
@@ -635,13 +674,20 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
         console.log("[FORM_SUBMIT] Updating asset:", id);
         await updateAsset(id, assetData);
         toast.success("Asset updated successfully!");
+        onSuccess?.();
+        if (!disableRedirect) router.push(`/assets/view/${id}`);
       } else {
         console.log("[FORM_SUBMIT] Creating new asset");
-        await createAsset(assetData);
+        const newAsset = await createAsset(assetData);
+        toast.success("Asset created successfully!");
+        onSuccess?.();
+        if (!disableRedirect && newAsset?.id) {
+          router.push(`/assets/view/${newAsset.id}`);
+        } else if (!disableRedirect) {
+          router.push("/assets");
+        }
       }
-
-      router.push("/assets");
-    } catch (error) {
+    } catch (error: any) {
       console.error("[FORM_SUBMIT] Error:", error);
       toast.dismiss(); // Dismiss loading toast
       if (error instanceof z.ZodError) {
@@ -651,10 +697,12 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
         console.error("[FORM_SUBMIT] Validation errors:", errors);
         toast.error(`Validation errors: ${errors.join(", ")}`);
       } else {
-        toast.error("Failed to save asset");
+        toast.error(error.message || "Failed to save asset");
       }
+      onError?.(error.message || "Failed to save asset");
     } finally {
       setSubmitting(false);
+      setSaving?.(false);
     }
   };
 
@@ -686,17 +734,17 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
         !field.showIf ||
         Object.entries(field.showIf).every(
           ([dependentField, allowedValues]) => {
-            const dependentValue = templateValues?.[dependentField];
+            const dependentValue1 = form.watch('templateValues')?.[dependentField];
             return (
               Array.isArray(allowedValues) &&
-              allowedValues.includes(dependentValue)
+              allowedValues.includes(dependentValue1)
             );
           },
         );
 
       if (!shouldShowField) return true; // If hidden, it doesn't need to be validated for completion
 
-      const value = templateValues?.[field.name];
+      const value = form.watch('templateValues')?.[field.name];
       if (!field.required) return true;
 
       switch (field.type) {
@@ -716,7 +764,7 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
           return true;
       }
     });
-  }, [selectedTemplate?.fields, templateValues]);
+  }, [selectedTemplate?.fields, form.watch('templateValues')]);
 
   useEffect(() => {
     const templateSelected =
@@ -797,164 +845,439 @@ const AssetForm = ({ id, isUpdate = false }: AssetFormProps) => {
   ]);
 
   return (
-    <FormContainer
-      form={form}
-      requiredFields={getRequiredFieldsList(assetFormSchema)}
-      requiredFieldsCount={getRequiredFieldCount(assetFormSchema)}
-    >
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)}>
-          <div className="max-w-[1200px] mx-auto px-4 py-6">
-            <PurchaseOrderDialog />
-            <div className="grid grid-cols-12 gap-6">
-              {(isLoading || isUpdating) && id ? ( // Show skeleton if loading or updating an existing asset
-                <MainFormSkeleton />
-              ) : (
-                <>
-                  <div className="col-span-12 lg:col-span-8 space-y-6">
-                    <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-                      <CardContent className="divide-y divide-slate-100 dark:divide-gray-700">
-                        {/* Asset Category */}
-                        <FormSection title="Asset Category">
-                          <SelectWithButton
-                            name="formTemplateId"
-                            label="Category Template"
-                            data={formTemplates as any}
-                            onNew={openTemplate}
-                            placeholder="Select a template"
-                            form={form}
-                            isPending={isUpdating}
-                            onChange={handleTemplateChange}
-                          />
-                        </FormSection>
+    <>
+      <ModalManager modals={useFormModals(form)} />
+      <FormContainer
+        form={form}
+        requiredFields={getRequiredFieldsList(assetFormSchema)}
+        requiredFieldsCount={getRequiredFieldCount(assetFormSchema)}
+        hideProgress={isUpdate}
+      >
+        <Form {...form}>
+          <form id="asset-form" onSubmit={form.handleSubmit(onSubmit)}>
+            {isUpdate ? (
+              <div className="w-full p-4">
+                <PurchaseOrderDialog />
+                {(!isDataLoaded || isUpdating) && id ? (
+                  <MainFormSkeleton />
+                ) : (
+                  <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                    <CardContent className="divide-y divide-slate-100 dark:divide-gray-700">
+                      {/* Asset Category */}
+                      <FormSection title="Asset Category">
+                        <SelectWithButton
+                          name="formTemplateId"
+                          label="Category Template"
+                          data={formTemplates as any}
+                          onNew={openTemplate}
+                          placeholder="Select a template"
+                          form={form}
+                          isPending={isUpdating}
+                          onChange={handleTemplateChange}
+                        />
+                      </FormSection>
 
-                        {/* Asset Details */}
-                        <FormSection title="Asset Details">
+                      {/* Asset Details */}
+                      <FormSection title="Asset Details">
+                        <div className="relative">
                           <CustomInput
                             required
-                            name="name"
+                            name={"name"}
                             label="Asset Title"
                             control={form.control}
                             placeholder="Enter asset name"
                             className="dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 dark:placeholder-gray-400"
-                            error={assetNameValidation.error || undefined}
-                            isLoading={assetNameValidation.isValidating}
+                            error={!isUpdate ? assetNameValidation.error ?? undefined : undefined}
+                            isLoading={!isUpdate ? assetNameValidation.isValidating : false}
+                            disabled={isUpdate}
                           />
-
+                          {isUpdate && (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="absolute right-3 top-1/2 -translate-y-1/2 cursor-default text-muted-foreground">
+                                    <Lock className="h-4 w-4" aria-label="Locked" />
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  Asset Title cannot be changed after creation.
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )}
+                        </div>
+                        <div className="relative">
                           <CustomInput
                             required
-                            name="assetTag"
+                            name={"assetTag"}
                             label="Asset Tag"
                             control={form.control}
                             placeholder="Enter asset tag"
                             className="dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 dark:placeholder-gray-400"
-                            error={assetTagValidation.error || undefined}
-                            isLoading={assetTagValidation.isValidating}
+                            error={!isUpdate ? assetTagValidation.error ?? undefined : undefined}
+                            isLoading={!isUpdate ? assetTagValidation.isValidating : false}
+                            disabled={isUpdate}
                           />
+                          {isUpdate && (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="absolute right-3 top-1/2 -translate-y-1/2 cursor-default text-muted-foreground">
+                                    <Lock className="h-4 w-4" aria-label="Locked" />
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  Asset Tag cannot be changed after creation.
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )}
+                        </div>
 
-                          <SelectWithButton
-                            name="modelId"
-                            form={form}
-                            label="Model"
-                            data={models as any}
-                            onNew={openModel}
-                            placeholder="Select model"
-                          />
+                        <SelectWithButton
+                          name="modelId"
+                          form={form}
+                          label="Model"
+                          data={models as any}
+                          onNew={openModel}
+                          placeholder="Select model"
+                        />
 
-                          <SelectWithButton
-                            name="supplierId"
-                            form={form}
-                            label="Supplier"
-                            data={suppliers as any}
-                            onNew={() => {
-                              /* open supplier modal */
-                            }}
-                            placeholder="Select a supplier"
-                          />
+                        <SelectWithButton
+                          name="supplierId"
+                          form={form}
+                          label="Supplier"
+                          data={suppliers as any}
+                          onNew={() => {
+                            /* open supplier modal */
+                          }}
+                          placeholder="Select a supplier"
+                        />
 
-                          <CustomDatePicker
-                            name="warrantyEndDate"
-                            label="Warranty End Date"
-                            form={form}
-                          />
+                        <CustomDatePicker
+                          name="warrantyEndDate"
+                          label="Warranty End Date"
+                          form={form}
+                        />
 
-                          <SelectWithButton
-                            name="purchaseOrderId"
-                            form={form}
-                            label="Purchase Order"
-                            data={purchaseOrders.map((po) => ({
-                              id: po.id,
-                              name: po.poNumber,
-                            }))}
-                            onNew={openPurchaseOrder}
-                            placeholder="Select a PO"
-                          />
-                        </FormSection>
+                        <SelectWithButton
+                          name="purchaseOrderId"
+                          form={form}
+                          label="Purchase Order"
+                          data={purchaseOrders.map((po) => ({
+                            id: po.id,
+                            name: po.poNumber,
+                          }))}
+                          onNew={openPurchaseOrder}
+                          placeholder="Select a PO"
+                        />
 
-                        {/* Environmental & Lifecycle */}
-                        <FormSection title="Environmental & Lifecycle">
-                          {/* User guidance message for CO2 accuracy */}
-                          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 text-blue-800 rounded text-sm">
-                            <strong>Tip:</strong> The more technical details you
-                            provide (like energy consumption, lifespan, or
-                            end-of-life plan), the more accurate your CO2
-                            calculation will be. If any information is missing,
-                            we&apos;ll use typical values for your asset
-                            type/model.
-                          </div>
-                          <CustomInput
-                            name="energyConsumption"
-                            label="Energy Consumption (Watts)"
-                            control={form.control}
-                            type="number"
-                            placeholder="e.g. 85"
-                          />
-                          <CustomInput
-                            name="expectedLifespan"
-                            label="Expected Lifespan (Years)"
-                            control={form.control}
-                            type="number"
-                            placeholder="e.g. 5"
-                          />
-                          <CustomSelect
-                            name="endOfLifePlan"
-                            label="End-of-Life Plan"
-                            control={form.control}
-                            placeholder="Select a plan"
-                            data={eolPlanOptions}
-                          />
-                        </FormSection>
+                        <CustomInput
+                          name="purchasePrice"
+                          label="Purchase Price"
+                          control={form.control}
+                          type="number"
+                          placeholder="e.g. 1000"
+                        />
 
-                        {/* Assignment & Location */}
-                        <FormSection title="Assignment & Location">
-                          <div className="space-y-6">
-                            {statusLocationSection.map((section, index) => (
-                              <SelectWithButton key={index} {...section} />
-                            ))}
-                          </div>
-                        </FormSection>
+                        <CustomInput
+                          name="currentValue"
+                          label="Current Value"
+                          control={form.control}
+                          type="number"
+                          placeholder="e.g. 800"
+                        />
 
-                        {/* Category-Specific Fields */}
-                        {selectedTemplate && renderCustomFields()}
-                      </CardContent>
-                    </Card>
+                        <CustomInput
+                          name="depreciationRate"
+                          label="Depreciation Rate (%)"
+                          control={form.control}
+                          type="number"
+                          placeholder="e.g. 10"
+                        />
+
+                        <CustomDatePicker
+                          name="purchaseDate"
+                          label="Purchase Date"
+                          form={form}
+                        />
+                      </FormSection>
+
+                      {/* Environmental & Lifecycle */}
+                      <FormSection title="Environmental & Lifecycle">
+                        {/* User guidance message for CO2 accuracy */}
+                        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 text-blue-800 rounded text-sm">
+                          <strong>Tip:</strong> The more technical details you
+                          provide (like energy consumption, lifespan, or
+                          end-of-life plan), the more accurate your CO2
+                          calculation will be. If any information is missing,
+                          we&apos;ll use typical values for your asset
+                          type/model.
+                        </div>
+                        <CustomInput
+                          name="energyConsumption"
+                          label="Energy Consumption (Watts)"
+                          control={form.control}
+                          type="number"
+                          placeholder="e.g. 85"
+                        />
+                        <CustomInput
+                          name="expectedLifespan"
+                          label="Expected Lifespan (Years)"
+                          control={form.control}
+                          type="number"
+                          placeholder="e.g. 5"
+                        />
+                        <CustomSelect
+                          name="endOfLifePlan"
+                          label="End-of-Life Plan"
+                          control={form.control}
+                          placeholder="Select a plan"
+                          data={eolPlanOptions}
+                        />
+                      </FormSection>
+
+                      {/* Assignment & Location */}
+                      <FormSection title="Assignment & Location">
+                        <div className="space-y-6">
+                          {statusLocationSection.map((section, index) => (
+                            <SelectWithButton key={index} {...section} />
+                          ))}
+                        </div>
+                      </FormSection>
+
+                      {/* Category-Specific Fields */}
+                      {selectedTemplate && renderCustomFields()}
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            ) : (
+              <div className="max-w-[1200px] mx-auto px-4 py-6">
+                <div className="grid grid-cols-12 gap-6">
+                  <div className="col-span-12 lg:col-span-8 space-y-6">
+                    <PurchaseOrderDialog />
+                    {isUpdating && id ? (
+                      <MainFormSkeleton />
+                    ) : (
+                      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                        <CardContent className="divide-y divide-slate-100 dark:divide-gray-700">
+                          {/* Asset Category */}
+                          <FormSection title="Asset Category">
+                            <SelectWithButton
+                              name="formTemplateId"
+                              label="Category Template"
+                              data={formTemplates as any}
+                              onNew={openTemplate}
+                              placeholder="Select a template"
+                              form={form}
+                              isPending={isUpdating}
+                              onChange={handleTemplateChange}
+                            />
+                          </FormSection>
+
+                          {/* Asset Details */}
+                          <FormSection title="Asset Details">
+                            <div className="relative">
+                              <CustomInput
+                                required
+                                name={"name"}
+                                label="Asset Title"
+                                control={form.control}
+                                placeholder="Enter asset name"
+                                className="dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 dark:placeholder-gray-400"
+                                error={!isUpdate ? assetNameValidation.error ?? undefined : undefined}
+                                isLoading={!isUpdate ? assetNameValidation.isValidating : false}
+                                disabled={isUpdate}
+                              />
+                              {isUpdate && (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <span className="absolute right-3 top-1/2 -translate-y-1/2 cursor-default text-muted-foreground">
+                                        <Lock className="h-4 w-4" aria-label="Locked" />
+                                      </span>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      Asset Title cannot be changed after creation.
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              )}
+                            </div>
+                            <div className="relative">
+                              <CustomInput
+                                required
+                                name={"assetTag"}
+                                label="Asset Tag"
+                                control={form.control}
+                                placeholder="Enter asset tag"
+                                className="dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 dark:placeholder-gray-400"
+                                error={!isUpdate ? assetTagValidation.error ?? undefined : undefined}
+                                isLoading={!isUpdate ? assetTagValidation.isValidating : false}
+                                disabled={isUpdate}
+                              />
+                              {isUpdate && (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <span className="absolute right-3 top-1/2 -translate-y-1/2 cursor-default text-muted-foreground">
+                                        <Lock className="h-4 w-4" aria-label="Locked" />
+                                      </span>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      Asset Tag cannot be changed after creation.
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              )}
+                            </div>
+
+                            <SelectWithButton
+                              name="modelId"
+                              form={form}
+                              label="Model"
+                              data={models as any}
+                              onNew={openModel}
+                              placeholder="Select model"
+                            />
+
+                            <SelectWithButton
+                              name="supplierId"
+                              form={form}
+                              label="Supplier"
+                              data={suppliers as any}
+                              onNew={() => {
+                                /* open supplier modal */
+                              }}
+                              placeholder="Select a supplier"
+                            />
+
+                            <CustomDatePicker
+                              name="warrantyEndDate"
+                              label="Warranty End Date"
+                              form={form}
+                            />
+
+                            <SelectWithButton
+                              name="purchaseOrderId"
+                              form={form}
+                              label="Purchase Order"
+                              data={purchaseOrders.map((po) => ({
+                                id: po.id,
+                                name: po.poNumber,
+                              }))}
+                              onNew={openPurchaseOrder}
+                              placeholder="Select a PO"
+                            />
+
+                            <CustomInput
+                              name="purchasePrice"
+                              label="Purchase Price"
+                              control={form.control}
+                              type="number"
+                              placeholder="e.g. 1000"
+                            />
+
+                            <CustomInput
+                              name="currentValue"
+                              label="Current Value"
+                              control={form.control}
+                              type="number"
+                              placeholder="e.g. 800"
+                            />
+
+                            <CustomInput
+                              name="depreciationRate"
+                              label="Depreciation Rate (%)"
+                              control={form.control}
+                              type="number"
+                              placeholder="e.g. 10"
+                            />
+
+                            <CustomDatePicker
+                              name="purchaseDate"
+                              label="Purchase Date"
+                              form={form}
+                            />
+
+                            <CustomInput
+                              name="licenseId"
+                              label="License ID"
+                              control={form.control}
+                              placeholder="Enter license ID"
+                            />
+
+                            <CustomInput
+                              name="userId"
+                              label="User ID"
+                              control={form.control}
+                              placeholder="Enter user ID"
+                            />
+                          </FormSection>
+
+                          {/* Environmental & Lifecycle */}
+                          <FormSection title="Environmental & Lifecycle">
+                            {/* User guidance message for CO2 accuracy */}
+                            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 text-blue-800 rounded text-sm">
+                              <strong>Tip:</strong> The more technical details you
+                              provide (like energy consumption, lifespan, or
+                              end-of-life plan), the more accurate your CO2
+                              calculation will be. If any information is missing,
+                              we&apos;ll use typical values for your asset
+                              type/model.
+                            </div>
+                            <CustomInput
+                              name="energyConsumption"
+                              label="Energy Consumption (Watts)"
+                              control={form.control}
+                              type="number"
+                              placeholder="e.g. 85"
+                            />
+                            <CustomInput
+                              name="expectedLifespan"
+                              label="Expected Lifespan (Years)"
+                              control={form.control}
+                              type="number"
+                              placeholder="e.g. 5"
+                            />
+                            <CustomSelect
+                              name="endOfLifePlan"
+                              label="End-of-Life Plan"
+                              control={form.control}
+                              placeholder="Select a plan"
+                              data={eolPlanOptions}
+                            />
+                          </FormSection>
+
+                          {/* Assignment & Location */}
+                          <FormSection title="Assignment & Location">
+                            <div className="space-y-6">
+                              {statusLocationSection.map((section, index) => (
+                                <SelectWithButton key={index} {...section} />
+                              ))}
+                            </div>
+                          </FormSection>
+
+                          {/* Category-Specific Fields */}
+                          {selectedTemplate && renderCustomFields()}
+                        </CardContent>
+                      </Card>
+                    )}
                   </div>
-                </>
-              )}
-
-              {(isLoading || isUpdating) && id ? ( // Show skeleton if loading or updating an existing asset
-                <FormProgressSkeleton />
-              ) : (
-                <FormProgress sections={formSections} />
-              )}
-            </div>
-          </div>
-
-          {/* Footer */}
-          <ActionFooter form={form} isPending={submitting} router={router} />
-        </form>
-      </Form>
-    </FormContainer>
+                  {/* Right Sidebar - Form Progress */}
+                  <FormProgress sections={formSections} />
+                </div>
+              </div>
+            )}
+            {/* Footer */}
+            {!isUpdate && (
+              <ActionFooter form={form} isPending={submitting} router={router} />
+            )}
+          </form>
+        </Form>
+      </FormContainer>
+    </>
   );
 };
 

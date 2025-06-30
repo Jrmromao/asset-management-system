@@ -399,29 +399,22 @@ export const bulkUpdateAssetStatus = withAuth(
               continue;
             }
 
+            const beforeAsset = { ...asset };
             await tx.asset.update({
               where: { id: assetId },
               data: { statusLabelId },
             });
+            const afterAsset = await tx.asset.findFirst({ where: { id: assetId, companyId } });
 
-            // Create audit log
-            const internalUser = await tx.user.findFirst({
-              where: { oauthId: user.id, companyId },
-              select: { id: true },
+            // Use createAuditLog for consistency
+            await createAuditLog({
+              companyId,
+              action: "BULK_STATUS_UPDATE",
+              entity: "ASSET",
+              entityId: assetId,
+              details: `Asset status updated to ${statusLabelId} via bulk operation\nBefore: ${JSON.stringify(beforeAsset)}\nAfter: ${JSON.stringify(afterAsset)}`,
+              dataAccessed: { before: beforeAsset, after: afterAsset },
             });
-
-            if (internalUser) {
-              await tx.auditLog.create({
-                data: {
-                  action: "BULK_STATUS_UPDATE",
-                  entity: "ASSET",
-                  entityId: assetId,
-                  userId: internalUser.id,
-                  companyId,
-                  details: `Asset status updated to ${statusLabelId} via bulk operation`,
-                },
-              });
-            }
 
             results.push({ id: assetId, status: "success" });
             processed++;
@@ -443,7 +436,8 @@ export const bulkUpdateAssetStatus = withAuth(
         action: 'BULK_OPERATION',
         entity: 'BULK',
         entityId: undefined,
-        details: `Bulk operation performed by user ${user.id}. Details: ${JSON.stringify(results)}`,
+        details: `Bulk status update performed by user ${user.id}. Summary: ${JSON.stringify(results)}`,
+        dataAccessed: { assetIds, statusLabelId },
       });
 
       return {

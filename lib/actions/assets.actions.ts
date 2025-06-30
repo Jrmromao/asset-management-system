@@ -391,10 +391,11 @@ export const getAssetById = withAuth(
           assetHistory: true,
           user: true,
           supplier: true,
-          purchaseOrder: true,
-          // formTemplate: true,
+          purchaseOrder: true,     
         },
       });
+
+      console.log("🔍 [getAssetById] - asset:", asset);
 
       if (!asset) {
         return {
@@ -456,8 +457,9 @@ export const removeAsset = withAuth(
         entity: "ASSET",
         entityId: id,
         details: asset
-          ? `Asset deleted: ${asset.name} (${asset.assetTag}) by user ${user.id}`
+          ? `Asset deleted: ${asset.name} (${asset.assetTag}) by user ${user.id}\nBefore: ${JSON.stringify(asset)}`
           : `Asset deleted (ID: ${id}) by user ${user.id}`,
+        dataAccessed: asset ? { before: asset } : undefined,
       });
       revalidatePath("/assets");
       return { success: true, data: [] };
@@ -478,6 +480,9 @@ export const updateAsset = withAuth(
           error: "User is not associated with a company",
         };
       }
+
+      // Get asset before update for audit log
+      const beforeAsset = await prisma.asset.findUnique({ where: { id, companyId } });
 
       const { name, assetTag, templateValues, ...assetData } =
         await assetSchema.parseAsync(data);
@@ -510,7 +515,8 @@ export const updateAsset = withAuth(
         action: "ASSET_UPDATED",
         entity: "ASSET",
         entityId: id,
-        details: `Asset updated: ${updatedAsset.name} (${updatedAsset.assetTag}) by user ${user.id}`,
+        details: `Asset updated: ${updatedAsset.name} (${updatedAsset.assetTag}) by user ${user.id}\nBefore: ${JSON.stringify(beforeAsset)}\nAfter: ${JSON.stringify(updatedAsset)}`,
+        dataAccessed: { before: beforeAsset, after: updatedAsset },
       });
       revalidatePath(`/assets/${id}`);
       return {
@@ -573,7 +579,7 @@ export const checkinAsset = withAuth(
         // Get the current asset to track who it was assigned to
         const currentAsset = await tx.asset.findUnique({
           where: { id, companyId },
-          select: { userId: true },
+          select: { userId: true, name: true, assetTag: true },
         });
 
         // Update the asset
@@ -592,18 +598,15 @@ export const checkinAsset = withAuth(
           },
         });
 
-        // Create audit log entry
-        await tx.auditLog.create({
-          data: {
-            action: "ASSET_CHECKIN",
-            entity: "ASSET",
-            entityId: id,
-            userId: internalUser.id,
-            companyId,
-            details: currentAsset?.userId
-              ? `Asset returned from user ${currentAsset.userId}`
-              : "Asset checked in",
-          },
+        // Use createAuditLog for consistency
+        await createAuditLog({
+          companyId,
+          action: "ASSET_CHECKIN",
+          entity: "ASSET",
+          entityId: id,
+          details: currentAsset?.userId
+            ? `Asset returned from user ${currentAsset.userId} (${currentAsset.name} - ${currentAsset.assetTag})`
+            : `Asset checked in (${currentAsset?.name} - ${currentAsset?.assetTag})`,
         });
 
         // Create asset history entry
@@ -656,44 +659,42 @@ export const checkoutAsset = withAuth(
           throw new Error("Internal user record not found for audit logging");
         }
 
+        // Get the current asset to track who it was assigned to
+        const currentAsset = await tx.asset.findUnique({
+          where: { id, companyId },
+          select: { userId: true, name: true, assetTag: true },
+        });
+
         // Update the asset
         const asset = await tx.asset.update({
-          where: { id, companyId },
-          data: { userId },
+          where: {
+            id,
+            companyId,
+          },
+          data: {
+            userId,
+          },
           include: {
             model: { include: { manufacturer: true } },
             statusLabel: true,
-            department: true,
-            departmentLocation: true,
-            inventory: true,
-            category: true,
-            formValues: true,
             co2eRecords: true,
-            assetHistory: true,
-            user: true,
-            supplier: true,
-            purchaseOrder: true,
-            // formTemplate: true,
           },
         });
 
-        // Create audit log entry
-        await tx.auditLog.create({
-          data: {
-            action: "ASSET_CHECKOUT",
-            entity: "ASSET",
-            entityId: id,
-            userId: internalUser.id,
-            companyId,
-            details: `Asset assigned to user ${userId}`,
-          },
+        // Use createAuditLog for consistency
+        await createAuditLog({
+          companyId,
+          action: "ASSET_CHECKOUT",
+          entity: "ASSET",
+          entityId: id,
+          details: `Asset checked out to user ${userId} (${currentAsset?.name} - ${currentAsset?.assetTag})`,
         });
 
         // Create asset history entry
         await tx.assetHistory.create({
           data: {
             assetId: id,
-            type: "assignment",
+            type: "checkout",
             companyId,
             notes: `Asset checked out to user ${userId}`,
           },
@@ -702,7 +703,7 @@ export const checkoutAsset = withAuth(
         return asset;
       });
 
-      revalidatePath(`/assets/${id}`);
+      revalidatePath("/assets");
       return {
         success: true,
         data: toArray(parseStringify(serializeAsset(result))),
@@ -1183,7 +1184,7 @@ export const bulkCreateAssets = withAuth(
       }
 
       // Log incoming asset data
-      console.log("[BULK IMPORT] Incoming assets:", JSON.stringify(assets, null, 2));
+      console.log("\n\n[BULK IMPORT] Incoming assets:", JSON.stringify(assets, null, 2));
 
       // Fetch all dependencies for the company
       console.log("[BULK IMPORT] Fetching dependencies...");
@@ -1294,20 +1295,42 @@ export const bulkCreateAssets = withAuth(
       });
       console.log("[BULK IMPORT] insertedAssets:", JSON.stringify(insertedAssets, null, 2));
 
-      // 3. Prepare FormTemplateValue records
+      // Helper to extract only valid custom field values for a given template
+      function extractFormTemplateValues(asset: any, formTemplateId: string, templateFieldMap: Map<string, any>): Record<string, any> | null {
+        const fields = templateFieldMap.get(formTemplateId);
+        if (!Array.isArray(fields)) return null;
+        const values: Record<string, any> = {};
+        for (const field of fields) {
+          // Try both field.name and field.label for flexibility
+          values[field.name] = asset[field.name] ?? asset[field.label] ?? null;
+        }
+        return values;
+      }
+
+      // Fetch all relevant form templates and their fields
+      const formTemplateIds = Array.from(new Set(assets.map(a => a.formTemplateId).filter((id): id is string => typeof id === 'string')));
+      const formTemplatesForMapping = await prisma.formTemplate.findMany({
+        where: { id: { in: formTemplateIds } },
+        select: { id: true, fields: true }, // fields assumed to be JSON or relation
+      });
+      // Build a map for quick lookup
+      const templateFieldMap = new Map(formTemplatesForMapping.map(t => [t.id, t.fields]));
+
       console.log("[BULK IMPORT] Mapping form template values...");
       const formTemplateValuesToCreate = insertedAssets.map(asset => {
         const original = assets.find(a => a.assetTag === asset.assetTag);
-        if (!original?.templateValues || !original.formTemplateId) return null;
+        if (!original?.formTemplateId) return null;
+        const values = extractFormTemplateValues(original, original.formTemplateId, templateFieldMap);
+        if (!values) return null;
         return {
           assetId: asset.id,
           templateId: original.formTemplateId,
-          values: original.templateValues,
+          values,
         };
       }).filter(Boolean) as { assetId: string; templateId: string; values: any }[];
       console.log("[BULK IMPORT] formTemplateValuesToCreate:", JSON.stringify(formTemplateValuesToCreate, null, 2));
 
-      // 4. Bulk insert FormTemplateValue
+      // 5. Bulk insert FormTemplateValue
       if (formTemplateValuesToCreate.length > 0) {
         console.log("[BULK IMPORT] Creating form template values in DB...");
         await prisma.formTemplateValue.createMany({ data: formTemplateValuesToCreate });

@@ -575,6 +575,13 @@ export const assetSchema = z.object({
   endOfLifePlan: z.string().optional(),
   supplierId: z.string().optional(),
   warrantyEndDate: z.date().optional(),
+  userId: z.string().optional(),
+  purchaseDate: z.date().optional(),
+  purchasePrice: z.number().optional(),
+  depreciationRate: z.number().optional(),
+  currentValue: z.number().optional(),
+  reorderPoint: z.number().optional(),
+  licenseId: z.string().optional(),
 });
 
 export const createTemplateSchema = z.object({
@@ -591,4 +598,16 @@ export const createTemplateSchema = z.object({
       showIf: z.record(z.array(z.string())).optional(),
     }),
   ),
+});
+
+// Asset list query schema for API filtering, pagination, etc.
+export const assetListQuerySchema = z.object({
+  page: z.string().optional(),
+  pageSize: z.string().optional(),
+  search: z.string().optional(),
+  sort: z.string().optional(),
+  status: z.string().optional(),
+  department: z.string().optional(),
+  model: z.string().optional(),
+  // Add more filters as needed
 });

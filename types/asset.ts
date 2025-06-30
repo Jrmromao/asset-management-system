@@ -43,6 +43,7 @@ export type AssetWithRelations = Asset & {
   auditLogs: AuditLog[];
   formTemplate: FormTemplate | null;
   purchaseOrder: PurchaseOrder | null;
+  formValues: FormTemplateValue[];
 };
 
 // This is used for the detail view page
@@ -82,6 +83,7 @@ export interface EnhancedAssetType {
   energyConsumption?: number | null;
   expectedLifespan?: number | null;
   endOfLifePlan?: string | null;
+  formValues?: any[];
 }
 
 export type CreateAssetInput = Omit<

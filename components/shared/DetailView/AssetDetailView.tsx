@@ -6,6 +6,7 @@ import React, {
   useTransition,
   useMemo,
   useEffect,
+  useCallback,
 } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -38,6 +39,9 @@ import {
   Recycle,
   Hourglass,
   Edit,
+  Pocket,
+  Pin,
+  X,
 } from "lucide-react";
 import QRCode from "react-qr-code";
 import {
@@ -52,18 +56,18 @@ import { EnhancedAssetType } from "@/types/asset";
 import { ActionButtons } from "./ActionButtons";
 import CO2Dialog from "@/components/dialogs/CO2Dialog";
 import { CO2CalculationResult } from "@/types/co2";
-import {
-  calculateAssetCO2Action,
-  saveAssetCO2Action,
-  getCO2DataFromStore,
-} from "@/lib/actions/co2.actions";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { DataTable } from "@/components/tables/DataTable/data-table";
 import { auditLogColumns } from "@/components/tables/AuditLogColumns";
 import { assetHistoryColumns } from "@/components/tables/AsetHistoryColumns";
-import { updateAssetNotes } from "@/lib/actions/assets.actions";
+import { updateAssetNotes, updateAsset } from "@/lib/actions/assets.actions";
 import { ColumnDef } from "@tanstack/react-table";
+import EditAssetDrawer from "@/components/forms/asset/EditAssetDrawer";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useStatusLabelsQuery } from "@/hooks/queries/useStatusLabelsQuery";
+import { useUserQuery } from "@/hooks/queries/useUserQuery";
+import { useQueryClient } from "@tanstack/react-query";
 
 // Helper component for individual detail items to reduce repetition
 const DetailItem: React.FC<{
@@ -156,7 +160,7 @@ const NotesSection: React.FC<{
               size="sm"
               onClick={() => setIsEditing(true)}
             >
-              <Plus className="h-4 w-4 mr-2" />
+              <Edit className="h-4 w-4 mr-2" />
               {notes ? "Edit" : "Add"} Notes
             </Button>
           )}
@@ -192,13 +196,28 @@ export const AssetDetailView: React.FC<{
   actions: any; // Using `any` to match original props, should be refined
   breadcrumbs?: React.ReactNode;
   onNotesUpdate?: (notes: string) => void;
-}> = ({ asset, actions, breadcrumbs, onNotesUpdate }) => {
+  setEditOpen?: (open: boolean) => void;
+  editOpen?: boolean;
+}> = ({ asset, actions, breadcrumbs, onNotesUpdate, setEditOpen: setEditOpenProp, editOpen: editOpenProp }) => {
   const router = useRouter();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [isPending, startTransition] = useTransition();
   const [isCo2DialogOpen, setCo2DialogOpen] = useState(false);
   const [co2Result, setCo2Result] = useState<CO2CalculationResult | null>(null);
   const [isNewCo2Calculation, setIsNewCo2Calculation] = useState(false);
+  const [internalEditOpen, setInternalEditOpen] = useState(false);
+  const editOpen = editOpenProp !== undefined ? editOpenProp : internalEditOpen;
+  const setEditOpen = setEditOpenProp || setInternalEditOpen;
+  const [isEditingStatus, setIsEditingStatus] = useState(false);
+  const [selectedStatus, setSelectedStatus] = useState(asset.statusLabel?.id);
+  const { statusLabels, isLoading: isLoadingStatusLabels } = useStatusLabelsQuery();
+  const { toast: statusToast } = useToast();
+  const [isSavingStatus, setIsSavingStatus] = useState(false);
+  const [isEditingUser, setIsEditingUser] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(asset.userId || "");
+  const { users: allUsers, isLoading: isLoadingUsers } = useUserQuery();
+  const [isSavingUser, setIsSavingUser] = useState(false);
 
   // Memoize columns to prevent unnecessary re-renders
   const auditLogColumnsMemo = useMemo(() => auditLogColumns(), []);
@@ -384,7 +403,89 @@ export const AssetDetailView: React.FC<{
       <DetailItem
         icon={<User className="h-4 w-4" />}
         label="Assigned To"
-        value={asset.user?.name}
+        value={
+          isEditingUser ? (
+            <div className="flex items-center gap-2">
+              <Select
+                value={selectedUser}
+                onValueChange={setSelectedUser}
+                disabled={isSavingUser || isLoadingUsers}
+              >
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Select user" />
+                </SelectTrigger>
+                <SelectContent>
+                  {allUsers?.map((u) => (
+                    <SelectItem key={u.id} value={u.id}>
+                      {u.name || u.email}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <button
+                className="btn btn-primary px-2 py-1 rounded text-sm font-medium"
+                disabled={isSavingUser}
+                onClick={async () => {
+                  setIsSavingUser(true);
+                  try {
+                    const res = await updateAsset(asset.id, {
+                      name: asset.name,
+                      assetTag: asset.assetTag,
+                      notes: asset.notes ?? undefined,
+                      departmentId: asset.department?.id ?? undefined,
+                      userId: (selectedUser ?? undefined),
+                      modelId: asset.model?.id ?? undefined,
+                      statusLabelId: asset.statusLabel?.id ?? undefined,
+                      locationId: asset.departmentLocation?.id ?? undefined,
+                      formTemplateId: asset.formTemplate?.id ?? undefined,
+                      templateValues: asset.formValues ?? undefined,
+                      purchaseOrderId: asset.purchaseOrderNumber ?? undefined,
+                      energyConsumption: asset.energyConsumption ?? undefined,
+                      expectedLifespan: asset.expectedLifespan ?? undefined,
+                      endOfLifePlan: asset.endOfLifePlan ?? undefined,
+                      supplierId: undefined,
+                      warrantyEndDate: asset.warrantyEndDate ?? undefined,
+                    });
+                    if (res.success) {
+                      toast({ title: "Assignment updated!", description: "Asset assigned user updated successfully." });
+                      setIsEditingUser(false);
+                      queryClient.invalidateQueries({ queryKey: ["asset", asset.id] });
+                    } else {
+                      toast({ title: "Error", description: res.error || "Failed to update assignment.", variant: "destructive" });
+                    }
+                  } catch (e) {
+                    toast({ title: "Error", description: "Failed to update assignment.", variant: "destructive" });
+                  } finally {
+                    setIsSavingUser(false);
+                  }
+                }}
+              >
+                {isSavingUser ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save"}
+              </button>
+              <button
+                className="btn btn-outline px-2 py-1 rounded text-sm font-medium"
+                disabled={isSavingUser}
+                onClick={() => {
+                  setIsEditingUser(false);
+                  setSelectedUser(asset.userId || "");
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              {asset.user?.name || "Unassigned"}
+              <button
+                className="ml-1 p-1 rounded hover:bg-muted transition"
+                aria-label="Edit assignment"
+                onClick={() => setIsEditingUser(true)}
+              >
+                <Edit className="h-4 w-4 text-muted-foreground" />
+              </button>
+            </div>
+          )
+        }
       />
       <DetailItem
         icon={<Building2 className="h-4 w-4" />}
@@ -457,8 +558,17 @@ export const AssetDetailView: React.FC<{
     </>
   );
 
+  const handleEditDrawerClose = useCallback(() => {
+    setEditOpen(false);
+  }, [setEditOpen]);
+
   return (
     <>
+      <EditAssetDrawer
+        assetId={asset.id}
+        open={editOpen}
+        onClose={handleEditDrawerClose}
+      />
       <Card className="h-full mx-2 border-0 shadow-none">
         <CardHeader>
           {breadcrumbs && <div className="mb-4">{breadcrumbs}</div>}
@@ -468,15 +578,97 @@ export const AssetDetailView: React.FC<{
                 <CardTitle className="text-2xl font-semibold">
                   {asset.name}
                 </CardTitle>
-                {asset.statusLabel && (
-                  <Badge
-                    style={{
-                      backgroundColor: asset.statusLabel.colorCode,
-                    }}
-                    className="text-white"
-                  >
-                    {asset.statusLabel.name}
-                  </Badge>
+                {isEditingStatus ? (
+                  <div className="flex items-center gap-2">
+                    <Select
+                      value={selectedStatus}
+                      onValueChange={(value) => setSelectedStatus(value)}
+                      disabled={isSavingStatus || isLoadingStatusLabels}
+                    >
+                      <SelectTrigger className="w-[120px]">
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {statusLabels?.map((label) => (
+                          <SelectItem key={label.id} value={label.id}>
+                            <span className="flex items-center gap-2">
+                              <span
+                                className="inline-block w-3 h-3 rounded-full"
+                                style={{ backgroundColor: label.colorCode }}
+                              />
+                              {label.name}
+                            </span>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <button
+                      className="btn btn-primary px-2 py-1 rounded text-sm font-medium"
+                      disabled={isSavingStatus || selectedStatus === asset.statusLabel?.id}
+                      onClick={async () => {
+                        setIsSavingStatus(true);
+                        try {
+                          const res = await updateAsset(asset.id, {
+                            name: asset.name,
+                            assetTag: asset.assetTag,
+                            notes: asset.notes ?? undefined,
+                            departmentId: asset.department?.id ?? undefined,
+                            userId: (asset.userId ?? undefined),
+                            modelId: asset.model?.id ?? undefined,
+                            statusLabelId: selectedStatus,
+                            locationId: asset.departmentLocation?.id ?? undefined,
+                            formTemplateId: asset.formTemplate?.id ?? undefined,
+                            templateValues: asset.formValues ?? undefined,
+                            purchaseOrderId: asset.purchaseOrderNumber ?? undefined,
+                            energyConsumption: asset.energyConsumption ?? undefined,
+                            expectedLifespan: asset.expectedLifespan ?? undefined,
+                            endOfLifePlan: asset.endOfLifePlan ?? undefined,
+                            supplierId: undefined,
+                            warrantyEndDate: asset.warrantyEndDate ?? undefined,
+                          });
+                          if (res.success) {
+                            toast({ title: "Status updated!", description: "Asset status was updated successfully." });
+                            setIsEditingStatus(false);
+                            queryClient.invalidateQueries({ queryKey: ["asset", asset.id] });
+                          } else {
+                            toast({ title: "Error", description: res.error || "Failed to update status.", variant: "destructive" });
+                          }
+                        } catch (e) {
+                          toast({ title: "Error", description: "Failed to update status.", variant: "destructive" });
+                        } finally {
+                          setIsSavingStatus(false);
+                        }
+                      }}
+                    >
+                      {isSavingStatus ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save"}
+                    </button>
+                    <button
+                      className="btn btn-outline px-2 py-1 rounded text-sm font-medium"
+                      disabled={isSavingStatus}
+                      onClick={() => {
+                        setIsEditingStatus(false);
+                        setSelectedStatus(asset.statusLabel?.id);
+                      }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <Badge
+                      style={{ backgroundColor: asset.statusLabel?.colorCode }}
+                      className="text-white"
+                    >
+                      {asset.statusLabel?.name}
+                    </Badge>
+                    <button
+                      className="ml-1 p-1 rounded hover:bg-muted transition"
+                      aria-label="Edit status"
+                      onClick={() => setIsEditingStatus(true)}
+                    >
+                      <Edit className="h-4 w-4 text-muted-foreground" />
+                    </button>
+                  </div>
                 )}
               </div>
               {asset.assetTag && (
@@ -504,7 +696,7 @@ export const AssetDetailView: React.FC<{
                 </p>
               )}
             </div>
-            <div className="flex-shrink-0">
+            <div className="flex-shrink-0 flex gap-2">
               <ActionButtons
                 actions={actions}
                 isAssigned={!!asset.user}
@@ -567,6 +759,36 @@ export const AssetDetailView: React.FC<{
                     </CardHeader>
                     <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       {environmentalAndLifecycleDetails}
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg font-semibold">
+                        Custom Fields
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {asset.formValues && asset.formValues.length > 0 &&
+                        asset.formValues.map((fv: any, idx: number) =>
+                          fv.values && Object.entries(fv.values).map(([key, value]) => (
+                            <DetailItem
+                              key={fv.id ? `${fv.id}-${key}` : `${idx}-${key}`}
+                              icon={<Pocket className="h-4 w-4 text-muted-foreground" />}
+                              label={
+                                key.length <= 3
+                                  ? key.toUpperCase()
+                                  : key.charAt(0).toUpperCase() + key.slice(1)
+                              }
+                              value={
+                                typeof value === 'string' && value.length > 0
+                                  ? value.charAt(0).toUpperCase() + value.slice(1)
+                                  : String(value)
+                              }
+                            />
+                          ))
+                        )
+                      }
                     </CardContent>
                   </Card>
                 </div>

@@ -7,25 +7,3 @@ Laptop 51,AT-005,ThinkPad T14,Active,IT,London,Lenovo,2023-05-12,1250,IT spare,I
 Laptop 61,AT-006,MacBook Air,Active,Marketing,Paris,Apple,2023-06-18,1500,Marketing,Apple M2,8,256,macOS Ventura
 Laptop 71,AT-007,Latitude 5430,Active,Sales,London,Dell,2023-07-22,1150,Sales team,Intel i5,8,256,Windows 10
 Laptop 81,AT-008,EliteBook 850,Active,Finance,Berlin,HP,2023-08-30,1400,Finance backup,Intel i7,16,512,Windows 11
-Laptop 91,AT-009,ThinkPad L14,Active,IT,London,Lenovo,2023-09-10,1000,Loaner,Intel i5,8,256,Windows 10
-Laptop 101,AT-010,MacBook Pro,Active,Design,New York,Apple,2023-10-15,2200,Design spare,Apple M1,16,512,macOS Ventura
-Laptop 111,AT-011,Latitude 7420,Active,Finance,London,Dell,2023-11-20,1350,Finance,Intel i7,16,512,Windows 11
-Laptop 121,AT-012,EliteBook 840,Active,HR,Berlin,HP,2023-12-05,1150,HR,Intel i5,8,256,Windows 10
-Laptop 131,AT-013,ThinkPad X1,Active,IT,London,Lenovo,2024-01-10,1250,IT,Intel i7,16,512,Windows 11
-Laptop 141,AT-014,MacBook Air,Active,Marketing,Paris,Apple,2024-02-15,1550,Marketing,Apple M2,8,256,macOS Ventura
-Laptop 151,AT-015,Latitude 5430,Active,Sales,London,Dell,2024-03-20,1200,Sales,Intel i5,8,256,Windows 10
-Laptop 161,AT-016,EliteBook 850,Active,Finance,Berlin,HP,2024-04-05,1450,Finance,Intel i7,16,512,Windows 11
-Laptop 171,AT-017,ThinkPad L14,Active,IT,London,Lenovo,2024-05-12,1050,Loaner,Intel i5,8,256,Windows 10
-Laptop 181,AT-018,MacBook Pro,Active,Design,New York,Apple,2024-06-18,2250,Design,Apple M1,16,512,macOS Ventura
-Laptop 191,AT-019,Latitude 7420,Active,Finance,London,Dell,2024-07-22,1400,Finance,Intel i7,16,512,Windows 11
-Laptop 201,AT-020,EliteBook 840,Active,HR,Berlin,HP,2024-08-30,1200,HR,Intel i5,8,256,Windows 10
-Laptop 211,AT-021,ThinkPad X1,Active,IT,London,Lenovo,2024-09-10,1300,IT,Intel i7,16,512,Windows 11
-Laptop 2211,AT-022,MacBook Air,Active,Marketing,Paris,Apple,2024-10-15,1600,Marketing,Apple M2,8,256,macOS Ventura
-Laptop 2311,AT-023,Latitude 5430,Active,Sales,London,Dell,2024-11-20,1250,Sales,Intel i5,8,256,Windows 10
-Laptop 2411,AT-024,EliteBook 850,Active,Finance,Berlin,HP,2024-12-05,1500,Finance,Intel i7,16,512,Windows 11
-Laptop 2511,AT-025,ThinkPad L14,Active,IT,London,Lenovo,2025-01-10,1100,Loaner,Intel i5,8,256,Windows 10
-Laptop 2611,AT-026,MacBook Pro,Active,Design,New York,Apple,2025-02-15,2300,Design,Apple M1,16,512,macOS Ventura
-Laptop 2711,AT-027,Latitude 7420,Active,Finance,London,Dell,2025-03-20,1450,Finance,Intel i7,16,512,Windows 11
-Laptop 2811,AT-028,EliteBook 840,Active,HR,Berlin,HP,2025-04-05,1250,HR,Intel i5,8,256,Windows 10
-Laptop 2911,AT-029,ThinkPad X1,Active,IT,London,Lenovo,2025-05-12,1350,IT,Intel i7,16,512,Windows 11
-Laptop 3011,AT-030,MacBook Air,Active,Marketing,Paris,Apple,2025-06-18,1650,Marketing,Apple M2,8,256,macOS Ventura
