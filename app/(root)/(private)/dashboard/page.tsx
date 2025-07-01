@@ -10,6 +10,7 @@ import { MaintenanceScheduleCard } from "@/components/dashboard/MaintenanceSched
 import { ESGReportingCard } from "@/components/dashboard/ESGReportingCard";
 import FullscreenLoader from "@/components/FullscreenLoader";
 import { AlertItem } from "@/components/dashboard/AlertItem";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Card,
   CardContent,
@@ -17,6 +18,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { DepreciationDashboard } from "@/components/dashboard/DepreciationDashboard";
 
 export default function DashboardPage() {
   const { isLoaded, isSignedIn } = useAuth();
@@ -119,26 +121,88 @@ export default function DashboardPage() {
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
       <DashboardHeader />
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2 space-y-6">
+      
+      <Tabs defaultValue="overview" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="depreciation">Depreciation</TabsTrigger>
+          <TabsTrigger value="maintenance">Maintenance</TabsTrigger>
+          <TabsTrigger value="esg">ESG & CO₂</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" className="space-y-6">
+          <div className="grid gap-6 lg:grid-cols-3">
+            <div className="lg:col-span-2 space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Key Metrics</CardTitle>
+                  <CardDescription>
+                    An overview of your asset ecosystem's performance.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <StatsGrid />
+                </CardContent>
+              </Card>
+              <AssetOverview />
+            </div>
+            <div className="space-y-6">
+              <MaintenanceScheduleCard />
+              <ESGReportingCard />
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="depreciation" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Key Metrics</CardTitle>
+              <CardTitle>Asset Depreciation Analysis</CardTitle>
               <CardDescription>
-                An overview of your asset ecosystem's performance.
+                Track asset values, depreciation schedules, and replacement planning.
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <StatsGrid />
+              <DepreciationDashboard />
             </CardContent>
           </Card>
-          <AssetOverview />
-        </div>
-        <div className="space-y-6">
-          <MaintenanceScheduleCard />
-          <ESGReportingCard />
-        </div>
-      </div>
+        </TabsContent>
+
+        <TabsContent value="maintenance" className="space-y-6">
+          <div className="grid gap-6 lg:grid-cols-3">
+            <div className="lg:col-span-2">
+              <MaintenanceScheduleCard />
+            </div>
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Maintenance Alerts</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <AlertItem type="info" message="No maintenance alerts found" />
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="esg" className="space-y-6">
+          <div className="grid gap-6 lg:grid-cols-3">
+            <div className="lg:col-span-2">
+              <ESGReportingCard />
+            </div>
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Environmental Impact</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <AlertItem type="info" message="No environmental impact alerts found" />
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

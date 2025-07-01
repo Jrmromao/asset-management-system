@@ -582,6 +582,7 @@ export const assetSchema = z.object({
   currentValue: z.number().optional(),
   reorderPoint: z.number().optional(),
   licenseId: z.string().optional(),
+  depreciationMethod: z.string().optional(),
 });
 
 export const createTemplateSchema = z.object({

@@ -40,7 +40,7 @@ import * as z from "zod";
 import { assignmentSchema } from "@/lib/schemas";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useUser } from "@clerk/nextjs";
-import BrandedSpinner from "@/components/ui/BrandedSpinner";
+import FullscreenLoader from "@/components/FullscreenLoader";
 import { ScheduleMaintenanceDialog } from "@/components/dialogs/ScheduleMaintenanceDialog";
 
 type AssignmentFormValues = z.infer<typeof assignmentSchema>;
@@ -213,7 +213,7 @@ export default function AssetPage() {
   };
 
   if (isLoading) {
-    return <BrandedSpinner />;
+    return <FullscreenLoader />;
   }
 
   if (error || !asset) {

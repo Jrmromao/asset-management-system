@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import BrandedSpinner from "./BrandedSpinner";
+import FullscreenLoader from "../FullscreenLoader";
 import { motion, AnimatePresence } from "framer-motion";
 
 const SUSTAINABILITY_TIPS = [
@@ -33,7 +33,7 @@ const CenteredSpinner: React.FC<{ label?: string; showTip?: boolean; isLoading?:
           transition={{ duration: 0.35, ease: "easeInOut" }}
           className="fixed inset-0 flex flex-col items-center justify-center w-full h-full bg-white z-50"
         >
-          <BrandedSpinner size={56} label={label} />
+          <FullscreenLoader />
           {showTip && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}

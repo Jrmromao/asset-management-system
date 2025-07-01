@@ -523,20 +523,42 @@ export const updateAsset = withAuth(
         statusLabelChanged = true;
       }
 
+      // Destructure and remove relation IDs from assetData before spreading
+      const {
+        departmentId,
+        supplierId,
+        inventoryId,
+        locationId,
+        modelId,
+        userId,
+        formTemplateId,
+        purchaseOrderId,
+        licenseId,
+        ...assetDataWithoutRelations
+      } = assetData;
+
       const updatedAsset = await prisma.asset.update({
         where: { id, companyId },
         data: {
-          ...assetData,
+          ...assetDataWithoutRelations,
           name,
           assetTag,
-          statusLabelId,
+          statusLabel: statusLabelId ? { connect: { id: statusLabelId } } : undefined,
+          department: departmentId ? { connect: { id: departmentId } } : undefined,
+          supplier: supplierId ? { connect: { id: supplierId } } : undefined,
+          inventory: inventoryId ? { connect: { id: inventoryId } } : undefined,
+          departmentLocation: locationId ? { connect: { id: locationId } } : undefined,
+          model: modelId ? { connect: { id: modelId } } : undefined,
+          user: userId ? { connect: { id: userId } } : undefined,
+          purchaseOrder: purchaseOrderId ? { connect: { id: purchaseOrderId } } : undefined,
+          License: licenseId ? { connect: { id: licenseId } } : undefined,
           formValues: templateValues
             ? {
                 deleteMany: { assetId: id },
                 create: {
                   values: templateValues,
-                  formTemplate: assetData.formTemplateId
-                    ? { connect: { id: assetData.formTemplateId } }
+                  formTemplate: formTemplateId
+                    ? { connect: { id: formTemplateId } }
                     : (() => { throw new Error("formTemplateId is required when updating form values"); })(),
                 },
               }
@@ -650,15 +672,18 @@ export const checkinAsset = withAuth(
           },
         });
 
-        // Use createAuditLog for consistency
-        await createAuditLog({
-          companyId,
-          action: "ASSET_CHECKIN",
-          entity: "ASSET",
-          entityId: id,
-          details: currentAsset?.userId
-            ? `Asset returned from user ${currentAsset.userId} (${currentAsset.name} - ${currentAsset.assetTag})`
-            : `Asset checked in (${currentAsset?.name} - ${currentAsset?.assetTag})`,
+        // Use tx.auditLog.create for consistency inside the transaction
+        await tx.auditLog.create({
+          data: {
+            companyId,
+            userId: internalUser.id,
+            action: "ASSET_CHECKIN",
+            entity: "ASSET",
+            entityId: id,
+            details: currentAsset?.userId
+              ? `Asset returned from user ${currentAsset.userId} (${currentAsset.name} - ${currentAsset.assetTag})`
+              : `Asset checked in (${currentAsset?.name} - ${currentAsset?.assetTag})`,
+          },
         });
 
         // Create asset history entry
@@ -733,13 +758,16 @@ export const checkoutAsset = withAuth(
           },
         });
 
-        // Use createAuditLog for consistency
-        await createAuditLog({
-          companyId,
-          action: "ASSET_CHECKOUT",
-          entity: "ASSET",
-          entityId: id,
-          details: `Asset checked out to user ${userId} (${currentAsset?.name} - ${currentAsset?.assetTag})`,
+        // Use tx.auditLog.create for consistency inside the transaction
+        await tx.auditLog.create({
+          data: {
+            companyId,
+            userId: internalUser.id,
+            action: "ASSET_CHECKOUT",
+            entity: "ASSET",
+            entityId: id,
+            details: `Asset assigned to user ${userId} (${currentAsset?.name} - ${currentAsset?.assetTag})`,
+          },
         });
 
         // Create asset history entry
@@ -1120,63 +1148,49 @@ export const getAssetDistribution = withAuth(
         };
       }
 
-      // Get assets grouped by category with counts
-      const assetsByCategory = await prisma.asset.groupBy({
-        by: ["categoryId"],
+      // Fetch all assets with formValues and formTemplate.category
+      const assets = await prisma.asset.findMany({
         where: { companyId },
-        _count: {
-          id: true,
+        include: {
+          formValues: {
+            include: {
+              formTemplate: {
+                include: {
+                  category: true,
+                },
+              },
+            },
+          },
         },
       });
 
-      // Get category details
-      const categoryIds = assetsByCategory
-        .map((item) => item.categoryId)
-        .filter((id): id is string => !!id);
+      // Group assets by the requested category name logic
+      const categoryMap = new Map<string, { count: number; assigned: number }>();
+      let totalAssets = 0;
+      for (const asset of assets) {
+        const categoryName = asset.formValues?.[0]?.formTemplate?.category?.name ?? "N/A";
+        totalAssets++;
+        if (!categoryMap.has(categoryName)) {
+          categoryMap.set(categoryName, { count: 0, assigned: 0 });
+        }
+        categoryMap.get(categoryName)!.count++;
+        if (asset.userId) {
+          categoryMap.get(categoryName)!.assigned++;
+        }
+      }
 
-      const categories = await prisma.category.findMany({
-        where: { id: { in: categoryIds } },
-      });
-
-      const categoryMap = new Map(categories.map((cat) => [cat.id, cat.name]));
-
-      // Get total assets for percentage calculation
-      const totalAssets = await prisma.asset.count({ where: { companyId } });
-
-      // --- NEW: Get assigned asset counts per category ---
-      const assignedAssetsByCategory = await prisma.asset.groupBy({
-        by: ["categoryId"],
-        where: { companyId, userId: { not: null } },
-        _count: { id: true },
-      });
-      const assignedMap = new Map(
-        assignedAssetsByCategory.map((item) => [
-          item.categoryId,
-          item._count.id,
-        ]),
-      );
-
-      // Build distribution data with per-category utilization
-      const distributionData = assetsByCategory.map((item) => {
-        const categoryName = item.categoryId
-          ? categoryMap.get(item.categoryId) || "Uncategorized"
-          : "Uncategorized";
-        const count = item._count.id;
+      // Build distribution data
+      const distributionData = Array.from(categoryMap.entries()).map(([name, { count, assigned }]) => {
         const percentage = totalAssets > 0 ? (count / totalAssets) * 100 : 0;
-        const assigned = assignedMap.get(item.categoryId) || 0;
-        const utilization =
-          count > 0 ? Math.round((assigned / count) * 100) : 0;
-
-        // Industry-standard: Health based on utilization
+        const utilization = count > 0 ? Math.round((assigned / count) * 100) : 0;
         let status: "Healthy" | "Warning" | "Critical" = "Healthy";
         if (utilization < 30) {
           status = "Critical";
         } else if (utilization < 70) {
           status = "Warning";
         }
-
         return {
-          name: categoryName,
+          name,
           count,
           percentage: Math.round(percentage),
           status,

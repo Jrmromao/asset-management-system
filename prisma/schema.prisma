@@ -604,6 +604,7 @@ model Asset {
   id                 String              @id @default(cuid())
   name               String
   assetTag           String              @unique @map("serialNumber")
+  depreciationMethod String? // "straightLine", "decliningBalance", "doubleDecliningBalance", etc.
   notes              String?
   reorderPoint       Int?
   purchaseDate       DateTime

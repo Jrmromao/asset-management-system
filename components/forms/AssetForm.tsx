@@ -93,6 +93,7 @@ const assetFormSchema = z.object({
   reorderPoint: z.coerce.number().optional(),
   licenseId: z.string().optional(),
   userId: z.string().optional(),
+  depreciationMethod: z.string().optional(),
 });
 
 type AssetFormValues = z.infer<typeof assetFormSchema>;
@@ -261,6 +262,7 @@ const AssetForm = ({ id, isUpdate = false, onSuccess, onError, setLoading, setSa
       reorderPoint: undefined,
       licenseId: "",
       userId: "",
+      depreciationMethod: "auto",
     },
     mode: "onSubmit",
   });
@@ -365,6 +367,7 @@ const AssetForm = ({ id, isUpdate = false, onSuccess, onError, setLoading, setSa
       reorderPoint: asset.reorderPoint || undefined,
       licenseId: asset.licenseId || undefined,
       userId: asset.userId || undefined,
+      depreciationMethod: asset.depreciationMethod || "auto",
     });
     if (formTemplateId) {
       const template = formTemplates.find((t) => t.id === formTemplateId);
@@ -681,6 +684,7 @@ const AssetForm = ({ id, isUpdate = false, onSuccess, onError, setLoading, setSa
         reorderPoint: data.reorderPoint || undefined,
         licenseId: data.licenseId || undefined,
         userId: data.userId || undefined,
+        depreciationMethod: data.depreciationMethod || "auto",
       };
 
       console.log("[FORM_SUBMIT] Submitting asset data:", assetData);
@@ -1017,6 +1021,19 @@ const AssetForm = ({ id, isUpdate = false, onSuccess, onError, setLoading, setSa
                           label="Purchase Date"
                           form={form}
                         />
+
+                        <CustomSelect
+                          name="depreciationMethod"
+                          label="Depreciation Method"
+                          control={form.control}
+                          placeholder="Select a method"
+                          data={[
+                            { id: "auto", name: "Auto (Recommended)" },
+                            { id: "straightLine", name: "Straight Line" },
+                            { id: "decliningBalance", name: "Declining Balance" },
+                            { id: "doubleDecliningBalance", name: "Double Declining Balance" },
+                          ]}
+                        />
                       </FormSection>
 
                       {/* Environmental & Lifecycle */}
@@ -1229,6 +1246,19 @@ const AssetForm = ({ id, isUpdate = false, onSuccess, onError, setLoading, setSa
                               label="User ID"
                               control={form.control}
                               placeholder="Enter user ID"
+                            />
+
+                            <CustomSelect
+                              name="depreciationMethod"
+                              label="Depreciation Method"
+                              control={form.control}
+                              placeholder="Select a method"
+                              data={[
+                                { id: "auto", name: "Auto (Recommended)" },
+                                { id: "straightLine", name: "Straight Line" },
+                                { id: "decliningBalance", name: "Declining Balance" },
+                                { id: "doubleDecliningBalance", name: "Double Declining Balance" },
+                              ]}
                             />
                           </FormSection>
 

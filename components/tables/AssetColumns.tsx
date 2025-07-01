@@ -1,6 +1,6 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
-import { ArrowUpDown, Loader2 } from "lucide-react";
+import { ArrowUpDown, Loader2, TrendingDown, DollarSign } from "lucide-react";
 import LinkTableCell from "@/components/tables/LinkTableCell";
 import React, { useTransition, useState } from "react";
 import DataTableRowActions from "@/components/tables/DataTable/DataTableRowActions";
@@ -310,10 +310,7 @@ export const assetColumns = ({
         status = (row.original.statusLabel as StatusLabel).name;
         colorCode = (row.original.statusLabel as StatusLabel).colorCode;
       }
-
       if (!status) status = "-";
-
-      // Utility to determine readable text color
       function getContrastYIQ(hexcolor: string) {
         if (!hexcolor) return "text-white";
         let hex = hexcolor.replace("#", "");
@@ -326,7 +323,6 @@ export const assetColumns = ({
         const yiq = (r*299+g*587+b*114)/1000;
         return yiq >= 128 ? "text-black" : "text-white";
       }
-
       return (
         <div className="flex items-center">
           <span
@@ -365,30 +361,12 @@ export const assetColumns = ({
     },
   },
   {
-    header: "CO2 Footprint",
-    cell: ({ row }) => <CO2FootprintCell row={row} onCo2Update={onCo2Update} />,
-  },
-  {
-    header: "Purchase Date",
-    accessorKey: "purchaseDate",
-    cell: ({ row }) => {
-      const value = row.getValue("purchaseDate") as string;
-      return (
-        <div className="font-medium">
-          {new Date(value).toLocaleDateString()}
-        </div>
-      );
-    },
-  },
-  {
     accessorKey: "category",
     header: "Category",
     cell: ({ row }) => {
-
       const modelCategory = (row.original as any).model?.category?.name;
       const formTemplateCategory = (row.original as any).formValues?.[0]?.formTemplate?.category?.name;
       const value = formTemplateCategory ?? modelCategory ?? "-";
-
       return <LinkTableCell value={value} />;
     },
   },

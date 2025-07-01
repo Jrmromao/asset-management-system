@@ -42,6 +42,7 @@ import {
   Pocket,
   Pin,
   X,
+  Calculator,
 } from "lucide-react";
 import QRCode from "react-qr-code";
 import {
@@ -68,6 +69,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useStatusLabelsQuery } from "@/hooks/queries/useStatusLabelsQuery";
 import { useUserQuery } from "@/hooks/queries/useUserQuery";
 import { useQueryClient } from "@tanstack/react-query";
+import { DepreciationCalculator } from "@/components/depreciation/DepreciationCalculator";
+import { updateAssetDepreciation } from "@/lib/actions/depreciation.actions";
 
 // Helper component for individual detail items to reduce repetition
 const DetailItem: React.FC<{
@@ -219,6 +222,7 @@ export const AssetDetailView: React.FC<{
   const [selectedUser, setSelectedUser] = useState(asset.userId || "");
   const { users: allUsers, isLoading: isLoadingUsers } = useUserQuery();
   const [isSavingUser, setIsSavingUser] = useState(false);
+  const [isCalculatingDepreciation, setIsCalculatingDepreciation] = useState(false);
 
   // Memoize columns to prevent unnecessary re-renders
   const auditLogColumnsMemo = useMemo(() => auditLogColumns(), []);
@@ -376,6 +380,34 @@ export const AssetDetailView: React.FC<{
           "There was an error loading the CO2 data. Please try recalculating.",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleQuickDepreciationCalculation = async () => {
+    setIsCalculatingDepreciation(true);
+    try {
+      const result = await updateAssetDepreciation(asset.id);
+      if (result.success) {
+        toast({
+          title: "Depreciation Updated",
+          description: "Asset depreciation has been recalculated successfully.",
+        });
+        queryClient.invalidateQueries({ queryKey: ["asset", asset.id] });
+      } else {
+        toast({
+          title: "Error",
+          description: result.error || "Failed to calculate depreciation.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to calculate depreciation.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCalculatingDepreciation(false);
     }
   };
 
@@ -700,6 +732,20 @@ export const AssetDetailView: React.FC<{
               )}
             </div>
             <div className="flex-shrink-0 flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleQuickDepreciationCalculation}
+                disabled={isCalculatingDepreciation}
+                className="flex items-center gap-2"
+              >
+                {isCalculatingDepreciation ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Calculator className="h-4 w-4" />
+                )}
+                Calculate Depreciation
+              </Button>
               <ActionButtons
                 actions={actions}
                 isAssigned={!!asset.user}
@@ -717,6 +763,7 @@ export const AssetDetailView: React.FC<{
           <Tabs defaultValue="details">
             <TabsList className="mb-4">
               <TabsTrigger value="details">Details</TabsTrigger>
+              <TabsTrigger value="depreciation">Depreciation</TabsTrigger>
               <TabsTrigger value="history">History</TabsTrigger>
               <TabsTrigger value="co2-history">CO₂ History</TabsTrigger>
               <TabsTrigger value="notes">Notes</TabsTrigger>
@@ -914,6 +961,15 @@ export const AssetDetailView: React.FC<{
                   </Card>
                 </div>
               </div>
+            </TabsContent>
+            <TabsContent value="depreciation">
+              <DepreciationCalculator 
+                asset={asset as any} 
+                onUpdate={() => {
+                  // Refresh asset data after depreciation calculation
+                  queryClient.invalidateQueries({ queryKey: ["asset", asset.id] });
+                }}
+              />
             </TabsContent>
             <TabsContent value="history">
               <div className="space-y-6">
