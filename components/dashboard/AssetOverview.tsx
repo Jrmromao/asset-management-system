@@ -28,16 +28,18 @@ export const AssetOverview = () => {
 
   const getIconForAsset = (assetName: string) => {
     const lowerCaseName = assetName.toLowerCase();
-    
+
     if (lowerCaseName.includes("laptop")) return <Laptop className="h-5 w-5" />;
-    if (lowerCaseName.includes("monitor")) return <Monitor className="h-5 w-5" />;
+    if (lowerCaseName.includes("monitor"))
+      return <Monitor className="h-5 w-5" />;
     if (lowerCaseName.includes("mobile") || lowerCaseName.includes("phone")) {
       return <Smartphone className="h-5 w-5" />;
     }
     if (lowerCaseName.includes("tablet")) return <Tablet className="h-5 w-5" />;
     if (lowerCaseName.includes("server")) return <Server className="h-5 w-5" />;
-    if (lowerCaseName.includes("printer")) return <Printer className="h-5 w-5" />;
-    
+    if (lowerCaseName.includes("printer"))
+      return <Printer className="h-5 w-5" />;
+
     return <HardDrive className="h-5 w-5" />;
   };
 
@@ -48,7 +50,10 @@ export const AssetOverview = () => {
     const top = distributionData.slice(0, TOP_N);
     const other = distributionData.slice(TOP_N);
     const otherCount = other.reduce((sum, item) => sum + item.count, 0);
-    const otherPercentage = other.reduce((sum, item) => sum + item.percentage, 0);
+    const otherPercentage = other.reduce(
+      (sum, item) => sum + item.percentage,
+      0,
+    );
     top.push({
       name: "Other",
       count: otherCount,
@@ -64,7 +69,9 @@ export const AssetOverview = () => {
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
           <CardTitle>Asset Distribution</CardTitle>
-          <CardDescription>A breakdown of your assets by category.</CardDescription>
+          <CardDescription>
+            A breakdown of your assets by category.
+          </CardDescription>
         </div>
         <Button
           variant="outline"
@@ -115,7 +122,9 @@ export const AssetOverview = () => {
           <div className="text-center py-8 text-gray-500">
             <HardDrive className="h-12 w-12 mx-auto mb-4 opacity-50" />
             <p>No assets found</p>
-            <p className="text-sm">Add your first asset to see the distribution</p>
+            <p className="text-sm">
+              Add your first asset to see the distribution
+            </p>
           </div>
         )}
       </CardContent>

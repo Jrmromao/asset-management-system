@@ -17,10 +17,28 @@ import {
   Clock,
   Calculator,
   PieChart,
+  Info,
 } from "lucide-react";
 import { calculatePortfolioDepreciation } from "@/lib/actions/depreciation.actions";
 import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@clerk/nextjs";
+import AnimatedCounter from "@/components/AnimatedCounter";
+import { AssetBarChart } from "@/components/dashboard/AssetBarChart";
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from "@/components/ui/popover";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+  TooltipProvider,
+} from "@/components/ui/tooltip";
+import {
+  getDepreciationPercentage,
+  getValueRetentionPercentage,
+} from "@/utils/depreciation";
 
 interface DepreciationStats {
   totalPurchaseValue: number;
@@ -44,7 +62,8 @@ export function DepreciationDashboard() {
   const loadDepreciationStats = async () => {
     try {
       setLoading(true);
-      const companyId = user?.publicMetadata?.companyId;
+      const companyIdRaw = user?.publicMetadata?.companyId;
+      const companyId = typeof companyIdRaw === "string" ? companyIdRaw : "";
       if (!companyId) {
         toast({
           title: "Error",
@@ -54,7 +73,8 @@ export function DepreciationDashboard() {
         setLoading(false);
         return;
       }
-      const result = await calculatePortfolioDepreciation(String(companyId));      if (result.success && result.data) {
+      const result = await calculatePortfolioDepreciation(companyId);
+      if (result.success && result.data) {
         setStats(result.data);
       } else {
         toast({
@@ -75,9 +95,9 @@ export function DepreciationDashboard() {
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
     }).format(amount);
   };
 
@@ -94,7 +114,7 @@ export function DepreciationDashboard() {
               <CardTitle className="text-sm font-medium">Loading...</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-8 bg-muted animate-pulse rounded" />
+              <div className="h-8 bg-green-100 animate-pulse rounded" />
             </CardContent>
           </Card>
         ))}
@@ -106,76 +126,144 @@ export function DepreciationDashboard() {
     return (
       <Card>
         <CardContent className="flex items-center justify-center h-32">
-          <p className="text-muted-foreground">No depreciation data available</p>
+          <p className="text-muted-foreground">
+            No depreciation data available
+          </p>
         </CardContent>
       </Card>
     );
   }
 
-  const depreciationPercentage = (stats.totalDepreciation / stats.totalPurchaseValue) * 100;
-  const valueRetentionPercentage = (stats.totalCurrentValue / stats.totalPurchaseValue) * 100;
+  // Use utility functions for calculations
+  const depreciationPercentage = getDepreciationPercentage(
+    stats.totalDepreciation,
+    stats.totalPurchaseValue,
+  );
+  const valueRetentionPercentage = getValueRetentionPercentage(
+    stats.totalCurrentValue,
+    stats.totalPurchaseValue,
+  );
+
+  // Placeholder for dynamic values (to be replaced with real data/API)
+  const totalAssets = stats.totalPurchaseValue
+    ? Math.round(stats.totalPurchaseValue / 1000)
+    : 0; // Example logic
+  const averageAge = 2.5; // TODO: Replace with real value from API or stats
+
+  // Prepare data for AssetBarChart
+  const depreciationMethodColors: Record<string, string> = {
+    "Straight-Line": "#2563eb",
+    "Declining Balance": "#f59e42",
+    "Units of Production": "#16a34a",
+    "Sum-of-the-Years'-Digits": "#dc2626",
+  };
+  const depreciationMethodData = Object.entries(
+    stats.assetsByDepreciationMethod || {},
+  ).map(([name, value]) => ({
+    name,
+    value,
+    color: depreciationMethodColors[name] || "#64748b",
+  }));
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
       {/* Overview Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Asset Value</CardTitle>
-            <DollarSign className="h-4 w-4 text-green-600" />
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <Card className="shadow-lg rounded-xl border-0 bg-gradient-to-br from-white to-gray-50 hover:shadow-xl transition-shadow">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <CardTitle className="text-lg font-semibold text-gray-800 cursor-help">
+                    Total Asset Value
+                  </CardTitle>
+                </TooltipTrigger>
+                <TooltipContent>
+                  Sum of all asset purchase prices
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <DollarSign className="h-6 w-6 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {formatCurrency(stats.totalPurchaseValue)}
-            </div>
-            <p className="text-xs text-muted-foreground">
+            <AnimatedCounter value={stats.totalPurchaseValue} decimals={0} />
+            <p className="text-xs text-gray-500 mt-1">
               Original purchase value
             </p>
           </CardContent>
         </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Current Value</CardTitle>
-            <BarChart3 className="h-4 w-4 text-blue-600" />
+        <Card className="shadow-lg rounded-xl border-0 bg-gradient-to-br from-white to-gray-50 hover:shadow-xl transition-shadow">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <CardTitle className="text-lg font-semibold text-gray-800 cursor-help">
+                    Current Value
+                  </CardTitle>
+                </TooltipTrigger>
+                <TooltipContent>
+                  Estimated current value after depreciation
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <BarChart3 className="h-6 w-6 text-blue-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {formatCurrency(stats.totalCurrentValue)}
-            </div>
-            <p className="text-xs text-muted-foreground">
+            <AnimatedCounter value={stats.totalCurrentValue} decimals={0} />
+            <p className="text-xs text-gray-500 mt-1">
               {formatPercentage(valueRetentionPercentage)} of original value
             </p>
             <Progress value={valueRetentionPercentage} className="mt-2" />
           </CardContent>
         </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Depreciation</CardTitle>
-            <TrendingDown className="h-4 w-4 text-red-600" />
+        <Card className="shadow-lg rounded-xl border-0 bg-gradient-to-br from-white to-gray-50 hover:shadow-xl transition-shadow">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <CardTitle className="text-lg font-semibold text-gray-800 cursor-help">
+                    Total Depreciation
+                  </CardTitle>
+                </TooltipTrigger>
+                <TooltipContent>
+                  Total value lost to depreciation
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <TrendingDown className="h-6 w-6 text-red-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">
-              {formatCurrency(stats.totalDepreciation)}
-            </div>
-            <p className="text-xs text-muted-foreground">
+            <span className="text-2xl font-bold text-red-600">
+              <AnimatedCounter value={stats.totalDepreciation} decimals={0} />
+            </span>
+            <p className="text-xs text-gray-500 mt-1">
               {formatPercentage(depreciationPercentage)} depreciation
             </p>
             <Progress value={depreciationPercentage} className="mt-2" />
           </CardContent>
         </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Replacement Alerts</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-orange-600" />
+        <Card className="shadow-lg rounded-xl border-0 bg-gradient-to-br from-white to-gray-50 hover:shadow-xl transition-shadow">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <CardTitle className="text-lg font-semibold text-gray-800 cursor-help">
+                    Replacement Alerts
+                  </CardTitle>
+                </TooltipTrigger>
+                <TooltipContent>Assets needing replacement soon</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <AlertTriangle className="h-6 w-6 text-orange-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600">
-              {stats.assetsNeedingReplacement}
-            </div>
-            <p className="text-xs text-muted-foreground">
+            <span className="text-2xl font-bold text-orange-600">
+              <AnimatedCounter
+                value={stats.assetsNeedingReplacement}
+                decimals={0}
+              />
+            </span>
+            <p className="text-xs text-gray-500 mt-1">
               Assets needing replacement
             </p>
           </CardContent>
@@ -185,35 +273,54 @@ export function DepreciationDashboard() {
       {/* Detailed Analysis */}
       <div className="grid gap-6 md:grid-cols-2">
         {/* Depreciation Methods Distribution */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Depreciation Methods</CardTitle>
+        <Card className="shadow-lg rounded-xl border-0 bg-white hover:shadow-xl transition-shadow">
+          <CardHeader className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2">
+              Depreciation Methods
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="ghost" size="icon" className="p-0 h-5 w-5">
+                    <Info className="h-4 w-4 text-blue-500" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="max-w-xs">
+                  <h4 className="font-semibold mb-2">
+                    About Depreciation Methods
+                  </h4>
+                  <ul className="text-sm text-muted-foreground space-y-1">
+                    <li>
+                      <b>Straight-Line:</b> Spreads the asset&apos;s cost evenly
+                      over its useful life.
+                    </li>
+
+                    <li>
+                      <b>Declining Balance:</b> Accelerates depreciation, with
+                      more expense in early years.
+                    </li>
+
+                    <li>
+                      <b>Units of Production:</b> Based on asset usage or
+                      output, not time.
+                    </li>
+
+                    <li>
+                      <b>Sum-of-the-Years&apos;-Digits:</b> Another accelerated
+                      method, decreasing each year.
+                    </li>
+                  </ul>
+                </PopoverContent>
+              </Popover>
+            </CardTitle>
             <CardContent className="text-sm text-muted-foreground">
               Distribution of assets by depreciation calculation method
             </CardContent>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {Object.entries(stats.assetsByDepreciationMethod).map(([method, count]) => (
-                <div
-                  key={method}
-                  className="flex items-center justify-between"
-                >
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-blue-500 rounded-full" />
-                    <span className="text-sm">{method}</span>
-                  </div>
-                  <Badge variant="secondary" className="text-xs">
-                    {count} assets
-                  </Badge>
-                </div>
-              ))}
-            </div>
+            <AssetBarChart data={depreciationMethodData} />
           </CardContent>
         </Card>
-
         {/* Depreciation Insights */}
-        <Card>
+        <Card className="shadow-lg rounded-xl border-0 bg-white hover:shadow-xl transition-shadow">
           <CardHeader>
             <CardTitle>Depreciation Insights</CardTitle>
             <CardContent className="text-sm text-muted-foreground">
@@ -230,10 +337,13 @@ export function DepreciationDashboard() {
                   </span>
                 </div>
                 <span className="text-lg font-bold text-green-800">
-                  {formatPercentage(stats.averageDepreciationRate)}
+                  <AnimatedCounter
+                    value={stats.averageDepreciationRate}
+                    decimals={1}
+                  />
+                  %
                 </span>
               </div>
-
               <div className="flex items-center justify-between p-3 bg-orange-50 border border-orange-200 rounded-lg">
                 <div className="flex items-center gap-2">
                   <Clock className="h-4 w-4 text-orange-600" />
@@ -242,10 +352,12 @@ export function DepreciationDashboard() {
                   </span>
                 </div>
                 <span className="text-lg font-bold text-orange-800">
-                  {stats.assetsNeedingReplacement}
+                  <AnimatedCounter
+                    value={stats.assetsNeedingReplacement}
+                    decimals={0}
+                  />
                 </span>
               </div>
-
               <div className="flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded-lg">
                 <div className="flex items-center gap-2">
                   <Calculator className="h-4 w-4 text-blue-600" />
@@ -254,7 +366,11 @@ export function DepreciationDashboard() {
                   </span>
                 </div>
                 <span className="text-lg font-bold text-blue-800">
-                  {formatPercentage(valueRetentionPercentage)}
+                  <AnimatedCounter
+                    value={valueRetentionPercentage}
+                    decimals={1}
+                  />
+                  %
                 </span>
               </div>
             </div>
@@ -264,44 +380,53 @@ export function DepreciationDashboard() {
 
       {/* Action Cards */}
       <div className="grid gap-4 md:grid-cols-3">
-        <Card>
+        <Card className="shadow rounded-xl border-0 bg-white hover:shadow-lg transition-shadow">
           <CardHeader>
             <CardTitle className="text-sm font-medium">Quick Actions</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            <Button 
-              onClick={loadDepreciationStats} 
-              variant="outline" 
-              size="sm" 
-              className="w-full"
+            <Button
+              onClick={loadDepreciationStats}
+              variant="outline"
+              size="sm"
+              className="w-full hover:bg-accent/30"
             >
               <RefreshCw className="mr-2 h-4 w-4" />
               Recalculate All
             </Button>
-            <Button variant="outline" size="sm" className="w-full">
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full hover:bg-accent/30"
+            >
               <BarChart3 className="mr-2 h-4 w-4" />
               Generate Report
             </Button>
-            <Button variant="outline" size="sm" className="w-full">
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full hover:bg-accent/30"
+            >
               <AlertTriangle className="mr-2 h-4 w-4" />
               View Alerts
             </Button>
           </CardContent>
         </Card>
-
-        <Card>
+        <Card className="shadow rounded-xl border-0 bg-white hover:shadow-lg transition-shadow">
           <CardHeader>
-            <CardTitle className="text-sm font-medium">Portfolio Summary</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Portfolio Summary
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span>Total Assets:</span>
-                <span className="font-medium">Calculated</span>
+                <span className="font-medium">{totalAssets}</span>
               </div>
               <div className="flex justify-between">
                 <span>Average Age:</span>
-                <span className="font-medium">2.5 years</span>
+                <span className="font-medium">{averageAge} years</span>
               </div>
               <div className="flex justify-between">
                 <span>Depreciation Method:</span>
@@ -310,8 +435,7 @@ export function DepreciationDashboard() {
             </div>
           </CardContent>
         </Card>
-
-        <Card>
+        <Card className="shadow rounded-xl border-0 bg-white hover:shadow-lg transition-shadow">
           <CardHeader>
             <CardTitle className="text-sm font-medium">Next Actions</CardTitle>
           </CardHeader>
@@ -336,11 +460,36 @@ export function DepreciationDashboard() {
 
       {/* Refresh Button */}
       <div className="flex justify-center">
-        <Button onClick={loadDepreciationStats} variant="outline">
+        <Button
+          onClick={loadDepreciationStats}
+          variant="outline"
+          className="hover:bg-accent/30"
+        >
           <RefreshCw className="mr-2 h-4 w-4" />
           Refresh Depreciation Data
         </Button>
       </div>
+
+      {/* Floating Info Popover */}
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="fixed bottom-6 right-6 z-50 shadow-lg"
+          >
+            <Info className="h-6 w-6" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent>
+          <h4 className="font-semibold mb-2">Depreciation Methodology</h4>
+          <p className="text-sm text-muted-foreground">
+            This dashboard uses multiple depreciation methods. You can select a
+            method per asset, or let the system auto-select the most appropriate
+            one. Hover over metrics for more info.
+          </p>
+        </PopoverContent>
+      </Popover>
     </div>
   );
 }
