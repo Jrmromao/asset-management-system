@@ -67,19 +67,20 @@ interface UseGenericQueryResult<T, TCreateInput, TUpdateInput = TCreateInput> {
   isUpdating: boolean;
   refresh: () => Promise<void>;
   findItemById: (id: string) => Promise<T | undefined>;
+  total: number;
 }
 
 export function createGenericQuery<
-  T extends { id?: string },
+  T,
   TCreateInput,
   TUpdateInput = TCreateInput,
 >(
   queryKey: QueryKey,
   actions: CrudActions<T, TCreateInput, TUpdateInput>,
-  options: UseGenericQueryOptions<T> = {},
-): () => UseGenericQueryResult<T, TCreateInput, TUpdateInput> {
+  options: UseGenericQueryOptions<any> = {},
+): () => UseGenericQueryResult<any, TCreateInput, TUpdateInput> {
   return function useGenericQuery(): UseGenericQueryResult<
-    T,
+    any,
     TCreateInput,
     TUpdateInput
   > {
@@ -87,11 +88,11 @@ export function createGenericQuery<
     const { onClose } = options;
 
     const {
-      data = [],
+      data: rawData = [],
       isLoading,
       error,
       refetch,
-    } = useQuery<T[], Error>({
+    } = useQuery<any, Error>({
       queryKey,
       queryFn: async () => {
         const result = await actions.getAll();
@@ -101,8 +102,19 @@ export function createGenericQuery<
       ...options,
     });
 
+    // Support paginated results: { data, total }
+    let items: any[] = [];
+    let total = 0;
+    if (rawData && typeof rawData === "object" && "data" in rawData && Array.isArray(rawData.data)) {
+      items = rawData;
+      total = typeof rawData.total === "number" ? rawData.total : (rawData.data?.length ?? 0);
+    } else if (Array.isArray(rawData)) {
+      items = rawData;
+      total = items.length;
+    }
+
     const findItemById = useCallback(
-      async (id: string): Promise<T | undefined> => {
+      async (id: string): Promise<any | undefined> => {
         if (actions.findById) {
           const result = await actions.findById(id);
           if (result.success) {
@@ -110,8 +122,8 @@ export function createGenericQuery<
           }
         }
         // Fallback to searching in the cached list
-        const cachedData = queryClient.getQueryData<T[]>(queryKey);
-        return cachedData?.find((item) => item.id === id);
+        const cachedData = queryClient.getQueryData<any[]>(queryKey);
+        return cachedData?.find((item: any) => item.id === id);
       },
       [queryClient, queryKey],
     );
@@ -170,7 +182,7 @@ export function createGenericQuery<
         if (previousData) {
           queryClient.setQueryData<T[]>(
             queryKey,
-            previousData.filter((item) => item.id !== id),
+            previousData.filter((item: any) => item.id !== id),
           );
         }
         return { previousData };
@@ -210,8 +222,8 @@ export function createGenericQuery<
           queryClient.setQueryData<T[]>(
             queryKey,
             previousData.map((item) =>
-              item.id === id ? ({ ...item, ...data } as T) : item,
-            ),
+              (item as any).id === id ? ({ ...item, ...data } as T) : item,
+            )
           );
         }
         return { previousData };
@@ -325,9 +337,9 @@ export function createGenericQuery<
     }, [refetch]);
 
     return {
-      items: data,
+      items,
       isLoading,
-      error: error as Error | null,
+      error,
       createItem,
       deleteItem,
       updateItem,
@@ -336,6 +348,7 @@ export function createGenericQuery<
       isUpdating,
       refresh,
       findItemById,
+      total,
     };
   };
 }

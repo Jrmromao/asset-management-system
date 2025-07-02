@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
 
-export function getIpAddress(): string {
-  const headersList = headers();
+export async function getIpAddress(): Promise<string> {
+  const headersList = await headers();
 
   // Try different header variations that might contain the IP
   const ip =

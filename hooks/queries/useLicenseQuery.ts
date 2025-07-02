@@ -10,6 +10,7 @@ import {
   checkin,
   checkout,
   findById,
+  getAllForStats,
 } from "@/lib/actions/license.actions";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -17,15 +18,23 @@ export const MODEL_KEY = ["licenses"] as const;
 
 type CreateLicenseInput = z.infer<typeof licenseSchema>;
 
-export function useLicenseQuery() {
+export function useLicenseQuery(pageIndex = 0, pageSize = 10, searchTerm = "", filters: any = {}) {
   const { onClose } = useUserUIStore();
   const queryClient = useQueryClient();
 
   const genericQuery = createGenericQuery<License, CreateLicenseInput>(
-    MODEL_KEY,
+    [
+      ...MODEL_KEY,
+      pageIndex,
+      pageSize,
+      searchTerm,
+      JSON.stringify(filters),
+    ],
     {
       getAll: async () => {
-        return await getAll();
+        const result = await getAll(pageIndex, pageSize, searchTerm, filters);
+        // The query factory will handle paginated response
+        return result;
       },
       insert: async (data: CreateLicenseInput) => {
         return await insert(data);
@@ -53,6 +62,7 @@ export function useLicenseQuery() {
     isCreating,
     refresh,
     deleteItem,
+    total: totalCount = 0,
   } = genericQuery();
 
   // Single license query
@@ -95,5 +105,19 @@ export function useLicenseQuery() {
     useLicense, // for single license
     checkin: checkinMutation.mutateAsync,
     checkout: checkoutMutation.mutateAsync,
+    total: totalCount,
   };
+}
+
+export function useAllLicensesForStats() {
+  const { onClose } = useUserUIStore();
+  return useQuery({
+    queryKey: ["licenses", "all-for-stats"],
+    queryFn: async () => {
+      const result = await getAllForStats();
+      if (result.error) throw new Error(result.error);
+      return result.data || [];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
 }

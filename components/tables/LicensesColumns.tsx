@@ -13,6 +13,12 @@ interface LicenseColumnsProps {
 
 // const navigate = useRouter() ncannot use hook in a non hook component
 
+// Helper to safely format date values
+function safeToLocaleDateString(dateValue: any) {
+  const date = new Date(dateValue);
+  return dateValue && !isNaN(date.getTime()) ? date.toLocaleDateString() : "-";
+}
+
 export const licenseColumns = ({
   onDelete,
   onView,
@@ -31,70 +37,51 @@ export const licenseColumns = ({
       );
     },
   },
-  // {
-  //   accessorKey: "createdAt",
-  //   header: "Created At",
-  //   cell: ({ row }) => {
-  //     const value = new Date(row.getValue("createdAt"));
-  //     const formattedDate = value.toLocaleDateString();
-  //     return <div>{formattedDate}</div>;
-  //   },
-  // },
-  // {
-  //   accessorKey: "updatedAt",
-  //   header: "Last Updated",
-  //
-  //   cell: ({ row }) => {
-  //     const value = new Date(row.getValue("updatedAt"));
-  //     const formattedDate = value.toLocaleDateString();
-  //     return <div>{formattedDate}</div>;
-  //   },
-  // },
-  // {
-  //   accessorKey: "datePurchased",
-  //   header: "Date Purchased",
-  //   cell: ({ row }) => {
-  //     // TODO: use fix this issue with the date format
-  //     const license = row.original;
-  //     return (
-  //       <div className={"cursor-pointer"}>
-  //         <LinkTableCell
-  //           value={formatDateTime(license.purchaseDate).dateOnly}
-  //           navigateTo={`/assets/view/?id=${license.id}`}
-  //         />
-  //       </div>
-  //     );
-  //   },
-  // },
-
+  {
+    accessorKey: "createdAt",
+    header: "Created At",
+    cell: ({ row }) => {
+      return <div>{safeToLocaleDateString(row.getValue("createdAt"))}</div>;
+    },
+  },
+  {
+    accessorKey: "updatedAt",
+    header: "Last Updated",
+    cell: ({ row }) => {
+      return <div>{safeToLocaleDateString(row.getValue("updatedAt"))}</div>;
+    },
+  },
+  {
+    accessorKey: "purchaseDate",
+    header: "Date Purchased",
+    cell: ({ row }) => {
+      return <div>{safeToLocaleDateString(row.getValue("purchaseDate"))}</div>;
+    },
+  },
   {
     accessorKey: "renewalDate",
     header: "Renewal Date",
     cell: ({ row }) => {
-      const value = new Date(row.getValue("renewalDate"));
-      const formattedDate = value.toLocaleDateString();
-      return <div>{formattedDate}</div>;
+      return <div>{safeToLocaleDateString(row.getValue("renewalDate"))}</div>;
     },
   },
-  // {
-  //   accessorKey: "minCopiesAlert",
-  //   header: "Min. Copies Alert",
-  // },
   {
     accessorKey: "alertRenewalDays",
     header: "Alert Renewal Days",
+    cell: ({ row }) => {
+      const value = row.getValue("alertRenewalDays");
+      return value !== undefined && value !== null && value !== ""
+        ? String(value)
+        : "-";
+    },
   },
-  // {
-  //   accessorKey: "purchasePrice",
-  //   header: "Purchase Price",
-  // },
-  // {
-  //   accessorKey: "licenseCopiesCount",
-  //   header: "License Copies Count",
-  // },
   {
     accessorKey: "licensedEmail",
     header: "Licensed Email",
+    cell: ({ row }) => {
+      const value = row.getValue("licensedEmail");
+      return value ? String(value) : "-";
+    },
   },
   {
     id: "actions",

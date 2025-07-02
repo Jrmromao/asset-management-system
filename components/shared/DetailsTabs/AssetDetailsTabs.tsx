@@ -57,6 +57,10 @@ const AssetDetailTab: React.FC<ItemDetailsTabsProps> = ({
           {assetHistory?.length > 0 ? (
             <div className="rounded-lg border bg-white mr-3 ml-3 mb-6">
               <DataTable
+                pageIndex={0}
+                pageSize={10}
+                total={assetHistory.length}
+                onPaginationChange={() => {}}
                 columns={assetHistoryColumnsMeno}
                 data={assetHistory}
               />

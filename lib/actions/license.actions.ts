@@ -120,14 +120,16 @@ export const create = withAuth(
 );
 
 export const getAll = withAuth(
-  async (user): Promise<AuthResponse<any[]>> => {
+  async (user, pageIndex?: number, pageSize?: number, searchTerm?: string, filters?: any): Promise<AuthResponse<any>> => {
     try {
       const companyId = user.user_metadata?.companyId;
       if (!companyId) {
         return { success: false, error: "User is not associated with a company" };
       }
-      const enhancedLicenses = await getAllEnhancedLicenses(companyId);
-      return { success: true, data: enhancedLicenses };
+      const limit = pageSize ?? undefined;
+      const offset = pageIndex !== undefined && pageSize !== undefined ? pageIndex * pageSize : undefined;
+      const { data, total } = await getAllEnhancedLicenses(companyId, limit, offset, searchTerm, filters);
+      return { success: true, data: { data, total } };
     } catch (error) {
       console.error("Error fetching licenses:", error);
       return { success: false, error: "Failed to fetch licenses" };
@@ -747,6 +749,25 @@ export const getLicenseFileDownloadUrl = withAuth(
         success: false,
         error: error instanceof Error ? error.message : String(error),
       };
+    } finally {
+      await prisma.$disconnect();
+    }
+  },
+);
+
+export const  getAllForStats = withAuth(
+  async (user): Promise<AuthResponse<any>> => {
+    try {
+      const companyId = user.user_metadata?.companyId;
+      if (!companyId) {
+        return { success: false, error: "User is not associated with a company" };
+      }
+      // Fetch all licenses for stats (no pagination, no filters)
+      const { data } = await getAllEnhancedLicenses(companyId);
+      return { success: true, data };
+    } catch (error) {
+      console.error("Error fetching all licenses for stats:", error);
+      return { success: false, error: "Failed to fetch licenses for stats" };
     } finally {
       await prisma.$disconnect();
     }

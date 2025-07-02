@@ -1,7 +1,6 @@
 import { createGenericQuery } from "@/hooks/queries/useQueryFactory";
 import {
   getAllCompanies,
-  createCompany,
   deleteCompany,
   updateCompany,
 } from "@/lib/actions/company.actions";

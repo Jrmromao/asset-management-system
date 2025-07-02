@@ -29,7 +29,7 @@ import { DialogContainer } from "@/components/dialogs/DialogContainer";
 import FileUploadForm from "@/components/forms/FileUploadForm";
 import { Card, CardContent } from "@/components/ui/card";
 import { DataTable } from "@/components/tables/DataTable/data-table";
-import { useLicenseQuery } from "@/hooks/queries/useLicenseQuery";
+import { useLicenseQuery, useAllLicensesForStats } from "@/hooks/queries/useLicenseQuery";
 import { toast } from "sonner";
 import type {
   ColumnDef,
@@ -98,7 +98,15 @@ const getNestedValue = (obj: any, path: string): any => {
 };
 
 const Licenses = () => {
-  const { licenses, isLoading, deleteItem } = useLicenseQuery();
+  const [pageIndex, setPageIndex] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filters, setFilters] = useState({});
+  const { licenses, isLoading, deleteItem, total, error } = useLicenseQuery(pageIndex, pageSize, searchTerm, filters);
+  const { data: allLicensesForStats = [], isLoading: isStatsLoading } = useAllLicensesForStats();
+
+  // Debug log
+  console.log('licenses', licenses, 'total', total, 'isLoading', isLoading, 'error', error);
 
   const [openDialog, closeDialog, isOpen] = useDialogStore((state) => [
     state.onOpen,
@@ -109,12 +117,7 @@ const Licenses = () => {
   const [isPending, startTransition] = useTransition();
 
   // State management
-  const [searchTerm, setSearchTerm] = useState("");
   const [filterDialogOpen, setFilterDialogOpen] = useState(false);
-  const [filters, setFilters] = useState({
-    supplier: "",
-    inventory: "",
-  });
 
   // Event handlers
   const handleView = useCallback(
@@ -173,35 +176,66 @@ const Licenses = () => {
   // Debounced search term
   const debouncedSearchTerm = useDebounce(searchTerm, SEARCH_DEBOUNCE_MS);
 
-  // Memoized computed values
-  const allLicenses = useMemo(() => licenses || [], [licenses]);
+  // Always use the array for table and filtering
+  let licensesArray: any[] = [];
+  if (Array.isArray(licenses)) {
+    licensesArray = licenses;
+  } else if (licenses && Array.isArray((licenses as any).data)) {
+    licensesArray = (licenses as any).data;
+  }
 
   const filteredData = useMemo(() => {
-    const searchFiltered = searchLicenses(allLicenses, debouncedSearchTerm);
+    const searchFiltered = searchLicenses(licensesArray, debouncedSearchTerm);
     return searchFiltered;
-  }, [allLicenses, debouncedSearchTerm]);
+  }, [licensesArray, debouncedSearchTerm]);
 
-  const availableLicenses = useMemo(
-    () =>
-      allLicenses.filter(
-        (license) => license.statusLabel?.name.toUpperCase() === "AVAILABLE",
-      ),
-    [allLicenses],
-  );
+  // Industry standard: total unassigned seats across all licenses
+  const availableSeats = useMemo(() => {
+    if (!Array.isArray(allLicensesForStats)) return 0;
+    return allLicensesForStats.reduce((sum, license) => {
+      const seats = typeof license.seats === 'number' ? license.seats : 0;
+      const allocated = typeof license.seatsAllocated === 'number' ? license.seatsAllocated : 0;
+      const available = seats - allocated;
+      return sum + (available > 0 ? available : 0);
+    }, 0);
+  }, [allLicensesForStats]);
 
   const expiringLicenses = useMemo(() => {
     const now = new Date();
     const thresholdDate = new Date();
     thresholdDate.setDate(thresholdDate.getDate() + EXPIRING_DAYS_THRESHOLD);
 
-    return allLicenses.filter((license) => {
-      const renewalDate = license.renewalDate;
-      return renewalDate && new Date(renewalDate) <= thresholdDate;
-    }).length;
-  }, [allLicenses]);
+    return Array.isArray(allLicensesForStats)
+      ? allLicensesForStats.filter((license) => {
+          const renewalDate = license.renewalDate;
+          return renewalDate && new Date(renewalDate) <= thresholdDate;
+        }).length
+      : 0;
+  }, [allLicensesForStats]);
+
+  // Pagination handler
+  const handlePaginationChange = useCallback(
+    ({ pageIndex: newPageIndex, pageSize: newPageSize }: { pageIndex: number; pageSize: number }) => {
+      setPageIndex(newPageIndex);
+      setPageSize(newPageSize);
+    },
+    [],
+  );
+
+  // Search handler
+  const handleSearch = useCallback((value: string) => {
+    setSearchTerm(value);
+    setPageIndex(0); // Reset to first page on search
+  }, []);
+
+  // Filter handler (for future advanced filters)
+  const handleFilterChange = useCallback((newFilters: any) => {
+    setFilters(newFilters);
+    setPageIndex(0); // Reset to first page on filter
+  }, []);
 
   const table = useReactTable({
-    data: filteredData,
+    data: licensesArray,
     columns,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
@@ -257,17 +291,13 @@ const Licenses = () => {
     () => [
       {
         title: "Total Licenses",
-        value: allLicenses.length,
+        value: allLicensesForStats.length,
         color: "info" as const,
       },
       {
         title: "Available Licenses",
-        value: availableLicenses.length,
-        percentage:
-          allLicenses.length > 0
-            ? (availableLicenses.length / allLicenses.length) * 100
-            : 0,
-        total: allLicenses.length,
+        value: availableSeats,
+        subtitle: "Unassigned seats",
         color: "success" as const,
       },
       {
@@ -277,7 +307,7 @@ const Licenses = () => {
         color: "warning" as const,
       },
     ],
-    [allLicenses.length, availableLicenses.length, expiringLicenses],
+    [allLicensesForStats.length, availableSeats, expiringLicenses],
   );
 
   // Loading state
@@ -307,13 +337,13 @@ const Licenses = () => {
         <Card className="dark:bg-gray-800 border-gray-200 dark:border-gray-700">
           <CardContent className="p-0">
             <DataTable
-              pageIndex={0}
-              pageSize={10}
-              total={0}
-              onPaginationChange={() => {}}
               columns={columns}
               data={[]}
               isLoading={true}
+              pageIndex={pageIndex}
+              pageSize={pageSize}
+              total={total}
+              onPaginationChange={handlePaginationChange}
             />
           </CardContent>
         </Card>
@@ -350,14 +380,15 @@ const Licenses = () => {
           onImport={handleImport}
           onExport={handleExport}
           isLoading={isLoading || isPending}
-          filterPlaceholder="Search licenses..."
+          searchPlaceholder="Search licenses..."
+          onSearch={handleSearch}
           className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm"
           showFilter={false}
         />
 
         <Card className="dark:bg-gray-800 border-gray-200 dark:border-gray-700">
           <CardContent className="p-0">
-            {allLicenses.length === 0 && !isLoading ? (
+            {licensesArray.length === 0 && !isLoading ? (
               <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
                 <FileCheck className="w-12 h-12 text-gray-400 mb-4" />
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
@@ -377,12 +408,12 @@ const Licenses = () => {
               </div>
             ) : (
               <DataTable
-                pageIndex={0}
-                pageSize={10}
-                total={filteredData.length}
-                onPaginationChange={() => {}}
+                pageIndex={pageIndex}
+                pageSize={pageSize}
+                total={total}
+                onPaginationChange={handlePaginationChange}
                 columns={columns}
-                data={filteredData}
+                data={licensesArray}
                 isLoading={isLoading || isPending}
               />
             )}
@@ -393,7 +424,7 @@ const Licenses = () => {
       <FilterDialog
         open={filterDialogOpen}
         onOpenChange={setFilterDialogOpen}
-        filters={filters}
+        filters={filters as { supplier: string; inventory: string }}
         setFilters={setFilters}
         onApplyFilters={applyFilters}
         title="Filter Licenses"

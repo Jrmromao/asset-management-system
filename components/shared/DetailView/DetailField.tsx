@@ -14,15 +14,20 @@ export const DetailField: React.FC<DetailFieldProps> = ({
   field,
   icon,
 }) => {
-  const formatValue = (field: DetailFieldType) => {
+  const formatValue = (field: DetailFieldType): React.ReactNode => {
     if (field.value === undefined) return "-";
     switch (field.type) {
       case "currency":
         return <AnimatedCounter value={Number(field.value)} />;
       case "date":
-        return field.value ? new Date(field.value).toLocaleDateString() : "-";
+        return (typeof field.value === "string" || typeof field.value === "number" || field.value instanceof Date)
+          ? new Date(field.value).toLocaleDateString()
+          : "-";
       default:
-        return field.value;
+        if (typeof field.value === "string" || typeof field.value === "number" || React.isValidElement(field.value)) {
+          return field.value;
+        }
+        return "-";
     }
   };
 

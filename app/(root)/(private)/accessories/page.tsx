@@ -132,6 +132,10 @@ const Accessories = () => {
     inventory: "",
   });
 
+  // Pagination state
+  const [pageIndex, setPageIndex] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
+
   // Event handlers
   const handleView = useCallback(
     (id: string) => {
@@ -192,9 +196,12 @@ const Accessories = () => {
   // Memoized computed values
   const allAccessories = useMemo(() => accessories || [], [accessories]);
 
-  const filteredData = useMemo(() => {
-    return allAccessories;
-  }, [allAccessories]);
+  // Paginate the data client-side (replace with server-side if available)
+  const paginatedAccessories = useMemo(() => {
+    const start = pageIndex * pageSize;
+    const end = start + pageSize;
+    return allAccessories.slice(start, end);
+  }, [allAccessories, pageIndex, pageSize]);
 
   const availableAccessories = useMemo(
     () =>
@@ -214,8 +221,8 @@ const Accessories = () => {
   }, [allAccessories]);
 
   const table = useReactTable({
-    data: filteredData,
-    columns: columns as ColumnDef<Accessory, any>[],
+    data: paginatedAccessories,
+    columns: columns,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
@@ -231,6 +238,21 @@ const Accessories = () => {
       rowSelection,
     },
   });
+
+  // Pagination handler
+  const handlePaginationChange = useCallback(
+    ({
+      pageIndex: newPageIndex,
+      pageSize: newPageSize,
+    }: {
+      pageIndex: number;
+      pageSize: number;
+    }) => {
+      setPageIndex(newPageIndex);
+      setPageSize(newPageSize);
+    },
+    [],
+  );
 
   // Optimized export function with better error handling
   const handleExport = useCallback(async () => {
@@ -319,7 +341,15 @@ const Accessories = () => {
 
         <Card className="dark:bg-gray-800 border-gray-200 dark:border-gray-700">
           <CardContent className="p-0">
-            <DataTable columns={columns} data={[]} isLoading={true} pageIndex={0} pageSize={10} total={0} onPaginationChange={() => {}} />
+            <DataTable
+              columns={columns}
+              data={[]}
+              isLoading={true}
+              pageIndex={pageIndex}
+              pageSize={pageSize}
+              total={allAccessories.length}
+              onPaginationChange={handlePaginationChange}
+            />
           </CardContent>
         </Card>
       </div>
@@ -382,12 +412,12 @@ const Accessories = () => {
               </div>
             ) : (
               <DataTable
-                pageIndex={0}
-                pageSize={10}
-                total={filteredData.length}
-                onPaginationChange={() => {}}
+                pageIndex={pageIndex}
+                pageSize={pageSize}
+                total={allAccessories.length}
+                onPaginationChange={handlePaginationChange}
                 columns={columns}
-                data={filteredData}
+                data={paginatedAccessories}
                 isLoading={isLoading || isPending}
               />
             )}
