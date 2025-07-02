@@ -90,6 +90,20 @@ export async function calculateAssetDepreciation(
   }
 }
 
+function deepConvertDecimals(obj: any): any {
+  if (obj === null || obj === undefined) return obj;
+  if (typeof obj === "object") {
+    if (typeof obj.toNumber === "function") return obj.toNumber();
+    if (Array.isArray(obj)) return obj.map(deepConvertDecimals);
+    const result: any = {};
+    for (const key in obj) {
+      result[key] = deepConvertDecimals(obj[key]);
+    }
+    return result;
+  }
+  return obj;
+}
+
 export async function generateDepreciationSchedule(
   assetId: string,
   method: "straightLine" | "decliningBalance" | "doubleDecliningBalance" = "straightLine",
@@ -113,20 +127,22 @@ export async function generateDepreciationSchedule(
 
     const schedule = DepreciationCalculator.generateSchedule(asset, method, new Date(), marketConditions);
 
+    const data = {
+      asset: {
+        id: asset.id,
+        name: asset.name,
+        purchasePrice: Number(asset.purchasePrice),
+        purchaseDate: asset.purchaseDate,
+        expectedLifespan: asset.expectedLifespan,
+      },
+      schedule,
+      method,
+      marketConditions,
+    };
+
     return {
       success: true,
-      data: {
-        asset: {
-          id: asset.id,
-          name: asset.name,
-          purchasePrice: Number(asset.purchasePrice),
-          purchaseDate: asset.purchaseDate,
-          expectedLifespan: asset.expectedLifespan,
-        },
-        schedule,
-        method,
-        marketConditions,
-      },
+      data: deepConvertDecimals(data),
     };
   } catch (error) {
     console.error("Error generating depreciation schedule:", error);

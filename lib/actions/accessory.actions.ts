@@ -9,6 +9,7 @@ import { revalidatePath } from "next/cache";
 import { ItemType, Prisma } from "@prisma/client";
 import { cookies } from "next/headers";
 import { withAuth } from "@/lib/middleware/withAuth";
+import { getEnhancedAccessoryById } from "@/lib/services/accessory.service";
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000; // 1 second
@@ -233,78 +234,23 @@ export async function getAllAccessories(): Promise<
 }
 
 export const findById = withAuth(
-  async (user, id: string): Promise<ActionResponse<Accessory>> => {
+  async (user, id: string): Promise<ActionResponse<any>> => {
     try {
-      // Get companyId from private metadata
       const companyId = user.privateMetadata?.companyId;
-
       if (!companyId) {
         return {
           success: false,
           error: "User is not associated with a company",
         };
       }
-
-      const accessoryQuery = {
-        where: {
-          id,
-          companyId,
-        },
-        include: {
-          company: true,
-          supplier: true,
-          inventory: true,
-          statusLabel: true,
-          department: true,
-          category: true,
-          departmentLocation: true,
-          userItems: {
-            include: {
-              user: {
-                select: {
-                  id: true,
-                  name: true,
-                  email: true,
-                  title: true,
-                  employeeId: true,
-                  active: true,
-                },
-              },
-            },
-          },
-          AccessoryStock: {
-            orderBy: {
-              date: "desc",
-            },
-          },
-        },
-      } as const;
-
-      const [accessory, auditLogsResult] = await Promise.all([
-        prisma.accessory.findUnique(accessoryQuery),
-        getAuditLog(id),
-      ]);
-
-      if (!accessory) {
+      const data = await getEnhancedAccessoryById(id, companyId);
+      if (!data) {
         return { success: false, error: "Accessory not found" };
       }
-
-      const accessoryWithComputedFields = {
-        ...accessory,
-        auditLogs: auditLogsResult.success ? auditLogsResult.data : [],
-        userAccessories: accessory.userItems,
-        currentAssignments: accessory.userItems,
-      };
-
-      return {
-        success: true,
-        data: parseStringify(accessoryWithComputedFields),
-      };
+      return { success: true, data };
     } catch (error) {
       console.error("Error finding accessory:", error);
       return { success: false, error: "Failed to find accessory" };
-    } finally {
-      await prisma.$disconnect();
     }
   },
 );

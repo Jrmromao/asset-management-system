@@ -1,7 +1,7 @@
 "use server";
 
 import { assetSchema } from "@/lib/schemas";
-import { AssetResponse, AssetWithRelations } from "@/types/asset";
+import { AssetWithRelations } from "@/types/asset";
 import { revalidatePath } from "next/cache";
 import { parseStringify } from "@/lib/utils";
 import { withAuth } from "@/lib/middleware/withAuth";
@@ -14,6 +14,9 @@ import { prisma } from "@/app/db";
 import { Prisma } from "@prisma/client";
 import { createAuditLog } from "@/lib/actions/auditLog.actions";
 import levenshtein from "js-levenshtein";
+import { getEnhancedAssetById } from "@/lib/services/asset.service";
+import { EnhancedAssetType } from "@/lib/services/asset.service";
+import { diff } from 'just-diff';
 
 type CSVResponse = {
   success: boolean;
@@ -103,6 +106,18 @@ const serializeAsset = (asset: any) => {
     return null;
   }
   const serialized = { ...asset };
+  // Serialize top-level date fields
+  const dateFields = [
+    'createdAt', 'updatedAt', 'purchaseDate', 'warrantyEndDate', 'endOfLife', 'nextMaintenance'
+  ];
+  for (const field of dateFields) {
+    const value = serialized[field];
+    if (value instanceof Date) {
+      serialized[field] = value.toISOString();
+    } else if (typeof value === 'string' && !isNaN(Date.parse(value))) {
+      serialized[field] = new Date(value).toISOString();
+    }
+  }
   if (asset.purchasePrice) {
     serialized.purchasePrice = Number(asset.purchasePrice);
   }
@@ -115,6 +130,7 @@ const serializeAsset = (asset: any) => {
   if (asset.energyConsumption) {
     serialized.energyConsumption = Number(asset.energyConsumption);
   }
+  // Serialize co2eRecords date fields
   if (asset.co2eRecords && Array.isArray(asset.co2eRecords)) {
     serialized.co2eRecords = asset.co2eRecords.map((record: any) => {
       const serializedRecord = {
@@ -156,7 +172,16 @@ const serializeAsset = (asset: any) => {
             ? Number(record.expectedLifespanYears)
             : undefined,
       };
-
+      // Serialize date fields in co2eRecords
+      const co2eDateFields = ['createdAt', 'updatedAt'];
+      for (const field of co2eDateFields) {
+        const value = serializedRecord[field];
+        if (value instanceof Date) {
+          serializedRecord[field] = value.toISOString();
+        } else if (typeof value === 'string' && !isNaN(Date.parse(value))) {
+          serializedRecord[field] = new Date(value).toISOString();
+        }
+      }
       // Recursively convert Decimals in activityData
       if (record.activityData) {
         try {
@@ -172,7 +197,6 @@ const serializeAsset = (asset: any) => {
           serializedRecord.activityData = record.activityData;
         }
       }
-
       // Parse and serialize the details JSON to handle any Decimal objects
       if (record.details) {
         try {
@@ -188,12 +212,92 @@ const serializeAsset = (asset: any) => {
           serializedRecord.details = record.details;
         }
       }
-
       return serializedRecord;
+    });
+  }
+  // Serialize auditLogs date fields if present
+  if (asset.auditLogs && Array.isArray(asset.auditLogs)) {
+    serialized.auditLogs = asset.auditLogs.map((log: any) => {
+      const serializedLog = { ...log };
+      const auditLogDateFields = ['createdAt', 'updatedAt'];
+      for (const field of auditLogDateFields) {
+        const value = serializedLog[field];
+        if (value instanceof Date) {
+          serializedLog[field] = value.toISOString();
+        } else if (typeof value === 'string' && !isNaN(Date.parse(value))) {
+          serializedLog[field] = new Date(value).toISOString();
+        }
+      }
+      return serializedLog;
     });
   }
   return serialized;
 };
+
+export type AssetResponse = {
+  success: boolean;
+  data: EnhancedAssetType[];
+  error?: string;
+};
+
+const EXCLUDED_FIELDS = new Set([
+  "updatedAt",
+  "co2eRecords",
+  // add more if needed
+]);
+
+function generateSummary(
+  changes: Record<string, { before: any; after: any }>,
+  before: Record<string, any>,
+  after: Record<string, any>
+): string {
+  const fieldSummaries: string[] = [];
+  for (const field of Object.keys(changes)) {
+    if (EXCLUDED_FIELDS.has(field)) continue; // Skip excluded fields
+
+    let beforeValue = changes[field].before;
+    let afterValue = changes[field].after;
+
+    // --- RELATIONS: Compare by ID ---
+    if (field === "model") {
+      const beforeId = before.modelId || before.model?.id || beforeValue;
+      const afterId = after.modelId || after.model?.id || afterValue;
+      if (beforeId === afterId) continue; // No real change
+      beforeValue = before.model?.name || beforeId;
+      afterValue = after.model?.name || afterId;
+    } else if (field === "statusLabel") {
+      const beforeId = before.statusLabelId || before.statusLabel?.id || beforeValue;
+      const afterId = after.statusLabelId || after.statusLabel?.id || afterValue;
+      if (beforeId === afterId) continue;
+      beforeValue = before.statusLabel?.name || beforeId;
+      afterValue = after.statusLabel?.name || afterId;
+    } else if (field === "supplier") {
+      const beforeId = before.supplierId || before.supplier?.id || beforeValue;
+      const afterId = after.supplierId || after.supplier?.id || afterValue;
+      if (beforeId === afterId) continue;
+      beforeValue = before.supplier?.name || beforeId;
+      afterValue = after.supplier?.name || afterId;
+    }
+    // --- ARRAYS: Only log if content changed ---
+    else if (Array.isArray(beforeValue) || Array.isArray(afterValue)) {
+      if (JSON.stringify(beforeValue) === JSON.stringify(afterValue)) continue;
+      beforeValue = Array.isArray(beforeValue) ? `[${beforeValue.length} items]` : beforeValue;
+      afterValue = Array.isArray(afterValue) ? `[${afterValue.length} items]` : afterValue;
+    }
+    // --- PRIMITIVES/OTHER: Only log if value changed ---
+    else if (JSON.stringify(beforeValue) === JSON.stringify(afterValue)) {
+      continue;
+    }
+
+    if (typeof beforeValue === "object" && beforeValue !== null) beforeValue = JSON.stringify(beforeValue);
+    if (typeof afterValue === "object" && afterValue !== null) afterValue = JSON.stringify(afterValue);
+
+    fieldSummaries.push(`${field}: ${beforeValue} → ${afterValue}`);
+  }
+  return fieldSummaries.length
+    ? `Updated asset fields:\n` + fieldSummaries.join("\n")
+    : "Asset updated";
+}
 
 export const createAsset = withAuth(
   async (user, data: CreateAssetInput): Promise<AssetResponse> => {
@@ -272,20 +376,68 @@ export const createAsset = withAuth(
 );
 
 export const getAllAssets = withAuth(
-  async (user): Promise<{ success: boolean; data: any[]; error?: string }> => {
+  async (
+    user,
+    options?: {
+      page?: number;
+      pageSize?: number;
+      search?: string;
+      sort?: string;
+      status?: string;
+      department?: string;
+      model?: string;
+    },
+  ): Promise<{
+    success: boolean;
+    data: any[];
+    total: number;
+    page: number;
+    pageSize: number;
+    error?: string;
+  }> => {
     try {
       const companyId = user.privateMetadata?.companyId as string;
-
       if (!companyId) {
         return {
           success: false,
           data: [],
+          total: 0,
+          page: 1,
+          pageSize: 10,
           error: "User is not associated with a company",
         };
       }
-
+      // Defaults
+      const page = options?.page && options.page > 0 ? options.page : 1;
+      const pageSize = options?.pageSize && options.pageSize > 0 ? options.pageSize : 10;
+      const skip = (page - 1) * pageSize;
+      const take = pageSize;
+      // Filters
+      const where: any = { companyId };
+      if (options?.status) where.statusLabelId = options.status;
+      if (options?.department) where.departmentId = options.department;
+      if (options?.model) where.modelId = options.model;
+      if (options?.search) {
+        where.OR = [
+          { name: { contains: options.search, mode: "insensitive" } },
+          { assetTag: { contains: options.search, mode: "insensitive" } },
+        ];
+      }
+      // Sorting
+      let orderBy: any = { updatedAt: "desc" };
+      if (options?.sort) {
+        // Example: "name:asc" or "purchaseDate:desc"
+        const [field, dir] = options.sort.split(":");
+        orderBy = { [field]: dir === "desc" ? "desc" : "asc" };
+      }
+      // Query total count
+      const total = await prisma.asset.count({ where });
+      // Query paginated data
       const assets = await prisma.asset.findMany({
-        where: { companyId },
+        where,
+        orderBy,
+        skip,
+        take,
         include: {
           model: { include: { manufacturer: true } },
           statusLabel: true,
@@ -294,24 +446,28 @@ export const getAllAssets = withAuth(
           formValues: {
             include: {
               formTemplate: {
-                include: {
-                  category: true,
-                },
+                include: { category: true },
               },
             },
           },
         },
       });
-
       const serializableAssets = assets.map(serializeAsset);
-
-      return { success: true, data: serializableAssets };
+      return {
+        success: true,
+        data: serializableAssets,
+        total,
+        page,
+        pageSize,
+      };
     } catch (error) {
       return {
         success: false,
         data: [],
-        error:
-          error instanceof Error ? error.message : "An unknown error occurred",
+        total: 0,
+        page: 1,
+        pageSize: 10,
+        error: error instanceof Error ? error.message : "An unknown error occurred",
       };
     }
   },
@@ -377,7 +533,6 @@ export const getAssetById = withAuth(
   async (user, id: string): Promise<AssetResponse> => {
     try {
       const companyId = user.privateMetadata?.companyId as string;
-
       if (!companyId) {
         return {
           success: false,
@@ -385,35 +540,7 @@ export const getAssetById = withAuth(
           error: "User is not associated with a company",
         };
       }
-
-      const asset = await prisma.asset.findUnique({
-        where: { id, companyId },
-        include: {
-          model: { include: { manufacturer: true } },
-          statusLabel: true,
-          department: true,
-          departmentLocation: true,
-          inventory: true,
-          category: true,
-          formValues: {
-            include: {
-              formTemplate: {
-                include: {
-                  category: true,
-                },
-              },
-            },
-          },
-          co2eRecords: true,
-          assetHistory: true,
-          user: true,
-          supplier: true,
-          purchaseOrder: true,
-        },
-      });
-
-      console.log("🔍 [getAssetById] - asset:", asset);
-
+      const asset = await getEnhancedAssetById(id, companyId);
       if (!asset) {
         return {
           success: false,
@@ -421,20 +548,9 @@ export const getAssetById = withAuth(
           error: "Asset not found",
         };
       }
-
-      // Fetch audit logs separately
-      const auditLogs = await prisma.auditLog.findMany({
-        where: { entity: "ASSET", entityId: id, companyId },
-        include: { user: true },
-        orderBy: { createdAt: "desc" },
-      });
-
-      // Attach auditLogs to the asset object
-      const assetWithAuditLogs = { ...asset, auditLogs };
-
       return {
         success: true,
-        data: toArray(parseStringify(assetWithAuditLogs)),
+        data: [asset],
       };
     } catch (error: any) {
       return {
@@ -572,13 +688,25 @@ export const updateAsset = withAuth(
       });
       console.log(`[updateAsset] Asset updated: ${id}`);
       // --- AUDIT LOG ---
+      // Compute diff (only changed fields, shallow for now)
+      function getChangedFields(before: Record<string, any>, after: Record<string, any>): Record<string, { before: any; after: any }> {
+        const changes: { [key: string]: { before: any; after: any } } = {};
+        for (const key of Object.keys(after)) {
+          if (before[key] !== after[key]) {
+            changes[key] = { before: before[key], after: after[key] };
+          }
+        }
+        return changes;
+      }
+      const changes = getChangedFields(beforeAsset || {}, updatedAsset || {});
+      const summary = generateSummary(changes, beforeAsset || {}, updatedAsset || {});
       await createAuditLog({
         companyId,
         action: "ASSET_UPDATED",
         entity: "ASSET",
         entityId: id,
-        details: `Asset updated: ${updatedAsset.name} (${updatedAsset.assetTag}) by user ${user.id}\nBefore: ${JSON.stringify(beforeAsset)}\nAfter: ${JSON.stringify(updatedAsset)}`,
-        dataAccessed: { before: beforeAsset, after: updatedAsset },
+        details: summary,
+        dataAccessed: { changes },
       });
       if (statusLabelChanged) {
         console.log(`[updateAsset] Status label successfully updated for asset ${id}: ${statusLabelId}`);
@@ -1440,3 +1568,32 @@ export const bulkCreateAssets = withAuth(
     }
   }
 );
+
+/**
+ * Returns the count of unique assets with scheduled maintenance within the next 30 days for the given companyId.
+ */
+export async function getMaintenanceDueCount(companyId: string): Promise<number> {
+  // Start of today
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  // End of the 30th day
+  const in30Days = new Date(now);
+  in30Days.setDate(now.getDate() + 30);
+  in30Days.setHours(23, 59, 59, 999);
+
+  const maintenanceDueAssets = await prisma.maintenance.findMany({
+    where: {
+      startDate: {
+        gte: now,
+        lte: in30Days,
+      },
+      asset: {
+        companyId,
+      },
+    },
+    select: { assetId: true },
+  });
+
+  const uniqueAssetIds = new Set(maintenanceDueAssets.map(m => m.assetId));
+  return uniqueAssetIds.size;
+}

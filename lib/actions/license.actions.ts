@@ -6,8 +6,8 @@ import { getAuditLog, createAuditLog } from "@/lib/actions/auditLog.actions";
 import { prisma } from "@/app/db";
 import { withAuth, type AuthResponse } from "@/lib/middleware/withAuth";
 import S3Service from "@/services/aws/S3";
-import { randomUUID } from "crypto";
 import { EmailService } from "@/services/email";
+import { getEnhancedLicenseById, getAllEnhancedLicenses, getEnhancedLicenseAfterCheckin, getEnhancedLicenseAfterCheckout } from "@/lib/services/license.service";
 
 export const create = withAuth(
   async (
@@ -120,23 +120,14 @@ export const create = withAuth(
 );
 
 export const getAll = withAuth(
-  async (user): Promise<AuthResponse<License[]>> => {
+  async (user): Promise<AuthResponse<any[]>> => {
     try {
-      const licenses = await prisma.license.findMany({
-        where: {
-          companyId: user.user_metadata?.companyId,
-        },
-        include: {
-          company: true,
-          statusLabel: true,
-          supplier: true,
-          department: true,
-          departmentLocation: true,
-          inventory: true,
-          userItems: true,
-        },
-      });
-      return { success: true, data: parseStringify(licenses) };
+      const companyId = user.user_metadata?.companyId;
+      if (!companyId) {
+        return { success: false, error: "User is not associated with a company" };
+      }
+      const enhancedLicenses = await getAllEnhancedLicenses(companyId);
+      return { success: true, data: enhancedLicenses };
     } catch (error) {
       console.error("Error fetching licenses:", error);
       return { success: false, error: "Failed to fetch licenses" };
@@ -147,59 +138,17 @@ export const getAll = withAuth(
 );
 
 export const findById = withAuth(
-  async (user, id: string): Promise<AuthResponse<License>> => {
+  async (user, id: string): Promise<AuthResponse<any>> => {
     try {
-      const licenseQuery = {
-        where: { id, companyId: user.user_metadata?.companyId },
-        include: {
-          company: true,
-          statusLabel: true,
-          supplier: true,
-          department: true,
-          departmentLocation: true,
-          inventory: true,
-          LicenseSeat: true,
-          Manufacturer: {
-            select: {
-              name: true,
-              url: true,
-              supportUrl: true,
-              supportPhone: true,
-              supportEmail: true,
-            },
-          },
-          userItems: {
-            include: {
-              user: {
-                select: {
-                  id: true,
-                  name: true,
-                  email: true,
-                  title: true,
-                  employeeId: true,
-                  active: true,
-                },
-              },
-            },
-          },
-          licenseFiles: true,
-        },
-      };
-      const [license, auditLogsResult] = await Promise.all([
-        prisma.license.findUnique(licenseQuery),
-        id ? getAuditLog(id) : Promise.resolve({ success: false, data: [] }),
-      ]);
-      if (!license) {
+      const companyId = user.user_metadata?.companyId;
+      if (!companyId) {
+        return { success: false, error: "User is not associated with a company" };
+      }
+      const enhanced = await getEnhancedLicenseById(id, companyId);
+      if (!enhanced) {
         return { success: false, error: "License not found" };
       }
-      const licenseWithComputedFields = {
-        ...license,
-        stockHistory: license.LicenseSeat,
-        auditLogs: auditLogsResult.success ? auditLogsResult.data : [],
-        userLicenses: license.userItems,
-        currentAssignments: license.userItems,
-      };
-      return { success: true, data: parseStringify(licenseWithComputedFields) };
+      return { success: true, data: enhanced };
     } catch (error) {
       console.error("Error finding license:", error);
       return { success: false, error: "Failed to find license" };
@@ -210,11 +159,18 @@ export const findById = withAuth(
 );
 
 export const update = withAuth(
-  async (user, data: z.infer<typeof licenseSchema>, id: string): Promise<AuthResponse<License>> => {
+  async (
+    user,
+    data: z.infer<typeof licenseSchema>,
+    id: string,
+  ): Promise<AuthResponse<License>> => {
     try {
       const companyId = user.user_metadata?.companyId;
       if (!companyId) {
-        return { success: false, error: "User is not associated with a company" };
+        return {
+          success: false,
+          error: "User is not associated with a company",
+        };
       }
       // Update license
       const updatedLicense = await prisma.license.update({
@@ -234,17 +190,29 @@ export const update = withAuth(
           minSeatsAlert: parseInt(data.minSeatsAlert),
           alertRenewalDays: parseInt(data.alertRenewalDays),
           seats: parseInt(data.seats),
-          purchasePrice: data.purchasePrice ? parseFloat(data.purchasePrice) : 0,
-          renewalPrice: data.renewalPrice ? parseFloat(data.renewalPrice) : null,
-          monthlyPrice: data.monthlyPrice ? parseFloat(data.monthlyPrice) : null,
+          purchasePrice: data.purchasePrice
+            ? parseFloat(data.purchasePrice)
+            : 0,
+          renewalPrice: data.renewalPrice
+            ? parseFloat(data.renewalPrice)
+            : null,
+          monthlyPrice: data.monthlyPrice
+            ? parseFloat(data.monthlyPrice)
+            : null,
           annualPrice: data.annualPrice ? parseFloat(data.annualPrice) : null,
-          pricePerSeat: data.pricePerSeat ? parseFloat(data.pricePerSeat) : null,
+          pricePerSeat: data.pricePerSeat
+            ? parseFloat(data.pricePerSeat)
+            : null,
           billingCycle: data.billingCycle || "annual",
           currency: data.currency || "USD",
-          discountPercent: data.discountPercent ? parseFloat(data.discountPercent) : null,
+          discountPercent: data.discountPercent
+            ? parseFloat(data.discountPercent)
+            : null,
           taxRate: data.taxRate ? parseFloat(data.taxRate) : null,
           lastUsageAudit: data.lastUsageAudit || null,
-          utilizationRate: data.utilizationRate ? parseFloat(data.utilizationRate) : null,
+          utilizationRate: data.utilizationRate
+            ? parseFloat(data.utilizationRate)
+            : null,
           costCenter: data.costCenter || null,
           budgetCode: data.budgetCode || null,
         },
@@ -272,10 +240,15 @@ export const remove = withAuth(
     try {
       const companyId = user.user_metadata?.companyId;
       if (!companyId) {
-        return { success: false, error: "User is not associated with a company" };
+        return {
+          success: false,
+          error: "User is not associated with a company",
+        };
       }
       // Get license info before deletion for audit log
-      const license = await prisma.license.findUnique({ where: { id, companyId } });
+      const license = await prisma.license.findUnique({
+        where: { id, companyId },
+      });
       const deletedLicense = await prisma.license.delete({
         where: {
           id: id,
@@ -288,7 +261,9 @@ export const remove = withAuth(
         action: "LICENSE_DELETED",
         entity: "LICENSE",
         entityId: id,
-        details: license ? `License deleted: ${license.name} (${license.seats} seats) by user ${user.id}` : `License deleted (ID: ${id}) by user ${user.id}`,
+        details: license
+          ? `License deleted: ${license.name} (${license.seats} seats) by user ${user.id}`
+          : `License deleted (ID: ${id}) by user ${user.id}`,
       });
       return { success: true, data: parseStringify(deletedLicense) };
     } catch (error) {
@@ -429,7 +404,7 @@ export const checkout = withAuth(
           licenseFiles.map(async (file) => ({
             name: file.fileName,
             url: await s3.getPresignedUrl(companyId, file.fileUrl),
-          }))
+          })),
         );
         if (links.length > 0) {
           await EmailService.sendEmail({
@@ -447,7 +422,9 @@ export const checkout = withAuth(
         console.error("Failed to send license assignment email:", emailError);
       }
 
-      return { success: true, data: parseStringify(result) };
+      // Fetch enhanced license after checkout
+      const enhanced = await getEnhancedLicenseAfterCheckout(result.license.id, companyId);
+      return { success: true, data: enhanced };
     } catch (error) {
       console.error("Error assigning license:", error);
       return {
@@ -461,7 +438,7 @@ export const checkout = withAuth(
 );
 
 export const checkin = withAuth(
-  async (user, userLicenseId: string): Promise<AuthResponse<License>> => {
+  async (user, userLicenseId: string): Promise<AuthResponse<any>> => {
     try {
       const companyId = user.privateMetadata?.companyId as string;
       if (!companyId) {
@@ -540,7 +517,9 @@ export const checkin = withAuth(
         details: `License ${result.license.name} checked in from user ${result.userItem.user?.name || result.userItem.user?.email} by internal user ID ${result.internalUserId}`,
       });
 
-      return { success: true, data: parseStringify(result) };
+      // Fetch enhanced license after checkin
+      const enhanced = await getEnhancedLicenseAfterCheckin(result.license.id, companyId);
+      return { success: true, data: enhanced };
     } catch (error) {
       console.error("Error checking in license:", error);
       return {
@@ -624,10 +603,18 @@ export const exportLicensesToCSV = withAuth(
 );
 
 export const uploadLicenseFile = withAuth(
-  async (user, licenseId: string, file: { buffer: Buffer; originalname: string; mimetype: string }) => {
+  async (
+    user,
+    licenseId: string,
+    file: { buffer: Buffer; originalname: string; mimetype: string },
+  ) => {
     try {
       const companyId = user.privateMetadata?.companyId as string;
-      if (!companyId) return { success: false, error: "User is not associated with a company" };
+      if (!companyId)
+        return {
+          success: false,
+          error: "User is not associated with a company",
+        };
       // Generate unique S3 key
       const timestamp = Date.now();
       const uniqueKey = `licenses/${licenseId}/${timestamp}-${file.originalname}`;
@@ -653,39 +640,55 @@ export const uploadLicenseFile = withAuth(
       });
       return { success: true, data: parseStringify(licenseFile) };
     } catch (error) {
-      return { success: false, error: error instanceof Error ? error.message : String(error) };
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
     } finally {
       await prisma.$disconnect();
     }
-  }
+  },
 );
 
-export const listLicenseFiles = withAuth(
-  async (user, licenseId: string) => {
-    try {
-      const companyId = user.privateMetadata?.companyId as string;
-      if (!companyId) return { success: false, error: "User is not associated with a company" };
-      // Check license ownership
-      const license = await prisma.license.findUnique({ where: { id: licenseId, companyId } });
-      if (!license) return { success: false, error: "License not found or not authorized" };
-      const files = await prisma.licenseFile.findMany({ where: { licenseId } });
-      return { success: true, data: parseStringify(files) };
-    } catch (error) {
-      return { success: false, error: error instanceof Error ? error.message : String(error) };
-    } finally {
-      await prisma.$disconnect();
-    }
+export const listLicenseFiles = withAuth(async (user, licenseId: string) => {
+  try {
+    const companyId = user.privateMetadata?.companyId as string;
+    if (!companyId)
+      return { success: false, error: "User is not associated with a company" };
+    // Check license ownership
+    const license = await prisma.license.findUnique({
+      where: { id: licenseId, companyId },
+    });
+    if (!license)
+      return { success: false, error: "License not found or not authorized" };
+    const files = await prisma.licenseFile.findMany({ where: { licenseId } });
+    return { success: true, data: parseStringify(files) };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  } finally {
+    await prisma.$disconnect();
   }
-);
+});
 
 export const deleteLicenseFile = withAuth(
   async (user, licenseFileId: string) => {
     try {
       const companyId = user.privateMetadata?.companyId as string;
-      if (!companyId) return { success: false, error: "User is not associated with a company" };
+      if (!companyId)
+        return {
+          success: false,
+          error: "User is not associated with a company",
+        };
       // Find LicenseFile and License
-      const licenseFile = await prisma.licenseFile.findUnique({ where: { id: licenseFileId }, include: { license: true } });
-      if (!licenseFile || licenseFile.license.companyId !== companyId) return { success: false, error: "File not found or not authorized" };
+      const licenseFile = await prisma.licenseFile.findUnique({
+        where: { id: licenseFileId },
+        include: { license: true },
+      });
+      if (!licenseFile || licenseFile.license.companyId !== companyId)
+        return { success: false, error: "File not found or not authorized" };
       // Delete from S3
       const s3 = S3Service.getInstance();
       await s3.deleteFile(companyId, licenseFile.fileUrl);
@@ -701,21 +704,32 @@ export const deleteLicenseFile = withAuth(
       });
       return { success: true };
     } catch (error) {
-      return { success: false, error: error instanceof Error ? error.message : String(error) };
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
     } finally {
       await prisma.$disconnect();
     }
-  }
+  },
 );
 
 export const getLicenseFileDownloadUrl = withAuth(
   async (user, licenseFileId: string) => {
     try {
       const companyId = user.privateMetadata?.companyId as string;
-      if (!companyId) return { success: false, error: "User is not associated with a company" };
+      if (!companyId)
+        return {
+          success: false,
+          error: "User is not associated with a company",
+        };
       // Find LicenseFile and License
-      const licenseFile = await prisma.licenseFile.findUnique({ where: { id: licenseFileId }, include: { license: true } });
-      if (!licenseFile || licenseFile.license.companyId !== companyId) return { success: false, error: "File not found or not authorized" };
+      const licenseFile = await prisma.licenseFile.findUnique({
+        where: { id: licenseFileId },
+        include: { license: true },
+      });
+      if (!licenseFile || licenseFile.license.companyId !== companyId)
+        return { success: false, error: "File not found or not authorized" };
       // Get presigned URL
       const s3 = S3Service.getInstance();
       const url = await s3.getPresignedUrl(companyId, licenseFile.fileUrl, 300);
@@ -729,9 +743,12 @@ export const getLicenseFileDownloadUrl = withAuth(
       });
       return { success: true, data: url };
     } catch (error) {
-      return { success: false, error: error instanceof Error ? error.message : String(error) };
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
     } finally {
       await prisma.$disconnect();
     }
-  }
+  },
 );

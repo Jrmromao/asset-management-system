@@ -359,8 +359,14 @@ export const assignmentSchema = z
     userId: z.string().min(1, "User is required"),
     itemId: z.string().min(1, "Item is required"),
     type: z.enum(["asset", "license", "accessory", "consumable"]),
-    seatsRequested: z.number().optional().default(1),
-    quantity: z.number().optional().default(1),
+    seatsRequested: z.preprocess(
+      (val) => (val === "" || val === undefined ? undefined : Number(val)),
+      z.number().optional().default(1),
+    ),
+    quantity: z.preprocess(
+      (val) => (val === "" || val === undefined ? undefined : Number(val)),
+      z.number().optional().default(1),
+    ),
   })
   .refine(
     (data) => {
