@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { Form } from "@/components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
@@ -126,18 +126,34 @@ const AssignmentForm = ({
 
           {/* Show seats dropdown for licenses using CustomSelect */}
           {type === "license" && availableSeats && availableSeats > 0 && (
-            <CustomSelect
-              control={form.control}
-              name="seatsRequested"
-              label="Number of Seats"
-              placeholder="Select seats"
-              disabled={isSubmitting}
-              data={Array.from({ length: availableSeats }, (_, i) => ({
-                id: String(i + 1),
-                name: String(i + 1),
-              }))}
-              required
-            />
+            <>
+              <Controller
+                control={form.control}
+                name="seatsRequested"
+                render={({ field }) => (
+                  <CustomSelect
+                    {...field}
+                    value={field.value ? String(field.value) : ""}
+                    label="Number of Seats"
+                    placeholder="Select seats"
+                    disabled={isSubmitting}
+                    data={Array.from({ length: availableSeats }, (_, i) => ({
+                      id: String(i + 1),
+                      name: String(i + 1),
+                    }))}
+                    required
+                    onChange={(val) =>
+                      field.onChange(val ? Number(val) : undefined)
+                    }
+                  />
+                )}
+              />
+              {form.formState.errors.seatsRequested && (
+                <div className="text-red-600 text-sm mt-1">
+                  {form.formState.errors.seatsRequested.message}
+                </div>
+              )}
+            </>
           )}
 
           {/* Show quantity dropdown for accessories using CustomSelect */}

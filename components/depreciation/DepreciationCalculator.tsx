@@ -24,6 +24,8 @@ interface DepreciationCalculatorProps {
   asset: Asset & {
     category?: { name: string } | null;
     model?: { name: string } | null;
+    aiRecommendedDepreciationMethod?: string;
+    aiDepreciationReasoning?: string;
   };
   onUpdate?: () => void;
 }
@@ -39,7 +41,7 @@ export function DepreciationCalculator({ asset, onUpdate }: DepreciationCalculat
   const handleCalculate = async (method: string = "auto") => {
     setIsCalculating(true);
     try {
-      const result = await calculateAssetDepreciation(asset.id, method as any, undefined, marketConditions);
+      const result = await calculateAssetDepreciation(asset.id, method as any, undefined, marketConditions ?? undefined);
       if (result.success) {
         setDepreciationData(result.data);
         setSelectedMethod(method);
@@ -54,7 +56,7 @@ export function DepreciationCalculator({ asset, onUpdate }: DepreciationCalculat
 
   const handleGenerateSchedule = async () => {
     try {
-      const result = await generateDepreciationSchedule(asset.id, selectedMethod as any, marketConditions);
+      const result = await generateDepreciationSchedule(asset.id, selectedMethod as any, marketConditions ?? undefined);
       if (result.success && result.data) {
         setSchedule(result.data.schedule);
       }
@@ -102,6 +104,28 @@ export function DepreciationCalculator({ asset, onUpdate }: DepreciationCalculat
 
   return (
     <div className="space-y-6">
+      {/* AI Recommendation Section */}
+      {asset.aiRecommendedDepreciationMethod && (
+        <Card className="border-blue-400 border-2 bg-blue-50 mb-2">
+          <CardContent className="py-4 flex flex-col gap-2">
+            <div className="flex items-center gap-2">
+              <Brain className="h-5 w-5 text-blue-600" />
+              <span className="font-semibold text-blue-800">
+                AI Recommendation:
+              </span>
+              <Badge className="ml-2 bg-blue-600 text-white">
+                {asset.aiRecommendedDepreciationMethod.replace(/([A-Z])/g, ' $1').replace(/^./, (str: string) => str.toUpperCase())}
+              </Badge>
+            </div>
+            {asset.aiDepreciationReasoning && (
+              <div className="text-sm text-blue-900 mt-1">
+                {asset.aiDepreciationReasoning}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -365,8 +389,12 @@ export function DepreciationCalculator({ asset, onUpdate }: DepreciationCalculat
                       <td className="text-right p-2 text-red-600">{formatCurrency(row.depreciation)}</td>
                       <td className="text-right p-2">{formatCurrency(row.endingValue)}</td>
                       <td className="text-right p-2 text-gray-600">{formatCurrency(row.accumulatedDepreciation)}</td>
-                      {row.marketValue && (
-                        <td className="text-right p-2 text-blue-600">{formatCurrency(row.marketValue)}</td>
+                      {schedule.some(row => row.marketValue) && (
+                        <td className="text-right p-2 text-blue-600">
+                          {typeof row.marketValue === 'number' && !isNaN(row.marketValue)
+                            ? formatCurrency(row.marketValue)
+                            : "—"}
+                        </td>
                       )}
                     </tr>
                   ))}

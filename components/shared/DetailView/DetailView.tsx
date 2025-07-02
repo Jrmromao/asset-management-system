@@ -70,6 +70,7 @@ export const DetailView: React.FC<DetailViewProps> = ({
   sourceData = "",
   customFormFields,
   checkoutDisabled = false,
+  badge,
 }) => {
   const getField = (label: string) => fields.find((f) => f.label === label);
   const tagNumber = getField("Tag Number")?.value;
@@ -95,10 +96,18 @@ export const DetailView: React.FC<DetailViewProps> = ({
                   {statusLabel.name}
                 </Badge>
               )}
+              {badge && (
+                <Badge
+                  className="text-white"
+                  style={{ backgroundColor: badge.color }}
+                >
+                  {badge.text}
+                </Badge>
+              )}
             </div>
             {tagNumber && (
               <p className="text-sm text-muted-foreground flex items-center gap-1">
-                Tag: {tagNumber}
+               Tag: {tagNumber !== undefined && tagNumber !== null ? String(tagNumber) : ""}
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
