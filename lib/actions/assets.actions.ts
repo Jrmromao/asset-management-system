@@ -299,6 +299,8 @@ function generateSummary(
     : "Asset updated";
 }
 
+const CO2_CONFIDENCE_THRESHOLD = 0.8;
+
 export const createAsset = withAuth(
   async (user, data: CreateAssetInput): Promise<AssetResponse> => {
     try {
@@ -341,16 +343,23 @@ export const createAsset = withAuth(
         },
       });
 
-      if (asset.model) {
+      // --- CO2 Automation ---
+      if (asset.model && asset.model.manufacturer) {
         const co2eResponse = await calculateAssetCo2(
           asset.name,
           asset.model.manufacturer.name,
           asset.model.name,
         );
-        if (co2eResponse.success) {
+        if (
+          co2eResponse.success &&
+          co2eResponse.data &&
+          typeof co2eResponse.data.confidence === 'number' &&
+          co2eResponse.data.confidence >= CO2_CONFIDENCE_THRESHOLD
+        ) {
           await createCo2eRecord(asset.id, co2eResponse.data);
         }
       }
+      // --- END CO2 Automation ---
 
       revalidatePath("/assets");
       // --- AUDIT LOG ---

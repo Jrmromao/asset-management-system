@@ -33,7 +33,7 @@ import {
 } from "lucide-react";
 import { CO2CalculationResult } from "@/types/co2";
 import { saveAssetCO2Action } from "@/lib/actions/co2.actions";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "react-hot-toast";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 
 interface CO2DialogProps {
@@ -68,7 +68,6 @@ const CO2Dialog: React.FC<CO2DialogProps> = ({
   manufacturerUrl,
   manufacturerSupportUrl,
 }) => {
-  const { toast } = useToast();
   const [isRecalculating, setIsRecalculating] = useState(false);
   const [currentResult, setCurrentResult] =
     useState<CO2CalculationResult>(initialResult);
@@ -107,24 +106,12 @@ const CO2Dialog: React.FC<CO2DialogProps> = ({
       if (result.success && result.data) {
         setCurrentResult(result.data);
         setIsUnsaved(true);
-        toast({
-          title: "Recalculation Complete",
-          description:
-            "CO2 footprint has been recalculated with refined parameters.",
-        });
+        toast.success("CO2 footprint has been recalculated with refined parameters.");
       } else {
-        toast({
-          title: "Recalculation Failed",
-          description: result.error || "Failed to recalculate CO2 footprint",
-          variant: "destructive",
-        });
+        toast.error(result.error || "Failed to recalculate CO2 footprint");
       }
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred during recalculation",
-        variant: "destructive",
-      });
+      toast.error("An unexpected error occurred during recalculation");
     } finally {
       setIsRecalculating(false);
     }
@@ -133,18 +120,11 @@ const CO2Dialog: React.FC<CO2DialogProps> = ({
   const handleSave = async () => {
     const result = await saveAssetCO2Action(assetId, currentResult);
     if (result.success) {
-      toast({
-        title: "CO2 Data Saved",
-        description: "The CO2 footprint data has been saved to the database.",
-      });
+      toast.success("The CO2 footprint data has been saved to the database.");
       setIsUnsaved(false);
       onSave?.(currentResult);
     } else {
-      toast({
-        title: "Save Failed",
-        description: result.error || "Failed to save CO2 footprint",
-        variant: "destructive",
-      });
+      toast.error(result.error || "Failed to save CO2 footprint");
     }
   };
 
@@ -254,28 +234,75 @@ const CO2Dialog: React.FC<CO2DialogProps> = ({
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground">
-                      Total Carbon Footprint
-                    </p>
+                    <div className="flex items-center gap-1">
+                      <span>Total Carbon Footprint</span>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-4 w-4 text-blue-500 cursor-pointer ml-1" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            Total CO₂ emissions this asset will generate over its entire life.<br />
+                            Use this value to compare environmental impact.<br />
+                            <i>(Key result of LCA)</i>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
                     <p className="text-3xl font-bold text-green-600">
                       {currentResult.totalCo2e} {currentResult.units}
                     </p>
-               
                     {/* Amortized Values */}
                     {typeof currentResult.amortizedAnnualCo2e === 'number' && (
-                      <p className="text-sm text-blue-700 mt-2">
-                        <strong>Amortized Annual CO2e:</strong> {currentResult.amortizedAnnualCo2e.toFixed(2)} {currentResult.units}/year
-                      </p>
+                      <div className="flex items-center gap-1 mt-2">
+                        <p className="text-sm text-blue-700">
+                          <strong>Amortized Annual CO2e:</strong> {currentResult.amortizedAnnualCo2e.toFixed(2)} {currentResult.units}/year
+                        </p>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Info className="h-4 w-4 text-blue-500 cursor-pointer" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              Average yearly CO₂ emissions, calculated by dividing the total by the expected lifespan. Useful for annual ESG reporting and benchmarking.
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
                     )}
                     {typeof currentResult.amortizedMonthlyCo2e === 'number' && (
-                      <p className="text-sm text-blue-700 mt-1">
-                        <strong>Amortized Monthly CO2e:</strong> {currentResult.amortizedMonthlyCo2e.toFixed(2)} {currentResult.units}/month
-                      </p>
+                      <div className="flex items-center gap-1 mt-1">
+                        <p className="text-sm text-blue-700">
+                          <strong>Amortized Monthly CO2e:</strong> {currentResult.amortizedMonthlyCo2e.toFixed(2)} {currentResult.units}/month
+                        </p>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Info className="h-4 w-4 text-blue-500 cursor-pointer" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              Average monthly CO₂ emissions, calculated by dividing the total by the expected lifespan in months. Useful for short-term analysis and operational dashboards.
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
                     )}
                     {typeof currentResult.expectedLifespanYears === 'number' && (
-                      <p className="text-xs text-muted-foreground mt-1">
-                        <strong>Expected Lifespan:</strong> {currentResult.expectedLifespanYears} years
-                      </p>
+                      <div className="flex items-center gap-1 mt-1">
+                        <p className="text-xs text-muted-foreground">
+                          <strong>Expected Lifespan:</strong> {currentResult.expectedLifespanYears} years
+                        </p>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Info className="h-4 w-4 text-blue-500 cursor-pointer" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              The number of years the asset is expected to be in use. This is a key input for amortizing the total CO₂ footprint in LCA.
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
                     )}
                   </div>
                   <div className="text-right">
@@ -342,6 +369,28 @@ const CO2Dialog: React.FC<CO2DialogProps> = ({
                     Based on {currentResult.sources?.length || 0} data sources
                     and {currentResult.methodology}
                   </p>
+                  {Array.isArray(currentResult.sources) && currentResult.sources.length > 0 && (
+                    <div className="mt-2 text-xs text-muted-foreground">
+                      <span className="font-medium">Sources:&nbsp;</span>
+                      {currentResult.sources.map((src, idx) => (
+                        <span key={src.url || src.name}>
+                          {src.url ? (
+                            <a
+                              href={src.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:underline"
+                            >
+                              {src.name || src.url}
+                            </a>
+                          ) : (
+                            src.name
+                          )}
+                          {idx < currentResult.sources.length - 1 && ", "}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
