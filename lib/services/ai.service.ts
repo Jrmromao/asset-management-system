@@ -177,3 +177,54 @@ export async function createCo2eRecord(
     return { success: false, error: error.message };
   }
 }
+
+/**
+ * Get AI-powered depreciation method recommendation and reasoning for an asset.
+ * @param assetDetails - Object with asset fields (category, model, purchaseDate, etc.)
+ * @param assetHistory - Array of asset history events (optional)
+ * @returns { method: string, reasoning: string, confidence?: number, assumptions?: string, summaryTable?: any[] }
+ */
+export async function getDepreciationRecommendation(assetDetails: any, assetHistory: any[] = []): Promise<{ method: string; reasoning: string; confidence?: number; assumptions?: string; summaryTable?: any[] }> {
+  const prompt = `
+You are an expert in accounting, asset management, and financial reporting. Your job is to recommend the most appropriate depreciation method for a given asset, based on its details and usage history. Use all provided data, and be explicit about any uncertainty or missing information.
+
+Asset Details:
+${JSON.stringify(assetDetails, null, 2)}
+
+Asset History (events, assignments, maintenance, etc.):
+${assetHistory.length > 0 ? JSON.stringify(assetHistory.slice(0, 5), null, 2) : "No significant history."}
+
+Please:
+1. Recommend the best depreciation method for this asset. Choose one of: 'straightLine', 'decliningBalance', or 'doubleDecliningBalance'.
+2. Consider industry standards, compliance, and tax implications for this asset type and region (if available).
+3. Provide a plain-English explanation for your choice, including any assumptions made.
+4. Give a confidence score (0-1) for your recommendation, and state any uncertainty.
+5. Provide a summary table comparing all three methods for this asset, with columns: method, pros, cons, suitability (short text).
+6. If possible, cite references or sources for your recommendation.
+
+Respond in JSON with:
+- method: the recommended method (string)
+- reasoning: a plain-English explanation for your choice (string)
+- confidence: number between 0 and 1 (optional)
+- assumptions: any assumptions or caveats (string, optional)
+- summaryTable: array of { method, pros, cons, suitability }
+- references: (optional) array of strings
+`;
+
+  const response = await openai.chat.completions.create({
+    model: "gpt-4o-mini",
+    messages: [{ role: "user", content: prompt }],
+    response_format: { type: "json_object" },
+    temperature: 0.2,
+    seed: 12345,
+  });
+
+  const json = JSON.parse(response.choices[0].message.content || "{}" );
+  return {
+    method: json.method || "straightLine",
+    reasoning: json.reasoning || "No reasoning provided by AI.",
+    confidence: json.confidence,
+    assumptions: json.assumptions,
+    summaryTable: json.summaryTable,
+  };
+}
