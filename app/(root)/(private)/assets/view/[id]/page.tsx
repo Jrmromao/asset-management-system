@@ -85,62 +85,14 @@ export default function AssetPage() {
 
 
   useEffect(() => {
-
     if (fetchedAsset) {
-      const assetData = fetchedAsset as unknown as AssetWithRelations;
-      setAsset({
-        id: assetData.id,
-        name: assetData.name,
-        assetTag: assetData.assetTag ?? "",
-        status: assetData.statusLabel?.name ?? "N/A",
-        purchaseDate: assetData.purchaseDate,
-        warrantyEndDate: assetData.warrantyEndDate ?? undefined,
-        notes: assetData.notes ?? undefined,
-        supplier: assetData.supplier
-          ? { name: assetData.supplier.name }
-          : undefined,
-        purchaseOrderNumber: assetData.purchaseOrder?.poNumber ?? undefined,
-        purchaseCost: assetData.purchaseOrder?.totalAmount
-          ? Number(assetData.purchaseOrder.totalAmount)
-          : undefined,
-        category: { name: assetData.formValues?.[0]?.formTemplate?.category?.name ?? "N/A" },
-        statusLabel: assetData.statusLabel,
-        user: assetData.user ? { name: assetData.user.name } : undefined,
-        co2Score:
-          (assetData.co2eRecords as any)?.length > 0
-            ? {
-                co2e: Number(assetData.co2eRecords[0].co2e),
-                units: assetData.co2eRecords[0].units,
-              }
-            : undefined,
-        model: assetData.model,
-        departmentLocation: assetData.departmentLocation,
-        department: assetData.department,
-        formTemplate:
-          assetData.formTemplate && assetData.values
-            ? {
-                ...assetData.formTemplate,
-                values: assetData.values?.map((v) => v.values) ?? [],
-              }
-            : null,
-        assetHistory: assetData.assetHistory ?? [],
-        auditLogs: (assetData.auditLogs as any) ?? [],
-        userId: assetData.user?.id,
-        createdAt: assetData.createdAt,
-        updatedAt: assetData.updatedAt,
-        co2eRecords: assetData.co2eRecords,
-        energyConsumption: assetData.energyConsumption
-          ? Number(assetData.energyConsumption)
-          : undefined,
-        expectedLifespan: assetData.expectedLifespan ?? undefined,
-        endOfLifePlan: assetData.endOfLifePlan ?? undefined,
-        price: assetData.purchaseOrder?.totalAmount
-          ? Number(assetData.purchaseOrder.totalAmount)
-          : 0,
-        formValues: assetData.formValues,
-      });
+      console.log("\n\nFetched Asset:", fetchedAsset);
+      setAsset(fetchedAsset as unknown as EnhancedAssetTypeWithFormValues);
     }
   }, [fetchedAsset]);
+
+
+  console.log("\n\nAsset Data:", asset);
 
   const handleSetMaintenance = async () => {
     if (!asset) return;

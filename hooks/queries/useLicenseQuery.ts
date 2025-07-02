@@ -7,7 +7,11 @@ import {
   getAll,
   remove,
   update,
+  checkin,
+  checkout,
+  findById,
 } from "@/lib/actions/license.actions";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 export const MODEL_KEY = ["licenses"] as const;
 
@@ -15,6 +19,7 @@ type CreateLicenseInput = z.infer<typeof licenseSchema>;
 
 export function useLicenseQuery() {
   const { onClose } = useUserUIStore();
+  const queryClient = useQueryClient();
 
   const genericQuery = createGenericQuery<License, CreateLicenseInput>(
     MODEL_KEY,
@@ -29,43 +34,7 @@ export function useLicenseQuery() {
         return await remove(id);
       },
       update: async (id: string, data: CreateLicenseInput) => {
-        // Map schema fields to License type fields and convert types
-        const updateData: Partial<License> = {
-          name: data.licenseName,
-          licensedEmail: data.licensedEmail,
-          statusLabelId: data.statusLabelId,
-          departmentId: data.departmentId,
-          locationId: data.locationId,
-          inventoryId: data.inventoryId,
-          seats: parseInt(data.seats),
-          minSeatsAlert: parseInt(data.minSeatsAlert),
-          alertRenewalDays: parseInt(data.alertRenewalDays),
-          purchaseNotes: data.notes,
-          
-          // Enhanced pricing fields
-          purchasePrice: data.purchasePrice ? parseFloat(data.purchasePrice) : undefined,
-          renewalPrice: data.renewalPrice ? parseFloat(data.renewalPrice) : undefined,
-          monthlyPrice: data.monthlyPrice ? parseFloat(data.monthlyPrice) : undefined,
-          annualPrice: data.annualPrice ? parseFloat(data.annualPrice) : undefined,
-          pricePerSeat: data.pricePerSeat ? parseFloat(data.pricePerSeat) : undefined,
-          billingCycle: data.billingCycle,
-          currency: data.currency,
-          discountPercent: data.discountPercent ? parseFloat(data.discountPercent) : undefined,
-          taxRate: data.taxRate ? parseFloat(data.taxRate) : undefined,
-          
-          // Usage and optimization fields
-          lastUsageAudit: data.lastUsageAudit,
-          utilizationRate: data.utilizationRate ? parseFloat(data.utilizationRate) : undefined,
-          costCenter: data.costCenter,
-          budgetCode: data.budgetCode,
-          
-          // Purchase fields
-          poNumber: data.poNumber,
-          purchaseDate: data.purchaseDate,
-          renewalDate: data.renewalDate,
-          supplierId: data.supplierId,
-        };
-        return await update(updateData as License, id);
+        return await update(data, id);
       },
     },
     {
@@ -86,6 +55,34 @@ export function useLicenseQuery() {
     deleteItem,
   } = genericQuery();
 
+  // Single license query
+  const useLicense = (id: string) =>
+    useQuery({
+      queryKey: ["license", id],
+      queryFn: () => findById(id),
+      staleTime: 5 * 60 * 1000,
+    });
+
+  // Mutations
+  const checkinMutation = useMutation({
+    mutationFn: (userLicenseId: string) => checkin(userLicenseId),
+    onSuccess: (_data, userLicenseId) => {
+      queryClient.invalidateQueries({ queryKey: ["license", userLicenseId] });
+      queryClient.invalidateQueries({ queryKey: ["licenses"] });
+    },
+  });
+
+  const checkoutMutation = useMutation({
+    mutationFn: (values: any) => checkout(values),
+    onSuccess: (_data, values) => {
+      const licenseId = values.licenseId || values.itemId;
+      if (licenseId) {
+        queryClient.invalidateQueries({ queryKey: ["license", licenseId] });
+      }
+      queryClient.invalidateQueries({ queryKey: ["licenses"] });
+    },
+  });
+
   return {
     licenses,
     isLoading,
@@ -94,5 +91,9 @@ export function useLicenseQuery() {
     createLicense,
     isCreating,
     refresh,
+    updateLicense: genericQuery().updateItem,
+    useLicense, // for single license
+    checkin: checkinMutation.mutateAsync,
+    checkout: checkoutMutation.mutateAsync,
   };
 }

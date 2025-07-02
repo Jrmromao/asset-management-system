@@ -19,6 +19,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { DepreciationDashboard } from "@/components/dashboard/DepreciationDashboard";
+import { LicenseOverview } from "@/components/dashboard/LicenseOverview";
+import { AccessoryOverview } from "@/components/dashboard/AccessoryOverview";
 
 export default function DashboardPage() {
   const { isLoaded, isSignedIn } = useAuth();
@@ -121,7 +123,7 @@ export default function DashboardPage() {
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
       <DashboardHeader />
-      
+
       <Tabs defaultValue="overview" className="space-y-6">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="overview">Overview</TabsTrigger>
@@ -137,14 +139,18 @@ export default function DashboardPage() {
                 <CardHeader>
                   <CardTitle>Key Metrics</CardTitle>
                   <CardDescription>
-                    An overview of your asset ecosystem's performance.
+                    An overview of your asset eco system&apos;s performance.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <StatsGrid />
                 </CardContent>
               </Card>
-              <AssetOverview />
+              <div className="grid gap-6 md:grid-cols-2">
+                <AssetOverview />
+                <LicenseOverview />
+              </div>
+              <AccessoryOverview />
             </div>
             <div className="space-y-6">
               <MaintenanceScheduleCard />
@@ -158,7 +164,8 @@ export default function DashboardPage() {
             <CardHeader>
               <CardTitle>Asset Depreciation Analysis</CardTitle>
               <CardDescription>
-                Track asset values, depreciation schedules, and replacement planning.
+                Track asset values, depreciation schedules, and replacement
+                planning.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -178,7 +185,10 @@ export default function DashboardPage() {
                   <CardTitle>Maintenance Alerts</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <AlertItem type="info" message="No maintenance alerts found" />
+                  <AlertItem
+                    type="info"
+                    message="No maintenance alerts found"
+                  />
                 </CardContent>
               </Card>
             </div>
@@ -196,7 +206,10 @@ export default function DashboardPage() {
                   <CardTitle>Environmental Impact</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <AlertItem type="info" message="No environmental impact alerts found" />
+                  <AlertItem
+                    type="info"
+                    message="No environmental impact alerts found"
+                  />
                 </CardContent>
               </Card>
             </div>

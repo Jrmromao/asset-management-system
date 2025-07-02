@@ -8,17 +8,25 @@ import {
   type CreateAssetInput,
 } from "@/lib/actions/assets.actions";
 import { useAssetUIStore } from "@/lib/stores";
-import type { AssetWithRelations } from "@/types/asset";
+import { EnhancedAssetType } from "@/lib/services/asset.service";
 import { useUser } from "@clerk/nextjs";
 
 export const MODEL_KEY = ["assets"] as const;
 
-export function useAssetQuery() {
+export function useAssetQuery(options?: {
+  pageIndex?: number;
+  pageSize?: number;
+  search?: string;
+  sort?: string;
+  status?: string;
+  department?: string;
+  model?: string;
+}) {
   const { onClose } = useAssetUIStore();
   const { user } = useUser();
 
-  const genericQuery = createGenericQuery<
-    AssetWithRelations,
+  return createGenericQuery<
+    EnhancedAssetType,
     CreateAssetInput,
     CreateAssetInput
   >(
@@ -28,15 +36,28 @@ export function useAssetQuery() {
         if (!user) {
           return {
             success: false,
-            data: [],
+            data: [] as EnhancedAssetType[],
             error: "User not authenticated",
           };
         }
-        const response = await getAllAssets();
+        const response = await getAllAssets({
+          page: options?.pageIndex ? options.pageIndex + 1 : 1,
+          pageSize: options?.pageSize ?? 10,
+          search: options?.search,
+          sort: options?.sort,
+          status: options?.status,
+          department: options?.department,
+          model: options?.model,
+        });
+        (response.data as any)._pagination = {
+          total: 'total' in response ? (response as any).total ?? 0 : 0,
+          page: 'page' in response ? (response as any).page ?? 1 : 1,
+          pageSize: 'pageSize' in response ? (response as any).pageSize ?? 10 : 10,
+        };
         return {
           success: response.success,
-          data: response.data as AssetWithRelations[],
-          error: "error" in response ? response.error : undefined,
+          data: response.data as EnhancedAssetType[],
+          error: response.error,
         };
       },
       insert: async (data) => {
@@ -104,6 +125,4 @@ export function useAssetQuery() {
       onClose,
     },
   );
-
-  return genericQuery;
 }

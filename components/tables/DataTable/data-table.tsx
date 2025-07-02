@@ -35,28 +35,30 @@ interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
   isLoading?: boolean;
+  pageIndex: number;
+  pageSize: number;
+  total: number;
+  onPaginationChange: (updater: { pageIndex: number; pageSize: number }) => void;
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
   isLoading,
+  pageIndex,
+  pageSize,
+  total,
+  onPaginationChange,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
-  const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({
-    pageIndex: 0,
-    pageSize: 10,
-  });
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     setIsMobile(window.innerWidth < 768);
-
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
     };
-
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
@@ -67,9 +69,18 @@ export function DataTable<TData, TValue>({
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    manualPagination: true,
+    pageCount: Math.ceil(total / pageSize),
     onSortingChange: setSorting,
     onColumnVisibilityChange: setColumnVisibility,
-    onPaginationChange: setPagination,
+    onPaginationChange: (updater) => {
+      if (typeof updater === "function") {
+        const next = updater({ pageIndex, pageSize });
+        onPaginationChange(next);
+      } else {
+        onPaginationChange(updater);
+      }
+    },
     autoResetPageIndex: false,
     state: {
       sorting,
@@ -195,7 +206,7 @@ export function DataTable<TData, TValue>({
             <span>Rows per page</span>
             <Select
               value={pageSize.toString()}
-              onValueChange={(value) => table.setPageSize(Number(value))}
+              onValueChange={(value) => onPaginationChange({ pageIndex, pageSize: Number(value) })}
             >
               <SelectTrigger className="h-8 w-16 border-slate-200 dark:border-gray-700 dark:bg-gray-800">
                 <SelectValue />
@@ -210,7 +221,7 @@ export function DataTable<TData, TValue>({
             </Select>
           </div>
           <div>
-            Page {pageIndex + 1} of {table.getPageCount()}
+            Page {pageIndex + 1} of {Math.max(1, Math.ceil(total / pageSize))}
           </div>
         </div>
 
@@ -218,8 +229,8 @@ export function DataTable<TData, TValue>({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
+            onClick={() => onPaginationChange({ pageIndex: Math.max(0, pageIndex - 1), pageSize })}
+            disabled={pageIndex === 0}
             className="h-8 border-slate-200 dark:border-gray-700 text-slate-600 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-gray-800"
           >
             Previous
@@ -227,8 +238,8 @@ export function DataTable<TData, TValue>({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
+            onClick={() => onPaginationChange({ pageIndex: pageIndex + 1, pageSize })}
+            disabled={pageIndex + 1 >= Math.ceil(total / pageSize)}
             className="h-8 border-slate-200 dark:border-gray-700 text-slate-600 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-gray-800"
           >
             Next

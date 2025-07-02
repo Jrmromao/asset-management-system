@@ -73,6 +73,8 @@ interface Asset {
     description: string | null;
     details: string | null;
   }>;
+  userId?: string | null;
+  user?: any;
 }
 
 interface Model {
@@ -146,13 +148,6 @@ const normalizeAssets = (assets: any[]) =>
   }));
 
 const Assets = () => {
-  const {
-    isLoading,
-    items: assets,
-    deleteItem,
-    createItem,
-  } = useAssetQuery()();
-
   const [openDialog, closeDialog, isOpen] = useDialogStore((state) => [
     state.onOpen,
     state.onClose,
@@ -161,20 +156,43 @@ const Assets = () => {
   const navigate = useRouter();
   const [isPending, startTransition] = useTransition();
 
-  // State management
+  // Pagination state
+  const [pageIndex, setPageIndex] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterDialogOpen, setFilterDialogOpen] = useState(false);
-  const [filters, setFilters] = useState({
-    supplier: "",
-    inventory: "",
-  });
+  const debouncedSearchTerm = useDebounce(searchTerm, SEARCH_DEBOUNCE_MS);
 
-  // --- Real-time CO2 update handler ---
+  // Use paginated asset query
+  const {
+    items: data,
+    isLoading: paginatedLoading,
+    error,
+    refresh,
+    deleteItem,
+  } = useAssetQuery({
+    pageIndex,
+    pageSize,
+    search: debouncedSearchTerm,
+    // Add sort, status, department, model as needed
+  })();
+  // Use _pagination property attached to data array
+  const pagination = (data as any)?._pagination || { total: 0, page: 1, pageSize: 10 };
+  const total = pagination.total;
+
+  // Get maintenanceDue from API response if available
+  const apiMaintenanceDue = (data as any)?.maintenanceDue;
+
+  // Table configuration
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [rowSelection, setRowSelection] = useState({});
+
+  // Memoized columns to prevent unnecessary re-renders
   const handleCo2Update = useCallback((assetId: string, newCo2Record: any) => {
     // No need to update localAssets here, as we're using assets directly
   }, []);
 
-  // Event handlers
   const handleView = useCallback(
     (id: string) => {
       startTransition(() => {
@@ -200,6 +218,19 @@ const Assets = () => {
       }
     },
     [handleView],
+  );
+
+  const columns = useMemo(() => {
+    return assetColumns({ onDelete, onView, onCo2Update: handleCo2Update }) as ColumnDef<Asset>[];
+  }, [onDelete, onView, handleCo2Update]);
+
+  // Pagination handler
+  const handlePaginationChange = useCallback(
+    ({ pageIndex: newPageIndex, pageSize: newPageSize }: { pageIndex: number; pageSize: number }) => {
+      setPageIndex(newPageIndex);
+      setPageSize(newPageSize);
+    },
+    [],
   );
 
   const handleCreateNew = useCallback(() => {
@@ -232,49 +263,37 @@ const Assets = () => {
     }
   };
 
-  // Table configuration
-  const [sorting, setSorting] = useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
-  const [rowSelection, setRowSelection] = useState({});
-
-  // Memoized columns to prevent unnecessary re-renders
-  const columns = useMemo(() => {
-    return assetColumns({ onDelete, onView, onCo2Update: handleCo2Update }) as ColumnDef<Asset>[];
-  }, [onDelete, onView, handleCo2Update]);
-
-  // Debounced search term
-  const debouncedSearchTerm = useDebounce(searchTerm, SEARCH_DEBOUNCE_MS);
-
   // Memoized computed values
   const activeAssets = useMemo(
-    () => getActiveAssets(normalizeAssets(assets)),
-    [assets],
+    () => getActiveAssets(normalizeAssets(data)),
+    [data],
   );
+
+  // Available assets: assets not assigned to a user
+  const availableAssets = useMemo(
+    () =>
+      activeAssets.filter(
+        (asset) => !asset.userId && !asset.user // covers both missing userId and user object
+      ),
+    [activeAssets],
+  );
+
+  // Use maintenanceDue from API if available, otherwise fallback to client-side calculation
+  const maintenanceDue = typeof apiMaintenanceDue === 'number' ? apiMaintenanceDue : (() => {
+    const now = new Date();
+    const thresholdDate = new Date();
+    thresholdDate.setDate(thresholdDate.getDate() + MAINTENANCE_DAYS_THRESHOLD);
+    return activeAssets.filter((asset) => {
+      if (!asset.endOfLife) return false;
+      const endOfLifeDate = new Date(asset.endOfLife);
+      return endOfLifeDate >= now && endOfLifeDate <= thresholdDate;
+    }).length;
+  })();
 
   const filteredData = useMemo(() => {
     const searchFiltered = searchAssets(activeAssets, debouncedSearchTerm);
     return searchFiltered;
   }, [activeAssets, debouncedSearchTerm]);
-
-  const availableAssets = useMemo(
-    () =>
-      activeAssets.filter(
-        (asset) => asset.statusLabel?.name.toUpperCase() === "AVAILABLE",
-      ),
-    [activeAssets],
-  );
-
-  const maintenanceDue = useMemo(() => {
-    const now = new Date();
-    const thresholdDate = new Date();
-    thresholdDate.setDate(thresholdDate.getDate() + MAINTENANCE_DAYS_THRESHOLD);
-
-    return activeAssets.filter((asset) => {
-      const maintenanceDate = asset.endOfLife || asset.updatedAt;
-      return maintenanceDate && new Date(maintenanceDate) <= thresholdDate;
-    }).length;
-  }, [activeAssets]);
 
   const table = useReactTable({
     data: filteredData,
@@ -333,14 +352,14 @@ const Assets = () => {
     () => [
       {
         title: "Total Assets",
-        value: assets.length,
+        value: data.length,
         color: "info" as const,
       },
       {
         title: "Available Assets",
         value: availableAssets.length,
-        percentage: (availableAssets.length / assets.length) * 100,
-        total: assets.length,
+        percentage: (availableAssets.length / data.length) * 100,
+        total: data.length,
         color: "success" as const,
       },
       {
@@ -350,11 +369,31 @@ const Assets = () => {
         color: "warning" as const,
       },
     ],
-    [assets.length, availableAssets.length, maintenanceDue],
+    [data.length, availableAssets.length, maintenanceDue],
   );
 
+  // 1. Remove all references to 'assets', use 'data' everywhere.
+  // 2. For DataTable, map 'data' to Asset type if needed:
+  const mappedData = (data as any[]).map((item) => ({
+    ...item,
+    co2eRecords: Array.isArray(item.co2eRecords)
+      ? item.co2eRecords.map((rec: any) => ({
+          id: rec.id,
+          co2e: typeof rec.co2e === 'number' ? rec.co2e : Number(rec.co2e),
+          units: rec.units ?? '',
+          co2eType: rec.co2eType ?? '',
+          sourceOrActivity: rec.sourceOrActivity ?? '',
+          description: rec.description ?? '',
+          details: typeof rec.details === 'string' ? rec.details : JSON.stringify(rec.details ?? ''),
+        }))
+      : [],
+  })) as Asset[];
+
+  // 3. For FilterDialog, provide the required shape
+  const [filters, setFilters] = useState({ supplier: '', inventory: '' });
+
   // Loading state
-  if (isLoading) {
+  if (paginatedLoading) {
     return (
       <div className="p-6 space-y-6 dark:bg-gray-900">
         <Breadcrumb className="hidden md:flex">
@@ -379,7 +418,15 @@ const Assets = () => {
 
         <Card className="dark:bg-gray-800 border-gray-200 dark:border-gray-700">
           <CardContent className="p-0">
-            <DataTable columns={columns} data={[]} isLoading={true} />
+            <DataTable
+              columns={columns}
+              data={[]}
+              isLoading={true}
+              pageIndex={pageIndex}
+              pageSize={pageSize}
+              total={total}
+              onPaginationChange={handlePaginationChange}
+            />
           </CardContent>
         </Card>
       </div>
@@ -414,31 +461,34 @@ const Assets = () => {
           onAddNew={handleCreateNew}
           onImport={openImportModal}
           onExport={handleExport}
-          isLoading={isLoading || isPending}
+          isLoading={paginatedLoading || isPending}
           filterPlaceholder="Search assets..."
           className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm"
           showFilter={false}
           searchColumnId="name"
         />
-
         <Card className="dark:bg-gray-800 border-gray-200 dark:border-gray-700">
           <CardContent className="p-0">
             <DataTable
               columns={columns}
-              data={filteredData}
-              isLoading={isLoading || isPending}
+              data={mappedData}
+              isLoading={paginatedLoading || isPending}
+              pageIndex={pageIndex}
+              pageSize={pageSize}
+              total={total}
+              onPaginationChange={handlePaginationChange}
             />
           </CardContent>
         </Card>
       </div>
 
       <FilterDialog
-        open={filterDialogOpen}
-        onOpenChange={setFilterDialogOpen}
+        open={isOpen}
+        onOpenChange={closeDialog}
         filters={filters}
         setFilters={setFilters}
         onApplyFilters={() => {
-          setFilterDialogOpen(false);
+          closeDialog();
         }}
         title="Filter Assets"
       />
