@@ -251,7 +251,7 @@ export default function View({ params }: AssetPageProps) {
           !!license &&
           typeof license.reorderPoint === "number" &&
           license.reorderPoint > 0 &&
-          (license.seats - license.seatsAllocated) < license.reorderPoint
+          license.seats - license.seatsAllocated < license.reorderPoint
         }
       />
     ),

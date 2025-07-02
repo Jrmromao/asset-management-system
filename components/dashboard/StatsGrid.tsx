@@ -66,17 +66,6 @@ export const StatsGrid = () => {
           getAssetUtilizationStats(),
         ]);
 
-        console.log("Dashboard data fetched:", {
-          assetsResponse,
-          licensesResponse,
-          accessoriesResponse,
-          quotaResponse,
-          maintenanceDueResponse,
-          co2SavingsResponse,
-          co2TrendResponse,
-          utilizationStatsResponse,
-        });
-
         const assets = assetsResponse.data || [];
         const licenses = licensesResponse.data || [];
         const accessories = accessoriesResponse.data || [];
@@ -190,11 +179,12 @@ export const StatsGrid = () => {
       />
 
       <StatCard
-        title="Maintenance Due"
+        title="Upcoming Maintenance"
         mainValue={stats.maintenanceDue}
         subValue="assets"
-        subtitle="Within next 30 days"
+        subtitle="Due within 30 days"
         icon={<Clock className="h-5 w-5 text-amber-600" />}
+        tooltip="Number of assets with maintenance due in the next 30 days."
       />
 
       <StatCard

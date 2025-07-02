@@ -10,6 +10,7 @@ import React, {
 import { useDialogStore } from "@/lib/stores/store";
 import { useRouter } from "next/navigation";
 import { assetColumns } from "@/components/tables/AssetColumns";
+import type { EnhancedAssetType } from "@/lib/services/asset.service";
 import StatusCards from "@/components/StatusCards";
 import {
   Breadcrumb,
@@ -147,6 +148,19 @@ const normalizeAssets = (assets: any[]) =>
     })),
   }));
 
+// Helper function for maintenance due calculation
+function calculateMaintenanceDue(assets: Asset[], daysThreshold: number): number {
+  const now = new Date();
+  const thresholdDate = new Date(now);
+  thresholdDate.setDate(now.getDate() + daysThreshold);
+
+  return assets.filter((asset: Asset) => {
+    if (!asset.endOfLife) return false;
+    const endOfLifeDate = new Date(asset.endOfLife);
+    return endOfLifeDate >= now && endOfLifeDate <= thresholdDate;
+  }).length;
+}
+
 const Assets = () => {
   const [openDialog, closeDialog, isOpen] = useDialogStore((state) => [
     state.onOpen,
@@ -164,8 +178,8 @@ const Assets = () => {
 
   // Use paginated asset query
   const {
-    items: data,
-    isLoading: paginatedLoading,
+    items: assetsData,
+    isLoading: loading,
     error,
     refresh,
     deleteItem,
@@ -176,11 +190,8 @@ const Assets = () => {
     // Add sort, status, department, model as needed
   })();
   // Use _pagination property attached to data array
-  const pagination = (data as any)?._pagination || { total: 0, page: 1, pageSize: 10 };
+  const pagination = (assetsData as any)?._pagination || { total: 0, page: 1, pageSize: 10 };
   const total = pagination.total;
-
-  // Get maintenanceDue from API response if available
-  const apiMaintenanceDue = (data as any)?.maintenanceDue;
 
   // Table configuration
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -198,7 +209,7 @@ const Assets = () => {
   );
 
   const onDelete = useCallback(
-    (asset: Asset) => {
+    (asset: EnhancedAssetType) => {
       if (asset?.id) {
         deleteItem(asset.id);
       }
@@ -207,7 +218,7 @@ const Assets = () => {
   );
 
   const onView = useCallback(
-    (asset: Asset) => {
+    (asset: EnhancedAssetType) => {
       if (asset?.id) {
         handleView(asset.id);
       }
@@ -245,7 +256,7 @@ const Assets = () => {
   }, [queryClient]);
 
   const columns = useMemo(() => {
-    return assetColumns({ onDelete, onView, onCo2Update: handleCo2Update }) as ColumnDef<Asset>[];
+    return assetColumns({ onDelete, onView, onCo2Update: handleCo2Update }) as ColumnDef<EnhancedAssetType>[];
   }, [onDelete, onView, handleCo2Update]);
 
   const handleBulkImport = async (data: any[]) => {
@@ -266,8 +277,8 @@ const Assets = () => {
 
   // Memoized computed values
   const activeAssets = useMemo(
-    () => getActiveAssets(normalizeAssets(data)),
-    [data],
+    () => getActiveAssets(normalizeAssets(assetsData)),
+    [assetsData],
   );
 
   // Available assets: assets not assigned to a user
@@ -279,25 +290,34 @@ const Assets = () => {
     [activeAssets],
   );
 
-  // Use maintenanceDue from API if available, otherwise fallback to client-side calculation
-  const maintenanceDue = typeof apiMaintenanceDue === 'number' ? apiMaintenanceDue : (() => {
-    const now = new Date();
-    const thresholdDate = new Date();
-    thresholdDate.setDate(thresholdDate.getDate() + MAINTENANCE_DAYS_THRESHOLD);
-    return activeAssets.filter((asset) => {
-      if (!asset.endOfLife) return false;
-      const endOfLifeDate = new Date(asset.endOfLife);
-      return endOfLifeDate >= now && endOfLifeDate <= thresholdDate;
-    }).length;
-  })();
+  // Memoized card data
+  const cardData = useMemo(
+    () => [
+      {
+        title: "Total Assets",
+        value: assetsData.length,
+        color: "info" as const,
+      },
+      {
+        title: "Available Assets",
+        value: availableAssets.length,
+        percentage: (availableAssets.length / assetsData.length) * 100,
+        total: assetsData.length,
+        color: "success" as const,
+      },
+      {
+        title: "Upcoming Maintenance",
+        value: calculateMaintenanceDue(activeAssets, MAINTENANCE_DAYS_THRESHOLD),
+        subtitle: "Due within 30 days",
+        color: "warning" as const,
+      },
+    ],
+    [assetsData.length, availableAssets.length],
+  );
 
-  const filteredData = useMemo(() => {
-    const searchFiltered = searchAssets(activeAssets, debouncedSearchTerm);
-    return searchFiltered;
-  }, [activeAssets, debouncedSearchTerm]);
-
+  // Table configuration
   const table = useReactTable({
-    data: filteredData,
+    data: assetsData,
     columns,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
@@ -348,53 +368,11 @@ const Assets = () => {
     }
   }, []);
 
-  // Memoized card data
-  const cardData = useMemo(
-    () => [
-      {
-        title: "Total Assets",
-        value: data.length,
-        color: "info" as const,
-      },
-      {
-        title: "Available Assets",
-        value: availableAssets.length,
-        percentage: (availableAssets.length / data.length) * 100,
-        total: data.length,
-        color: "success" as const,
-      },
-      {
-        title: "Maintenance Due",
-        value: maintenanceDue,
-        subtitle: "Due within 30 days",
-        color: "warning" as const,
-      },
-    ],
-    [data.length, availableAssets.length, maintenanceDue],
-  );
-
-  // 1. Remove all references to 'assets', use 'data' everywhere.
-  // 2. For DataTable, map 'data' to Asset type if needed:
-  const mappedData = (data as any[]).map((item) => ({
-    ...item,
-    co2eRecords: Array.isArray(item.co2eRecords)
-      ? item.co2eRecords.map((rec: any) => ({
-          id: rec.id,
-          co2e: typeof rec.co2e === 'number' ? rec.co2e : Number(rec.co2e),
-          units: rec.units ?? '',
-          co2eType: rec.co2eType ?? '',
-          sourceOrActivity: rec.sourceOrActivity ?? '',
-          description: rec.description ?? '',
-          details: typeof rec.details === 'string' ? rec.details : JSON.stringify(rec.details ?? ''),
-        }))
-      : [],
-  })) as Asset[];
-
   // 3. For FilterDialog, provide the required shape
   const [filters, setFilters] = useState({ supplier: '', inventory: '' });
 
   // Loading state
-  if (paginatedLoading) {
+  if (loading) {
     return (
       <div className="p-6 space-y-6 dark:bg-gray-900">
         <Breadcrumb className="hidden md:flex">
@@ -462,7 +440,7 @@ const Assets = () => {
           onAddNew={handleCreateNew}
           onImport={openImportModal}
           onExport={handleExport}
-          isLoading={paginatedLoading || isPending}
+          isLoading={loading || isPending}
           filterPlaceholder="Search assets..."
           className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm"
           showFilter={false}
@@ -472,8 +450,8 @@ const Assets = () => {
           <CardContent className="p-0">
             <DataTable
               columns={columns}
-              data={mappedData}
-              isLoading={paginatedLoading || isPending}
+              data={assetsData}
+              isLoading={loading || isPending}
               pageIndex={pageIndex}
               pageSize={pageSize}
               total={total}

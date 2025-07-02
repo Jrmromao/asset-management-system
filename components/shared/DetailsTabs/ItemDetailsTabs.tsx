@@ -455,7 +455,14 @@ const ItemDetailsTabs: React.FC<ItemDetailsTabsProps> = ({
         <TabsContent value="used-by" className="pt-4">
           {(usedBy?.length | usedBy.length) > 0 ? (
             <div className="rounded-lg border bg-white mx-3 mb-6">
-              <DataTable columns={usedByAccessoryColumnsMemo} data={usedBy} />
+              <DataTable
+                onPaginationChange={() => {}}
+                columns={usedByAccessoryColumnsMemo}
+                data={usedBy}
+                pageIndex={0}
+                pageSize={10}
+                total={usedBy.length}
+              />
             </div>
           ) : (
             <div className="text-center py-12 text-gray-500">

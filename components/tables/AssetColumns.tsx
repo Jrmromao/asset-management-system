@@ -5,22 +5,22 @@ import LinkTableCell from "@/components/tables/LinkTableCell";
 import React, { useTransition, useState } from "react";
 import DataTableRowActions from "@/components/tables/DataTable/DataTableRowActions";
 import { cn } from "@/lib/utils";
-import { useToast } from "@/hooks/use-toast";
+// import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
-
+import { toast } from "react-hot-toast";
 import CO2Dialog from "@/components/dialogs/CO2Dialog";
 import { Co2eRecord } from "@prisma/client";
 import { CO2CalculationResult } from "@/types/co2";
-import { Asset } from "@/types/asset";
+import { EnhancedAssetType } from "@/lib/services/asset.service";
 
 interface AssetColumnsProps {
-  onDelete: (value: Asset) => void;
-  onView: (value: Asset) => void;
+  onDelete: (value: EnhancedAssetType) => void;
+  onView: (value: EnhancedAssetType) => void;
   onCo2Update: (assetId: string, newCo2Record: any) => void;
 }
 
 const CO2FootprintCell = ({ row, onCo2Update }: { row: any; onCo2Update: (assetId: string, newCo2Record: any) => void }) => {
-  const { toast } = useToast();
+  // const { toast } = useToast();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [isDialogOpen, setDialogOpen] = useState(false);
@@ -59,21 +59,15 @@ const CO2FootprintCell = ({ row, onCo2Update }: { row: any; onCo2Update: (assetI
           // Use the complete data directly from API route
           openDialog(result.data, true);
         } else {
-          toast({
-            title: "CO2 Calculation Failed",
-            description: result.error || "An unknown error occurred.",
-            variant: "destructive",
-          });
+          toast.error("CO2 Calculation Failed");
+          // toast({
+          //   title: "CO2 Calculation Failed",
+          //   description: result.error || "An unknown error occurred.",
+          //   variant: "destructive",
+          // });
         }
       } catch (error) {
-        toast({
-          title: "Error",
-          description:
-            error instanceof Error
-              ? error.message
-              : "An unknown error occurred.",
-          variant: "destructive",
-        });
+        toast.error("Error: " + error);
       }
     });
   };
@@ -275,7 +269,7 @@ export const assetColumns = ({
   onDelete,
   onView,
   onCo2Update,
-}: AssetColumnsProps): ColumnDef<Asset>[] => [
+}: AssetColumnsProps): ColumnDef<EnhancedAssetType>[] => [
   {
     accessorKey: "name",
     header: ({ column }) => (
@@ -375,8 +369,8 @@ export const assetColumns = ({
     cell: ({ row }) => (
       <DataTableRowActions
         row={row}
-        onDelete={() => onDelete(row.original)}
-        onView={() => onView(row.original)}
+        onDelete={onDelete}
+        onView={onView}
       />
     ),
   },

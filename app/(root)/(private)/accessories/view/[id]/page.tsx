@@ -36,11 +36,19 @@ interface AssetPageProps {
   }>;
 }
 
+// Helper to safely format date values
+function safeToISOString(dateValue: any) {
+  const date = new Date(dateValue);
+  return dateValue && !isNaN(date.getTime()) ? date.toISOString() : "-";
+}
+
 export default function Page({ params }: AssetPageProps) {
   const [error, setError] = useState<string | null>(null);
   const { id } = use(params);
   const { isAssignOpen, onAssignOpen, onAssignClose } = useAccessoryStore();
-  const [accessory, setAccessory] = useState<EnhancedAccessoryType | undefined>(undefined);
+  const [accessory, setAccessory] = useState<EnhancedAccessoryType | undefined>(
+    undefined,
+  );
 
   const [loadingStates, setLoadingStates] = useState<LoadingStates>({
     isInitialLoading: true,
@@ -87,7 +95,10 @@ export default function Page({ params }: AssetPageProps) {
       console.error("Error fetching accessory:", error);
       setError("Failed to load accessory details");
     } finally {
-      updateLoadingState(isRefresh ? "isRefreshing" : "isInitialLoading", false);
+      updateLoadingState(
+        isRefresh ? "isRefreshing" : "isInitialLoading",
+        false,
+      );
     }
   };
 
@@ -226,12 +237,12 @@ export default function Page({ params }: AssetPageProps) {
       },
       {
         label: "Created At",
-        value: accessory?.createdAt ? new Date(accessory.createdAt).toISOString() : "-",
+        value: safeToISOString(accessory?.createdAt),
         type: "date",
       },
       {
         label: "Last Updated",
-        value: accessory?.updatedAt ? new Date(accessory.updatedAt).toISOString() : "-",
+        value: safeToISOString(accessory?.updatedAt),
         type: "date",
       },
       { label: "Quantity", value: accessory?.totalQuantity ?? 0, type: "text" },
@@ -291,10 +302,9 @@ export default function Page({ params }: AssetPageProps) {
     sourceData: "accessory",
     checkoutDisabled:
       (accessory?.unitsAllocated ?? 0) >= (accessory?.totalQuantity ?? 0),
-    badge:
-      accessory?.belowReorderPoint
-        ? { text: "Below reorder point!", color: "warning" }
-        : undefined,
+    badge: accessory?.belowReorderPoint
+      ? { text: "Below reorder point!", color: "warning" }
+      : undefined,
   };
 
   return (
@@ -311,7 +321,14 @@ export default function Page({ params }: AssetPageProps) {
             itemId={id}
             type="accessory"
             assignAction={checkout}
-            availableQuantity={accessory ? Math.max(accessory.totalQuantity - accessory.unitsAllocated, 0) : 0}
+            availableQuantity={
+              accessory
+                ? Math.max(
+                    accessory.totalQuantity - accessory.unitsAllocated,
+                    0,
+                  )
+                : 0
+            }
             onOptimisticUpdate={() => {
               setAccessory((prev) =>
                 prev

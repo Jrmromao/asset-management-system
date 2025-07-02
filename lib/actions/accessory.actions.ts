@@ -31,6 +31,21 @@ const getSession = async () => {
   };
 };
 
+// Utility to deeply convert Decimal-like objects to numbers
+function deepConvertDecimals(obj: any): any {
+  if (obj === null || obj === undefined) return obj;
+  if (typeof obj === "object") {
+    if (typeof obj.toNumber === "function") return obj.toNumber();
+    if (Array.isArray(obj)) return obj.map(deepConvertDecimals);
+    const result: any = {};
+    for (const key in obj) {
+      result[key] = deepConvertDecimals(obj[key]);
+    }
+    return result;
+  }
+  return obj;
+}
+
 export const insert = withAuth(
   async (
     user,
@@ -163,7 +178,7 @@ export const insert = withAuth(
       );
       return {
         success: true,
-        data: parseStringify(result.accessory),
+        data: deepConvertDecimals(result.accessory),
       };
     } catch (error) {
       console.error("❌ [accessory.actions] insert - Error:", error);
@@ -212,9 +227,11 @@ export const getAll = withAuth(
           createdAt: "desc",
         },
       });
+      // Convert Decimal objects to numbers before returning
+      const serializedAccessories = deepConvertDecimals(accessories);
       return {
         success: true,
-        data: parseStringify(accessories),
+        data: serializedAccessories,
       };
     } catch (error) {
       console.error("Error fetching accessories:", error);
@@ -247,7 +264,9 @@ export const findById = withAuth(
       if (!data) {
         return { success: false, error: "Accessory not found" };
       }
-      return { success: true, data };
+      // Convert Decimal objects to numbers before returning
+      const serializedData = deepConvertDecimals(data);
+      return { success: true, data: serializedData };
     } catch (error) {
       console.error("Error finding accessory:", error);
       return { success: false, error: "Failed to find accessory" };
@@ -294,13 +313,15 @@ export const remove = withAuth(
         action: "ACCESSORY_DELETED",
         entity: "ACCESSORY",
         entityId: id,
-        details: accessory ? `Accessory deleted: ${accessory.name} (${accessory.serialNumber}) by user ${user.id}` : `Accessory deleted (ID: ${id}) by user ${user.id}`,
+        details: accessory
+          ? `Accessory deleted: ${accessory.name} (${accessory.serialNumber}) by user ${user.id}`
+          : `Accessory deleted (ID: ${id}) by user ${user.id}`,
       });
 
       revalidatePath("/accessories");
       return {
         success: true,
-        data: parseStringify(deletedAccessory),
+        data: deepConvertDecimals(deletedAccessory),
       };
     } catch (error) {
       console.error("Error deleting accessory:", error);
@@ -369,7 +390,7 @@ export const update = withAuth(
       revalidatePath(`/accessories/${id}`);
       return {
         success: true,
-        data: parseStringify(accessory),
+        data: deepConvertDecimals(accessory),
       };
     } catch (error) {
       console.error("Error updating accessory:", error);
@@ -589,7 +610,7 @@ export const checkout = withAuth(
         details: `Accessory ${result.accessory.name} assigned to user ${result.assigneeUser.name || result.assigneeUser.email} by internal user ID ${result.internalUserId}`,
       });
 
-      return { success: true, data: parseStringify(result) };
+      return { success: true, data: deepConvertDecimals(result) };
     } catch (error) {
       console.error("Error assigning accessory:", error);
       return {
@@ -668,7 +689,7 @@ export const checkin = withAuth(
         details: `Accessory ${result.accessory.name} checked in from user ${result.userItem.user?.name || result.userItem.user?.email}`,
       });
 
-      return { success: true, data: parseStringify(result.accessory) };
+      return { success: true, data: deepConvertDecimals(result.accessory) };
     } catch (error) {
       console.error("Error checking in accessory:", error);
       return {

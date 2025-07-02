@@ -331,7 +331,11 @@ const LicenseForm: React.FC<LicenseFormProps> = ({
               utilizationRate: res.data.utilizationRate?.toString() || "",
               costCenter: res.data.costCenter || "",
               budgetCode: res.data.budgetCode || "",
-              departmentId: res.data.departmentId || (departments && departments.length > 0 ? departments[0].id : ""),
+              departmentId:
+                res.data.departmentId ||
+                (departments && departments.length > 0
+                  ? departments[0].id
+                  : ""),
             });
           }
         })

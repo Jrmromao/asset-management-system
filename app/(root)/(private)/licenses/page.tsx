@@ -306,7 +306,15 @@ const Licenses = () => {
 
         <Card className="dark:bg-gray-800 border-gray-200 dark:border-gray-700">
           <CardContent className="p-0">
-            <DataTable columns={columns} data={[]} isLoading={true} />
+            <DataTable
+              pageIndex={0}
+              pageSize={10}
+              total={0}
+              onPaginationChange={() => {}}
+              columns={columns}
+              data={[]}
+              isLoading={true}
+            />
           </CardContent>
         </Card>
       </div>
@@ -369,6 +377,10 @@ const Licenses = () => {
               </div>
             ) : (
               <DataTable
+                pageIndex={0}
+                pageSize={10}
+                total={filteredData.length}
+                onPaginationChange={() => {}}
                 columns={columns}
                 data={filteredData}
                 isLoading={isLoading || isPending}

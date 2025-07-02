@@ -319,7 +319,7 @@ const Accessories = () => {
 
         <Card className="dark:bg-gray-800 border-gray-200 dark:border-gray-700">
           <CardContent className="p-0">
-            <DataTable columns={columns} data={[]} isLoading={true} />
+            <DataTable columns={columns} data={[]} isLoading={true} pageIndex={0} pageSize={10} total={0} onPaginationChange={() => {}} />
           </CardContent>
         </Card>
       </div>
@@ -382,6 +382,10 @@ const Accessories = () => {
               </div>
             ) : (
               <DataTable
+                pageIndex={0}
+                pageSize={10}
+                total={filteredData.length}
+                onPaginationChange={() => {}}
                 columns={columns}
                 data={filteredData}
                 isLoading={isLoading || isPending}

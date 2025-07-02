@@ -25,7 +25,10 @@ export interface EnhancedAccessoryType {
   belowReorderPoint: boolean;
 }
 
-export async function getEnhancedAccessoryById(id: string, companyId: string): Promise<EnhancedAccessoryType | null> {
+export async function getEnhancedAccessoryById(
+  id: string,
+  companyId: string,
+): Promise<EnhancedAccessoryType | null> {
   const accessory = await prisma.accessory.findUnique({
     where: { id, companyId },
     include: {
@@ -41,33 +44,83 @@ export async function getEnhancedAccessoryById(id: string, companyId: string): P
   if (!accessory) return null;
 
   const auditLogsResult = await getAuditLog(id);
-  const unitsAllocated = sumUnitsAssigned(accessory.userItems as any[] ?? []);
+  const unitsAllocated = sumUnitsAssigned((accessory.userItems as any[]) ?? []);
   const totalQuantity = accessory.totalQuantityCount ?? 0;
   const reorderPoint = accessory.reorderPoint ?? 0;
-  const belowReorderPoint = reorderPoint > 0 && (totalQuantity - unitsAllocated) < reorderPoint;
+  const belowReorderPoint =
+    reorderPoint > 0 && totalQuantity - unitsAllocated < reorderPoint;
+
+  // Ensure usedBy array is always well-formed and strictly typed
+  const usedBy = ((accessory.userItems as any[]) ?? []).map((item) => ({
+    ...item,
+    user: {
+      id: item.user && typeof item.user.id === "string" ? item.user.id : "",
+      name:
+        item.user && typeof item.user.name === "string" ? item.user.name : "-",
+      employeeId:
+        item.user && typeof item.user.employeeId === "string"
+          ? item.user.employeeId
+          : "-",
+      title:
+        item.user && typeof item.user.title === "string"
+          ? item.user.title
+          : "-",
+    },
+    accessory:
+      item.accessory && typeof item.accessory.id === "string"
+        ? item.accessory
+        : { id: "", name: "-" },
+    company:
+      item.company && typeof item.company.id === "string"
+        ? item.company
+        : { id: "", name: "-" },
+    quantity: typeof item.quantity === "number" ? item.quantity : 0,
+    assignedAt:
+      item.assignedAt instanceof Date && !isNaN(item.assignedAt)
+        ? item.assignedAt
+        : null,
+    returnedAt:
+      item.returnedAt instanceof Date && !isNaN(item.returnedAt)
+        ? item.returnedAt
+        : null,
+    notes: typeof item.notes === "string" ? item.notes : "",
+  }));
 
   return {
     id: accessory.id,
     name: accessory.name,
     co2Score: 0, // or calculate if needed
-    category: (accessory as any).category ? { name: (accessory as any).category.name } : null,
+    category: (accessory as any).category
+      ? { name: (accessory as any).category.name }
+      : null,
     modelNumber: accessory.modelNumber || null,
     statusLabel: (accessory as any).statusLabel
-      ? { name: (accessory as any).statusLabel.name, colorCode: (accessory as any).statusLabel.colorCode }
+      ? {
+          name: (accessory as any).statusLabel.name,
+          colorCode: (accessory as any).statusLabel.colorCode,
+        }
       : null,
-    location: (accessory as any).departmentLocation ? { name: (accessory as any).departmentLocation.name } : null,
-    department: (accessory as any).department ? { name: (accessory as any).department.name } : null,
+    location: (accessory as any).departmentLocation
+      ? { name: (accessory as any).departmentLocation.name }
+      : null,
+    department: (accessory as any).department
+      ? { name: (accessory as any).department.name }
+      : null,
     unitsAllocated,
     createdAt: accessory.createdAt,
     updatedAt: accessory.updatedAt,
     alertEmail: accessory.alertEmail,
-    inventory: (accessory as any).inventory ? { name: (accessory as any).inventory.name } : null,
+    inventory: (accessory as any).inventory
+      ? { name: (accessory as any).inventory.name }
+      : null,
     poNumber: accessory.poNumber || null,
     reorderPoint,
-    supplier: (accessory as any).supplier ? { name: (accessory as any).supplier.name } : null,
+    supplier: (accessory as any).supplier
+      ? { name: (accessory as any).supplier.name }
+      : null,
     totalQuantity,
     auditLogs: Array.isArray(auditLogsResult?.data) ? auditLogsResult.data : [],
-    usedBy: (accessory.userItems as any[]) ?? [],
+    usedBy,
     belowReorderPoint,
   } as EnhancedAccessoryType;
-} 
+}
