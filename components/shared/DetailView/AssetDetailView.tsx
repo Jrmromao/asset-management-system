@@ -57,7 +57,6 @@ import { EnhancedAssetType } from "@/types/asset";
 import { ActionButtons } from "./ActionButtons";
 import CO2Dialog from "@/components/dialogs/CO2Dialog";
 import { CO2CalculationResult } from "@/types/co2";
-import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { DataTable } from "@/components/tables/DataTable/data-table";
 import { auditLogColumns } from "@/components/tables/AuditLogColumns";
@@ -77,6 +76,8 @@ import { useUserQuery } from "@/hooks/queries/useUserQuery";
 import { useQueryClient } from "@tanstack/react-query";
 import { DepreciationCalculator } from "@/components/depreciation/DepreciationCalculator";
 import { updateAssetDepreciation } from "@/lib/actions/depreciation.actions";
+import { toast } from "react-hot-toast" 
+
 
 // Helper component for individual detail items to reduce repetition
 const DetailItem: React.FC<{
@@ -102,33 +103,20 @@ const NotesSection: React.FC<{
   const [notes, setNotes] = useState(currentNotes || "");
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const { toast } = useToast();
 
   const handleSave = async () => {
     setIsSaving(true);
     try {
       const response = await updateAssetNotes(assetId, notes);
-
       if (response.success) {
-        toast({
-          title: "Notes saved",
-          description: "Asset notes have been updated successfully.",
-        });
+        toast.success("Asset notes have been updated successfully.");
         setIsEditing(false);
-        // Call the callback to update the parent component
         onNotesUpdate?.(notes);
       } else {
-        throw new Error(response.error || "Failed to save notes");
+        toast.error(response.error || "Failed to update notes.");
       }
     } catch (error) {
-      toast({
-        title: "Error",
-        description:
-          error instanceof Error
-            ? error.message
-            : "Failed to save notes. Please try again.",
-        variant: "destructive",
-      });
+      toast.error("An error occurred while saving notes.");
     } finally {
       setIsSaving(false);
     }
@@ -221,7 +209,6 @@ export const AssetDetailView: React.FC<{
   categoryName,
 }) => {
   const router = useRouter();
-  const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isPending, startTransition] = useTransition();
   const [isCo2DialogOpen, setCo2DialogOpen] = useState(false);
@@ -232,9 +219,7 @@ export const AssetDetailView: React.FC<{
   const setEditOpen = setEditOpenProp || setInternalEditOpen;
   const [isEditingStatus, setIsEditingStatus] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState(asset.statusLabel?.id);
-  const { statusLabels, isLoading: isLoadingStatusLabels } =
-    useStatusLabelsQuery();
-  const { toast: statusToast } = useToast();
+  const { statusLabels, isLoading: isLoadingStatusLabels } = useStatusLabelsQuery();
   const [isSavingStatus, setIsSavingStatus] = useState(false);
   const [isEditingUser, setIsEditingUser] = useState(false);
   const [selectedUser, setSelectedUser] = useState(asset.userId || "");
@@ -324,11 +309,7 @@ export const AssetDetailView: React.FC<{
                 setIsNewCo2Calculation(false);
                 setCo2DialogOpen(true);
               } catch (e) {
-                toast({
-                  title: "Could not load CO2 details",
-                  description: "There was an error loading this calculation.",
-                  variant: "destructive",
-                });
+                toast.error("Could not load CO2 details");
               }
             }}
           >
@@ -341,25 +322,38 @@ export const AssetDetailView: React.FC<{
   );
 
   const handleCalculateCo2 = () => {
+    if (!asset.model || !asset.model.manufacturer) {
+      toast.error(
+        <span>
+          <b>Missing Model or Manufacturer</b><br />
+          Please assign both a model and a manufacturer to this asset before calculating CO2.
+        </span>
+      );
+      return;
+    }
     startTransition(async () => {
-      // Test with API route instead of server action
-      const response = await fetch(`/api/co2/calculate?t=${Date.now()}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ assetId: asset.id }),
-      });
-      const result = await response.json();
-
-      if (result.success && "data" in result && result.data) {
-        setCo2Result(result.data as CO2CalculationResult);
-        setIsNewCo2Calculation(true);
-        setCo2DialogOpen(true);
-      } else {
-        toast({
-          title: "CO2 Calculation Failed",
-          description: result.error || "An unknown error occurred.",
-          variant: "destructive",
+      try {
+        const response = await fetch(`/api/co2/calculate?t=${Date.now()}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ assetId: asset.id }),
         });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+
+        if (result.success && "data" in result && result.data) {
+          setCo2Result(result.data as CO2CalculationResult);
+          setIsNewCo2Calculation(true);
+          setCo2DialogOpen(true);
+        } else {
+          toast.error(result.error || "CO2 Calculation Failed");
+        }
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : "An unknown error occurred.");
       }
     });
   };
@@ -419,12 +413,7 @@ export const AssetDetailView: React.FC<{
       setCo2DialogOpen(true);
     } catch (error) {
       console.error("Error parsing CO2 details:", error);
-      toast({
-        title: "Could not parse CO2 details",
-        description:
-          "There was an error loading the CO2 data. Please try recalculating.",
-        variant: "destructive",
-      });
+      toast.error("Could not parse CO2 details");
     }
   };
 
@@ -433,24 +422,13 @@ export const AssetDetailView: React.FC<{
     try {
       const result = await updateAssetDepreciation(asset.id);
       if (result.success) {
-        toast({
-          title: "Depreciation Updated",
-          description: "Asset depreciation has been recalculated successfully.",
-        });
+        toast.success("Asset depreciation has been recalculated successfully.");
         queryClient.invalidateQueries({ queryKey: ["asset", asset.id] });
       } else {
-        toast({
-          title: "Error",
-          description: result.error || "Failed to calculate depreciation.",
-          variant: "destructive",
-        });
+        toast.error(result.error || "Failed to calculate depreciation.");
       }
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to calculate depreciation.",
-        variant: "destructive",
-      });
+      toast.error("Failed to calculate depreciation.");
     } finally {
       setIsCalculatingDepreciation(false);
     }
@@ -530,7 +508,7 @@ export const AssetDetailView: React.FC<{
                       locationId: asset.departmentLocation?.id ?? undefined,
                       formTemplateId: asset.formTemplate?.id ?? undefined,
                       templateValues: asset.formValues?.[0]?.values ?? {},
-                      purchaseOrderId: asset.purchaseOrderNumber ?? undefined,
+                      purchaseOrderId: asset.purchaseOrder?.id ?? undefined,
                       energyConsumption: asset.energyConsumption ?? undefined,
                       expectedLifespan: asset.expectedLifespan ?? undefined,
                       endOfLifePlan: asset.endOfLifePlan ?? undefined,
@@ -538,29 +516,16 @@ export const AssetDetailView: React.FC<{
                       warrantyEndDate: asset.warrantyEndDate ?? undefined,
                     });
                     if (res.success) {
-                      toast({
-                        title: "Assignment updated!",
-                        description:
-                          "Asset assigned user updated successfully.",
-                      });
+                      toast.success("Asset assigned user updated successfully.");
                       setIsEditingUser(false);
                       queryClient.invalidateQueries({
                         queryKey: ["asset", asset.id],
                       });
                     } else {
-                      toast({
-                        title: "Error",
-                        description:
-                          res.error || "Failed to update assignment.",
-                        variant: "destructive",
-                      });
+                      toast.error(res.error || "Failed to update assignment.");
                     }
                   } catch (e) {
-                    toast({
-                      title: "Error",
-                      description: "Failed to update assignment.",
-                      variant: "destructive",
-                    });
+                    toast.error("Failed to update assignment.");
                   } finally {
                     setIsSavingUser(false);
                   }
@@ -635,7 +600,7 @@ export const AssetDetailView: React.FC<{
       <DetailItem
         icon={<Receipt className="h-4 w-4" />}
         label="PO Number"
-        value={asset.purchaseOrderNumber}
+        value={asset.purchaseOrder?.poNumber}
       />
     </>
   );
@@ -737,7 +702,7 @@ export const AssetDetailView: React.FC<{
                               ? asset.formValues?.[0]?.values
                               : undefined,
                             purchaseOrderId:
-                              asset.purchaseOrderNumber ?? undefined,
+                              asset.purchaseOrder?.id ?? undefined,
                             energyConsumption:
                               asset.energyConsumption ?? undefined,
                             expectedLifespan:
@@ -751,29 +716,16 @@ export const AssetDetailView: React.FC<{
                             updatePayload,
                           );
                           if (res.success) {
-                            toast({
-                              title: "Status updated!",
-                              description:
-                                "Asset status was updated successfully.",
-                            });
+                            toast.success("Asset status was updated successfully.");
                             setIsEditingStatus(false);
                             queryClient.invalidateQueries({
                               queryKey: ["asset", asset.id],
                             });
                           } else {
-                            toast({
-                              title: "Error",
-                              description:
-                                res.error || "Failed to update status.",
-                              variant: "destructive",
-                            });
+                            toast.error(res.error || "Failed to update status.");
                           }
                         } catch (e) {
-                          toast({
-                            title: "Error",
-                            description: "Failed to update status.",
-                            variant: "destructive",
-                          });
+                          toast.error("Failed to update status.");
                         } finally {
                           setIsSavingStatus(false);
                         }
@@ -1187,6 +1139,8 @@ export const AssetDetailView: React.FC<{
           isNewCalculation={isNewCo2Calculation}
           onSave={() => {
             setCo2DialogOpen(false);
+            // Invalidate React Query cache to refetch updated asset data
+            queryClient.invalidateQueries({ queryKey: ["asset", asset.id] });
             router.refresh();
           }}
         />

@@ -911,20 +911,6 @@ const AssetForm = ({ id, isUpdate = false, onSuccess, onError, setLoading, setSa
                             isLoading={!isUpdate ? assetNameValidation.isValidating : false}
                             disabled={isUpdate}
                           />
-                          {isUpdate && (
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <span className="absolute right-3 top-1/2 -translate-y-1/2 cursor-default text-muted-foreground">
-                                    <Lock className="h-4 w-4" aria-label="Locked" />
-                                  </span>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  Asset Title cannot be changed after creation.
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          )}
                         </div>
                         <div className="relative">
                           <CustomInput
@@ -938,20 +924,6 @@ const AssetForm = ({ id, isUpdate = false, onSuccess, onError, setLoading, setSa
                             isLoading={!isUpdate ? assetTagValidation.isValidating : false}
                             disabled={isUpdate}
                           />
-                          {isUpdate && (
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <span className="absolute right-3 top-1/2 -translate-y-1/2 cursor-default text-muted-foreground">
-                                    <Lock className="h-4 w-4" aria-label="Locked" />
-                                  </span>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  Asset Tag cannot be changed after creation.
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          )}
                         </div>
 
                         <SelectWithButton
@@ -1123,20 +1095,6 @@ const AssetForm = ({ id, isUpdate = false, onSuccess, onError, setLoading, setSa
                                 isLoading={!isUpdate ? assetNameValidation.isValidating : false}
                                 disabled={isUpdate}
                               />
-                              {isUpdate && (
-                                <TooltipProvider>
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <span className="absolute right-3 top-1/2 -translate-y-1/2 cursor-default text-muted-foreground">
-                                        <Lock className="h-4 w-4" aria-label="Locked" />
-                                      </span>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                      Asset Title cannot be changed after creation.
-                                    </TooltipContent>
-                                  </Tooltip>
-                                </TooltipProvider>
-                              )}
                             </div>
                             <div className="relative">
                               <CustomInput
@@ -1150,20 +1108,6 @@ const AssetForm = ({ id, isUpdate = false, onSuccess, onError, setLoading, setSa
                                 isLoading={!isUpdate ? assetTagValidation.isValidating : false}
                                 disabled={isUpdate}
                               />
-                              {isUpdate && (
-                                <TooltipProvider>
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <span className="absolute right-3 top-1/2 -translate-y-1/2 cursor-default text-muted-foreground">
-                                        <Lock className="h-4 w-4" aria-label="Locked" />
-                                      </span>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                      Asset Tag cannot be changed after creation.
-                                    </TooltipContent>
-                                  </Tooltip>
-                                </TooltipProvider>
-                              )}
                             </div>
 
                             <SelectWithButton

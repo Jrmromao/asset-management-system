@@ -42,10 +42,9 @@ export interface EnhancedAssetType {
   assetHistory?: any[];
   user?: any;
   supplier?: any;
-  purchaseOrder?: any;
+  purchaseOrder?: { id: string; poNumber: string } | null;
   auditLogs?: any[];
   price?: number;
-  purchaseOrderNumber?: string;
   purchaseCost?: number;
   co2Score?: { co2e: number; units: string };
   belowReorderPoint?: boolean;

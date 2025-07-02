@@ -71,7 +71,7 @@ export interface EnhancedAssetType {
   warrantyEndDate?: Date;
   notes?: string;
   supplier?: { name: string } | null;
-  purchaseOrderNumber?: string | null;
+  purchaseOrder?: { id: string; poNumber: string } | null;
   category: { name: string };
   statusLabel: StatusLabel | null;
   user?: { name: string | null } | null;

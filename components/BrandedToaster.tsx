@@ -32,44 +32,44 @@ export default function BrandedToaster() {
     <Toaster
       position="top-center"
       toastOptions={{
-        duration: 4000,
+        duration: 3000,
         style: {
           borderRadius: '10px',
           fontFamily: 'Inter, sans-serif',
-          boxShadow: '0 4px 24px rgba(0,0,0,0.15)',
+          boxShadow: '0 4px 24px rgba(0,0,0,0.10)',
+          background: 'white',
+          color: 'black',
+          padding: '0',
+          minWidth: 'unset',
         },
       }}
     >
-      {(t) => {
-        // Map 'custom' to 'warning' if you use toast.custom for warnings
-        const type = t.type === 'custom' ? 'warning' : t.type === 'blank' ? 'blank' : t.type;
-        const { bg, icon } = toastTypeStyles[type] || toastTypeStyles.blank;
-        return (
-          <ToastBar toast={t}>
-            {({ message }) => (
-              <div
-                className={`flex items-center gap-3 px-5 py-3 min-w-[220px] text-white ${bg} shadow-lg`}
-                style={{
-                  borderRadius: 10,
-                  fontWeight: 500,
-                  fontSize: 16,
-                }}
-              >
-                {icon}
-                <span>{message}</span>
-                {t.type !== 'loading' && (
-                  <button
-                    className="ml-auto text-white/70 hover:text-white"
-                    onClick={() => toast.dismiss(t.id)}
-                  >
-                    ×
-                  </button>
-                )}
-              </div>
-            )}
-          </ToastBar>
-        );
-      }}
+      {(t) => (
+        <ToastBar toast={t}>
+          {({ icon, message }) => (
+            <div
+              className="flex items-center gap-2 px-4 py-3"
+              style={{
+                background: 'white',
+                borderRadius: 10,
+                fontWeight: 500,
+                fontSize: 16,
+                color: 'black',
+                boxShadow: '0 4px 24px rgba(0,0,0,0.10)',
+              }}
+            >
+              {t.type === 'success' ? (
+                <CheckCircle className="text-green-500 w-5 h-5" />
+              ) : t.type === 'error' ? (
+                <XCircle className="text-red-500 w-5 h-5" />
+              ) : (
+                icon
+              )}
+              <span>{message}</span>
+            </div>
+          )}
+        </ToastBar>
+      )}
     </Toaster>
   );
 } 

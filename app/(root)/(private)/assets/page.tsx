@@ -188,11 +188,6 @@ const Assets = () => {
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = useState({});
 
-  // Memoized columns to prevent unnecessary re-renders
-  const handleCo2Update = useCallback((assetId: string, newCo2Record: any) => {
-    // No need to update localAssets here, as we're using assets directly
-  }, []);
-
   const handleView = useCallback(
     (id: string) => {
       startTransition(() => {
@@ -220,10 +215,6 @@ const Assets = () => {
     [handleView],
   );
 
-  const columns = useMemo(() => {
-    return assetColumns({ onDelete, onView, onCo2Update: handleCo2Update }) as ColumnDef<Asset>[];
-  }, [onDelete, onView, handleCo2Update]);
-
   // Pagination handler
   const handlePaginationChange = useCallback(
     ({ pageIndex: newPageIndex, pageSize: newPageSize }: { pageIndex: number; pageSize: number }) => {
@@ -246,6 +237,16 @@ const Assets = () => {
   };
 
   const queryClient = useQueryClient();
+
+  // Memoized columns to prevent unnecessary re-renders
+  const handleCo2Update = useCallback((assetId: string, newCo2Record: any) => {
+    // Invalidate React Query cache to refetch updated asset data
+    queryClient.invalidateQueries({ queryKey: ["assets"] });
+  }, [queryClient]);
+
+  const columns = useMemo(() => {
+    return assetColumns({ onDelete, onView, onCo2Update: handleCo2Update }) as ColumnDef<Asset>[];
+  }, [onDelete, onView, handleCo2Update]);
 
   const handleBulkImport = async (data: any[]) => {
     try {

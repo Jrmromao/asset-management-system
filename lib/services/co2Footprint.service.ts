@@ -123,6 +123,7 @@ export class CO2FootprintService {
           },
           category: true,
           department: true,
+          company: true,
         },
       });
 
@@ -141,8 +142,19 @@ export class CO2FootprintService {
         };
       }
 
+      if (!asset.company?.id) {
+        console.error(
+          `❌ Asset company missing for: ${asset.name}`,
+        );
+        return {
+          success: false,
+          error: "Asset company not found",
+        };
+      }
+
       // Calculate CO2 using consistency service for deterministic results
       const co2Result = await CO2ConsistencyService.calculateConsistentCO2(
+        asset.company.id,
         asset.name,
         asset.model.manufacturer.name,
         asset.model.name,
