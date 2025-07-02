@@ -27,31 +27,33 @@ export const SelectWithButton = ({
   isPending = false,
   required = false,
 }: SelectWithButtonProps) => (
-  <div className="flex gap-2 items-start">
-    <div className="flex-1">
-      <CustomSelect
-        name={name}
-        required={required}
-        label={label}
-        control={form.control}
-        data={data}
-        placeholder={placeholder}
-        onChange={onChange}
-      />
-    </div>
-    <div className="flex pt-5">
-      <Button
-        type="button"
-        variant="outline"
-        onClick={(e) => {
-          e.preventDefault(); // Prevent form submission
-          onNew();
-        }}
-        className="h-10 z-10"
-        // disabled={isPending}
-      >
-        <Plus className="h-4 w-4" />
-      </Button>
+  <div className="w-full">
+    <div className="grid grid-cols-[1fr_auto] gap-2 items-end">
+      <div className="min-w-0">
+        <CustomSelect
+          name={name}
+          required={required}
+          label={label}
+          control={form.control}
+          data={data}
+          placeholder={placeholder}
+          onChange={onChange}
+        />
+      </div>
+      <div className="pb-0">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={(e) => {
+            e.preventDefault(); // Prevent form submission
+            onNew();
+          }}
+          className="h-10 w-10 p-0 flex-shrink-0"
+          // disabled={isPending}
+        >
+          <Plus className="h-4 w-4" />
+        </Button>
+      </div>
     </div>
   </div>
 );

@@ -72,6 +72,9 @@ import {
 } from "@/lib/schemas/schema-utils";
 import { getStatusLocationSection } from "@/components/forms/formSections";
 import { useSupplierUIStore } from "@/lib/stores/useSupplierUIStore";
+import { usePurchaseOrderUIStore } from "@/lib/stores/usePurchaseOrderUIStore";
+import { usePurchaseOrderQuery } from "@/hooks/queries/usePurchaseOrderQuery";
+import { PurchaseOrderDialog } from "../dialogs/PurchaseOrderDialog";
 import { findById as findLicenseById } from "@/lib/actions/license.actions";
 
 type LicenseFormValues = z.infer<typeof licenseSchema>;
@@ -187,6 +190,8 @@ const LicenseForm: React.FC<LicenseFormProps> = ({
   const { onOpen: openInventory } = useInventoryUIStore();
   const { onOpen: openLocation } = useLocationUIStore();
   const { onOpen: openSupplier } = useSupplierUIStore();
+  const { onOpen: openPurchaseOrder } = usePurchaseOrderUIStore();
+  const { items: purchaseOrders } = usePurchaseOrderQuery()();
 
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -492,8 +497,18 @@ const LicenseForm: React.FC<LicenseFormProps> = ({
   return (
     <FormContainer
       form={form}
-      requiredFields={isUpdate ? [] : getRequiredFieldsList(licenseSchema)}
-      requiredFieldsCount={isUpdate ? 0 : getRequiredFieldCount(licenseSchema)}
+      requiredFields={isUpdate ? [] : [
+        "licenseName",
+        "seats", 
+        "minSeatsAlert",
+        "licensedEmail",
+        "statusLabelId",
+        "alertRenewalDays",
+        "departmentId",
+        "inventoryId", 
+        "locationId"
+      ]}
+      requiredFieldsCount={isUpdate ? 0 : 9}
       hideProgress={isUpdate}
     >
       <Form {...form}>
@@ -517,6 +532,7 @@ const LicenseForm: React.FC<LicenseFormProps> = ({
                       : "col-span-12 lg:col-span-8 space-y-6"
                   }
                 >
+                  <PurchaseOrderDialog />
                   {/* License Information - Always Visible */}
                   <Card className={"bg-white"}>
                     <CardContent className="divide-y divide-slate-100">
@@ -599,11 +615,17 @@ const LicenseForm: React.FC<LicenseFormProps> = ({
                           />
                         </div>
                         <div className="grid grid-cols-2 gap-6">
-                          <CustomInput
+                          <SelectWithButton
                             name="poNumber"
-                            label="PO Number"
-                            control={form.control}
-                            placeholder="Enter purchase order number"
+                            form={form}
+                            label="Purchase Order"
+                            data={purchaseOrders.map((po) => ({
+                              id: po.poNumber,
+                              name: po.poNumber,
+                            }))}
+                            onNew={openPurchaseOrder}
+                            placeholder="Select a PO"
+                            isPending={isPending}
                           />
                           <SelectWithButton
                             name="supplierId"
@@ -856,17 +878,29 @@ const LicenseForm: React.FC<LicenseFormProps> = ({
           </div>
 
           {/* Action Footer */}
-          {!isUpdate && (
+          {isUpdate ? (
+            <div className="max-w-[1200px] mx-auto px-4 py-6">
+              <div className="flex justify-end gap-4 pt-6 border-t">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => router.back()}
+                  disabled={isPending}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isPending}
+                  className="min-w-[120px]"
+                >
+                  {isPending ? "Saving..." : "Save Changes"}
+                </Button>
+              </div>
+            </div>
+          ) : (
             <ActionFooter form={form} isPending={isPending} router={router} />
           )}
-
-          <button
-            className="btn btn-primary px-4 py-2 rounded font-medium"
-            form="license-form"
-            type="submit"
-          >
-            Save
-          </button>
         </form>
       </Form>
     </FormContainer>

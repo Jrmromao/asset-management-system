@@ -5,6 +5,7 @@ import {
   FormField,
   FormLabel,
   FormMessage,
+  FormItem,
 } from "@/components/ui/form";
 import {
   Select,
@@ -109,37 +110,38 @@ const CustomSelect = <T extends { id?: string; name?: string }>({
         };
 
         return (
-          <div className="space-y-1">
-            {renderLabel()}
-            <div className="flex w-full flex-col gap-1">
-              <FormControl>
-                <Select
-                  onValueChange={handleValueChange}
-                  value={field.value || ""}
-                  disabled={disabled || isLoading}
+          <FormItem>
+            <FormLabel>
+              {label}
+              {required && <span className="text-red-500 ml-1">*</span>}
+            </FormLabel>
+            <FormControl>
+              <Select
+                onValueChange={handleValueChange}
+                value={field.value || ""}
+                disabled={disabled || isLoading}
+              >
+                <SelectTrigger
+                  className={`w-full input-class ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
                 >
-                  <SelectTrigger
-                    className={`w-full input-class ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
-                  >
-                    <div className={`${field.value ? "" : "text-gray-600"}`}>
-                      <SelectValue placeholder={placeholder} />
-                    </div>
-                  </SelectTrigger>
-                  <SelectContent className="w-full bg-white">
-                    <SelectGroup>
-                      {data?.map((option) => (
-                        <SelectItem key={option.id} value={option.id || ""}>
-                          {option.name ||
-                            `${(option as any).firstName} ${(option as any).lastName}`}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-              </FormControl>
-              <FormMessage className="text-sm text-red-700" />
-            </div>
-          </div>
+                  <div className={`${field.value ? "" : "text-gray-600"}`}>
+                    <SelectValue placeholder={placeholder} />
+                  </div>
+                </SelectTrigger>
+                <SelectContent className="w-full bg-white">
+                  <SelectGroup>
+                    {data?.map((option) => (
+                      <SelectItem key={option.id} value={option.id || ""}>
+                        {option.name ||
+                          `${(option as any).firstName} ${(option as any).lastName}`}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </FormControl>
+            <FormMessage className="text-sm text-red-700" />
+          </FormItem>
         );
       }}
     />

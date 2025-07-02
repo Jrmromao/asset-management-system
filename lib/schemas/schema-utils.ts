@@ -12,7 +12,16 @@ export const isRequiredField = (field: unknown): field is z.ZodTypeAny => {
     return checks.some((check) => check.kind === "min" && check.value > 0);
   }
 
-  // Handle other required types
+  // Check if it's a string with refine validation (like seats, minSeatsAlert, etc.)
+  if (field instanceof z.ZodEffects) {
+    const innerType = field._def.schema;
+    if (innerType instanceof z.ZodString) {
+      // If it's a string with refine, consider it required
+      return true;
+    }
+  }
+
+  // Handle other required types (like email validation)
   return true;
 };
 
