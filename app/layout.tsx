@@ -5,7 +5,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import QueryProvider from "@/components/providers/QueryClientProvider";
 import { UserProvider } from "@/components/providers/UserContext";
 import ClientLayout from "@/components/layout/ClientLayout";
-import BrandedToaster from '@/components/BrandedToaster';
+import BrandedToaster from "@/components/BrandedToaster";
 
 export const dynamic = "force-dynamic";
 
@@ -17,8 +17,9 @@ const iBMPlexSerif = IBM_Plex_Serif({
 });
 
 export const metadata = {
-  title: "Asset Management Pro",
-  description: "A modern asset management solution for your business.",
+  title: "EcoKeepr",
+  description:
+    "EcoKeepr is a modern asset management solution for your business.",
   icons: {
     icon: "/icons/logo.svg",
   },
