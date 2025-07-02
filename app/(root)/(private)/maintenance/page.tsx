@@ -234,7 +234,7 @@ export default function MaintenancePage() {
 
         <Card className="dark:bg-gray-800 border-gray-200 dark:border-gray-700">
           <CardContent className="p-0">
-            <DataTable columns={columns} data={[]} isLoading={true} />
+            <DataTable pageIndex={0} pageSize={10} total={0} onPaginationChange={() => {}} columns={columns} data={[]} isLoading={true} />
           </CardContent>
         </Card>
       </div>
@@ -327,6 +327,10 @@ export default function MaintenancePage() {
           <Card className="dark:bg-gray-800 border-gray-200 dark:border-gray-700">
             <CardContent className="p-0">
               <DataTable
+                pageIndex={0}
+                pageSize={10}
+                total={maintenance.length}
+                onPaginationChange={() => {}}
                 columns={columns}
                 data={maintenance}
                 isLoading={isLoading || isPending}

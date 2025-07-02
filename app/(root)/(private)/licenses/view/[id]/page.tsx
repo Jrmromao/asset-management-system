@@ -3,7 +3,8 @@
 import { useEffect, useState, use } from "react";
 import { DetailView } from "@/components/shared/DetailView/DetailView";
 import Link from "next/link";
-import { toast } from "sonner";
+// import { toast } from "sonner";
+import toast from "react-hot-toast";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -21,8 +22,21 @@ import { sleep, sumSeatsAssigned } from "@/lib/utils";
 import DetailViewSkeleton from "@/components/shared/DetailView/DetailViewSkeleton";
 import { Badge } from "@/components/ui/badge";
 import Image from "next/image";
-import { Users, AlertTriangle, Factory, Building2, Mail, Phone, Globe, FileText, FileImage, FileArchive, File } from "lucide-react";
+import {
+  Users,
+  AlertTriangle,
+  Factory,
+  Building2,
+  Mail,
+  Phone,
+  Globe,
+  FileText,
+  FileImage,
+  FileArchive,
+  File,
+} from "lucide-react";
 import { LicenseHeader } from "@/components/LicenseHeader";
+import EditLicenseDrawer from "@/components/forms/license/EditLicenseDrawer";
 
 interface AssetPageProps {
   params: Promise<{
@@ -80,7 +94,7 @@ interface LoadingStates {
 }
 
 function getFileIcon(fileName: string) {
-  const ext = fileName.split('.').pop()?.toLowerCase();
+  const ext = fileName.split(".").pop()?.toLowerCase();
   switch (ext) {
     case "pdf":
       return <FileText className="text-red-500 w-6 h-6" />;
@@ -112,6 +126,7 @@ export default function View({ params }: AssetPageProps) {
     isAssigning: false,
     isRefreshing: false,
   });
+  const [isEditDrawerOpen, setEditDrawerOpen] = useState(false);
 
   const updateLoadingState = (
     key: keyof Omit<LoadingStates, "isCheckingIn">,
@@ -146,39 +161,9 @@ export default function View({ params }: AssetPageProps) {
         return;
       }
 
-      const foundLicense = response.data;
-      if (!foundLicense) return;
+      if (!response.data) return;
 
-      setLicense({
-        id: foundLicense?.id!,
-        name: foundLicense?.name ?? "",
-        co2Score: 23,
-        statusLabel: {
-          name: foundLicense?.statusLabel?.name ?? "",
-          colorCode: foundLicense?.statusLabel?.colorCode ?? "#000000",
-        },
-        location: {
-          name: foundLicense?.departmentLocation?.name ?? "",
-        },
-        department: {
-          name: foundLicense?.department?.name ?? "",
-        },
-        purchaseDate: foundLicense?.purchaseDate ?? new Date(),
-        renewalDate: foundLicense?.renewalDate ?? new Date(),
-        inventory: {
-          name: foundLicense?.inventory?.name ?? "",
-        },
-        auditLogs: foundLicense?.auditLogs ?? [],
-        seats: foundLicense?.seats ?? 0,
-        seatsAllocated: sumSeatsAssigned(foundLicense?.users ?? []),
-        reorderPoint: foundLicense?.minSeatsAlert ?? 0,
-        seatsAlert: foundLicense?.licensedEmail ?? "",
-        supplier: foundLicense?.supplier ?? "",
-        poNumber: foundLicense?.poNumber ?? "",
-        usedBy: foundLicense?.userLicenses ?? [],
-        Manufacturer: (foundLicense as any)?.Manufacturer ?? undefined,
-        licenseFiles: (foundLicense as any)?.licenseFiles ?? [],
-      });
+      setLicense(response.data); // Use the server-shaped object directly
     } catch (error) {
       console.error("Error fetching license:", error);
       setError("Failed to fetch license details");
@@ -239,12 +224,19 @@ export default function View({ params }: AssetPageProps) {
       removeCheckingInId(userLicenseId);
     }
   };
+
+  const handleCheckOut = async (...args: any[]) => {
+    // ... your checkout logic ...
+    // After successful checkout:
+    await fetcdData(true);
+  };
+
   const handleAction = (action: "archive" | "duplicate" | "edit" | "print") => {
     const actions: Record<typeof action, () => void> = {
-      archive: () => toast.info("Archive action not implemented"),
-      duplicate: () => toast.info("Duplicate action not implemented"),
-      edit: () => toast.info("Edit action not implemented", { id: "edit" }),
-      print: () => toast.info("Print label action not implemented"),
+      archive: () => toast.error("Archive action not implemented"),
+      duplicate: () => toast.error("Duplicate action not implemented"),
+      edit: () => setEditDrawerOpen(true),
+      print: () => toast.error("Print label action not implemented"),
     };
 
     actions[action]();
@@ -259,8 +251,7 @@ export default function View({ params }: AssetPageProps) {
           !!license &&
           typeof license.reorderPoint === "number" &&
           license.reorderPoint > 0 &&
-          license.seatsAllocated > 0 &&
-          license.seatsAllocated <= license.reorderPoint
+          (license.seats - license.seatsAllocated) < license.reorderPoint
         }
       />
     ),
@@ -321,17 +312,49 @@ export default function View({ params }: AssetPageProps) {
       // Supplier details
       {
         label: "Supplier",
-        value: (typeof license?.supplier === 'object' && license?.supplier?.name) ? (
-          <div className="flex flex-col gap-1">
-            <span className="flex items-center gap-2"><Building2 className="h-4 w-4 text-blue-700" />{license.supplier.name}</span>
-            {"contactName" in license.supplier && license.supplier.contactName && <span className="flex items-center gap-2"><Mail className="h-4 w-4 text-blue-700" />{license.supplier.contactName}</span>}
-            {"email" in license.supplier && license.supplier.email && <span className="flex items-center gap-2"><Mail className="h-4 w-4 text-blue-700" />{license.supplier.email}</span>}
-            {"phoneNum" in license.supplier && license.supplier.phoneNum && <span className="flex items-center gap-2"><Phone className="h-4 w-4 text-blue-700" />{license.supplier.phoneNum}</span>}
-            {"url" in license.supplier && license.supplier.url && <span className="flex items-center gap-2"><Globe className="h-4 w-4 text-blue-700" />
-              <a href={license.supplier.url} target="_blank" rel="noopener noreferrer" className="underline text-blue-700">{license.supplier.url}</a>
-            </span>}
-          </div>
-        ) : "",
+        value:
+          typeof license?.supplier === "object" && license?.supplier?.name ? (
+            <div className="flex flex-col gap-1">
+              <span className="flex items-center gap-2">
+                <Building2 className="h-4 w-4 text-blue-700" />
+                {license.supplier.name}
+              </span>
+              {"contactName" in license.supplier &&
+                license.supplier.contactName && (
+                  <span className="flex items-center gap-2">
+                    <Mail className="h-4 w-4 text-blue-700" />
+                    {license.supplier.contactName}
+                  </span>
+                )}
+              {"email" in license.supplier && license.supplier.email && (
+                <span className="flex items-center gap-2">
+                  <Mail className="h-4 w-4 text-blue-700" />
+                  {license.supplier.email}
+                </span>
+              )}
+              {"phoneNum" in license.supplier && license.supplier.phoneNum && (
+                <span className="flex items-center gap-2">
+                  <Phone className="h-4 w-4 text-blue-700" />
+                  {license.supplier.phoneNum}
+                </span>
+              )}
+              {"url" in license.supplier && license.supplier.url && (
+                <span className="flex items-center gap-2">
+                  <Globe className="h-4 w-4 text-blue-700" />
+                  <a
+                    href={license.supplier.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline text-blue-700"
+                  >
+                    {license.supplier.url}
+                  </a>
+                </span>
+              )}
+            </div>
+          ) : (
+            ""
+          ),
         type: "text",
       },
       // Manufacturer details
@@ -339,17 +362,55 @@ export default function View({ params }: AssetPageProps) {
         label: "Manufacturer",
         value: license?.Manufacturer?.name ? (
           <div className="flex flex-col gap-1">
-            <span className="flex items-center gap-2"><Factory className="h-4 w-4 text-blue-700" />{license.Manufacturer.name}</span>
-            {"url" in license.Manufacturer && license.Manufacturer.url && <span className="flex items-center gap-2"><Globe className="h-4 w-4 text-blue-700" />
-              <a href={license.Manufacturer.url} target="_blank" rel="noopener noreferrer" className="underline text-blue-700">{license.Manufacturer.url}</a>
-            </span>}
-            {"supportUrl" in license.Manufacturer && license.Manufacturer.supportUrl && <span className="flex items-center gap-2"><Globe className="h-4 w-4 text-blue-700" />
-              <a href={license.Manufacturer.supportUrl} target="_blank" rel="noopener noreferrer" className="underline text-blue-700">Support</a>
-            </span>}
-            {"supportPhone" in license.Manufacturer && license.Manufacturer.supportPhone && <span className="flex items-center gap-2"><Phone className="h-4 w-4 text-blue-700" />{license.Manufacturer.supportPhone}</span>}
-            {"supportEmail" in license.Manufacturer && license.Manufacturer.supportEmail && <span className="flex items-center gap-2"><Mail className="h-4 w-4 text-blue-700" />{license.Manufacturer.supportEmail}</span>}
+            <span className="flex items-center gap-2">
+              <Factory className="h-4 w-4 text-blue-700" />
+              {license.Manufacturer.name}
+            </span>
+            {"url" in license.Manufacturer && license.Manufacturer.url && (
+              <span className="flex items-center gap-2">
+                <Globe className="h-4 w-4 text-blue-700" />
+                <a
+                  href={license.Manufacturer.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline text-blue-700"
+                >
+                  {license.Manufacturer.url}
+                </a>
+              </span>
+            )}
+            {"supportUrl" in license.Manufacturer &&
+              license.Manufacturer.supportUrl && (
+                <span className="flex items-center gap-2">
+                  <Globe className="h-4 w-4 text-blue-700" />
+                  <a
+                    href={license.Manufacturer.supportUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline text-blue-700"
+                  >
+                    Support
+                  </a>
+                </span>
+              )}
+            {"supportPhone" in license.Manufacturer &&
+              license.Manufacturer.supportPhone && (
+                <span className="flex items-center gap-2">
+                  <Phone className="h-4 w-4 text-blue-700" />
+                  {license.Manufacturer.supportPhone}
+                </span>
+              )}
+            {"supportEmail" in license.Manufacturer &&
+              license.Manufacturer.supportEmail && (
+                <span className="flex items-center gap-2">
+                  <Mail className="h-4 w-4 text-blue-700" />
+                  {license.Manufacturer.supportEmail}
+                </span>
+              )}
           </div>
-        ) : "",
+        ) : (
+          ""
+        ),
         type: "text",
       },
       { label: "PO Number", value: license?.poNumber ?? "", type: "text" },
@@ -398,8 +459,14 @@ export default function View({ params }: AssetPageProps) {
       {license ? (
         <>
           <DetailView {...detailViewProps} />
-          {/* Debug: Render full license object */}
-          {/* <pre style={{ background: '#f8f8f8', padding: 12, fontSize: 12, borderRadius: 4, margin: '16px 0' }}>{JSON.stringify(license, null, 2)}</pre> */}
+          <EditLicenseDrawer
+            licenseId={license.id}
+            open={isEditDrawerOpen}
+            onClose={() => setEditDrawerOpen(false)}
+            licenseName={license.name}
+            licenseStatus={license.statusLabel?.name}
+            licenseStatusColor={license.statusLabel?.colorCode}
+          />
         </>
       ) : (
         <DetailViewSkeleton />
@@ -422,7 +489,9 @@ export default function View({ params }: AssetPageProps) {
               }
               return checkout(data);
             }}
-            availableSeats={license ? Math.max(license.seats - license.seatsAllocated, 0) : 0}
+            availableSeats={
+              license ? Math.max(license.seats - license.seatsAllocated, 0) : 0
+            }
             onOptimisticUpdate={(formData) => {
               setLicense((prev: EnhancedLicenseType | undefined) => {
                 if (!prev) return undefined;
@@ -461,7 +530,7 @@ export default function View({ params }: AssetPageProps) {
           <ItemDetailsTabs
             itemId={license.id}
             itemType="license"
-            auditLogs={license.auditLogs.map(log => ({
+            auditLogs={license.auditLogs.map((log) => ({
               ...log,
               entityId: log.entityId ?? null,
               details: log.details ?? null,
@@ -469,14 +538,15 @@ export default function View({ params }: AssetPageProps) {
               dataAccessed: log.dataAccessed ?? null,
               company: {
                 ...log.company,
-                name: log.company?.name ?? '',
+                name: log.company?.name ?? "",
               },
-              user: typeof log.user === 'object' && log.user !== null
-                ? {
-                    id: (log.user as any).id ?? '',
-                    name: (log.user as any).name ?? '',
-                  }
-                : { id: '', name: '' },
+              user:
+                typeof log.user === "object" && log.user !== null
+                  ? {
+                      id: (log.user as any).id ?? "",
+                      name: (log.user as any).name ?? "",
+                    }
+                  : { id: "", name: "" },
             }))}
             usedBy={license.usedBy}
             handleCheckIn={handleCheckIn}
