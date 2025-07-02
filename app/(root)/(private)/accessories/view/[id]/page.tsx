@@ -3,7 +3,8 @@
 import { useEffect, useState, use } from "react";
 import { DetailView } from "@/components/shared/DetailView/DetailView";
 import Link from "next/link";
-import { toast } from "sonner";
+// import { toast } from "sonner";
+import toast from "react-hot-toast";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -20,6 +21,7 @@ import ItemDetailsTabs from "@/components/shared/DetailsTabs/ItemDetailsTabs";
 import { sleep, sumUnitsAssigned } from "@/lib/utils";
 import QRCode from "react-qr-code";
 import DetailViewSkeleton from "@/components/shared/DetailView/DetailViewSkeleton";
+import { EnhancedAccessoryType } from "@/lib/services/accessory.service";
 
 interface LoadingStates {
   isInitialLoading: boolean;
@@ -34,48 +36,11 @@ interface AssetPageProps {
   }>;
 }
 
-interface EnhancedAccessoryType {
-  id: string;
-  name: string;
-  category: {
-    name: string;
-  } | null;
-  statusLabel: {
-    name: string;
-    colorCode: string;
-  } | null;
-  modelNumber: string | null;
-  location: {
-    name: string;
-  } | null;
-  department: {
-    name: string;
-  } | null;
-  createdAt: Date;
-  updatedAt: Date;
-  inventory: {
-    name: string;
-  } | null;
-  totalQuantity: number;
-  reorderPoint: number;
-  unitsAllocated: number;
-  alertEmail: string;
-  supplier: {
-    name: string;
-  } | null;
-  poNumber: string | null;
-  auditLogs: AuditLog[];
-  usedBy: UserItems[];
-  co2Score?: number;
-}
-
 export default function Page({ params }: AssetPageProps) {
   const [error, setError] = useState<string | null>(null);
   const { id } = use(params);
   const { isAssignOpen, onAssignOpen, onAssignClose } = useAccessoryStore();
-  const [accessory, setAccessory] = useState<
-    EnhancedAccessoryType | undefined
-  >();
+  const [accessory, setAccessory] = useState<EnhancedAccessoryType | undefined>(undefined);
 
   const [loadingStates, setLoadingStates] = useState<LoadingStates>({
     isInitialLoading: true,
@@ -108,73 +73,21 @@ export default function Page({ params }: AssetPageProps) {
 
   const fetchAccessory = async (isRefresh = false) => {
     if (!id) return;
-
     try {
       updateLoadingState(isRefresh ? "isRefreshing" : "isInitialLoading", true);
-
       const response = await findById(id);
       if (response.error) {
         setError(response.error);
         return;
       }
-
       const foundAccessory = response.data;
       if (!foundAccessory) return;
-
-      setAccessory({
-        id: foundAccessory.id,
-        name: foundAccessory.name,
-        co2Score: 0,
-        category: foundAccessory.category
-          ? {
-              name: foundAccessory.category.name,
-            }
-          : null,
-        modelNumber: foundAccessory.modelNumber || null,
-        statusLabel: foundAccessory.statusLabel
-          ? {
-              name: foundAccessory.statusLabel.name,
-              colorCode: foundAccessory.statusLabel.colorCode,
-            }
-          : null,
-        location: foundAccessory.departmentLocation
-          ? {
-              name: foundAccessory.departmentLocation.name,
-            }
-          : null,
-        department: foundAccessory.department
-          ? {
-              name: foundAccessory.department.name,
-            }
-          : null,
-        unitsAllocated: sumUnitsAssigned(foundAccessory.userAccessories ?? []),
-        createdAt: new Date(foundAccessory.createdAt),
-        updatedAt: new Date(foundAccessory.updatedAt),
-        alertEmail: foundAccessory.alertEmail,
-        inventory: foundAccessory.inventory
-          ? {
-              name: foundAccessory.inventory.name,
-            }
-          : null,
-        poNumber: foundAccessory.poNumber || null,
-        reorderPoint: foundAccessory.reorderPoint,
-        supplier: foundAccessory.supplier
-          ? {
-              name: foundAccessory.supplier.name,
-            }
-          : null,
-        totalQuantity: foundAccessory.totalQuantityCount,
-        auditLogs: foundAccessory.auditLogs ?? [],
-        usedBy: foundAccessory.userAccessories ?? [],
-      });
+      setAccessory(foundAccessory as EnhancedAccessoryType);
     } catch (error) {
       console.error("Error fetching accessory:", error);
       setError("Failed to load accessory details");
     } finally {
-      updateLoadingState(
-        isRefresh ? "isRefreshing" : "isInitialLoading",
-        false,
-      );
+      updateLoadingState(isRefresh ? "isRefreshing" : "isInitialLoading", false);
     }
   };
 
@@ -266,10 +179,10 @@ export default function Page({ params }: AssetPageProps) {
 
   const handleAction = (action: "archive" | "duplicate" | "edit" | "print") => {
     const actions: Record<typeof action, () => void> = {
-      archive: () => toast.info("Archive action not implemented"),
-      duplicate: () => toast.info("Duplicate action not implemented"),
-      edit: () => toast.info("Edit action not implemented"),
-      print: () => toast.info("Print label action not implemented"),
+      archive: () => toast.error("Archive action not implemented"),
+      duplicate: () => toast.error("Duplicate action not implemented"),
+      edit: () => toast.error("Edit action not implemented"),
+      print: () => toast.error("Print label action not implemented"),
     };
 
     actions[action]();
@@ -313,12 +226,12 @@ export default function Page({ params }: AssetPageProps) {
       },
       {
         label: "Created At",
-        value: accessory?.createdAt?.toISOString() ?? "-",
+        value: accessory?.createdAt ? new Date(accessory.createdAt).toISOString() : "-",
         type: "date",
       },
       {
         label: "Last Updated",
-        value: accessory?.updatedAt?.toISOString() ?? "-",
+        value: accessory?.updatedAt ? new Date(accessory.updatedAt).toISOString() : "-",
         type: "date",
       },
       { label: "Quantity", value: accessory?.totalQuantity ?? 0, type: "text" },
@@ -378,6 +291,10 @@ export default function Page({ params }: AssetPageProps) {
     sourceData: "accessory",
     checkoutDisabled:
       (accessory?.unitsAllocated ?? 0) >= (accessory?.totalQuantity ?? 0),
+    badge:
+      accessory?.belowReorderPoint
+        ? { text: "Below reorder point!", color: "warning" }
+        : undefined,
   };
 
   return (

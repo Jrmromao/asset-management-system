@@ -33,7 +33,7 @@ const Create = () => {
 
       <HeaderBox
         title="Create an Accessory"
-        subtext="Fill the form to create an Accessory."
+        subtitle="Fill the form to create an Accessory."
       />
 
       <AccessoryForm />

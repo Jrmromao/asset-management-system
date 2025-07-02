@@ -8,10 +8,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
-import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, Info } from "lucide-react";
 import HeaderIcon from "@/components/page/HeaderIcon";
 import CustomInput from "@/components/CustomInput";
+import { toast } from "sonner";
 
 const forgotPasswordSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address." }),
@@ -34,9 +34,18 @@ export default function ForgotPasswordPage() {
   // Handle the case when user is already signed in
   useEffect(() => {
     if (isLoaded && isSignedIn) {
-      toast.info(
-        "You're already signed in. Please sign out first to reset your password.",
-      );
+      toast.custom((t) => (
+        <div className="flex items-center gap-3 px-5 py-3 min-w-[220px] text-white bg-blue-500 shadow-lg rounded-lg font-medium">
+          <Info className="text-white w-5 h-5" />
+          <span>You're already signed in. Please sign out first to reset your password.</span>
+          <button
+            className="ml-auto text-white/70 hover:text-white"
+            onClick={() => toast.dismiss(t.id)}
+          >
+            ×
+          </button>
+        </div>
+      ));
     }
   }, [isLoaded, isSignedIn]);
 
