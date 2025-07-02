@@ -411,6 +411,8 @@ const LicenseForm: React.FC<LicenseFormProps> = ({
       "annualPrice",
       "costCenter",
       "budgetCode",
+      "departmentId",
+      "inventoryId",
     ],
   });
 
@@ -429,6 +431,8 @@ const LicenseForm: React.FC<LicenseFormProps> = ({
     annualPrice,
     costCenter,
     budgetCode,
+    departmentId,
+    inventoryId,
   ] = watchedValues;
 
   const progressFormSection = [
@@ -439,6 +443,13 @@ const LicenseForm: React.FC<LicenseFormProps> = ({
     {
       name: "Status & Location",
       status: (statusLabelId && locationId
+        ? "complete"
+        : "incomplete") as SectionStatus,
+    },
+
+    {
+      name: "Department & Inventory",
+      status: (departmentId && inventoryId
         ? "complete"
         : "incomplete") as SectionStatus,
     },

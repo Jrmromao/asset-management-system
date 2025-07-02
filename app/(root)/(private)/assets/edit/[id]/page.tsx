@@ -21,7 +21,7 @@ const Edit = ({ params }: EditPageProps) => {
       <div>
         <HeaderBox
           title={`Update asset with id: ${id}`}
-          subtext="Change the fields you'd like to update."
+          subtitle="Change the fields you'd like to update."
           icon={<Laptop className="h-6 w-6" />}
         />
       </div>

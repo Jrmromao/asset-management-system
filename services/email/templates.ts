@@ -192,4 +192,21 @@ export const emailTemplates = {
       </div>
     </div>
   `,
+
+  licenseExpiryReminder: ({ licenseName, renewalDate, daysUntilExpiry }: { licenseName: string; renewalDate: string; daysUntilExpiry: number }) => `
+    <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
+      <div style="background-color: #f7f7f7; padding: 20px; text-align: center;">
+        <h1 style="color: #f59e0b; margin: 0;">License Expiry Reminder</h1>
+      </div>
+      <div style="padding: 30px;">
+        <h2 style="color: #333;">License Renewal Required</h2>
+        <p>Your license <strong>${licenseName}</strong> is expiring in <strong>${daysUntilExpiry} days</strong> on ${renewalDate}.</p>
+        <p>Please contact your administrator to renew this license before it expires to avoid service interruption.</p>
+        <p>Best regards,<br>The EcoKeepr Team</p>
+      </div>
+      <div style="background-color: #f7f7f7; padding: 15px; text-align: center; font-size: 12px; color: #777;">
+        <p>&copy; ${new Date().getFullYear()} EcoKeepr. All rights reserved.</p>
+      </div>
+    </div>
+  `,
 };

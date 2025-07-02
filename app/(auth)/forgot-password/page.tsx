@@ -40,7 +40,7 @@ export default function ForgotPasswordPage() {
           <span>You're already signed in. Please sign out first to reset your password.</span>
           <button
             className="ml-auto text-white/70 hover:text-white"
-            onClick={() => toast.dismiss(t.id)}
+            onClick={() => toast.dismiss()}
           >
             ×
           </button>

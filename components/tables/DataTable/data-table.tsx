@@ -30,24 +30,25 @@ import {
 } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
 import TableSkeleton from "@/components/tables/TableSkeleton";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
   isLoading?: boolean;
-  pageIndex: number;
-  pageSize: number;
-  total: number;
-  onPaginationChange: (updater: { pageIndex: number; pageSize: number }) => void;
+  pageIndex?: number;
+  pageSize?: number;
+  total?: number;
+  onPaginationChange?: (pagination: { pageIndex: number; pageSize: number }) => void;
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
-  isLoading,
-  pageIndex,
-  pageSize,
-  total,
+  isLoading = false,
+  pageIndex = 0,
+  pageSize = 10,
+  total = 0,
   onPaginationChange,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -76,9 +77,9 @@ export function DataTable<TData, TValue>({
     onPaginationChange: (updater) => {
       if (typeof updater === "function") {
         const next = updater({ pageIndex, pageSize });
-        onPaginationChange(next);
+        onPaginationChange?.(next);
       } else {
-        onPaginationChange(updater);
+        onPaginationChange?.(updater);
       }
     },
     autoResetPageIndex: false,
@@ -206,7 +207,7 @@ export function DataTable<TData, TValue>({
             <span>Rows per page</span>
             <Select
               value={pageSize.toString()}
-              onValueChange={(value) => onPaginationChange({ pageIndex, pageSize: Number(value) })}
+              onValueChange={(value) => onPaginationChange?.({ pageIndex, pageSize: Number(value) })}
             >
               <SelectTrigger className="h-8 w-16 border-slate-200 dark:border-gray-700 dark:bg-gray-800">
                 <SelectValue />
@@ -229,23 +230,54 @@ export function DataTable<TData, TValue>({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => onPaginationChange({ pageIndex: Math.max(0, pageIndex - 1), pageSize })}
+            onClick={() => onPaginationChange?.({ pageIndex: Math.max(0, pageIndex - 1), pageSize })}
             disabled={pageIndex === 0}
             className="h-8 border-slate-200 dark:border-gray-700 text-slate-600 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-gray-800"
           >
-            Previous
+            <ChevronLeft className="h-4 w-4" />
+            <span className="sr-only">Go to previous page</span>
           </Button>
           <Button
             variant="outline"
             size="sm"
-            onClick={() => onPaginationChange({ pageIndex: pageIndex + 1, pageSize })}
+            onClick={() => onPaginationChange?.({ pageIndex: pageIndex + 1, pageSize })}
             disabled={pageIndex + 1 >= Math.ceil(total / pageSize)}
             className="h-8 border-slate-200 dark:border-gray-700 text-slate-600 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-gray-800"
           >
-            Next
+            <ChevronRight className="h-4 w-4" />
+            <span className="sr-only">Go to next page</span>
           </Button>
         </div>
       </div>
+
+      {total > 0 && onPaginationChange && (
+        <div className="flex items-center justify-between space-x-2 py-4">
+          <div className="flex-1 text-sm text-muted-foreground">
+            {table.getFilteredSelectedRowModel().rows.length} of{" "}
+            {table.getFilteredRowModel().rows.length} row(s) selected.
+          </div>
+          <div className="flex items-center space-x-6 lg:space-x-8">
+            <div className="flex items-center space-x-2">
+              <p className="text-sm font-medium">Rows per page</p>
+                          <Select
+              value={pageSize.toString()}
+              onValueChange={(value) => onPaginationChange?.({ pageIndex, pageSize: Number(value) })}
+            >
+                <SelectTrigger className="h-8 w-16 border-slate-200 dark:border-gray-700 dark:bg-gray-800">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {[10, 20, 30, 40, 50].map((size) => (
+                    <SelectItem key={size} value={size.toString()}>
+                      {size}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

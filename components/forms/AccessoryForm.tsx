@@ -206,7 +206,7 @@ const AccessoryForm = () => {
             toast.success("Accessory created successfully");
             router.push("/accessories");
           },
-          onError: (error) => {
+          onError: (error: Error) => {
             toast.error("Something went wrong");
             console.error(error);
           },

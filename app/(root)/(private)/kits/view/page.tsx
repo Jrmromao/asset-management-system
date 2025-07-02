@@ -110,7 +110,6 @@ const View = () => {
                 <CustomButton
                   size="sm"
                   className={"w-full sm:w-auto"}
-                  variant="outline"
                   action={navigate.back}
                   value="Archive"
                   Icon={FaArchive}
@@ -118,7 +117,6 @@ const View = () => {
                 <CustomButton
                   size="sm"
                   className={"w-full sm:w-auto"}
-                  variant="outline"
                   action={navigate.back}
                   value="Assign"
                   Icon={FaChevronRight}
@@ -126,7 +124,6 @@ const View = () => {
                 <CustomButton
                   className={"w-full sm:w-auto md:w-auto"}
                   size="sm"
-                  variant="outline"
                   action={navigate.back}
                   value="Duplicate"
                   Icon={FaCopy}
@@ -134,7 +131,6 @@ const View = () => {
                 <CustomButton
                   className={"w-full sm:w-auto md:w-auto"}
                   size="sm"
-                  variant="outline"
                   action={navigate.back}
                   value="Edit"
                   Icon={FaPen}
@@ -142,7 +138,6 @@ const View = () => {
                 <CustomButton
                   className={"w-full sm:w-auto md:w-auto"}
                   size="sm"
-                  variant="outline"
                   action={navigate.back}
                   value="Print Label"
                   Icon={FaPrint}

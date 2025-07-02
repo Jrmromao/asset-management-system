@@ -16,7 +16,7 @@ import { Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-interface CustomInputProps {
+export interface CustomInputProps {
   name: string;
   label: string;
   control: Control<any>;
@@ -27,6 +27,7 @@ interface CustomInputProps {
   error?: string;
   isLoading?: boolean;
   disabled?: boolean;
+  readonly?: boolean;
   tooltip?: string;
 }
 

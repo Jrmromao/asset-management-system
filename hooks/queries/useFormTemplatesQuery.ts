@@ -18,22 +18,60 @@ export function useFormTemplatesQuery() {
   const { onClose } = useUserUIStore();
 
   const genericQuery = createGenericQuery<
-    FormTemplate,
+    any,
     CreateFormTemplateInput
   >(
     MODEL_KEY,
     {
       getAll: async () => {
-        return await getAll();
+        const result = await getAll();
+        if (result.success && result.data) {
+          result.data = result.data.map(item => ({
+            ...item,
+            fields: Array.isArray(item.fields) ? item.fields as any[] : []
+          }));
+        }
+        return result;
       },
       insert: async (data: CreateFormTemplateInput) => {
-        return await insert(data);
+        const { fields, ...rest } = data;
+        const transformedData = {
+          ...rest,
+          fields: fields ? JSON.parse(JSON.stringify(fields)) : []
+        };
+        const result = await insert(transformedData as any);
+        if (result.success && result.data) {
+          result.data = {
+            ...result.data,
+            fields: Array.isArray(result.data.fields) ? result.data.fields as any[] : []
+          };
+        }
+        return result;
       },
       delete: async (id: string) => {
-        return await remove(id);
+        const result = await remove(id);
+        if (result.success && result.data) {
+          result.data = {
+            ...result.data,
+            fields: Array.isArray(result.data.fields) ? result.data.fields as any[] : []
+          };
+        }
+        return result;
       },
       update: async (id: string, data: Partial<FormTemplate>) => {
-        return await update(id, data);
+        const { fields, ...rest } = data;
+        const transformedData = {
+          ...rest,
+          ...(fields ? { fields: JSON.parse(JSON.stringify(fields)) } : {})
+        };
+        const result = await update(id, transformedData as any);
+        if (result.success && result.data) {
+          result.data = {
+            ...result.data,
+            fields: Array.isArray(result.data.fields) ? result.data.fields as any[] : []
+          };
+        }
+        return result;
       },
     },
     {

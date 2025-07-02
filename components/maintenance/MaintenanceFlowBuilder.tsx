@@ -1480,7 +1480,7 @@ export const MaintenanceFlowBuilder: React.FC = () => {
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => setDeleteFlowId(flow.id)}
+                                  onClick={() => setDeleteFlowId(flow.id || "")}
                                   disabled={isDeleting}
                                 >
                                   <Trash2 className="h-4 w-4" />

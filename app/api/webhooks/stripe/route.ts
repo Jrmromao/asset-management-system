@@ -19,7 +19,7 @@ Object.entries(requiredEnvVars).forEach(([key, value]) => {
 });
 
 const stripe = new Stripe(requiredEnvVars.STRIPE_SECRET_KEY!, {
-  apiVersion: "2025-02-24.acacia",
+  apiVersion: "2024-06-20",
 });
 
 // Retry logic with exponential backoff

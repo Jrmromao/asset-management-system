@@ -8,7 +8,7 @@ const Create = () => {
       <div>
         <HeaderBox
           title="Register a new employee"
-          subtext="Fill the form to register a new employee."
+          subtitle="Fill the form to register a new employee."
         />
       </div>
       <UserForm />

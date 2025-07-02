@@ -16,7 +16,7 @@ type CreateAccessoryInput = z.infer<typeof accessorySchema>;
 export function useAccessoryQuery() {
   const { onClose } = useUserUIStore();
 
-  const genericQuery: ReturnType<typeof createGenericQuery<Accessory, CreateAccessoryInput>> = createGenericQuery<Accessory, CreateAccessoryInput>(
+  const genericQuery = createGenericQuery<any, CreateAccessoryInput>(
     MODEL_KEY,
     {
       getAll: async () => {
@@ -28,9 +28,9 @@ export function useAccessoryQuery() {
       delete: async (id: string) => {
         return await deleteAccessory(id);
       },
-      update: async (id: string, data: Partial<Accessory>) => {
+      update: async (id: string, data: any) => {
         const result = await updateAccessory(id, data);
-        return result as unknown as ActionResponse<Accessory>;
+        return result;
       },
     },
     {
@@ -49,7 +49,7 @@ export function useAccessoryQuery() {
     isCreating,
     refresh,
     deleteItem,
-  } = genericQuery();
+  } = genericQuery() as any;
 
   return {
     accessories,

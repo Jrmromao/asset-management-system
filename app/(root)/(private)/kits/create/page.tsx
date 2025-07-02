@@ -89,7 +89,7 @@ const Create = () => {
       <div>
         <HeaderBox
           title="Create Pre-defined Kit"
-          subtext="Create a new kit using the form below"
+          subtitle="Create a new kit using the form below"
         />
       </div>
       {/*<section className="w-full bg-white z-50 max-h-[900px] overflow-y-auto p-4">*/}

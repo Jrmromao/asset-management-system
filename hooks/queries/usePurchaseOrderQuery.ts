@@ -12,7 +12,7 @@ export function usePurchaseOrderQuery() {
   const { user } = useUser();
   const companyId = user?.publicMetadata?.companyId as string | undefined;
 
-  const genericQuery = createGenericQuery<PurchaseOrder, any, any>(PO_KEY, {
+  const genericQuery = createGenericQuery<any, any, any>(PO_KEY, {
     getAll: async () => {
       if (!companyId) {
         return { success: true, data: [] };

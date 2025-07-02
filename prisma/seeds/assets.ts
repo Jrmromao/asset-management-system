@@ -650,7 +650,7 @@ export async function seedAssets(prisma: PrismaClient, companyId: string) {
           active: assetData.statusName !== "Retired",
           depreciationRate: 0.15, // 15% annual depreciation
           // Create form template values if provided
-          values:
+          formValues:
             assetData.templateValues &&
             formTemplates.find((f) => f.name === assetData.formTemplateName)
               ? {

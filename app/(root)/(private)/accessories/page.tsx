@@ -206,7 +206,7 @@ const Accessories = () => {
   const availableAccessories = useMemo(
     () =>
       allAccessories.filter(
-        (accessory) =>
+        (accessory: Accessory) =>
           accessory.statusLabel?.name.toUpperCase() === "AVAILABLE",
       ),
     [allAccessories],

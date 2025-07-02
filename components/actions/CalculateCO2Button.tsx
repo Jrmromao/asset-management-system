@@ -43,7 +43,7 @@ const CalculateCO2Button: React.FC<CalculateCO2ButtonProps> = ({
             title: "CO2 Calculation Successful",
             description: `The CO2 footprint has been calculated.`,
           });
-          onComplete?.(result.data);
+          onComplete?.(result.data as CO2CalculationResult);
           router.refresh();
         } else {
           toast({

@@ -375,7 +375,7 @@ const AssetForm = ({ id, isUpdate = false, onSuccess, onError, setLoading, setSa
       if (template) {
         setSelectedTemplate(template as FormTemplate);
         const assetTemplateValues = (asset.formValues?.[0]?.values as Record<string, any>) || {};
-        const initialValues = template.fields.reduce<Record<string, any>>((acc, field) => {
+        const initialValues = (template.fields as CustomField[]).reduce<Record<string, any>>((acc, field) => {
           acc[field.name] = assetTemplateValues[field.name] ?? "";
           return acc;
         }, {});
@@ -422,8 +422,8 @@ const AssetForm = ({ id, isUpdate = false, onSuccess, onError, setLoading, setSa
     setSelectedTemplate(template as FormTemplate);
 
     // Initialize template values with default values based on field type
-    const initialValues = template.fields.reduce<Record<string, any>>(
-      (acc, field) => {
+    const initialValues = (template.fields as CustomField[]).reduce<Record<string, any>>(
+      (acc: Record<string, any>, field: CustomField) => {
         // Keep existing value if it exists and the field type hasn't changed
         const existingValue = form.getValues(`templateValues.${field.name}`);
         const shouldKeepValue =

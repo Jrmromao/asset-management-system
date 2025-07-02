@@ -19,7 +19,7 @@ export const AccessoryOverview = () => {
   // Calculate low stock (quantity <= reorderPoint)
   const lowStock = useMemo(() => {
     return accessories.filter(
-      (a) =>
+      (a: any) =>
         typeof a.totalQuantityCount === "number" &&
         typeof a.reorderPoint === "number" &&
         a.totalQuantityCount <= a.reorderPoint,

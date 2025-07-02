@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { produce } from "immer";
 import {
-  createUser,
+  createUserWithCompany as createUser,
   getAll as fetch,
   remove,
 } from "@/lib/actions/user.actions";
@@ -46,12 +46,13 @@ export const useUserStore = create(
       create: async (data: User) => {
         try {
           const result = await createUser({
+            clerkId: "", // This would need to be provided
             email: data.email,
+            username: null,
             firstName: data.firstName,
             lastName: data.lastName,
+            photo: "",
             companyId: data.companyId!,
-            title: data.title || "",
-            employeeId: data.employeeId || "",
             roleId: data.roleId!,
           });
 

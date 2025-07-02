@@ -56,7 +56,7 @@ export const useLicenseStore = create(
       update: (id: string, updatedLicense: License) => {
         set(
           produce((state) => {
-            update(updatedLicense, id)
+            update(updatedLicense as any, id)
               .then(() => {
                 const index = state.licenses.findIndex(
                   (license: License) => license.id === id,

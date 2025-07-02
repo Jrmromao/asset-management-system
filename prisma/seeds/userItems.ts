@@ -38,7 +38,7 @@ export async function seedUserItems(prisma: PrismaClient, companyId: string) {
       const userItem = await prisma.userItem.create({
         data: {
           userId: primaryUserId, // ✅ Linked to user: cmc80pcfb00088oa52sxacapd
-          itemId: license.id,
+          licenseId: license.id,
           itemType: "LICENSE",
           companyId, // ✅ Linked to company: cmc80pcez00048oa5v3px063c
         },
@@ -56,7 +56,7 @@ export async function seedUserItems(prisma: PrismaClient, companyId: string) {
       const userItem = await prisma.userItem.create({
         data: {
           userId: primaryUserId, // ✅ Linked to user: cmc80pcfb00088oa52sxacapd
-          itemId: accessory.id,
+          accessoryId: accessory.id,
           itemType: "ACCESSORY",
           companyId, // ✅ Linked to company: cmc80pcez00048oa5v3px063c
         },

@@ -372,7 +372,7 @@ export class DepreciationCalculator {
         depreciation,
         endingValue,
         accumulatedDepreciation,
-        marketValue: endingValue * (marketMultiplier !== 1 ? marketMultiplier : undefined),
+        marketValue: marketMultiplier !== 1 ? endingValue * marketMultiplier : undefined,
       });
 
       beginningValue = endingValue;

@@ -416,7 +416,13 @@ export async function registerCompany(
 
     // 10. Bulk Insert Templates
     try {
-      await bulkInsertTemplates(company.id);
+      // Find the first category to use as default
+      const defaultCategory = await prisma.category.findFirst({
+        where: { companyId: company.id },
+      });
+      if (defaultCategory) {
+        await bulkInsertTemplates(company.id, defaultCategory.id);
+      }
     } catch (templateError) {
       console.warn("Failed to insert templates:", templateError);
       // Don't fail the entire registration for template issues

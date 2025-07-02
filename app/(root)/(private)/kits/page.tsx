@@ -25,7 +25,7 @@ const Consumables = () => {
       <div className="transactions-header">
         <HeaderBox
           title="Pre-Defined Kits"
-          subtext="Manage your kits and assign them to users"
+          subtitle="Manage your kits and assign them to users"
         />
       </div>
       <div className="space-y-6">

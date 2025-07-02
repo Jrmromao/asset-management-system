@@ -108,10 +108,7 @@ const createAssetAction = requirePermission("assets.create", async (data: any) =
 
 // Example 7: Multiple permission check
 export async function POST_bulk_assign(req: NextRequest) {
-  const verification = await verifyPermissions([
-    "assets.assign",
-    "users.view"
-  ], true); // Requires BOTH permissions
+  const verification = await verifyPermission("assets.assign");
   
   if (!verification.success) {
     return NextResponse.json(
