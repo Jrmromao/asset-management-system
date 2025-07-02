@@ -55,4 +55,8 @@ export interface DetailViewProps {
   };
   asset?: AssetType;
   checkoutDisabled?: boolean;
+  badge?: {
+    text: string;
+    color: string;
+  };
 }

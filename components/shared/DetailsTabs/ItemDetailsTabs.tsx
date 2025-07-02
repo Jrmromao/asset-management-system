@@ -1,7 +1,22 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
-import { FileText, Users, File, FileImage, FileArchive, User as UserIcon, Download, Clock, CheckCircle, UploadCloud, Trash2, UserPlus, UserMinus, Edit2 } from "lucide-react";
+import {
+  FileText,
+  Users,
+  File,
+  FileImage,
+  FileArchive,
+  User as UserIcon,
+  Download,
+  Clock,
+  CheckCircle,
+  UploadCloud,
+  Trash2,
+  UserPlus,
+  UserMinus,
+  Edit2,
+} from "lucide-react";
 import { DataTable } from "@/components/tables/DataTable/data-table";
 import { auditLogColumns } from "@/components/tables/AuditLogColumns";
 import { usedByAccColumns } from "@/components/tables/usedByColumns";
@@ -20,19 +35,24 @@ type LicenseFile = {
 };
 
 function getFileIcon(fileName: string) {
-  const ext = fileName.split('.').pop()?.toLowerCase();
+  const ext = fileName.split(".").pop()?.toLowerCase();
   switch (ext) {
-    case "pdf": return <FileText className="text-red-500 w-6 h-6" />;
+    case "pdf":
+      return <FileText className="text-red-500 w-6 h-6" />;
     case "jpg":
     case "jpeg":
     case "png":
-    case "gif": return <FileImage className="text-blue-500 w-6 h-6" />;
+    case "gif":
+      return <FileImage className="text-blue-500 w-6 h-6" />;
     case "zip":
-    case "rar": return <FileArchive className="text-yellow-500 w-6 h-6" />;
+    case "rar":
+      return <FileArchive className="text-yellow-500 w-6 h-6" />;
     case "doc":
     case "docx":
-    case "txt": return <FileText className="text-indigo-500 w-6 h-6" />;
-    default: return <File className="text-gray-400 w-6 h-6" />;
+    case "txt":
+      return <FileText className="text-indigo-500 w-6 h-6" />;
+    default:
+      return <File className="text-gray-400 w-6 h-6" />;
   }
 }
 
@@ -44,18 +64,24 @@ const AttachmentsTab: React.FC<{ files: LicenseFile[] }> = ({ files }) => {
   const [selected, setSelected] = useState<string[]>([]);
   const [page, setPage] = useState(1);
 
-  useEffect(() => { setPage(1); }, [files]);
+  useEffect(() => {
+    setPage(1);
+  }, [files]);
 
   const totalPages = Math.ceil(files.length / PAGE_SIZE);
   const pagedFiles = files.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const handleSelect = (fileId: string) => {
-    setSelected((prev) => prev.includes(fileId) ? prev.filter(id => id !== fileId) : [...prev, fileId]);
+    setSelected((prev) =>
+      prev.includes(fileId)
+        ? prev.filter((id) => id !== fileId)
+        : [...prev, fileId],
+    );
   };
 
   const handleSelectAll = () => {
     if (selected.length === files.length) setSelected([]);
-    else setSelected(files.map(f => f.id));
+    else setSelected(files.map((f) => f.id));
   };
 
   const handleBulkDownload = async () => {
@@ -63,9 +89,11 @@ const AttachmentsTab: React.FC<{ files: LicenseFile[] }> = ({ files }) => {
     setError(null);
     try {
       const zip = new JSZip();
-      for (const file of files.filter(f => selected.includes(f.id))) {
+      for (const file of files.filter((f) => selected.includes(f.id))) {
         // Fetch presigned URL
-        const res = await fetch(`/api/licenses/files/download-url?fileId=${file.id}`);
+        const res = await fetch(
+          `/api/licenses/files/download-url?fileId=${file.id}`,
+        );
         const { data: url } = await res.json();
         const fileRes = await fetch(url);
         const blob = await fileRes.blob();
@@ -87,7 +115,10 @@ const AttachmentsTab: React.FC<{ files: LicenseFile[] }> = ({ files }) => {
   if (loading) {
     return (
       <div className="flex justify-center items-center py-8">
-        <span className="w-8 h-8 border-4 border-emerald-300 border-t-transparent rounded-full animate-spin" aria-label="Loading attachments" />
+        <span
+          className="w-8 h-8 border-4 border-emerald-300 border-t-transparent rounded-full animate-spin"
+          aria-label="Loading attachments"
+        />
       </div>
     );
   }
@@ -95,7 +126,11 @@ const AttachmentsTab: React.FC<{ files: LicenseFile[] }> = ({ files }) => {
     return <div className="text-red-500 py-8 text-center">{error}</div>;
   }
   if (!files?.length) {
-    return <div className="text-slate-500 py-8 text-center">No attachments found for this license.</div>;
+    return (
+      <div className="text-slate-500 py-8 text-center">
+        No attachments found for this license.
+      </div>
+    );
   }
   return (
     <>
@@ -104,7 +139,11 @@ const AttachmentsTab: React.FC<{ files: LicenseFile[] }> = ({ files }) => {
           className="px-3 py-2 bg-emerald-600 text-white rounded font-semibold shadow hover:bg-emerald-700 transition disabled:opacity-50"
           onClick={handleBulkDownload}
           disabled={selected.length === 0 || loading}
-          title={selected.length === 0 ? "Select files to download" : "Download selected files as ZIP"}
+          title={
+            selected.length === 0
+              ? "Select files to download"
+              : "Download selected files as ZIP"
+          }
         >
           Download Selected ({selected.length})
         </button>
@@ -116,11 +155,16 @@ const AttachmentsTab: React.FC<{ files: LicenseFile[] }> = ({ files }) => {
         </button>
       </div>
       <ul className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
-        {pagedFiles.map(file => {
-          const ext = file.fileName.split('.').pop()?.toLowerCase();
-          const isImage = ["jpg", "jpeg", "png", "gif", "webp"].includes(ext || "");
+        {pagedFiles.map((file) => {
+          const ext = file.fileName.split(".").pop()?.toLowerCase();
+          const isImage = ["jpg", "jpeg", "png", "gif", "webp"].includes(
+            ext || "",
+          );
           return (
-            <li key={file.id} className="flex flex-col bg-white rounded-xl shadow border p-4 hover:shadow-lg transition relative">
+            <li
+              key={file.id}
+              className="flex flex-col bg-white rounded-xl shadow border p-4 hover:shadow-lg transition relative"
+            >
               <input
                 type="checkbox"
                 checked={selected.includes(file.id)}
@@ -141,7 +185,9 @@ const AttachmentsTab: React.FC<{ files: LicenseFile[] }> = ({ files }) => {
                 ) : (
                   getFileIcon(file.fileName)
                 )}
-                <span className="truncate font-medium text-lg">{file.fileName}</span>
+                <span className="truncate font-medium text-lg">
+                  {file.fileName}
+                </span>
               </div>
               <div className="flex items-center gap-2 text-xs text-slate-500 mb-2 ml-6">
                 <UserIcon className="w-4 h-4" />
@@ -174,7 +220,9 @@ const AttachmentsTab: React.FC<{ files: LicenseFile[] }> = ({ files }) => {
           >
             Previous
           </button>
-          <span className="text-sm text-slate-600">Page {page} of {totalPages}</span>
+          <span className="text-sm text-slate-600">
+            Page {page} of {totalPages}
+          </span>
           <button
             className="px-3 py-1 rounded bg-slate-100 text-slate-700 hover:bg-slate-200 disabled:opacity-50"
             onClick={() => setPage(page + 1)}
@@ -198,33 +246,61 @@ const eventIconMap: Record<string, React.ReactNode> = {
   LICENSE_CREATED: <CheckCircle className="text-emerald-700 w-5 h-5" />,
   LICENSE_DELETED: <Trash2 className="text-red-700 w-5 h-5" />,
   LICENSES_EXPORTED_CSV: <UploadCloud className="text-gray-400 w-5 h-5" />,
-  LICENSE_FILE_DOWNLOAD_URL_REQUESTED: <Download className="text-gray-400 w-5 h-5" />,
+  LICENSE_FILE_DOWNLOAD_URL_REQUESTED: (
+    <Download className="text-gray-400 w-5 h-5" />
+  ),
   default: <Clock className="text-slate-400 w-5 h-5" />,
 };
 
 const TimelineTab: React.FC<{ logs: SimpleAuditLog[] }> = ({ logs }) => {
+  const [showAll, setShowAll] = useState(false);
+  const DEFAULT_VISIBLE = 5;
+
   if (!logs?.length) {
-    return <div className="text-slate-500 py-8 text-center">No history found for this license.</div>;
+    return (
+      <div className="text-slate-500 py-8 text-center">
+        No history found for this license.
+      </div>
+    );
   }
   // Sort logs by date descending
-  const sorted = [...logs].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  const sorted = [...logs].sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+  );
+  const visibleLogs = showAll ? sorted : sorted.slice(0, DEFAULT_VISIBLE);
+
   return (
-    <ol className="relative border-l border-slate-200 ml-4">
-      {sorted.map((log, i) => (
-        <li key={log.id || i} className="mb-8 ml-6">
-          <span className="absolute -left-3 flex items-center justify-center w-6 h-6 bg-white border-2 border-slate-200 rounded-full">
-            {eventIconMap[log.action] || eventIconMap.default}
-          </span>
-          <div className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-slate-800">
-              {log.action.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, c => c.toUpperCase())}
+    <div>
+      <ol className="relative border-l border-slate-200 ml-4">
+        {visibleLogs.map((log, i) => (
+          <li key={log.id || i} className="mb-8 ml-6">
+            <span className="absolute -left-3 flex items-center justify-center w-6 h-6 bg-white border-2 border-slate-200 rounded-full">
+              {eventIconMap[log.action] || eventIconMap.default}
             </span>
-            <span className="text-xs text-slate-500">{log.details}</span>
-            <span className="text-xs text-slate-400">{new Date(log.createdAt).toLocaleString()}</span>
-          </div>
-        </li>
-      ))}
-    </ol>
+            <div className="flex flex-col gap-1">
+              <span className="text-sm font-medium text-slate-800">
+                {log.action
+                  .replace(/_/g, " ")
+                  .toLowerCase()
+                  .replace(/\b\w/g, (c) => c.toUpperCase())}
+              </span>
+              <span className="text-xs text-slate-500">{log.details}</span>
+              <span className="text-xs text-slate-400">
+                {new Date(log.createdAt).toLocaleString()}
+              </span>
+            </div>
+          </li>
+        ))}
+      </ol>
+      {sorted.length > DEFAULT_VISIBLE && (
+        <button
+          className="text-blue-600 hover:underline mt-2"
+          onClick={() => setShowAll((v) => !v)}
+        >
+          {showAll ? "Show Less" : `Show All (${sorted.length})`}
+        </button>
+      )}
+    </div>
   );
 };
 
@@ -287,7 +363,9 @@ const ItemDetailsTabs: React.FC<ItemDetailsTabsProps> = ({
             */}
 
             {/* Show Timeline for license, asset, and accessory */}
-            {(itemType === "license" || itemType === "asset" || itemType === "accessory") && (
+            {(itemType === "license" ||
+              itemType === "asset" ||
+              itemType === "accessory") && (
               <TabsTrigger
                 value="timeline"
                 className={cn(
@@ -364,7 +442,9 @@ const ItemDetailsTabs: React.FC<ItemDetailsTabsProps> = ({
         */}
 
         {/* Timeline tab for license, asset, and accessory */}
-        {(itemType === "license" || itemType === "asset" || itemType === "accessory") && (
+        {(itemType === "license" ||
+          itemType === "asset" ||
+          itemType === "accessory") && (
           <TabsContent value="timeline" className="pt-4">
             <div className="rounded-lg border bg-white p-6">
               <TimelineTab logs={auditLogs} />
@@ -381,7 +461,9 @@ const ItemDetailsTabs: React.FC<ItemDetailsTabsProps> = ({
             <div className="text-center py-12 text-gray-500">
               <Users className="h-12 w-12 mx-auto mb-4 text-gray-400" />
               <p className="text-lg font-medium">No Assignments</p>
-              <p className="text-sm">No assignment activity has been recorded yet</p>
+              <p className="text-sm">
+                No assignment activity has been recorded yet
+              </p>
             </div>
           )}
         </TabsContent>

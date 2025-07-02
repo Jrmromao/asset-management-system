@@ -65,7 +65,13 @@ import { assetHistoryColumns } from "@/components/tables/AsetHistoryColumns";
 import { updateAssetNotes, updateAsset } from "@/lib/actions/assets.actions";
 import { ColumnDef } from "@tanstack/react-table";
 import EditAssetDrawer from "@/components/forms/asset/EditAssetDrawer";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useStatusLabelsQuery } from "@/hooks/queries/useStatusLabelsQuery";
 import { useUserQuery } from "@/hooks/queries/useUserQuery";
 import { useQueryClient } from "@tanstack/react-query";
@@ -82,7 +88,7 @@ const DetailItem: React.FC<{
     <div className="text-muted-foreground mt-1">{icon}</div>
     <div>
       <p className="text-sm text-muted-foreground">{label}</p>
-      <p className="text-sm font-medium">{value || "—"}</p>
+      <div className="text-sm font-medium">{value || "—"}</div>
     </div>
   </div>
 );
@@ -102,7 +108,7 @@ const NotesSection: React.FC<{
     setIsSaving(true);
     try {
       const response = await updateAssetNotes(assetId, notes);
-      
+
       if (response.success) {
         toast({
           title: "Notes saved",
@@ -117,7 +123,10 @@ const NotesSection: React.FC<{
     } catch (error) {
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to save notes. Please try again.",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to save notes. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -202,7 +211,15 @@ export const AssetDetailView: React.FC<{
   setEditOpen?: (open: boolean) => void;
   editOpen?: boolean;
   categoryName?: string;
-}> = ({ asset, actions, breadcrumbs, onNotesUpdate, setEditOpen: setEditOpenProp, editOpen: editOpenProp, categoryName }) => {
+}> = ({
+  asset,
+  actions,
+  breadcrumbs,
+  onNotesUpdate,
+  setEditOpen: setEditOpenProp,
+  editOpen: editOpenProp,
+  categoryName,
+}) => {
   const router = useRouter();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -215,14 +232,16 @@ export const AssetDetailView: React.FC<{
   const setEditOpen = setEditOpenProp || setInternalEditOpen;
   const [isEditingStatus, setIsEditingStatus] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState(asset.statusLabel?.id);
-  const { statusLabels, isLoading: isLoadingStatusLabels } = useStatusLabelsQuery();
+  const { statusLabels, isLoading: isLoadingStatusLabels } =
+    useStatusLabelsQuery();
   const { toast: statusToast } = useToast();
   const [isSavingStatus, setIsSavingStatus] = useState(false);
   const [isEditingUser, setIsEditingUser] = useState(false);
   const [selectedUser, setSelectedUser] = useState(asset.userId || "");
   const { users: allUsers, isLoading: isLoadingUsers } = useUserQuery();
   const [isSavingUser, setIsSavingUser] = useState(false);
-  const [isCalculatingDepreciation, setIsCalculatingDepreciation] = useState(false);
+  const [isCalculatingDepreciation, setIsCalculatingDepreciation] =
+    useState(false);
 
   // Memoize columns to prevent unnecessary re-renders
   const auditLogColumnsMemo = useMemo(() => auditLogColumns(), []);
@@ -230,70 +249,96 @@ export const AssetDetailView: React.FC<{
 
   // Sort records to ensure we always have the latest one.
   const latestCo2Record = Array.isArray(asset.co2eRecords)
-    ? asset.co2eRecords.slice().sort(
-        (a: any, b: any) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-      )[0]
+    ? asset.co2eRecords
+        .slice()
+        .sort(
+          (a: any, b: any) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+        )[0]
     : undefined;
 
+
+  console.log("\n\nCO2 History Data:", asset.co2eRecords);
+
   // CO2 History columns (moved here for access to state)
-  const co2HistoryColumnsMemo = useMemo(() => [
-    {
-      id: "date",
-      header: "Date",
-      accessorFn: (row: any) => new Date(row.createdAt).toLocaleString(),
-      cell: ({ getValue }: any) => <span>{getValue() as string}</span>,
-      enableSorting: true,
-    },
-    {
-      id: "co2e",
-      header: "Total CO2e",
-      accessorKey: "co2e",
-      cell: ({ getValue }: any) => <span>{Number(getValue() as number).toFixed(2)}</span>,
-      enableSorting: true,
-    },
-    {
-      id: "units",
-      header: "Units",
-      accessorKey: "units",
-      cell: ({ getValue }: any) => <span>{getValue() as string}</span>,
-    },
-    {
-      id: "current",
-      header: "Current",
-      cell: ({ row }: any) =>
-        row.original.id === latestCo2Record?.id ? (
-          <span className="inline-flex items-center px-2 py-0.5 rounded bg-green-100 text-green-800 text-xs font-semibold">Current</span>
-        ) : null,
-      enableSorting: false,
-    },
-    {
-      id: "actions",
-      header: "Actions",
-      cell: ({ row }: any) => (
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => {
-            try {
-              const details = typeof row.original.details === 'string' ? JSON.parse(row.original.details) : row.original.details;
-              setCo2Result(details);
-              setIsNewCo2Calculation(false);
-              setCo2DialogOpen(true);
-            } catch (e) {
-              toast({
-                title: "Could not load CO2 details",
-                description: "There was an error loading this calculation.",
-                variant: "destructive",
-              });
-            }
-          }}
-        >
-          View Details
-        </Button>
-      ),
-    },
-  ], [toast, latestCo2Record]);
+  const co2HistoryColumnsMemo = useMemo(
+    () => [
+      {
+        id: "date",
+        header: "Date",
+        accessorFn: (row: any) => row.createdAt,
+        cell: ({ getValue }: any) => {
+          const rawDate = getValue();
+          let date: Date | null = null;
+          if (rawDate instanceof Date) {
+            date = rawDate;
+          } else if (typeof rawDate === 'string' && !isNaN(Date.parse(rawDate))) {
+            date = new Date(rawDate);
+          }
+          return (
+            <span>{date && !isNaN(date.getTime()) ? date.toLocaleString() : "—"}</span>
+          );
+        },
+        enableSorting: true,
+      },
+      {
+        id: "co2e",
+        header: "Total CO2e",
+        accessorKey: "co2e",
+        cell: ({ getValue }: any) => (
+          <span>{Number(getValue() as number).toFixed(2)}</span>
+        ),
+        enableSorting: true,
+      },
+      {
+        id: "units",
+        header: "Units",
+        accessorKey: "units",
+        cell: ({ getValue }: any) => <span>{getValue() as string}</span>,
+      },
+      {
+        id: "current",
+        header: "Current",
+        cell: ({ row }: any) =>
+          row.original.id === latestCo2Record?.id ? (
+            <span className="inline-flex items-center px-2 py-0.5 rounded bg-green-100 text-green-800 text-xs font-semibold">
+              Current
+            </span>
+          ) : null,
+        enableSorting: false,
+      },
+      {
+        id: "actions",
+        header: "Actions",
+        cell: ({ row }: any) => (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              try {
+                const details =
+                  typeof row.original.details === "string"
+                    ? JSON.parse(row.original.details)
+                    : row.original.details;
+                setCo2Result(details);
+                setIsNewCo2Calculation(false);
+                setCo2DialogOpen(true);
+              } catch (e) {
+                toast({
+                  title: "Could not load CO2 details",
+                  description: "There was an error loading this calculation.",
+                  variant: "destructive",
+                });
+              }
+            }}
+          >
+            View Details
+          </Button>
+        ),
+      },
+    ],
+    [toast, latestCo2Record],
+  );
 
   const handleCalculateCo2 = () => {
     startTransition(async () => {
@@ -411,6 +456,19 @@ export const AssetDetailView: React.FC<{
     }
   };
 
+  // Memoized formatted dates to avoid SSR/CSR mismatch
+  const [createdAtString, setCreatedAtString] = useState("");
+  const [updatedAtString, setUpdatedAtString] = useState("");
+  const [purchaseDateString, setPurchaseDateString] = useState("");
+  const [warrantyEndDateString, setWarrantyEndDateString] = useState("");
+
+  useEffect(() => {
+    if (asset.createdAt) setCreatedAtString(new Date(asset.createdAt).toLocaleString());
+    if (asset.updatedAt) setUpdatedAtString(new Date(asset.updatedAt).toLocaleString());
+    if (asset.purchaseDate) setPurchaseDateString(new Date(asset.purchaseDate).toLocaleDateString());
+    if (asset.warrantyEndDate) setWarrantyEndDateString(new Date(asset.warrantyEndDate).toLocaleDateString());
+  }, [asset.createdAt, asset.updatedAt, asset.purchaseDate, asset.warrantyEndDate]);
+
   const hardwareDetails = (
     <>
       <DetailItem
@@ -466,7 +524,7 @@ export const AssetDetailView: React.FC<{
                       assetTag: asset.assetTag,
                       notes: asset.notes ?? undefined,
                       departmentId: asset.department?.id ?? undefined,
-                      userId: (selectedUser ?? undefined),
+                      userId: selectedUser ?? undefined,
                       modelId: asset.model?.id ?? undefined,
                       statusLabelId: asset.statusLabel?.id ?? undefined,
                       locationId: asset.departmentLocation?.id ?? undefined,
@@ -480,20 +538,39 @@ export const AssetDetailView: React.FC<{
                       warrantyEndDate: asset.warrantyEndDate ?? undefined,
                     });
                     if (res.success) {
-                      toast({ title: "Assignment updated!", description: "Asset assigned user updated successfully." });
+                      toast({
+                        title: "Assignment updated!",
+                        description:
+                          "Asset assigned user updated successfully.",
+                      });
                       setIsEditingUser(false);
-                      queryClient.invalidateQueries({ queryKey: ["asset", asset.id] });
+                      queryClient.invalidateQueries({
+                        queryKey: ["asset", asset.id],
+                      });
                     } else {
-                      toast({ title: "Error", description: res.error || "Failed to update assignment.", variant: "destructive" });
+                      toast({
+                        title: "Error",
+                        description:
+                          res.error || "Failed to update assignment.",
+                        variant: "destructive",
+                      });
                     }
                   } catch (e) {
-                    toast({ title: "Error", description: "Failed to update assignment.", variant: "destructive" });
+                    toast({
+                      title: "Error",
+                      description: "Failed to update assignment.",
+                      variant: "destructive",
+                    });
                   } finally {
                     setIsSavingUser(false);
                   }
                 }}
               >
-                {isSavingUser ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save"}
+                {isSavingUser ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  "Save"
+                )}
               </button>
               <button
                 className="btn btn-outline px-2 py-1 rounded text-sm font-medium"
@@ -543,20 +620,12 @@ export const AssetDetailView: React.FC<{
       <DetailItem
         icon={<ShoppingCart className="h-4 w-4" />}
         label="Purchase Date"
-        value={
-          asset.purchaseDate
-            ? new Date(asset.purchaseDate).toLocaleDateString()
-            : "—"
-        }
+        value={purchaseDateString || "—"}
       />
       <DetailItem
         icon={<ShieldCheck className="h-4 w-4" />}
         label="Warranty End"
-        value={
-          asset.warrantyEndDate
-            ? new Date(asset.warrantyEndDate).toLocaleDateString()
-            : "—"
-        }
+        value={warrantyEndDateString || "—"}
       />
       <DetailItem
         icon={<Truck className="h-4 w-4" />}
@@ -609,7 +678,7 @@ export const AssetDetailView: React.FC<{
             <div className="space-y-1">
               <div className="flex items-center gap-3">
                 <CardTitle className="text-2xl font-semibold">
-                  {asset.name} 
+                  {asset.name}
                 </CardTitle>
                 {isEditingStatus ? (
                   <div className="flex items-center gap-2">
@@ -637,45 +706,84 @@ export const AssetDetailView: React.FC<{
                     </Select>
                     <button
                       className="btn btn-primary px-2 py-1 rounded text-sm font-medium"
-                      disabled={isSavingStatus || selectedStatus === asset.statusLabel?.id}
+                      disabled={
+                        isSavingStatus ||
+                        selectedStatus === asset.statusLabel?.id
+                      }
                       onClick={async () => {
                         setIsSavingStatus(true);
                         try {
-                          const hasTemplate = !!(asset.formTemplate && asset.formTemplate.id && (asset.formValues?.[0]?.values && Object.keys(asset.formValues?.[0]?.values || {}).length > 0));
+                          const hasTemplate = !!(
+                            asset.formTemplate &&
+                            asset.formTemplate.id &&
+                            asset.formValues?.[0]?.values &&
+                            Object.keys(asset.formValues?.[0]?.values || {})
+                              .length > 0
+                          );
                           const updatePayload = {
                             name: asset.name,
                             assetTag: asset.assetTag,
                             notes: asset.notes ?? undefined,
                             departmentId: asset.department?.id ?? undefined,
-                            userId: (asset.userId ?? undefined),
+                            userId: asset.userId ?? undefined,
                             modelId: asset.model?.id ?? undefined,
                             statusLabelId: selectedStatus,
-                            locationId: asset.departmentLocation?.id ?? undefined,
-                            formTemplateId: hasTemplate ? asset.formTemplate!.id : undefined,
-                            templateValues: hasTemplate ? asset.formValues?.[0]?.values : undefined,
-                            purchaseOrderId: asset.purchaseOrderNumber ?? undefined,
-                            energyConsumption: asset.energyConsumption ?? undefined,
-                            expectedLifespan: asset.expectedLifespan ?? undefined,
+                            locationId:
+                              asset.departmentLocation?.id ?? undefined,
+                            formTemplateId: hasTemplate
+                              ? asset.formTemplate!.id
+                              : undefined,
+                            templateValues: hasTemplate
+                              ? asset.formValues?.[0]?.values
+                              : undefined,
+                            purchaseOrderId:
+                              asset.purchaseOrderNumber ?? undefined,
+                            energyConsumption:
+                              asset.energyConsumption ?? undefined,
+                            expectedLifespan:
+                              asset.expectedLifespan ?? undefined,
                             endOfLifePlan: asset.endOfLifePlan ?? undefined,
                             supplierId: undefined,
                             warrantyEndDate: asset.warrantyEndDate ?? undefined,
                           };
-                          const res = await updateAsset(asset.id, updatePayload);
+                          const res = await updateAsset(
+                            asset.id,
+                            updatePayload,
+                          );
                           if (res.success) {
-                            toast({ title: "Status updated!", description: "Asset status was updated successfully." });
+                            toast({
+                              title: "Status updated!",
+                              description:
+                                "Asset status was updated successfully.",
+                            });
                             setIsEditingStatus(false);
-                            queryClient.invalidateQueries({ queryKey: ["asset", asset.id] });
+                            queryClient.invalidateQueries({
+                              queryKey: ["asset", asset.id],
+                            });
                           } else {
-                            toast({ title: "Error", description: res.error || "Failed to update status.", variant: "destructive" });
+                            toast({
+                              title: "Error",
+                              description:
+                                res.error || "Failed to update status.",
+                              variant: "destructive",
+                            });
                           }
                         } catch (e) {
-                          toast({ title: "Error", description: "Failed to update status.", variant: "destructive" });
+                          toast({
+                            title: "Error",
+                            description: "Failed to update status.",
+                            variant: "destructive",
+                          });
                         } finally {
                           setIsSavingStatus(false);
                         }
                       }}
                     >
-                      {isSavingStatus ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save"}
+                      {isSavingStatus ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        "Save"
+                      )}
                     </button>
                     <button
                       className="btn btn-outline px-2 py-1 rounded text-sm font-medium"
@@ -732,20 +840,6 @@ export const AssetDetailView: React.FC<{
               )}
             </div>
             <div className="flex-shrink-0 flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleQuickDepreciationCalculation}
-                disabled={isCalculatingDepreciation}
-                className="flex items-center gap-2"
-              >
-                {isCalculatingDepreciation ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Calculator className="h-4 w-4" />
-                )}
-                Calculate Depreciation
-              </Button>
               <ActionButtons
                 actions={actions}
                 isAssigned={!!asset.user}
@@ -754,7 +848,7 @@ export const AssetDetailView: React.FC<{
                   "archived",
                   "inactive",
                   "out of order",
-                ].includes(asset.status.toLowerCase())}
+                ].includes((asset.status ?? '').toLowerCase())}
               />
             </div>
           </div>
@@ -819,26 +913,33 @@ export const AssetDetailView: React.FC<{
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {asset.formValues && asset.formValues.length > 0 &&
-                        asset.formValues.map((fv: any, idx: number) =>
-                          fv.values && Object.entries(fv.values).map(([key, value]) => (
-                            <DetailItem
-                              key={fv.id ? `${fv.id}-${key}` : `${idx}-${key}`}
-                              icon={<Pocket className="h-4 w-4 text-muted-foreground" />}
-                              label={
-                                key.length <= 3
-                                  ? key.toUpperCase()
-                                  : key.charAt(0).toUpperCase() + key.slice(1)
-                              }
-                              value={
-                                typeof value === 'string' && value.length > 0
-                                  ? value.charAt(0).toUpperCase() + value.slice(1)
-                                  : String(value)
-                              }
-                            />
-                          ))
-                        )
-                      }
+                      {asset.formValues &&
+                        asset.formValues.length > 0 &&
+                        asset.formValues.map(
+                          (fv: any, idx: number) =>
+                            fv.values &&
+                            Object.entries(fv.values).map(([key, value]) => (
+                              <DetailItem
+                                key={
+                                  fv.id ? `${fv.id}-${key}` : `${idx}-${key}`
+                                }
+                                icon={
+                                  <Pocket className="h-4 w-4 text-muted-foreground" />
+                                }
+                                label={
+                                  key.length <= 3
+                                    ? key.toUpperCase()
+                                    : key.charAt(0).toUpperCase() + key.slice(1)
+                                }
+                                value={
+                                  typeof value === "string" && value.length > 0
+                                    ? value.charAt(0).toUpperCase() +
+                                      value.slice(1)
+                                    : String(value)
+                                }
+                              />
+                            )),
+                        )}
                     </CardContent>
                   </Card>
                 </div>
@@ -851,7 +952,7 @@ export const AssetDetailView: React.FC<{
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="flex items-center justify-center p-4">
-                      <QRCode value={window.location.href} size={128} />
+                      <QRCode value={typeof window !== 'undefined' ? window.location.href : ''} size={128} />
                     </CardContent>
                   </Card>
                   <Card>
@@ -865,12 +966,12 @@ export const AssetDetailView: React.FC<{
                       <DetailItem
                         icon={<Calendar className="h-4 w-4" />}
                         label="Created At"
-                        value={new Date(asset.createdAt).toLocaleString()}
+                        value={createdAtString}
                       />
                       <DetailItem
                         icon={<RefreshCcw className="h-4 w-4" />}
                         label="Last Updated"
-                        value={new Date(asset.updatedAt).toLocaleString()}
+                        value={updatedAtString}
                       />
                     </CardContent>
                   </Card>
@@ -963,11 +1064,13 @@ export const AssetDetailView: React.FC<{
               </div>
             </TabsContent>
             <TabsContent value="depreciation">
-              <DepreciationCalculator 
-                asset={asset as any} 
+              <DepreciationCalculator
+                asset={asset as any}
                 onUpdate={() => {
                   // Refresh asset data after depreciation calculation
-                  queryClient.invalidateQueries({ queryKey: ["asset", asset.id] });
+                  queryClient.invalidateQueries({
+                    queryKey: ["asset", asset.id],
+                  });
                 }}
               />
             </TabsContent>
@@ -981,6 +1084,10 @@ export const AssetDetailView: React.FC<{
                   <CardContent>
                     {asset.assetHistory && asset.assetHistory.length > 0 ? (
                       <DataTable
+                        pageIndex={0}
+                        pageSize={10}
+                        total={asset.assetHistory.length}
+                        onPaginationChange={() => {}} 
                         columns={assetHistoryColumnsMemo}
                         data={asset.assetHistory as any}
                       />
@@ -1003,6 +1110,10 @@ export const AssetDetailView: React.FC<{
                   <CardContent>
                     {asset.auditLogs && asset.auditLogs.length > 0 ? (
                       <DataTable
+                        pageIndex={0}
+                        pageSize={10}
+                        total={asset.auditLogs.length}
+                        onPaginationChange={() => {}}
                         columns={auditLogColumnsMemo}
                         data={asset.auditLogs}
                       />
@@ -1027,7 +1138,14 @@ export const AssetDetailView: React.FC<{
                     <CardTitle>CO2 Calculation History</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <DataTable columns={co2HistoryColumnsMemo} data={asset.co2eRecords} />
+                    <DataTable
+                      pageIndex={0}
+                      pageSize={10}
+                      total={asset.co2eRecords.length}
+                      onPaginationChange={() => {}}
+                      columns={co2HistoryColumnsMemo}
+                      data={asset.co2eRecords}
+                    />
                   </CardContent>
                 </Card>
               ) : (
@@ -1038,7 +1156,9 @@ export const AssetDetailView: React.FC<{
                   <CardContent>
                     <div className="text-center py-12 text-gray-500">
                       <Clock className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                      <p className="text-lg font-medium">No CO2 Calculation History</p>
+                      <p className="text-lg font-medium">
+                        No CO2 Calculation History
+                      </p>
                       <p className="text-sm">
                         No CO2 calculations have been recorded for this asset.
                       </p>
@@ -1048,8 +1168,8 @@ export const AssetDetailView: React.FC<{
               )}
             </TabsContent>
             <TabsContent value="notes">
-              <NotesSection 
-                assetId={asset.id} 
+              <NotesSection
+                assetId={asset.id}
                 currentNotes={asset.notes}
                 onNotesUpdate={onNotesUpdate}
               />

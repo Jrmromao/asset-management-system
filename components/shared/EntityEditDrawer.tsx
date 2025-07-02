@@ -32,13 +32,18 @@ const EntityEditDrawer: React.FC<EntityEditDrawerProps> = ({
   footer,
 }) => {
   return (
-    <Sheet open={open} onOpenChange={(val) => { if (!val) onClose(); }}>
+    <Sheet
+      open={open}
+      onOpenChange={(val) => {
+        if (!val) onClose();
+      }}
+    >
       <SheetContent
         side="right"
         className="w-[800px] sm:max-w-[800px] bg-gradient-to-br from-white via-slate-50 to-slate-100 shadow-2xl rounded-l-2xl flex flex-col animate-slide-in border-l-4 border-primary"
         hideDefaultClose
         aria-label={title}
-        onOpenAutoFocus={e => e.preventDefault()}
+        onOpenAutoFocus={(e) => e.preventDefault()}
       >
         <SheetHeader className="sticky top-0 z-10 bg-white/80 backdrop-blur border-b pb-4 flex flex-row items-center justify-between rounded-t-2xl border-b-primary/30">
           <div className="flex items-center gap-3">
@@ -47,14 +52,18 @@ const EntityEditDrawer: React.FC<EntityEditDrawerProps> = ({
             </span>
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-lg font-bold truncate max-w-[300px]" title={title}>{title}</span>
+                <SheetTitle className="text-xl font-semibold">
+                  {title}
+                </SheetTitle>
                 {statusLabel && (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold" style={{ backgroundColor: statusColor, color: '#fff' }}>
+                  <span
+                    className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold"
+                    style={{ backgroundColor: statusColor, color: "#fff" }}
+                  >
                     {statusLabel}
                   </span>
                 )}
               </div>
-              <SheetTitle className="text-xl font-semibold">{title}</SheetTitle>
               {description && (
                 <SheetDescription className="text-muted-foreground">
                   {description}
@@ -83,4 +92,4 @@ const EntityEditDrawer: React.FC<EntityEditDrawerProps> = ({
   );
 };
 
-export default EntityEditDrawer; 
+export default EntityEditDrawer;

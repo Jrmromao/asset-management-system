@@ -72,6 +72,7 @@ import {
 } from "@/lib/schemas/schema-utils";
 import { getStatusLocationSection } from "@/components/forms/formSections";
 import { useSupplierUIStore } from "@/lib/stores/useSupplierUIStore";
+import { findById as findLicenseById } from "@/lib/actions/license.actions";
 
 type LicenseFormValues = z.infer<typeof licenseSchema>;
 
@@ -138,7 +139,17 @@ const CollapsibleSection = ({
   </div>
 );
 
-const LicenseForm = () => {
+interface LicenseFormProps {
+  id?: string;
+  isUpdate?: boolean;
+  onSuccess?: () => void;
+}
+
+const LicenseForm: React.FC<LicenseFormProps> = ({
+  id,
+  isUpdate = false,
+  onSuccess,
+}) => {
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
   const [file, setFile] = useState<File | null>(null);
@@ -156,16 +167,18 @@ const LicenseForm = () => {
   });
 
   const params = useParams();
-  const licenseId = params?.id as string | undefined;
+  const licenseId = id || (params?.id as string | undefined);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [createdLicenseId, setCreatedLicenseId] = useState<string | undefined>(
     licenseId,
   );
+  const [loading, setLoading] = useState(false);
+  const [licenseData, setLicenseData] = useState<any>(null);
 
   // Queries and UI stores
   const { onOpen: openStatus } = useStatusLabelUIStore();
   const { statusLabels } = useStatusLabelsQuery();
-  const { createLicense } = useLicenseQuery();
+  const { createLicense, updateLicense, refresh } = useLicenseQuery();
   const { onOpen: openDepartment } = useDepartmentUIStore();
   const { departments } = useDepartmentQuery();
   const { suppliers } = useSupplierQuery();
@@ -224,11 +237,15 @@ const LicenseForm = () => {
       inventoryId: "",
       minSeatsAlert: "",
       seats: "",
-
       alertRenewalDays: "",
       notes: "",
     },
   });
+
+  // Debug: log form errors
+  useEffect(() => {
+    console.log("formState.errors", form.formState.errors);
+  }, [form.formState.errors]);
 
   const statusLocationSection = getStatusLocationSection({
     form,
@@ -272,28 +289,104 @@ const LicenseForm = () => {
     if (idToUse) fetchFiles();
   }, [idToUse]);
 
+  // Load license data for update
+  useEffect(() => {
+    if (isUpdate && licenseId) {
+      setLoading(true);
+      findLicenseById(licenseId)
+        .then((res) => {
+          if (res && res.data) {
+            setLicenseData(res.data);
+            // Set form values
+            form.reset({
+              licenseName: res.data.name || "",
+              licensedEmail: res.data.licensedEmail || "",
+              statusLabelId: res.data.statusLabelId || "",
+              locationId: res.data.locationId || "",
+              inventoryId: res.data.inventoryId || "",
+              minSeatsAlert: res.data.minSeatsAlert?.toString() || "",
+              seats: res.data.seats?.toString() || "",
+              alertRenewalDays: res.data.alertRenewalDays?.toString() || "",
+              notes: res.data.purchaseNotes || "",
+              purchaseDate: res.data.purchaseDate
+                ? new Date(res.data.purchaseDate)
+                : undefined,
+              renewalDate: res.data.renewalDate
+                ? new Date(res.data.renewalDate)
+                : undefined,
+              poNumber: res.data.poNumber || "",
+              supplierId: res.data.supplierId || "",
+              purchasePrice: res.data.purchasePrice?.toString() || "",
+              renewalPrice: res.data.renewalPrice?.toString() || "",
+              monthlyPrice: res.data.monthlyPrice?.toString() || "",
+              annualPrice: res.data.annualPrice?.toString() || "",
+              pricePerSeat: res.data.pricePerSeat?.toString() || "",
+              currency: res.data.currency || "",
+              billingCycle: res.data.billingCycle || "",
+              discountPercent: res.data.discountPercent?.toString() || "",
+              taxRate: res.data.taxRate?.toString() || "",
+              lastUsageAudit: res.data.lastUsageAudit
+                ? new Date(res.data.lastUsageAudit)
+                : undefined,
+              utilizationRate: res.data.utilizationRate?.toString() || "",
+              costCenter: res.data.costCenter || "",
+              budgetCode: res.data.budgetCode || "",
+              departmentId: res.data.departmentId || (departments && departments.length > 0 ? departments[0].id : ""),
+            });
+          }
+        })
+        .finally(() => setLoading(false));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isUpdate, licenseId, departments]);
+
   // Submit handler
   async function onSubmit(data: LicenseFormValues) {
-    startTransition(async () => {
-      try {
-        await createLicense(data, {
-          onSuccess: (createdLicense) => {
-            const newId = createdLicense?.data?.id;
-            if (newId) {
-              setCreatedLicenseId(newId);
-              setDialogOpen(true);
+    console.log("SUBMIT HANDLER CALLED", data);
+    if (isUpdate && licenseId) {
+      // Update mode
+      console.log("Calling updateLicense", { licenseId, data });
+      await updateLicense(licenseId, data, {
+        onSuccess: () => {
+          refresh();
+          if (onSuccess) onSuccess();
+          toast.dismiss();
+          toast.success("License updated successfully!");
+        },
+        onError: (error: Error) => {
+          toast.dismiss();
+          toast.error("Failed to update license");
+          console.error("Error updating license:", error);
+        },
+      });
+    } else {
+      // Create mode
+      startTransition(async () => {
+        try {
+          await createLicense(data, {
+            onSuccess: (createdLicense: any) => {
+              refresh();
+              const newId = createdLicense?.data?.id;
+              if (newId) {
+                setCreatedLicenseId(newId);
+                setDialogOpen(true);
+              }
+              toast.dismiss();
               toast.success("License created! You can now upload files.");
-            }
-          },
-          onError: (error) => {
-            console.error("Error creating a License:", error);
-          },
-        });
-      } catch (error) {
-        toast.error("An unexpected error occurred");
-        console.error(error);
-      }
-    });
+            },
+            onError: (error: Error) => {
+              toast.dismiss();
+              toast.error("Failed to create license");
+              console.error("Error creating a License:", error);
+            },
+          });
+        } catch (error) {
+          toast.dismiss();
+          toast.error("An unexpected error occurred");
+          console.error(error);
+        }
+      });
+    }
   }
 
   // Watch form values for progress tracking
@@ -384,18 +477,31 @@ const LicenseForm = () => {
   return (
     <FormContainer
       form={form}
-      requiredFields={getRequiredFieldsList(licenseSchema)}
-      requiredFieldsCount={getRequiredFieldCount(licenseSchema)}
+      requiredFields={isUpdate ? [] : getRequiredFieldsList(licenseSchema)}
+      requiredFieldsCount={isUpdate ? 0 : getRequiredFieldCount(licenseSchema)}
+      hideProgress={isUpdate}
     >
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)}>
+        <form id="license-form" onSubmit={form.handleSubmit(onSubmit)}>
           <div className="max-w-[1200px] mx-auto px-4 py-6">
             <div className="grid grid-cols-12 gap-6">
               {/* Main Form Content */}
-              {isPending ? (
-                <MainFormSkeleton />
+              {isPending || (isUpdate && loading) ? (
+                isUpdate ? (
+                  <div className="col-span-12 mt-6">
+                    <MainFormSkeleton />
+                  </div>
+                ) : (
+                  <MainFormSkeleton />
+                )
               ) : (
-                <div className="col-span-12 lg:col-span-8 space-y-6">
+                <div
+                  className={
+                    isUpdate
+                      ? "col-span-12"
+                      : "col-span-12 lg:col-span-8 space-y-6"
+                  }
+                >
                   {/* License Information - Always Visible */}
                   <Card className={"bg-white"}>
                     <CardContent className="divide-y divide-slate-100">
@@ -725,16 +831,27 @@ const LicenseForm = () => {
                 </div>
               )}
               {/* Right Sidebar - Form Progress */}
-              {isPending ? (
-                <FormProgressSkeleton />
-              ) : (
-                <FormProgress sections={progressFormSection} />
-              )}
+              {!isUpdate &&
+                (isPending || (isUpdate && loading) ? (
+                  <FormProgressSkeleton />
+                ) : (
+                  <FormProgress sections={progressFormSection} />
+                ))}
             </div>
           </div>
 
           {/* Action Footer */}
-          <ActionFooter form={form} isPending={isPending} router={router} />
+          {!isUpdate && (
+            <ActionFooter form={form} isPending={isPending} router={router} />
+          )}
+
+          <button
+            className="btn btn-primary px-4 py-2 rounded font-medium"
+            form="license-form"
+            type="submit"
+          >
+            Save
+          </button>
         </form>
       </Form>
     </FormContainer>
