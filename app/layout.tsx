@@ -5,6 +5,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import QueryProvider from "@/components/providers/QueryClientProvider";
 import { UserProvider } from "@/components/providers/UserContext";
 import ClientLayout from "@/components/layout/ClientLayout";
+import BrandedToaster from '@/components/BrandedToaster';
 
 export const dynamic = "force-dynamic";
 
@@ -40,6 +41,7 @@ export default function RootLayout({
               <ClientLayout>{children}</ClientLayout>
             </QueryProvider>
           </UserProvider>
+          <BrandedToaster />
         </body>
       </html>
     </ClerkProvider>

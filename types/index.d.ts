@@ -68,6 +68,17 @@ declare global {
     redirectUrl?: string;
   };
 
+  // Paginated response for tables
+  export type PaginatedResponse<T> = {
+    data: T[];
+    total: number;
+    page: number;
+    pageSize: number;
+    error?: string;
+    success?: boolean;
+    message?: string;
+  };
+
   type CSVRow = Record<string, string>;
 
   // ==================== Core Entity Types ====================
@@ -211,6 +222,7 @@ declare global {
   }
 
   interface License extends BaseEntity {
+    [x: string]: any;
     name: string;
     licensedEmail: string;
     poNumber: string;
