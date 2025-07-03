@@ -67,13 +67,13 @@ export function withAuth<T extends any[], R>(
         privateMetadata: clerkUser.privateMetadata || {},
       };
 
-          // console.log("🔍 [withAuth] - Created user object:", {
-          //   id: user.id,
-          //   publicMetadata: user.publicMetadata,
-          //   privateMetadata: user.privateMetadata,
-          //   hasCompanyId: !!user.privateMetadata?.companyId,
-          //   companyId: user.privateMetadata?.companyId,
-          // });
+      // console.log("🔍 [withAuth] - Created user object:", {
+      //   id: user.id,
+      //   publicMetadata: user.publicMetadata,
+      //   privateMetadata: user.privateMetadata,
+      //   hasCompanyId: !!user.privateMetadata?.companyId,
+      //   companyId: user.privateMetadata?.companyId,
+      // });
 
       // Call the original action with the authenticated user
       return await action(user, ...args);

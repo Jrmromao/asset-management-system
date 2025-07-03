@@ -1,4 +1,9 @@
 import { prisma } from "@/app/db";
+import {
+  PlanType as StaticPlanType,
+  hasFeature as staticHasFeature,
+  FeatureType,
+} from "@/lib/services/plan-features.service";
 
 async function getCompanySubscription(companyId: string) {
   const subscription = await prisma.subscription.findUnique({
@@ -129,8 +134,25 @@ export async function hasFeature(
     if (!subscription.pricingPlan) {
       return false;
     }
-    const features = subscription.pricingPlan.features as string[];
-    return features.includes(feature);
+    // Use static plan-feature mapping for MVP
+    const planType = subscription.pricingPlan.planType?.toLowerCase?.();
+    if (!planType) return false;
+    // Type assertion: convert DB planType to static PlanType enum
+    const staticPlanType = Object.values(StaticPlanType).find(
+      (p) => p === planType,
+    ) as StaticPlanType | undefined;
+    if (!staticPlanType) return false;
+    // Convert string to FeatureType enum
+    const featureEnum = (Object.values(FeatureType) as string[]).includes(
+      feature,
+    )
+      ? (feature as FeatureType)
+      : undefined;
+    if (!featureEnum) return false;
+    return staticHasFeature(staticPlanType, featureEnum);
+    // For future migration: fallback to DB features array if needed
+    // const features = subscription.pricingPlan.features as string[];
+    // return features.includes(feature);
   } catch (error) {
     console.error(`Error checking feature "${feature}":`, error);
     return false;

@@ -49,84 +49,99 @@ export default function PricingTable() {
   const navigate = useRouter();
 
   // Set minimums for item slider/input
-  const MIN_ITEMS = 500;
-  const MAX_ITEMS = 10000;
+  const MIN_ITEMS = 100;
+  const MAX_ITEMS = 5000;
   const [totalItemCount, setTotalItemCount] = useState(MIN_ITEMS);
   const [totalItemInputValue, setTotalItemInputValue] = useState(MIN_ITEMS.toString());
 
-  // Premium pricing tiers - per month, unified item count
+  // Competitive pricing tiers - per month, unified item count
   const pricingTiers: PricingTier[] = [
     {
-      name: "Core",
-      description: "Essential asset, license, and accessory management for growing teams",
-      baseMonthlyPrice: 249,
-      maxAssets: 500,
-      assetOveragePrice: 0.12, // $0.12 per additional item per month
+      name: "Starter",
+      description: "Essential asset, license, and accessory management for small teams",
+      baseMonthlyPrice: 49,
+      maxAssets: 250,
+      assetOveragePrice: 0.20, // $0.20 per additional item per month (higher to encourage upgrade)
       features: [
-        "Asset, license, and accessory tracking",
-        "Inventory management",
+        "Complete asset lifecycle tracking",
+        "License & accessory management", 
         "QR/barcode generation",
-        "Basic reporting",
-        "Maintenance scheduling",
-        "CSV import/export",
+        "Depreciation calculations",
+        "Check-in/check-out workflows",
+        "Basic reporting & dashboards",
+        "CSV import/export capabilities",
         "User roles & permissions",
-        "Unlimited users",
+        "Up to 10 team members",
         "Email support",
-        "Mobile access",
       ],
       cta: "Start Free Trial",
     },
     {
-      name: "Optimizer",
-      description: "AI-powered optimization, analytics, and sustainability for scaling organizations",
-      baseMonthlyPrice: 799,
-      maxAssets: 10000,
-      assetOveragePrice: 0.09, // $0.09 per additional item per month
+      name: "Professional",
+      description: "Advanced features with AI insights and sustainability tracking for growing businesses",
+      baseMonthlyPrice: 149,
+      maxAssets: 2500,
+      assetOveragePrice: 0.06, // $0.06 per additional item per month
       features: [
-        "Everything in Core, plus:",
-        "AI-powered cost optimization",
-        "AI anomaly detection",
-        "CO₂ tracking & sustainability analytics",
-        "Advanced reporting & dashboards",
+        "Everything in Starter, plus:",
+        "AI-powered cost optimization insights",
+        "CO₂ tracking & ESG reporting",
+        "Advanced analytics & custom dashboards",
+        "Maintenance workflow builder",
+        "Bulk operations & mass updates",
+        "Purchase order management",
+        "Unlimited team members",
         "Priority support",
         "API access & integrations",
       ],
+      popular: true,
+      badge: "Most Popular",
       cta: "Start Free Trial",
+      savings: "Save $358 annually",
     },
-    {
-      name: "Enterprise",
-      description: "Full automation, custom integrations, and white-glove support for large enterprises",
-      baseMonthlyPrice: 2499,
-      maxAssets: 50000,
-      assetOveragePrice: 0.05, // $0.05 per additional item per month
-      features: [
-        "Everything in Optimizer, plus:",
-        "Custom integrations",
-        "SSO & advanced security",
-        "Custom branding",
-        "Dedicated account manager",
-        "White-glove onboarding",
-        "Phone support",
-        "Custom reporting & dashboards",
-      ],
-      cta: "Contact Sales",
-    },
+    // Enterprise tier hidden for first release
+    // {
+    //   name: "Enterprise",
+    //   description: "Complete platform with custom integrations and dedicated support for large organizations",
+    //   baseMonthlyPrice: 399,
+    //   maxAssets: 10000,
+    //   assetOveragePrice: 0.03, // $0.03 per additional item per month
+    //   features: [
+    //     "Everything in Professional, plus:",
+    //     "AI anomaly detection & alerts",
+    //     "Custom integrations & webhooks",
+    //     "SSO & enterprise security",
+    //     "Custom branding & white-labeling",
+    //     "Multi-location & department management",
+    //     "Advanced workflow automation",
+    //     "Dedicated account manager",
+    //     "White-glove onboarding & training",
+    //     "24/7 phone support & SLA guarantee",
+    //   ],
+    //   cta: "Contact Sales",
+    // },
   ];
 
   // Calculate plan price based on baseMonthlyPrice and overage
   const calculatePrice = (tier: PricingTier, items: number) => {
     const included = tier.maxAssets;
-    const overage = items > included ? (items - included) * tier.assetOveragePrice : 0;
-    const monthly = Math.max(tier.baseMonthlyPrice, tier.baseMonthlyPrice + overage);
-    const annual = monthly * 12 * 0.9; // 10% discount for annual
-    return { monthly, annual, baseMonthlyPrice: tier.baseMonthlyPrice, overage };
+    const overageItems = items > included ? items - included : 0;
+    const overageAmount = overageItems * tier.assetOveragePrice;
+    const monthly = tier.baseMonthlyPrice + overageAmount;
+    const annual = monthly * 12 * 0.85; // 15% discount for annual (not 10%)
+    return { 
+      monthly, 
+      annual, 
+      baseMonthlyPrice: tier.baseMonthlyPrice, 
+      overage: overageAmount,
+      overageItems 
+    };
   };
 
   const getRecommendedTier = () => {
     // Consider both users and assets for recommendation
-    if (totalItemCount <= 1000 && userCount <= 5) return "Core";
-    if (totalItemCount <= 10000 && userCount <= 25) return "Optimizer";
-    return "Enterprise";
+    if (totalItemCount <= 500 && userCount <= 10) return "Starter";
+    return "Professional";
   };
 
   const containerVariants = {
@@ -183,7 +198,7 @@ export default function PricingTable() {
 
   const recommendedTier = getRecommendedTier();
 
-  // Calculate all plan prices and enforce monotonicity
+  // Calculate all plan prices - no artificial monotonicity enforcement
   const getTierPrices = (users: number, assets: number, isAnnual: boolean) => {
     const basePrices = pricingTiers.map((tier) => {
       const pricing = calculatePrice(tier, assets);
@@ -193,12 +208,6 @@ export default function PricingTable() {
         pricing,
       };
     });
-    // Enforce monotonicity: each higher tier must be at least $1 more than the previous
-    for (let i = 1; i < basePrices.length; i++) {
-      if (basePrices[i].price < basePrices[i - 1].price) {
-        basePrices[i].price = basePrices[i - 1].price + 1;
-      }
-    }
     return basePrices;
   };
 
@@ -324,8 +333,8 @@ export default function PricingTable() {
           />
         </div>
         <div className="text-xs text-gray-500 mt-2 text-center">
-          Minimum: 500 items &nbsp;|&nbsp; Maximum: 10,000 items<br />
-          Core plan includes up to 500 items. Overage applies above this limit.
+          Minimum: 100 items &nbsp;|&nbsp; Maximum: 5,000 items<br />
+          Starter plan includes up to 250 items. Overage applies above this limit.
         </div>
         <Slider
           value={[totalItemCount]}
@@ -335,13 +344,19 @@ export default function PricingTable() {
           }}
           min={MIN_ITEMS}
           max={MAX_ITEMS}
-          step={500}
+          step={100}
           className="mb-4 w-full max-w-2xl"
         />
         <div className="text-center mt-4">
           <span className="text-xl font-extrabold text-emerald-600 drop-shadow-sm">
-            {`Your price: ${formatPrice(tierPrices[0].price)} / ${isAnnual ? 'year' : 'month'}`}
+            {`Your price: ${formatPrice(Math.min(...tierPrices.map(t => t.price)))} / ${isAnnual ? 'year' : 'month'}`}
           </span>
+          <div className="text-sm text-gray-600 mt-2">
+            {(() => {
+              const cheapestTier = tierPrices.reduce((min, tier) => tier.price < min.price ? tier : min);
+              return `Best value: ${cheapestTier.name} plan`;
+            })()}
+          </div>
         </div>
       </motion.div>
       <div className="text-center text-xs text-gray-500 mb-12">
@@ -360,7 +375,7 @@ export default function PricingTable() {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="grid md:grid-cols-3 gap-8 mb-12"
+        className="grid md:grid-cols-2 gap-8 mb-12 max-w-5xl mx-auto"
       >
         {pricingTiers.map((tier, index) => {
           const tierPriceObj = tierPrices.find((t) => t.name === tier.name);
@@ -369,11 +384,11 @@ export default function PricingTable() {
           const isRecommended = tier.name === recommendedTier;
           const period = isAnnual ? "year" : "month";
 
-          // Add Best Value badge to Optimizer
-          const showBestValue = tier.name === "Optimizer";
+          // Add Best Value badge to Professional
+          const showBestValue = tier.name === "Professional";
 
-          // Special deal: 20% off first year for Core and Optimizer
-          const isSpecialDeal = tier.name === "Core" || tier.name === "Optimizer";
+          // Special deal: 20% off first year for Starter and Professional
+          const isSpecialDeal = tier.name === "Starter" || tier.name === "Professional";
           const specialDealDiscount = 0.2;
           const specialDealPrice = Math.round(price * (1 - specialDealDiscount));
 
@@ -488,9 +503,14 @@ export default function PricingTable() {
                       // Features that are coming soon
                       const comingSoonFeatures = [
                         'API access & integrations',
-                        'SSO & advanced security',
-                        'Custom integrations',
-                        'Phone support',
+                        'SSO & enterprise security', 
+                        'Custom integrations & webhooks',
+                        '24/7 phone support & SLA guarantee',
+                        'AI anomaly detection & alerts',
+                        'Advanced workflow automation',
+                        'Custom branding & white-labeling',
+                        'Dedicated account manager',
+                        'White-glove onboarding & training',
                       ];
                       const isComingSoon = comingSoonFeatures.some((soon) => feature.includes(soon));
                       return (
@@ -560,55 +580,41 @@ export default function PricingTable() {
         className="bg-blue-50 rounded-2xl p-8 mb-12"
       >
         <h3 className="text-xl font-bold text-center mb-2 text-blue-900">
-          💡 Example: Solo User with 4,000 Items
+          💡 Example: Small Team with 1,000 Items
         </h3>
         <p className="text-center text-sm text-blue-700 mb-6">
           Items include assets, licenses, and accessories.
         </p>
-        <div className="grid md:grid-cols-3 gap-6">
-          {(() => {
-            const exampleTierPrices = getTierPrices(1, 4000, false);
-            return pricingTiers.map((tier) => {
-              const tierPriceObj = exampleTierPrices.find((t) => t.name === tier.name);
-              const monthlyPrice = tierPriceObj ? tierPriceObj.price : 0;
-              const pricing = calculatePrice(tier, 4000);
-              const period = 'month';
-              return (
-                <div
-                  key={tier.name}
-                  className="bg-white rounded-lg p-4 text-center"
-                >
-                  <h4 className="font-semibold text-gray-900 mb-2">
-                    {tier.name}
-                  </h4>
-                  {tier.name === "Enterprise" ? (
-                    <div>
-                      <div className="text-2xl font-bold text-gray-900 mb-1">
-                        Custom Quote
+                <div className="grid md:grid-cols-2 gap-6">
+          {pricingTiers.map((tier) => {
+            const exampleTierPrices = getTierPrices(5, 1000, false);
+            const tierPriceObj = exampleTierPrices.find((t) => t.name === tier.name);
+            const monthlyPrice = tierPriceObj ? tierPriceObj.price : 0;
+            const pricing = calculatePrice(tier, 1000);
+            return (
+              <div
+                key={tier.name}
+                className="bg-white rounded-lg p-4 text-center"
+              >
+                <h4 className="font-semibold text-gray-900 mb-2">
+                  {tier.name}
+                </h4>
+                <div>
+                  <div className="text-2xl font-bold text-gray-900 mb-1">
+                    {formatPrice(monthlyPrice)}/month
+                  </div>
+                  <div className="text-xs text-gray-500 space-y-1">
+                    <div>Base: {formatPrice(tier.baseMonthlyPrice)}/month</div>
+                    {pricing.overage > 0 && (
+                      <div>
+                        Assets: +{formatPrice(pricing.overage)} /month
                       </div>
-                      <div className="text-xs text-gray-500">
-                        Contact sales for pricing
-                      </div>
-                    </div>
-                  ) : (
-                    <div>
-                      <div className="text-2xl font-bold text-gray-900 mb-1">
-                        {formatPrice(monthlyPrice)}/month
-                      </div>
-                      <div className="text-xs text-gray-500 space-y-1">
-                        <div>Base: {formatPrice(tier.baseMonthlyPrice)}/month</div>
-                        {pricing.overage > 0 && (
-                          <div>
-                            Assets: +{formatPrice(pricing.overage)} /month
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
-              );
-            });
-          })()}
+              </div>
+            );
+          })}
         </div>
       </motion.div>
 
@@ -676,7 +682,7 @@ export default function PricingTable() {
               What's included in the free trial?
             </h4>
             <p className="text-sm text-gray-600">
-              Full access to Optimizer plan features for 30 days. A Stripe subscription is required to start your free trial, but you will not be charged until the trial period ends. You can cancel anytime before the trial ends to avoid charges.
+              Full access to Professional plan features for 30 days. A Stripe subscription is required to start your free trial, but you will not be charged until the trial period ends. You can cancel anytime before the trial ends to avoid charges.
             </p>
           </div>
           <div>
