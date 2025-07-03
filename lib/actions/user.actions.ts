@@ -417,6 +417,34 @@ export async function createInitialUser(user: {
   }
 }
 
+/**
+ * Creates a lonee (assignment-only) user who cannot log in.
+ */
+export async function createLoneeUser(user: {
+  name: string;
+  email: string;
+  roleId: string;
+  departmentId?: string;
+}) {
+  try {
+    const newUser = await prisma.user.create({
+      data: {
+        name: user.name,
+        email: user.email,
+        roleId: user.roleId,
+        departmentId: user.departmentId,
+        active: false,
+        status: "REGISTERED",
+        oauthId: null,
+      },
+    });
+    return parseStringify(newUser);
+  } catch (error) {
+    console.error("Error creating lonee user:", error);
+    throw new Error("Failed to create lonee user in database.");
+  }
+}
+
 // Function to create user during company registration
 export async function createUserWithCompany(user: {
   clerkId: string;
@@ -705,10 +733,16 @@ export async function syncCompanyUserMetadata(companyId: string): Promise<{
       totalCount: users.length,
     };
   } catch (error) {
-    console.error("❌ [syncCompanyUserMetadata] - Error syncing company metadata:", error);
+    console.error(
+      "❌ [syncCompanyUserMetadata] - Error syncing company metadata:",
+      error,
+    );
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Failed to sync company metadata",
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to sync company metadata",
       syncedCount: 0,
       totalCount: 0,
     };
@@ -765,10 +799,16 @@ export async function ensureUserMetadataSync(clerkUserId: string): Promise<{
       companyId: dbUser.companyId,
     };
   } catch (error) {
-    console.error("❌ [ensureUserMetadataSync] - Error ensuring metadata sync:", error);
+    console.error(
+      "❌ [ensureUserMetadataSync] - Error ensuring metadata sync:",
+      error,
+    );
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Failed to ensure metadata sync",
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to ensure metadata sync",
     };
   }
 }

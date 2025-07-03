@@ -22,7 +22,7 @@ async function main() {
 
   try {
     // Seed global roles first (no company required)
-    // await seedGlobalRoles(prisma);
+    await seedGlobalRoles(prisma);
 
     // Seed pricing plans (also global/system-wide)
     // await seedPricingPlans(prisma);
@@ -42,8 +42,8 @@ async function main() {
     };
 
     // await seedStatusLabels(prisma, company.id);
-    const categories = await seedCategories(prisma, company.id);
-    await seedFormTemplates(prisma, company.id, categories);
+    // const categories = await seedCategories(prisma, company.id);
+    // await seedFormTemplates(prisma, company.id, categories);
     // await seedDepartments(prisma, company.id);
     // await seedLocations(prisma, company.id);
     // await seedInventories(prisma, company.id);

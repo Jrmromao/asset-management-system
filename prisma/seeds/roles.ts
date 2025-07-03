@@ -52,6 +52,22 @@ export async function seedGlobalRoles(prisma: PrismaClient) {
         canManageCompany: false,
       },
     },
+    {
+      name: "Lonee",
+      isAdmin: false,
+      isDefault: false,
+      isGlobal: true,
+      permissions: {
+        canManageUsers: false,
+        canManageAssets: false,
+        canManageLicenses: false,
+        canManageAccessories: false,
+        canManageReports: false,
+        canManageSettings: false,
+        canViewAuditLogs: false,
+        canManageCompany: false,
+      },
+    },
   ];
 
   const createdRoles = [];
