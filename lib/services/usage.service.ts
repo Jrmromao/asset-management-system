@@ -3,6 +3,7 @@ import {
   PlanType as StaticPlanType,
   hasFeature as staticHasFeature,
   FeatureType,
+  getPlanLimits,
 } from "@/lib/services/plan-features.service";
 
 async function getCompanySubscription(companyId: string) {
@@ -40,6 +41,45 @@ async function getItemUsage(companyId: string): Promise<{
   };
 }
 
+export async function getActiveUserCount(companyId: string): Promise<number> {
+  // Only count users who are active and have completed registration
+  return prisma.user.count({
+    where: {
+      companyId,
+      active: true,
+      status: "ACTIVE", // Only users who have completed registration
+    },
+  });
+}
+
+export async function canAddActiveUser(
+  companyId: string,
+): Promise<{ allowed: boolean; limit: number; used: number }> {
+  let planType: string | undefined;
+  let staticPlanType: StaticPlanType | undefined;
+  try {
+    const subscription = await getCompanySubscription(companyId);
+    planType = subscription.pricingPlan?.planType?.toLowerCase?.();
+    // Log for debugging
+    console.log("[canAddActiveUser] planType:", planType);
+    staticPlanType = Object.values(StaticPlanType).find(
+      (p) => p === planType,
+    ) as StaticPlanType | undefined;
+    console.log("[canAddActiveUser] staticPlanType:", staticPlanType);
+  } catch (e) {
+    console.warn("[canAddActiveUser] Subscription lookup failed:", e);
+  }
+  // Fallback to Starter plan if planType is missing or invalid
+  if (!staticPlanType) {
+    staticPlanType = StaticPlanType.Starter;
+    planType = "starter";
+  }
+  const { activeUserLimit } = getPlanLimits(staticPlanType);
+  const used = await getActiveUserCount(companyId);
+  return { allowed: used < activeUserLimit, limit: activeUserLimit, used };
+}
+
+// Update checkItemLimit to use itemLimit from plan limits
 export async function checkItemLimit(companyId: string): Promise<{
   allowed: boolean;
   usage: {
@@ -53,14 +93,20 @@ export async function checkItemLimit(companyId: string): Promise<{
 }> {
   try {
     const subscription = await getCompanySubscription(companyId);
-    const limit = subscription.assetQuota;
+    const planType = subscription.pricingPlan?.planType?.toLowerCase?.();
+    if (!planType) throw new Error("No plan type");
+    const staticPlanType = Object.values(StaticPlanType).find(
+      (p) => p === planType,
+    ) as StaticPlanType | undefined;
+    if (!staticPlanType) throw new Error("No static plan type");
+    const { itemLimit } = getPlanLimits(staticPlanType);
     const usage = await getItemUsage(companyId);
 
     return {
-      allowed: usage.total < limit,
+      allowed: usage.total < itemLimit,
       usage,
-      limit,
-      remaining: Math.max(0, limit - usage.total),
+      limit: itemLimit,
+      remaining: Math.max(0, itemLimit - usage.total),
     };
   } catch (error) {
     console.error(`Error checking item limit:`, error);

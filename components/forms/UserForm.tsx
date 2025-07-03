@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition } from "react";
+import { useTransition, useEffect, useState } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -26,6 +26,32 @@ const UserForm = () => {
   const { roles, isLoading: rolesLoading, error: rolesError } = useRoleQuery();
   const [closeDialog] = useDialogStore((state) => [state.onClose]);
 
+  // State for active user usage
+  const [activeUserUsage, setActiveUserUsage] = useState<{
+    used: number;
+    limit: number;
+  } | null>(null);
+  const [usageLoading, setUsageLoading] = useState(true);
+
+  useEffect(() => {
+    // Fetch active user usage from backend
+    async function fetchUsage() {
+      setUsageLoading(true);
+      try {
+        const res = await fetch("/api/user/can-add-active-user");
+        if (res.ok) {
+          const data = await res.json();
+          setActiveUserUsage({ used: data.used, limit: data.limit });
+        }
+      } catch (e) {
+        // Ignore for now
+      } finally {
+        setUsageLoading(false);
+      }
+    }
+    fetchUsage();
+  }, []);
+
   const form = useForm<UserFormValues>({
     resolver: zodResolver(userInviteSchema),
     defaultValues: {
@@ -36,6 +62,22 @@ const UserForm = () => {
   });
 
   async function onSubmit(data: UserFormValues) {
+    // Check active user limit before inviting
+    try {
+      const res = await fetch("/api/user/can-add-active-user");
+      if (res.ok) {
+        const usage = await res.json();
+        if (!usage.allowed) {
+          toast.error(
+            `You've reached your active user limit (${usage.limit}). Upgrade your plan to add more users.`,
+          );
+          return;
+        }
+      }
+    } catch (e) {
+      toast.error("Could not verify user limit. Please try again.");
+      return;
+    }
     startTransition(async () => {
       try {
         const result = await inviteUserSecure(data);
@@ -128,6 +170,17 @@ const UserForm = () => {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <div className="space-y-4">
                 <h3 className="font-medium">Invite New User</h3>
+                {/* Show active user usage */}
+                <div className="mb-2 text-sm text-gray-600">
+                  {usageLoading ? (
+                    <span>Loading user quota...</span>
+                  ) : activeUserUsage ? (
+                    <span>
+                      Active users: <b>{activeUserUsage.used}</b> of{" "}
+                      <b>{activeUserUsage.limit}</b> used
+                    </span>
+                  ) : null}
+                </div>
                 <CustomInput
                   required
                   name="email"

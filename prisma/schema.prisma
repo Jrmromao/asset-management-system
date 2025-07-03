@@ -30,7 +30,7 @@ model User {
   companyId             String
   createdAt             DateTime      @default(now())
   updatedAt             DateTime      @updatedAt
-  active                Boolean       @default(true)
+  active                Boolean       @default(true) // If true, user can log in (counts toward active user limit). If false, user is registered but cannot log in.
   accountType           String        @default("Internal User")
   departmentId          String?
   dataRetentionDate     DateTime?

@@ -34,8 +34,9 @@ interface PricingTier {
   name: string;
   description: string;
   baseMonthlyPrice: number;
-  maxAssets: number;
-  assetOveragePrice: number;
+  maxItems: number;
+  activeUserLimit: number;
+  overagePerItem: number;
   features: string[];
   badge?: string;
   popular?: boolean;
@@ -52,36 +53,40 @@ export default function PricingTable() {
   const MIN_ITEMS = 100;
   const MAX_ITEMS = 5000;
   const [totalItemCount, setTotalItemCount] = useState(MIN_ITEMS);
-  const [totalItemInputValue, setTotalItemInputValue] = useState(MIN_ITEMS.toString());
+  const [totalItemInputValue, setTotalItemInputValue] = useState(
+    MIN_ITEMS.toString(),
+  );
 
   // Competitive pricing tiers - per month, unified item count
   const pricingTiers: PricingTier[] = [
     {
       name: "Starter",
-      description: "Essential asset, license, and accessory management for small teams",
-      baseMonthlyPrice: 49,
-      maxAssets: 250,
-      assetOveragePrice: 0.20, // $0.20 per additional item per month (higher to encourage upgrade)
+      description:
+        "Essential asset, license, and accessory management for small teams",
+      baseMonthlyPrice: 39,
+      maxItems: 100,
+      activeUserLimit: 3,
+      overagePerItem: 0.25,
       features: [
-        "Complete asset lifecycle tracking",
-        "License & accessory management", 
+        "Complete asset, license, and accessory lifecycle tracking",
         "QR/barcode generation",
         "Depreciation calculations",
         "Check-in/check-out workflows",
         "Basic reporting & dashboards",
         "CSV import/export capabilities",
         "User roles & permissions",
-        "Up to 10 team members",
         "Email support",
       ],
       cta: "Start Free Trial",
     },
     {
       name: "Professional",
-      description: "Advanced features with AI insights and sustainability tracking for growing businesses",
-      baseMonthlyPrice: 149,
-      maxAssets: 2500,
-      assetOveragePrice: 0.06, // $0.06 per additional item per month
+      description:
+        "Advanced features with AI insights and sustainability tracking for growing businesses",
+      baseMonthlyPrice: 99,
+      maxItems: 1000,
+      activeUserLimit: 10,
+      overagePerItem: 0.1,
       features: [
         "Everything in Starter, plus:",
         "AI-powered cost optimization insights",
@@ -90,14 +95,13 @@ export default function PricingTable() {
         "Maintenance workflow builder",
         "Bulk operations & mass updates",
         "Purchase order management",
-        "Unlimited team members",
         "Priority support",
         "API access & integrations",
       ],
       popular: true,
       badge: "Most Popular",
       cta: "Start Free Trial",
-      savings: "Save $358 annually",
+      savings: "Save $198 annually",
     },
     // Enterprise tier hidden for first release
     // {
@@ -124,17 +128,17 @@ export default function PricingTable() {
 
   // Calculate plan price based on baseMonthlyPrice and overage
   const calculatePrice = (tier: PricingTier, items: number) => {
-    const included = tier.maxAssets;
+    const included = tier.maxItems;
     const overageItems = items > included ? items - included : 0;
-    const overageAmount = overageItems * tier.assetOveragePrice;
+    const overageAmount = overageItems * tier.overagePerItem;
     const monthly = tier.baseMonthlyPrice + overageAmount;
     const annual = monthly * 12 * 0.85; // 15% discount for annual (not 10%)
-    return { 
-      monthly, 
-      annual, 
-      baseMonthlyPrice: tier.baseMonthlyPrice, 
+    return {
+      monthly,
+      annual,
+      baseMonthlyPrice: tier.baseMonthlyPrice,
       overage: overageAmount,
-      overageItems 
+      overageItems,
     };
   };
 
@@ -214,11 +218,11 @@ export default function PricingTable() {
   // Use getTierPrices for main pricing cards
   const tierPrices = getTierPrices(userCount, totalItemCount, isAnnual);
 
-  const [currency, setCurrency] = useState<'USD' | 'EUR'>('USD');
+  const [currency, setCurrency] = useState<"USD" | "EUR">("USD");
   const conversionRate = 0.92; // 1 USD = 0.92 EUR (example)
 
   const formatPrice = (price: number) =>
-    currency === 'USD'
+    currency === "USD"
       ? `$${price.toLocaleString()}`
       : `€${Math.round(price * conversionRate).toLocaleString()}`;
 
@@ -247,11 +251,24 @@ export default function PricingTable() {
       {/* Annual vs Monthly Toggle - sticky and full width */}
       <div className="sticky top-16 z-20 bg-white/80 backdrop-blur-md py-4 mb-8 w-full flex justify-center border-b border-gray-100 shadow">
         <div className="inline-flex items-center gap-4 bg-white/70 backdrop-blur-md shadow-md px-8 py-4 rounded-full border border-gray-200">
-          <span className={!isAnnual ? "font-semibold text-gray-900" : "text-gray-500"}>Monthly</span>
+          <span
+            className={
+              !isAnnual ? "font-semibold text-gray-900" : "text-gray-500"
+            }
+          >
+            Monthly
+          </span>
           <Switch checked={isAnnual} onCheckedChange={setIsAnnual} />
-          <span className={isAnnual ? "font-semibold text-gray-900" : "text-gray-500"}>
+          <span
+            className={
+              isAnnual ? "font-semibold text-gray-900" : "text-gray-500"
+            }
+          >
             Annual
-            <Badge variant="secondary" className="ml-2 bg-emerald-100 text-emerald-700 border-emerald-200">
+            <Badge
+              variant="secondary"
+              className="ml-2 bg-emerald-100 text-emerald-700 border-emerald-200"
+            >
               Save 15%
             </Badge>
           </span>
@@ -266,8 +283,8 @@ export default function PricingTable() {
             <TooltipTrigger asChild>
               <button
                 aria-label="Select USD"
-                className={`px-3 py-1 rounded-full border transition-all duration-150 ${currency === 'USD' ? 'bg-emerald-600 text-white border-emerald-700 shadow-md scale-105' : 'bg-gray-200 text-gray-700 border-gray-300 hover:bg-gray-300'}`}
-                onClick={() => setCurrency('USD')}
+                className={`px-3 py-1 rounded-full border transition-all duration-150 ${currency === "USD" ? "bg-emerald-600 text-white border-emerald-700 shadow-md scale-105" : "bg-gray-200 text-gray-700 border-gray-300 hover:bg-gray-300"}`}
+                onClick={() => setCurrency("USD")}
               >
                 USD
               </button>
@@ -282,8 +299,8 @@ export default function PricingTable() {
             <TooltipTrigger asChild>
               <button
                 aria-label="Select EUR"
-                className={`px-3 py-1 rounded-full border transition-all duration-150 ${currency === 'EUR' ? 'bg-emerald-600 text-white border-emerald-700 shadow-md scale-105' : 'bg-gray-200 text-gray-700 border-gray-300 hover:bg-gray-300'}`}
-                onClick={() => setCurrency('EUR')}
+                className={`px-3 py-1 rounded-full border transition-all duration-150 ${currency === "EUR" ? "bg-emerald-600 text-white border-emerald-700 shadow-md scale-105" : "bg-gray-200 text-gray-700 border-gray-300 hover:bg-gray-300"}`}
+                onClick={() => setCurrency("EUR")}
               >
                 EUR
               </button>
@@ -301,10 +318,17 @@ export default function PricingTable() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
         className="flex flex-col items-center justify-center gap-8 bg-white/80 backdrop-blur-lg rounded-2xl shadow-2xl border border-gray-100 p-10 mb-4 w-full max-w-5xl mx-auto"
-        style={{ boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.15)", border: "1.5px solid rgba(255,255,255,0.25)", background: "linear-gradient(135deg, rgba(255,255,255,0.85) 60%, rgba(236,254,255,0.7) 100%)" }}
+        style={{
+          boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.15)",
+          border: "1.5px solid rgba(255,255,255,0.25)",
+          background:
+            "linear-gradient(135deg, rgba(255,255,255,0.85) 60%, rgba(236,254,255,0.7) 100%)",
+        }}
       >
         <div className="flex flex-col items-center mb-2">
-          <h4 className="text-3xl font-extrabold text-brand-700 tracking-tight mb-1">Total Items Tracked</h4>
+          <h4 className="text-3xl font-extrabold text-brand-700 tracking-tight mb-1">
+            Total Items Tracked
+          </h4>
           <span className="text-base text-brand-500 mt-1 flex items-center gap-1">
             Assets, licenses, and accessories—all in one place.
             <TooltipProvider>
@@ -314,7 +338,8 @@ export default function PricingTable() {
                 </TooltipTrigger>
                 <TooltipContent>
                   <span>
-                    "Items" are any asset, license, or accessory you track in the platform.
+                    &quot;Items&quot; are any asset, license, or accessory you
+                    track in the platform.
                   </span>
                 </TooltipContent>
               </Tooltip>
@@ -322,7 +347,9 @@ export default function PricingTable() {
           </span>
         </div>
         <div className="flex items-center justify-between w-full max-w-2xl">
-          <span className="text-base font-semibold text-gray-700">Number of items</span>
+          <span className="text-base font-semibold text-gray-700">
+            Number of items
+          </span>
           <Input
             type="number"
             value={totalItemInputValue}
@@ -333,8 +360,10 @@ export default function PricingTable() {
           />
         </div>
         <div className="text-xs text-gray-500 mt-2 text-center">
-          Minimum: 100 items &nbsp;|&nbsp; Maximum: 5,000 items<br />
-          Starter plan includes up to 250 items. Overage applies above this limit.
+          Minimum: 100 items &nbsp;|&nbsp; Maximum: 5,000 items
+          <br />
+          Starter plan includes up to 250 items. Overage applies above this
+          limit.
         </div>
         <Slider
           value={[totalItemCount]}
@@ -349,24 +378,31 @@ export default function PricingTable() {
         />
         <div className="text-center mt-4">
           <span className="text-xl font-extrabold text-emerald-600 drop-shadow-sm">
-            {`Your price: ${formatPrice(Math.min(...tierPrices.map(t => t.price)))} / ${isAnnual ? 'year' : 'month'}`}
+            {`Your price: ${formatPrice(Math.min(...tierPrices.map((t) => t.price)))} / ${isAnnual ? "year" : "month"}`}
           </span>
           <div className="text-sm text-gray-600 mt-2">
             {(() => {
-              const cheapestTier = tierPrices.reduce((min, tier) => tier.price < min.price ? tier : min);
+              const cheapestTier = tierPrices.reduce((min, tier) =>
+                tier.price < min.price ? tier : min,
+              );
               return `Best value: ${cheapestTier.name} plan`;
             })()}
           </div>
         </div>
       </motion.div>
       <div className="text-center text-xs text-gray-500 mb-12">
-        All prices exclude VAT. Billed in USD. EUR prices are for reference only.
+        All prices exclude VAT. Billed in USD. EUR prices are for reference
+        only.
       </div>
 
       {/* Special Deal Banner */}
       <div className="w-full flex justify-center mb-6">
         <div className="bg-amber-100 text-amber-800 px-6 py-3 rounded-full font-semibold shadow-md text-center text-base animate-pulse">
-          🎉 Special Deal: 20% off your first year – Use code <span className="font-mono bg-amber-200 px-2 py-1 rounded">LAUNCH20</span> at checkout! <span className="ml-2 text-xs">(Ends August 31)</span>
+          🎉 Special Deal: 20% off your first year – Use code{" "}
+          <span className="font-mono bg-amber-200 px-2 py-1 rounded">
+            LAUNCH20
+          </span>{" "}
+          at checkout! <span className="ml-2 text-xs">(Ends August 31)</span>
         </div>
       </div>
 
@@ -388,9 +424,12 @@ export default function PricingTable() {
           const showBestValue = tier.name === "Professional";
 
           // Special deal: 20% off first year for Starter and Professional
-          const isSpecialDeal = tier.name === "Starter" || tier.name === "Professional";
+          const isSpecialDeal =
+            tier.name === "Starter" || tier.name === "Professional";
           const specialDealDiscount = 0.2;
-          const specialDealPrice = Math.round(price * (1 - specialDealDiscount));
+          const specialDealPrice = Math.round(
+            price * (1 - specialDealDiscount),
+          );
 
           return (
             <motion.div
@@ -398,7 +437,7 @@ export default function PricingTable() {
               custom={index}
               variants={cardVariants}
               whileHover="hover"
-              className={`relative ${isRecommended ? 'ring-4 ring-emerald-400 scale-105 shadow-emerald-200 animate-pulse-slow' : ''}`}
+              className={`relative ${isRecommended ? "ring-4 ring-emerald-400 scale-105 shadow-emerald-200 animate-pulse-slow" : ""}`}
               aria-label={`Pricing card for ${tier.name}`}
             >
               <Card
@@ -422,10 +461,20 @@ export default function PricingTable() {
                       </Badge>
                     )}
                     {showBestValue && (
-                      <Badge className="px-4 py-1 bg-amber-400 text-amber-900 font-bold animate-bounce" aria-label="Best Value">Best Value</Badge>
+                      <Badge
+                        className="px-4 py-1 bg-amber-400 text-amber-900 font-bold animate-bounce"
+                        aria-label="Best Value"
+                      >
+                        Best Value
+                      </Badge>
                     )}
                     {isRecommended && (
-                      <Badge className="px-4 py-1 bg-emerald-600 text-white font-bold animate-pulse" aria-label="Recommended">Recommended</Badge>
+                      <Badge
+                        className="px-4 py-1 bg-emerald-600 text-white font-bold animate-pulse"
+                        aria-label="Recommended"
+                      >
+                        Recommended
+                      </Badge>
                     )}
                   </div>
                 )}
@@ -443,7 +492,7 @@ export default function PricingTable() {
                           Custom Pricing
                         </div> */}
                         <p className="text-sm text-gray-600">
-                          Tailored to your organization's needs
+                          Tailored to your organization&apos;s needs
                         </p>
                         <p className="text-xs text-gray-500 mt-2">
                           Volume discounts available
@@ -460,9 +509,15 @@ export default function PricingTable() {
                       <div className="flex items-baseline justify-center gap-1">
                         {isSpecialDeal ? (
                           <>
-                            <span className="text-lg text-gray-400 line-through mr-2">{formatPrice(price)}</span>
-                            <span className="text-4xl font-bold text-emerald-600">{formatPrice(specialDealPrice)}</span>
-                            <span className="ml-2 bg-amber-200 text-amber-800 px-2 py-0.5 rounded text-xs font-semibold">20% Off First Year</span>
+                            <span className="text-lg text-gray-400 line-through mr-2">
+                              {formatPrice(price)}
+                            </span>
+                            <span className="text-4xl font-bold text-emerald-600">
+                              {formatPrice(specialDealPrice)}
+                            </span>
+                            <span className="ml-2 bg-amber-200 text-amber-800 px-2 py-0.5 rounded text-xs font-semibold">
+                              20% Off First Year
+                            </span>
                             <span className="text-gray-600">/{period}</span>
                           </>
                         ) : (
@@ -484,10 +539,25 @@ export default function PricingTable() {
                         )}
                         {/* Price Breakdown */}
                         <div className="mt-3 text-xs text-gray-500 space-y-1">
-                          <div>Base: {formatPrice(tierPriceObj && tierPriceObj.pricing ? tierPriceObj.pricing.baseMonthlyPrice : pricing.baseMonthlyPrice)}/month</div>
-                          {((tierPriceObj && tierPriceObj.pricing ? tierPriceObj.pricing.overage : pricing.overage) > 0) && (
+                          <div>
+                            Base:{" "}
+                            {formatPrice(
+                              tierPriceObj && tierPriceObj.pricing
+                                ? tierPriceObj.pricing.baseMonthlyPrice
+                                : pricing.baseMonthlyPrice,
+                            )}
+                            /month
+                          </div>
+                          {(tierPriceObj && tierPriceObj.pricing
+                            ? tierPriceObj.pricing.overage
+                            : pricing.overage) > 0 && (
                             <div>
-                              Assets: +{formatPrice(tierPriceObj && tierPriceObj.pricing ? tierPriceObj.pricing.overage : pricing.overage)}
+                              Assets: +
+                              {formatPrice(
+                                tierPriceObj && tierPriceObj.pricing
+                                  ? tierPriceObj.pricing.overage
+                                  : pricing.overage,
+                              )}
                               /month
                             </div>
                           )}
@@ -498,21 +568,38 @@ export default function PricingTable() {
                 </CardHeader>
 
                 <CardContent className="flex flex-col flex-grow">
+                  {/* New: Plan limits summary */}
+                  <div className="mb-4 space-y-1 text-sm text-gray-700">
+                    <div>
+                      <b>Items included:</b> {tier.maxItems.toLocaleString()}
+                    </div>
+                    <div>
+                      <b>Active users (can log in):</b> {tier.activeUserLimit}
+                    </div>
+                    <div>
+                      <b>Registered users (for assignment):</b> Unlimited
+                    </div>
+                    <div>
+                      <b>Overage per item:</b> ${tier.overagePerItem.toFixed(2)}
+                    </div>
+                  </div>
                   <div className="space-y-3 flex-grow">
                     {tier.features.map((feature, featureIndex) => {
                       // Features that are coming soon
                       const comingSoonFeatures = [
-                        'API access & integrations',
-                        'SSO & enterprise security', 
-                        'Custom integrations & webhooks',
-                        '24/7 phone support & SLA guarantee',
-                        'AI anomaly detection & alerts',
-                        'Advanced workflow automation',
-                        'Custom branding & white-labeling',
-                        'Dedicated account manager',
-                        'White-glove onboarding & training',
+                        "API access & integrations",
+                        "SSO & enterprise security",
+                        "Custom integrations & webhooks",
+                        "24/7 phone support & SLA guarantee",
+                        "AI anomaly detection & alerts",
+                        "Advanced workflow automation",
+                        "Custom branding & white-labeling",
+                        "Dedicated account manager",
+                        "White-glove onboarding & training",
                       ];
-                      const isComingSoon = comingSoonFeatures.some((soon) => feature.includes(soon));
+                      const isComingSoon = comingSoonFeatures.some((soon) =>
+                        feature.includes(soon),
+                      );
                       return (
                         <div
                           key={featureIndex}
@@ -522,7 +609,9 @@ export default function PricingTable() {
                           <span className="text-sm text-gray-700 flex items-center gap-2">
                             {feature}
                             {isComingSoon && (
-                              <span className="ml-2 px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-800 text-xs font-semibold border border-yellow-200">Coming Soon</span>
+                              <span className="ml-2 px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-800 text-xs font-semibold border border-yellow-200">
+                                Coming Soon
+                              </span>
                             )}
                           </span>
                         </div>
@@ -542,10 +631,13 @@ export default function PricingTable() {
                       }`}
                       onClick={() => {
                         if (tier.name === "Enterprise") {
-                          window.open('mailto:sales@yourcompany.com?subject=Enterprise%20Pricing%20Inquiry', '_blank');
+                          window.open(
+                            "mailto:sales@yourcompany.com?subject=Enterprise%20Pricing%20Inquiry",
+                            "_blank",
+                          );
                         } else {
                           navigate.push(
-                            `/sign-up?plan=${tier.name.toLowerCase()}&users=${userCount}&assets=${totalItemCount}&billing=${isAnnual ? "annual" : "monthly"}`
+                            `/sign-up?plan=${tier.name.toLowerCase()}&users=${userCount}&assets=${totalItemCount}&billing=${isAnnual ? "annual" : "monthly"}`,
                           );
                         }
                       }}
@@ -554,7 +646,9 @@ export default function PricingTable() {
                       {isSpecialDeal ? (
                         <>
                           {tier.cta}
-                          <span className="ml-2 bg-amber-200 text-amber-800 px-2 py-0.5 rounded text-xs font-semibold">20% Off First Year</span>
+                          <span className="ml-2 bg-amber-200 text-amber-800 px-2 py-0.5 rounded text-xs font-semibold">
+                            20% Off First Year
+                          </span>
                           <ArrowRight className="ml-2 h-4 w-4" />
                         </>
                       ) : (
@@ -585,10 +679,12 @@ export default function PricingTable() {
         <p className="text-center text-sm text-blue-700 mb-6">
           Items include assets, licenses, and accessories.
         </p>
-                <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid md:grid-cols-2 gap-6">
           {pricingTiers.map((tier) => {
             const exampleTierPrices = getTierPrices(5, 1000, false);
-            const tierPriceObj = exampleTierPrices.find((t) => t.name === tier.name);
+            const tierPriceObj = exampleTierPrices.find(
+              (t) => t.name === tier.name,
+            );
             const monthlyPrice = tierPriceObj ? tierPriceObj.price : 0;
             const pricing = calculatePrice(tier, 1000);
             return (
@@ -606,9 +702,7 @@ export default function PricingTable() {
                   <div className="text-xs text-gray-500 space-y-1">
                     <div>Base: {formatPrice(tier.baseMonthlyPrice)}/month</div>
                     {pricing.overage > 0 && (
-                      <div>
-                        Assets: +{formatPrice(pricing.overage)} /month
-                      </div>
+                      <div>Assets: +{formatPrice(pricing.overage)} /month</div>
                     )}
                   </div>
                 </div>
@@ -679,10 +773,13 @@ export default function PricingTable() {
         <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
           <div>
             <h4 className="font-semibold text-gray-900 mb-2">
-              What's included in the free trial?
+              What&apos;s included in the free trial?
             </h4>
             <p className="text-sm text-gray-600">
-              Full access to Professional plan features for 30 days. A Stripe subscription is required to start your free trial, but you will not be charged until the trial period ends. You can cancel anytime before the trial ends to avoid charges.
+              Full access to Professional plan features for 30 days. A Stripe
+              subscription is required to start your free trial, but you will
+              not be charged until the trial period ends. You can cancel anytime
+              before the trial ends to avoid charges.
             </p>
           </div>
           <div>
@@ -690,7 +787,10 @@ export default function PricingTable() {
               What AI features are currently available?
             </h4>
             <p className="text-sm text-gray-600">
-              Smart Cleanup Engine with intelligent file protection, AI-powered cost optimization analysis, CO2 footprint calculation and tracking, automated maintenance recommendations, and intelligent insights for asset lifecycle management.
+              Smart Cleanup Engine with intelligent file protection, AI-powered
+              cost optimization analysis, CO2 footprint calculation and
+              tracking, automated maintenance recommendations, and intelligent
+              insights for asset lifecycle management.
             </p>
           </div>
           <div>
@@ -718,9 +818,13 @@ export default function PricingTable() {
               Is there an API available?
             </h4>
             <p className="text-sm text-gray-600">
-              REST API access for integrating with your existing systems is coming soon.
-              <span className="ml-2 px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-800 text-xs font-semibold border border-yellow-200 align-middle">Coming Soon</span>
-              <br />API documentation will be available for the Enterprise plan.
+              REST API access for integrating with your existing systems is
+              coming soon.
+              <span className="ml-2 px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-800 text-xs font-semibold border border-yellow-200 align-middle">
+                Coming Soon
+              </span>
+              <br />
+              API documentation will be available for the Enterprise plan.
             </p>
           </div>
           <div>
@@ -728,7 +832,10 @@ export default function PricingTable() {
               How does the Smart Cleanup Engine work?
             </h4>
             <p className="text-sm text-gray-600">
-              Our AI analyzes your reports and files to recommend optimal cleanup actions while protecting important documents. You can permanently protect critical files with one click, and the system learns from your preferences.
+              Our AI analyzes your reports and files to recommend optimal
+              cleanup actions while protecting important documents. You can
+              permanently protect critical files with one click, and the system
+              learns from your preferences.
             </p>
           </div>
           <div>

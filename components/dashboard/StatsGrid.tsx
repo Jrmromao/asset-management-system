@@ -164,23 +164,25 @@ export const StatsGrid = () => {
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       <StatCard
         title="Total Items"
-        mainValue={stats.totalItems}
-        subValue={`/${stats.quota.limit}`}
-        subtitle={`${stats.quota.remaining} remaining • ${stats.quota.percentage}% used`}
+        mainValue={Number.isFinite(stats.totalItems) ? stats.totalItems : 0}
+        subValue={`/${Number.isFinite(stats.quota.limit) ? stats.quota.limit : 0}`}
+        subtitle={`${Number.isFinite(stats.quota.remaining) ? stats.quota.remaining : 0} remaining • ${Number.isFinite(stats.quota.percentage) ? stats.quota.percentage : 0}% used`}
         icon={quotaIcon}
         tooltip={`Assets: ${stats.itemsBreakdown.assets} • Licenses: ${stats.itemsBreakdown.licenses} • Accessories: ${stats.itemsBreakdown.accessories}`}
       />
 
       <StatCard
         title="Asset Utilization"
-        mainValue={`${Math.round(stats.utilizationRate)}%`}
-        subtitle={`${stats.assignedAssets} of ${stats.itemsBreakdown.assets} assigned`}
+        mainValue={`${Number.isFinite(stats.utilizationRate) ? Math.round(stats.utilizationRate) : 0}%`}
+        subtitle={`${Number.isFinite(stats.assignedAssets) ? stats.assignedAssets : 0} of ${Number.isFinite(stats.itemsBreakdown.assets) ? stats.itemsBreakdown.assets : 0} assigned`}
         icon={<BarChart3 className="h-5 w-5 text-blue-600" />}
       />
 
       <StatCard
         title="Upcoming Maintenance"
-        mainValue={stats.maintenanceDue}
+        mainValue={
+          Number.isFinite(stats.maintenanceDue) ? stats.maintenanceDue : 0
+        }
         subValue="assets"
         subtitle="Due within 30 days"
         icon={<Clock className="h-5 w-5 text-amber-600" />}
@@ -189,9 +191,9 @@ export const StatsGrid = () => {
 
       <StatCard
         title="CO₂ Savings"
-        mainValue={stats.co2Savings}
+        mainValue={Number.isFinite(stats.co2Savings) ? stats.co2Savings : 0}
         subValue="tons"
-        subtitle={`+${stats.co2Trend} this month`}
+        subtitle={`+${Number.isFinite(stats.co2Trend) ? stats.co2Trend : 0} this month`}
         icon={<Battery className="h-5 w-5 text-emerald-600" />}
       />
     </div>

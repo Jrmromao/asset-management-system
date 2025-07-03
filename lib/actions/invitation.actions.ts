@@ -299,7 +299,7 @@ export async function inviteUser({ email, roleId }: InviteUserParams) {
 // Add this new function to handle invitation completion
 export async function completeInvitationRegistration({
   clerkUserId,
-  invitationId,
+  invitationId, // kept for backward compatibility, but we use token
   userData,
   token,
 }: {
@@ -322,37 +322,74 @@ export async function completeInvitationRegistration({
       "🎯 [completeInvitationRegistration] Starting completion process",
     );
 
-    // Create user in database
-    const user = await prisma.user.create({
-      data: {
-        oauthId: clerkUserId,
-        email: userData.email,
-        firstName: userData.firstName,
-        lastName: userData.lastName,
-        name: `${userData.firstName} ${userData.lastName}`,
-        phoneNum: userData.phone,
-        title: userData.title,
-        employeeId: userData.employeeId,
-        roleId: userData.roleId,
-        companyId: userData.companyId,
-        status: "ACTIVE",
+    // 1. Find invitation by token and status 'PENDING'
+    const invitation = await prisma.invitation.findFirst({
+      where: {
+        token,
+        status: "PENDING",
       },
     });
 
-    // Update invitation status
-    await prisma.invitation.update({
-      where: { clerkInvitationId: invitationId },
-      data: {
-        status: "ACCEPTED",
-        acceptedAt: new Date(),
-      },
+    if (!invitation) {
+      return { success: false, error: "Invalid or expired invitation token." };
+    }
+
+    // 2. Validate invitation (not expired, not accepted, email/role/company match)
+    const now = new Date();
+    if (invitation.expiresAt && invitation.expiresAt < now) {
+      return { success: false, error: "Invitation has expired." };
+    }
+    if (invitation.status !== "PENDING") {
+      return { success: false, error: "Invitation is not pending." };
+    }
+    if (invitation.email.toLowerCase() !== userData.email.toLowerCase()) {
+      return { success: false, error: "Invitation email does not match." };
+    }
+    if (invitation.roleId !== userData.roleId) {
+      return { success: false, error: "Invitation role does not match." };
+    }
+    if (invitation.companyId !== userData.companyId) {
+      return { success: false, error: "Invitation company does not match." };
+    }
+
+    // 3. Use a transaction for atomicity
+    const result = await prisma.$transaction(async (tx) => {
+      // Create user in database
+      const user = await tx.user.create({
+        data: {
+          oauthId: clerkUserId,
+          email: userData.email,
+          firstName: userData.firstName,
+          lastName: userData.lastName,
+          name: `${userData.firstName} ${userData.lastName}`,
+          phoneNum: userData.phone,
+          title: userData.title,
+          employeeId: userData.employeeId,
+          roleId: userData.roleId,
+          companyId: userData.companyId,
+          emailVerified: new Date(),
+          status: "ACTIVE", // Explicitly set user as ACTIVE after registration
+          active: true,
+        },
+      });
+
+      // Mark invitation as accepted
+      await tx.invitation.update({
+        where: { id: invitation.id },
+        data: {
+          status: "ACCEPTED",
+          acceptedAt: new Date(),
+        },
+      });
+
+      return user;
     });
 
-    // Update Clerk user metadata
+    // 4. Update Clerk user metadata (after DB transaction)
     const clerk = await clerkClient();
     await clerk.users.updateUserMetadata(clerkUserId, {
       publicMetadata: {
-        userId: user.id,
+        userId: result.id,
         role: userData.roleId,
         onboardingComplete: true,
       },
@@ -361,19 +398,19 @@ export async function completeInvitationRegistration({
       },
     });
 
-    console.log(
-      "✅ [completeInvitationRegistration] User created successfully",
-    );
-
+    // 5. Log audit event
     await createAuditLog({
       companyId: userData.companyId,
       action: "INVITATION_COMPLETED",
       entity: "INVITATION",
-      entityId: invitationId,
+      entityId: invitation.id,
       details: `Invitation completed for ${userData.email} (userId: ${clerkUserId})`,
     });
 
-    return { success: true, user };
+    console.log(
+      "✅ [completeInvitationRegistration] User created successfully",
+    );
+    return { success: true, user: result };
   } catch (error) {
     console.error("❌ [completeInvitationRegistration] Error:", error);
     return {

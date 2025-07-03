@@ -14,24 +14,25 @@ import { useLicenseQuery } from "@/hooks/queries/useLicenseQuery";
 
 export const LicenseOverview = () => {
   const router = useRouter();
-  const { licenses = [], isLoading } = useLicenseQuery();
+  const { licenses, isLoading } = useLicenseQuery();
+  const safeLicenses = Array.isArray(licenses) ? licenses : [];
 
   // Calculate expiring soon (within 30 days)
   const expiringSoon = useMemo(() => {
     const now = new Date();
     const threshold = new Date();
     threshold.setDate(now.getDate() + 30);
-    return licenses.filter(
+    return safeLicenses.filter(
       (license) =>
         license.renewalDate &&
         new Date(license.renewalDate) <= threshold &&
         new Date(license.renewalDate) >= now,
     ).length;
-  }, [licenses]);
+  }, [safeLicenses]);
 
   // Calculate utilization rate (average of all licenses with seats > 0)
   const utilization = useMemo(() => {
-    const withSeats = licenses.filter((l) => l.seats && l.seats > 0);
+    const withSeats = safeLicenses.filter((l) => l.seats && l.seats > 0);
     if (withSeats.length === 0) return 0;
     const totalUtil = withSeats.reduce((sum, l) => {
       // Prefer utilizationRate field, fallback to userLicenses length
@@ -43,7 +44,7 @@ export const LicenseOverview = () => {
       return sum;
     }, 0);
     return Math.round(totalUtil / withSeats.length);
-  }, [licenses]);
+  }, [safeLicenses]);
 
   return (
     <Card>
@@ -66,7 +67,7 @@ export const LicenseOverview = () => {
         <div className="grid grid-cols-3 gap-4">
           <div className="text-center">
             <div className="text-2xl font-bold text-blue-600">
-              {isLoading ? "--" : licenses.length}
+              {isLoading ? "--" : safeLicenses.length}
             </div>
             <div className="text-sm text-gray-600">Active Licenses</div>
           </div>

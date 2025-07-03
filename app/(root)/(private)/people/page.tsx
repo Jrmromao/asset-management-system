@@ -337,7 +337,15 @@ const People = () => {
 
         <Card className="dark:bg-gray-800 border-gray-200 dark:border-gray-700">
           <CardContent className="p-0">
-            <DataTable pageIndex={0} pageSize={10} total={0} onPaginationChange={() => {}} columns={columns} data={[]} isLoading={true} />
+            <DataTable
+              pageIndex={0}
+              pageSize={10}
+              total={0}
+              onPaginationChange={() => {}}
+              columns={columns}
+              data={[]}
+              isLoading={true}
+            />
           </CardContent>
         </Card>
       </div>
@@ -448,7 +456,8 @@ const People = () => {
         onOpenChange={closeDialog}
         title="New Employee"
         description="Register a new team member for your organization."
-        form={<UserForm />}
+        form={null}
+        body={<UserForm />}
       />
     </div>
   );

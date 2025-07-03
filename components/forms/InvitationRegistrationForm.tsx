@@ -66,16 +66,57 @@ export function InvitationRegistrationForm({
 
     startTransition(async () => {
       try {
-        // Step 1: Create user in Clerk
-        const signUpAttempt = await signUp.create({
+        // Clerk expects only these fields for sign up. Do NOT send firstName/lastName here!
+        const clerkPayload = {
           emailAddress: invitationData.email,
           password: data.password,
-          firstName: data.firstName,
-          lastName: data.lastName,
+        };
+        const allowedKeys = ["emailAddress", "password"];
+        Object.keys(clerkPayload).forEach((key) => {
+          if (!allowedKeys.includes(key)) {
+            throw new Error(`Unexpected field in Clerk payload: ${key}`);
+          }
         });
+        console.log("Clerk payload (signUp.create):", clerkPayload);
+        const signUpAttempt = await signUp.create(clerkPayload);
+        console.log("Clerk signUp.create result:", signUpAttempt);
 
+        // After sign up, update firstName and lastName if possible
         if (signUpAttempt.status === "complete") {
-          // Step 2: Complete registration in our database
+          if (signUpAttempt.createdUserId) {
+            try {
+              await fetch("/api/clerk-update-user", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  userId: signUpAttempt.createdUserId,
+                  firstName: data.firstName,
+                  lastName: data.lastName,
+                }),
+              });
+              console.log("Clerk user updated with firstName and lastName");
+            } catch (updateError) {
+              console.error(
+                "Failed to update Clerk user with name fields:",
+                updateError,
+              );
+            }
+          }
+          console.log("Calling completeInvitationRegistration with:", {
+            clerkUserId: signUpAttempt.createdUserId,
+            invitationId: invitationData.invitationId,
+            userData: {
+              firstName: data.firstName,
+              lastName: data.lastName,
+              phone: data.phone,
+              title: data.title,
+              employeeId: data.employeeId,
+              email: invitationData.email,
+              roleId: invitationData.roleId,
+              companyId: invitationData.companyId,
+            },
+            token,
+          });
           const registrationResult = await completeInvitationRegistration({
             clerkUserId: signUpAttempt.createdUserId!,
             invitationId: invitationData.invitationId,
@@ -91,14 +132,14 @@ export function InvitationRegistrationForm({
             },
             token,
           });
+          console.log(
+            "completeInvitationRegistration result:",
+            registrationResult,
+          );
 
           if (registrationResult.success) {
-            // Set the session active
             await setActive({ session: signUpAttempt.createdSessionId });
-
             toast.success("Registration completed successfully!");
-
-            // Redirect to dashboard
             window.location.href = "/dashboard";
           } else {
             toast.error(
@@ -106,11 +147,16 @@ export function InvitationRegistrationForm({
             );
           }
         } else {
-          // Handle verification if needed
           toast.error("Please verify your email address");
         }
       } catch (error: any) {
-        toast.error(error.errors?.[0]?.message || "Registration failed");
+        console.error("Registration error:", error);
+        const message =
+          error?.errors?.[0]?.message ||
+          error?.message ||
+          (typeof error === "string" ? error : null) ||
+          "Registration failed";
+        toast.error(message);
       }
     });
   };
