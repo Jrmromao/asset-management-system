@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAllModels, createModel } from "@/lib/actions/model.actions";
+import { apiErrorResponse } from "@/lib/utils/apiError";
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,10 +13,7 @@ export async function GET(request: NextRequest) {
     }
     return NextResponse.json({ success: true, models: result.data });
   } catch (error) {
-    return NextResponse.json(
-      { success: false, error: "Failed to fetch models" },
-      { status: 500 },
-    );
+    return apiErrorResponse(error, 500, "GET /api/models");
   }
 }
 
@@ -31,9 +29,6 @@ export async function POST(request: NextRequest) {
     }
     return NextResponse.json({ success: true, model: result.data });
   } catch (error) {
-    return NextResponse.json(
-      { success: false, error: "Failed to create model" },
-      { status: 500 },
-    );
+    return apiErrorResponse(error, 500, "POST /api/models");
   }
 }

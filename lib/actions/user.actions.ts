@@ -242,6 +242,16 @@ export const updateUserNonAuthDetails = async (
         ...(data.active !== undefined ? { active: data.active } : {}),
       },
     });
+    // Audit log: track user edit details
+    const before = await prisma.user.findUnique({ where: { id } });
+    await createAuditLog({
+      companyId: updatedUser.companyId,
+      action: "USER_UPDATED",
+      entity: "USER",
+      entityId: updatedUser.id,
+      details: `User updated: ${updatedUser.email} (${updatedUser.name})`,
+      dataAccessed: { before, after: updatedUser },
+    });
     revalidatePath("/admin/users");
     revalidatePath(`/admin/users/${id}`);
     return { success: true, data: parseStringify(updatedUser) };
@@ -322,6 +332,15 @@ export const getUserById = async (
         },
         auditLogs: {
           orderBy: { createdAt: "desc" },
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
+          },
         },
       },
     });
@@ -571,13 +590,31 @@ export const updateUserNotes = async (
       where: { id: userId },
       data: { notes },
     });
+    // Fetch actor details if actorId is provided
+    let actorLabel = "system";
+    if (actorId) {
+      const actor = await prisma.user.findUnique({ where: { id: actorId } });
+      if (actor) {
+        if (actor.name && actor.email) {
+          actorLabel = `${actor.name} (${actor.email})`;
+        } else if (actor.name) {
+          actorLabel = actor.name;
+        } else if (actor.email) {
+          actorLabel = actor.email;
+        } else {
+          actorLabel = "Unknown User";
+        }
+      } else {
+        actorLabel = "Unknown User";
+      }
+    }
     // Log audit with notes value
     const auditLog = await createAuditLog({
       companyId: updatedUser.companyId,
       action: "USER_NOTES_UPDATED",
       entity: "USER",
       entityId: userId,
-      details: `User notes updated by user ${actorId || "system"}. New notes: ${notes}`,
+      details: `User notes updated by ${actorLabel}. New notes: ${notes}`,
       dataAccessed: { notes },
     });
     return { success: true, data: { ...parseStringify(updatedUser), lastAuditLog: auditLog?.data } };

@@ -6,6 +6,7 @@ import QueryProvider from "@/components/providers/QueryClientProvider";
 import { UserProvider } from "@/components/providers/UserContext";
 import ClientLayout from "@/components/layout/ClientLayout";
 import BrandedToaster from "@/components/BrandedToaster";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 export const dynamic = "force-dynamic";
 
@@ -39,7 +40,9 @@ export default function RootLayout({
         >
           <UserProvider>
             <QueryProvider>
-              <ClientLayout>{children}</ClientLayout>
+              <ErrorBoundary>
+                <ClientLayout>{children}</ClientLayout>
+              </ErrorBoundary>
             </QueryProvider>
           </UserProvider>
           <BrandedToaster />

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import EntityEditDrawer from "@/components/shared/EntityEditDrawer";
 import { Pencil } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "react-hot-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { useUserQuery } from "@/hooks/queries/useUserQuery";
 import MainFormSkeleton from "@/components/forms/MainFormSkeleton";
@@ -45,7 +45,6 @@ const EditUserDrawer: React.FC<EditUserDrawerProps> = ({ userId, open, onClose }
   }, [userId, open]);
 
   const handleSuccess = (updatedUser?: any) => {
-    toast.success("User updated successfully!");
     queryClient.invalidateQueries({ queryKey: ["users"] });
     if (updatedUser) {
       // If parent passed a callback to update user in real time, call it

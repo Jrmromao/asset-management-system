@@ -7,7 +7,7 @@ import {
   updateUserNonAuthDetails,
 } from "@/lib/actions/user.actions";
 import { inviteUserSecure } from "@/lib/actions/invitation.actions";
-import { toast } from "sonner";
+import { toast } from "react-hot-toast";
 import { User } from "@prisma/client";
 
 export const useUserQuery = () => {

@@ -85,26 +85,6 @@ const userEditSchema = z.object({
   isActive: z.boolean().optional(),
 });
 
-type UserEditFormValues = z.infer<typeof userEditSchema>;
-
-// Only declare these once at the top level
-const departmentOptions = [
-  { id: "engineering", name: "Engineering" },
-  { id: "hr", name: "HR" },
-  { id: "finance", name: "Finance" },
-  { id: "it", name: "IT" },
-];
-const roleOptions = [
-  { id: "admin", name: "Admin" },
-  { id: "manager", name: "Manager" },
-  { id: "user", name: "User" },
-];
-const accountTypeOptions = [
-  { id: "employee", name: "Employee" },
-  { id: "contractor", name: "Contractor" },
-  { id: "guest", name: "Guest" },
-];
-
 // DetailItem for user fields
 const DetailItem: React.FC<{
   icon: React.ReactNode;
@@ -385,7 +365,7 @@ export default function UserDetailsView(
           </Avatar>
           <div className="flex-1 min-w-0">
             <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              {user.name || `${user.firstName} ${user.lastName}`.trim()}
+              {`${user.firstName} ${user.lastName}`.trim()}
               {isLonee && (
                 <span className="ml-2 px-2 py-0.5 rounded bg-yellow-100 text-yellow-800 text-xs font-semibold" title="Assignment-only user">Lonee</span>
               )}
@@ -405,6 +385,7 @@ export default function UserDetailsView(
         <div className="flex items-center gap-4 mt-6 md:mt-0">
           <CustomButton
             value="Edit"
+            disabled={!user.active}
             Icon={Pencil}
             action={() => setEditDrawerOpen(true)}
             className="w-full sm:w-auto"
@@ -637,7 +618,15 @@ export default function UserDetailsView(
             </div>
           </TabsContent>
           <TabsContent value="history" className="mt-6">
-            {user?.id ? <ActivityLog sourceType="user" sourceId={user.id} auditLogs={(user as any).auditLogs || []} /> : <EmptyState type={"history"} />}
+            {user?.id ? (
+              <ActivityLog
+                sourceType="user"
+                sourceId={user.id}
+                auditLogs={((user as any).auditLogs || []).slice().sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())}
+              />
+            ) : (
+              <EmptyState type={"history"} />
+            )}
           </TabsContent>
         </Tabs>
       </React.Suspense>
