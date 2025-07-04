@@ -14,7 +14,7 @@ const DevelopmentBanner = () => {
           This application is under development
         </AlertTitle>
         <AlertDescription className="text-yellow-700">
-          Scheduled release: End of June 2025
+          Scheduled release: End of July 2025
         </AlertDescription>
       </div>
     </Alert>
