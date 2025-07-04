@@ -7,6 +7,7 @@ interface User {
   email: string;
   firstName: string;
   lastName: string;
+  companyId: string; // <-- Add this line
   companyName: string;
 }
 

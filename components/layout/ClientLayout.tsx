@@ -34,7 +34,8 @@ const ClientLayout = ({ children }: { children: React.ReactNode }) => {
         email: clerkUser.emailAddresses?.[0]?.emailAddress || "",
         firstName: clerkUser.firstName || "",
         lastName: clerkUser.lastName || "",
-        companyName: clerkUser.publicMetadata?.companyId as string || "", // Use companyId if available
+        companyId: clerkUser.publicMetadata?.companyId as string || "", // <-- Set companyId
+        companyName: clerkUser.publicMetadata?.companyName as string || "", // <-- Set companyName
       });
     }
   }, [isLoaded, clerkUser, setUser]);
