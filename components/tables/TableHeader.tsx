@@ -41,6 +41,7 @@ interface DataTableHeaderProps<TData> {
   showAddNew?: boolean;
   searchColumnId?: string;
   children?: React.ReactNode;
+  importControl?: React.ReactNode; // NEW: custom import control slot
 }
 
 export function DataTableHeader<TData>({
@@ -63,6 +64,7 @@ export function DataTableHeader<TData>({
   showAddNew = true,
   searchColumnId = "title",
   children,
+  importControl, // NEW
 }: DataTableHeaderProps<TData>) {
   // Bulletproof: auto-detect a valid search column
   const allColumnIds = table.getAllColumns().map((col) => col.id);
@@ -89,32 +91,36 @@ export function DataTableHeader<TData>({
           )}
         </div>
         <div className="flex items-center space-x-3">
-          {showSearch && (() => {
-            const searchColumn = table.getColumn(effectiveSearchColumnId);
-            if (!searchColumn) return null;
-            const filterValue = (searchColumn.getFilterValue() as string) ?? "";
-            return (
-              <div className="relative w-full max-w-[340px]">
-                <Input
-                  placeholder={searchPlaceholder}
-                  value={filterValue}
-                  onChange={(event) => searchColumn.setFilterValue(event.target.value)}
-                  className="h-9 w-full pr-10 pl-4 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition bg-white dark:bg-gray-800 dark:border-gray-700 dark:placeholder-gray-400 shadow-sm"
-                  aria-label="Search assets"
-                />
-                {filterValue && (
-                  <button
-                    type="button"
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
-                    onClick={() => searchColumn.setFilterValue("")}
-                    aria-label="Clear search"
-                  >
-                    <Cross2Icon className="h-4 w-4" />
-                  </button>
-                )}
-              </div>
-            );
-          })()}
+          {showSearch &&
+            (() => {
+              const searchColumn = table.getColumn(effectiveSearchColumnId);
+              if (!searchColumn) return null;
+              const filterValue =
+                (searchColumn.getFilterValue() as string) ?? "";
+              return (
+                <div className="relative w-full max-w-[340px]">
+                  <Input
+                    placeholder={searchPlaceholder}
+                    value={filterValue}
+                    onChange={(event) =>
+                      searchColumn.setFilterValue(event.target.value)
+                    }
+                    className="h-9 w-full pr-10 pl-4 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition bg-white dark:bg-gray-800 dark:border-gray-700 dark:placeholder-gray-400 shadow-sm"
+                    aria-label="Search assets"
+                  />
+                  {filterValue && (
+                    <button
+                      type="button"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+                      onClick={() => searchColumn.setFilterValue("")}
+                      aria-label="Clear search"
+                    >
+                      <Cross2Icon className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+              );
+            })()}
         </div>
         <div className="flex items-center space-x-3">
           {showAddNew && (
@@ -128,17 +134,20 @@ export function DataTableHeader<TData>({
               {addNewText}
             </Button>
           )}
-          {onImport && (
-            <Button
-              variant="outline"
-              className="h-9 dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700"
-              onClick={onImport}
-              disabled={isLoading}
-            >
-              <UploadIcon className="mr-2 h-4 w-4" />
-              Import
-            </Button>
-          )}
+          {/* Custom import control slot */}
+          {importControl
+            ? importControl
+            : onImport && (
+                <Button
+                  variant="outline"
+                  className="h-9 dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700"
+                  onClick={onImport}
+                  disabled={isLoading}
+                >
+                  <UploadIcon className="mr-2 h-4 w-4" />
+                  Import
+                </Button>
+              )}
           {onExport && (
             <Button
               variant="outline"

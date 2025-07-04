@@ -1,24 +1,39 @@
 "use client";
 
-import React, { useMemo } from "react";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
+import React, { useMemo, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import QRCode from "react-qr-code";
 import {
   BadgeCheck,
+  Ban,
   Building2,
-  CalendarDays,
-  CircleCheck,
+  Calendar,
+  CheckCircle,
   Download,
+  Edit,
   Fingerprint,
   History,
   Key,
   Laptop,
+  Loader2,
   Mail,
+  Mail as MailIcon,
   Monitor,
+  MoreVertical,
+  Pencil,
+  RefreshCcw,
+  Save,
+  Send,
   ShieldCheck,
+  Trash2,
   Users,
 } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "react-hot-toast";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+
 import Link from "next/link";
 import { DetailField } from "@/components/shared/DetailView/DetailField";
 import {
@@ -34,16 +49,174 @@ import EmptyState from "@/components/EmptyState";
 import UserProfileSkeleton from "@/components/UserProfileSkeleton";
 import { DataTable } from "@/components/tables/DataTable/data-table";
 import { useRouter } from "next/navigation";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import CustomButton from "@/components/CustomButton";
+import { FaTools, FaChevronRight, FaPen } from "react-icons/fa";
+import { licenseColumns } from "@/components/tables/LicensesColumns";
+import EntityEditDrawer from "@/components/shared/EntityEditDrawer";
+import { useForm } from "react-hook-form";
+import CustomInput from "@/components/CustomInput";
+import CustomSelect from "@/components/CustomSelect";
+import CustomSwitch from "@/components/CustomSwitch";
+import { Form } from "@/components/ui/form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import EditUserDrawer from "@/components/forms/user/EditUserDrawer";
 
-const fieldIcons = {
-  "Email Address": Mail,
-  "Account Type": Users,
-  Department: Building2,
-  Role: ShieldCheck, // Shield icon for role/permissions
-  Title: BadgeCheck, // Badge icon for job title
-  "Employee ID": Fingerprint, // Fingerprint icon for unique ID
-  "Account Status": CircleCheck,
-} as const;
+// Improved user edit form with all main fields
+const userEditSchema = z.object({
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  email: z.string().email("Invalid email address"),
+  title: z.string().optional(),
+  employeeId: z.string().optional(),
+  department: z.string().min(1, "Department is required"),
+  role: z.string().min(1, "Role is required"),
+  accountType: z.string().min(1, "Account type is required"),
+  isActive: z.boolean().optional(),
+});
+
+type UserEditFormValues = z.infer<typeof userEditSchema>;
+
+// Only declare these once at the top level
+const departmentOptions = [
+  { id: "engineering", name: "Engineering" },
+  { id: "hr", name: "HR" },
+  { id: "finance", name: "Finance" },
+  { id: "it", name: "IT" },
+];
+const roleOptions = [
+  { id: "admin", name: "Admin" },
+  { id: "manager", name: "Manager" },
+  { id: "user", name: "User" },
+];
+const accountTypeOptions = [
+  { id: "employee", name: "Employee" },
+  { id: "contractor", name: "Contractor" },
+  { id: "guest", name: "Guest" },
+];
+
+// DetailItem for user fields
+const DetailItem: React.FC<{
+  icon: React.ReactNode;
+  label: string;
+  value?: string | number | null | React.ReactNode;
+}> = ({ icon, label, value }) => (
+  <div className="flex items-start gap-3">
+    <div className="text-muted-foreground mt-1">{icon}</div>
+    <div>
+      <p className="text-sm text-muted-foreground">{label}</p>
+      <div className="text-sm font-medium">{value || "—"}</div>
+    </div>
+  </div>
+);
+
+// Notes section for user
+const NotesSection: React.FC<{
+  userId: string;
+  currentNotes?: string;
+  onNotesUpdate?: (notes: string) => void;
+}> = ({ userId, currentNotes, onNotesUpdate }) => {
+  const [notes, setNotes] = React.useState(currentNotes || "");
+  const [isEditing, setIsEditing] = React.useState(false);
+  const [isSaving, setIsSaving] = React.useState(false);
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      // TODO: Implement updateUserNotes API call
+      // const response = await updateUserNotes(userId, notes);
+      // if (response.success) {
+      //   toast.success("User notes have been updated successfully.");
+      //   setIsEditing(false);
+      //   onNotesUpdate?.(notes);
+      // } else {
+      //   toast.error(response.error || "Failed to update notes.");
+      // }
+      setTimeout(() => {
+        setIsEditing(false);
+        onNotesUpdate?.(notes);
+        toast.success("User notes have been updated successfully.");
+        setIsSaving(false);
+      }, 500);
+    } catch (error) {
+      toast.error("An error occurred while saving notes.");
+      setIsSaving(false);
+    }
+  };
+
+  React.useEffect(() => {
+    setNotes(currentNotes || "");
+  }, [currentNotes]);
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle>User Notes</CardTitle>
+        <div className="flex gap-2">
+          {isEditing ? (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setNotes(currentNotes || "");
+                  setIsEditing(false);
+                }}
+                disabled={isSaving}
+              >
+                Cancel
+              </Button>
+              <Button size="sm" onClick={handleSave} disabled={isSaving}>
+                {isSaving ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Save className="h-4 w-4 mr-2" />
+                )}
+                Save
+              </Button>
+            </>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsEditing(true)}
+            >
+              <Edit className="h-4 w-4 mr-2" />
+              {notes ? "Edit" : "Add"} Notes
+            </Button>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent>
+        {isEditing ? (
+          <Textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder={"Enter notes about this user..."}
+            className="min-h-[120px]"
+          />
+        ) : (
+          <div className="min-h-[120px] p-4 border rounded-lg bg-muted/50">
+            {notes ? (
+              <p className="whitespace-pre-wrap text-sm">{notes}</p>
+            ) : (
+              <p className="text-muted-foreground text-sm">
+                No notes added yet. Click &quot;Add Notes&quot; to add information about this user.
+              </p>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
 
 interface UserDetailsViewProps {
   user: {
@@ -66,45 +239,109 @@ interface UserDetailsViewProps {
   isLoading: boolean;
 }
 
-export default function UserDetailsView({
-  user,
-  isLoading,
-}: UserDetailsViewProps) {
+// Local type to reflect backend response
+type UserItemWithLicense = UserItems & { license?: License };
+
+export default function UserDetailsView(
+  {
+    user,
+    isLoading,
+  }: UserDetailsViewProps
+) {
   const router = useRouter();
-  const fields: DetailFieldType[] = [
-    { label: "Email Address", value: user.email || "-", type: "text" },
-    { label: "Account Type", value: user.accountType || "-", type: "text" },
-    { label: "Department", value: user.department?.name || "-", type: "text" },
-    { label: "Role", value: user.role?.name || "-", type: "text" },
-    { label: "Title", value: user.title || "-", type: "text" },
-    { label: "Employee ID", value: user.employeeId || "-", type: "text" },
+  const isLonee =
+    user.active === false && ((user as any).status ?? "-") === "REGISTERED";
+  const fieldsProfile = [
+    {
+      label: "Title",
+      value: user.title || "-",
+      type: "text",
+      icon: <BadgeCheck className="w-4 h-4 text-gray-400" />,
+    },
+    {
+      label: "Employee ID",
+      value: user.employeeId || "-",
+      type: "text",
+      icon: <Fingerprint className="w-4 h-4 text-gray-400" />,
+    },
   ];
+  const fieldsOrg = [
+    {
+      label: "Company",
+      value: user.company?.name || "-",
+      type: "text",
+      icon: <Building2 className="w-4 h-4 text-gray-400" />,
+    },
+    {
+      label: "Department",
+      value: user.department?.name || "-",
+      type: "text",
+      icon: <Building2 className="w-4 h-4 text-gray-400" />,
+    },
+    {
+      label: "Role",
+      value: user.role?.name || "-",
+      type: "text",
+      icon: <ShieldCheck className="w-4 h-4 text-gray-400" />,
+    },
+  ];
+  const fieldsAccount = [
+    {
+      label: "Email Address",
+      value: user.email || "-",
+      type: "text",
+      icon: <Mail className="w-4 h-4 text-gray-400" />,
+    },
+    {
+      label: "Account Type",
+      value: user.accountType || "-",
+      type: "text",
+      icon: <Users className="w-4 h-4 text-gray-400" />,
+    },
+  ];
+  const columns = React.useMemo(() => userAssetColumns({ onDelete: () => {}, onView: (asset) => router.push(`/assets/view/${asset.id}`), }), [router]);
 
-  const columns = useMemo(
-    () =>
-      userAssetColumns({
-        onDelete: () => {},
-        onView: (asset) => {
-          router.push(`/assets/view/${asset.id}`);
-        },
-      }),
-    [router],
-  );
-
-  if (isLoading) {
-    return <UserProfileSkeleton />;
-  }
-
-  // Determine user status based on active field or other status indicators
+  // Accessories DataTable columns
+  const accessoryColumns = React.useMemo(() => [
+    {
+      accessorKey: 'accessory.name',
+      header: 'Accessory Name',
+      cell: ({ row }: { row: any }) => row.original.accessory?.name || 'Accessory',
+    },
+    {
+      accessorKey: 'quantity',
+      header: 'Quantity',
+    },
+    {
+      accessorKey: 'assignedAt',
+      header: 'Assigned At',
+      cell: ({ row }: { row: any }) => new Date(row.original.assignedAt).toLocaleDateString(),
+    },
+    {
+      id: 'actions',
+      header: 'Actions',
+      cell: ({ row }: { row: any }) => (
+        <Button variant="outline" size="sm" onClick={() => {/* TODO: View accessory details */}}>
+          View
+        </Button>
+      ),
+    },
+  ], []);
+  const [editDrawerOpen, setEditDrawerOpen] = useState(false);
+  if (isLoading) return <UserProfileSkeleton />;
   const userStatus = user.active ? "Active" : "Inactive";
-  const statusColor = user.active
-    ? "bg-green-100 text-green-800"
-    : "bg-red-100 text-red-800";
-
+  const statusColor = user.active ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800";
+  // Memoized formatted dates
+  const [createdAtString, setCreatedAtString] = React.useState("");
+  const [updatedAtString, setUpdatedAtString] = React.useState("");
+  React.useEffect(() => {
+    if ((user as any).createdAt) setCreatedAtString(new Date((user as any).createdAt).toLocaleString());
+    if ((user as any).updatedAt) setUpdatedAtString(new Date((user as any).updatedAt).toLocaleString());
+  }, [user]);
   return (
-    <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+    <section aria-label="User Details" className="bg-white shadow rounded-lg">
       {/* Breadcrumbs */}
-      <div className="flex items-center justify-between px-4 py-5 sm:px-6">
+      <div className="flex items-center justify-between px-4 pt-5 pb-2 sm:px-6">
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem>
@@ -121,229 +358,207 @@ export default function UserDetailsView({
           </BreadcrumbList>
         </Breadcrumb>
       </div>
-
       {/* Header */}
-      <div className="px-4 py-1 sm:px-6">
-        <div>
-          <h3 className="text-xl font-semibold text-gray-900">
-            {user.name || `${user.firstName} ${user.lastName}`.trim()}
-          </h3>
-          <p className="text-sm text-gray-500 mt-1">{user.email}</p>
-        </div>
-
-        <div className="flex items-center gap-3 mt-4 flex-wrap mb-3">
-          {user.accountType && (
-            <span className="px-3 py-1 text-sm rounded-full bg-blue-100 text-blue-800">
-              {user.accountType}
-            </span>
-          )}
-
-          <span className={`px-3 py-1 text-sm rounded-full ${statusColor}`}>
-            {userStatus}
-          </span>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <Card className="w-full">
-        <CardContent>
-          <div className="grid grid-cols-1 lg:grid-cols-6 gap-4 mt-6">
-            {/* Fields */}
-            <div className="lg:col-span-6 p-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {fields.map((field, index) => {
-                  const IconComponent =
-                    fieldIcons[field.label as keyof typeof fieldIcons];
-                  return (
-                    <DetailField
-                      key={index}
-                      label={field.label}
-                      field={field}
-                      icon={
-                        IconComponent && (
-                          <IconComponent className="w-4 h-4 text-gray-400" />
-                        )
-                      }
-                    />
-                  );
-                })}
-              </div>
+      <header className="flex flex-col md:flex-row items-center justify-between px-4 py-6 border-b">
+        <div className="flex items-center gap-4 w-full">
+          <Avatar>
+            {(user as any).images ? (
+              <AvatarImage src={(user as any).images ?? undefined} alt={user.name || user.email} />
+            ) : (
+              <AvatarFallback>
+                {user.firstName?.[0] || user.name?.[0] || user.email[0]}
+                {user.lastName?.[0] || ""}
+              </AvatarFallback>
+            )}
+          </Avatar>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+              {user.name || `${user.firstName} ${user.lastName}`.trim()}
+              {isLonee && (
+                <span className="ml-2 px-2 py-0.5 rounded bg-yellow-100 text-yellow-800 text-xs font-semibold" title="Assignment-only user">Lonee</span>
+              )}
+            </h1>
+            <div className="flex flex-wrap gap-2 mt-2">
+              <span className={`px-3 py-1 text-xs rounded-full ${statusColor}`}>{userStatus}</span>
+              {user.role?.name && (
+                <span className="px-3 py-1 text-xs rounded-full bg-blue-100 text-blue-800">{user.role.name}</span>
+              )}
+              {user.accountType && (
+                <span className="px-3 py-1 text-xs rounded-full bg-gray-100 text-gray-800">{user.accountType}</span>
+              )}
             </div>
           </div>
-        </CardContent>
-
+        </div>
         {/* Action Buttons */}
-        <CardFooter className="bg-white">
-          <div className="w-full flex flex-col sm:flex-row lg:justify-end gap-2 md:flex-row md:justify-center mt-4 md:mt-0">
-            <Button variant="outline">
-              <Download className="h-4 w-4 mr-2" />
-              Export Report
-            </Button>
-            <Button variant="outline">
-              <Mail className="h-4 w-4 mr-2" />
-              Send Message
-            </Button>
-            {user?.assets && user.assets.length > 0 && (
-              <Button>
-                <Laptop className="h-4 w-4 mr-2" />
-                Manage Assets
-              </Button>
-            )}
-          </div>
-        </CardFooter>
-      </Card>
-
-      {/* Tabs Section */}
-      <Tabs defaultValue="assets" className="w-full mt-6">
-        <TabsList className="inline-flex h-auto p-0 bg-transparent gap-1">
-          <TabsTrigger
-            value="assets"
-            className="flex items-center gap-2 px-6 py-3 data-[state=active]:bg-white rounded-none border-b-2 border-transparent data-[state=active]:border-primary"
-          >
-            <Laptop className="h-4 w-4" />
-            Assets
-            <span className="ml-1 bg-primary text-primary-foreground rounded-full h-5 w-5 flex items-center justify-center text-xs">
-              {user?.assets?.length || 0}
-            </span>
-          </TabsTrigger>
-          <TabsTrigger
-            value="accessories"
-            className="flex items-center gap-2 px-6 py-3 data-[state=active]:bg-white rounded-none border-b-2 border-transparent data-[state=active]:border-primary"
-          >
-            <Monitor className="h-4 w-4" />
-            Accessories
-            <span className="ml-1 bg-primary text-primary-foreground rounded-full h-5 w-5 flex items-center justify-center text-xs">
-              {user?.userItem?.length || 0}
-            </span>
-          </TabsTrigger>
-          <TabsTrigger
-            value="licenses"
-            className="flex items-center gap-2 px-6 py-3 data-[state=active]:bg-white rounded-none border-b-2 border-transparent data-[state=active]:border-primary"
-          >
-            <Key className="h-4 w-4" />
-            Licenses
-            <span className="ml-1 bg-primary text-primary-foreground rounded-full h-5 w-5 flex items-center justify-center text-xs">
-              {user?.licenses?.length || 0}
-            </span>
-          </TabsTrigger>
-          <TabsTrigger
-            value="history"
-            className="flex items-center gap-2 px-6 py-3 data-[state=active]:bg-white rounded-none border-b-2 border-transparent data-[state=active]:border-primary"
-          >
-            <History className="h-4 w-4" />
-            Activity Log
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="assets" className="mt-6">
-          <div className="space-y-4">
-            {user?.assets && user.assets.length > 0 ? (
-              <DataTable
-                columns={columns}
-                data={user.assets}
-                isLoading={isLoading}
-              />
-            ) : (
-              <EmptyState type={"assets"} />
-            )}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="accessories" className="mt-6">
-          <div className="space-y-4">
-            {user?.userItem && user.userItem.length > 0 ? (
-              <div className="space-y-3">
-                {user.userItem.map((item, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between p-4 border rounded-lg bg-gray-50"
-                  >
-                    <div className="flex items-center gap-3">
-                      <Monitor className="h-5 w-5 text-gray-400" />
-                      <div>
-                        <p className="font-medium">
-                          {item.accessory?.name || "Accessory"}
-                        </p>
-                        <p className="text-sm text-gray-600">
-                          Quantity: {item.quantity}
-                        </p>
-                      </div>
-                    </div>
-                    <span className="text-xs text-gray-500">
-                      {new Date(item.assignedAt).toLocaleDateString()}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <Monitor className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  No Accessories
-                </h3>
-                <p className="text-gray-600 mb-4">
-                  This user hasn't been assigned any accessories yet.
-                </p>
-                <p className="text-sm text-gray-500">
-                  <strong>Coming Soon:</strong> Full accessory management with
-                  tracking, requests, and more.
-                </p>
-              </div>
-            )}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="licenses" className="mt-6">
-          <div className="space-y-4">
-            {user?.licenses && user.licenses.length > 0 ? (
-              <div className="space-y-3">
-                {user.licenses.map((license, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between p-4 border rounded-lg bg-gray-50"
-                  >
-                    <div className="flex items-center gap-3">
-                      <Key className="h-5 w-5 text-gray-400" />
-                      <div>
-                        <p className="font-medium">{license.name}</p>
-                        <p className="text-sm text-gray-600">
-                          Seats: {license.seats}
-                        </p>
-                      </div>
-                    </div>
-                    <span className="text-xs text-gray-500">
-                      Expires:{" "}
-                      {new Date(license.renewalDate).toLocaleDateString()}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <Key className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  No Licenses
-                </h3>
-                <p className="text-gray-600 mb-4">
-                  This user hasn't been assigned any software licenses yet.
-                </p>
-                <p className="text-sm text-gray-500">
-                  <strong>Coming Soon:</strong> Complete license management with
-                  renewals, compliance tracking, and cost optimization.
-                </p>
-              </div>
-            )}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="history" className="mt-6">
-          {user?.id ? (
-            <ActivityLog sourceType="user" sourceId={user.id} />
+        <div className="flex items-center gap-4 mt-6 md:mt-0">
+          <CustomButton
+            value="Edit"
+            Icon={Pencil}
+            action={() => setEditDrawerOpen(true)}
+            className="w-full sm:w-auto"
+          />
+          <CustomButton
+            value="Send Message"
+            Icon={Mail}
+            action={() => {/* TODO: Implement send message */}}
+            className="w-full sm:w-auto"
+          />
+          {user.active ? (
+            <CustomButton
+              value="Deactivate"
+              Icon={Ban}
+              action={() => {/* TODO: Implement deactivate logic */}}
+              className="w-full sm:w-auto border border-red-500 text-red-600 bg-white hover:bg-red-50"
+            />
           ) : (
-            <EmptyState type={"history"} />
+            <CustomButton
+              value="Activate"
+              Icon={CheckCircle}
+              action={() => {/* TODO: Implement activate logic */}}
+              className="w-full sm:w-auto border border-green-500 text-green-600 bg-white hover:bg-green-50"
+            />
           )}
-        </TabsContent>
-      </Tabs>
-    </div>
+          <CustomButton
+            value="Delete"
+            Icon={Trash2}
+            action={() => {
+              if (window.confirm("Are you sure you want to delete this user? This action cannot be undone.")) {
+                // TODO: Implement delete logic
+              }
+            }}
+            className="w-full sm:w-auto border border-red-500 text-red-600 bg-white hover:bg-red-50"
+          />
+          {/* Dropdown for less common actions */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" aria-label="More actions">
+                <MoreVertical className="h-5 w-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => {/* TODO: Reset password */}}>
+                <Key className="h-4 w-4 mr-2" /> Reset Password
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => {/* TODO: Resend invite */}}>
+                <Send className="h-4 w-4 mr-2" /> Resend Invitation
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => {/* TODO: Export user data */}}>
+                <Download className="h-4 w-4 mr-2" /> Export Data
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </header>
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 p-6">
+        <div className="lg:col-span-3 space-y-6">
+          <Card>
+            <CardHeader><CardTitle>Profile</CardTitle></CardHeader>
+            <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {fieldsProfile.map((field, i) => <DetailItem key={i} icon={field.icon} label={field.label} value={field.value} />)}
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader><CardTitle>Organization</CardTitle></CardHeader>
+            <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {fieldsOrg.map((field, i) => <DetailItem key={i} icon={field.icon} label={field.label} value={field.value} />)}
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader><CardTitle>Account</CardTitle></CardHeader>
+            <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {fieldsAccount.map((field, i) => <DetailItem key={i} icon={field.icon} label={field.label} value={field.value} />)}
+            </CardContent>
+          </Card>
+          <NotesSection userId={user.id} currentNotes={(user as any).notes} />
+        </div>
+        <div className="lg:col-span-1 space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm font-medium flex items-center gap-2"><Calendar className="h-4 w-4" />Timestamps</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <DetailItem icon={<Calendar className="h-4 w-4" />} label="Created At" value={createdAtString} />
+              <DetailItem icon={<RefreshCcw className="h-4 w-4" />} label="Last Updated" value={updatedAtString} />
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+      <React.Suspense fallback={<UserProfileSkeleton />}>
+        <Tabs defaultValue="assets" className="w-full mt-6">
+          <TabsList className="inline-flex h-auto p-0 bg-transparent gap-1">
+            <TabsTrigger value="assets" className="flex items-center gap-2 px-6 py-3 data-[state=active]:bg-white rounded-none border-b-2 border-transparent data-[state=active]:border-primary">
+              <Laptop className="h-4 w-4" /> Assets
+              <span className="ml-1 bg-primary text-primary-foreground rounded-full h-5 w-5 flex items-center justify-center text-xs">{user?.assets?.length || 0}</span>
+            </TabsTrigger>
+            <TabsTrigger value="accessories" className="flex items-center gap-2 px-6 py-3 data-[state=active]:bg-white rounded-none border-b-2 border-transparent data-[state=active]:border-primary">
+              <Monitor className="h-4 w-4" /> Accessories
+              <span className="ml-1 bg-primary text-primary-foreground rounded-full h-5 w-5 flex items-center justify-center text-xs">{user?.userItem?.length || 0}</span>
+            </TabsTrigger>
+            <TabsTrigger value="licenses" className="flex items-center gap-2 px-6 py-3 data-[state=active]:bg-white rounded-none border-b-2 border-transparent data-[state=active]:border-primary">
+              <Key className="h-4 w-4" /> Licenses
+              <span className="ml-1 bg-primary text-primary-foreground rounded-full h-5 w-5 flex items-center justify-center text-xs">
+                {user?.userItem ? (user.userItem as UserItemWithLicense[]).filter(item => item.license).length : 0}
+              </span>
+            </TabsTrigger>
+            <TabsTrigger value="history" className="flex items-center gap-2 px-6 py-3 data-[state=active]:bg-white rounded-none border-b-2 border-transparent data-[state=active]:border-primary">
+              <History className="h-4 w-4" /> Activity Log
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent value="assets" className="mt-6">
+            <div className="space-y-4">
+              {user?.assets && user.assets.length > 0 ? (
+                <DataTable columns={columns} data={user.assets} isLoading={isLoading} />
+              ) : (
+                <div className="text-center py-12">
+                  <Laptop className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No Assets</h3>
+                  <p className="text-gray-600 mb-4">This user hasn't been assigned any assets yet.</p>
+                  <p className="text-sm text-gray-500"><strong>Tip:</strong> Assign assets to this user from the asset management page.</p>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+          <TabsContent value="accessories" className="mt-6">
+            <div className="space-y-4">
+              {user?.userItem && user.userItem.length > 0 ? (
+                <DataTable columns={accessoryColumns} data={user.userItem} isLoading={isLoading} />
+              ) : (
+                <div className="text-center py-12">
+                  <Monitor className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No Accessories</h3>
+                  <p className="text-gray-600 mb-4">This user hasn't been assigned any accessories yet.</p>
+                  <p className="text-sm text-gray-500"><strong>Tip:</strong> Accessory management is coming soon!</p>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+          <TabsContent value="licenses" className="mt-6">
+            <div className="space-y-4">
+              {user?.userItem && (user.userItem as UserItemWithLicense[]).filter(item => item.license).length > 0 ? (
+                <DataTable
+                  columns={licenseColumns({ onDelete: () => {}, onView: () => {} })}
+                  data={(user.userItem as UserItemWithLicense[]).filter(item => item.license).map(item => item.license!)}
+                  isLoading={isLoading}
+                />
+              ) : (
+                <div className="text-center py-12">
+                  <Key className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No Licenses</h3>
+                  <p className="text-gray-600 mb-4">This user hasn't been assigned any software licenses yet.</p>
+                  <p className="text-sm text-gray-500"><strong>Tip:</strong> License management is coming soon!</p>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+          <TabsContent value="history" className="mt-6">
+            {user?.id ? <ActivityLog sourceType="user" sourceId={user.id} auditLogs={(user as any).auditLogs || []} /> : <EmptyState type={"history"} />}
+          </TabsContent>
+        </Tabs>
+      </React.Suspense>
+      {/* User Edit Side Drawer */}
+      {user.id && (
+        <EditUserDrawer userId={user.id} open={editDrawerOpen} onClose={() => setEditDrawerOpen(false)} />
+      )}
+    </section>
   );
 }

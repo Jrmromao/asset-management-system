@@ -1,0 +1,3 @@
+firstName,lastName,email,employeeId,role
+John,Doe,john.doe@example.com,EMP001,AssignmentOnly
+Jane,Smith,jane.smith@example.com,EMP002,AssignmentOnly 

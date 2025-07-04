@@ -1,23 +1,30 @@
 import { z } from "zod";
 
 export const loneeUserImportSchema = z.object({
-  name: z.string().min(1, "Name is required"),
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
   email: z.string().email("Valid email required"),
-  roleId: z.string().min(1, "Role is required"),
-  departmentId: z.string().optional(),
+  employeeId: z.string().optional(),
+  role: z.string().min(1, "Role is required"),
 });
 
 export const loneeUserImportConfig = {
   entityType: "lonee-user",
   fields: [
-    { name: "name", label: "Name", type: "string", required: true },
+    { name: "firstName", label: "First Name", type: "string", required: true },
+    { name: "lastName", label: "Last Name", type: "string", required: true },
     { name: "email", label: "Email", type: "string", required: true },
-    { name: "roleId", label: "Role", type: "string", required: true },
-    { name: "departmentId", label: "Department", type: "string", required: false },
+    {
+      name: "employeeId",
+      label: "Employee ID",
+      type: "string",
+      required: false,
+    },
+    { name: "role", label: "Role", type: "string", required: true },
   ],
   dependencies: [],
   importApi: "/api/users/create-lonee",
-  templateUrl: "/templates/lonee-user-import.csv",
+  templateUrl: "/lonee-user-template.csv",
   validationSchema: loneeUserImportSchema,
   companyId: "", // Set dynamically if needed
-}; 
+};

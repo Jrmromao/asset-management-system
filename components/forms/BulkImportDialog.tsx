@@ -47,7 +47,12 @@ import type { StatusLabel } from "@prisma/client";
 import SchemaMappingStep from "./SchemaMappingStep";
 import levenshtein from "js-levenshtein";
 
-type ImportStep = "select-category" | "upload" | "mapping" | "preview" | "result";
+type ImportStep =
+  | "select-category"
+  | "upload"
+  | "mapping"
+  | "preview"
+  | "result";
 
 interface ImportField {
   name: string;
@@ -78,6 +83,7 @@ interface BulkImportDialogProps {
   onClose: () => void;
   config: BulkImportConfig;
   onImport: (data: any[]) => Promise<void>;
+  importType?: "asset" | "loneeUser"; // NEW: context-aware import type
 }
 
 interface ValidationError {
@@ -91,9 +97,14 @@ export default function BulkImportDialog({
   onClose,
   config,
   onImport,
+  importType = "asset", // default to asset for backward compatibility
 }: BulkImportDialogProps) {
   const queryClient = useQueryClient();
-  const [step, setStep] = useState<ImportStep>("select-category");
+  const [showAllRows, setShowAllRows] = useState(false);
+  // Context-aware: set initial step based on importType
+  const initialStep: ImportStep =
+    importType === "loneeUser" ? "upload" : "select-category";
+  const [step, setStep] = useState<ImportStep>(initialStep);
   const [file, setFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [parsedData, setParsedData] = useState<any[]>([]);
@@ -114,7 +125,9 @@ export default function BulkImportDialog({
     columnName: string;
   } | null>(null);
   const [uploadedColumns, setUploadedColumns] = useState<string[]>([]);
-  const [columnMapping, setColumnMapping] = useState<Record<string, string | null>>({});
+  const [columnMapping, setColumnMapping] = useState<
+    Record<string, string | null>
+  >({});
 
   const { formTemplates, isLoading: isLoadingFormTemplates } =
     useFormTemplatesQuery();
@@ -139,7 +152,9 @@ export default function BulkImportDialog({
     },
     enabled: !!companyId,
   });
-  const statusLabels: StatusLabel[] = Array.isArray(statusLabelsData) ? statusLabelsData : [];
+  const statusLabels: StatusLabel[] = Array.isArray(statusLabelsData)
+    ? statusLabelsData
+    : [];
 
   // Helper to match status label name to ID (case-insensitive, partial, fuzzy)
   function findStatusLabelId(input: string) {
@@ -149,13 +164,17 @@ export default function BulkImportDialog({
     let match = statusLabels.find((l) => l.name.toLowerCase() === normalized);
     if (match) return match.id;
     // Starts with
-    match = statusLabels.find((l) => l.name.toLowerCase().startsWith(normalized));
+    match = statusLabels.find((l) =>
+      l.name.toLowerCase().startsWith(normalized),
+    );
     if (match) return match.id;
     // Includes
     match = statusLabels.find((l) => l.name.toLowerCase().includes(normalized));
     if (match) return match.id;
     // Fuzzy (Levenshtein distance <= 2)
-    match = statusLabels.find((l) => levenshtein(l.name.toLowerCase(), normalized) <= 2);
+    match = statusLabels.find(
+      (l) => levenshtein(l.name.toLowerCase(), normalized) <= 2,
+    );
     if (match) return match.id;
     return null;
   }
@@ -202,8 +221,8 @@ export default function BulkImportDialog({
         Papa.ParseResult<Record<string, unknown>>
       >((resolve, reject) => {
         const papaConfig = {
-      header: true,
-      skipEmptyLines: true,
+          header: true,
+          skipEmptyLines: true,
           complete: resolve,
           error: (err: Error) => reject(err),
         };
@@ -223,11 +242,12 @@ export default function BulkImportDialog({
       setUploadedColumns([]);
       setColumnMapping({});
       // Extract columns from the first row or meta.fields
-      const columns = parseResult.meta.fields || Object.keys(parseResult.data[0] || {});
+      const columns =
+        parseResult.meta.fields || Object.keys(parseResult.data[0] || {});
       setUploadedColumns(columns);
       setParsedData(parseResult.data);
       setStep("mapping");
-          } catch (error) {
+    } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "An unknown error occurred";
       toast.error(`Error processing file: ${errorMessage}`);
@@ -240,7 +260,7 @@ export default function BulkImportDialog({
   const handleMappingComplete = (mapping: Record<string, string | null>) => {
     setColumnMapping(mapping);
     // Transform parsedData using mapping
-    const mappedRows = parsedData.map(row => {
+    const mappedRows = parsedData.map((row) => {
       const mapped: Record<string, any> = {};
       Object.entries(mapping).forEach(([uploadedCol, templateField]) => {
         if (templateField) mapped[templateField] = row[uploadedCol];
@@ -290,8 +310,7 @@ export default function BulkImportDialog({
       setValidationSuggestions((prev) => ({ ...prev, [columnName]: items }));
 
       const newItem = items.find(
-        (item: any) =>
-          item.name.toLowerCase() === originalValue.toLowerCase(),
+        (item: any) => item.name.toLowerCase() === originalValue.toLowerCase(),
       );
 
       if (newItem) {
@@ -339,7 +358,7 @@ export default function BulkImportDialog({
         if (id) {
           mapped.statusLabelId = id;
           delete mapped.statusLabel;
-      } else {
+        } else {
           // Add validation error for unmatched status label
           setValidationErrors((prev) => [
             ...prev,
@@ -390,13 +409,21 @@ export default function BulkImportDialog({
     setStep("upload");
   };
 
-  const steps = [
+  // Context-aware: steps for each import type
+  const assetSteps = [
     { key: "select-category", label: "Select Template" },
     { key: "upload", label: "Upload File" },
     { key: "mapping", label: "Map Columns" },
     { key: "preview", label: "Preview & Import" },
     { key: "result", label: "Complete" },
   ];
+  const loneeUserSteps = [
+    { key: "upload", label: "Upload File" },
+    { key: "mapping", label: "Map Columns" },
+    { key: "preview", label: "Preview & Import" },
+    { key: "result", label: "Complete" },
+  ];
+  const steps = importType === "loneeUser" ? loneeUserSteps : assetSteps;
   const stepIndex = steps.findIndex((s) => s.key === step);
 
   // Stepper component
@@ -419,10 +446,12 @@ export default function BulkImportDialog({
     </div>
   );
 
+  // Context-aware: render step content
   const renderStepContent = () => {
     switch (step) {
       case "select-category":
-        return renderCategorySelectStep();
+        if (importType === "asset") return renderCategorySelectStep();
+        return null;
       case "upload":
         return renderUploadStep();
       case "mapping":
@@ -465,10 +494,11 @@ export default function BulkImportDialog({
     }
   };
 
-  const assetTypeOptions = formTemplates?.map((template) => ({
-    id: template.id,
-    name: template.name,
-  })) || [];
+  const assetTypeOptions =
+    formTemplates?.map((template) => ({
+      id: template.id,
+      name: template.name,
+    })) || [];
 
   const fakeControl = {
     getFieldState: () => ({
@@ -487,13 +517,15 @@ export default function BulkImportDialog({
     getValues: () => selectedTemplateId,
   };
 
-  const [showAllRows, setShowAllRows] = useState(false);
   const previewRows = showAllRows ? parsedData : parsedData.slice(0, 10);
   const renderPreviewStep = () => (
     <div className="max-w-[1100px] mx-auto p-4">
       <Stepper />
       <h2 className="text-xl font-bold mb-1 text-center">Map & Preview Data</h2>
-      <p className="text-gray-500 text-sm mb-4 text-center">Map your columns to the correct fields and review your data before importing.</p>
+      <p className="text-gray-500 text-sm mb-4 text-center">
+        Map your columns to the correct fields and review your data before
+        importing.
+      </p>
       {validationErrors.length > 0 && (
         <Alert variant="destructive" className="mb-4">
           <AlertCircle className="h-4 w-4" />
@@ -508,32 +540,51 @@ export default function BulkImportDialog({
             <TableRow>
               <TableHead className="sticky top-0 bg-white z-10">Row</TableHead>
               {allTemplateFields.map((field: ImportField) => (
-                <TableHead className="sticky top-0 bg-white z-10" key={field.name}>{field.label}</TableHead>
+                <TableHead
+                  className="sticky top-0 bg-white z-10"
+                  key={field.name}
+                >
+                  {field.label}
+                </TableHead>
               ))}
             </TableRow>
           </TableHeader>
           <TableBody>
             {previewRows.map((row, rowIndex) => (
-              <TableRow key={rowIndex} className="hover:bg-blue-50 transition-colors">
+              <TableRow
+                key={rowIndex}
+                className="hover:bg-blue-50 transition-colors"
+              >
                 <TableCell>{rowIndex + 1}</TableCell>
                 {allTemplateFields.map((field: ImportField) => {
                   const error = getCellError(rowIndex, field.name);
                   const cellValue = row[field.label] || row[field.name];
-                  const dependency = config.dependencies.find((d) => d.name === field.name);
+                  const dependency = config.dependencies.find(
+                    (d) => d.name === field.name,
+                  );
                   const suggestions = validationSuggestions[field.name];
                   if (error && dependency && suggestions) {
-          return (
+                    return (
                       <TableCell key={field.name}>
                         <Select
                           defaultValue={cellValue}
                           onValueChange={(newValue) => {
                             if (newValue === "create-new") {
                               setIsCreatingNew(dependency.label);
-                              setCreatingNewContext({ rowIndex, columnName: field.name });
-                      } else {
-                              const selected = suggestions.find((s) => s.id === newValue);
+                              setCreatingNewContext({
+                                rowIndex,
+                                columnName: field.name,
+                              });
+                            } else {
+                              const selected = suggestions.find(
+                                (s) => s.id === newValue,
+                              );
                               if (selected) {
-                                handleCellUpdate(rowIndex, field.name, selected.name);
+                                handleCellUpdate(
+                                  rowIndex,
+                                  field.name,
+                                  selected.name,
+                                );
                               }
                             }
                           }}
@@ -542,7 +593,10 @@ export default function BulkImportDialog({
                             <SelectValue placeholder="Select..." />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="create-new" className="font-bold text-blue-600">
+                            <SelectItem
+                              value="create-new"
+                              className="font-bold text-blue-600"
+                            >
                               Create new...
                             </SelectItem>
                             {suggestions.map((option: any) => (
@@ -552,17 +606,22 @@ export default function BulkImportDialog({
                             ))}
                           </SelectContent>
                         </Select>
-                        <p className="mt-1 text-xs text-red-600">{error.message}</p>
+                        <p className="mt-1 text-xs text-red-600">
+                          {error.message}
+                        </p>
                       </TableCell>
                     );
                   }
                   return (
                     <TableCell key={field.name}>
                       {error && (
-                        <span className="text-red-500 font-semibold" title={error.message}>
+                        <span
+                          className="text-red-500 font-semibold"
+                          title={error.message}
+                        >
                           {cellValue}
-                    </span>
-                  )}
+                        </span>
+                      )}
                       {!error && cellValue}
                     </TableCell>
                   );
@@ -571,17 +630,23 @@ export default function BulkImportDialog({
             ))}
           </TableBody>
         </Table>
-                </div>
+      </div>
       {parsedData.length > 10 && (
         <div className="text-center mt-2">
-          <Button variant="link" size="sm" onClick={() => setShowAllRows((v) => !v)}>
+          <Button
+            variant="link"
+            size="sm"
+            onClick={() => setShowAllRows((v) => !v)}
+          >
             {showAllRows ? "Show less" : `Show all ${parsedData.length} rows`}
           </Button>
-                </div>
-              )}
+        </div>
+      )}
       <DialogFooter className="mt-6 flex justify-between">
-        <Button variant="outline" onClick={() => setStep("upload")}>Back</Button>
-                <Button
+        <Button variant="outline" onClick={() => setStep("upload")}>
+          Back
+        </Button>
+        <Button
           onClick={handleImport}
           disabled={isProcessing || validationErrors.length > 0}
           className="font-bold"
@@ -593,7 +658,7 @@ export default function BulkImportDialog({
           )}
         </Button>
       </DialogFooter>
-            </div>
+    </div>
   );
 
   const renderCreationDialog = () => {
@@ -611,7 +676,7 @@ export default function BulkImportDialog({
           </Dialog>
         );
       case "Status Label":
-                        return (
+        return (
           <Dialog open={isCreatingNew === "Status Label"} {...dialogProps}>
             <DialogContent>
               <StatusLabelForm onSubmitSuccess={handleCreationSuccess} />
@@ -653,18 +718,32 @@ export default function BulkImportDialog({
         >
           Import More
         </Button>
-        <Button onClick={() => { resetState(); onClose(); }}>Close</Button>
-                  </div>
-                </div>
+        <Button
+          onClick={() => {
+            resetState();
+            onClose();
+          }}
+        >
+          Close
+        </Button>
+      </div>
+    </div>
   );
 
   // --- Refined Step 1: Category/Template Select ---
   const renderCategorySelectStep = () => (
     <div className="max-w-[440px] mx-auto p-4">
       <Stepper />
-      <h2 className="text-xl font-bold mb-1 text-center">Select Asset Template</h2>
-      <p className="text-gray-500 text-sm mb-4 text-center">Choose a template to match your asset data fields.</p>
-      <label htmlFor="asset-category-select" className="mb-2 block text-sm font-medium text-gray-700">
+      <h2 className="text-xl font-bold mb-1 text-center">
+        Select Asset Template
+      </h2>
+      <p className="text-gray-500 text-sm mb-4 text-center">
+        Choose a template to match your asset data fields.
+      </p>
+      <label
+        htmlFor="asset-category-select"
+        className="mb-2 block text-sm font-medium text-gray-700"
+      >
         Template
       </label>
       <Select
@@ -684,40 +763,55 @@ export default function BulkImportDialog({
             formTemplates?.map((option) => (
               <SelectItem key={option.id} value={option.id}>
                 <span className="font-semibold">{option.name}</span>
-                <span className="block text-xs text-gray-400">{option.fields?.length || 0} fields</span>
+                <span className="block text-xs text-gray-400">
+                  {option.fields?.length || 0} fields
+                </span>
               </SelectItem>
             ))
           )}
         </SelectContent>
       </Select>
       <div className="flex justify-end mt-6">
-                      <Button
+        <Button
           onClick={() => setStep("upload")}
           disabled={!selectedTemplateId}
           className="w-full"
         >
           Next
-                      </Button>
-                    </div>
-                  </div>
+        </Button>
+      </div>
+    </div>
   );
 
   // --- Refined Step 2: Upload ---
   const renderUploadStep = () => (
     <div className="max-w-[600px] mx-auto p-4">
       <Stepper />
-      <h2 className="text-xl font-bold mb-1 text-center">Upload CSV File</h2>
-      <p className="text-gray-500 text-sm mb-4 text-center">Upload your asset data as a CSV file. Download a template for guidance.</p>
+      <h2 className="text-xl font-bold mb-1 text-center">
+        {importType === "loneeUser"
+          ? "Import Assignment-Only Users"
+          : "Upload CSV File"}
+      </h2>
+      <p className="text-gray-500 text-sm mb-4 text-center">
+        {importType === "loneeUser"
+          ? "Upload a CSV file with assignment-only user data. Download a template for guidance."
+          : "Upload your asset data as a CSV file. Download a template for guidance."}
+      </p>
       <div className="mb-4">
         <div
           {...getRootProps()}
           className={`flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed p-10 text-center transition-colors shadow-sm ${
-            selectedTemplateId
-              ? "border-blue-500 bg-blue-50 hover:bg-blue-100"
-              : "border-gray-300 bg-gray-50"
+            importType === "asset"
+              ? selectedTemplateId
+                ? "border-blue-500 bg-blue-50 hover:bg-blue-100"
+                : "border-gray-300 bg-gray-50"
+              : "border-blue-500 bg-blue-50 hover:bg-blue-100"
           }`}
         >
-          <input {...getInputProps()} disabled={!selectedTemplateId} />
+          <input
+            {...getInputProps()}
+            disabled={importType === "asset" && !selectedTemplateId}
+          />
           <Upload className="mb-4 h-12 w-12 text-gray-400" />
           {isProcessing ? (
             <>
@@ -733,32 +827,43 @@ export default function BulkImportDialog({
             </>
           ) : (
             <p className="font-semibold text-gray-700">
-              {selectedTemplateId
-                ? "Drop CSV file here or click to upload"
-                : "Please select a template to enable upload"}
+              {importType === "asset"
+                ? selectedTemplateId
+                  ? "Drop CSV file here or click to upload"
+                  : "Please select a template to enable upload"
+                : "Drop CSV file here or click to upload"}
             </p>
-              )}
-            </div>
-                  <Button
-          onClick={handleDownloadTemplate}
-          disabled={!selectedTemplateId || isLoadingFormTemplates}
-          className="mt-4 w-full"
-          variant="secondary"
-        >
-          <Download className="mr-2 h-4 w-4" />
-          Download CSV Template for {selectedTemplate ? `"${selectedTemplate.name}"` : "Template"}
-                  </Button>
-                </div>
+          )}
+        </div>
+        {importType === "loneeUser" ? (
+          <Button asChild className="mt-4 w-full" variant="secondary">
+            <a href="/lonee-user-template.csv" download>
+              Download CSV Template for Assignment-Only Users
+            </a>
+          </Button>
+        ) : (
+          <Button
+            onClick={handleDownloadTemplate}
+            disabled={!selectedTemplateId || isLoadingFormTemplates}
+            className="mt-4 w-full"
+            variant="secondary"
+          >
+            <Download className="mr-2 h-4 w-4" />
+            {`Download CSV Template for ${selectedTemplate ? `"${selectedTemplate.name}"` : "Template"}`}
+          </Button>
+        )}
+      </div>
       <div className="flex justify-between mt-6">
-        <Button variant="outline" onClick={() => setStep("select-category")}>Back</Button>
-                      <Button
-          onClick={() => setStep("mapping")}
-          disabled={!file}
-        >
+        {importType === "asset" && (
+          <Button variant="outline" onClick={() => setStep("select-category")}>
+            Back
+          </Button>
+        )}
+        <Button onClick={() => setStep("mapping")} disabled={!file}>
           Next
-                      </Button>
-                    </div>
-                  </div>
+        </Button>
+      </div>
+    </div>
   );
 
   // --- Mapping Step ---
@@ -766,7 +871,9 @@ export default function BulkImportDialog({
     <div className="max-w-[700px] mx-auto p-4">
       <Stepper />
       <h2 className="text-xl font-bold mb-1 text-center">Map Columns</h2>
-      <p className="text-gray-500 text-sm mb-4 text-center">Map your CSV columns to the correct fields before previewing your data.</p>
+      <p className="text-gray-500 text-sm mb-4 text-center">
+        Map your CSV columns to the correct fields before previewing your data.
+      </p>
       <SchemaMappingStep
         uploadedColumns={uploadedColumns}
         templateFields={allTemplateFields}
@@ -776,29 +883,33 @@ export default function BulkImportDialog({
         }}
       />
       <div className="flex justify-between mt-6">
-        <Button variant="outline" onClick={() => setStep("upload")}>Back</Button>
-                      </div>
-                      </div>
-                              );
+        <Button variant="outline" onClick={() => setStep("upload")}>
+          Back
+        </Button>
+      </div>
+    </div>
+  );
 
-                              return (
-    <Dialog open={isOpen} onOpenChange={() => { resetState(); onClose(); }}>
+  return (
+    <Dialog
+      open={isOpen}
+      onOpenChange={() => {
+        resetState();
+        onClose();
+      }}
+    >
       <DialogContent
         className={
           step === "select-category" || step === "result"
             ? "w-[95vw] max-w-[480px]"
             : step === "upload"
-            ? "w-[95vw] max-w-[600px]"
-            : "w-[98vw] max-w-[1150px]"
+              ? "w-[95vw] max-w-[600px]"
+              : "w-[98vw] max-w-[1150px]"
         }
         style={{ overflowX: "visible" }}
       >
         {isCreatingNew && renderCreationDialog()}
-        {step === "select-category" && renderCategorySelectStep()}
-        {step === "upload" && renderUploadStep()}
-        {step === "mapping" && renderMappingStep()}
-        {step === "preview" && renderPreviewStep()}
-        {step === "result" && renderResultStep()}
+        {renderStepContent()}
       </DialogContent>
     </Dialog>
   );

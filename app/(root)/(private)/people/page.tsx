@@ -50,6 +50,16 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
+import BulkImportDialog from "@/components/forms/BulkImportDialog";
+import { loneeUserImportConfig } from "@/config/loneeUserImportConfig";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { UploadIcon } from "@radix-ui/react-icons";
 
 // Constants for better maintainability
 const SEARCH_DEBOUNCE_MS = 300;
@@ -120,6 +130,37 @@ const getActiveUsers = (users: UserWithRole[]): UserWithRole[] => {
   });
 };
 
+// Helper for the Import Dropdown
+const ImportDropdown = ({
+  onImportUsers,
+  onImportLoneeUsers,
+  canInviteUsers,
+}: {
+  onImportUsers: () => void;
+  onImportLoneeUsers: () => void;
+  canInviteUsers: boolean;
+}) => (
+  <DropdownMenu>
+    <DropdownMenuTrigger asChild>
+      <Button
+        variant="outline"
+        className="h-9 dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700"
+      >
+        <UploadIcon className="mr-2 h-4 w-4" />
+        Import
+      </Button>
+    </DropdownMenuTrigger>
+    <DropdownMenuContent align="end">
+      <DropdownMenuItem onClick={canInviteUsers ? onImportUsers : undefined}>
+        Import Users
+      </DropdownMenuItem>
+      <DropdownMenuItem onClick={onImportLoneeUsers}>
+        Import Assignment-Only Users
+      </DropdownMenuItem>
+    </DropdownMenuContent>
+  </DropdownMenu>
+);
+
 const People = () => {
   const {
     isLoading,
@@ -139,6 +180,8 @@ const People = () => {
   ]);
   const navigate = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [isLoneeImportOpen, setLoneeImportOpen] = useState(false);
+  const [isUserImportOpen, setUserImportOpen] = useState(false); // For future: regular user import
 
   // Debug: Log the users data to understand structure (can be removed in production)
   useEffect(() => {
@@ -190,8 +233,9 @@ const People = () => {
     openDialog();
   }, [openDialog]);
 
+  // Placeholder for regular user import (not implemented yet)
   const handleImport = useCallback(() => {
-    // Open import dialog - could be implemented later
+    // TODO: Implement regular user import dialog
     toast.info("Import functionality coming soon");
   }, []);
 
@@ -397,12 +441,21 @@ const People = () => {
           table={table}
           addNewText="Add Employee"
           onAddNew={permissions.canInviteUsers ? handleCreateNew : undefined}
-          onImport={permissions.canInviteUsers ? handleImport : undefined}
+          // Remove onImport from DataTableHeader, handled by dropdown
           onExport={permissions.canExportUsers ? handleExport : undefined}
           isLoading={isLoading || isPending}
           filterPlaceholder="Search people..."
           className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm"
           showFilter={false}
+          importControl={
+            <ImportDropdown
+              onImportUsers={
+                permissions.canInviteUsers ? handleImport : () => {}
+              }
+              onImportLoneeUsers={() => setLoneeImportOpen(true)}
+              canInviteUsers={permissions.canInviteUsers}
+            />
+          }
         />
 
         <Card className="dark:bg-gray-800 border-gray-200 dark:border-gray-700">
@@ -458,6 +511,37 @@ const People = () => {
         description="Register a new team member for your organization."
         form={null}
         body={<UserForm />}
+      />
+
+      <BulkImportDialog
+        isOpen={isLoneeImportOpen}
+        onClose={() => setLoneeImportOpen(false)}
+        config={loneeUserImportConfig}
+        importType="loneeUser"
+        onImport={async (data) => {
+          // POST to the API to create lonee users
+          const res = await fetch("/api/users/create-lonee", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data),
+          });
+          const result = await res.json();
+          // Optionally: show a toast or refresh users
+          if (result && result.results) {
+            const successCount = result.results.filter(
+              (r: any) => r.success,
+            ).length;
+            const errorCount = result.results.length - successCount;
+            if (successCount > 0) {
+              if (typeof toast !== "undefined")
+                toast.success(`${successCount} users imported successfully!`);
+            }
+            if (errorCount > 0) {
+              if (typeof toast !== "undefined")
+                toast.error(`${errorCount} users failed to import.`);
+            }
+          }
+        }}
       />
     </div>
   );

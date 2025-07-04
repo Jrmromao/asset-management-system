@@ -307,6 +307,7 @@ export const getUserById = async (
         },
         userItem: {
           include: {
+            license: true,
             accessory: {
               include: {
                 statusLabel: true,
@@ -314,6 +315,9 @@ export const getUserById = async (
               },
             },
           },
+        },
+        auditLogs: {
+          orderBy: { createdAt: "desc" },
         },
       },
     });
@@ -414,34 +418,6 @@ export async function createInitialUser(user: {
   } catch (error) {
     console.error("Error handling initial user:", error);
     throw new Error("Failed to handle initial user signup.");
-  }
-}
-
-/**
- * Creates a lonee (assignment-only) user who cannot log in.
- */
-export async function createLoneeUser(user: {
-  name: string;
-  email: string;
-  roleId: string;
-  departmentId?: string;
-}) {
-  try {
-    const newUser = await prisma.user.create({
-      data: {
-        name: user.name,
-        email: user.email,
-        roleId: user.roleId,
-        departmentId: user.departmentId,
-        active: false,
-        status: "REGISTERED",
-        oauthId: null,
-      },
-    });
-    return parseStringify(newUser);
-  } catch (error) {
-    console.error("Error creating lonee user:", error);
-    throw new Error("Failed to create lonee user in database.");
   }
 }
 
