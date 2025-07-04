@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertTriangle, RefreshCw, Home, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
+import * as Sentry from "@sentry/nextjs";
 
 interface Props {
   children: ReactNode;
@@ -48,6 +49,8 @@ export class ErrorBoundary extends Component<Props, State> {
     // Log the error for monitoring
     console.error("ErrorBoundary caught an error:", error, errorInfo);
 
+    // Report to Sentry
+    Sentry.captureException(error, { extra: { ...errorInfo } });
     this.setState({
       error,
       errorInfo,

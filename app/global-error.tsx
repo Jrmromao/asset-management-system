@@ -1,10 +1,17 @@
 "use client";
 
-import React from "react";
+import * as Sentry from "@sentry/nextjs";
+import React, { useEffect } from "react";
 import { AlertTriangle, RefreshCw, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export default function GlobalError({ reset }: { reset?: () => void }) {
+export default function GlobalError({ error, reset }: { error: Error; reset?: () => void }) {
+  useEffect(() => {
+    if (error) {
+      Sentry.captureException(error);
+    }
+  }, [error]);
+
   const handleRetry = () => {
     if (reset) reset();
     else window.location.reload();

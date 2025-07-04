@@ -371,6 +371,12 @@ const Assets = () => {
   // 3. For FilterDialog, provide the required shape
   const [filters, setFilters] = useState({ supplier: '', inventory: '' });
 
+
+  // // TEMP: Throw error for testing ErrorBoundary
+  // if (typeof window !== "undefined") {
+  //   throw new Error("Test error from Assets page");
+  // }
+
   // Loading state
   if (loading) {
     return (

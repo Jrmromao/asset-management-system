@@ -1,8 +1,10 @@
 // lib/utils/apiError.ts
 import { NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 
 /**
  * Standardizes API error responses and logs the error.
+ * Also reports to Sentry.
  * @param error The error object or message
  * @param status HTTP status code (default: 500)
  * @param context Optional context for logging
@@ -25,5 +27,7 @@ export function apiErrorResponse(
     // eslint-disable-next-line no-console
     console.error("[API ERROR]", error);
   }
+  // Report to Sentry
+  Sentry.captureException(error, { extra: { context } });
   return NextResponse.json({ success: false, error: message }, { status });
 } 
