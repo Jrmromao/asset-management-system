@@ -22,7 +22,7 @@ async function main() {
 
   try {
     // Seed global roles first (no company required)
-    await seedGlobalRoles(prisma);
+    // await seedGlobalRoles(prisma);
 
     // Seed pricing plans (also global/system-wide)
     // await seedPricingPlans(prisma);

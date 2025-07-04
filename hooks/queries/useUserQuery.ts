@@ -88,15 +88,54 @@ export const useUserQuery = () => {
     },
   });
 
-  const findById = async (id: string) => {
-    const user = users.find((user: User) => user.id === id);
-    if (user) return user;
+  // Add deactivateUser mutation
+  const { mutateAsync: deactivateUser, isPending: isDeactivating } = useMutation({
+    mutationFn: async ({ userId, actorId, companyId }: { userId: string; actorId: string; companyId: string }) => {
+      const res = await fetch(`/api/users/${userId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "deactivate", actorId, companyId }),
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || "Failed to deactivate user");
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      toast.success("User deactivated and notified!");
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to deactivate user");
+    },
+  });
 
+  // Add activateUser mutation
+  const { mutateAsync: activateUser, isPending: isActivating } = useMutation({
+    mutationFn: async ({ userId, actorId, companyId }: { userId: string; actorId: string; companyId: string }) => {
+      const res = await fetch(`/api/users/${userId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "activate", actorId, companyId }),
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || "Failed to activate user");
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      toast.success("User activated!");
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to activate user");
+    },
+  });
+
+  const findById = async (id: string) => {
+    // Always fetch full user details from backend for detail view
     const result = await getUserById(id);
     if (result.success && result.data) {
       return result.data;
     }
-
     return undefined;
   };
 
@@ -111,6 +150,10 @@ export const useUserQuery = () => {
     isUpdating,
     refresh: refetch,
     deleteItem,
+    deactivateUser,
+    isDeactivating,
+    activateUser,
+    isActivating,
     // Metrics from the enhanced service
     totalUsers: usersData?.totalUsers || 0,
     newThisMonth: usersData?.newThisMonth || 0,

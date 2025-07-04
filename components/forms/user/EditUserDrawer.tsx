@@ -9,11 +9,12 @@ import { Button } from "@/components/ui/button";
 
 // Import the improved UserEditForm from UserDetailsView
 import UserEditForm from "@/components/forms/user/UserEditForm";
+import { inviteUserSecure } from "@/lib/actions/invitation.actions";
 
 interface EditUserDrawerProps {
   userId: string;
   open: boolean;
-  onClose: () => void;
+  onClose: (updatedUser?: any) => void;
 }
 
 const EditUserDrawer: React.FC<EditUserDrawerProps> = ({ userId, open, onClose }) => {
@@ -43,9 +44,16 @@ const EditUserDrawer: React.FC<EditUserDrawerProps> = ({ userId, open, onClose }
       .finally(() => setLoading(false));
   }, [userId, open]);
 
-  const handleSuccess = () => {
+  const handleSuccess = (updatedUser?: any) => {
     toast.success("User updated successfully!");
     queryClient.invalidateQueries({ queryKey: ["users"] });
+    if (updatedUser) {
+      // If parent passed a callback to update user in real time, call it
+      if (typeof onClose === "function" && onClose.length > 0) {
+        onClose(updatedUser);
+        return;
+      }
+    }
     onClose();
   };
 
@@ -58,9 +66,37 @@ const EditUserDrawer: React.FC<EditUserDrawerProps> = ({ userId, open, onClose }
   const handleSave = async (data: any) => {
     setSaving(true);
     try {
+      const wasLonee = user?.role === "lonee";
+      const isNowLoginEnabled = data.role && data.role !== "lonee";
+      let inviteError = null;
+
+      // If switching from lonee to a login-enabled role, send invite
+      if (wasLonee && isNowLoginEnabled) {
+        // Check quota
+        const res = await fetch("/api/user/can-add-active-user");
+        const usage = await res.json();
+        if (!usage.allowed) {
+          toast.error(`User quota reached (${usage.limit}). Upgrade to add more users.`);
+          setSaving(false);
+          return;
+        }
+        // Send invite
+        const inviteResult = await inviteUserSecure({
+          email: data.email,
+          roleId: data.role, // or map to roleId as needed
+        });
+        if (!inviteResult.success) {
+          inviteError = inviteResult.error || "Failed to send invitation.";
+        }
+      }
+
+      // Proceed with user update
       const result = await updateUser({ id: userId, data });
       if (result?.success) {
-        handleSuccess();
+        handleSuccess(result.data);
+        if (inviteError) {
+          toast.error(inviteError);
+        }
       } else {
         handleError(result?.error || "Unknown error");
       }

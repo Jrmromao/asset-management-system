@@ -44,6 +44,8 @@ model User {
   isDeleted             Boolean       @default(false)
   deletedAt             DateTime?
 
+  notes                 String?       // <-- Add this line for user notes
+
   // Relations
   company           Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
   role              Role          @relation(fields: [roleId], references: [id], onDelete: Restrict)
@@ -681,7 +683,7 @@ model Category {
 
 model StatusLabel {
   id          String        @id @default(cuid())
-  name        String
+  name        String        // e.g., 'active', 'inactive', 'awaiting_return', ...
   colorCode   String
   isArchived  Boolean       @default(false)
   allowLoan   Boolean       @default(false)

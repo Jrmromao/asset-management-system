@@ -209,4 +209,24 @@ export const emailTemplates = {
       </div>
     </div>
   `,
+
+  assetReturnRequest: ({ firstName, items, message }: { firstName: string; items: { type: string; name: string; id: string }[]; message?: string }) => `
+    <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
+      <div style="background-color: #f7f7f7; padding: 20px; text-align: center;">
+        <h1 style="color: #f59e0b; margin: 0;">Asset Return Request</h1>
+      </div>
+      <div style="padding: 30px;">
+        <h2 style="color: #333;">Hello, ${firstName}!</h2>
+        <p>${message || "Your account has been deactivated. Please return the following items assigned to you as soon as possible:"}</p>
+        <ul>
+          ${items.map(item => `<li><strong>${item.type}:</strong> ${item.name} (ID: ${item.id})</li>`).join("")}
+        </ul>
+        <p>If you have already returned these items, please disregard this message. If you have any questions, contact your administrator.</p>
+        <p>Best regards,<br>The EcoKeepr Team</p>
+      </div>
+      <div style="background-color: #f7f7f7; padding: 15px; text-align: center; font-size: 12px; color: #777;">
+        <p>&copy; ${new Date().getFullYear()} EcoKeepr. All rights reserved.</p>
+      </div>
+    </div>
+  `,
 };

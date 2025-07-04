@@ -69,7 +69,7 @@ export const peopleColumns = ({
     id: "actions",
     cell: ({ row }) => {
       return (
-        <DataTableRowActions row={row} onDelete={onDelete} onView={onView} />
+        <DataTableRowActions row={row} onView={onView} />
       );
     },
   },

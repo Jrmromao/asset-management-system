@@ -7,6 +7,7 @@ import { prisma } from "@/app/db";
 import { parseStringify } from "@/lib/utils";
 import { UserService } from "@/services/user/userService";
 import { createAuditLog } from "@/lib/actions/auditLog.actions";
+import { EmailService } from "@/services/email";
 
 /**
  * Creates a new user in the database when a new user signs up via Clerk.
@@ -223,7 +224,7 @@ export const updateUserNonAuthDetails = async (
   data: Partial<
     Pick<
       PrismaUser,
-      "firstName" | "lastName" | "roleId" | "title" | "employeeId"
+      "firstName" | "lastName" | "roleId" | "title" | "employeeId" | "departmentId" | "active"
     >
   >,
 ): Promise<{ success: boolean; error?: string; data?: PrismaUser }> => {
@@ -236,6 +237,9 @@ export const updateUserNonAuthDetails = async (
         roleId: data.roleId,
         title: data.title,
         employeeId: data.employeeId,
+        departmentId: data.departmentId,
+        // Allow updating active field if present
+        ...(data.active !== undefined ? { active: data.active } : {}),
       },
     });
     revalidatePath("/admin/users");
@@ -381,6 +385,204 @@ export const remove = async (
       success: false,
       error: "Failed to delete user",
     };
+  }
+};
+
+/**
+ * Marks all items assigned to a user as 'awaiting_return' and removes the user assignment.
+ * Logs an audit entry for each item.
+ */
+export const markUserItemsAwaitingReturn = async (
+  userId: string,
+  actorId: string,
+  companyId: string,
+): Promise<{ success: boolean; error?: string; details?: any[] }> => {
+  try {
+    // Find the 'Awaiting Return' status label for this company
+    const statusLabel = await prisma.statusLabel.findFirst({
+      where: { name: "Awaiting Return", companyId },
+    });
+    if (!statusLabel) {
+      return { success: false, error: "Awaiting Return status label not found for this company." };
+    }
+    // Find all UserItem assignments for this user
+    const userItems = await prisma.userItem.findMany({
+      where: { userId, companyId },
+      include: { asset: true, accessory: true, license: true },
+    });
+    const details: any[] = [];
+    for (const item of userItems) {
+      // Remove assignment and set status to 'awaiting_return'
+      if (item.assetId && item.asset) {
+        await prisma.asset.update({
+          where: { id: item.assetId },
+          data: { userId: null, statusLabelId: statusLabel.id },
+        });
+        await prisma.assetHistory.create({
+          data: {
+            assetId: item.assetId,
+            type: "status_change",
+            companyId,
+            notes: `Marked as awaiting return due to user deactivation/deletion`,
+          },
+        });
+        await prisma.auditLog.create({
+          data: {
+            companyId,
+            userId: actorId,
+            action: "ASSET_AWAITING_RETURN",
+            entity: "ASSET",
+            entityId: item.assetId,
+            details: `Asset marked as awaiting return due to user deactivation/deletion`,
+          },
+        });
+        details.push({ type: "asset", id: item.assetId, name: item.asset.name });
+      }
+      if (item.accessoryId && item.accessory) {
+        await prisma.accessory.update({
+          where: { id: item.accessoryId },
+          data: { statusLabelId: statusLabel.id },
+        });
+        await prisma.auditLog.create({
+          data: {
+            companyId,
+            userId: actorId,
+            action: "ACCESSORY_AWAITING_RETURN",
+            entity: "ACCESSORY",
+            entityId: item.accessoryId,
+            details: `Accessory marked as awaiting return due to user deactivation/deletion`,
+          },
+        });
+        details.push({ type: "accessory", id: item.accessoryId, name: item.accessory.name });
+      }
+      if (item.licenseId && item.license) {
+        await prisma.license.update({
+          where: { id: item.licenseId },
+          data: { statusLabelId: statusLabel.id },
+        });
+        await prisma.auditLog.create({
+          data: {
+            companyId,
+            userId: actorId,
+            action: "LICENSE_AWAITING_RETURN",
+            entity: "LICENSE",
+            entityId: item.licenseId,
+            details: `License marked as awaiting return due to user deactivation/deletion`,
+          },
+        });
+        details.push({ type: "license", id: item.licenseId, name: item.license.name });
+      }
+      // Remove the user assignment
+      await prisma.userItem.delete({ where: { id: item.id } });
+    }
+    return { success: true, details };
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
+  }
+};
+
+/**
+ * Deactivates a user, marks their items as Awaiting Return, logs all actions, and sends notification emails.
+ */
+export const deactivateUser = async (
+  userId: string,
+  actorId: string,
+  companyId: string,
+) => {
+  try {
+    // 1. Deactivate the user
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data: { active: false, status: "DISABLED" },
+    });
+    // 2. Log audit
+    await createAuditLog({
+      companyId,
+      action: "USER_DEACTIVATED",
+      entity: "USER",
+      entityId: userId,
+      details: `User deactivated: ${user.email} (${user.name}) by user ${actorId}`,
+    });
+    // 3. Mark all items as Awaiting Return
+    const { details } = await markUserItemsAwaitingReturn(userId, actorId, companyId);
+    // 4. Send asset return email to user (if not lonee)
+    let isLonee = false;
+    if (user.roleId) {
+      const role = await prisma.role.findUnique({ where: { id: user.roleId } });
+      isLonee = role?.name?.toLowerCase() === "lonee";
+    }
+    if (!isLonee && user.email) {
+      await EmailService.sendEmail({
+        to: user.email,
+        subject: "Asset Return Request",
+        templateName: "assetReturnRequest",
+        templateData: {
+          firstName: user.firstName || user.name || "",
+          items: details || [],
+        },
+      });
+    }
+    // 5. (Optional) Send summary email to actor/admin
+    // ...
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
+  }
+};
+
+/**
+ * Activates a user, logs the action, and returns success or error.
+ */
+export const activateUser = async (
+  userId: string,
+  actorId: string,
+  companyId: string,
+) => {
+  try {
+    // 1. Activate the user
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data: { active: true, status: "ACTIVE" },
+    });
+    // 2. Log audit
+    await createAuditLog({
+      companyId,
+      action: "USER_ACTIVATED",
+      entity: "USER",
+      entityId: userId,
+      details: `User activated: ${user.email} (${user.name}) by user ${actorId}`,
+    });
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
+  }
+};
+
+/**
+ * Updates the notes field for a user by ID.
+ */
+export const updateUserNotes = async (
+  userId: string,
+  notes: string,
+  actorId?: string,
+) => {
+  try {
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: { notes },
+    });
+    // Log audit with notes value
+    const auditLog = await createAuditLog({
+      companyId: updatedUser.companyId,
+      action: "USER_NOTES_UPDATED",
+      entity: "USER",
+      entityId: userId,
+      details: `User notes updated by user ${actorId || "system"}. New notes: ${notes}`,
+      dataAccessed: { notes },
+    });
+    return { success: true, data: { ...parseStringify(updatedUser), lastAuditLog: auditLog?.data } };
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
   }
 };
 

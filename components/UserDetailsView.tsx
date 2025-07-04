@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useContext } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import QRCode from "react-qr-code";
@@ -68,6 +68,9 @@ import { Form } from "@/components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import EditUserDrawer from "@/components/forms/user/EditUserDrawer";
+import ConfirmationDialog from "@/components/ConfirmationDialog";
+import { UserContext } from "@/components/providers/UserContext";
+import { useUserQuery } from "@/hooks/queries/useUserQuery";
 
 // Improved user edit form with all main fields
 const userEditSchema = z.object({
@@ -121,32 +124,34 @@ const DetailItem: React.FC<{
 const NotesSection: React.FC<{
   userId: string;
   currentNotes?: string;
-  onNotesUpdate?: (notes: string) => void;
+  onNotesUpdate?: (notes: string, newAuditLog?: any) => void;
 }> = ({ userId, currentNotes, onNotesUpdate }) => {
   const [notes, setNotes] = React.useState(currentNotes || "");
   const [isEditing, setIsEditing] = React.useState(false);
   const [isSaving, setIsSaving] = React.useState(false);
+  const { user: currentUser } = useContext(UserContext);
 
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      // TODO: Implement updateUserNotes API call
-      // const response = await updateUserNotes(userId, notes);
-      // if (response.success) {
-      //   toast.success("User notes have been updated successfully.");
-      //   setIsEditing(false);
-      //   onNotesUpdate?.(notes);
-      // } else {
-      //   toast.error(response.error || "Failed to update notes.");
-      // }
-      setTimeout(() => {
-        setIsEditing(false);
-        onNotesUpdate?.(notes);
+      // Call API to update user notes
+      const res = await fetch(`/api/users/${userId}/notes`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ notes, actorId: currentUser?.id }),
+      });
+      const data = await res.json();
+      if (data.success) {
         toast.success("User notes have been updated successfully.");
-        setIsSaving(false);
-      }, 500);
+        setIsEditing(false);
+        // Pass the new audit log entry to the parent
+        onNotesUpdate?.(notes, data.data?.lastAuditLog);
+      } else {
+        toast.error(data.error || "Failed to update notes.");
+      }
     } catch (error) {
       toast.error("An error occurred while saving notes.");
+    } finally {
       setIsSaving(false);
     }
   };
@@ -244,11 +249,14 @@ type UserItemWithLicense = UserItems & { license?: License };
 
 export default function UserDetailsView(
   {
-    user,
+    user: initialUser,
     isLoading,
   }: UserDetailsViewProps
 ) {
   const router = useRouter();
+  const [user, setUser] = React.useState(initialUser);
+  React.useEffect(() => { setUser(initialUser); }, [initialUser]);
+  const { findById } = useUserQuery();
   const isLonee =
     user.active === false && ((user as any).status ?? "-") === "REGISTERED";
   const fieldsProfile = [
@@ -328,6 +336,10 @@ export default function UserDetailsView(
     },
   ], []);
   const [editDrawerOpen, setEditDrawerOpen] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showDeactivateDialog, setShowDeactivateDialog] = useState(false);
+  const { deactivateUser, isDeactivating, activateUser, isActivating } = useUserQuery();
+  const { user: currentUser } = useContext(UserContext);
   if (isLoading) return <UserProfileSkeleton />;
   const userStatus = user.active ? "Active" : "Inactive";
   const statusColor = user.active ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800";
@@ -366,7 +378,7 @@ export default function UserDetailsView(
               <AvatarImage src={(user as any).images ?? undefined} alt={user.name || user.email} />
             ) : (
               <AvatarFallback>
-                {user.firstName?.[0] || user.name?.[0] || user.email[0]}
+                {user.firstName?.[0] || user.name?.[0] || user.email?.[0] || "?"}
                 {user.lastName?.[0] || ""}
               </AvatarFallback>
             )}
@@ -404,30 +416,72 @@ export default function UserDetailsView(
             className="w-full sm:w-auto"
           />
           {user.active ? (
-            <CustomButton
-              value="Deactivate"
-              Icon={Ban}
-              action={() => {/* TODO: Implement deactivate logic */}}
-              className="w-full sm:w-auto border border-red-500 text-red-600 bg-white hover:bg-red-50"
-            />
+            <>
+              <CustomButton
+                value="Deactivate"
+                Icon={Ban}
+                action={() => setShowDeactivateDialog(true)}
+                className="w-full sm:w-auto border border-red-500 text-red-600 bg-white hover:bg-red-50"
+              />
+              <ConfirmationDialog
+                open={showDeactivateDialog}
+                onOpenChange={setShowDeactivateDialog}
+                title="Deactivate User"
+                description="Are you sure you want to deactivate this user? They will not be able to log in until reactivated."
+                confirmText={isDeactivating ? "Deactivating..." : "Deactivate"}
+                cancelText="Cancel"
+                variant="warning"
+                onConfirm={async () => {
+                  if (!currentUser?.id || !currentUser?.companyName) {
+                    toast.error("Current user context is missing. Please refresh and try again.");
+                    setShowDeactivateDialog(false);
+                    return;
+                  }
+                  try {
+                    await deactivateUser({
+                      userId: user.id,
+                      actorId: currentUser.id,
+                      companyId: currentUser.companyName, // Replace with companyId if available
+                    });
+                    // Fetch the latest user details (with relations)
+                    const freshUser = await findById(user.id);
+                    if (freshUser) setUser(freshUser);
+                    else setUser({ ...user, active: false });
+                  } catch (e: any) {
+                    // Error toast handled in hook
+                  } finally {
+                    setShowDeactivateDialog(false);
+                  }
+                }}
+              />
+            </>
           ) : (
             <CustomButton
-              value="Activate"
+              value={isActivating ? "Activating..." : "Activate"}
               Icon={CheckCircle}
-              action={() => {/* TODO: Implement activate logic */}}
+              action={async () => {
+                if (!currentUser?.id || !currentUser?.companyName) {
+                  toast.error("Current user context is missing. Please refresh and try again.");
+                  return;
+                }
+                try {
+                  await activateUser({
+                    userId: user.id,
+                    actorId: currentUser.id,
+                    companyId: currentUser.companyName, // Replace with companyId if available
+                  });
+                  // Fetch the latest user details (with relations)
+                  const freshUser = await findById(user.id);
+                  if (freshUser) setUser(freshUser);
+                  else setUser({ ...user, active: true });
+                } catch (e: any) {
+                  // Error toast handled in hook
+                }
+              }}
               className="w-full sm:w-auto border border-green-500 text-green-600 bg-white hover:bg-green-50"
+              disabled={isActivating}
             />
           )}
-          <CustomButton
-            value="Delete"
-            Icon={Trash2}
-            action={() => {
-              if (window.confirm("Are you sure you want to delete this user? This action cannot be undone.")) {
-                // TODO: Implement delete logic
-              }
-            }}
-            className="w-full sm:w-auto border border-red-500 text-red-600 bg-white hover:bg-red-50"
-          />
           {/* Dropdown for less common actions */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -436,13 +490,36 @@ export default function UserDetailsView(
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => {/* TODO: Reset password */}}>
-                <Key className="h-4 w-4 mr-2" /> Reset Password
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => {/* TODO: Resend invite */}}>
-                <Send className="h-4 w-4 mr-2" /> Resend Invitation
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => {/* TODO: Export user data */}}>
+              <DropdownMenuItem onClick={async () => {
+                let auditLogs = (user as any).auditLogs;
+                // If auditLogs are not present, fetch from backend
+                if (!auditLogs) {
+                  try {
+                    const res = await fetch(`/api/audit-logs?userId=${user.id}`);
+                    if (res.ok) {
+                      const data = await res.json();
+                      auditLogs = data.auditLogs || [];
+                    } else {
+                      auditLogs = [];
+                    }
+                  } catch {
+                    auditLogs = [];
+                  }
+                }
+                const exportData = { user, auditLogs };
+                const dataStr = JSON.stringify(exportData, null, 2);
+                const blob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `user-${user.id}-with-logs.json`;
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(() => {
+                  document.body.removeChild(a);
+                  URL.revokeObjectURL(url);
+                }, 100);
+              }}>
                 <Download className="h-4 w-4 mr-2" /> Export Data
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -469,7 +546,16 @@ export default function UserDetailsView(
               {fieldsAccount.map((field, i) => <DetailItem key={i} icon={field.icon} label={field.label} value={field.value} />)}
             </CardContent>
           </Card>
-          <NotesSection userId={user.id} currentNotes={(user as any).notes} />
+          <NotesSection userId={user.id} currentNotes={(user as any).notes} onNotesUpdate={(notes, newAuditLog) => {
+            setUser(prev => {
+              const prevLogs = (prev as any).auditLogs || [];
+              return {
+                ...prev,
+                notes,
+                auditLogs: newAuditLog ? [newAuditLog, ...prevLogs] : prevLogs,
+              };
+            });
+          }} />
         </div>
         <div className="lg:col-span-1 space-y-6">
           <Card>
@@ -557,7 +643,15 @@ export default function UserDetailsView(
       </React.Suspense>
       {/* User Edit Side Drawer */}
       {user.id && (
-        <EditUserDrawer userId={user.id} open={editDrawerOpen} onClose={() => setEditDrawerOpen(false)} />
+        <EditUserDrawer userId={user.id} open={editDrawerOpen} onClose={async (updatedUser) => {
+          setEditDrawerOpen(false);
+          if (updatedUser) {
+            // Fetch the latest user details (with relations)
+            const freshUser = await findById(user.id);
+            if (freshUser) setUser(freshUser);
+            else setUser(updatedUser); // fallback
+          }
+        }} />
       )}
     </section>
   );

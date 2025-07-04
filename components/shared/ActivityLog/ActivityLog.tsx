@@ -58,7 +58,7 @@ function exportLogsToCSV(logs: SimpleAuditLog[]) {
 
 const ActivityLog: React.FC<ActivityLogProps> = ({ auditLogs }) => {
   const [showAll, setShowAll] = useState(false);
-  const logsToShow = showAll ? auditLogs : auditLogs?.slice(0, 10);
+  const logsToShow = showAll ? auditLogs : auditLogs?.slice(0, 5);
   return (
     <section className="flex w-full">
       <Card className="w-full mx-auto py-3 max-h-900 overflow-y-auto mt-2">
@@ -70,7 +70,7 @@ const ActivityLog: React.FC<ActivityLogProps> = ({ auditLogs }) => {
                 className="text-xs px-3 py-1 rounded bg-gray-100 hover:bg-gray-200 border border-gray-300"
                 onClick={() => setShowAll((prev) => !prev)}
               >
-                {showAll ? "Show Top 10" : `Show All (${auditLogs.length})`}
+                {showAll ? "Show Top 5" : `Show All (${auditLogs.length})`}
               </button>
             )}
             {auditLogs && auditLogs.length > 0 && (

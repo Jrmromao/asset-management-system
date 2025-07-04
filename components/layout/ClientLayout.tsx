@@ -10,6 +10,10 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
 import CookieBanner from "@/components/cookies/CookieBanner";
 import { FloatingHelpWidget } from "@/components/floating/FloatingHelpWidget";
+import { useUser } from "@clerk/nextjs";
+import { useContext, useEffect } from "react";
+import { UserContext } from "@/components/providers/UserContext";
+import { currentUser } from "@clerk/nextjs/server";
 
 const ClientLayout = ({ children }: { children: React.ReactNode }) => {
   const [queryClient] = React.useState(() => new QueryClient());
@@ -18,6 +22,22 @@ const ClientLayout = ({ children }: { children: React.ReactNode }) => {
   const handlePreferencesChange = (preferences: any) => {
     setShowGA(preferences.analytics);
   };
+
+  const { user: clerkUser, isLoaded } = useUser();
+  
+  const { setUser } = useContext(UserContext);
+
+  useEffect(() => {
+    if (isLoaded && clerkUser) {
+      setUser({
+        id: clerkUser.id,
+        email: clerkUser.emailAddresses?.[0]?.emailAddress || "",
+        firstName: clerkUser.firstName || "",
+        lastName: clerkUser.lastName || "",
+        companyName: clerkUser.publicMetadata?.companyId as string || "", // Use companyId if available
+      });
+    }
+  }, [isLoaded, clerkUser, setUser]);
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -30,7 +50,7 @@ const ClientLayout = ({ children }: { children: React.ReactNode }) => {
           storageKey="asset-management-theme"
         >
           <Toaster richColors />
-          {showGA && process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID && (
+          {showGA && process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID && process.env.NODE_ENV === "production" && (
             <GoogleAnalytics
               GA_MEASUREMENT_ID={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}
             />
