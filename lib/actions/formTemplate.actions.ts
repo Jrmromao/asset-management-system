@@ -10,8 +10,7 @@ import { withAuth } from "@/lib/middleware/withAuth";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { createAuditLog } from "@/lib/actions/auditLog.actions";
-
-const prisma = new PrismaClient();
+import { prisma } from "@/app/db";
 
 type AuthResponse<T> = {
   data?: T;
@@ -96,8 +95,6 @@ export const getFormTemplateById = withAuth(
     } catch (error) {
       console.error("Get form template error:", error);
       return { success: false, error: "Failed to fetch form template" };
-    } finally {
-      await prisma.$disconnect();
     }
   },
 );
@@ -127,8 +124,6 @@ export const remove = withAuth(
     } catch (error) {
       console.error("Delete form template error:", error);
       return { success: false, error: "Failed to delete form template" };
-    } finally {
-      await prisma.$disconnect();
     }
   },
 );
@@ -167,8 +162,6 @@ export const update = withAuth(
     } catch (error) {
       console.error("Update form template error:", error);
       return { success: false, error: "Failed to update form template" };
-    } finally {
-      await prisma.$disconnect();
     }
   },
 );
@@ -196,8 +189,6 @@ export async function bulkInsertTemplates(
     };
   } catch (error) {
     return handleError(error, "Failed to bulk insert templates");
-  } finally {
-    await prisma.$disconnect();
   }
 }
 

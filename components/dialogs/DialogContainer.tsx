@@ -10,7 +10,7 @@ import React from "react";
 
 interface IProps {
   open: boolean;
-  onOpenChange: () => void;
+  onOpenChange: (open: boolean) => void;
   title: string;
   description: string;
   form: any;

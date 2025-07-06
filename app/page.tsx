@@ -104,7 +104,7 @@ const LandingPage = () => {
       <Features />
 
       {/* Industries Section */}
-      <Industries />
+      {/* <Industries /> */}
 
       {/* Pricing Section */}
       <section

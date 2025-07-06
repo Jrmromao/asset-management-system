@@ -15,6 +15,8 @@ import { seedLicenses } from "./seeds/licenses";
 import { seedAccessories } from "./seeds/accessories";
 import { seedUserItems } from "./seeds/userItems";
 
+// If this is a CLI script, keep direct instantiation. Otherwise, replace with:
+// import { prisma } from "@/app/db";
 const prisma = new PrismaClient();
 
 async function main() {

@@ -113,7 +113,7 @@ export const ValuePropositionSection = () => {
         </div>
 
         {/* Social Proof Quote */}
-        <motion.div
+        {/* <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.8, duration: 0.6 }}
@@ -144,7 +144,7 @@ export const ValuePropositionSection = () => {
               </div>
             </div>
           </div>
-        </motion.div>
+        </motion.div> */}
 
         {/* CTA Section */}
         <motion.div

@@ -1,17 +1,12 @@
+// This file exports a singleton Prisma client. Always import from here to avoid multiple client instances and connection issues in development and serverless environments.
 import { PrismaClient } from "@prisma/client";
 
-declare global {
-  var prisma: PrismaClient | undefined;
-}
+const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
 
-const prismaClientSingleton = () => {
-  return new PrismaClient();
-};
+export const prisma =
+  globalForPrisma.prisma ||
+  new PrismaClient({
+    log: ["query", "info", "warn", "error"],
+  });
 
-const prisma = globalThis.prisma ?? prismaClientSingleton();
-
-if (process.env.NODE_ENV !== "production") {
-  globalThis.prisma = prisma;
-}
-
-export { prisma };
+if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;

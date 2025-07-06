@@ -43,20 +43,26 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
     }
     const json = await req.json();
-    const { fileContent } = json;
-    if (!fileContent) {
-      return NextResponse.json({ success: false, message: "No file content provided" }, { status: 400 });
-    }
-    // Parse CSV
-    let records: Record<string, string>[] = [];
-    try {
-      records = parse(fileContent, { columns: true, skip_empty_lines: true }) as Record<string, string>[];
-    } catch (e) {
-      return NextResponse.json({ success: false, message: "Invalid CSV format" }, { status: 400 });
-    }
+    // Support both CSV and JSON array input
+    const { fileContent, licenses } = json;
     // Get companyId from Clerk claims
-    const companyId = (sessionClaims?.privateMetadata as { companyId?: string } | undefined)?.companyId;    if (!companyId) {
+    const companyId = (sessionClaims?.privateMetadata as { companyId?: string } | undefined)?.companyId;
+    if (!companyId) {
       return NextResponse.json({ success: false, message: "No companyId found in user metadata" }, { status: 400 });
+    }
+    let records: Record<string, any>[] = [];
+    if (Array.isArray(licenses)) {
+      // JSON array path
+      records = licenses;
+    } else if (fileContent) {
+      // CSV path
+      try {
+        records = parse(fileContent, { columns: true, skip_empty_lines: true }) as Record<string, string>[];
+      } catch (e) {
+        return NextResponse.json({ success: false, message: "Invalid CSV format" }, { status: 400 });
+      }
+    } else {
+      return NextResponse.json({ success: false, message: "No data provided" }, { status: 400 });
     }
     let successCount = 0;
     let errorRows: { row: number; error: string }[] = [];

@@ -29,7 +29,10 @@ import { DialogContainer } from "@/components/dialogs/DialogContainer";
 import FileUploadForm from "@/components/forms/FileUploadForm";
 import { Card, CardContent } from "@/components/ui/card";
 import { DataTable } from "@/components/tables/DataTable/data-table";
-import { useLicenseQuery, useAllLicensesForStats } from "@/hooks/queries/useLicenseQuery";
+import {
+  useLicenseQuery,
+  useAllLicensesForStats,
+} from "@/hooks/queries/useLicenseQuery";
 import { toast } from "sonner";
 import type {
   ColumnDef,
@@ -44,6 +47,10 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
+import BulkImportDialog from "@/components/forms/BulkImportDialog";
+import { z } from "zod";
+import { Button } from "@/components/ui/button";
+import { Dialog } from "@/components/ui/dialog";
 
 // Constants for better maintainability
 const SEARCH_DEBOUNCE_MS = 300;
@@ -97,27 +104,185 @@ const getNestedValue = (obj: any, path: string): any => {
   return path.split(".").reduce((current, key) => current?.[key], obj);
 };
 
-const Licenses = () => {
+// License bulk import config
+const licenseImportFields = [
+  { name: "name", label: "License Name", type: "string", required: true },
+  {
+    name: "licensedEmail",
+    label: "Licensed Email",
+    type: "string",
+    required: true,
+  },
+  { name: "poNumber", label: "PO Number", type: "string", required: false },
+  { name: "renewalDate", label: "Renewal Date", type: "date", required: true },
+  {
+    name: "purchaseDate",
+    label: "Purchase Date",
+    type: "date",
+    required: true,
+  },
+  {
+    name: "purchaseNotes",
+    label: "Purchase Notes",
+    type: "string",
+    required: false,
+  },
+  { name: "licenseUrl", label: "License URL", type: "string", required: false },
+  {
+    name: "minSeatsAlert",
+    label: "Min Seats Alert",
+    type: "number",
+    required: false,
+  },
+  {
+    name: "alertRenewalDays",
+    label: "Alert Renewal Days",
+    type: "number",
+    required: false,
+  },
+  { name: "seats", label: "Seats", type: "number", required: false },
+  {
+    name: "purchasePrice",
+    label: "Purchase Price",
+    type: "number",
+    required: false,
+  },
+];
+const licenseImportDependencies = [
+  {
+    name: "statusLabelId",
+    label: "Status Label",
+    api: "/api/status-labels",
+    createApi: "/api/status-labels",
+  },
+  {
+    name: "supplierId",
+    label: "Supplier",
+    api: "/api/suppliers",
+    createApi: "/api/suppliers",
+  },
+];
+const licenseImportValidationSchema = z.object({
+  name: z.string().min(1),
+  licensedEmail: z.string().email(),
+  renewalDate: z.string().min(1),
+  purchaseDate: z.string().min(1),
+});
+const licenseBulkImportConfig = {
+  entityType: "license",
+  fields: licenseImportFields,
+  dependencies: licenseImportDependencies,
+  importApi: "/api/licenses/bulk-import",
+  templateUrl: "/license-import-template.csv",
+  validationSchema: licenseImportValidationSchema,
+  companyId: "COMPANY_ID_PLACEHOLDER", // TODO: Replace with actual companyId from context
+};
+
+// Add a function to download the template
+const handleDownloadLicenseTemplate = () => {
+  const headers = [
+    "name",
+    "licensedEmail",
+    "poNumber",
+    "renewalDate",
+    "purchaseDate",
+    "purchaseNotes",
+    "licenseUrl",
+    "minSeatsAlert",
+    "alertRenewalDays",
+    "seats",
+    "purchasePrice",
+    "statusLabelId",
+    "supplierId",
+  ];
+  const csvContent = headers.join(",") + "\n";
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "license-import-template.csv";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+};
+
+function LicensesPage() {
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState(10);
   const [searchTerm, setSearchTerm] = useState("");
   const [filters, setFilters] = useState({});
-  const { licenses, isLoading, deleteItem, total, error } = useLicenseQuery(pageIndex, pageSize, searchTerm, filters);
-  const { data: allLicensesForStats = [], isLoading: isStatsLoading } = useAllLicensesForStats();
+  const { licenses, isLoading, deleteItem, total, error } = useLicenseQuery(
+    pageIndex,
+    pageSize,
+    searchTerm,
+    filters,
+  );
+  const { data: allLicensesForStats = [], isLoading: isStatsLoading } =
+    useAllLicensesForStats();
 
   // Debug log
-  console.log('licenses', licenses, 'total', total, 'isLoading', isLoading, 'error', error);
+  console.log(
+    "licenses",
+    licenses,
+    "total",
+    total,
+    "isLoading",
+    isLoading,
+    "error",
+    error,
+  );
 
-  const [openDialog, closeDialog, isOpen] = useDialogStore((state) => [
-    state.onOpen,
-    state.onClose,
-    state.isOpen,
-  ]);
+  // Remove openDialog from useDialogStore for import dialog
+  // const [openDialog, closeDialog, isOpen] = useDialogStore((state) => [
+  //   state.onOpen,
+  //   state.onClose,
+  //   state.isOpen,
+  // ]);
   const navigate = useRouter();
   const [isPending, startTransition] = useTransition();
 
   // State management
   const [filterDialogOpen, setFilterDialogOpen] = useState(false);
+  const [isImportDialogOpen, setImportDialogOpen] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const [importResult, setImportResult] = useState<null | {
+    success: number;
+    failed: number;
+    errors?: any[];
+  }>(null);
+
+  const handleLicenseImport = async (data: any) => {
+    setIsImporting(true);
+    setImportResult(null);
+    try {
+      const response = await fetch("/api/licenses/bulk-import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ licenses: data }),
+      });
+      const result = await response.json();
+      setIsImporting(false);
+      if (response.ok) {
+        setImportResult(result);
+        toast.success(
+          `Imported ${result.success} licenses. ${result.failed > 0 ? result.failed + " failed." : ""}`,
+        );
+        if (result.failed > 0 && result.errors) {
+          // Show modal with errors
+          setImportDialogOpen(false); // Close import dialog
+        } else {
+          setImportDialogOpen(false);
+        }
+      } else {
+        setImportResult(result);
+        toast.error(result.message || "Bulk import failed");
+      }
+    } catch (error: any) {
+      setIsImporting(false);
+      toast.error("Bulk import failed: " + (error?.message || "Unknown error"));
+    }
+  };
 
   // Event handlers
   const handleView = useCallback(
@@ -153,9 +318,10 @@ const Licenses = () => {
     });
   }, [navigate]);
 
+  // Use setImportDialogOpen for import dialog
   const handleImport = useCallback(() => {
-    openDialog();
-  }, [openDialog]);
+    setImportDialogOpen(true);
+  }, []);
 
   const applyFilters = useCallback(() => {
     // Filter logic can be implemented here
@@ -193,8 +359,9 @@ const Licenses = () => {
   const availableSeats = useMemo(() => {
     if (!Array.isArray(allLicensesForStats)) return 0;
     return allLicensesForStats.reduce((sum, license) => {
-      const seats = typeof license.seats === 'number' ? license.seats : 0;
-      const allocated = typeof license.seatsAllocated === 'number' ? license.seatsAllocated : 0;
+      const seats = typeof license.seats === "number" ? license.seats : 0;
+      const allocated =
+        typeof license.seatsAllocated === "number" ? license.seatsAllocated : 0;
       const available = seats - allocated;
       return sum + (available > 0 ? available : 0);
     }, 0);
@@ -215,7 +382,13 @@ const Licenses = () => {
 
   // Pagination handler
   const handlePaginationChange = useCallback(
-    ({ pageIndex: newPageIndex, pageSize: newPageSize }: { pageIndex: number; pageSize: number }) => {
+    ({
+      pageIndex: newPageIndex,
+      pageSize: newPageSize,
+    }: {
+      pageIndex: number;
+      pageSize: number;
+    }) => {
       setPageIndex(newPageIndex);
       setPageSize(newPageSize);
     },
@@ -386,6 +559,14 @@ const Licenses = () => {
           showFilter={false}
         />
 
+        <Button
+          onClick={handleDownloadLicenseTemplate}
+          variant="secondary"
+          className="mb-2"
+        >
+          Download License Import CSV Template
+        </Button>
+
         <Card className="dark:bg-gray-800 border-gray-200 dark:border-gray-700">
           <CardContent className="p-0">
             {licensesArray.length === 0 && !isLoading ? (
@@ -431,14 +612,57 @@ const Licenses = () => {
       />
 
       <DialogContainer
-        open={isOpen}
-        onOpenChange={closeDialog}
+        open={isImportDialogOpen}
+        onOpenChange={setImportDialogOpen}
         title="Import Licenses"
         description="Import licenses from a CSV file"
-        form={<FileUploadForm dataType="licenses" />}
+        body={
+          <BulkImportDialog
+            isOpen={isImportDialogOpen}
+            onClose={() => setImportDialogOpen(false)}
+            config={licenseBulkImportConfig}
+            onImport={handleLicenseImport}
+            importType="license"
+            // isLoading={isImporting} // Remove this line to fix linter error
+          />
+        }
+        form={null}
       />
+      {/* Import Result Modal for row-level errors */}
+      {importResult && importResult.failed > 0 && importResult.errors && (
+        <Dialog open={true} onOpenChange={() => setImportResult(null)}>
+          <div className="p-6">
+            <h2 className="text-lg font-semibold mb-2">
+              Import Completed with Errors
+            </h2>
+            <p className="mb-4">
+              {importResult.success} licenses imported successfully.{" "}
+              {importResult.failed} failed.
+            </p>
+            <div className="overflow-x-auto max-h-64 mb-4">
+              <table className="min-w-full text-sm">
+                <thead>
+                  <tr>
+                    <th className="px-2 py-1 border">Row</th>
+                    <th className="px-2 py-1 border">Error</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {importResult.errors.map((err, idx) => (
+                    <tr key={idx}>
+                      <td className="px-2 py-1 border">{err.row}</td>
+                      <td className="px-2 py-1 border">{err.message}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <Button onClick={() => setImportResult(null)}>Close</Button>
+          </div>
+        </Dialog>
+      )}
     </div>
   );
-};
+}
 
-export default Licenses;
+export default LicensesPage;
