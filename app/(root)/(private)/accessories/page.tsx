@@ -439,7 +439,8 @@ const Accessories = () => {
         onOpenChange={closeDialog}
         title="Import Accessories"
         description="Import accessories from a CSV file"
-        form={<FileUploadForm dataType="accessories" />}
+        body={<FileUploadForm dataType="accessories" />}
+        form={null}
       />
     </div>
   );

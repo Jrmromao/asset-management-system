@@ -76,6 +76,8 @@ import { DialogContainer } from "@/components/dialogs/DialogContainer";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import ReportStorageSettings from "@/components/settings/ReportStorageSettings";
 import SustainabilityTargets from "@/components/settings/SustainabilityTargets";
+import { DataTable } from "@/components/tables/DataTable/data-table";
+import SettingsHeader from "@/components/settings/SettingsHeader";
 
 interface Tab {
   id: TabId;
@@ -368,6 +370,7 @@ const AdminSettings = () => {
       deleteFormTemplate,
     ],
   );
+
   const MODAL_CONFIGS: ModalConfig[] = [
     {
       id: "models",
@@ -583,7 +586,98 @@ const AdminSettings = () => {
   };
 
   const renderDataTable = () => {
-    // Implement logic for rendering the correct data table or content per tab
+    if (activeTab === "models") {
+      // Filter models by searchQuery (case-insensitive, on name or modelNo)
+      const filteredModels = (models || []).filter((model) => {
+        const query = searchQuery.toLowerCase();
+        return (
+          model.name.toLowerCase().includes(query) ||
+          (model.modelNo && model.modelNo.toLowerCase().includes(query))
+        );
+      });
+      return (
+        <DataTable
+          columns={columns.models}
+          data={filteredModels}
+          isLoading={isLoadingData}
+        />
+      );
+    }
+    if (activeTab === "manufacturers") {
+      // Filter manufacturers by searchQuery (case-insensitive, on name)
+      const filteredManufacturers = (manufacturers || []).filter(
+        (manufacturer) => {
+          const query = searchQuery.toLowerCase();
+          return manufacturer.name.toLowerCase().includes(query);
+        },
+      );
+      return (
+        <DataTable
+          columns={columns.manufacturers}
+          data={filteredManufacturers}
+          isLoading={isLoadingData}
+        />
+      );
+    }
+
+    if (activeTab === "locations") {
+      // Filter locations by searchQuery (case-insensitive, on name)
+      const filteredLocations = (locations || []).filter((location) => {
+        const query = searchQuery.toLowerCase();
+        return location.name.toLowerCase().includes(query);
+      });
+      return (
+        <DataTable
+          columns={columns.locations}
+          data={filteredLocations}
+          isLoading={isLoadingData}
+        />
+      );
+    }
+    if (activeTab === "departments") {
+      // Filter departments by searchQuery (case-insensitive, on name)
+      const filteredDepartments = (departments || []).filter((department) => {
+        const query = searchQuery.toLowerCase();
+        return department.name.toLowerCase().includes(query);
+      });
+      return (
+        <DataTable
+          columns={columns.departments}
+          data={filteredDepartments}
+          isLoading={isLoadingData}
+        />
+      );
+    }
+    if (activeTab === "status-label") {
+      // Filter status labels by searchQuery (case-insensitive, on name)
+      const filteredStatusLabels = (statusLabels || []).filter(
+        (statusLabel) => {
+          const query = searchQuery.toLowerCase();
+          return statusLabel.name.toLowerCase().includes(query);
+        },
+      );
+      return (
+        <DataTable
+          columns={columns["status-label"]}
+          data={filteredStatusLabels}
+          isLoading={isLoadingData}
+        />
+      );
+    }
+    if (activeTab === "inventories") {
+      // Filter inventories by searchQuery (case-insensitive, on name)
+      const filteredInventories = (inventories || []).filter((inventory) => {
+        const query = searchQuery.toLowerCase();
+        return inventory.name.toLowerCase().includes(query);
+      });
+      return (
+        <DataTable
+          columns={columns.inventories}
+          data={filteredInventories}
+          isLoading={isLoadingData}
+        />
+      );
+    }
     return null;
   };
 
@@ -602,6 +696,83 @@ const AdminSettings = () => {
     }
   };
 
+  // Example user permissions (replace with real logic)
+  const userPermissions: Record<string, boolean> = {
+    canManageModels: true,
+    canManageManufacturers: true,
+    canManageLocations: true,
+    canManageDepartments: true,
+    canManageStatusLabels: true,
+    canManageInventories: true,
+    canManageAssetCategories: true,
+  };
+
+  // Tab metadata for dynamic UI
+  const TAB_META: Record<
+    string,
+    {
+      addNewLabel: string;
+      importTemplateUrl: string;
+      onAddNew: () => void;
+      onImport: () => void;
+      permission: keyof typeof userPermissions;
+    }
+  > = {
+    models: {
+      addNewLabel: "Add New Model",
+      importTemplateUrl: "/assets-sample-template.csv",
+      onAddNew: onModelOpen,
+      onImport: () => alert("Import Models (implement logic)"),
+      permission: "canManageModels",
+    },
+    manufacturers: {
+      addNewLabel: "Add New Manufacturer",
+      importTemplateUrl: "/manufacturers-template.csv",
+      onAddNew: onManufacturerOpen,
+      onImport: () => alert("Import Manufacturers (implement logic)"),
+      permission: "canManageManufacturers",
+    },
+    locations: {
+      addNewLabel: "Add New Location",
+      importTemplateUrl: "/locations-template.csv",
+      onAddNew: onLocationOpen,
+      onImport: () => alert("Import Locations (implement logic)"),
+      permission: "canManageLocations",
+    },
+    departments: {
+      addNewLabel: "Add New Department",
+      importTemplateUrl: "/departments-template.csv",
+      onAddNew: onDepartmentOpen,
+      onImport: () => alert("Import Departments (implement logic)"),
+      permission: "canManageDepartments",
+    },
+    "status-label": {
+      addNewLabel: "Add New Status Label",
+      importTemplateUrl: "/status-labels-template.csv",
+      onAddNew: onStatusLabelOpen,
+      onImport: () => alert("Import Status Labels (implement logic)"),
+      permission: "canManageStatusLabels",
+    },
+    inventories: {
+      addNewLabel: "Add New Inventory",
+      importTemplateUrl: "/inventories-template.csv",
+      onAddNew: onInventoryOpen,
+      onImport: () => alert("Import Inventories (implement logic)"),
+      permission: "canManageInventories",
+    },
+    "asset-categories": {
+      addNewLabel: "Add New Asset Category",
+      importTemplateUrl: "/asset-categories-template.csv",
+      onAddNew: onFormTemplateOpen,
+      onImport: () => alert("Import Asset Categories (implement logic)"),
+      permission: "canManageAssetCategories",
+    },
+  };
+
+  // Helper type guard for supported tabs
+  const isMetaTab = (tab: string): tab is keyof typeof TAB_META =>
+    Object.prototype.hasOwnProperty.call(TAB_META, tab);
+
   return (
     <div className="min-h-screen bg-gray-50/30">
       {/* Modals */}
@@ -615,7 +786,8 @@ const AdminSettings = () => {
             onOpenChange={onClose}
             title={title}
             description={description}
-            form={<FormComponent />}
+            body={<FormComponent />}
+            form={null}
           />
         );
       })}
@@ -623,95 +795,19 @@ const AdminSettings = () => {
       <div className="max-w-8xl mx-auto">
         {/* Header Section */}
         <div className="px-6 py-8">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-slate-900 to-slate-700 rounded-xl flex items-center justify-center shadow-lg">
-                <Settings className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-semibold text-gray-900">
-                  System Configuration
-                </h1>
-                <p className="text-sm text-gray-600">
-                  Manage your application settings and master data
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1 px-3 py-1.5 bg-emerald-50 border border-emerald-200 rounded-lg">
-                <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
-                <span className="text-xs font-medium text-emerald-700">
-                  System Healthy
-                </span>
-              </div>
-              {llmStatus && (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div
-                        className={`flex items-center gap-1 px-3 py-1.5 rounded-lg border cursor-help ${
-                          llmStatus.available > 0
-                            ? "bg-blue-50 border-blue-200"
-                            : "bg-amber-50 border-amber-200"
-                        }`}
-                      >
-                        <Brain
-                          className={`w-3 h-3 ${
-                            llmStatus.available > 0
-                              ? "text-blue-600"
-                              : "text-amber-600"
-                          }`}
-                        />
-                        <span
-                          className={`text-xs font-medium ${
-                            llmStatus.available > 0
-                              ? "text-blue-700"
-                              : "text-amber-700"
-                          }`}
-                        >
-                          AI: {llmStatus.available}/{llmStatus.total}
-                        </span>
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom" className="max-w-xs">
-                      <div className="space-y-2">
-                        <div className="font-medium">AI Provider Status</div>
-                        <div className="text-sm text-gray-600">
-                          {llmStatus.available > 0
-                            ? `${llmStatus.available} of ${llmStatus.total} AI providers are available`
-                            : `No AI providers are configured`}
-                        </div>
-                        {llmStatus.providers.length > 0 && (
-                          <div className="text-xs">
-                            <div className="font-medium mb-1">
-                              Active providers:
-                            </div>
-                            <div className="space-y-0.5">
-                              {llmStatus.providers.map((provider) => (
-                                <div
-                                  key={provider}
-                                  className="flex items-center gap-1"
-                                >
-                                  <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
-                                  <span className="capitalize">{provider}</span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                        {llmStatus.available === 0 && (
-                          <div className="text-xs text-amber-600">
-                            Configure API keys in .env.local to enable AI
-                            features
-                          </div>
-                        )}
-                      </div>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              )}
-            </div>
-          </div>
+          {/* SettingsHeader replaces old header/buttons, only for supported tabs */}
+          {isMetaTab(activeTab) && (
+            <SettingsHeader
+              title={activeTabConfig?.label || ""}
+              addNewLabel={TAB_META[activeTab].addNewLabel}
+              onAddNew={TAB_META[activeTab].onAddNew}
+              onImport={TAB_META[activeTab].onImport}
+              importTemplateUrl={TAB_META[activeTab].importTemplateUrl}
+              showAddNew={userPermissions[TAB_META[activeTab].permission]}
+              showImport={userPermissions[TAB_META[activeTab].permission]}
+              isLoading={isLoadingData}
+            />
+          )}
         </div>
 
         <div className="px-6 pb-8">
@@ -801,21 +897,6 @@ const AdminSettings = () => {
                         </p>
                       </div>
                     </div>
-                    {activeTab !== "report-storage" &&
-                      activeTab !== "sustainability-targets" && (
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => handleCreateNew(activeTab)}
-                            className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors text-sm font-medium"
-                          >
-                            <Plus className="w-4 h-4" />
-                            Add New
-                          </button>
-                          <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
-                            <MoreHorizontal className="w-4 h-4" />
-                          </button>
-                        </div>
-                      )}
                   </div>
                 </div>
 
@@ -885,22 +966,13 @@ const AdminSettings = () => {
                               className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent outline-none transition-all text-sm w-64"
                             />
                           </div>
-                          <button
+                          {/* <button
                             onClick={handleFilter}
                             className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors text-sm"
                           >
                             <Filter className="w-4 h-4" />
                             Filter
-                          </button>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={handleImport}
-                            disabled={isLoading}
-                            className="px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors text-sm font-medium border border-gray-200"
-                          >
-                            Import
-                          </button>
+                          </button> */}
                         </div>
                       </div>
 

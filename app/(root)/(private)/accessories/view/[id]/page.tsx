@@ -288,7 +288,11 @@ export default function Page({ params }: AssetPageProps) {
     ),
     qrCode: (
       <div className="flex flex-col items-center justify-center gap-2">
-        <QRCode value={`/assets/view/${id}`} size={140} />
+        <QRCode
+          value={`/assets/view/${id}`}
+          size={140}
+          title="Accessory QR Code"
+        />
       </div>
     ),
     actions: {

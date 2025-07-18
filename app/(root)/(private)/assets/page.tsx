@@ -26,8 +26,6 @@ import StatusCardPlaceholder from "@/components/StatusCardPlaceholder";
 import TableHeaderSkeleton from "@/components/tables/TableHeaderSkeleton";
 import { DataTableHeader } from "@/components/tables/TableHeader";
 import FilterDialog from "@/components/dialogs/FilterDialog";
-import { DialogContainer } from "@/components/dialogs/DialogContainer";
-import FileUploadForm from "@/components/forms/FileUploadForm";
 import { Card, CardContent } from "@/components/ui/card";
 import { DataTable } from "@/components/tables/DataTable/data-table";
 import { useAssetQuery } from "@/hooks/queries/useAssetQuery";
@@ -149,7 +147,10 @@ const normalizeAssets = (assets: any[]) =>
   }));
 
 // Helper function for maintenance due calculation
-function calculateMaintenanceDue(assets: Asset[], daysThreshold: number): number {
+function calculateMaintenanceDue(
+  assets: Asset[],
+  daysThreshold: number,
+): number {
   const now = new Date();
   const thresholdDate = new Date(now);
   thresholdDate.setDate(now.getDate() + daysThreshold);
@@ -190,7 +191,11 @@ const Assets = () => {
     // Add sort, status, department, model as needed
   })();
   // Use _pagination property attached to data array
-  const pagination = (assetsData as any)?._pagination || { total: 0, page: 1, pageSize: 10 };
+  const pagination = (assetsData as any)?._pagination || {
+    total: 0,
+    page: 1,
+    pageSize: 10,
+  };
   const total = pagination.total;
 
   // Table configuration
@@ -228,7 +233,13 @@ const Assets = () => {
 
   // Pagination handler
   const handlePaginationChange = useCallback(
-    ({ pageIndex: newPageIndex, pageSize: newPageSize }: { pageIndex: number; pageSize: number }) => {
+    ({
+      pageIndex: newPageIndex,
+      pageSize: newPageSize,
+    }: {
+      pageIndex: number;
+      pageSize: number;
+    }) => {
       setPageIndex(newPageIndex);
       setPageSize(newPageSize);
     },
@@ -250,13 +261,20 @@ const Assets = () => {
   const queryClient = useQueryClient();
 
   // Memoized columns to prevent unnecessary re-renders
-  const handleCo2Update = useCallback((assetId: string, newCo2Record: any) => {
-    // Invalidate React Query cache to refetch updated asset data
-    queryClient.invalidateQueries({ queryKey: ["assets"] });
-  }, [queryClient]);
+  const handleCo2Update = useCallback(
+    (assetId: string, newCo2Record: any) => {
+      // Invalidate React Query cache to refetch updated asset data
+      queryClient.invalidateQueries({ queryKey: ["assets"] });
+    },
+    [queryClient],
+  );
 
   const columns = useMemo(() => {
-    return assetColumns({ onDelete, onView, onCo2Update: handleCo2Update }) as ColumnDef<EnhancedAssetType>[];
+    return assetColumns({
+      onDelete,
+      onView,
+      onCo2Update: handleCo2Update,
+    }) as ColumnDef<EnhancedAssetType>[];
   }, [onDelete, onView, handleCo2Update]);
 
   const handleBulkImport = async (data: any[]) => {
@@ -266,12 +284,12 @@ const Assets = () => {
         toast.success(`Assets imported successfully`);
         queryClient.invalidateQueries({ queryKey: ["assets"] });
       } else {
-        toast.error(`Failed to import assets. ${result.error || ''}`);
+        toast.error(`Failed to import assets. ${result.error || ""}`);
       }
     } catch (err: any) {
       toast.error(`Bulk import failed: ${err.message || err}`);
     } finally {
-    setImportDialogOpen(false);
+      setImportDialogOpen(false);
     }
   };
 
@@ -285,7 +303,7 @@ const Assets = () => {
   const availableAssets = useMemo(
     () =>
       activeAssets.filter(
-        (asset) => !asset.userId && !asset.user // covers both missing userId and user object
+        (asset) => !asset.userId && !asset.user, // covers both missing userId and user object
       ),
     [activeAssets],
   );
@@ -307,7 +325,10 @@ const Assets = () => {
       },
       {
         title: "Upcoming Maintenance",
-        value: calculateMaintenanceDue(activeAssets, MAINTENANCE_DAYS_THRESHOLD),
+        value: calculateMaintenanceDue(
+          activeAssets,
+          MAINTENANCE_DAYS_THRESHOLD,
+        ),
         subtitle: "Due within 30 days",
         color: "warning" as const,
       },
@@ -369,8 +390,7 @@ const Assets = () => {
   }, []);
 
   // 3. For FilterDialog, provide the required shape
-  const [filters, setFilters] = useState({ supplier: '', inventory: '' });
-
+  const [filters, setFilters] = useState({ supplier: "", inventory: "" });
 
   // // TEMP: Throw error for testing ErrorBoundary
   // if (typeof window !== "undefined") {
