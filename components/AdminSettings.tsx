@@ -1,5 +1,11 @@
 "use client";
-import React, { useCallback, useMemo, useState, useEffect } from "react";
+import React, {
+  useCallback,
+  useMemo,
+  useState,
+  useEffect,
+  useContext,
+} from "react";
 import {
   BadgeCheck,
   Boxes,
@@ -10,15 +16,11 @@ import {
   Tags,
   Warehouse,
   HardDrive,
-  Settings,
   Sparkles,
   ChevronRight,
   Search,
-  Plus,
-  Filter,
-  MoreHorizontal,
   Target,
-  Brain,
+  Users,
 } from "lucide-react";
 import {
   useDepartmentQuery,
@@ -28,6 +30,8 @@ import {
   useModelsQuery,
   useStatusLabelsQuery,
 } from "@/hooks/queries";
+import { useUserQuery } from "@/hooks/queries/useUserQuery";
+import { User } from "@prisma/client";
 import {
   assetCategoriesColumns,
   departmentColumns,
@@ -53,31 +57,33 @@ import {
   useManufacturerUIStore,
   useModelUIStore,
   useStatusLabelUIStore,
+  useUserUIStore,
 } from "@/lib/stores";
 import FormTemplateCreator from "@/components/forms/FormTemplateCreator";
 import { useFormTemplatesQuery } from "@/hooks/queries/useFormTemplatesQuery";
 import { FormTemplate } from "@/types/form";
 import { ModelWithRelations } from "@/types/model";
-import {
-  StatusLabel,
-  Department,
-  DepartmentLocation,
-  Inventory,
-  Manufacturer,
-} from "@prisma/client";
 import { aiService } from "@/lib/services/ai-multi-provider.service";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { DialogContainer } from "@/components/dialogs/DialogContainer";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import ReportStorageSettings from "@/components/settings/ReportStorageSettings";
 import SustainabilityTargets from "@/components/settings/SustainabilityTargets";
 import { DataTable } from "@/components/tables/DataTable/data-table";
 import SettingsHeader from "@/components/settings/SettingsHeader";
+import { peopleColumns } from "@/components/tables/PeopleColumns";
+import UserForm from "@/components/forms/UserForm";
+import BulkImportDialog from "@/components/forms/BulkImportDialog";
+import { loneeUserImportConfig } from "@/config/loneeUserImportConfig";
+import { BulkImportConfig } from "@/types/importConfig";
+import { UserContext } from "@/components/providers/UserContext";
+import { modelImportConfig } from "@/importConfigs/modelImportConfig";
+import { locationImportConfig } from "@/importConfigs/locationImportConfig";
+import { manufacturerImportConfig } from "@/importConfigs/manufacturerImportConfig";
+import { departmentImportConfig } from "@/importConfigs/departmentImportConfig";
+import { statusLabelImportConfig } from "@/importConfigs/statusLabelImportConfig";
+import { inventoryImportConfig } from "@/importConfigs/inventoryImportConfig";
+import { assetCategoryImportConfig } from "@/importConfigs/assetCategoryImportConfig";
+import CompanySettings from "@/components/settings/CompanySettings";
 
 interface Tab {
   id: TabId;
@@ -96,7 +102,8 @@ type TabId =
   | "asset-categories"
   | "sustainability-targets"
   | "report-storage"
-  | "company-settings";
+  | "company-settings"
+  | "people";
 
 interface ModalConfig {
   id: TabId;
@@ -109,22 +116,10 @@ interface ModalConfig {
 
 const TABS: Tab[] = [
   {
-    id: "models",
-    label: "Models",
-    icon: Boxes,
-    description: "Device and equipment models in your inventory",
-  },
-  {
-    id: "manufacturers",
-    label: "Manufacturers",
-    icon: Factory,
-    description: "Companies and brands that produce your assets",
-  },
-  {
-    id: "locations",
-    label: "Locations",
-    icon: MapPin,
-    description: "Physical and virtual locations for asset placement",
+    id: "asset-categories",
+    label: "Asset Categories",
+    icon: Tags,
+    description: "Classification system for asset organization",
   },
   {
     id: "departments",
@@ -133,49 +128,66 @@ const TABS: Tab[] = [
     description: "Organizational units and teams managing assets",
   },
   {
-    id: "status-label",
-    label: "Status Labels",
-    icon: BadgeCheck,
-    description: "Asset lifecycle states and condition tracking",
-  },
-  {
     id: "inventories",
     label: "Inventories",
     icon: Warehouse,
     description: "Stock levels and inventory management zones",
   },
   {
-    id: "asset-categories",
-    label: "Asset Categories",
-    icon: Tags,
-    description: "Classification system for asset organization",
+    id: "locations",
+    label: "Locations",
+    icon: MapPin,
+    description: "Physical and virtual locations for asset placement",
   },
   {
-    id: "sustainability-targets",
-    label: "Sustainability Targets",
-    icon: Target,
-    description: "Energy efficiency and carbon reduction goals",
+    id: "manufacturers",
+    label: "Manufacturers",
+    icon: Factory,
+    description: "Companies and brands that produce your assets",
   },
   {
-    id: "report-storage",
-    label: "Report Storage",
-    icon: HardDrive,
-    description: "Intelligent storage policies and cleanup automation",
+    id: "models",
+    label: "Models",
+    icon: Boxes,
+    description: "Device and equipment models in your inventory",
   },
+  {
+    id: "people",
+    label: "People",
+    icon: Users,
+    description: "Manage users and team members",
+  },
+  {
+    id: "status-label",
+    label: "Status Labels",
+    icon: BadgeCheck,
+    description: "Asset lifecycle states and condition tracking",
+  },
+  // Special tabs at the end
   {
     id: "company-settings",
     label: "Company Settings",
     icon: Building2,
     description: "Manage company-specific settings",
   },
+  // {
+  //   id: "sustainability-targets",
+  //   label: "Sustainability Targets",
+  //   icon: Target,
+  //   description: "Energy efficiency and carbon reduction goals",
+  // },
+  {
+    id: "report-storage",
+    label: "Report Storage",
+    icon: HardDrive,
+    description: "Intelligent storage policies and cleanup automation",
+  },
 ];
 
-function handleFilter() {
-  console.log("filter");
-}
-
 const AdminSettings = () => {
-  const [activeTab, setActiveTab] = useState<TabId>("models");
+  const { user } = useContext(UserContext);
+  const companyId = user?.companyId || "";
+  const [activeTab, setActiveTab] = useState<TabId>("asset-categories");
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -200,6 +212,7 @@ const AdminSettings = () => {
     useState<StatusLabel | null>();
   const [editingFormTemplate, setEditingFormTemplate] =
     useState<FormTemplate | null>();
+  const [editingUser, setEditingUser] = useState<User | null>(null);
   const {
     onClose: closeModel,
     isOpen: isModelOpen,
@@ -241,6 +254,12 @@ const AdminSettings = () => {
   } = useStatusLabelUIStore();
 
   const {
+    isOpen: isUserOpen,
+    onClose: closeUser,
+    onOpen: onUserOpen,
+  } = useUserUIStore();
+
+  const {
     models,
     isLoading: modelsLoading,
     error: modelsError,
@@ -278,6 +297,22 @@ const AdminSettings = () => {
     isLoading: formTemplatesLoading,
     deleteFormTemplate,
   } = useFormTemplatesQuery();
+  const {
+    users,
+    isLoading: usersLoading,
+    deleteItem: deleteUser,
+  } = useUserQuery();
+
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [importConfig, setImportConfig] = useState<BulkImportConfig | null>(
+    null,
+  );
+
+  // Example onImport handler (replace with real API call as needed)
+  const handleBulkImport = async (data: any[]) => {
+    console.log("Imported data:", data);
+    setImportDialogOpen(false);
+  };
 
   // Load LLM status on component mount
   useEffect(() => {
@@ -298,37 +333,6 @@ const AdminSettings = () => {
       });
     }
   }, []);
-
-  const handleDelete = async (id: string) => {
-    switch (activeTab) {
-      case "models":
-        await deleteModel(id);
-        break;
-      case "manufacturers":
-        await deleteManufacturer(id);
-        break;
-      case "locations":
-        await deleteLocation(id);
-        break;
-      case "departments":
-        await deleteDepartment(id);
-        break;
-      case "status-label":
-        await deleteStatusLabel(id);
-        break;
-      case "inventories":
-        await deleteInventory(id);
-        break;
-      case "asset-categories":
-        await deleteFormTemplate(id);
-        break;
-      case "report-storage":
-        // No delete action needed for report storage settings
-        break;
-      default:
-        return null;
-    }
-  };
 
   // Move handleDelete inside useCallback to ensure it has access to the current activeTab value
   const onDelete = useCallback(
@@ -355,6 +359,9 @@ const AdminSettings = () => {
         case "asset-categories":
           await deleteFormTemplate(item.id);
           break;
+        case "people":
+          await deleteUser(item.id);
+          break;
         default:
           return null;
       }
@@ -368,6 +375,7 @@ const AdminSettings = () => {
       deleteStatusLabel,
       deleteInventory,
       deleteFormTemplate,
+      deleteUser,
     ],
   );
 
@@ -386,7 +394,10 @@ const AdminSettings = () => {
         />
       ),
       isOpen: isModelOpen,
-      onClose: closeModel,
+      onClose: () => {
+        closeModel();
+        setEditingModel(null);
+      },
     },
     {
       id: "manufacturers",
@@ -404,7 +415,10 @@ const AdminSettings = () => {
         />
       ),
       isOpen: isManufacturerOpen,
-      onClose: closeManufacturer,
+      onClose: () => {
+        closeManufacturer();
+        setEditingManufacturer(null);
+      },
     },
     {
       id: "locations",
@@ -422,7 +436,10 @@ const AdminSettings = () => {
         />
       ),
       isOpen: isLocationOpen,
-      onClose: closeLocation,
+      onClose: () => {
+        closeLocation();
+        setEditingLocation(null);
+      },
     },
     {
       id: "departments",
@@ -440,7 +457,10 @@ const AdminSettings = () => {
         />
       ),
       isOpen: isDepartmentOpen,
-      onClose: closeDepartment,
+      onClose: () => {
+        closeDepartment();
+        setEditingDepartment(null);
+      },
     },
     {
       id: "status-label",
@@ -450,7 +470,7 @@ const AdminSettings = () => {
         : "Add a new status label",
       FormComponent: () => (
         <StatusLabelForm
-          initialData={editingStatusLabel || undefined}
+          initialData={editingStatusLabel as any}
           onSubmitSuccess={() => {
             closeStatusLabel();
             setEditingStatusLabel(null);
@@ -458,7 +478,10 @@ const AdminSettings = () => {
         />
       ),
       isOpen: isStatusLabelOpen,
-      onClose: closeStatusLabel,
+      onClose: () => {
+        closeStatusLabel();
+        setEditingStatusLabel(null);
+      },
     },
     {
       id: "inventories",
@@ -497,7 +520,21 @@ const AdminSettings = () => {
         />
       ),
       isOpen: isFormTemplateOpen,
-      onClose: closeFormTemplate,
+      onClose: () => {
+        closeFormTemplate();
+        setEditingFormTemplate(null);
+      },
+    },
+    {
+      id: "people",
+      title: editingUser ? "Update User" : "Add User",
+      description: editingUser ? "Update existing user" : "Add a new user",
+      FormComponent: () => <UserForm />,
+      isOpen: isUserOpen,
+      onClose: () => {
+        closeUser();
+        setEditingUser(null);
+      },
     },
   ];
 
@@ -546,10 +583,17 @@ const AdminSettings = () => {
         },
       }),
       "asset-categories": assetCategoriesColumns({
-        onDelete,
-        onUpdate: (formTemplate: FormTemplate) => {
+        onDelete: (formTemplate) => deleteFormTemplate(formTemplate.id),
+        onUpdate: (formTemplate) => {
           setEditingFormTemplate(formTemplate);
           onFormTemplateOpen();
+        },
+      }),
+      people: peopleColumns({
+        onDelete: (user: User) => deleteUser(user.id),
+        onView: (user: User) => {
+          setEditingUser(user);
+          onUserOpen();
         },
       }),
     }),
@@ -562,6 +606,9 @@ const AdminSettings = () => {
       onStatusLabelOpen,
       onInventoryOpen,
       onFormTemplateOpen,
+      deleteUser,
+      onUserOpen,
+      deleteFormTemplate,
     ],
   );
 
@@ -576,14 +623,11 @@ const AdminSettings = () => {
     "sustainability-targets": false,
     "report-storage": false,
     "company-settings": false,
+    people: usersLoading,
   };
 
   const activeTabConfig = TABS.find((tab) => tab.id === activeTab);
   const isLoadingData = loadingMap[activeTab];
-
-  const handleCreateNew = (activeTab: TabId) => {
-    // Implement logic for creating new items per tab if needed
-  };
 
   const renderDataTable = () => {
     if (activeTab === "models") {
@@ -678,22 +722,43 @@ const AdminSettings = () => {
         />
       );
     }
+    if (activeTab === "asset-categories") {
+      const filteredCategories = (formTemplates || []).filter((cat) =>
+        cat.name.toLowerCase().includes(searchQuery.toLowerCase()),
+      );
+      return (
+        <DataTable
+          columns={columns["asset-categories"]}
+          data={filteredCategories}
+          isLoading={formTemplatesLoading}
+        />
+      );
+    }
+    if (activeTab === "people") {
+      const filteredUsers = (users || []).filter((user: User) => {
+        const query = searchQuery.toLowerCase();
+        return (
+          (user.name && user.name.toLowerCase().includes(query)) ||
+          (user.email && user.email.toLowerCase().includes(query)) ||
+          (user.employeeId && user.employeeId.toLowerCase().includes(query))
+        );
+      });
+      return (
+        <DataTable
+          columns={columns.people}
+          data={filteredUsers}
+          isLoading={isLoadingData}
+        />
+      );
+    }
+    if (activeTab === "company-settings") {
+      return <CompanySettings />;
+    }
     return null;
   };
 
   const handleSearch = (value: string) => {
     setSearchQuery(value);
-  };
-
-  const handleImport = async () => {
-    setIsLoading(true);
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-    } catch (error) {
-      console.error("Import failed:", error);
-    } finally {
-      setIsLoading(false);
-    }
   };
 
   // Example user permissions (replace with real logic)
@@ -705,6 +770,7 @@ const AdminSettings = () => {
     canManageStatusLabels: true,
     canManageInventories: true,
     canManageAssetCategories: true,
+    canManageUsers: true,
   };
 
   // Tab metadata for dynamic UI
@@ -720,52 +786,101 @@ const AdminSettings = () => {
   > = {
     models: {
       addNewLabel: "Add New Model",
-      importTemplateUrl: "/assets-sample-template.csv",
+      importTemplateUrl: "/models-template.csv",
       onAddNew: onModelOpen,
-      onImport: () => alert("Import Models (implement logic)"),
+      onImport: () => {
+        setImportConfig({ ...modelImportConfig, companyId: companyId || "" });
+        setImportDialogOpen(true);
+      },
       permission: "canManageModels",
     },
     manufacturers: {
       addNewLabel: "Add New Manufacturer",
       importTemplateUrl: "/manufacturers-template.csv",
       onAddNew: onManufacturerOpen,
-      onImport: () => alert("Import Manufacturers (implement logic)"),
+      onImport: () => {
+        setImportConfig({
+          ...manufacturerImportConfig,
+          companyId: companyId || "",
+        });
+        setImportDialogOpen(true);
+      },
       permission: "canManageManufacturers",
     },
     locations: {
       addNewLabel: "Add New Location",
       importTemplateUrl: "/locations-template.csv",
       onAddNew: onLocationOpen,
-      onImport: () => alert("Import Locations (implement logic)"),
+      onImport: () => {
+        setImportConfig({
+          ...locationImportConfig,
+          companyId: companyId || "",
+        });
+        setImportDialogOpen(true);
+      },
       permission: "canManageLocations",
     },
     departments: {
       addNewLabel: "Add New Department",
       importTemplateUrl: "/departments-template.csv",
       onAddNew: onDepartmentOpen,
-      onImport: () => alert("Import Departments (implement logic)"),
+      onImport: () => {
+        setImportConfig({
+          ...departmentImportConfig,
+          companyId: companyId || "",
+        });
+        setImportDialogOpen(true);
+      },
       permission: "canManageDepartments",
     },
     "status-label": {
       addNewLabel: "Add New Status Label",
       importTemplateUrl: "/status-labels-template.csv",
       onAddNew: onStatusLabelOpen,
-      onImport: () => alert("Import Status Labels (implement logic)"),
+      onImport: () => {
+        setImportConfig({
+          ...statusLabelImportConfig,
+          companyId: companyId || "",
+        });
+        setImportDialogOpen(true);
+      },
       permission: "canManageStatusLabels",
     },
     inventories: {
       addNewLabel: "Add New Inventory",
       importTemplateUrl: "/inventories-template.csv",
       onAddNew: onInventoryOpen,
-      onImport: () => alert("Import Inventories (implement logic)"),
+      onImport: () => {
+        setImportConfig({
+          ...inventoryImportConfig,
+          companyId: companyId || "",
+        });
+        setImportDialogOpen(true);
+      },
       permission: "canManageInventories",
     },
     "asset-categories": {
       addNewLabel: "Add New Asset Category",
       importTemplateUrl: "/asset-categories-template.csv",
       onAddNew: onFormTemplateOpen,
-      onImport: () => alert("Import Asset Categories (implement logic)"),
+      onImport: () => {
+        setImportConfig({ ...assetCategoryImportConfig, companyId });
+        setImportDialogOpen(true);
+      },
       permission: "canManageAssetCategories",
+    },
+    people: {
+      addNewLabel: "Add New User",
+      importTemplateUrl: "/users-template.csv",
+      onAddNew: onUserOpen,
+      onImport: () => {
+        setImportConfig({
+          ...loneeUserImportConfig,
+          companyId: companyId || "",
+        });
+        setImportDialogOpen(true);
+      },
+      permission: "canManageUsers",
     },
   };
 
@@ -773,10 +888,17 @@ const AdminSettings = () => {
   const isMetaTab = (tab: string): tab is keyof typeof TAB_META =>
     Object.prototype.hasOwnProperty.call(TAB_META, tab);
 
+  useEffect(() => {
+    if (importConfig) {
+      console.log("AdminSettings: importConfig", importConfig);
+    }
+  }, [importConfig]);
+
   return (
     <div className="min-h-screen bg-gray-50/30">
       {/* Modals */}
       {MODAL_CONFIGS.map((config) => {
+        if (!config.isOpen) return null;
         const { id, title, description, FormComponent, isOpen, onClose } =
           config;
         return (
@@ -792,6 +914,34 @@ const AdminSettings = () => {
         );
       })}
 
+      {/* Bulk Import Dialog */}
+      {importConfig && (
+        <BulkImportDialog
+          isOpen={importDialogOpen}
+          onClose={() => {
+            setImportDialogOpen(false);
+            setImportConfig(null);
+          }}
+          config={importConfig}
+          onImport={handleBulkImport}
+          importType={
+            importConfig.entityType as
+              | "user"
+              | "asset"
+              | "accessory"
+              | "license"
+              | "loneeUser"
+              | "department"
+              | "location"
+              | "manufacturer"
+              | "model"
+              | "inventory"
+              | "statusLabel"
+              | "assetCategory"
+          }
+        />
+      )}
+
       <div className="max-w-8xl mx-auto">
         {/* Header Section */}
         <div className="px-6 py-8">
@@ -804,7 +954,10 @@ const AdminSettings = () => {
               onImport={TAB_META[activeTab].onImport}
               importTemplateUrl={TAB_META[activeTab].importTemplateUrl}
               showAddNew={userPermissions[TAB_META[activeTab].permission]}
-              showImport={userPermissions[TAB_META[activeTab].permission]}
+              showImport={
+                activeTab !== "asset-categories" &&
+                userPermissions[TAB_META[activeTab].permission]
+              }
               isLoading={isLoadingData}
             />
           )}
@@ -956,16 +1109,18 @@ const AdminSettings = () => {
                       {/* Enhanced Table Header */}
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                          <div className="relative">
-                            <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
-                            <input
-                              type="text"
-                              placeholder="Search..."
-                              value={searchQuery}
-                              onChange={(e) => handleSearch(e.target.value)}
-                              className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent outline-none transition-all text-sm w-64"
-                            />
-                          </div>
+                          {activeTab !== "company-settings" && (
+                            <div className="relative">
+                              <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+                              <input
+                                type="text"
+                                placeholder="Search..."
+                                value={searchQuery}
+                                onChange={(e) => handleSearch(e.target.value)}
+                                className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent outline-none transition-all text-sm w-64"
+                              />
+                            </div>
+                          )}
                           {/* <button
                             onClick={handleFilter}
                             className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors text-sm"

@@ -181,7 +181,7 @@ const People = () => {
   const navigate = useRouter();
   const [isPending, startTransition] = useTransition();
   const [isLoneeImportOpen, setLoneeImportOpen] = useState(false);
-  const [isUserImportOpen, setUserImportOpen] = useState(false); // For future: regular user import
+  const [isUserImportOpen, setUserImportOpen] = useState(false);
 
   // Debug: Log the users data to understand structure (can be removed in production)
   useEffect(() => {
@@ -235,8 +235,7 @@ const People = () => {
 
   // Placeholder for regular user import (not implemented yet)
   const handleImport = useCallback(() => {
-    // TODO: Implement regular user import dialog
-    toast.info("Import functionality coming soon");
+    setUserImportOpen(true);
   }, []);
 
   const applyFilters = useCallback(() => {
@@ -521,6 +520,37 @@ const People = () => {
         onImport={async (data) => {
           // POST to the API to create lonee users
           const res = await fetch("/api/users/create-lonee", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data),
+          });
+          const result = await res.json();
+          // Optionally: show a toast or refresh users
+          if (result && result.results) {
+            const successCount = result.results.filter(
+              (r: any) => r.success,
+            ).length;
+            const errorCount = result.results.length - successCount;
+            if (successCount > 0) {
+              if (typeof toast !== "undefined")
+                toast.success(`${successCount} users imported successfully!`);
+            }
+            if (errorCount > 0) {
+              if (typeof toast !== "undefined")
+                toast.error(`${errorCount} users failed to import.`);
+            }
+          }
+        }}
+      />
+
+      <BulkImportDialog
+        isOpen={isUserImportOpen}
+        onClose={() => setUserImportOpen(false)}
+        config={loneeUserImportConfig}
+        importType="user"
+        onImport={async (data) => {
+          // POST to the API to create users
+          const res = await fetch("/api/users/bulk-import", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(data),

@@ -83,7 +83,19 @@ interface BulkImportDialogProps {
   onClose: () => void;
   config: BulkImportConfig;
   onImport: (data: any[]) => Promise<void>;
-  importType?: "asset" | "loneeUser" | "license" | "accessory" | "user"; // NEW: context-aware import type
+  importType?:
+    | "asset"
+    | "loneeUser"
+    | "license"
+    | "accessory"
+    | "user"
+    | "department"
+    | "location"
+    | "manufacturer"
+    | "model"
+    | "inventory"
+    | "statusLabel"
+    | "assetCategory"; // NEW: context-aware import type
 }
 
 interface ValidationError {
@@ -99,13 +111,12 @@ export default function BulkImportDialog({
   onImport,
   importType = "asset", // default to asset for backward compatibility
 }: BulkImportDialogProps) {
+  console.log("BulkImportDialog: config.entityType", config.entityType, config);
   const queryClient = useQueryClient();
   const [showAllRows, setShowAllRows] = useState(false);
-  // Context-aware: set initial step based on importType
+  // Set initial step: only 'asset' (or entities with templates) use 'select-category'
   const initialStep: ImportStep =
-    importType === "loneeUser" || importType === "license"
-      ? "upload"
-      : "select-category";
+    config.entityType === "asset" ? "select-category" : "upload";
   const [step, setStep] = useState<ImportStep>(initialStep);
   const [file, setFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -141,7 +152,9 @@ export default function BulkImportDialog({
   // Combine standard and custom fields for mapping and preview
   const allTemplateFields: ImportField[] = [
     ...(config.fields || []),
-    ...((selectedTemplate?.fields as ImportField[]) || []),
+    ...(config.entityType === "asset" && selectedTemplate?.fields
+      ? (selectedTemplate.fields as ImportField[])
+      : []),
   ];
 
   // Assume companyId is available in config or context
@@ -437,14 +450,23 @@ export default function BulkImportDialog({
     { key: "preview", label: "Preview Accessories" },
     { key: "result", label: "Import Results" },
   ];
-  const steps =
-    importType === "license"
-      ? licenseSteps
-      : importType === "loneeUser" || importType === "user"
-        ? userSteps
-        : importType === "accessory"
-          ? accessorySteps
-          : assetSteps;
+  // Generic stepper for all entities
+  const genericSteps = [
+    {
+      key: "upload",
+      label: `Upload ${config.entityType.charAt(0).toUpperCase() + config.entityType.slice(1)} CSV`,
+    },
+    {
+      key: "mapping",
+      label: `Map ${config.entityType.charAt(0).toUpperCase() + config.entityType.slice(1)} Fields`,
+    },
+    {
+      key: "preview",
+      label: `Preview ${config.entityType.charAt(0).toUpperCase() + config.entityType.slice(1)}s`,
+    },
+    { key: "result", label: "Import Results" },
+  ];
+  const steps = config.entityType === "asset" ? assetSteps : genericSteps;
   const stepIndex = steps.findIndex((s) => s.key === step);
 
   // Stepper component
@@ -471,7 +493,7 @@ export default function BulkImportDialog({
   const renderStepContent = () => {
     switch (step) {
       case "select-category":
-        if (importType === "asset") return renderCategorySelectStep();
+        if (config.entityType === "asset") return renderCategorySelectStep();
         return null;
       case "upload":
         return renderUploadStep();
@@ -543,26 +565,12 @@ export default function BulkImportDialog({
     <div className="max-w-[1100px] mx-auto p-4">
       <Stepper />
       <h2 className="text-xl font-bold mb-1 text-center">
-        {importType === "license"
-          ? "Preview Licenses"
-          : importType === "loneeUser" || importType === "user"
-            ? "Preview Users"
-            : importType === "accessory"
-              ? "Preview Accessories"
-              : importType === "asset"
-                ? "Preview Assets"
-                : "Preview Data"}
+        {"Preview "}
+        {config.entityType.charAt(0).toUpperCase() + config.entityType.slice(1)}
+        {"s"}
       </h2>
       <p className="text-gray-500 text-sm mb-4 text-center">
-        {importType === "license"
-          ? "Review your license data before importing."
-          : importType === "loneeUser" || importType === "user"
-            ? "Review your user data before importing."
-            : importType === "accessory"
-              ? "Review your accessory data before importing."
-              : importType === "asset"
-                ? "Review your asset data before importing."
-                : "Review your data before importing."}
+        Review your {config.entityType} data before importing.
       </p>
       {validationErrors.length > 0 && (
         <Alert variant="destructive" className="mb-4">
@@ -681,9 +689,11 @@ export default function BulkImportDialog({
         </div>
       )}
       <DialogFooter className="mt-6 flex justify-between">
-        <Button variant="outline" onClick={() => setStep("upload")}>
-          Back
-        </Button>
+        {config.entityType === "asset" && (
+          <Button variant="outline" onClick={() => setStep("select-category")}>
+            Back
+          </Button>
+        )}
         <Button
           onClick={handleImport}
           disabled={isProcessing || validationErrors.length > 0}
@@ -691,18 +701,8 @@ export default function BulkImportDialog({
         >
           {isProcessing ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : importType === "license" ? (
-            `Import ${parsedData.length} Licenses`
-          ) : importType === "loneeUser" ? (
-            `Import ${parsedData.length} Users`
-          ) : importType === "user" ? (
-            `Import ${parsedData.length} Users`
-          ) : importType === "accessory" ? (
-            `Import ${parsedData.length} Accessories`
-          ) : importType === "asset" ? (
-            `Import ${parsedData.length} Assets`
           ) : (
-            `Import ${parsedData.length} Records`
+            `Import ${parsedData.length} ${config.entityType.charAt(0).toUpperCase() + config.entityType.slice(1)}${parsedData.length === 1 ? "" : "s"}`
           )}
         </Button>
       </DialogFooter>
@@ -754,29 +754,9 @@ export default function BulkImportDialog({
       )}
       <h3 className="mb-2 text-xl font-semibold">
         {importResult?.success
-          ? importType === "license"
-            ? "License Import Complete"
-            : importType === "loneeUser"
-              ? "User Import Complete"
-              : importType === "user"
-                ? "User Import Complete"
-                : importType === "accessory"
-                  ? "Accessory Import Complete"
-                  : importType === "asset"
-                    ? "Asset Import Complete"
-                    : "Import Complete"
+          ? `${config.entityType.charAt(0).toUpperCase() + config.entityType.slice(1)} Import Complete`
           : importResult?.success === false
-            ? importType === "license"
-              ? "License Import Failed"
-              : importType === "loneeUser"
-                ? "User Import Failed"
-                : importType === "user"
-                  ? "User Import Failed"
-                  : importType === "accessory"
-                    ? "Accessory Import Failed"
-                    : importType === "asset"
-                      ? "Asset Import Failed"
-                      : "Import Failed"
+            ? `${config.entityType.charAt(0).toUpperCase() + config.entityType.slice(1)} Import Failed`
             : "Import Results"}
       </h3>
       <p className="text-sm text-gray-600">{importResult?.message}</p>
@@ -784,7 +764,9 @@ export default function BulkImportDialog({
         <Button
           onClick={() => {
             resetState();
-            setStep(importType === "asset" ? "select-category" : "upload");
+            setStep(
+              config.entityType === "asset" ? "select-category" : "upload",
+            );
           }}
           variant="secondary"
         >
@@ -860,32 +842,18 @@ export default function BulkImportDialog({
     <div className="max-w-[600px] mx-auto p-4">
       <Stepper />
       <h2 className="text-xl font-bold mb-1 text-center">
-        {importType === "license"
-          ? "Upload License CSV"
-          : importType === "loneeUser" || importType === "user"
-            ? "Upload User CSV"
-            : importType === "accessory"
-              ? "Upload Accessory CSV"
-              : importType === "asset"
-                ? "Upload Asset CSV"
-                : "Upload CSV File"}
+        {"Upload "}
+        {config.entityType.charAt(0).toUpperCase() + config.entityType.slice(1)}
+        {" CSV"}
       </h2>
       <p className="text-gray-500 text-sm mb-4 text-center">
-        {importType === "license"
-          ? "Download the license CSV template, fill in your license data, and upload it here."
-          : importType === "loneeUser" || importType === "user"
-            ? "Download the user CSV template, fill in your user data, and upload it here."
-            : importType === "accessory"
-              ? "Download the accessory CSV template, fill in your accessory data, and upload it here."
-              : importType === "asset"
-                ? "Download the asset CSV template, fill in your asset data, and upload it here."
-                : "Download the CSV template, fill in your data, and upload it here."}
+        Download the CSV template, fill in your data, and upload it here.
       </p>
       <div className="mb-4">
         <div
           {...getRootProps()}
           className={`flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed p-10 text-center transition-colors shadow-sm ${
-            importType === "asset"
+            config.entityType === "asset"
               ? selectedTemplateId
                 ? "border-blue-500 bg-blue-50 hover:bg-blue-100"
                 : "border-gray-300 bg-gray-50"
@@ -894,7 +862,7 @@ export default function BulkImportDialog({
         >
           <input
             {...getInputProps()}
-            disabled={importType === "asset" && !selectedTemplateId}
+            disabled={config.entityType === "asset" && !selectedTemplateId}
           />
           <Upload className="mb-4 h-12 w-12 text-gray-400" />
           {isProcessing ? (
@@ -911,7 +879,7 @@ export default function BulkImportDialog({
             </>
           ) : (
             <p className="font-semibold text-gray-700">
-              {importType === "asset"
+              {config.entityType === "asset"
                 ? selectedTemplateId
                   ? "Drop CSV file here or click to upload"
                   : "Please select a template to enable upload"
@@ -933,7 +901,7 @@ export default function BulkImportDialog({
         </Button>
       </div>
       <div className="flex justify-between mt-6">
-        {importType === "asset" && (
+        {config.entityType === "asset" && (
           <Button variant="outline" onClick={() => setStep("select-category")}>
             Back
           </Button>
@@ -950,26 +918,12 @@ export default function BulkImportDialog({
     <div className="max-w-[700px] mx-auto p-4">
       <Stepper />
       <h2 className="text-xl font-bold mb-1 text-center">
-        {importType === "license"
-          ? "Map License Fields"
-          : importType === "loneeUser" || importType === "user"
-            ? "Map User Fields"
-            : importType === "accessory"
-              ? "Map Accessory Fields"
-              : importType === "asset"
-                ? "Map Asset Fields"
-                : "Map Fields"}
+        {"Map "}
+        {config.entityType.charAt(0).toUpperCase() + config.entityType.slice(1)}
+        {" Fields"}
       </h2>
       <p className="text-gray-500 text-sm mb-4 text-center">
-        {importType === "license"
-          ? "Match your CSV columns to the correct license fields."
-          : importType === "loneeUser" || importType === "user"
-            ? "Match your CSV columns to the correct user fields."
-            : importType === "accessory"
-              ? "Match your CSV columns to the correct accessory fields."
-              : importType === "asset"
-                ? "Match your CSV columns to the correct asset fields."
-                : "Match your CSV columns to the correct fields."}
+        Match your CSV columns to the correct {config.entityType} fields.
       </p>
       <SchemaMappingStep
         uploadedColumns={uploadedColumns}
@@ -986,6 +940,23 @@ export default function BulkImportDialog({
       </div>
     </div>
   );
+
+  const getDialogTitleForStep = () => {
+    switch (step) {
+      case "select-category":
+        return "Select Asset Template";
+      case "upload":
+        return `Upload ${config.entityType.charAt(0).toUpperCase() + config.entityType.slice(1)} CSV`;
+      case "mapping":
+        return `Map ${config.entityType.charAt(0).toUpperCase() + config.entityType.slice(1)} Fields`;
+      case "preview":
+        return `Preview ${config.entityType.charAt(0).toUpperCase() + config.entityType.slice(1)}s`;
+      case "result":
+        return "Import Results";
+      default:
+        return "Import Data";
+    }
+  };
 
   return (
     <Dialog
@@ -1005,6 +976,9 @@ export default function BulkImportDialog({
         }
         style={{ overflowX: "visible" }}
       >
+        <DialogHeader className="sr-only">
+          <DialogTitle>{getDialogTitleForStep()}</DialogTitle>
+        </DialogHeader>
         {isCreatingNew && renderCreationDialog()}
         {renderStepContent()}
       </DialogContent>

@@ -2,66 +2,56 @@ import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { ArrowUpDown } from "lucide-react";
 import React from "react";
-import { FormTemplate } from "@/types/form";
 import DataTableRowActions from "@/components/tables/DataTable/DataTableRowActions";
-import { ColumnsProps } from "@/components/tables/table.types";
-import { BooleanCell } from "@/components/tables/CustomCells";
+import { FormTemplate } from "@/types/form";
+
+interface AssetCategoriesColumnsProps {
+  onDelete: (category: FormTemplate) => void;
+  onUpdate: (category: FormTemplate) => void;
+}
 
 export const assetCategoriesColumns = ({
   onDelete,
   onUpdate,
-}: ColumnsProps<FormTemplate>): ColumnDef<FormTemplate>[] => [
+}: AssetCategoriesColumnsProps): ColumnDef<FormTemplate>[] => [
   {
     accessorKey: "name",
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Name
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      );
-    },
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      >
+        Category Name
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
   },
   {
-    accessorKey: "fields",
-    header: "Fields",
+    accessorKey: "createdAt",
+    header: "Created At",
     cell: ({ row }) => {
-      return (
-        <div className="overflow-x-auto" style={{ maxWidth: "650px" }}>
-          {" "}
-          {/* Add a max-width as needed */}
-          <div className="flex items-center">
-            {row.original.fields.map((field) => {
-              return (
-                <div className="mr-2" key={field.name}>
-                  <div className="text-sm text-gray-600">{field.name}</div>
-                  <div className="text-sm text-gray-400">{field.type}</div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      );
+      const value = new Date(row.getValue("createdAt"));
+      const formattedDate = value.toLocaleDateString();
+      return <div>{formattedDate}</div>;
     },
   },
   {
-    accessorKey: "active",
-    header: "Active",
-    cell: ({ row }) => <BooleanCell value={row.getValue("active")} />,
+    accessorKey: "updatedAt",
+    header: "Last Updated",
+    cell: ({ row }) => {
+      const value = new Date(row.getValue("updatedAt"));
+      const formattedDate = value.toLocaleDateString();
+      return <div>{formattedDate}</div>;
+    },
   },
   {
     id: "actions",
-    cell: ({ row }) => {
-      return (
-        <DataTableRowActions
-          row={row}
-          onDelete={onDelete}
-          onUpdate={onUpdate}
-        />
-      );
-    },
+    cell: ({ row }) => (
+      <DataTableRowActions
+        row={row}
+        onDelete={() => onDelete(row.original)}
+        onUpdate={() => onUpdate(row.original)}
+      />
+    ),
   },
 ];

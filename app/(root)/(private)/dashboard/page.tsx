@@ -125,10 +125,10 @@ export default function DashboardPage() {
       <DashboardHeader />
 
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="depreciation">Depreciation</TabsTrigger>
-          <TabsTrigger value="maintenance">Maintenance</TabsTrigger>
+          {/* <TabsTrigger value="maintenance">Maintenance</TabsTrigger> */}
           <TabsTrigger value="esg">ESG & CO₂</TabsTrigger>
         </TabsList>
 
@@ -153,7 +153,8 @@ export default function DashboardPage() {
               <AccessoryOverview />
             </div>
             <div className="space-y-6">
-              <MaintenanceScheduleCard />
+              {/* TODO: This cannot be removed, but it is not implemented yet */}
+              {/* <MaintenanceScheduleCard /> */}
               <ESGReportingCard />
             </div>
           </div>
@@ -174,7 +175,8 @@ export default function DashboardPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="maintenance" className="space-y-6">
+        {/* TODO: This cannot be removed, but it is not implemented yet */}
+        {/* <TabsContent value="maintenance" className="space-y-6">
           <div className="grid gap-6 lg:grid-cols-3">
             <div className="lg:col-span-2">
               <MaintenanceScheduleCard />
@@ -193,7 +195,7 @@ export default function DashboardPage() {
               </Card>
             </div>
           </div>
-        </TabsContent>
+        </TabsContent> */}
 
         <TabsContent value="esg" className="space-y-6">
           <div className="grid gap-6 lg:grid-cols-3">

@@ -22,4 +22,5 @@ export interface BulkImportConfig {
   importApi: string;
   templateUrl: string;
   validationSchema: ZodSchema<any>;
+  companyId: string;
 }

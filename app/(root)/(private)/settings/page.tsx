@@ -26,6 +26,7 @@ const SettingsPage = (): JSX.Element => {
           <BreadcrumbSeparator />
         </BreadcrumbList>
       </Breadcrumb>
+
       <AdminSettings />
     </div>
   );

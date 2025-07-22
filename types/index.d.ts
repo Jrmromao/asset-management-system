@@ -120,11 +120,14 @@ declare global {
   }
 
   interface Company {
+    targetEnergy: any;
+    targetCarbonReduction: any;
     // Primary fields
     id: string;
     name: string;
     createdAt: Date;
     updatedAt: Date;
+    employeeCount: number | null;
 
     // Relations
     users?: User[];

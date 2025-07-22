@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { BulkImportConfig } from "@/types/importConfig";
 
 export const loneeUserImportSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
@@ -8,7 +9,7 @@ export const loneeUserImportSchema = z.object({
   role: z.string().min(1, "Role is required"),
 });
 
-export const loneeUserImportConfig = {
+export const loneeUserImportConfig: BulkImportConfig = {
   entityType: "lonee-user",
   fields: [
     { name: "firstName", label: "First Name", type: "string", required: true },

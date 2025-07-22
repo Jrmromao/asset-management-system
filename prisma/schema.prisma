@@ -435,6 +435,7 @@ model Company {
   targetEnergy          Decimal? @db.Decimal(12, 2) // Company-defined energy efficiency target (kWh)
   targetCarbonReduction Decimal? @db.Decimal(12, 2) // Company-defined carbon reduction target (tons)
 
+  employeeCount         Int?     // MVP: Track number of employees
   // Relations
   users                        User[]
   roles                        Role[]

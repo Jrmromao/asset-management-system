@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowUpDown } from "lucide-react";
 import React from "react";
 import DataTableRowActions from "@/components/tables/DataTable/DataTableRowActions";
+import { User } from "@prisma/client";
 
 // const navigate = useRouter() cannot use hook in a non hook component
 interface PeopleColumnsProps {
@@ -68,9 +69,7 @@ export const peopleColumns = ({
   {
     id: "actions",
     cell: ({ row }) => {
-      return (
-        <DataTableRowActions row={row} onView={onView} />
-      );
+      return <DataTableRowActions row={row} onView={onView} />;
     },
   },
 ];

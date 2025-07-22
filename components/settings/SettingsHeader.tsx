@@ -11,7 +11,7 @@ interface SettingsHeaderProps {
   title: string;
   addNewLabel: string;
   onAddNew: () => void;
-  onImport: (file: File) => void;
+  onImport: () => void;
   importTemplateUrl?: string;
   showAddNew?: boolean;
   showImport?: boolean;
@@ -28,20 +28,6 @@ const SettingsHeader: React.FC<SettingsHeaderProps> = ({
   showImport = true,
   isLoading = false,
 }) => {
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const handleImportClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      onImport(file);
-      e.target.value = ""; // Reset so the same file can be selected again
-    }
-  };
-
   return (
     <div className="flex items-center justify-between mb-2">
       <div>
@@ -71,7 +57,7 @@ const SettingsHeader: React.FC<SettingsHeaderProps> = ({
               <TooltipTrigger asChild>
                 <button
                   type="button"
-                  onClick={handleImportClick}
+                  onClick={onImport}
                   className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors text-sm font-medium border border-gray-200 shadow-sm
                     ${
                       isLoading
@@ -106,14 +92,6 @@ const SettingsHeader: React.FC<SettingsHeaderProps> = ({
                 )}
               </TooltipContent>
             </Tooltip>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".csv"
-              style={{ display: "none" }}
-              onChange={handleFileChange}
-              aria-label="Select CSV file to import"
-            />
           </TooltipProvider>
         )}
       </div>

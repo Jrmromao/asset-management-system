@@ -398,7 +398,6 @@ const FormTemplateCreator = ({
           await updateFormTemplate(initialData.id, transformedData as any, {
             onSuccess: () => {
               form.reset();
-              closeTemplate();
               toast.success("Successfully updated form template");
               onSubmitSuccess?.();
             },
@@ -410,7 +409,6 @@ const FormTemplateCreator = ({
         } else {
           await createFormTemplate(transformedData, {
             onSuccess: () => {
-              closeTemplate();
               form.reset();
               toast.success("Form template created successfully");
               onSubmitSuccess?.();

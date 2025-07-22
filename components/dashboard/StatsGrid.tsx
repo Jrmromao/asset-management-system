@@ -161,7 +161,7 @@ export const StatsGrid = () => {
     );
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       <StatCard
         title="Total Items"
         mainValue={Number.isFinite(stats.totalItems) ? stats.totalItems : 0}
@@ -177,8 +177,8 @@ export const StatsGrid = () => {
         subtitle={`${Number.isFinite(stats.assignedAssets) ? stats.assignedAssets : 0} of ${Number.isFinite(stats.itemsBreakdown.assets) ? stats.itemsBreakdown.assets : 0} assigned`}
         icon={<BarChart3 className="h-5 w-5 text-blue-600" />}
       />
-
-      <StatCard
+      {/* TODO: This cannot be removed, but it is not implemented yet */}
+      {/* <StatCard
         title="Upcoming Maintenance"
         mainValue={
           Number.isFinite(stats.maintenanceDue) ? stats.maintenanceDue : 0
@@ -187,7 +187,7 @@ export const StatsGrid = () => {
         subtitle="Due within 30 days"
         icon={<Clock className="h-5 w-5 text-amber-600" />}
         tooltip="Number of assets with maintenance due in the next 30 days."
-      />
+      /> */}
 
       <StatCard
         title="CO₂ Savings"

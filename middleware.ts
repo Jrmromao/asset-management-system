@@ -1,53 +1,56 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
-import type { NextRequest } from 'next/server'
+import type { NextRequest } from "next/server";
 
 // Rate limiting store (in production, use Redis or external service)
-const rateLimit = new Map<string, { count: number; resetTime: number }>()
+const rateLimit = new Map<string, { count: number; resetTime: number }>();
 
 // Rate limiting configuration
-const RATE_LIMIT_WINDOW = 15 * 60 * 1000 // 15 minutes
-const RATE_LIMIT_MAX_REQUESTS = 1000 // requests per window (increased for development)
-const API_RATE_LIMIT_MAX_REQUESTS = 500 // stricter for API routes (increased for development)
+const RATE_LIMIT_WINDOW = 15 * 60 * 1000; // 15 minutes
+const RATE_LIMIT_MAX_REQUESTS = 1000; // requests per window (increased for development)
+const API_RATE_LIMIT_MAX_REQUESTS = 500; // stricter for API routes (increased for development)
 
 function getRateLimitKey(request: NextRequest): string {
-  const forwarded = request.headers.get('x-forwarded-for')
-  const realIp = request.headers.get('x-real-ip')
-  const ip = forwarded ? forwarded.split(',')[0].trim() : realIp || 'unknown'
-  return `${ip}-${request.nextUrl.pathname.startsWith('/api') ? 'api' : 'web'}`
+  const forwarded = request.headers.get("x-forwarded-for");
+  const realIp = request.headers.get("x-real-ip");
+  const ip = forwarded ? forwarded.split(",")[0].trim() : realIp || "unknown";
+  return `${ip}-${request.nextUrl.pathname.startsWith("/api") ? "api" : "web"}`;
 }
 
 function checkRateLimit(request: NextRequest): boolean {
-  const key = getRateLimitKey(request)
-  const now = Date.now()
-  const maxRequests = request.nextUrl.pathname.startsWith('/api') 
-    ? API_RATE_LIMIT_MAX_REQUESTS 
-    : RATE_LIMIT_MAX_REQUESTS
+  const key = getRateLimitKey(request);
+  const now = Date.now();
+  const maxRequests = request.nextUrl.pathname.startsWith("/api")
+    ? API_RATE_LIMIT_MAX_REQUESTS
+    : RATE_LIMIT_MAX_REQUESTS;
 
-  const record = rateLimit.get(key)
-  
+  const record = rateLimit.get(key);
+
   if (!record || now > record.resetTime) {
     // Reset or create new record
-    rateLimit.set(key, { count: 1, resetTime: now + RATE_LIMIT_WINDOW })
-    return true
+    rateLimit.set(key, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
+    return true;
   }
-  
+
   if (record.count >= maxRequests) {
-    return false
+    return false;
   }
-  
-  record.count++
-  return true
+
+  record.count++;
+  return true;
 }
 
 function addSecurityHeaders(response: NextResponse): NextResponse {
   // Security headers
-  response.headers.set('X-Content-Type-Options', 'nosniff')
-  response.headers.set('X-Frame-Options', 'DENY')
-  response.headers.set('X-XSS-Protection', '1; mode=block')
-  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
-  response.headers.set('Permissions-Policy', 'geolocation=(), microphone=(), camera=()')
-  
+  response.headers.set("X-Content-Type-Options", "nosniff");
+  response.headers.set("X-Frame-Options", "DENY");
+  response.headers.set("X-XSS-Protection", "1; mode=block");
+  response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  response.headers.set(
+    "Permissions-Policy",
+    "geolocation=(), microphone=(), camera=()",
+  );
+
   // Content Security Policy
   const csp = [
     "default-src 'self'",
@@ -59,19 +62,19 @@ function addSecurityHeaders(response: NextResponse): NextResponse {
     "frame-src 'self' https://clerk.com https://*.clerk.com https://*.clerk.accounts.dev",
     "object-src 'none'",
     "base-uri 'self'",
-    "form-action 'self'"
-  ].join('; ')
-  
-  response.headers.set('Content-Security-Policy', csp)
-  
-  return response
+    "form-action 'self'",
+  ].join("; ");
+
+  response.headers.set("Content-Security-Policy", csp);
+
+  return response;
 }
 
 // Define public routes that don't require authentication
 const isPublicRoute = createRouteMatcher([
   "/",
   "/about",
-  "/careers", 
+  "/careers",
   "/contact",
   "/privacy-policy",
   "/terms-of-service",
@@ -87,7 +90,7 @@ const isPublicRoute = createRouteMatcher([
   "/api/health",
   "/api/contact",
   "/api/validate(.*)",
-  "/api/validate-invitation"
+  "/api/validate-invitation",
 ]);
 
 // Define auth routes that should redirect signed-in users to dashboard
@@ -104,6 +107,11 @@ interface UserMetadata {
   role?: string;
 }
 
+const isMaintenanceRoute = createRouteMatcher([
+  "/maintenance(.*)",
+  "/maintenance-flows(.*)",
+]);
+
 export default clerkMiddleware(async (auth, request) => {
   const { userId } = await auth();
   const url = request.nextUrl;
@@ -118,17 +126,17 @@ export default clerkMiddleware(async (auth, request) => {
 
   // Check rate limiting first
   if (!checkRateLimit(request)) {
-    console.log('🚫 Rate limit exceeded for:', getRateLimitKey(request))
+    console.log("🚫 Rate limit exceeded for:", getRateLimitKey(request));
     return new NextResponse(
-      JSON.stringify({ error: 'Too many requests. Please try again later.' }),
-      { 
+      JSON.stringify({ error: "Too many requests. Please try again later." }),
+      {
         status: 429,
         headers: {
-          'Content-Type': 'application/json',
-          'Retry-After': '900' // 15 minutes
-        }
-      }
-    )
+          "Content-Type": "application/json",
+          "Retry-After": "900", // 15 minutes
+        },
+      },
+    );
   }
 
   // For public routes, allow access regardless of auth status
@@ -152,6 +160,18 @@ export default clerkMiddleware(async (auth, request) => {
     console.log("🔄 Auth route with signed user, redirecting to dashboard");
     const response = NextResponse.redirect(new URL("/dashboard", request.url));
     return addSecurityHeaders(response);
+  }
+
+  // If the request is for a maintenance route, return a 404
+  if (isMaintenanceRoute(request)) {
+    console.log(
+      "🚫 Maintenance route blocked for MVP:",
+      request.nextUrl.pathname,
+    );
+    return new NextResponse(
+      "This feature is not available in the MVP release.",
+      { status: 404 },
+    );
   }
 
   // For all other routes, allow access if user is signed in

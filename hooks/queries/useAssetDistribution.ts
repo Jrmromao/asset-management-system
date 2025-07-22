@@ -21,9 +21,9 @@ export const useAssetDistribution = () => {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       const response = await getAssetDistribution();
-      
+
       if (response.success && response.data) {
         setData(response.data);
       } else {
@@ -31,7 +31,8 @@ export const useAssetDistribution = () => {
         toast.error("Failed to load asset distribution data");
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "An unknown error occurred";
+      const errorMessage =
+        err instanceof Error ? err.message : "An unknown error occurred";
       setError(errorMessage);
       toast.error("Error loading asset distribution data");
     } finally {
@@ -49,4 +50,4 @@ export const useAssetDistribution = () => {
     error,
     refetch: fetchData,
   };
-}; 
+};

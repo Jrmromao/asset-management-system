@@ -92,7 +92,16 @@ export const getAll = withAuth(
 // Wrapper function for client-side use
 export async function getAllCompanies(): Promise<ActionResponse<Company[]>> {
   const session = await getSession();
-  return getAll();
+  const result = await getAll();
+  if (result.success && Array.isArray(result.data)) {
+    result.data = result.data.map((company: any) =>
+      serializeCompany({
+        ...company,
+        employeeCount: company.employeeCount ?? null,
+      }),
+    );
+  }
+  return result;
 }
 
 export const update = withAuth(
@@ -126,43 +135,72 @@ export const update = withAuth(
 // Wrapper function for client-side use
 export async function updateCompany(
   id: string,
-  name: string,
+  data: Partial<{
+    name: string;
+    industry: string;
+    website: string;
+    contactEmail: string;
+    logoUrl: string;
+    employeeCount?: number;
+    // ...add more fields as needed
+  }>,
 ): Promise<ActionResponse<Company>> {
-  return update(id, name);
+  try {
+    const company = await prisma.company.update({
+      where: { id },
+      data,
+    });
+    // Ensure employeeCount is never undefined and serialize decimals
+    const safeCompany = serializeCompany({
+      ...company,
+      employeeCount: company.employeeCount ?? null,
+    });
+    await createAuditLog({
+      companyId: company.id,
+      action: "COMPANY_UPDATED",
+      entity: "COMPANY",
+      entityId: company.id,
+      details: `Company updated: ${company.name}`,
+    });
+    return { success: true, data: safeCompany };
+  } catch (error) {
+    console.error("Update company error:", error);
+    return {
+      success: false,
+      data: null as any,
+      error: "Failed to update company",
+    };
+  } finally {
+    await prisma.$disconnect();
+  }
 }
-
-export const remove = withAuth(
-  async (user, id: string): Promise<AuthResponse<Company>> => {
-    try {
-      const company = await prisma.company.delete({
-        where: { id },
-      });
-      await createAuditLog({
-        companyId: company.id,
-        action: "COMPANY_DELETED",
-        entity: "COMPANY",
-        entityId: company.id,
-        details: `Company deleted: ${company.name} by user ${user.id}`,
-      });
-      return { success: true, data: company };
-    } catch (error) {
-      console.error("Delete company error:", error);
-      return {
-        success: false,
-        data: null as any,
-        error: "Failed to delete company",
-      };
-    } finally {
-      await prisma.$disconnect();
-    }
-  },
-);
 
 // Wrapper function for client-side use
 export async function deleteCompany(
   id: string,
 ): Promise<ActionResponse<Company>> {
-  return remove(id);
+  try {
+    const company = await prisma.company.delete({
+      where: { id },
+    });
+    await createAuditLog({
+      companyId: company.id,
+      action: "COMPANY_DELETED",
+      entity: "COMPANY",
+      entityId: company.id,
+      details: `Company deleted: ${company.name}`,
+    });
+    return { success: true, data: company };
+  } catch (error) {
+    console.error("Delete company error:", error);
+    return {
+      success: false,
+      data: null as any,
+      error: "Failed to delete company",
+    };
+  } finally {
+    await prisma.$disconnect();
+  }
 }
 
 export async function registerCompany(
@@ -480,4 +518,15 @@ async function createPrismaUser({
     update: userData,
     create: userData,
   });
+}
+
+// Helper to serialize Decimal fields for client
+function serializeCompany(company: any) {
+  return {
+    ...company,
+    targetEnergy: company.targetEnergy ? company.targetEnergy.toString() : null,
+    targetCarbonReduction: company.targetCarbonReduction
+      ? company.targetCarbonReduction.toString()
+      : null,
+  };
 }

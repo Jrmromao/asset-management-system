@@ -47,18 +47,18 @@ export const sidebarLinks = [
     label: "Reports",
     visibleTo: [roles.ADMIN],
   },
-  {
-    imgURL: "/icons/maintenance-icon.svg",
-    route: "/maintenance",
-    label: "Maintenance",
-    visibleTo: [roles.ADMIN],
-  },
-  {
-    imgURL: "/icons/maintenance-flows-icon.svg",
-    route: "/maintenance-flows",
-    label: "Maintenance Flows",
-    visibleTo: [roles.ADMIN],
-  },
+  // {
+  //   imgURL: "/icons/maintenance-icon.svg",
+  //   route: "/maintenance",
+  //   label: "Maintenance",
+  //   visibleTo: [roles.ADMIN],
+  // },
+  // {
+  //   imgURL: "/icons/maintenance-flows-icon.svg",
+  //   route: "/maintenance-flows",
+  //   label: "Maintenance Flows",
+  //   visibleTo: [roles.ADMIN],
+  // },
   {
     imgURL: "/icons/audit-logs.svg",
     route: "/audit-logs",

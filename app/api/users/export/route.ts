@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAllUsersWithService } from "@/lib/actions/user.actions";
+import { getAuth } from "@clerk/nextjs/server";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
+  // Clerk authentication
+  const auth = getAuth(req);
+  if (!auth.userId) {
+    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  }
   try {
     const result = await getAllUsersWithService();
 

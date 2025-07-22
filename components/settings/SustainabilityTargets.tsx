@@ -3,9 +3,15 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { 
+import {
   Target,
   Zap,
   Leaf,
@@ -16,7 +22,7 @@ import {
   AlertTriangle,
   Info,
   Calendar,
-  BarChart3
+  BarChart3,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
@@ -47,17 +53,17 @@ const SustainabilityTargets = () => {
   const loadTargets = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('/api/company/sustainability-targets');
+      const response = await fetch("/api/company/sustainability-targets");
       const result = await response.json();
-      
+
       if (!result.success) {
-        throw new Error(result.error || 'Failed to load targets');
+        throw new Error(result.error || "Failed to load targets");
       }
-      
+
       setTargets(result.data.targets);
       setProgress(result.data.progress);
     } catch (error) {
-      console.error('Load targets error:', error);
+      console.error("Load targets error:", error);
       toast({
         title: "Error",
         description: "Failed to load sustainability targets",
@@ -72,27 +78,27 @@ const SustainabilityTargets = () => {
   const saveTargets = async () => {
     setIsSaving(true);
     try {
-      const response = await fetch('/api/company/sustainability-targets', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/company/sustainability-targets", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(targets),
       });
-      
+
       const result = await response.json();
-      
+
       if (!result.success) {
-        throw new Error(result.error || 'Failed to save targets');
+        throw new Error(result.error || "Failed to save targets");
       }
-      
+
       toast({
         title: "Success",
         description: "Sustainability targets updated successfully",
       });
-      
+
       setHasChanges(false);
       await loadTargets(); // Reload to get updated progress
     } catch (error) {
-      console.error('Save targets error:', error);
+      console.error("Save targets error:", error);
       toast({
         title: "Error",
         description: "Failed to save sustainability targets",
@@ -104,9 +110,12 @@ const SustainabilityTargets = () => {
   };
 
   // Handle input changes
-  const handleTargetChange = (field: keyof SustainabilityTargets, value: string) => {
-    const numericValue = value === '' ? null : parseFloat(value);
-    setTargets(prev => ({
+  const handleTargetChange = (
+    field: keyof SustainabilityTargets,
+    value: string,
+  ) => {
+    const numericValue = value === "" ? null : parseFloat(value);
+    setTargets((prev) => ({
       ...prev,
       [field]: numericValue,
     }));
@@ -120,10 +129,33 @@ const SustainabilityTargets = () => {
 
   // Calculate progress status
   const getProgressStatus = (progress: number) => {
-    if (progress >= 90) return { color: 'text-emerald-600', bg: 'bg-emerald-50', icon: CheckCircle, label: 'Excellent' };
-    if (progress >= 70) return { color: 'text-green-600', bg: 'bg-green-50', icon: TrendingUp, label: 'On Track' };
-    if (progress >= 50) return { color: 'text-yellow-600', bg: 'bg-yellow-50', icon: AlertTriangle, label: 'Behind' };
-    return { color: 'text-red-600', bg: 'bg-red-50', icon: AlertTriangle, label: 'Critical' };
+    if (progress >= 90)
+      return {
+        color: "text-emerald-600",
+        bg: "bg-emerald-50",
+        icon: CheckCircle,
+        label: "Excellent",
+      };
+    if (progress >= 70)
+      return {
+        color: "text-green-600",
+        bg: "bg-green-50",
+        icon: TrendingUp,
+        label: "On Track",
+      };
+    if (progress >= 50)
+      return {
+        color: "text-yellow-600",
+        bg: "bg-yellow-50",
+        icon: AlertTriangle,
+        label: "Behind",
+      };
+    return {
+      color: "text-red-600",
+      bg: "bg-red-50",
+      icon: AlertTriangle,
+      label: "Critical",
+    };
   };
 
   if (isLoading) {
@@ -131,7 +163,9 @@ const SustainabilityTargets = () => {
       <div className="flex justify-center items-center py-12">
         <div className="flex items-center gap-3">
           <RefreshCw className="w-6 h-6 animate-spin text-slate-600" />
-          <span className="text-slate-600">Loading sustainability targets...</span>
+          <span className="text-slate-600">
+            Loading sustainability targets...
+          </span>
         </div>
       </div>
     );
@@ -151,7 +185,8 @@ const SustainabilityTargets = () => {
             Sustainability Targets
           </h2>
           <p className="text-sm text-gray-600 max-w-xl mx-auto">
-            Set and track your organization's energy efficiency and carbon reduction goals
+            Set and track your organization&apos;s energy efficiency and carbon
+            reduction goals
           </p>
         </div>
       </div>
@@ -166,7 +201,9 @@ const SustainabilityTargets = () => {
                   <Zap className="w-5 h-5 text-blue-600" />
                   <CardTitle className="text-lg">Energy Efficiency</CardTitle>
                 </div>
-                <div className={`px-2 py-1 rounded-full text-xs font-medium ${getProgressStatus(progress.energyProgress).bg} ${getProgressStatus(progress.energyProgress).color}`}>
+                <div
+                  className={`px-2 py-1 rounded-full text-xs font-medium ${getProgressStatus(progress.energyProgress).bg} ${getProgressStatus(progress.energyProgress).color}`}
+                >
                   {getProgressStatus(progress.energyProgress).label}
                 </div>
               </div>
@@ -175,22 +212,29 @@ const SustainabilityTargets = () => {
               <div className="space-y-3">
                 <div className="flex justify-between items-end">
                   <div>
-                    <p className="text-2xl font-bold text-gray-900">{progress.currentEnergy.toLocaleString()}</p>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {progress.currentEnergy.toLocaleString()}
+                    </p>
                     <p className="text-sm text-gray-600">kWh current usage</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-lg font-semibold text-blue-600">{progress.energyProgress}%</p>
+                    <p className="text-lg font-semibold text-blue-600">
+                      {progress.energyProgress}%
+                    </p>
                     <p className="text-xs text-gray-500">of target</p>
                   </div>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div 
+                  <div
                     className="bg-blue-600 h-2 rounded-full transition-all duration-500"
-                    style={{ width: `${Math.min(progress.energyProgress, 100)}%` }}
+                    style={{
+                      width: `${Math.min(progress.energyProgress, 100)}%`,
+                    }}
                   ></div>
                 </div>
                 <p className="text-xs text-gray-500">
-                  Target: {targets.targetEnergy?.toLocaleString() || 'Not set'} kWh
+                  Target: {targets.targetEnergy?.toLocaleString() || "Not set"}{" "}
+                  kWh
                 </p>
               </div>
             </CardContent>
@@ -203,7 +247,9 @@ const SustainabilityTargets = () => {
                   <Leaf className="w-5 h-5 text-emerald-600" />
                   <CardTitle className="text-lg">Carbon Reduction</CardTitle>
                 </div>
-                <div className={`px-2 py-1 rounded-full text-xs font-medium ${getProgressStatus(progress.carbonProgress).bg} ${getProgressStatus(progress.carbonProgress).color}`}>
+                <div
+                  className={`px-2 py-1 rounded-full text-xs font-medium ${getProgressStatus(progress.carbonProgress).bg} ${getProgressStatus(progress.carbonProgress).color}`}
+                >
                   {getProgressStatus(progress.carbonProgress).label}
                 </div>
               </div>
@@ -212,22 +258,30 @@ const SustainabilityTargets = () => {
               <div className="space-y-3">
                 <div className="flex justify-between items-end">
                   <div>
-                    <p className="text-2xl font-bold text-gray-900">{progress.currentCarbon.toFixed(1)}</p>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {progress.currentCarbon.toFixed(1)}
+                    </p>
                     <p className="text-sm text-gray-600">tons CO2e saved</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-lg font-semibold text-emerald-600">{progress.carbonProgress}%</p>
+                    <p className="text-lg font-semibold text-emerald-600">
+                      {progress.carbonProgress}%
+                    </p>
                     <p className="text-xs text-gray-500">of target</p>
                   </div>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div 
+                  <div
                     className="bg-emerald-600 h-2 rounded-full transition-all duration-500"
-                    style={{ width: `${Math.min(progress.carbonProgress, 100)}%` }}
+                    style={{
+                      width: `${Math.min(progress.carbonProgress, 100)}%`,
+                    }}
                   ></div>
                 </div>
                 <p className="text-xs text-gray-500">
-                  Target: {targets.targetCarbonReduction?.toLocaleString() || 'Not set'} tons CO2e
+                  Target:{" "}
+                  {targets.targetCarbonReduction?.toLocaleString() || "Not set"}{" "}
+                  tons CO2e
                 </p>
               </div>
             </CardContent>
@@ -272,7 +326,10 @@ const SustainabilityTargets = () => {
         <CardContent className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-3">
-              <Label htmlFor="energy-target" className="flex items-center gap-2 text-sm font-medium">
+              <Label
+                htmlFor="energy-target"
+                className="flex items-center gap-2 text-sm font-medium"
+              >
                 <Zap className="w-4 h-4 text-blue-600" />
                 Annual Energy Target (kWh)
               </Label>
@@ -281,8 +338,10 @@ const SustainabilityTargets = () => {
                 type="number"
                 min="0"
                 step="100"
-                value={targets.targetEnergy || ''}
-                onChange={(e) => handleTargetChange('targetEnergy', e.target.value)}
+                value={targets.targetEnergy || ""}
+                onChange={(e) =>
+                  handleTargetChange("targetEnergy", e.target.value)
+                }
                 placeholder="e.g., 10000"
                 className="text-lg"
               />
@@ -292,7 +351,10 @@ const SustainabilityTargets = () => {
             </div>
 
             <div className="space-y-3">
-              <Label htmlFor="carbon-target" className="flex items-center gap-2 text-sm font-medium">
+              <Label
+                htmlFor="carbon-target"
+                className="flex items-center gap-2 text-sm font-medium"
+              >
                 <Leaf className="w-4 h-4 text-emerald-600" />
                 Annual Carbon Reduction Target (tons CO2e)
               </Label>
@@ -301,8 +363,10 @@ const SustainabilityTargets = () => {
                 type="number"
                 min="0"
                 step="1"
-                value={targets.targetCarbonReduction || ''}
-                onChange={(e) => handleTargetChange('targetCarbonReduction', e.target.value)}
+                value={targets.targetCarbonReduction || ""}
+                onChange={(e) =>
+                  handleTargetChange("targetCarbonReduction", e.target.value)
+                }
                 placeholder="e.g., 100"
                 className="text-lg"
               />
@@ -316,7 +380,8 @@ const SustainabilityTargets = () => {
             <Alert className="border-amber-200 bg-amber-50">
               <Info className="w-4 h-4 text-amber-600" />
               <AlertDescription className="text-amber-800">
-                You have unsaved changes. Click "Save Targets" to apply your new sustainability goals.
+                You have unsaved changes. Click &quot;Save Targets&quot; to
+                apply your new sustainability goals.
               </AlertDescription>
             </Alert>
           )}
@@ -374,4 +439,4 @@ const SustainabilityTargets = () => {
   );
 };
 
-export default SustainabilityTargets; 
+export default SustainabilityTargets;
