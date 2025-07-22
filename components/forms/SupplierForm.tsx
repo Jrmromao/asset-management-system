@@ -12,59 +12,99 @@ import CustomInput from "@/components/CustomInput";
 import { supplierSchema } from "@/lib/schemas";
 import { useSupplierUIStore } from "@/lib/stores/useSupplierUIStore";
 import { useSupplierQuery } from "@/hooks/queries/useSupplierQuery";
+import CustomSwitch from "../CustomSwitch";
+import { Supplier } from "@prisma/client";
 
 interface SupplierFormProps {
+  initialData?: Supplier;
   onSubmitSuccess?: () => void;
 }
 
-const SupplierForm = ({ onSubmitSuccess }: SupplierFormProps) => {
+function sanitizeSupplierUpdate(data: any) {
+  const cleaned = { ...data };
+  delete cleaned.id;
+  delete cleaned.createdAt;
+  delete cleaned.updatedAt;
+  delete cleaned.asset;
+  delete cleaned.companyId;
+  delete cleaned.company;
+  return cleaned;
+}
+
+const SupplierForm = ({ initialData, onSubmitSuccess }: SupplierFormProps) => {
   const [isPending, startTransition] = useTransition();
   const { onClose } = useSupplierUIStore();
-  const { createSupplier } = useSupplierQuery();
+  const { createSupplier, updateSupplier } = useSupplierQuery();
 
-  const form = useForm<z.infer<typeof supplierSchema>>({
+  const form = useForm<z.infer<typeof supplierSchema> & { active: boolean }>({
     resolver: zodResolver(supplierSchema),
-    defaultValues: {
-      name: "",
-      contactName: "",
-      email: "",
-      phoneNum: "",
-      url: "",
-      addressLine1: "",
-      addressLine2: "",
-      city: "",
-      state: "",
-      zip: "",
-      country: "",
-      notes: "",
-    },
+    defaultValues: initialData
+      ? {
+          ...initialData,
+          phoneNum: initialData.phoneNum ?? "",
+          url: initialData.url ?? "",
+          addressLine2: initialData.addressLine2 ?? "",
+          notes: initialData.notes ?? "",
+          active: initialData.active ?? true,
+        }
+      : {
+          name: "",
+          contactName: "",
+          email: "",
+          phoneNum: "",
+          url: "",
+          addressLine1: "",
+          addressLine2: "",
+          city: "",
+          state: "",
+          zip: "",
+          country: "",
+          notes: "",
+          active: true,
+        },
   });
 
-  const onSubmit = async (data: z.infer<typeof supplierSchema>) => {
+  const onSubmit = async (data: z.infer<typeof supplierSchema> & { active: boolean }) => {
     startTransition(async () => {
       try {
-        await createSupplier(data, {
-          onSuccess: () => {
-            console.log("Successfully created Supplier");
-          },
-          onError: (error) => {
-            console.error("Error creating Supplier:", error);
-          },
-        });
-        toast.success("Supplier created successfully");
+        if (initialData && initialData.id) {
+          const updateData = sanitizeSupplierUpdate(data);
+          await updateSupplier(initialData.id, updateData, {
+            onSuccess: () => {
+              toast.success("Supplier updated successfully");
+            },
+            onError: (error) => {
+              console.error("Error updating Supplier:", error);
+              toast.error("Failed to update supplier");
+            },
+          });
+        } else {
+          await createSupplier(data, {
+            onSuccess: () => {
+              toast.success("Supplier created successfully");
+            },
+            onError: (error) => {
+              console.error("Error creating Supplier:", error);
+              toast.error("Failed to create supplier");
+            },
+          });
+        }
         onSubmitSuccess?.();
         onClose();
         form.reset();
       } catch (error) {
-        console.error("Supplier creation error:", error);
-        toast.error("Failed to create supplier");
+        console.error("Supplier operation error:", error);
+        toast.error("Failed to save supplier");
       }
     });
   };
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form
+        onSubmit={form.handleSubmit(onSubmit)}
+        className="space-y-6 max-h-[70vh] overflow-y-auto pr-2"
+      >
         <CustomInput
           name="name"
           label="Supplier Name"
@@ -193,7 +233,12 @@ const SupplierForm = ({ onSubmitSuccess }: SupplierFormProps) => {
             tooltip="Optional notes about the supplier"
           />
         </div>
-
+        <CustomSwitch
+          control={form.control}
+          name="active"
+          label="Active"
+          disabled={isPending}
+        />
         <div className="flex justify-end gap-4 pt-4">
           <Button
             type="button"
@@ -211,10 +256,10 @@ const SupplierForm = ({ onSubmitSuccess }: SupplierFormProps) => {
             {isPending ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Creating...
+                {initialData ? "Updating..." : "Creating..."}
               </>
             ) : (
-              "Create"
+              initialData ? "Update" : "Create"
             )}
           </Button>
         </div>

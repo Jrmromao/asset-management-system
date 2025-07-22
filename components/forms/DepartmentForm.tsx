@@ -15,6 +15,7 @@ import { useDepartmentQuery } from "@/hooks/queries/useDepartmentQuery";
 import { FormProps } from "@/types/form";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import CustomSwitch from "../CustomSwitch";
 
 const DepartmentForm = ({
   initialData,
@@ -90,16 +91,13 @@ const DepartmentForm = ({
           tooltip="A unique name for this department."
         />
 
-        {initialData && (
-          <div className="flex items-center gap-3 pt-4">
-            <Label htmlFor="active-toggle">Is Active</Label>
-            <Switch
-              id="active-toggle"
-              checked={form.watch("active")}
-              onCheckedChange={(checked: boolean) => form.setValue("active", checked)}
-              disabled={isLoading}
-            />
-          </div>
+      {initialData && (
+          <CustomSwitch
+            control={form.control}
+            name="active"
+            label="Is Active"
+            disabled={isLoading}
+          />
         )}
 
         <div className="flex justify-end gap-4 pt-4">

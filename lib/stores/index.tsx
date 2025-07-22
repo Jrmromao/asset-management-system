@@ -8,6 +8,7 @@ import { useLocationUIStore } from "./useLocationUIStore";
 import { useFormTemplateUIStore } from "./useFormTemplateUIStore";
 import { useDepartmentUIStore } from "./useDepartmentUIStore";
 import { useAssetUIStore } from "./useAssetUIStore";
+import { useSupplierUIStore } from "./useSupplierUIStore";
 
 export {
   useInventoryUIStore,
@@ -20,4 +21,5 @@ export {
   useFormTemplateUIStore,
   useDepartmentUIStore,
   useAssetUIStore,
+  useSupplierUIStore,
 };

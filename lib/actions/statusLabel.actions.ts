@@ -268,6 +268,7 @@ export const update = withAuth(
           isArchived: data.isArchived,
           allowLoan: data.allowLoan,
           description: data.description,
+          active: data.active,
         },
       });
 

@@ -21,6 +21,7 @@ import {
   Search,
   Target,
   Users,
+  ShoppingCart,
 } from "lucide-react";
 import {
   useDepartmentQuery,
@@ -58,6 +59,7 @@ import {
   useModelUIStore,
   useStatusLabelUIStore,
   useUserUIStore,
+  useSupplierUIStore,
 } from "@/lib/stores";
 import FormTemplateCreator from "@/components/forms/FormTemplateCreator";
 import { useFormTemplatesQuery } from "@/hooks/queries/useFormTemplatesQuery";
@@ -84,6 +86,10 @@ import { statusLabelImportConfig } from "@/importConfigs/statusLabelImportConfig
 import { inventoryImportConfig } from "@/importConfigs/inventoryImportConfig";
 import { assetCategoryImportConfig } from "@/importConfigs/assetCategoryImportConfig";
 import CompanySettings from "@/components/settings/CompanySettings";
+import { useSupplierQuery } from "@/hooks/queries/useSupplierQuery";
+import { Supplier } from "@prisma/client";
+import { supplierColumns } from "@/components/tables/SupplierColumns";
+import SupplierForm from "@/components/forms/SupplierForm";
 
 interface Tab {
   id: TabId;
@@ -103,6 +109,7 @@ type TabId =
   | "sustainability-targets"
   | "report-storage"
   | "company-settings"
+  | "suppliers"
   | "people";
 
 interface ModalConfig {
@@ -132,6 +139,12 @@ const TABS: Tab[] = [
     label: "Inventories",
     icon: Warehouse,
     description: "Stock levels and inventory management zones",
+  },
+  {
+    id: "suppliers",
+    label: "Suppliers",
+    icon: ShoppingCart,
+    description: "Companies and brands that produce your assets",
   },
   {
     id: "locations",
@@ -213,6 +226,7 @@ const AdminSettings = () => {
   const [editingFormTemplate, setEditingFormTemplate] =
     useState<FormTemplate | null>();
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
   const {
     onClose: closeModel,
     isOpen: isModelOpen,
@@ -261,6 +275,12 @@ const AdminSettings = () => {
   } = useUserUIStore();
 
   const {
+    isOpen: isSupplierOpen,
+    onClose: closeSupplier,
+    onOpen: onSupplierOpen,
+  } = useSupplierUIStore();
+
+  const {
     models,
     isLoading: modelsLoading,
     error: modelsError,
@@ -278,6 +298,16 @@ const AdminSettings = () => {
     isLoading: locationsLoading,
     deleteLocation,
   } = useLocationQuery();
+
+  const {
+    suppliers,
+    isLoading: suppliersLoading,
+    deleteItem: deleteSupplier,
+    createSupplier,
+    isCreating: isSupplierCreating,
+    refresh: refreshSuppliers,
+  } = useSupplierQuery();
+
   const {
     departments,
     isLoading: departmentsLoading,
@@ -363,6 +393,9 @@ const AdminSettings = () => {
         case "people":
           await deleteUser(item.id);
           break;
+        case "suppliers":
+          await deleteSupplier(item.id);
+          break;
         default:
           return null;
       }
@@ -377,6 +410,7 @@ const AdminSettings = () => {
       deleteInventory,
       deleteFormTemplate,
       deleteUser,
+      deleteSupplier,
     ],
   );
 
@@ -537,6 +571,26 @@ const AdminSettings = () => {
         setEditingUser(null);
       },
     },
+    {
+      id: "suppliers",
+      title: editingSupplier ? "Update Supplier" : "Add Supplier",
+      description: editingSupplier ? "Update existing supplier" : "Add a new supplier",
+      FormComponent: () => (
+        <SupplierForm
+          initialData={editingSupplier || undefined}
+          onSubmitSuccess={() => {
+            closeSupplier();
+            setEditingSupplier(null);
+            refreshSuppliers();
+          }}
+        />
+      ),
+      isOpen: isSupplierOpen,
+      onClose: () => {
+        closeSupplier();
+        setEditingSupplier(null);
+      },
+    },
   ], [
     editingModel,
     closeModel,
@@ -570,6 +624,11 @@ const AdminSettings = () => {
     closeUser,
     setEditingUser,
     isUserOpen,
+    editingSupplier,
+    closeSupplier,
+    setEditingSupplier,
+    isSupplierOpen,
+    refreshSuppliers,
   ]);
 
   const columns = useMemo(
@@ -593,6 +652,13 @@ const AdminSettings = () => {
         onUpdate: (departmentLocation: any) => {
           setEditingLocation(departmentLocation);
           onLocationOpen();
+        },
+      }),
+      suppliers: supplierColumns({
+        onDelete: (supplier: any) => deleteSupplier(supplier.id),
+        onUpdate: (supplier: any) => {
+          setEditingSupplier(supplier);
+          onSupplierOpen();
         },
       }),
       departments: departmentColumns({
@@ -640,8 +706,8 @@ const AdminSettings = () => {
       onStatusLabelOpen,
       onInventoryOpen,
       onFormTemplateOpen,
-      deleteUser,
-      onUserOpen,
+      deleteSupplier,
+      onSupplierOpen,
       deleteFormTemplate,
     ],
   );
@@ -658,6 +724,7 @@ const AdminSettings = () => {
     "report-storage": false,
     "company-settings": false,
     people: usersLoading,
+    suppliers: suppliersLoading,
   };
 
   const activeTabConfig = TABS.find((tab) => tab.id === activeTab);
@@ -785,6 +852,19 @@ const AdminSettings = () => {
         />
       );
     }
+    if (activeTab === "suppliers") {
+      const filteredSuppliers = (suppliers || []).filter((supplier) => {
+        const query = searchQuery.toLowerCase();
+        return supplier.name.toLowerCase().includes(query);
+      });
+      return (
+        <DataTable
+          columns={columns.suppliers}
+          data={filteredSuppliers}
+          isLoading={suppliersLoading}
+        />
+      );
+    }
     if (activeTab === "company-settings") {
       return <CompanySettings />;
     }
@@ -805,6 +885,7 @@ const AdminSettings = () => {
     canManageInventories: true,
     canManageAssetCategories: true,
     canManageUsers: true,
+    canManageSuppliers: true,
   };
 
   // Tab metadata for dynamic UI
@@ -916,6 +997,19 @@ const AdminSettings = () => {
       },
       permission: "canManageUsers",
     },
+    suppliers: {
+      addNewLabel: "Add New Supplier",
+      importTemplateUrl: "/suppliers-template.csv",
+      onAddNew: onSupplierOpen,
+      onImport: () => {
+        setImportConfig({
+          ...loneeUserImportConfig, // Assuming a similar import config for suppliers
+          companyId: companyId || "",
+        });
+        setImportDialogOpen(true);
+      },
+      permission: "canManageSuppliers",
+    },
   };
 
   // Helper type guard for supported tabs
@@ -972,6 +1066,7 @@ const AdminSettings = () => {
               | "inventory"
               | "statusLabel"
               | "assetCategory"
+              | "supplier"
           }
         />
       )}

@@ -95,6 +95,7 @@ interface BulkImportDialogProps {
     | "model"
     | "inventory"
     | "statusLabel"
+    | "supplier"
     | "assetCategory"; // NEW: context-aware import type
 }
 

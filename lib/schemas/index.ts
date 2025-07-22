@@ -335,6 +335,7 @@ export const statusLabelSchema = z.object({
   colorCode: z.string().optional(),
   isArchived: z.boolean().optional(),
   allowLoan: z.boolean().optional(),
+  active: z.boolean().optional(),
 });
 
 export const kitSchema = z.object({
@@ -491,6 +492,7 @@ export const supplierSchema = z.object({
   notes: z.string().optional(),
   name: z.string().min(1, "Company name is required"),
   ...addressFields,
+  active: z.boolean().default(true),
 });
 
 export const userSchema = z.object({

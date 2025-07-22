@@ -20,6 +20,8 @@ import type { StatusLabel } from "@prisma/client";
 import CustomInput from "@/components/CustomInput";
 import CustomColorPicker from "@/components/CustomColorPicker";
 import CustomSwitch from "@/components/CustomSwitch";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 
 import { statusLabelSchema } from "@/lib/schemas";
 import { useStatusLabelsQuery } from "@/hooks/queries/useStatusLabelsQuery";
@@ -41,7 +43,7 @@ export default function StatusLabelForm({
   const { createStatusLabel, updateStatusLabel, isCreating, isUpdating } =
     useStatusLabelsQuery();
 
-  const form = useForm<FormValues>({
+  const form = useForm<FormValues & { active?: boolean }>({
     resolver: zodResolver(statusLabelSchema),
     defaultValues: {
       name: initialData?.name ?? "",
@@ -49,6 +51,7 @@ export default function StatusLabelForm({
       colorCode: initialData?.colorCode ?? "#000000",
       isArchived: initialData?.isArchived ?? false,
       allowLoan: initialData?.allowLoan ?? true,
+      active: initialData?.active ?? true,
     },
   });
 
@@ -156,6 +159,15 @@ export default function StatusLabelForm({
           label="Allow Loan"
           disabled={isLoading}
         />
+
+        {initialData && (
+          <CustomSwitch
+            control={form.control}
+            name="active"
+            label="Is Active"
+            disabled={isLoading}
+          />
+        )}
 
         <div className="flex justify-end space-x-2 pt-4">
           <Button

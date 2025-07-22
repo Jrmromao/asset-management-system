@@ -172,6 +172,7 @@ export const update = withAuth(
         ...(validation.data.addressLine2 && {
           addressLine2: validation.data.addressLine2,
         }),
+        ...(typeof validation.data.active === "boolean" ? { active: validation.data.active } : {}),
       };
 
       // Update supplier

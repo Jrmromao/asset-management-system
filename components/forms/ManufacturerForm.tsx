@@ -15,6 +15,7 @@ import { useManufacturerUIStore } from "@/lib/stores";
 import { useManufacturerQuery } from "@/hooks/queries";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import CustomSwitch from "../CustomSwitch";
 
 const ManufacturerForm = ({
   initialData,
@@ -119,16 +120,13 @@ const ManufacturerForm = ({
           control={form.control}
           type="email"
         />
-        {initialData && (
-          <div className="flex items-center gap-3 pt-4">
-            <Label htmlFor="active-toggle">Is Active</Label>
-            <Switch
-              id="active-toggle"
-              checked={form.watch("active")}
-              onCheckedChange={(checked: boolean) => form.setValue("active", checked)}
-              disabled={isPending}
-            />
-          </div>
+         {initialData && (
+          <CustomSwitch
+            control={form.control}
+            name="active"
+            label="Is Active"
+            disabled={isPending}
+          />
         )}
         <div className="flex space-x-2">
           <Button type="submit" className="w-24" disabled={isPending}>

@@ -46,6 +46,7 @@ export function useSupplierQuery() {
     isLoading,
     error,
     createItem: createSupplier,
+    updateItem: updateSupplier,
     isCreating,
     refresh,
   } = genericQuery();
@@ -55,7 +56,9 @@ export function useSupplierQuery() {
     isLoading,
     error,
     createSupplier,
+    updateSupplier,
     isCreating,
     refresh,
+    deleteItem: deleteSupplier,
   };
 }
