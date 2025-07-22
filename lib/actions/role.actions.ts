@@ -119,7 +119,9 @@ export async function getAll(): Promise<AuthResponse<Role[]>> {
     }
 
     console.log("🔍 [getAll] Querying roles for company:", companyId);
-    const roles = await prisma.role.findMany({
+    
+    // First, get company-specific roles
+    const companyRoles = await prisma.role.findMany({
       where: {
         companyId: companyId,
       },
@@ -132,6 +134,31 @@ export async function getAll(): Promise<AuthResponse<Role[]>> {
         },
       },
     });
+
+    // Get global roles (excluding Super Admin)
+    const globalRoles = await prisma.role.findMany({
+      where: {
+        isGlobal: true,
+        name: { not: "Super Admin" },
+      },
+      orderBy: {
+        name: "asc",
+      },
+      include: {
+        _count: {
+          select: { users: true },
+        },
+      },
+    });
+
+    // Create a map of company role names to prioritize them
+    const companyRoleNames = new Set(companyRoles.map(role => role.name));
+    
+    // Filter out global roles that have company equivalents
+    const filteredGlobalRoles = globalRoles.filter(role => !companyRoleNames.has(role.name));
+    
+    // Combine company roles first, then filtered global roles
+    const roles = [...companyRoles, ...filteredGlobalRoles];
 
     console.log("✅ [getAll] Found roles:", roles.length);
     return { success: true, data: parseStringify(roles) };

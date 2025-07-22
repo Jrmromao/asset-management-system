@@ -78,6 +78,7 @@ import { DataTable } from "@/components/tables/DataTable/data-table";
 import SettingsHeader from "@/components/settings/SettingsHeader";
 import { peopleColumns } from "@/components/tables/PeopleColumns";
 import UserForm from "@/components/forms/UserForm";
+import UserEditModalForm from "@/components/forms/UserEditModalForm";
 import BulkImportDialog from "@/components/forms/BulkImportDialog";
 import { loneeUserImportConfig } from "@/config/loneeUserImportConfig";
 import { BulkImportConfig } from "@/types/importConfig";
@@ -614,7 +615,17 @@ const AdminSettings = ({ activeTab: initialActiveTab }: AdminSettingsProps) => {
       id: "people",
       title: editingUser ? "Update User" : "Add User",
       description: editingUser ? "Update existing user" : "Add a new user",
-      FormComponent: () => <UserForm />,
+      FormComponent: () => editingUser ? (
+        <UserEditModalForm 
+          user={editingUser}
+          onSubmitSuccess={() => {
+            closeUser();
+            setEditingUser(null);
+          }}
+        />
+      ) : (
+        <UserForm />
+      ),
       isOpen: isUserOpen,
       onClose: () => {
         closeUser();
@@ -1043,7 +1054,10 @@ const AdminSettings = ({ activeTab: initialActiveTab }: AdminSettingsProps) => {
     people: {
       addNewLabel: "Add New User",
       importTemplateUrl: "/users-template.csv",
-      onAddNew: onUserOpen,
+      onAddNew: () => {
+        setEditingUser(null);
+        onUserOpen();
+      },
       onImport: () => {
         setImportConfig({
           ...loneeUserImportConfig,

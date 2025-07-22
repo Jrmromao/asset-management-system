@@ -229,6 +229,35 @@ export const updateUserNonAuthDetails = async (
   >,
 ): Promise<{ success: boolean; error?: string; data?: PrismaUser }> => {
   try {
+    // Get current user to check if we're activating a user
+    const currentUser = await prisma.user.findUnique({
+      where: { id },
+      select: { active: true, companyId: true },
+    });
+
+    if (!currentUser) {
+      return {
+        success: false,
+        error: "User not found",
+      };
+    }
+
+    // Check if we're activating a user and if it would exceed quota
+    const isActivatingUser = data.active === true && !currentUser.active;
+    
+    if (isActivatingUser) {
+      // Import the quota checking function
+      const { canAddActiveUser } = await import("@/lib/services/usage.service");
+      const quotaCheck = await canAddActiveUser(currentUser.companyId);
+      
+      if (!quotaCheck.allowed) {
+        return {
+          success: false,
+          error: `Cannot activate user. You've reached your active user limit (${quotaCheck.used}/${quotaCheck.limit}). Please upgrade your plan to add more users.`,
+        };
+      }
+    }
+
     const updatedUser = await prisma.user.update({
       where: { id },
       data: {

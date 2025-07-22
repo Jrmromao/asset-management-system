@@ -72,9 +72,30 @@ export const peopleColumns = ({
     header: "Role",
     cell: ({ row }) => {
       const role = row.original.role;
+      
+      const getRoleVariant = (roleName: string) => {
+        const name = roleName?.toLowerCase();
+        if (name?.includes('admin') || name?.includes('super')) {
+          return 'destructive' as const; // Red for admin roles
+        }
+        if (name?.includes('manager') || name?.includes('lead')) {
+          return 'default' as const; // Blue for manager roles
+        }
+        if (name?.includes('user') || name?.includes('employee')) {
+          return 'secondary' as const; // Gray for regular users
+        }
+        if (name?.includes('lonee')) {
+          return 'outline' as const; // Outline for lonee
+        }
+        return 'outline' as const; // Default for other roles
+      };
+      
       return (
         <div className="py-2">
-          <Badge variant="outline" className="text-xs">
+          <Badge 
+            variant={getRoleVariant(role?.name)} 
+            className="text-xs font-medium"
+          >
             {role?.name || "—"}
           </Badge>
         </div>
