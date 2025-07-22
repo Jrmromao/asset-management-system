@@ -530,18 +530,19 @@ const FormTemplateCreator = ({
           </div>
         </div>
 
-        {/* Fixed Footer */}
+        {/* Form Actions */}
         <div className="border-t px-6 py-4 bg-white">
-          <div className="flex justify-end gap-4">
+          <div className="flex justify-end space-x-2">
             <Button
               type="button"
               variant="outline"
+              className="w-24"
               onClick={() => form.reset()}
               disabled={isPending}
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isPending}>
+            <Button type="submit" disabled={isPending} className="w-24">
               {isPending ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />

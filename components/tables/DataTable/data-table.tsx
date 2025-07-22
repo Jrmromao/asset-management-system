@@ -103,8 +103,8 @@ export function DataTable<TData, TValue>({
   return (
     <div className="w-full">
       {/* Desktop View */}
-      <div className="hidden md:block rounded-lg border border-slate-200 dark:border-gray-700 shadow-sm overflow-hidden">
-        <Table>
+      <div className="hidden md:block rounded-lg border border-slate-200 dark:border-gray-700 shadow-sm overflow-x-auto">
+        <Table className="min-w-[800px]">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id} className="hover:bg-transparent">

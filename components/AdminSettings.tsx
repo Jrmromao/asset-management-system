@@ -6,6 +6,7 @@ import React, {
   useEffect,
   useContext,
 } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   BadgeCheck,
   Boxes,
@@ -22,6 +23,9 @@ import {
   Target,
   Users,
   ShoppingCart,
+  UserCheck,
+  Mail,
+  UserX,
 } from "lucide-react";
 import {
   useDepartmentQuery,
@@ -90,6 +94,7 @@ import { useSupplierQuery } from "@/hooks/queries/useSupplierQuery";
 import { Supplier } from "@prisma/client";
 import { supplierColumns } from "@/components/tables/SupplierColumns";
 import SupplierForm from "@/components/forms/SupplierForm";
+import { toast } from "sonner";
 
 interface Tab {
   id: TabId;
@@ -168,7 +173,7 @@ const TABS: Tab[] = [
     id: "people",
     label: "People",
     icon: Users,
-    description: "Manage users and team members",
+    description: "Manage team members, roles, and user permissions",
   },
   {
     id: "status-label",
@@ -197,13 +202,58 @@ const TABS: Tab[] = [
   },
 ];
 
-const AdminSettings = () => {
+interface AdminSettingsProps {
+  activeTab?: string;
+}
+
+const AdminSettings = ({ activeTab: initialActiveTab }: AdminSettingsProps) => {
   const { user } = useContext(UserContext);
   const companyId = user?.companyId || "";
-  const [activeTab, setActiveTab] = useState<TabId>("asset-categories");
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const urlTab = searchParams.get('tab') as TabId;
+  const validTabs = TABS.map(tab => tab.id);
+  const defaultTab: TabId = "asset-categories";
+  
+  // Validate the tab from URL
+  const validatedUrlTab = urlTab && validTabs.includes(urlTab) ? urlTab : null;
+  const [activeTab, setActiveTab] = useState<TabId>(validatedUrlTab || (initialActiveTab as TabId) || defaultTab);
+
+  // Handle initial load and URL validation
+  useEffect(() => {
+    if (!urlTab) {
+      // No tab in URL, redirect to default
+      router.push(`/settings?tab=${defaultTab}`);
+    } else if (!validTabs.includes(urlTab)) {
+      // Invalid tab in URL, redirect to default
+      router.push(`/settings?tab=${defaultTab}`);
+    }
+  }, [urlTab, router, validTabs, defaultTab]);
+
+  // Update activeTab when URL changes
+  useEffect(() => {
+    if (validatedUrlTab && validatedUrlTab !== activeTab) {
+      setActiveTab(validatedUrlTab);
+    }
+  }, [validatedUrlTab, activeTab]);
+
+  // Function to handle tab changes
+  const handleTabChange = (tabId: TabId) => {
+    if (validTabs.includes(tabId)) {
+      setActiveTab(tabId);
+      router.push(`/settings?tab=${tabId}`, { scroll: false });
+    }
+  };
+
+  // Helper function to get tab display name
+  const getTabDisplayName = (tabId: TabId) => {
+    const tab = TABS.find(t => t.id === tabId);
+    return tab ? tab.label : tabId.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+  };
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [configAreasCollapsed, setConfigAreasCollapsed] = useState(false);
   const [llmStatus, setLlmStatus] = useState<{
     available: number;
     total: number;
@@ -691,7 +741,7 @@ const AdminSettings = () => {
       }),
       people: peopleColumns({
         onDelete: (user: User) => deleteUser(user.id),
-        onView: (user: User) => {
+        onUpdate: (user: User) => {
           setEditingUser(user);
           onUserOpen();
         },
@@ -836,20 +886,26 @@ const AdminSettings = () => {
       );
     }
     if (activeTab === "people") {
-      const filteredUsers = (users || []).filter((user: User) => {
+      const filteredUsers = (users || []).filter((user: any) => {
         const query = searchQuery.toLowerCase();
         return (
           (user.name && user.name.toLowerCase().includes(query)) ||
           (user.email && user.email.toLowerCase().includes(query)) ||
-          (user.employeeId && user.employeeId.toLowerCase().includes(query))
+          (user.employeeId && user.employeeId.toLowerCase().includes(query)) ||
+          (user.title && user.title.toLowerCase().includes(query)) ||
+          (user.role?.name && user.role.name.toLowerCase().includes(query)) ||
+          (user.department?.name && user.department.name.toLowerCase().includes(query))
         );
       });
+
       return (
-        <DataTable
-          columns={columns.people}
-          data={filteredUsers}
-          isLoading={isLoadingData}
-        />
+        <div className="overflow-x-auto">
+          <DataTable
+            columns={columns.people}
+            data={filteredUsers as any}
+            isLoading={isLoadingData}
+          />
+        </div>
       );
     }
     if (activeTab === "suppliers") {
@@ -1112,7 +1168,7 @@ const AdminSettings = () => {
                     return (
                       <button
                         key={tab.id}
-                        onClick={() => setActiveTab(tab.id)}
+                        onClick={() => handleTabChange(tab.id)}
                         className={`w-full group flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 ${
                           isActive
                             ? "bg-slate-900 text-white shadow-lg shadow-slate-900/20"
@@ -1237,16 +1293,16 @@ const AdminSettings = () => {
                     <div className="space-y-6">
                       {/* Enhanced Table Header */}
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-4">
                           {activeTab !== "company-settings" && (
                             <div className="relative">
                               <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
                               <input
                                 type="text"
-                                placeholder="Search..."
+                                placeholder="Search users..."
                                 value={searchQuery}
                                 onChange={(e) => handleSearch(e.target.value)}
-                                className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent outline-none transition-all text-sm w-64"
+                                className="pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all text-sm w-80 bg-white shadow-sm"
                               />
                             </div>
                           )}
@@ -1261,7 +1317,7 @@ const AdminSettings = () => {
                       </div>
 
                       {/* Enhanced Data Table */}
-                      <div className="border border-gray-200 rounded-xl overflow-hidden bg-white">
+                      <div className="border border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm">
                         {renderDataTable()}
                       </div>
                     </div>

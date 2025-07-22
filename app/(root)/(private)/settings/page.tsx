@@ -9,10 +9,16 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import Link from "next/link";
-import HeaderBox from "@/components/HeaderBox";
 import { Settings } from "lucide-react";
 
-const SettingsPage = (): JSX.Element => {
+interface SettingsPageProps {
+  searchParams: Promise<{ tab?: string }>;
+}
+
+const SettingsPage = ({ searchParams }: SettingsPageProps): JSX.Element => {
+  const resolvedSearchParams = React.use(searchParams);
+  const activeTab = resolvedSearchParams.tab || "asset-categories";
+
   return (
     <div className="p-8 space-y-6">
       {/* Breadcrumb */}
@@ -24,10 +30,21 @@ const SettingsPage = (): JSX.Element => {
             </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbLink asChild>
+              <Link href={`/settings?tab=${activeTab}`}>
+                {activeTab === 'asset-categories' ? 'Asset Categories' : 
+                 activeTab === 'status-label' ? 'Status Labels' :
+                 activeTab === 'company-settings' ? 'Company Settings' :
+                 activeTab === 'report-storage' ? 'Report Storage' :
+                 activeTab.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+              </Link>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
 
-      <AdminSettings />
+      <AdminSettings activeTab={activeTab} />
     </div>
   );
 };

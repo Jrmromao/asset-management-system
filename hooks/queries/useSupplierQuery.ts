@@ -3,10 +3,10 @@ import { createGenericQuery } from "@/hooks/queries/useQueryFactory";
 import { z } from "zod";
 import { supplierSchema } from "@/lib/schemas";
 import {
-  createSupplier,
-  deleteSupplier,
+  createSupplier as createSupplierAction,
+  deleteSupplier as deleteSupplierAction,
   getAllSuppliers,
-  updateSupplier,
+  updateSupplier as updateSupplierAction,
 } from "@/lib/actions/supplier.actions";
 
 export const MODEL_KEY = ["suppliers"] as const;
@@ -23,14 +23,17 @@ export function useSupplierQuery() {
         return await getAllSuppliers();
       },
       insert: async (data: CreateSupplierInput) => {
-        return await createSupplier(data);
+        return await createSupplierAction(data);
       },
       update: async (id: string, data: Partial<Supplier>) => {
-        const result = await updateSupplier(id, data as any);
+        const result = await updateSupplierAction(id, data as any);
+        if (!result.success) {
+          throw new Error(result.error || "Failed to update supplier");
+        }
         return result as ActionResponse<Supplier>;
       },
       delete: async (id: string) => {
-        return await deleteSupplier(id);
+        return await deleteSupplierAction(id);
       },
     },
     {
@@ -59,6 +62,6 @@ export function useSupplierQuery() {
     updateSupplier,
     isCreating,
     refresh,
-    deleteItem: deleteSupplier,
+    deleteItem: deleteSupplierAction,
   };
 }

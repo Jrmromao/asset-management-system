@@ -251,7 +251,7 @@ const People = () => {
 
   // Memoized columns to prevent unnecessary re-renders
   const columns = useMemo(() => {
-    return peopleColumns({ onDelete, onView }) as ColumnDef<UserWithRole>[];
+    return peopleColumns({ onDelete, onUpdate: onView }) as ColumnDef<UserWithRole>[];
   }, [onDelete, onView]);
 
   // Debounced search term
