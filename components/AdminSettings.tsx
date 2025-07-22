@@ -241,6 +241,7 @@ const AdminSettings = () => {
     onClose: closeDepartment,
     onOpen: onDepartmentOpen,
   } = useDepartmentUIStore();
+  
   const {
     isOpen: isFormTemplateOpen,
     onClose: closeFormTemplate,
@@ -379,7 +380,7 @@ const AdminSettings = () => {
     ],
   );
 
-  const MODAL_CONFIGS: ModalConfig[] = [
+  const MODAL_CONFIGS = useMemo(() => [
     {
       id: "models",
       title: editingModel ? "Update Model" : "Add Model",
@@ -536,7 +537,40 @@ const AdminSettings = () => {
         setEditingUser(null);
       },
     },
-  ];
+  ], [
+    editingModel,
+    closeModel,
+    setEditingModel,
+    isModelOpen,
+    editingManufacturer,
+    closeManufacturer,
+    setEditingManufacturer,
+    isManufacturerOpen,
+    editingLocation,
+    closeLocation,
+    setEditingLocation,
+    isLocationOpen,
+    editingDepartment,
+    closeDepartment,
+    setEditingDepartment,
+    isDepartmentOpen,
+    editingStatusLabel,
+    closeStatusLabel,
+    setEditingStatusLabel,
+    isStatusLabelOpen,
+    editingInventory,
+    closeInventory,
+    setEditingInventory,
+    isInventoryOpen,
+    editingFormTemplate,
+    closeFormTemplate,
+    setEditingFormTemplate,
+    isFormTemplateOpen,
+    editingUser,
+    closeUser,
+    setEditingUser,
+    isUserOpen,
+  ]);
 
   const columns = useMemo(
     () => ({

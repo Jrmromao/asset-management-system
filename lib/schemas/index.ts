@@ -452,6 +452,7 @@ export const manufacturerSchema = z.object({
     .string()
     .email({ message: "Please enter a valid email" })
     .optional(),
+  active: z.boolean().default(true),
 });
 
 export const modelSchema = z.object({
@@ -468,14 +469,17 @@ export const modelSchema = z.object({
 export const locationSchema = z.object({
   ...nameField("Location name"),
   ...addressFields,
+  active: z.boolean().default(true),
 });
 
 export const inventorySchema = z.object({
   name: z.string().min(1, "Name is required"),
+  active: z.boolean().default(true),
 });
 
 export const departmentSchema = z.object({
   ...nameField("Department"),
+  active: z.boolean().default(true),
 });
 
 export const supplierSchema = z.object({

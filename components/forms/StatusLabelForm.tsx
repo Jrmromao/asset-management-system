@@ -52,7 +52,10 @@ export default function StatusLabelForm({
     },
   });
 
+  const initialName = initialData?.name ?? "";
   const watchedName = form.watch("name");
+  const shouldValidateName = watchedName !== initialName;
+
   const {
     isValid: isNameUnique,
     message: nameErrorMessage,
@@ -62,6 +65,7 @@ export default function StatusLabelForm({
     field: "Name",
     value: watchedName,
     excludeId: initialData?.id,
+    enabled: shouldValidateName,
   });
 
   const isLoading = isCreating || isUpdating;
@@ -110,10 +114,10 @@ export default function StatusLabelForm({
                   required
                 />
               </FormControl>
-              {isNameChecking && (
+              {shouldValidateName && isNameChecking && (
                 <p className="text-sm text-gray-500">Checking...</p>
               )}
-              {!isNameUnique && (
+              {shouldValidateName && !isNameUnique && (
                 <p className="text-sm font-medium text-destructive">
                   {nameErrorMessage}
                 </p>
@@ -164,12 +168,12 @@ export default function StatusLabelForm({
           </Button>
           <Button
             type="submit"
-            disabled={isLoading || isNameChecking || !isNameUnique}
+            disabled={isLoading || (shouldValidateName && (isNameChecking || !isNameUnique))}
           >
-            {isLoading || isNameChecking ? (
+            {isLoading || (shouldValidateName && isNameChecking) ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : null}
-            {isNameChecking
+            {shouldValidateName && isNameChecking
               ? "Validating..."
               : initialData
                 ? "Update"

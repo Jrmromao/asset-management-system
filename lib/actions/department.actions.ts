@@ -214,6 +214,11 @@ export const update = withAuth(
         };
       }
 
+      console.log(" [department.actions] update - Updating department with data:", {
+        id,
+        data,
+      });
+
       const department = await prisma.department.update({
         where: {
           id,
@@ -221,6 +226,7 @@ export const update = withAuth(
         },
         data: {
           name: data.name,
+          active: data.active,
         },
       });
 

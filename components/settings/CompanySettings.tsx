@@ -368,7 +368,7 @@ function BillingTab() {
           </span>
         </div>
         {/* Billing History */}
-        <div>
+    <div>
           <div className="font-semibold mb-2 flex items-center gap-2">
             <Receipt className="w-5 h-5" /> Billing History
           </div>

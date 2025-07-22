@@ -151,6 +151,7 @@ export const update = withAuth(
         },
         data: {
           name: data.name,
+          ...(typeof data.active === "boolean" ? { active: data.active } : {}),
         },
       });
       revalidatePath("/inventories");

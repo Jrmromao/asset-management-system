@@ -27,9 +27,15 @@ export function DialogContainer({
   className,
   body,
 }: IProps) {
+  // Only close the dialog when open becomes false
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen) {
+      onOpenChange(false);
+    }
+  };
   return (
     <div className={"asset-dialog"}>
-      <Dialog open={open} onOpenChange={onOpenChange}>
+      <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogContent className={className ? className + " max-w-3xl w-full" : "max-w-3xl w-full"}>
           <DialogHeader>
             <DialogTitle>{title}</DialogTitle>

@@ -14,6 +14,7 @@ interface UseRealTimeValidationOptions {
   debounceMs?: number;
   minLength?: number;
   required?: boolean;
+  enabled?: boolean;
 }
 
 export function useRealTimeValidation({
@@ -24,6 +25,7 @@ export function useRealTimeValidation({
   debounceMs = 500,
   minLength = 2,
   required = true,
+  enabled = true,
 }: UseRealTimeValidationOptions): ValidationResult {
   const [result, setResult] = useState<ValidationResult>({
     isValid: true,
@@ -35,6 +37,10 @@ export function useRealTimeValidation({
 
   const validate = useCallback(
     async (val: string) => {
+      if (!enabled) {
+        setResult({ isValid: true, message: "", isChecking: false });
+        return;
+      }
       // Basic validation
       if (required && !val.trim()) {
         setResult({
@@ -106,10 +112,14 @@ export function useRealTimeValidation({
         });
       }
     },
-    [endpoint, field, excludeId, minLength, required],
+    [endpoint, field, excludeId, minLength, required, enabled],
   );
 
   useEffect(() => {
+    if (!enabled) {
+      setResult({ isValid: true, message: "", isChecking: false });
+      return;
+    }
     // Clear previous timeout
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
@@ -126,7 +136,7 @@ export function useRealTimeValidation({
         clearTimeout(timeoutRef.current);
       }
     };
-  }, [value, validate, debounceMs]);
+  }, [value, validate, debounceMs, enabled]);
 
   return result;
 }

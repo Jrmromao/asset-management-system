@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useTransition } from "react";
+import React, { useTransition, useState } from "react";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -13,6 +13,8 @@ import { departmentSchema } from "@/lib/schemas";
 import { useDepartmentUIStore } from "@/lib/stores/useDepartmentUIStore";
 import { useDepartmentQuery } from "@/hooks/queries/useDepartmentQuery";
 import { FormProps } from "@/types/form";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 
 const DepartmentForm = ({
   initialData,
@@ -20,17 +22,20 @@ const DepartmentForm = ({
 }: FormProps<Department>) => {
   const [isPending, startTransition] = useTransition();
   const { onClose } = useDepartmentUIStore();
-  const { createDepartment, updateDepartment, isCreating, isUpdating } =
+  const { createDepartment, updateDepartment, isCreating, isUpdating} =
     useDepartmentQuery();
+  
+  const { onClose: closeDepartment } = useDepartmentUIStore();
 
-  const form = useForm<z.infer<typeof departmentSchema>>({
+  const form = useForm<z.infer<typeof departmentSchema> & { active: boolean }>({
     resolver: zodResolver(departmentSchema),
     defaultValues: {
       name: initialData?.name || "",
+      active: initialData?.active ?? true,
     },
   });
 
-  const onSubmit = async (data: z.infer<typeof departmentSchema>) => {
+  const onSubmit = async (data: z.infer<typeof departmentSchema> & { active: boolean }) => {
     startTransition(async () => {
       try {
         if (initialData) {
@@ -38,7 +43,7 @@ const DepartmentForm = ({
             onSuccess: () => {
               toast.success("Department updated successfully");
               onSubmitSuccess?.();
-              onClose();
+              form.reset();
             },
             onError: (error: any) => {
               console.error("Error updating department:", error);
@@ -50,7 +55,7 @@ const DepartmentForm = ({
             onSuccess: () => {
               toast.success("Department created successfully");
               onSubmitSuccess?.();
-              onClose();
+              form.reset();
             },
             onError: (error: any) => {
               console.error("Error creating department:", error);
@@ -84,6 +89,18 @@ const DepartmentForm = ({
           disabled={isLoading}
           tooltip="A unique name for this department."
         />
+
+        {initialData && (
+          <div className="flex items-center gap-3 pt-4">
+            <Label htmlFor="active-toggle">Is Active</Label>
+            <Switch
+              id="active-toggle"
+              checked={form.watch("active")}
+              onCheckedChange={(checked: boolean) => form.setValue("active", checked)}
+              disabled={isLoading}
+            />
+          </div>
+        )}
 
         <div className="flex justify-end gap-4 pt-4">
           <Button

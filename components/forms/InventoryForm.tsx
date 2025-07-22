@@ -13,6 +13,8 @@ import { inventorySchema } from "@/lib/schemas";
 import { useInventoryUIStore } from "@/lib/stores/useInventoryUIStore";
 import { useInventoryQuery } from "@/hooks/queries/useInventoryQuery";
 import { FormProps } from "@/types/form";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 
 const InventoryForm = ({
   initialData,
@@ -24,15 +26,15 @@ const InventoryForm = ({
 
   const defaultValues = {
     name: initialData?.name ?? "",
+    active: initialData?.active ?? true,
   };
 
-
-  const form = useForm<z.infer<typeof inventorySchema>>({
+  const form = useForm<z.infer<typeof inventorySchema> & { active: boolean }>({
     resolver: zodResolver(inventorySchema),
     defaultValues,
   });
 
-  async function onSubmit(data: z.infer<typeof inventorySchema>) {
+  async function onSubmit(data: z.infer<typeof inventorySchema> & { active: boolean }) {
     console.log("🔍 [InventoryForm] onSubmit - Starting with data:", data);
 
     startTransition(async () => {
@@ -101,6 +103,18 @@ const InventoryForm = ({
           disabled={isPending}
           tooltip="A unique name for this Inventory"
         />
+
+        {initialData && (
+          <div className="flex items-center gap-3 pt-4">
+            <Label htmlFor="active-toggle">Is Active</Label>
+            <Switch
+              id="active-toggle"
+              checked={form.watch("active")}
+              onCheckedChange={(checked: boolean) => form.setValue("active", checked)}
+              disabled={isPending}
+            />
+          </div>
+        )}
 
         <div className="flex justify-end gap-4 pt-4">
           <Button

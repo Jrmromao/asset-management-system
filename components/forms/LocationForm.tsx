@@ -13,6 +13,8 @@ import { locationSchema } from "@/lib/schemas";
 import { useLocationUIStore } from "@/lib/stores/useLocationUIStore";
 import { useLocationQuery } from "@/hooks/queries/useLocationQuery";
 import { FormProps } from "@/types/form";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 
 const LocationForm = ({
   initialData,
@@ -31,11 +33,19 @@ const LocationForm = ({
     city: "",
     zip: "",
     country: "",
+    active: true,
   };
 
   const form = useForm<z.infer<typeof locationSchema>>({
     resolver: zodResolver(locationSchema),
-    defaultValues: emptyValues,
+    defaultValues: initialData
+      ? {
+          ...emptyValues,
+          ...initialData,
+          addressLine2: initialData.addressLine2 ?? "",
+          active: initialData.active ?? true,
+        }
+      : emptyValues,
   });
 
   // Set form values when initialData changes or component mounts
@@ -49,6 +59,7 @@ const LocationForm = ({
         city: initialData.city,
         zip: initialData.zip,
         country: initialData.country,
+        active: initialData.active ?? true,
       });
     } else {
       form.reset(emptyValues);
@@ -174,7 +185,17 @@ const LocationForm = ({
             required={true}
           />
         </div>
-
+        {initialData && (
+          <div className="flex items-center gap-3 pt-4">
+            <Label htmlFor="active-toggle">Is Active</Label>
+            <Switch
+              id="active-toggle"
+              checked={form.watch("active")}
+              onCheckedChange={(checked: boolean) => form.setValue("active", checked)}
+              disabled={isLoading}
+            />
+          </div>
+        )}
         <div className="flex justify-end gap-4 pt-4">
           <Button
             type="button"

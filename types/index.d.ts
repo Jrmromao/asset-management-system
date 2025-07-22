@@ -341,6 +341,7 @@ declare global {
     name: string;
     companyId?: string;
     company?: Company;
+    active: boolean;
   }
 
   interface Supplier extends BaseEntity, AddressFields {
@@ -357,6 +358,7 @@ declare global {
   interface DepartmentLocation extends BaseEntity, AddressFields {
     name: string;
     companyId?: string;
+    active: boolean;
   }
 
   interface Manufacturer extends BaseEntity {

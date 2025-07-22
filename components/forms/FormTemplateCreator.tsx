@@ -400,6 +400,7 @@ const FormTemplateCreator = ({
               form.reset();
               toast.success("Successfully updated form template");
               onSubmitSuccess?.();
+              closeTemplate();
             },
             onError: (error: any) => {
               console.error("Error updating form template:", error);
@@ -412,6 +413,7 @@ const FormTemplateCreator = ({
               form.reset();
               toast.success("Form template created successfully");
               onSubmitSuccess?.();
+              closeTemplate();
             },
             onError: (error) => {
               console.error("Error creating form template:", error);
