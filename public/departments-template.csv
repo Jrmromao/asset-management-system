@@ -1,2 +1,4 @@
-Name,Manager,Email,Active
-IT,Jane Doe,jane.doe@example.com,true 
+name,active
+IT,true
+Marketing,true
+Sales,false 

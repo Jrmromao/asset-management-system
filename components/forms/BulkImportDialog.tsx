@@ -260,6 +260,13 @@ export default function BulkImportDialog({
       // Extract columns from the first row or meta.fields
       const columns =
         parseResult.meta.fields || Object.keys(parseResult.data[0] || {});
+      console.log("[BulkImportDialog] Parsed CSV columns:", columns);
+      console.log("[BulkImportDialog] Parsed CSV data:", parseResult.data);
+      console.log(
+        "[BulkImportDialog] First row keys:",
+        parseResult.data[0] ? Object.keys(parseResult.data[0]) : [],
+      );
+      console.log("[BulkImportDialog] First row values:", parseResult.data[0]);
       setUploadedColumns(columns);
       setParsedData(parseResult.data);
       setStep("mapping");
@@ -274,15 +281,35 @@ export default function BulkImportDialog({
   };
 
   const handleMappingComplete = (mapping: Record<string, string | null>) => {
+    console.log(
+      "[BulkImportDialog] handleMappingComplete called with mapping:",
+      mapping,
+    );
+    console.log("[BulkImportDialog] Original parsed data:", parsedData);
+    console.log("[BulkImportDialog] Mapping entries:", Object.entries(mapping));
+
     setColumnMapping(mapping);
+
     // Transform parsedData using mapping
-    const mappedRows = parsedData.map((row) => {
+    const mappedRows = parsedData.map((row, index) => {
+      console.log(`[BulkImportDialog] Processing row ${index}:`, row);
       const mapped: Record<string, any> = {};
+
       Object.entries(mapping).forEach(([uploadedCol, templateField]) => {
-        if (templateField) mapped[templateField] = row[uploadedCol];
+        if (templateField) {
+          const value = row[uploadedCol];
+          console.log(
+            `[BulkImportDialog] Mapping ${uploadedCol} -> ${templateField} = ${value}`,
+          );
+          mapped[templateField] = value;
+        }
       });
+
+      console.log(`[BulkImportDialog] Mapped row ${index}:`, mapped);
       return mapped;
     });
+
+    console.log("[BulkImportDialog] All mapped rows:", mappedRows);
     setParsedData(mappedRows);
     setStep("preview");
   };
@@ -348,55 +375,112 @@ export default function BulkImportDialog({
   };
 
   const handleImport = async () => {
+    console.log("[BulkImportDialog] handleImport called");
+    console.log("[BulkImportDialog] columnMapping:", columnMapping);
+    console.log("[BulkImportDialog] parsedData:", parsedData);
+
     setIsProcessing(true);
     setImportProgress(0);
-    // Map parsedData using columnMapping
-    const mappedRows = parsedData.map((row, rowIndex) => {
-      const mapped: Record<string, any> = {};
-      // For each mapping, assign the value from the uploaded column to the mapped field
-      Object.entries(columnMapping).forEach(([uploadedCol, mappedField]) => {
-        if (mappedField) {
-          mapped[mappedField] = row[uploadedCol];
-        }
-      });
-      // Also copy any fields that were already present in the row (for dependencies, etc.)
-      Object.keys(row).forEach((key) => {
-        if (!(key in mapped)) {
-          mapped[key] = row[key];
-        }
-      });
-      // Add formTemplateId to each row
-      mapped.formTemplateId = selectedTemplateId;
 
-      // Map statusLabel to statusLabelId before import
-      if (mapped.statusLabel) {
-        const id = findStatusLabelId(mapped.statusLabel);
-        if (id) {
-          mapped.statusLabelId = id;
-          delete mapped.statusLabel;
-        } else {
-          // Add validation error for unmatched status label
-          setValidationErrors((prev) => [
-            ...prev,
-            {
-              row: rowIndex + 1,
-              column: "statusLabel",
-              message: `Unrecognized status label: ${mapped.statusLabel}`,
-            },
-          ]);
+    // For departments and other simple entities, the data should already be mapped
+    // For assets, we need to do additional processing
+    let finalData = parsedData;
+
+    if (config.entityType === "asset") {
+      // Map parsedData using columnMapping for assets
+      finalData = parsedData.map((row, rowIndex) => {
+        console.log(
+          `[BulkImportDialog] Processing asset row ${rowIndex}:`,
+          row,
+        );
+        const mapped: Record<string, any> = {};
+
+        // For each mapping, assign the value from the uploaded column to the mapped field
+        Object.entries(columnMapping).forEach(([uploadedCol, mappedField]) => {
+          if (mappedField) {
+            let value = row[uploadedCol];
+            console.log(
+              `[BulkImportDialog] Mapping ${uploadedCol} -> ${mappedField} = ${value}`,
+            );
+
+            // Handle boolean field transformation for departments and other entities
+            if (mappedField === "active" && typeof value === "string") {
+              value = value.toLowerCase();
+              if (value === "true" || value === "1" || value === "yes") {
+                value = true;
+              } else if (value === "false" || value === "0" || value === "no") {
+                value = false;
+              } else {
+                value = true; // default to true
+              }
+            }
+
+            mapped[mappedField] = value;
+          }
+        });
+
+        // Only add formTemplateId for assets
+        if (selectedTemplateId) {
+          mapped.formTemplateId = selectedTemplateId;
         }
-      }
-      return mapped;
-    });
+
+        // Map statusLabel to statusLabelId before import (only for assets)
+        if (mapped.statusLabel) {
+          const id = findStatusLabelId(mapped.statusLabel);
+          if (id) {
+            mapped.statusLabelId = id;
+            delete mapped.statusLabel;
+          } else {
+            // Add validation error for unmatched status label
+            setValidationErrors((prev) => [
+              ...prev,
+              {
+                row: rowIndex + 1,
+                column: "statusLabel",
+                message: `Unrecognized status label: ${mapped.statusLabel}`,
+              },
+            ]);
+          }
+        }
+
+        return mapped;
+      });
+    } else {
+      // For departments and other simple entities, just handle boolean transformation
+      finalData = parsedData.map((row, rowIndex) => {
+        console.log(
+          `[BulkImportDialog] Processing simple entity row ${rowIndex}:`,
+          row,
+        );
+        const processed: Record<string, any> = { ...row };
+
+        // Handle boolean field transformation
+        if (processed.active && typeof processed.active === "string") {
+          const value = processed.active.toLowerCase();
+          if (value === "true" || value === "1" || value === "yes") {
+            processed.active = true;
+          } else if (value === "false" || value === "0" || value === "no") {
+            processed.active = false;
+          } else {
+            processed.active = true; // default to true
+          }
+        }
+
+        console.log(`[BulkImportDialog] Processed row ${rowIndex}:`, processed);
+        return processed;
+      });
+    }
+
     // If there are validation errors, do not proceed
     if (validationErrors.length > 0) {
       setIsProcessing(false);
       toast.error("Please fix validation errors before importing.");
       return;
     }
+
     try {
-      console.log("[BULK IMPORT] Sending mappedRows to onImport:", mappedRows);
-      await onImport(mappedRows);
+      console.log("[BULK IMPORT] Sending finalData to onImport:", finalData);
+      await onImport(finalData);
       setImportResult({
         success: true,
         message: "All records imported successfully!",
@@ -929,10 +1013,7 @@ export default function BulkImportDialog({
       <SchemaMappingStep
         uploadedColumns={uploadedColumns}
         templateFields={allTemplateFields}
-        onMappingComplete={(mapping) => {
-          setColumnMapping(mapping);
-          setStep("preview");
-        }}
+        onMappingComplete={handleMappingComplete}
       />
       <div className="flex justify-between mt-6">
         <Button variant="outline" onClick={() => setStep("upload")}>

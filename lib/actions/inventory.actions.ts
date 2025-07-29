@@ -561,3 +561,162 @@ export const getMaintenanceSchedule = withAuth(
     }
   },
 );
+
+export const bulkCreate = withAuth(
+  async (
+    user,
+    inventories: Array<{ name: string; active?: boolean }>,
+  ): Promise<
+    AuthResponse<{
+      successCount: number;
+      errorCount: number;
+      errors: Array<{ row: number; error: string }>;
+    }>
+  > => {
+    console.log(" [inventory.actions] bulkCreate - Starting with user:", {
+      userId: user?.id,
+      privateMetadata: user?.privateMetadata,
+      hasCompanyId: !!user?.privateMetadata?.companyId,
+      companyId: user?.privateMetadata?.companyId,
+    });
+
+    try {
+      // Get companyId from private metadata
+      const companyId = user.privateMetadata?.companyId;
+
+      if (!companyId) {
+        console.error(
+          "❌ [inventory.actions] bulkCreate - User missing companyId in private metadata:",
+          {
+            user: user?.id,
+            privateMetadata: user?.privateMetadata,
+          },
+        );
+        return {
+          success: false,
+          data: null as any,
+          error: "User is not associated with a company",
+        };
+      }
+
+      let successCount = 0;
+      let errorCount = 0;
+      const errors: Array<{ row: number; error: string }> = [];
+
+      // Process each inventory
+      for (let i = 0; i < inventories.length; i++) {
+        const inventoryData = inventories[i];
+        console.log(
+          `[Inventory Actions] Processing inventory ${i + 1}:`,
+          inventoryData,
+        );
+
+        try {
+          // Validate the inventory data
+          console.log(`[Inventory Actions] Validating inventory data:`, {
+            name: inventoryData.name,
+            active: inventoryData.active ?? true,
+          });
+
+          const validation = inventorySchema.safeParse({
+            name: inventoryData.name,
+            active: inventoryData.active ?? true,
+          });
+
+          if (!validation.success) {
+            console.log(
+              `[Inventory Actions] Validation failed for row ${i + 1}:`,
+              validation.error.errors,
+            );
+            errors.push({
+              row: i + 1,
+              error: validation.error.errors[0].message,
+            });
+            errorCount++;
+            continue;
+          }
+
+          // Check if inventory already exists
+          const existingInventory = await prisma.inventory.findFirst({
+            where: {
+              name: inventoryData.name,
+              companyId,
+            },
+          });
+
+          if (existingInventory) {
+            console.log(
+              `[Inventory Actions] Inventory "${inventoryData.name}" already exists`,
+            );
+            errors.push({
+              row: i + 1,
+              error: `Inventory "${inventoryData.name}" already exists`,
+            });
+            errorCount++;
+            continue;
+          }
+
+          // Create the inventory
+          const inventory = await prisma.inventory.create({
+            data: {
+              name: inventoryData.name,
+              active: inventoryData.active ?? true,
+              companyId,
+            },
+          });
+
+          console.log(
+            `[Inventory Actions] Successfully created inventory:`,
+            inventory.name,
+          );
+          successCount++;
+
+          // Create audit log
+          await createAuditLog({
+            companyId,
+            action: "INVENTORY_CREATED",
+            entity: "INVENTORY",
+            entityId: inventory.id,
+            details: `Inventory created via bulk import: ${inventory.name} by user ${user.id}`,
+          });
+        } catch (error) {
+          console.error(
+            `[Inventory Actions] Error processing inventory at row ${i + 1}:`,
+            error,
+          );
+          errors.push({
+            row: i + 1,
+            error:
+              error instanceof Error ? error.message : "Unknown error occurred",
+          });
+          errorCount++;
+        }
+      }
+
+      console.log(
+        `[Inventory Actions] Bulk create completed: ${successCount} successful, ${errorCount} errors`,
+      );
+
+      return {
+        success: true,
+        data: {
+          successCount,
+          errorCount,
+          errors,
+        },
+      };
+    } catch (error) {
+      console.error(
+        "❌ [inventory.actions] bulkCreate - Database error:",
+        error,
+      );
+      return {
+        success: false,
+        data: null as any,
+        error: "Failed to create inventories",
+      };
+    } finally {
+      await prisma.$disconnect();
+    }
+  },
+);

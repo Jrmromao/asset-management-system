@@ -212,13 +212,15 @@ const AdminSettings = ({ activeTab: initialActiveTab }: AdminSettingsProps) => {
   const companyId = user?.companyId || "";
   const router = useRouter();
   const searchParams = useSearchParams();
-  const urlTab = searchParams.get('tab') as TabId;
-  const validTabs = TABS.map(tab => tab.id);
+  const urlTab = searchParams.get("tab") as TabId;
+  const validTabs = TABS.map((tab) => tab.id);
   const defaultTab: TabId = "asset-categories";
-  
+
   // Validate the tab from URL
   const validatedUrlTab = urlTab && validTabs.includes(urlTab) ? urlTab : null;
-  const [activeTab, setActiveTab] = useState<TabId>(validatedUrlTab || (initialActiveTab as TabId) || defaultTab);
+  const [activeTab, setActiveTab] = useState<TabId>(
+    validatedUrlTab || (initialActiveTab as TabId) || defaultTab,
+  );
 
   // Handle initial load and URL validation
   useEffect(() => {
@@ -248,8 +250,13 @@ const AdminSettings = ({ activeTab: initialActiveTab }: AdminSettingsProps) => {
 
   // Helper function to get tab display name
   const getTabDisplayName = (tabId: TabId) => {
-    const tab = TABS.find(t => t.id === tabId);
-    return tab ? tab.label : tabId.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+    const tab = TABS.find((t) => t.id === tabId);
+    return tab
+      ? tab.label
+      : tabId
+          .split("-")
+          .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(" ");
   };
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -306,7 +313,7 @@ const AdminSettings = ({ activeTab: initialActiveTab }: AdminSettingsProps) => {
     onClose: closeDepartment,
     onOpen: onDepartmentOpen,
   } = useDepartmentUIStore();
-  
+
   const {
     isOpen: isFormTemplateOpen,
     onClose: closeFormTemplate,
@@ -363,6 +370,7 @@ const AdminSettings = ({ activeTab: initialActiveTab }: AdminSettingsProps) => {
     departments,
     isLoading: departmentsLoading,
     deleteDepartment,
+    refresh: refreshDepartments,
   } = useDepartmentQuery();
   const {
     statusLabels,
@@ -373,6 +381,7 @@ const AdminSettings = ({ activeTab: initialActiveTab }: AdminSettingsProps) => {
     inventories,
     isLoading: inventoriesLoading,
     deleteInventory,
+    refresh: refreshInventories,
   } = useInventoryQuery();
   const {
     formTemplates,
@@ -390,10 +399,174 @@ const AdminSettings = ({ activeTab: initialActiveTab }: AdminSettingsProps) => {
     null,
   );
 
-  // Example onImport handler (replace with real API call as needed)
+  // Handle bulk import for different entity types
   const handleBulkImport = async (data: any[]) => {
-    console.log("Imported data:", data);
-    setImportDialogOpen(false);
+    console.log("[AdminSettings] handleBulkImport called with data:", data);
+    console.log("[AdminSettings] importConfig:", importConfig);
+
+    if (!importConfig) {
+      toast.error("No import configuration found");
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+
+      // Determine the entity type and make the appropriate API call
+      const entityType = importConfig.entityType;
+      const apiEndpoint = importConfig.importApi;
+
+      let response;
+      let successMessage = "";
+
+      switch (entityType) {
+        case "department":
+          console.log("[AdminSettings] Making API call to:", apiEndpoint);
+          console.log(
+            "[AdminSettings] Request body:",
+            JSON.stringify({ departments: data }, null, 2),
+          );
+          response = await fetch(apiEndpoint, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ departments: data }),
+          });
+          successMessage = "departments";
+          break;
+        case "location":
+          response = await fetch(apiEndpoint, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ locations: data }),
+          });
+          successMessage = "locations";
+          break;
+        case "manufacturer":
+          response = await fetch(apiEndpoint, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ manufacturers: data }),
+          });
+          successMessage = "manufacturers";
+          break;
+        case "model":
+          response = await fetch(apiEndpoint, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ models: data }),
+          });
+          successMessage = "models";
+          break;
+        case "inventory":
+          response = await fetch(apiEndpoint, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ inventories: data }),
+          });
+          successMessage = "inventories";
+          break;
+        case "statusLabel":
+          response = await fetch(apiEndpoint, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ statusLabels: data }),
+          });
+          successMessage = "status labels";
+          break;
+        case "supplier":
+          response = await fetch(apiEndpoint, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ suppliers: data }),
+          });
+          successMessage = "suppliers";
+          break;
+        case "user":
+        case "loneeUser":
+          response = await fetch(apiEndpoint, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ users: data }),
+          });
+          successMessage = "users";
+          break;
+        default:
+          toast.error(`Unsupported entity type: ${entityType}`);
+          return;
+      }
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.log("[AdminSettings] API error response:", errorData);
+        throw new Error(
+          errorData.message || `Failed to import ${successMessage}`,
+        );
+      }
+
+      const result = await response.json();
+      console.log("[AdminSettings] API success response:", result);
+
+      if (result.success) {
+        toast.success(
+          `Successfully imported ${result.data?.successCount || data.length} ${successMessage}`,
+        );
+
+        // Refresh the data for the current tab
+        switch (activeTab) {
+          case "departments":
+            refreshDepartments();
+            break;
+          case "locations":
+            // TODO: Add refresh for locations
+            break;
+          case "manufacturers":
+            // TODO: Add refresh for manufacturers
+            break;
+          case "models":
+            // TODO: Add refresh for models
+            break;
+          case "inventories":
+            refreshInventories();
+            break;
+          case "status-label":
+            // TODO: Add refresh for status labels
+            break;
+          case "suppliers":
+            refreshSuppliers();
+            break;
+          case "people":
+            // TODO: Add refresh for users
+            break;
+        }
+      } else {
+        throw new Error(result.message || `Failed to import ${successMessage}`);
+      }
+
+      setImportDialogOpen(false);
+    } catch (error) {
+      console.error("Bulk import error:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Failed to import data",
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Load LLM status on component mount
@@ -465,232 +638,240 @@ const AdminSettings = ({ activeTab: initialActiveTab }: AdminSettingsProps) => {
     ],
   );
 
-  const MODAL_CONFIGS = useMemo(() => [
-    {
-      id: "models",
-      title: editingModel ? "Update Model" : "Add Model",
-      description: editingModel ? "Update existing model" : "Add a new model",
-      FormComponent: () => (
-        <ModelForm
-          initialData={editingModel as any}
-          onSubmitSuccess={() => {
-            closeModel();
-            setEditingModel(null);
-          }}
-        />
-      ),
-      isOpen: isModelOpen,
-      onClose: () => {
-        closeModel();
-        setEditingModel(null);
+  const MODAL_CONFIGS = useMemo(
+    () => [
+      {
+        id: "models",
+        title: editingModel ? "Update Model" : "Add Model",
+        description: editingModel ? "Update existing model" : "Add a new model",
+        FormComponent: () => (
+          <ModelForm
+            initialData={editingModel as any}
+            onSubmitSuccess={() => {
+              closeModel();
+              setEditingModel(null);
+            }}
+          />
+        ),
+        isOpen: isModelOpen,
+        onClose: () => {
+          closeModel();
+          setEditingModel(null);
+        },
       },
-    },
-    {
-      id: "manufacturers",
-      title: editingManufacturer ? "Update Manufacturer" : "Add Manufacturer",
-      description: editingManufacturer
-        ? "Update existing manufacturer"
-        : "Add a new manufacturer",
-      FormComponent: () => (
-        <ManufacturerForm
-          initialData={editingManufacturer as any}
-          onSubmitSuccess={() => {
-            closeManufacturer();
-            setEditingManufacturer(null);
-          }}
-        />
-      ),
-      isOpen: isManufacturerOpen,
-      onClose: () => {
-        closeManufacturer();
-        setEditingManufacturer(null);
+      {
+        id: "manufacturers",
+        title: editingManufacturer ? "Update Manufacturer" : "Add Manufacturer",
+        description: editingManufacturer
+          ? "Update existing manufacturer"
+          : "Add a new manufacturer",
+        FormComponent: () => (
+          <ManufacturerForm
+            initialData={editingManufacturer as any}
+            onSubmitSuccess={() => {
+              closeManufacturer();
+              setEditingManufacturer(null);
+            }}
+          />
+        ),
+        isOpen: isManufacturerOpen,
+        onClose: () => {
+          closeManufacturer();
+          setEditingManufacturer(null);
+        },
       },
-    },
-    {
-      id: "locations",
-      title: editingLocation ? "Update Location" : "Add Location",
-      description: editingLocation
-        ? "Update existing location"
-        : "Add a new location",
-      FormComponent: () => (
-        <LocationForm
-          initialData={editingLocation || undefined}
-          onSubmitSuccess={() => {
-            closeLocation();
-            setEditingLocation(null);
-          }}
-        />
-      ),
-      isOpen: isLocationOpen,
-      onClose: () => {
-        closeLocation();
-        setEditingLocation(null);
+      {
+        id: "locations",
+        title: editingLocation ? "Update Location" : "Add Location",
+        description: editingLocation
+          ? "Update existing location"
+          : "Add a new location",
+        FormComponent: () => (
+          <LocationForm
+            initialData={editingLocation || undefined}
+            onSubmitSuccess={() => {
+              closeLocation();
+              setEditingLocation(null);
+            }}
+          />
+        ),
+        isOpen: isLocationOpen,
+        onClose: () => {
+          closeLocation();
+          setEditingLocation(null);
+        },
       },
-    },
-    {
-      id: "departments",
-      title: editingDepartment ? "Update Department" : "Add Department",
-      description: editingDepartment
-        ? "Update existing department"
-        : "Add a new department",
-      FormComponent: () => (
-        <DepartmentForm
-          initialData={editingDepartment || undefined}
-          onSubmitSuccess={() => {
-            closeDepartment();
-            setEditingDepartment(null);
-          }}
-        />
-      ),
-      isOpen: isDepartmentOpen,
-      onClose: () => {
-        closeDepartment();
-        setEditingDepartment(null);
+      {
+        id: "departments",
+        title: editingDepartment ? "Update Department" : "Add Department",
+        description: editingDepartment
+          ? "Update existing department"
+          : "Add a new department",
+        FormComponent: () => (
+          <DepartmentForm
+            initialData={editingDepartment || undefined}
+            onSubmitSuccess={() => {
+              closeDepartment();
+              setEditingDepartment(null);
+            }}
+          />
+        ),
+        isOpen: isDepartmentOpen,
+        onClose: () => {
+          closeDepartment();
+          setEditingDepartment(null);
+        },
       },
-    },
-    {
-      id: "status-label",
-      title: editingStatusLabel ? "Update Status Label" : "Add Status Label",
-      description: editingStatusLabel
-        ? "Update existing status label"
-        : "Add a new status label",
-      FormComponent: () => (
-        <StatusLabelForm
-          initialData={editingStatusLabel as any}
-          onSubmitSuccess={() => {
-            closeStatusLabel();
-            setEditingStatusLabel(null);
-          }}
-        />
-      ),
-      isOpen: isStatusLabelOpen,
-      onClose: () => {
-        closeStatusLabel();
-        setEditingStatusLabel(null);
+      {
+        id: "status-label",
+        title: editingStatusLabel ? "Update Status Label" : "Add Status Label",
+        description: editingStatusLabel
+          ? "Update existing status label"
+          : "Add a new status label",
+        FormComponent: () => (
+          <StatusLabelForm
+            initialData={editingStatusLabel as any}
+            onSubmitSuccess={() => {
+              closeStatusLabel();
+              setEditingStatusLabel(null);
+            }}
+          />
+        ),
+        isOpen: isStatusLabelOpen,
+        onClose: () => {
+          closeStatusLabel();
+          setEditingStatusLabel(null);
+        },
       },
-    },
-    {
-      id: "inventories",
-      title: editingInventory ? "Update Inventory" : "Add Inventory",
-      description: editingInventory
-        ? "Update existing inventory"
-        : "Add a new inventory",
-      FormComponent: () => (
-        <InventoryForm
-          initialData={editingInventory || undefined}
-          onSubmitSuccess={() => {
-            closeInventory();
-            setEditingInventory(null);
-          }}
-        />
-      ),
-      isOpen: isInventoryOpen,
-      onClose: () => {
-        closeInventory();
-        setEditingInventory(null);
+      {
+        id: "inventories",
+        title: editingInventory ? "Update Inventory" : "Add Inventory",
+        description: editingInventory
+          ? "Update existing inventory"
+          : "Add a new inventory",
+        FormComponent: () => (
+          <InventoryForm
+            initialData={editingInventory || undefined}
+            onSubmitSuccess={() => {
+              closeInventory();
+              setEditingInventory(null);
+            }}
+          />
+        ),
+        isOpen: isInventoryOpen,
+        onClose: () => {
+          closeInventory();
+          setEditingInventory(null);
+        },
       },
-    },
-    {
-      id: "asset-categories",
-      title: editingFormTemplate ? "Update Custom Fields" : "Add Custom Fields",
-      description: editingFormTemplate
-        ? "Update existing custom fields"
-        : "Add a new custom form fields",
-      FormComponent: () => (
-        <FormTemplateCreator
-          initialData={editingFormTemplate || undefined}
-          onSubmitSuccess={() => {
-            closeFormTemplate();
-            setEditingFormTemplate(null);
-          }}
-        />
-      ),
-      isOpen: isFormTemplateOpen,
-      onClose: () => {
-        closeFormTemplate();
-        setEditingFormTemplate(null);
+      {
+        id: "asset-categories",
+        title: editingFormTemplate
+          ? "Update Custom Fields"
+          : "Add Custom Fields",
+        description: editingFormTemplate
+          ? "Update existing custom fields"
+          : "Add a new custom form fields",
+        FormComponent: () => (
+          <FormTemplateCreator
+            initialData={editingFormTemplate || undefined}
+            onSubmitSuccess={() => {
+              closeFormTemplate();
+              setEditingFormTemplate(null);
+            }}
+          />
+        ),
+        isOpen: isFormTemplateOpen,
+        onClose: () => {
+          closeFormTemplate();
+          setEditingFormTemplate(null);
+        },
       },
-    },
-    {
-      id: "people",
-      title: editingUser ? "Update User" : "Add User",
-      description: editingUser ? "Update existing user" : "Add a new user",
-      FormComponent: () => editingUser ? (
-        <UserEditModalForm 
-          user={editingUser}
-          onSubmitSuccess={() => {
-            closeUser();
-            setEditingUser(null);
-          }}
-        />
-      ) : (
-        <UserForm />
-      ),
-      isOpen: isUserOpen,
-      onClose: () => {
-        closeUser();
-        setEditingUser(null);
+      {
+        id: "people",
+        title: editingUser ? "Update User" : "Add User",
+        description: editingUser ? "Update existing user" : "Add a new user",
+        FormComponent: () =>
+          editingUser ? (
+            <UserEditModalForm
+              user={editingUser}
+              onSubmitSuccess={() => {
+                closeUser();
+                setEditingUser(null);
+              }}
+            />
+          ) : (
+            <UserForm />
+          ),
+        isOpen: isUserOpen,
+        onClose: () => {
+          closeUser();
+          setEditingUser(null);
+        },
       },
-    },
-    {
-      id: "suppliers",
-      title: editingSupplier ? "Update Supplier" : "Add Supplier",
-      description: editingSupplier ? "Update existing supplier" : "Add a new supplier",
-      FormComponent: () => (
-        <SupplierForm
-          initialData={editingSupplier || undefined}
-          onSubmitSuccess={() => {
-            closeSupplier();
-            setEditingSupplier(null);
-            refreshSuppliers();
-          }}
-        />
-      ),
-      isOpen: isSupplierOpen,
-      onClose: () => {
-        closeSupplier();
-        setEditingSupplier(null);
+      {
+        id: "suppliers",
+        title: editingSupplier ? "Update Supplier" : "Add Supplier",
+        description: editingSupplier
+          ? "Update existing supplier"
+          : "Add a new supplier",
+        FormComponent: () => (
+          <SupplierForm
+            initialData={editingSupplier || undefined}
+            onSubmitSuccess={() => {
+              closeSupplier();
+              setEditingSupplier(null);
+              refreshSuppliers();
+            }}
+          />
+        ),
+        isOpen: isSupplierOpen,
+        onClose: () => {
+          closeSupplier();
+          setEditingSupplier(null);
+        },
       },
-    },
-  ], [
-    editingModel,
-    closeModel,
-    setEditingModel,
-    isModelOpen,
-    editingManufacturer,
-    closeManufacturer,
-    setEditingManufacturer,
-    isManufacturerOpen,
-    editingLocation,
-    closeLocation,
-    setEditingLocation,
-    isLocationOpen,
-    editingDepartment,
-    closeDepartment,
-    setEditingDepartment,
-    isDepartmentOpen,
-    editingStatusLabel,
-    closeStatusLabel,
-    setEditingStatusLabel,
-    isStatusLabelOpen,
-    editingInventory,
-    closeInventory,
-    setEditingInventory,
-    isInventoryOpen,
-    editingFormTemplate,
-    closeFormTemplate,
-    setEditingFormTemplate,
-    isFormTemplateOpen,
-    editingUser,
-    closeUser,
-    setEditingUser,
-    isUserOpen,
-    editingSupplier,
-    closeSupplier,
-    setEditingSupplier,
-    isSupplierOpen,
-    refreshSuppliers,
-  ]);
+    ],
+    [
+      editingModel,
+      closeModel,
+      setEditingModel,
+      isModelOpen,
+      editingManufacturer,
+      closeManufacturer,
+      setEditingManufacturer,
+      isManufacturerOpen,
+      editingLocation,
+      closeLocation,
+      setEditingLocation,
+      isLocationOpen,
+      editingDepartment,
+      closeDepartment,
+      setEditingDepartment,
+      isDepartmentOpen,
+      editingStatusLabel,
+      closeStatusLabel,
+      setEditingStatusLabel,
+      isStatusLabelOpen,
+      editingInventory,
+      closeInventory,
+      setEditingInventory,
+      isInventoryOpen,
+      editingFormTemplate,
+      closeFormTemplate,
+      setEditingFormTemplate,
+      isFormTemplateOpen,
+      editingUser,
+      closeUser,
+      setEditingUser,
+      isUserOpen,
+      editingSupplier,
+      closeSupplier,
+      setEditingSupplier,
+      isSupplierOpen,
+      refreshSuppliers,
+    ],
+  );
 
   const columns = useMemo(
     () => ({
@@ -905,7 +1086,8 @@ const AdminSettings = ({ activeTab: initialActiveTab }: AdminSettingsProps) => {
           (user.employeeId && user.employeeId.toLowerCase().includes(query)) ||
           (user.title && user.title.toLowerCase().includes(query)) ||
           (user.role?.name && user.role.name.toLowerCase().includes(query)) ||
-          (user.department?.name && user.department.name.toLowerCase().includes(query))
+          (user.department?.name &&
+            user.department.name.toLowerCase().includes(query))
         );
       });
 

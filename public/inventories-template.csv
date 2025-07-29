@@ -1,2 +1,4 @@
-Name,Location,Capacity,Active
-Central Inventory,Main Warehouse,1000,true 
+name,active
+Central Inventory,true
+Main Warehouse,true
+Storage Room A,false 
