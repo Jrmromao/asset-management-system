@@ -1,2 +1,4 @@
-Name,Address,City,Country,Active
-Main Warehouse,123 Main St,Seoul,South Korea,true 
+name,addressLine1,addressLine2,city,state,zip,country,active
+Main Warehouse,123 Main Street,Suite 100,San Francisco,CA,94105,USA,true
+Office Building,456 Business Avenue,,New York,NY,10001,USA,true
+Storage Facility,789 Industrial Blvd,Building A,Chicago,IL,60601,USA,true 

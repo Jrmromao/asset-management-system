@@ -259,3 +259,188 @@ export const update = withAuth(
     }
   },
 );
+
+export const bulkCreate = withAuth(
+  async (
+    user,
+    locations: Array<{
+      name: string;
+      addressLine1: string;
+      addressLine2?: string;
+      city: string;
+      state: string;
+      zip: string;
+      country: string;
+      active?: boolean;
+    }>,
+  ): Promise<AuthResponse<{
+    successCount: number;
+    errorCount: number;
+    errors: Array<{ row: number; error: string }>;
+  }>> => {
+    console.log(" [location.actions] bulkCreate - Starting with user:", {
+      userId: user?.id,
+      user_metadata: user?.user_metadata,
+      hasCompanyId: !!user?.user_metadata?.companyId,
+      companyId: user?.user_metadata?.companyId,
+    });
+
+    try {
+      // Get companyId from user metadata
+      const companyId = user.user_metadata?.companyId;
+
+      if (!companyId) {
+        console.error(
+          "❌ [location.actions] bulkCreate - User missing companyId in user_metadata:",
+          {
+            user: user?.id,
+            user_metadata: user?.user_metadata,
+          },
+        );
+        return {
+          success: false,
+          data: null as any,
+          error: "User is not associated with a company",
+        };
+      }
+
+      let successCount = 0;
+      let errorCount = 0;
+      const errors: Array<{ row: number; error: string }> = [];
+
+      // Process each location
+      for (let i = 0; i < locations.length; i++) {
+        const locationData = locations[i];
+        console.log(
+          `[Location Actions] Processing location ${i + 1}:`,
+          locationData,
+        );
+        
+        try {
+          // Validate the location data
+          console.log(`[Location Actions] Validating location data:`, {
+            name: locationData.name,
+            addressLine1: locationData.addressLine1,
+            addressLine2: locationData.addressLine2,
+            city: locationData.city,
+            state: locationData.state,
+            zip: locationData.zip,
+            country: locationData.country,
+            active: locationData.active ?? true,
+          });
+          
+          const validation = locationSchema.safeParse({
+            name: locationData.name,
+            addressLine1: locationData.addressLine1,
+            addressLine2: locationData.addressLine2,
+            city: locationData.city,
+            state: locationData.state,
+            zip: locationData.zip,
+            country: locationData.country,
+            active: locationData.active ?? true,
+          });
+
+          if (!validation.success) {
+            console.log(
+              `[Location Actions] Validation failed for row ${i + 1}:`,
+              validation.error.errors,
+            );
+            errors.push({
+              row: i + 1,
+              error: validation.error.errors[0].message,
+            });
+            errorCount++;
+            continue;
+          }
+
+          // Check if location already exists (by name and company)
+          const existingLocation = await prisma.departmentLocation.findFirst({
+            where: {
+              name: locationData.name,
+              companyId,
+            },
+          });
+
+          if (existingLocation) {
+            console.log(
+              `[Location Actions] Location "${locationData.name}" already exists`,
+            );
+            errors.push({
+              row: i + 1,
+              error: `Location "${locationData.name}" already exists`,
+            });
+            errorCount++;
+            continue;
+          }
+
+          // Create the location
+          const location = await prisma.departmentLocation.create({
+            data: {
+              name: locationData.name,
+              addressLine1: locationData.addressLine1,
+              addressLine2: locationData.addressLine2,
+              city: locationData.city,
+              state: locationData.state,
+              zip: locationData.zip,
+              country: locationData.country,
+              active: locationData.active ?? true,
+              companyId,
+            },
+          });
+
+          console.log(
+            `[Location Actions] Successfully created location:`,
+            location.name,
+          );
+          successCount++;
+
+          // Create audit log
+          await createAuditLog({
+            companyId,
+            action: "LOCATION_CREATED",
+            entity: "LOCATION",
+            entityId: location.id,
+            details: `Location created via bulk import: ${location.name} by user ${user.id}`,
+          });
+
+        } catch (error) {
+          console.error(
+            `[Location Actions] Error processing location at row ${i + 1}:`,
+            error,
+          );
+          errors.push({
+            row: i + 1,
+            error:
+              error instanceof Error ? error.message : "Unknown error occurred",
+          });
+          errorCount++;
+        }
+      }
+
+      console.log(
+        `[Location Actions] Bulk create completed: ${successCount} successful, ${errorCount} errors`,
+      );
+      
+      return {
+        success: true,
+        data: {
+          successCount,
+          errorCount,
+          errors,
+        },
+      };
+    } catch (error) {
+      console.error(
+        "❌ [location.actions] bulkCreate - Database error:",
+        error,
+      );
+      return {
+        success: false,
+        data: null as any,
+        error: "Failed to create locations",
+      };
+    } finally {
+      await prisma.$disconnect();
+    }
+  },
+);
