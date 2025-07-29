@@ -344,6 +344,7 @@ const AdminSettings = ({ activeTab: initialActiveTab }: AdminSettingsProps) => {
     isLoading: modelsLoading,
     error: modelsError,
     deleteModel,
+    refresh: refreshModels,
   } = useModelsQuery();
 
   const {
@@ -542,7 +543,7 @@ const AdminSettings = ({ activeTab: initialActiveTab }: AdminSettingsProps) => {
             refreshManufacturers();
             break;
           case "models":
-            // TODO: Add refresh for models
+            refreshModels();
             break;
           case "inventories":
             refreshInventories();

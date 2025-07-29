@@ -308,3 +308,197 @@ export async function updateModel(
   const session = getSession();
   return update(id, data);
 }
+
+export const bulkCreate = withAuth(
+  async (
+    user,
+    models: Array<{
+      name: string;
+      modelNo: string;
+      manufacturerName: string;
+      active?: boolean;
+      notes?: string;
+    }>,
+  ): Promise<AuthResponse<{
+    successCount: number;
+    errorCount: number;
+    errors: Array<{ row: number; error: string }>;
+  }>> => {
+    console.log(" [model.actions] bulkCreate - Starting with user:", {
+      userId: user?.id,
+      user_metadata: user?.user_metadata,
+      hasCompanyId: !!user?.user_metadata?.companyId,
+      companyId: user?.user_metadata?.companyId,
+    });
+
+    try {
+      // Get companyId from user metadata
+      const companyId = user.user_metadata?.companyId;
+
+      if (!companyId) {
+        console.error(
+          "❌ [model.actions] bulkCreate - User missing companyId in user_metadata:",
+          {
+            user: user?.id,
+            user_metadata: user?.user_metadata,
+          },
+        );
+        return {
+          success: false,
+          data: null as any,
+          error: "User is not associated with a company",
+        };
+      }
+
+      let successCount = 0;
+      let errorCount = 0;
+      const errors: Array<{ row: number; error: string }> = [];
+
+      // Process each model
+      for (let i = 0; i < models.length; i++) {
+        const modelData = models[i];
+        console.log(
+          `[Model Actions] Processing model ${i + 1}:`,
+          modelData,
+        );
+        
+        try {
+          // First, find the manufacturer by name
+          const manufacturer = await prisma.manufacturer.findFirst({
+            where: {
+              name: modelData.manufacturerName,
+              companyId,
+            },
+          });
+
+          if (!manufacturer) {
+            console.log(
+              `[Model Actions] Manufacturer "${modelData.manufacturerName}" not found`,
+            );
+            errors.push({
+              row: i + 1,
+              error: `Manufacturer "${modelData.manufacturerName}" not found. Please create the manufacturer first.`,
+            });
+            errorCount++;
+            continue;
+          }
+
+          // Validate the model data
+          console.log(`[Model Actions] Validating model data:`, {
+            name: modelData.name,
+            modelNo: modelData.modelNo,
+            manufacturerId: manufacturer.id,
+            active: modelData.active ?? true,
+            notes: modelData.notes,
+          });
+          
+          const validation = modelSchema.safeParse({
+            name: modelData.name,
+            modelNo: modelData.modelNo,
+            manufacturerId: manufacturer.id,
+            active: modelData.active ?? true,
+            notes: modelData.notes,
+            companyId,
+          });
+
+          if (!validation.success) {
+            console.log(
+              `[Model Actions] Validation failed for row ${i + 1}:`,
+              validation.error.errors,
+            );
+            errors.push({
+              row: i + 1,
+              error: validation.error.errors[0].message,
+            });
+            errorCount++;
+            continue;
+          }
+
+          // Check if model already exists (by modelNo and company)
+          const existingModel = await prisma.model.findFirst({
+            where: {
+              modelNo: modelData.modelNo,
+              companyId,
+            },
+          });
+
+          if (existingModel) {
+            console.log(
+              `[Model Actions] Model with modelNo "${modelData.modelNo}" already exists`,
+            );
+            errors.push({
+              row: i + 1,
+              error: `Model with model number "${modelData.modelNo}" already exists`,
+            });
+            errorCount++;
+            continue;
+          }
+
+          // Create the model
+          const model = await prisma.model.create({
+            data: {
+              name: modelData.name,
+              modelNo: modelData.modelNo,
+              manufacturerId: manufacturer.id,
+              active: modelData.active ?? true,
+              notes: modelData.notes,
+              companyId,
+            },
+          });
+
+          console.log(
+            `[Model Actions] Successfully created model:`,
+            model.name,
+          );
+          successCount++;
+
+          // Create audit log
+          await createAuditLog({
+            companyId,
+            action: "MODEL_CREATED",
+            entity: "MODEL",
+            entityId: model.id,
+            details: `Model created via bulk import: ${model.name} by user ${user.id}`,
+          });
+
+        } catch (error) {
+          console.error(
+            `[Model Actions] Error processing model at row ${i + 1}:`,
+            error,
+          );
+          errors.push({
+            row: i + 1,
+            error:
+              error instanceof Error ? error.message : "Unknown error occurred",
+          });
+          errorCount++;
+        }
+      }
+
+      console.log(
+        `[Model Actions] Bulk create completed: ${successCount} successful, ${errorCount} errors`,
+      );
+      
+      return {
+        success: true,
+        data: {
+          successCount,
+          errorCount,
+          errors,
+        },
+      };
+    } catch (error) {
+      console.error(
+        "❌ [model.actions] bulkCreate - Database error:",
+        error,
+      );
+      return {
+        success: false,
+        data: null as any,
+        error: "Failed to create models",
+      };
+    } finally {
+      await prisma.$disconnect();
+    }
+  },
+);
