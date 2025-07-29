@@ -262,10 +262,7 @@ export default function BulkImportDialog({
         parseResult.meta.fields || Object.keys(parseResult.data[0] || {});
       console.log("[BulkImportDialog] Parsed CSV columns:", columns);
       console.log("[BulkImportDialog] Parsed CSV data:", parseResult.data);
-      console.log(
-        "[BulkImportDialog] First row keys:",
-        parseResult.data[0] ? Object.keys(parseResult.data[0]) : [],
-      );
+      console.log("[BulkImportDialog] First row keys:", parseResult.data[0] ? Object.keys(parseResult.data[0]) : []);
       console.log("[BulkImportDialog] First row values:", parseResult.data[0]);
       setUploadedColumns(columns);
       setParsedData(parseResult.data);
@@ -281,34 +278,29 @@ export default function BulkImportDialog({
   };
 
   const handleMappingComplete = (mapping: Record<string, string | null>) => {
-    console.log(
-      "[BulkImportDialog] handleMappingComplete called with mapping:",
-      mapping,
-    );
+    console.log("[BulkImportDialog] handleMappingComplete called with mapping:", mapping);
     console.log("[BulkImportDialog] Original parsed data:", parsedData);
     console.log("[BulkImportDialog] Mapping entries:", Object.entries(mapping));
-
+    
     setColumnMapping(mapping);
-
+    
     // Transform parsedData using mapping
     const mappedRows = parsedData.map((row, index) => {
       console.log(`[BulkImportDialog] Processing row ${index}:`, row);
       const mapped: Record<string, any> = {};
-
+      
       Object.entries(mapping).forEach(([uploadedCol, templateField]) => {
         if (templateField) {
           const value = row[uploadedCol];
-          console.log(
-            `[BulkImportDialog] Mapping ${uploadedCol} -> ${templateField} = ${value}`,
-          );
+          console.log(`[BulkImportDialog] Mapping ${uploadedCol} -> ${templateField} = ${value}`);
           mapped[templateField] = value;
         }
       });
-
+      
       console.log(`[BulkImportDialog] Mapped row ${index}:`, mapped);
       return mapped;
     });
-
+    
     console.log("[BulkImportDialog] All mapped rows:", mappedRows);
     setParsedData(mappedRows);
     setStep("preview");
@@ -378,31 +370,26 @@ export default function BulkImportDialog({
     console.log("[BulkImportDialog] handleImport called");
     console.log("[BulkImportDialog] columnMapping:", columnMapping);
     console.log("[BulkImportDialog] parsedData:", parsedData);
-
+    
     setIsProcessing(true);
     setImportProgress(0);
-
+    
     // For departments and other simple entities, the data should already be mapped
     // For assets, we need to do additional processing
     let finalData = parsedData;
-
+    
     if (config.entityType === "asset") {
       // Map parsedData using columnMapping for assets
       finalData = parsedData.map((row, rowIndex) => {
-        console.log(
-          `[BulkImportDialog] Processing asset row ${rowIndex}:`,
-          row,
-        );
+        console.log(`[BulkImportDialog] Processing asset row ${rowIndex}:`, row);
         const mapped: Record<string, any> = {};
-
+        
         // For each mapping, assign the value from the uploaded column to the mapped field
         Object.entries(columnMapping).forEach(([uploadedCol, mappedField]) => {
           if (mappedField) {
             let value = row[uploadedCol];
-            console.log(
-              `[BulkImportDialog] Mapping ${uploadedCol} -> ${mappedField} = ${value}`,
-            );
-
+            console.log(`[BulkImportDialog] Mapping ${uploadedCol} -> ${mappedField} = ${value}`);
+            
             // Handle boolean field transformation for departments and other entities
             if (mappedField === "active" && typeof value === "string") {
               value = value.toLowerCase();
@@ -414,11 +401,11 @@ export default function BulkImportDialog({
                 value = true; // default to true
               }
             }
-
+            
             mapped[mappedField] = value;
           }
         });
-
+        
         // Only add formTemplateId for assets
         if (selectedTemplateId) {
           mapped.formTemplateId = selectedTemplateId;
@@ -442,18 +429,15 @@ export default function BulkImportDialog({
             ]);
           }
         }
-
+        
         return mapped;
       });
     } else {
       // For departments and other simple entities, just handle boolean transformation
       finalData = parsedData.map((row, rowIndex) => {
-        console.log(
-          `[BulkImportDialog] Processing simple entity row ${rowIndex}:`,
-          row,
-        );
+        console.log(`[BulkImportDialog] Processing simple entity row ${rowIndex}:`, row);
         const processed: Record<string, any> = { ...row };
-
+        
         // Handle boolean field transformation
         if (processed.active && typeof processed.active === "string") {
           const value = processed.active.toLowerCase();
@@ -465,19 +449,19 @@ export default function BulkImportDialog({
             processed.active = true; // default to true
           }
         }
-
+        
         console.log(`[BulkImportDialog] Processed row ${rowIndex}:`, processed);
         return processed;
       });
     }
-
+    
     // If there are validation errors, do not proceed
     if (validationErrors.length > 0) {
       setIsProcessing(false);
       toast.error("Please fix validation errors before importing.");
       return;
     }
-
+    
     try {
       console.log("[BULK IMPORT] Sending finalData to onImport:", finalData);
       await onImport(finalData);

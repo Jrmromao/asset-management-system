@@ -232,6 +232,211 @@ export const remove = withAuth(
   },
 );
 
+export const bulkCreate = withAuth(
+  async (
+    user,
+    suppliers: Array<{
+      name: string;
+      contactName: string;
+      email: string;
+      phoneNum?: string;
+      url?: string;
+      notes?: string;
+      addressLine1: string;
+      addressLine2?: string;
+      city: string;
+      state: string;
+      zip: string;
+      country: string;
+      active?: boolean;
+    }>,
+  ): Promise<ActionResponse<{
+    successCount: number;
+    errorCount: number;
+    errors: Array<{ row: number; error: string }>;
+  }>> => {
+    console.log(" [supplier.actions] bulkCreate - Starting with user:", {
+      userId: user?.id,
+      user_metadata: user?.user_metadata,
+      hasCompanyId: !!user?.user_metadata?.companyId,
+      companyId: user?.user_metadata?.companyId,
+    });
+
+    try {
+      // Get companyId from user metadata
+      const companyId = user.user_metadata?.companyId;
+
+      if (!companyId) {
+        console.error(
+          "❌ [supplier.actions] bulkCreate - User missing companyId in user_metadata:",
+          {
+            user: user?.id,
+            user_metadata: user?.user_metadata,
+          },
+        );
+        return {
+          success: false,
+          data: undefined,
+          error: "User is not associated with a company",
+        };
+      }
+
+      let successCount = 0;
+      let errorCount = 0;
+      const errors: Array<{ row: number; error: string }> = [];
+
+      // Process each supplier
+      for (let i = 0; i < suppliers.length; i++) {
+        const supplierData = suppliers[i];
+        console.log(
+          `[Supplier Actions] Processing supplier ${i + 1}:`,
+          supplierData,
+        );
+        
+        try {
+          // Validate the supplier data
+          console.log(`[Supplier Actions] Validating supplier data:`, {
+            name: supplierData.name,
+            contactName: supplierData.contactName,
+            email: supplierData.email,
+            phoneNum: supplierData.phoneNum,
+            url: supplierData.url,
+            notes: supplierData.notes,
+            addressLine1: supplierData.addressLine1,
+            addressLine2: supplierData.addressLine2,
+            city: supplierData.city,
+            state: supplierData.state,
+            zip: supplierData.zip,
+            country: supplierData.country,
+            active: supplierData.active ?? true,
+          });
+          
+          const validation = supplierSchema.safeParse({
+            name: supplierData.name,
+            contactName: supplierData.contactName,
+            email: supplierData.email,
+            phoneNum: supplierData.phoneNum,
+            url: supplierData.url,
+            notes: supplierData.notes,
+            active: supplierData.active ?? true,
+            addressLine1: supplierData.addressLine1,
+            addressLine2: supplierData.addressLine2,
+            city: supplierData.city,
+            state: supplierData.state,
+            zip: supplierData.zip,
+            country: supplierData.country,
+          });
+
+          if (!validation.success) {
+            console.log(
+              `[Supplier Actions] Validation failed for row ${i + 1}:`,
+              validation.error.errors,
+            );
+            errors.push({
+              row: i + 1,
+              error: validation.error.errors[0].message,
+            });
+            errorCount++;
+            continue;
+          }
+
+          // Check if supplier already exists (by name and company)
+          const existingSupplier = await prisma.supplier.findFirst({
+            where: {
+              name: supplierData.name,
+              companyId,
+            },
+          });
+
+          if (existingSupplier) {
+            console.log(
+              `[Supplier Actions] Supplier "${supplierData.name}" already exists`,
+            );
+            errors.push({
+              row: i + 1,
+              error: `Supplier "${supplierData.name}" already exists`,
+            });
+            errorCount++;
+            continue;
+          }
+
+          // Create the supplier
+          const supplier = await prisma.supplier.create({
+            data: {
+              name: supplierData.name,
+              contactName: supplierData.contactName,
+              email: supplierData.email,
+              phoneNum: supplierData.phoneNum,
+              url: supplierData.url,
+              notes: supplierData.notes,
+              active: supplierData.active ?? true,
+              addressLine1: supplierData.addressLine1,
+              addressLine2: supplierData.addressLine2,
+              city: supplierData.city,
+              state: supplierData.state,
+              zip: supplierData.zip,
+              country: supplierData.country,
+              companyId,
+            },
+          });
+
+          console.log(
+            `[Supplier Actions] Successfully created supplier:`,
+            supplier.name,
+          );
+          successCount++;
+
+          // Create audit log
+          await createAuditLog({
+            companyId,
+            action: "SUPPLIER_CREATED",
+            entity: "SUPPLIER",
+            entityId: supplier.id,
+            details: `Supplier created via bulk import: ${supplier.name} by user ${user.id}`,
+          });
+
+        } catch (error) {
+          console.error(
+            `[Supplier Actions] Error processing supplier at row ${i + 1}:`,
+            error,
+          );
+          errors.push({
+            row: i + 1,
+            error:
+              error instanceof Error ? error.message : "Unknown error occurred",
+          });
+          errorCount++;
+        }
+      }
+
+      console.log(
+        `[Supplier Actions] Bulk create completed: ${successCount} successful, ${errorCount} errors`,
+      );
+      
+      return {
+        success: true,
+        data: {
+          successCount,
+          errorCount,
+          errors,
+        },
+      };
+    } catch (error) {
+      console.error(
+        "❌ [supplier.actions] bulkCreate - Database error:",
+        error,
+      );
+      return {
+        success: false,
+        data: undefined,
+        error: "Failed to create suppliers",
+      };
+    } finally {
+      await prisma.$disconnect();
+    }
+  },
+);
+
 export async function createSupplier(values: z.infer<typeof supplierSchema>) {
   return insert(values);
 }

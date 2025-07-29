@@ -1,0 +1,4 @@
+name,contactName,email,phoneNum,url,notes,addressLine1,addressLine2,city,state,zip,country,active
+TechCorp Inc,John Smith,john.smith@techcorp.com,+1-555-0123,https://techcorp.com,Primary hardware supplier,123 Tech Street,Suite 100,San Francisco,CA,94105,USA,true
+Office Supplies Co,Jane Doe,jane.doe@officesupplies.com,+1-555-0456,https://officesupplies.com,Office supplies and furniture,456 Business Ave,,New York,NY,10001,USA,true
+Network Solutions,Sarah Johnson,sarah@networksolutions.com,+1-555-0789,https://networksolutions.com,Network equipment and services,789 Network Blvd,Building A,Chicago,IL,60601,USA,true 

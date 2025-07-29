@@ -90,6 +90,7 @@ import { departmentImportConfig } from "@/importConfigs/departmentImportConfig";
 import { statusLabelImportConfig } from "@/importConfigs/statusLabelImportConfig";
 import { inventoryImportConfig } from "@/importConfigs/inventoryImportConfig";
 import { assetCategoryImportConfig } from "@/importConfigs/assetCategoryImportConfig";
+import { supplierImportConfig } from "@/importConfigs/supplierImportConfig";
 import CompanySettings from "@/components/settings/CompanySettings";
 import { useSupplierQuery } from "@/hooks/queries/useSupplierQuery";
 import { Supplier } from "@prisma/client";
@@ -1255,7 +1256,7 @@ const AdminSettings = ({ activeTab: initialActiveTab }: AdminSettingsProps) => {
       onAddNew: onSupplierOpen,
       onImport: () => {
         setImportConfig({
-          ...loneeUserImportConfig, // Assuming a similar import config for suppliers
+          ...supplierImportConfig,
           companyId: companyId || "",
         });
         setImportDialogOpen(true);

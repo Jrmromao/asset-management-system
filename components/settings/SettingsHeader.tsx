@@ -76,21 +76,6 @@ const SettingsHeader: React.FC<SettingsHeaderProps> = ({
                   <span className="font-semibold">Import</span>
                 </button>
               </TooltipTrigger>
-              <TooltipContent>
-                Import from CSV
-                {importTemplateUrl && (
-                  <>
-                    <br />
-                    <a
-                      href={importTemplateUrl}
-                      download
-                      className="text-blue-600 underline"
-                    >
-                      Download template
-                    </a>
-                  </>
-                )}
-              </TooltipContent>
             </Tooltip>
           </TooltipProvider>
         )}
