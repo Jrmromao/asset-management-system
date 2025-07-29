@@ -1,2 +1,4 @@
-Name,Country,Website,Active
-Samsung,South Korea,https://www.samsung.com,true 
+name,url,supportUrl,supportPhone,supportEmail,active
+Samsung,https://www.samsung.com,https://www.samsung.com/support,+1-800-726-7864,support@samsung.com,true
+Apple,https://www.apple.com,https://support.apple.com,+1-800-275-2273,support@apple.com,true
+Dell,https://www.dell.com,https://www.dell.com/support,+1-800-624-9897,support@dell.com,true 

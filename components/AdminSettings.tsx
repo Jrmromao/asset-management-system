@@ -351,6 +351,7 @@ const AdminSettings = ({ activeTab: initialActiveTab }: AdminSettingsProps) => {
     isLoading: manufacturersLoading,
     deleteManufacturer,
     isDeleting,
+    refresh: refreshManufacturers,
   } = useManufacturerQuery();
   const {
     locations,
@@ -538,7 +539,7 @@ const AdminSettings = ({ activeTab: initialActiveTab }: AdminSettingsProps) => {
             refreshLocations();
             break;
           case "manufacturers":
-            // TODO: Add refresh for manufacturers
+            refreshManufacturers();
             break;
           case "models":
             // TODO: Add refresh for models

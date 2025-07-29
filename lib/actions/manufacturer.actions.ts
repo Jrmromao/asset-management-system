@@ -316,3 +316,180 @@ export const isManufacturerNameUnique = withAuth(
     }
   },
 );
+
+export const bulkCreate = withAuth(
+  async (
+    user,
+    manufacturers: Array<{
+      name: string;
+      url: string;
+      supportUrl: string;
+      supportPhone?: string;
+      supportEmail?: string;
+      active?: boolean;
+    }>,
+  ): Promise<ActionResponse<{
+    successCount: number;
+    errorCount: number;
+    errors: Array<{ row: number; error: string }>;
+  }>> => {
+    console.log(" [manufacturer.actions] bulkCreate - Starting with user:", {
+      userId: user?.id,
+      user_metadata: user?.user_metadata,
+      hasCompanyId: !!user?.user_metadata?.companyId,
+      companyId: user?.user_metadata?.companyId,
+    });
+
+    try {
+      // Get companyId from user metadata
+      const companyId = user.user_metadata?.companyId;
+
+      if (!companyId) {
+        console.error(
+          "❌ [manufacturer.actions] bulkCreate - User missing companyId in user_metadata:",
+          {
+            user: user?.id,
+            user_metadata: user?.user_metadata,
+          },
+        );
+        return {
+          success: false,
+          data: null as any,
+          error: "User is not associated with a company",
+        };
+      }
+
+      let successCount = 0;
+      let errorCount = 0;
+      const errors: Array<{ row: number; error: string }> = [];
+
+      // Process each manufacturer
+      for (let i = 0; i < manufacturers.length; i++) {
+        const manufacturerData = manufacturers[i];
+        console.log(
+          `[Manufacturer Actions] Processing manufacturer ${i + 1}:`,
+          manufacturerData,
+        );
+        
+        try {
+          // Validate the manufacturer data
+          console.log(`[Manufacturer Actions] Validating manufacturer data:`, {
+            name: manufacturerData.name,
+            url: manufacturerData.url,
+            supportUrl: manufacturerData.supportUrl,
+            supportPhone: manufacturerData.supportPhone,
+            supportEmail: manufacturerData.supportEmail,
+            active: manufacturerData.active ?? true,
+          });
+          
+          const validation = manufacturerSchema.safeParse({
+            name: manufacturerData.name,
+            url: manufacturerData.url,
+            supportUrl: manufacturerData.supportUrl,
+            supportPhone: manufacturerData.supportPhone,
+            supportEmail: manufacturerData.supportEmail,
+            active: manufacturerData.active ?? true,
+          });
+
+          if (!validation.success) {
+            console.log(
+              `[Manufacturer Actions] Validation failed for row ${i + 1}:`,
+              validation.error.errors,
+            );
+            errors.push({
+              row: i + 1,
+              error: validation.error.errors[0].message,
+            });
+            errorCount++;
+            continue;
+          }
+
+          // Check if manufacturer already exists (by name and company)
+          const existingManufacturer = await prisma.manufacturer.findFirst({
+            where: {
+              name: manufacturerData.name,
+              companyId,
+            },
+          });
+
+          if (existingManufacturer) {
+            console.log(
+              `[Manufacturer Actions] Manufacturer "${manufacturerData.name}" already exists`,
+            );
+            errors.push({
+              row: i + 1,
+              error: `Manufacturer "${manufacturerData.name}" already exists`,
+            });
+            errorCount++;
+            continue;
+          }
+
+          // Create the manufacturer
+          const manufacturer = await prisma.manufacturer.create({
+            data: {
+              name: manufacturerData.name,
+              url: manufacturerData.url,
+              supportUrl: manufacturerData.supportUrl,
+              supportPhone: manufacturerData.supportPhone || null,
+              supportEmail: manufacturerData.supportEmail || null,
+              active: manufacturerData.active ?? true,
+              companyId,
+            },
+          });
+
+          console.log(
+            `[Manufacturer Actions] Successfully created manufacturer:`,
+            manufacturer.name,
+          );
+          successCount++;
+
+          // Create audit log
+          await createAuditLog({
+            companyId,
+            action: "MANUFACTURER_CREATED",
+            entity: "MANUFACTURER",
+            entityId: manufacturer.id,
+            details: `Manufacturer created via bulk import: ${manufacturer.name} by user ${user.id}`,
+          });
+
+        } catch (error) {
+          console.error(
+            `[Manufacturer Actions] Error processing manufacturer at row ${i + 1}:`,
+            error,
+          );
+          errors.push({
+            row: i + 1,
+            error:
+              error instanceof Error ? error.message : "Unknown error occurred",
+          });
+          errorCount++;
+        }
+      }
+
+      console.log(
+        `[Manufacturer Actions] Bulk create completed: ${successCount} successful, ${errorCount} errors`,
+      );
+      
+      return {
+        success: true,
+        data: {
+          successCount,
+          errorCount,
+          errors,
+        },
+      };
+    } catch (error) {
+      console.error(
+        "❌ [manufacturer.actions] bulkCreate - Database error:",
+        error,
+      );
+      return {
+        success: false,
+        data: null as any,
+        error: "Failed to create manufacturers",
+      };
+    } finally {
+      await prisma.$disconnect();
+    }
+  },
+);
