@@ -372,6 +372,7 @@ const AdminSettings = ({ activeTab: initialActiveTab }: AdminSettingsProps) => {
     statusLabels,
     isLoading: labelsLoading,
     deleteStatusLabel,
+    refresh: refreshStatusLabels,
   } = useStatusLabelsQuery();
   const {
     inventories,
@@ -540,9 +541,9 @@ const AdminSettings = ({ activeTab: initialActiveTab }: AdminSettingsProps) => {
           case "inventories":
             refreshInventories();
             break;
-          case "status-label":
-            // TODO: Add refresh for status labels
-            break;
+                  case "status-label":
+          refreshStatusLabels();
+          break;
           case "suppliers":
             refreshSuppliers();
             break;

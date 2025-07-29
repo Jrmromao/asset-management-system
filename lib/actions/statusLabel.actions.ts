@@ -319,3 +319,174 @@ export async function updateStatusLabel(
 ): Promise<AuthResponse<StatusLabel>> {
   return update(id, data);
 }
+
+export const bulkCreate = withAuth(
+  async (
+    user,
+    statusLabels: Array<{
+      name: string;
+      description?: string;
+      active?: boolean;
+    }>,
+  ): Promise<AuthResponse<{
+    successCount: number;
+    errorCount: number;
+    errors: Array<{ row: number; error: string }>;
+  }>> => {
+    console.log(" [statusLabel.actions] bulkCreate - Starting with user:", {
+      userId: user?.id,
+      user_metadata: user?.user_metadata,
+      hasCompanyId: !!user?.user_metadata?.companyId,
+      companyId: user?.user_metadata?.companyId,
+    });
+
+    try {
+      // Get companyId from user metadata
+      const companyId = user.user_metadata?.companyId;
+
+      if (!companyId) {
+        console.error(
+          "❌ [statusLabel.actions] bulkCreate - User missing companyId in user_metadata:",
+          {
+            user: user?.id,
+            user_metadata: user?.user_metadata,
+          },
+        );
+        return {
+          success: false,
+          data: null as any,
+          error: "User is not associated with a company",
+        };
+      }
+
+      let successCount = 0;
+      let errorCount = 0;
+      const errors: Array<{ row: number; error: string }> = [];
+
+      // Process each status label
+      for (let i = 0; i < statusLabels.length; i++) {
+        const statusLabelData = statusLabels[i];
+        console.log(
+          `[Status Label Actions] Processing status label ${i + 1}:`,
+          statusLabelData,
+        );
+        
+        try {
+          // Check if status label already exists (by name and company)
+          const existingStatusLabel = await prisma.statusLabel.findFirst({
+            where: {
+              name: statusLabelData.name,
+              companyId,
+            },
+          });
+
+          if (existingStatusLabel) {
+            console.log(
+              `[Status Label Actions] Status label with name "${statusLabelData.name}" already exists`,
+            );
+            errors.push({
+              row: i + 1,
+              error: `Status label with name "${statusLabelData.name}" already exists`,
+            });
+            errorCount++;
+            continue;
+          }
+
+          // Validate the status label data
+          console.log(`[Status Label Actions] Validating status label data:`, {
+            name: statusLabelData.name,
+            description: statusLabelData.description,
+            active: statusLabelData.active ?? true,
+            companyId,
+          });
+          
+          const validation = statusLabelSchema.safeParse({
+            name: statusLabelData.name,
+            description: statusLabelData.description || "",
+            colorCode: "#3B82F6", // Default color
+            isArchived: !(statusLabelData.active ?? true), // Inverse of active
+            allowLoan: true, // Default to true
+            companyId,
+          });
+
+          if (!validation.success) {
+            console.log(
+              `[Status Label Actions] Validation failed for row ${i + 1}:`,
+              validation.error.errors,
+            );
+            errors.push({
+              row: i + 1,
+              error: validation.error.errors[0].message,
+            });
+            errorCount++;
+            continue;
+          }
+
+          // Create the status label
+          const statusLabel = await prisma.statusLabel.create({
+            data: {
+              name: statusLabelData.name,
+              description: statusLabelData.description || "",
+              colorCode: "#3B82F6", // Default color
+              isArchived: !(statusLabelData.active ?? true), // Inverse of active
+              allowLoan: true, // Default to true
+              companyId,
+            },
+          });
+
+          console.log(
+            `[Status Label Actions] Successfully created status label:`,
+            statusLabel.name,
+          );
+          successCount++;
+
+          // Create audit log
+          await createAuditLog({
+            companyId,
+            action: "STATUS_LABEL_CREATED",
+            entity: "STATUS_LABEL",
+            entityId: statusLabel.id,
+            details: `Status label created via bulk import: ${statusLabel.name} by user ${user.id}`,
+          });
+
+        } catch (error) {
+          console.error(
+            `[Status Label Actions] Error processing status label at row ${i + 1}:`,
+            error,
+          );
+          errors.push({
+            row: i + 1,
+            error:
+              error instanceof Error ? error.message : "Unknown error occurred",
+          });
+          errorCount++;
+        }
+      }
+
+      console.log(
+        `[Status Label Actions] Bulk create completed: ${successCount} successful, ${errorCount} errors`,
+      );
+      
+      return {
+        success: true,
+        data: {
+          successCount,
+          errorCount,
+          errors,
+        },
+      };
+    } catch (error) {
+      console.error(
+        "❌ [statusLabel.actions] bulkCreate - Database error:",
+        error,
+      );
+      return {
+        success: false,
+        data: null as any,
+        error: "Failed to create status labels",
+      };
+    } finally {
+      await prisma.$disconnect();
+    }
+  },
+);

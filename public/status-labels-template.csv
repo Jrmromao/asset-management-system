@@ -1,2 +1,6 @@
-Name,Description,Active
-In Use,Asset is currently in use,true 
+name,description,active
+In Use,Asset is currently in use,true
+Available,Asset is available for assignment,true
+Under Maintenance,Asset is being repaired or maintained,true
+Retired,Asset has been retired from service,false
+Lost,Asset cannot be located,false 
