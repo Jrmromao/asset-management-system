@@ -76,7 +76,6 @@ import ReportStorageSettings from "@/components/settings/ReportStorageSettings";
 import SustainabilityTargets from "@/components/settings/SustainabilityTargets";
 import { DataTable } from "@/components/tables/DataTable/data-table";
 import SettingsHeader from "@/components/settings/SettingsHeader";
-import { peopleColumns } from "@/components/tables/PeopleColumns";
 import UserForm from "@/components/forms/UserForm";
 import UserEditModalForm from "@/components/forms/UserEditModalForm";
 import BulkImportDialog from "@/components/forms/BulkImportDialog";
@@ -116,8 +115,7 @@ type TabId =
   | "sustainability-targets"
   | "report-storage"
   | "company-settings"
-  | "suppliers"
-  | "people";
+  | "suppliers";
 
 interface ModalConfig {
   id: TabId;
@@ -170,12 +168,6 @@ const TABS: Tab[] = [
     label: "Models",
     icon: Boxes,
     description: "Device and equipment models in your inventory",
-  },
-  {
-    id: "people",
-    label: "People",
-    icon: Users,
-    description: "Manage team members, roles, and user permissions",
   },
   {
     id: "status-label",
@@ -554,9 +546,6 @@ const AdminSettings = ({ activeTab: initialActiveTab }: AdminSettingsProps) => {
           case "suppliers":
             refreshSuppliers();
             break;
-          case "people":
-            // TODO: Add refresh for users
-            break;
         }
       } else {
         throw new Error(result.message || `Failed to import ${successMessage}`);
@@ -617,9 +606,6 @@ const AdminSettings = ({ activeTab: initialActiveTab }: AdminSettingsProps) => {
           break;
         case "asset-categories":
           await deleteFormTemplate(item.id);
-          break;
-        case "people":
-          await deleteUser(item.id);
           break;
         case "suppliers":
           await deleteSupplier(item.id);
@@ -792,28 +778,6 @@ const AdminSettings = ({ activeTab: initialActiveTab }: AdminSettingsProps) => {
         },
       },
       {
-        id: "people",
-        title: editingUser ? "Update User" : "Add User",
-        description: editingUser ? "Update existing user" : "Add a new user",
-        FormComponent: () =>
-          editingUser ? (
-            <UserEditModalForm
-              user={editingUser}
-              onSubmitSuccess={() => {
-                closeUser();
-                setEditingUser(null);
-              }}
-            />
-          ) : (
-            <UserForm />
-          ),
-        isOpen: isUserOpen,
-        onClose: () => {
-          closeUser();
-          setEditingUser(null);
-        },
-      },
-      {
         id: "suppliers",
         title: editingSupplier ? "Update Supplier" : "Add Supplier",
         description: editingSupplier
@@ -935,13 +899,6 @@ const AdminSettings = ({ activeTab: initialActiveTab }: AdminSettingsProps) => {
           onFormTemplateOpen();
         },
       }),
-      people: peopleColumns({
-        onDelete: (user: User) => deleteUser(user.id),
-        onUpdate: (user: User) => {
-          setEditingUser(user);
-          onUserOpen();
-        },
-      }),
     }),
     [
       onDelete,
@@ -969,7 +926,6 @@ const AdminSettings = ({ activeTab: initialActiveTab }: AdminSettingsProps) => {
     "sustainability-targets": false,
     "report-storage": false,
     "company-settings": false,
-    people: usersLoading,
     suppliers: suppliersLoading,
   };
 
@@ -1079,30 +1035,6 @@ const AdminSettings = ({ activeTab: initialActiveTab }: AdminSettingsProps) => {
           data={filteredCategories}
           isLoading={formTemplatesLoading}
         />
-      );
-    }
-    if (activeTab === "people") {
-      const filteredUsers = (users || []).filter((user: any) => {
-        const query = searchQuery.toLowerCase();
-        return (
-          (user.name && user.name.toLowerCase().includes(query)) ||
-          (user.email && user.email.toLowerCase().includes(query)) ||
-          (user.employeeId && user.employeeId.toLowerCase().includes(query)) ||
-          (user.title && user.title.toLowerCase().includes(query)) ||
-          (user.role?.name && user.role.name.toLowerCase().includes(query)) ||
-          (user.department?.name &&
-            user.department.name.toLowerCase().includes(query))
-        );
-      });
-
-      return (
-        <div className="overflow-x-auto">
-          <DataTable
-            columns={columns.people}
-            data={filteredUsers as any}
-            isLoading={isLoadingData}
-          />
-        </div>
       );
     }
     if (activeTab === "suppliers") {
@@ -1236,22 +1168,6 @@ const AdminSettings = ({ activeTab: initialActiveTab }: AdminSettingsProps) => {
         setImportDialogOpen(true);
       },
       permission: "canManageAssetCategories",
-    },
-    people: {
-      addNewLabel: "Add New User",
-      importTemplateUrl: "/users-template.csv",
-      onAddNew: () => {
-        setEditingUser(null);
-        onUserOpen();
-      },
-      onImport: () => {
-        setImportConfig({
-          ...loneeUserImportConfig,
-          companyId: companyId || "",
-        });
-        setImportDialogOpen(true);
-      },
-      permission: "canManageUsers",
     },
     suppliers: {
       addNewLabel: "Add New Supplier",
