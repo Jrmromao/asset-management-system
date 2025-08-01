@@ -24,7 +24,7 @@ const ClientLayout = ({ children }: { children: React.ReactNode }) => {
   };
 
   const { user: clerkUser, isLoaded } = useUser();
-  
+
   const { setUser } = useContext(UserContext);
 
   useEffect(() => {
@@ -34,8 +34,8 @@ const ClientLayout = ({ children }: { children: React.ReactNode }) => {
         email: clerkUser.emailAddresses?.[0]?.emailAddress || "",
         firstName: clerkUser.firstName || "",
         lastName: clerkUser.lastName || "",
-        companyId: clerkUser.publicMetadata?.companyId as string || "", // <-- Set companyId
-        companyName: clerkUser.publicMetadata?.companyName as string || "", // <-- Set companyName
+        companyId: (clerkUser.publicMetadata?.companyId as string) || "", // <-- Set companyId
+        companyName: (clerkUser.publicMetadata?.companyName as string) || "", // <-- Set companyName
       });
     }
   }, [isLoaded, clerkUser, setUser]);
@@ -51,11 +51,13 @@ const ClientLayout = ({ children }: { children: React.ReactNode }) => {
           storageKey="asset-management-theme"
         >
           <Toaster richColors />
-          {showGA && process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID && process.env.NODE_ENV === "production" && (
-            <GoogleAnalytics
-              GA_MEASUREMENT_ID={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}
-            />
-          )}
+          {showGA &&
+            process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID &&
+            process.env.NODE_ENV === "production" && (
+              <GoogleAnalytics
+                GA_MEASUREMENT_ID={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}
+              />
+            )}
           {children}
           <FloatingHelpWidget />
           <CookieBanner onPreferencesChange={handlePreferencesChange} />

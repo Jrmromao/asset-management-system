@@ -39,7 +39,10 @@ interface DataTableProps<TData, TValue> {
   pageIndex?: number;
   pageSize?: number;
   total?: number;
-  onPaginationChange?: (pagination: { pageIndex: number; pageSize: number }) => void;
+  onPaginationChange?: (pagination: {
+    pageIndex: number;
+    pageSize: number;
+  }) => void;
 }
 
 export function DataTable<TData, TValue>({
@@ -207,7 +210,9 @@ export function DataTable<TData, TValue>({
             <span>Rows per page</span>
             <Select
               value={pageSize.toString()}
-              onValueChange={(value) => onPaginationChange?.({ pageIndex, pageSize: Number(value) })}
+              onValueChange={(value) =>
+                onPaginationChange?.({ pageIndex, pageSize: Number(value) })
+              }
             >
               <SelectTrigger className="h-8 w-16 border-slate-200 dark:border-gray-700 dark:bg-gray-800">
                 <SelectValue />
@@ -230,7 +235,12 @@ export function DataTable<TData, TValue>({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => onPaginationChange?.({ pageIndex: Math.max(0, pageIndex - 1), pageSize })}
+            onClick={() =>
+              onPaginationChange?.({
+                pageIndex: Math.max(0, pageIndex - 1),
+                pageSize,
+              })
+            }
             disabled={pageIndex === 0}
             className="h-8 border-slate-200 dark:border-gray-700 text-slate-600 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-gray-800"
           >
@@ -240,7 +250,9 @@ export function DataTable<TData, TValue>({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => onPaginationChange?.({ pageIndex: pageIndex + 1, pageSize })}
+            onClick={() =>
+              onPaginationChange?.({ pageIndex: pageIndex + 1, pageSize })
+            }
             disabled={pageIndex + 1 >= Math.ceil(total / pageSize)}
             className="h-8 border-slate-200 dark:border-gray-700 text-slate-600 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-gray-800"
           >
@@ -259,10 +271,12 @@ export function DataTable<TData, TValue>({
           <div className="flex items-center space-x-6 lg:space-x-8">
             <div className="flex items-center space-x-2">
               <p className="text-sm font-medium">Rows per page</p>
-                          <Select
-              value={pageSize.toString()}
-              onValueChange={(value) => onPaginationChange?.({ pageIndex, pageSize: Number(value) })}
-            >
+              <Select
+                value={pageSize.toString()}
+                onValueChange={(value) =>
+                  onPaginationChange?.({ pageIndex, pageSize: Number(value) })
+                }
+              >
                 <SelectTrigger className="h-8 w-16 border-slate-200 dark:border-gray-700 dark:bg-gray-800">
                   <SelectValue />
                 </SelectTrigger>

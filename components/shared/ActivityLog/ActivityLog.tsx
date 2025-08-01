@@ -12,24 +12,37 @@ interface ActivityLogProps {
 
 const actionLabel = (action: string) => {
   switch (action) {
-    case "USER_CREATED": return "User Created";
-    case "USER_UPDATED": return "User Updated";
-    case "USER_SOFT_DELETED": return "User Deleted";
-    case "USER_ACTIVATED": return "User Activated";
-    case "USER_DEACTIVATED": return "User Deactivated";
-    case "USER_NOTES_UPDATED": return "User Notes Updated";
-    default: return action.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    case "USER_CREATED":
+      return "User Created";
+    case "USER_UPDATED":
+      return "User Updated";
+    case "USER_SOFT_DELETED":
+      return "User Deleted";
+    case "USER_ACTIVATED":
+      return "User Activated";
+    case "USER_DEACTIVATED":
+      return "User Deactivated";
+    case "USER_NOTES_UPDATED":
+      return "User Notes Updated";
+    default:
+      return action.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
   }
 };
 
 const actionIcon = (action: string) => {
   switch (action) {
-    case "USER_CREATED": return <User className="text-green-500 h-5 w-5" />;
-    case "USER_UPDATED": return <User className="text-blue-500 h-5 w-5" />;
-    case "USER_SOFT_DELETED": return <User className="text-red-500 h-5 w-5" />;
-    case "USER_ACTIVATED": return <User className="text-green-600 h-5 w-5" />;
-    case "USER_DEACTIVATED": return <User className="text-yellow-600 h-5 w-5" />;
-    default: return <Clock className="text-gray-400 h-5 w-5" />;
+    case "USER_CREATED":
+      return <User className="text-green-500 h-5 w-5" />;
+    case "USER_UPDATED":
+      return <User className="text-blue-500 h-5 w-5" />;
+    case "USER_SOFT_DELETED":
+      return <User className="text-red-500 h-5 w-5" />;
+    case "USER_ACTIVATED":
+      return <User className="text-green-600 h-5 w-5" />;
+    case "USER_DEACTIVATED":
+      return <User className="text-yellow-600 h-5 w-5" />;
+    default:
+      return <Clock className="text-gray-400 h-5 w-5" />;
   }
 };
 
@@ -39,7 +52,12 @@ function renderChanges(changes: any[]) {
     <ul className="text-xs text-gray-700 mt-2 ml-2 border-l pl-3 border-blue-200">
       {changes.map((chg, idx) => (
         <li key={idx} className="mb-1">
-          <span className="font-semibold">{chg.field}:</span> <span className="text-red-600 line-through">{String((chg as any)?.before)}</span> <span className="mx-1">→</span> <span className="text-green-600">{String((chg as any)?.after)}</span>
+          <span className="font-semibold">{chg.field}:</span>{" "}
+          <span className="text-red-600 line-through">
+            {String((chg as any)?.before)}
+          </span>{" "}
+          <span className="mx-1">→</span>{" "}
+          <span className="text-green-600">{String((chg as any)?.after)}</span>
         </li>
       ))}
     </ul>
@@ -67,7 +85,9 @@ function exportLogsToCSV(logs: SimpleAuditLog[]) {
     log.ipAddress || "",
   ]);
   const csvContent = [header, ...rows]
-    .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","))
+    .map((row) =>
+      row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","),
+    )
     .join("\n");
   const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
@@ -114,13 +134,19 @@ const ActivityLog: React.FC<ActivityLogProps> = ({ auditLogs }) => {
             <div className="flex flex-col items-center justify-center py-12 text-gray-400">
               <Clock className="h-12 w-12 mb-4" />
               <p className="text-lg font-medium">No Activity Log Entries</p>
-              <p className="text-sm text-muted-foreground">No activity has been recorded for this user yet.</p>
+              <p className="text-sm text-muted-foreground">
+                No activity has been recorded for this user yet.
+              </p>
             </div>
           ) : (
             <ol className="relative border-l border-gray-200 dark:border-gray-700">
               {logsToShow!.map((log) => {
                 const isExpanded = expanded[log.id];
-                const changes = Array.isArray((log.dataAccessed as any)?.changes) ? (log.dataAccessed as any).changes : [];
+                const changes = Array.isArray(
+                  (log.dataAccessed as any)?.changes,
+                )
+                  ? (log.dataAccessed as any).changes
+                  : [];
                 return (
                   <li key={log.id} className="mb-8 ml-6 group">
                     <span className="absolute -left-3 flex items-center justify-center w-6 h-6 bg-white border-2 border-gray-200 rounded-full shadow-sm group-hover:border-primary transition">
@@ -130,22 +156,28 @@ const ActivityLog: React.FC<ActivityLogProps> = ({ auditLogs }) => {
                       <span className="text-sm font-semibold text-gray-800 dark:text-gray-100">
                         {actionLabel(log.action)}
                       </span>
-                      <span className="text-xs text-gray-400" title={format(new Date(log.createdAt), 'PPpp')}>
-                        {format(new Date(log.createdAt), 'Pp')} ({formatDistanceToNow(new Date(log.createdAt), { addSuffix: true })})
+                      <span
+                        className="text-xs text-gray-400"
+                        title={format(new Date(log.createdAt), "PPpp")}
+                      >
+                        {format(new Date(log.createdAt), "Pp")} (
+                        {formatDistanceToNow(new Date(log.createdAt), {
+                          addSuffix: true,
+                        })}
+                        )
                       </span>
                     </div>
                     <div className="flex items-center gap-2 mb-1">
                       <User className="h-4 w-4 text-muted-foreground" />
                       <span className="text-xs text-gray-500">
-                        By: {
-                          log.user?.name && (log.user as any)?.email
-                            ? `${log.user.name} (${(log.user as any).email})`
-                            : log.user?.name
-                              ? log.user.name
-                              : (log.user as any)?.email
-                                ? (log.user as any).email
-                                : "Unknown User"
-                        }
+                        By:{" "}
+                        {log.user?.name && (log.user as any)?.email
+                          ? `${log.user.name} (${(log.user as any).email})`
+                          : log.user?.name
+                            ? log.user.name
+                            : (log.user as any)?.email
+                              ? (log.user as any).email
+                              : "Unknown User"}
                       </span>
                     </div>
                     <div className="text-sm text-gray-600 dark:text-gray-300 max-w-prose">
@@ -154,7 +186,12 @@ const ActivityLog: React.FC<ActivityLogProps> = ({ auditLogs }) => {
                         <>
                           <button
                             className="ml-2 text-xs text-blue-600 underline cursor-pointer"
-                            onClick={() => setExpanded((prev) => ({ ...prev, [log.id]: !isExpanded }))}
+                            onClick={() =>
+                              setExpanded((prev) => ({
+                                ...prev,
+                                [log.id]: !isExpanded,
+                              }))
+                            }
                           >
                             {isExpanded ? "Hide Changes" : "Show Changes"}
                           </button>
@@ -165,9 +202,21 @@ const ActivityLog: React.FC<ActivityLogProps> = ({ auditLogs }) => {
                     {isExpanded && log.dataAccessed && (
                       <div className="mt-2 p-2 bg-gray-50 border rounded text-xs">
                         <div className="font-semibold mb-1">Before:</div>
-                        <pre className="overflow-x-auto whitespace-pre-wrap">{JSON.stringify((log.dataAccessed as any)?.before, null, 2)}</pre>
+                        <pre className="overflow-x-auto whitespace-pre-wrap">
+                          {JSON.stringify(
+                            (log.dataAccessed as any)?.before,
+                            null,
+                            2,
+                          )}
+                        </pre>
                         <div className="font-semibold mt-2 mb-1">After:</div>
-                        <pre className="overflow-x-auto whitespace-pre-wrap">{JSON.stringify((log.dataAccessed as any)?.after, null, 2)}</pre>
+                        <pre className="overflow-x-auto whitespace-pre-wrap">
+                          {JSON.stringify(
+                            (log.dataAccessed as any)?.after,
+                            null,
+                            2,
+                          )}
+                        </pre>
                       </div>
                     )}
                   </li>

@@ -232,8 +232,8 @@ export async function analyzeLicenseCostOptimization(
 
     await createAuditLog({
       companyId: user.companyId,
-      action: 'LICENSE_COST_OPTIMIZED',
-      entity: 'COST_OPTIMIZATION',
+      action: "LICENSE_COST_OPTIMIZED",
+      entity: "COST_OPTIMIZATION",
       entityId: user.companyId,
       details: `License cost optimization analysis performed for company ${user.companyId}`,
     });
@@ -399,8 +399,8 @@ export async function analyzeAccessoryCostOptimization(
 
     await createAuditLog({
       companyId: user.companyId,
-      action: 'ACCESSORY_COST_OPTIMIZED',
-      entity: 'COST_OPTIMIZATION',
+      action: "ACCESSORY_COST_OPTIMIZED",
+      entity: "COST_OPTIMIZATION",
       entityId: user.companyId,
       details: `Accessory cost optimization analysis performed for company ${user.companyId}`,
     });
@@ -497,8 +497,8 @@ export async function generateCostForecast(
 
     await createAuditLog({
       companyId: companyId,
-      action: 'COST_FORECAST_GENERATED',
-      entity: 'COST_OPTIMIZATION',
+      action: "COST_FORECAST_GENERATED",
+      entity: "COST_OPTIMIZATION",
       entityId: companyId,
       details: `Cost forecast generated for company ${companyId}`,
     });
@@ -867,8 +867,8 @@ async function storeCostOptimizationAnalysis(
     );
     await createAuditLog({
       companyId: companyId,
-      action: 'COST_OPTIMIZATION_ANALYSIS_STORED',
-      entity: 'COST_OPTIMIZATION',
+      action: "COST_OPTIMIZATION_ANALYSIS_STORED",
+      entity: "COST_OPTIMIZATION",
       entityId: companyId,
       details: `Cost optimization analysis stored for company ${companyId}`,
     });
@@ -985,8 +985,8 @@ async function storeCostForecast(
     // Implementation would store forecast in database
     await createAuditLog({
       companyId: companyId,
-      action: 'COST_FORECAST_STORED',
-      entity: 'COST_OPTIMIZATION',
+      action: "COST_FORECAST_STORED",
+      entity: "COST_OPTIMIZATION",
       entityId: companyId,
       details: `Cost forecast stored for company ${companyId}`,
     });

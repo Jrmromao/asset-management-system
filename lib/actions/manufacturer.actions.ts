@@ -328,11 +328,13 @@ export const bulkCreate = withAuth(
       supportEmail?: string;
       active?: boolean;
     }>,
-  ): Promise<ActionResponse<{
-    successCount: number;
-    errorCount: number;
-    errors: Array<{ row: number; error: string }>;
-  }>> => {
+  ): Promise<
+    ActionResponse<{
+      successCount: number;
+      errorCount: number;
+      errors: Array<{ row: number; error: string }>;
+    }>
+  > => {
     console.log(" [manufacturer.actions] bulkCreate - Starting with user:", {
       userId: user?.id,
       user_metadata: user?.user_metadata,
@@ -370,7 +372,7 @@ export const bulkCreate = withAuth(
           `[Manufacturer Actions] Processing manufacturer ${i + 1}:`,
           manufacturerData,
         );
-        
+
         try {
           // Validate the manufacturer data
           console.log(`[Manufacturer Actions] Validating manufacturer data:`, {
@@ -381,7 +383,7 @@ export const bulkCreate = withAuth(
             supportEmail: manufacturerData.supportEmail,
             active: manufacturerData.active ?? true,
           });
-          
+
           const validation = manufacturerSchema.safeParse({
             name: manufacturerData.name,
             url: manufacturerData.url,
@@ -451,7 +453,6 @@ export const bulkCreate = withAuth(
             entityId: manufacturer.id,
             details: `Manufacturer created via bulk import: ${manufacturer.name} by user ${user.id}`,
           });
-
         } catch (error) {
           console.error(
             `[Manufacturer Actions] Error processing manufacturer at row ${i + 1}:`,
@@ -469,7 +470,7 @@ export const bulkCreate = withAuth(
       console.log(
         `[Manufacturer Actions] Bulk create completed: ${successCount} successful, ${errorCount} errors`,
       );
-      
+
       return {
         success: true,
         data: {

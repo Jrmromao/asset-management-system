@@ -105,9 +105,17 @@ export function createGenericQuery<
     // Support paginated results: { data, total }
     let items: any[] = [];
     let total = 0;
-    if (rawData && typeof rawData === "object" && "data" in rawData && Array.isArray(rawData.data)) {
+    if (
+      rawData &&
+      typeof rawData === "object" &&
+      "data" in rawData &&
+      Array.isArray(rawData.data)
+    ) {
       items = rawData;
-      total = typeof rawData.total === "number" ? rawData.total : (rawData.data?.length ?? 0);
+      total =
+        typeof rawData.total === "number"
+          ? rawData.total
+          : (rawData.data?.length ?? 0);
     } else if (Array.isArray(rawData)) {
       items = rawData;
       total = items.length;
@@ -192,11 +200,14 @@ export function createGenericQuery<
           queryClient.setQueryData(queryKey, context.previousData);
         }
         console.error(`Delete error:`, err);
-        toast.error(options?.errorMessage || `Failed to delete ${queryKey[0]}`);
+        toast.error(
+          options?.deleteErrorMessage || `Failed to delete ${queryKey[0]}`,
+        );
       },
       onSuccess: () => {
         toast.success(
-          options?.successMessage || `${queryKey[0]} deleted successfully`,
+          options?.deleteSuccessMessage ||
+            `${queryKey[0]} deleted successfully`,
         );
       },
       onSettled: () => {
@@ -223,7 +234,7 @@ export function createGenericQuery<
             queryKey,
             previousData.map((item) =>
               (item as any).id === id ? ({ ...item, ...data } as T) : item,
-            )
+            ),
           );
         }
         return { previousData };

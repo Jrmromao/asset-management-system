@@ -356,7 +356,7 @@ const AdminSettings = ({ activeTab: initialActiveTab }: AdminSettingsProps) => {
   const {
     suppliers,
     isLoading: suppliersLoading,
-    deleteItem: deleteSupplier,
+    deleteSupplier,
     createSupplier,
     isCreating: isSupplierCreating,
     refresh: refreshSuppliers,
@@ -541,9 +541,9 @@ const AdminSettings = ({ activeTab: initialActiveTab }: AdminSettingsProps) => {
           case "inventories":
             refreshInventories();
             break;
-                  case "status-label":
-          refreshStatusLabels();
-          break;
+          case "status-label":
+            refreshStatusLabels();
+            break;
           case "suppliers":
             refreshSuppliers();
             break;
@@ -586,33 +586,61 @@ const AdminSettings = ({ activeTab: initialActiveTab }: AdminSettingsProps) => {
   // Move handleDelete inside useCallback to ensure it has access to the current activeTab value
   const onDelete = useCallback(
     async (item: any) => {
-      switch (activeTab) {
-        case "models":
-          await deleteModel(item.id);
-          break;
-        case "manufacturers":
-          await deleteManufacturer(item.id);
-          break;
-        case "locations":
-          await deleteLocation(item.id);
-          break;
-        case "departments":
-          await deleteDepartment(item.id);
-          break;
-        case "status-label":
-          await deleteStatusLabel(item.id);
-          break;
-        case "inventories":
-          await deleteInventory(item.id);
-          break;
-        case "asset-categories":
-          await deleteFormTemplate(item.id);
-          break;
-        case "suppliers":
-          await deleteSupplier(item.id);
-          break;
-        default:
-          return null;
+      try {
+        switch (activeTab) {
+          case "models":
+            await deleteModel(item.id);
+            break;
+          case "manufacturers":
+            await deleteManufacturer(item.id);
+            break;
+          case "locations":
+            await deleteLocation(item.id);
+            break;
+          case "departments":
+            await deleteDepartment(item.id);
+            break;
+          case "status-label":
+            await deleteStatusLabel(item.id);
+            break;
+          case "inventories":
+            await deleteInventory(item.id);
+            break;
+          case "asset-categories":
+            await deleteFormTemplate(item.id);
+            break;
+          case "suppliers":
+            await deleteSupplier(item.id);
+            break;
+          default:
+            return null;
+        }
+      } catch (error) {
+        console.error(`Failed to delete ${activeTab} item:`, error);
+
+        // Provide specific error messages based on the error
+        const errorMessage =
+          error instanceof Error ? error.message : "Unknown error";
+
+        if (errorMessage.includes("not associated with a company")) {
+          toast.error(
+            "Please refresh the page and try again. Your session may need to be updated.",
+          );
+        } else if (
+          errorMessage.includes("not found or you don't have permission")
+        ) {
+          toast.error(
+            `${getTabDisplayName(activeTab)} not found or you don't have permission to delete it.`,
+          );
+        } else if (errorMessage.includes("foreign key constraint")) {
+          toast.error(
+            `Cannot delete this ${getTabDisplayName(activeTab)} because it is being used by other items.`,
+          );
+        } else {
+          toast.error(
+            `Failed to delete ${getTabDisplayName(activeTab)}. Please try again.`,
+          );
+        }
       }
     },
     [

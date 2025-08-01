@@ -1,19 +1,27 @@
 "use server";
 
 import { prisma } from "@/app/db";
-import { DepreciationCalculator, MarketConditions } from "@/lib/utils/depreciation";
+import {
+  DepreciationCalculator,
+  MarketConditions,
+} from "@/lib/utils/depreciation";
 import { auth } from "@clerk/nextjs/server";
 import { createAuditLog } from "@/lib/actions/auditLog.actions";
 
 export async function calculateAssetDepreciation(
   assetId: string,
-  method?: "straightLine" | "decliningBalance" | "doubleDecliningBalance" | "auto",
+  method?:
+    | "straightLine"
+    | "decliningBalance"
+    | "doubleDecliningBalance"
+    | "auto",
   asOfDate?: Date,
-  marketConditions?: MarketConditions
+  marketConditions?: MarketConditions,
 ) {
   try {
     const { sessionClaims } = await auth();
-    const companyId = (sessionClaims?.privateMetadata as { companyId?: string })?.companyId as string;
+    const companyId = (sessionClaims?.privateMetadata as { companyId?: string })
+      ?.companyId as string;
 
     const asset = await prisma.asset.findUnique({
       where: { id: assetId, companyId },
@@ -22,17 +30,17 @@ export async function calculateAssetDepreciation(
         model: {
           include: {
             manufacturer: true,
-          }
+          },
         },
         formValues: {
           include: {
             formTemplate: {
               include: {
                 category: true,
-              }
-            }
-          }
-        }
+              },
+            },
+          },
+        },
       },
     });
 
@@ -48,14 +56,24 @@ export async function calculateAssetDepreciation(
         result = DepreciationCalculator.straightLine(asset, calculationDate);
         break;
       case "decliningBalance":
-        result = DepreciationCalculator.decliningBalance(asset, calculationDate);
+        result = DepreciationCalculator.decliningBalance(
+          asset,
+          calculationDate,
+        );
         break;
       case "doubleDecliningBalance":
-        result = DepreciationCalculator.doubleDecliningBalance(asset, calculationDate);
+        result = DepreciationCalculator.doubleDecliningBalance(
+          asset,
+          calculationDate,
+        );
         break;
       case "auto":
       default:
-        result = DepreciationCalculator.autoCalculate(asset, calculationDate, marketConditions);
+        result = DepreciationCalculator.autoCalculate(
+          asset,
+          calculationDate,
+          marketConditions,
+        );
         break;
     }
 
@@ -64,7 +82,9 @@ export async function calculateAssetDepreciation(
       where: { id: assetId },
       data: {
         currentValue: result.currentValue,
-        depreciationRate: asset.purchasePrice ? result.annualDepreciation / Number(asset.purchasePrice) : null,
+        depreciationRate: asset.purchasePrice
+          ? result.annualDepreciation / Number(asset.purchasePrice)
+          : null,
       },
     });
 
@@ -106,18 +126,22 @@ function deepConvertDecimals(obj: any): any {
 
 export async function generateDepreciationSchedule(
   assetId: string,
-  method: "straightLine" | "decliningBalance" | "doubleDecliningBalance" = "straightLine",
-  marketConditions?: MarketConditions
+  method:
+    | "straightLine"
+    | "decliningBalance"
+    | "doubleDecliningBalance" = "straightLine",
+  marketConditions?: MarketConditions,
 ) {
   try {
     const { sessionClaims } = await auth();
-    const companyId = (sessionClaims?.privateMetadata as { companyId?: string })?.companyId as string;
+    const companyId = (sessionClaims?.privateMetadata as { companyId?: string })
+      ?.companyId as string;
 
     const asset = await prisma.asset.findUnique({
       where: { id: assetId, companyId },
       include: {
         category: true,
-        model: true
+        model: true,
       },
     });
 
@@ -125,7 +149,12 @@ export async function generateDepreciationSchedule(
       throw new Error("Asset not found");
     }
 
-    const schedule = DepreciationCalculator.generateSchedule(asset, method, new Date(), marketConditions);
+    const schedule = DepreciationCalculator.generateSchedule(
+      asset,
+      method,
+      new Date(),
+      marketConditions,
+    );
 
     const data = {
       asset: {
@@ -153,12 +182,16 @@ export async function generateDepreciationSchedule(
   }
 }
 
-export async function calculatePortfolioDepreciation(companyId?: string, marketConditions?: MarketConditions) {
+export async function calculatePortfolioDepreciation(
+  companyId?: string,
+  marketConditions?: MarketConditions,
+) {
   try {
     // Get company ID from auth if not provided
     if (!companyId) {
       const { sessionClaims } = await auth();
-      companyId = (sessionClaims?.privateMetadata as { companyId?: string })?.companyId as string;
+      companyId = (sessionClaims?.privateMetadata as { companyId?: string })
+        ?.companyId as string;
     }
 
     if (!companyId) {
@@ -173,21 +206,25 @@ export async function calculatePortfolioDepreciation(companyId?: string, marketC
         model: {
           include: {
             manufacturer: true,
-          }
+          },
         },
         formValues: {
           include: {
             formTemplate: {
               include: {
                 category: true,
-              }
-            }
-          }
-        }
+              },
+            },
+          },
+        },
       },
     });
 
-    const portfolioData = DepreciationCalculator.calculatePortfolioDepreciation(assets, new Date(), marketConditions);
+    const portfolioData = DepreciationCalculator.calculatePortfolioDepreciation(
+      assets,
+      new Date(),
+      marketConditions,
+    );
 
     return {
       success: true,
@@ -202,12 +239,21 @@ export async function calculatePortfolioDepreciation(companyId?: string, marketC
   }
 }
 
-export async function updateAssetDepreciation(assetId: string, marketConditions?: MarketConditions) {
+export async function updateAssetDepreciation(
+  assetId: string,
+  marketConditions?: MarketConditions,
+) {
   try {
     const { sessionClaims } = await auth();
-    const companyId = (sessionClaims?.privateMetadata as { companyId?: string })?.companyId as string;
+    const companyId = (sessionClaims?.privateMetadata as { companyId?: string })
+      ?.companyId as string;
 
-    const result = await calculateAssetDepreciation(assetId, "auto", undefined, marketConditions);
+    const result = await calculateAssetDepreciation(
+      assetId,
+      "auto",
+      undefined,
+      marketConditions,
+    );
 
     if (result.success) {
       return {
@@ -232,10 +278,10 @@ export async function getMarketConditions(): Promise<MarketConditions> {
   // This could be enhanced to fetch real market data from APIs
   // For now, returning default conditions
   return {
-    technologyTrend: 'accelerating',
-    industryGrowth: 'medium',
-    supplyChainImpact: 'low',
-    regulatoryChanges: 'minor',
-    economicConditions: 'stable',
+    technologyTrend: "accelerating",
+    industryGrowth: "medium",
+    supplyChainImpact: "low",
+    regulatoryChanges: "minor",
+    economicConditions: "stable",
   };
-} 
+}

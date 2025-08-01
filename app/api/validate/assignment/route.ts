@@ -34,7 +34,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Map itemId to the correct field for future-proofing
-    let itemField: { licenseId?: string; accessoryId?: string; assetId?: string } = {};
+    const itemField: {
+      licenseId?: string;
+      accessoryId?: string;
+      assetId?: string;
+    } = {};
     if (type === "license") {
       itemField.licenseId = itemId;
     } else if (type === "accessory") {

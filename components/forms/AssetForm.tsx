@@ -10,8 +10,24 @@ import { useAssetQuery } from "@/hooks/queries/useAssetQuery";
 import type { CustomField } from "@/types/form";
 import { CreateAssetInput } from "@/lib/actions/assets.actions";
 import { debounce } from "lodash";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Tag, Briefcase, Building, User, MapPin, Layers, ClipboardEdit, Info, Star, Lock } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
+  Tag,
+  Briefcase,
+  Building,
+  User,
+  MapPin,
+  Layers,
+  ClipboardEdit,
+  Info,
+  Star,
+  Lock,
+} from "lucide-react";
 
 // Components
 import CustomInput from "@/components/CustomInput";
@@ -186,8 +202,15 @@ const useImprovedAssetValidation = (
   return validationState;
 };
 
-const AssetForm = ({ id, isUpdate = false, onSuccess, onError, setLoading, setSaving, disableRedirect = false }: AssetFormProps) => {
-
+const AssetForm = ({
+  id,
+  isUpdate = false,
+  onSuccess,
+  onError,
+  setLoading,
+  setSaving,
+  disableRedirect = false,
+}: AssetFormProps) => {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<FormTemplate | null>(
@@ -318,7 +341,7 @@ const AssetForm = ({ id, isUpdate = false, onSuccess, onError, setLoading, setSa
         setLoading?.(true);
         // Use server action instead of direct API call to avoid auth issues
         const asset = await findItemById(id);
-        console.log('[AssetForm][Update] Full asset object:', asset);
+        console.log("[AssetForm][Update] Full asset object:", asset);
         // Save asset data in a ref so we can use it after formTemplates load
         setAssetDataForUpdate(asset);
       } catch (error) {
@@ -334,15 +357,28 @@ const AssetForm = ({ id, isUpdate = false, onSuccess, onError, setLoading, setSa
 
   // New: Wait for both asset data and formTemplates, then set form state and selectedTemplate
   useEffect(() => {
-    if (!isUpdate || !assetDataForUpdate || !formTemplates || formTemplates.length === 0 || isDataLoaded) return;
+    if (
+      !isUpdate ||
+      !assetDataForUpdate ||
+      !formTemplates ||
+      formTemplates.length === 0 ||
+      isDataLoaded
+    )
+      return;
     const asset = assetDataForUpdate;
     // Prefer nested formTemplate.id, fallback to flat formTemplateId, then formValues[0].templateId
     const formTemplateId =
       asset.formTemplate?.id ||
       asset.formTemplateId ||
       (asset.formValues?.[0]?.templateId ?? "");
-    console.log('[AssetForm][Update] asset.formTemplateId (resolved):', formTemplateId);
-    console.log('[AssetForm][Update] formTemplates:', formTemplates.map(t => t.id));
+    console.log(
+      "[AssetForm][Update] asset.formTemplateId (resolved):",
+      formTemplateId,
+    );
+    console.log(
+      "[AssetForm][Update] formTemplates:",
+      formTemplates.map((t) => t.id),
+    );
     form.reset({
       name: asset.name || "",
       assetTag: asset.assetTag || "",
@@ -353,17 +389,33 @@ const AssetForm = ({ id, isUpdate = false, onSuccess, onError, setLoading, setSa
       locationId: asset.departmentLocation?.id || "",
       formTemplateId: formTemplateId,
       purchaseOrderId: asset.purchaseOrderId || "",
-      templateValues: (asset.formValues?.[0]?.values as Record<string, any>) || {},
+      templateValues:
+        (asset.formValues?.[0]?.values as Record<string, any>) || {},
       notes: asset.notes || "",
-      energyConsumption: asset.energyConsumption ? Number(asset.energyConsumption) : undefined,
+      energyConsumption: asset.energyConsumption
+        ? Number(asset.energyConsumption)
+        : undefined,
       expectedLifespan: asset.expectedLifespan || undefined,
       endOfLifePlan: (asset.endOfLifePlan as EOLPlan) || undefined,
       supplierId: asset.supplierId || "",
-      warrantyEndDate: asset.warrantyEndDate ? new Date(asset.warrantyEndDate) : undefined,
-      purchaseDate: asset.purchaseDate ? new Date(asset.purchaseDate) : undefined,
-      purchasePrice: asset.purchasePrice !== null && asset.purchasePrice !== undefined ? Number(asset.purchasePrice) : undefined,
-      depreciationRate: asset.depreciationRate !== null && asset.depreciationRate !== undefined ? Number(asset.depreciationRate) : undefined,
-      currentValue: asset.currentValue !== null && asset.currentValue !== undefined ? Number(asset.currentValue) : undefined,
+      warrantyEndDate: asset.warrantyEndDate
+        ? new Date(asset.warrantyEndDate)
+        : undefined,
+      purchaseDate: asset.purchaseDate
+        ? new Date(asset.purchaseDate)
+        : undefined,
+      purchasePrice:
+        asset.purchasePrice !== null && asset.purchasePrice !== undefined
+          ? Number(asset.purchasePrice)
+          : undefined,
+      depreciationRate:
+        asset.depreciationRate !== null && asset.depreciationRate !== undefined
+          ? Number(asset.depreciationRate)
+          : undefined,
+      currentValue:
+        asset.currentValue !== null && asset.currentValue !== undefined
+          ? Number(asset.currentValue)
+          : undefined,
       reorderPoint: asset.reorderPoint || undefined,
       licenseId: asset.licenseId || undefined,
       userId: asset.userId || undefined,
@@ -371,11 +423,14 @@ const AssetForm = ({ id, isUpdate = false, onSuccess, onError, setLoading, setSa
     });
     if (formTemplateId) {
       const template = formTemplates.find((t) => t.id === formTemplateId);
-      console.log('[AssetForm][Update] selectedTemplate:', template);
+      console.log("[AssetForm][Update] selectedTemplate:", template);
       if (template) {
         setSelectedTemplate(template as FormTemplate);
-        const assetTemplateValues = (asset.formValues?.[0]?.values as Record<string, any>) || {};
-        const initialValues = (template.fields as CustomField[]).reduce<Record<string, any>>((acc, field) => {
+        const assetTemplateValues =
+          (asset.formValues?.[0]?.values as Record<string, any>) || {};
+        const initialValues = (template.fields as CustomField[]).reduce<
+          Record<string, any>
+        >((acc, field) => {
           acc[field.name] = assetTemplateValues[field.name] ?? "";
           return acc;
         }, {});
@@ -422,48 +477,47 @@ const AssetForm = ({ id, isUpdate = false, onSuccess, onError, setLoading, setSa
     setSelectedTemplate(template as FormTemplate);
 
     // Initialize template values with default values based on field type
-    const initialValues = (template.fields as CustomField[]).reduce<Record<string, any>>(
-      (acc: Record<string, any>, field: CustomField) => {
-        // Keep existing value if it exists and the field type hasn't changed
-        const existingValue = form.getValues(`templateValues.${field.name}`);
-        const shouldKeepValue =
-          existingValue !== undefined &&
-          ((typeof existingValue === "number" && field.type === "number") ||
-            (typeof existingValue === "boolean" &&
-              (field.type === "boolean" || field.type === "checkbox")) ||
-            (typeof existingValue === "string" &&
-              (field.type === "text" || field.type === "select")) ||
-            (existingValue instanceof Date && field.type === "date"));
+    const initialValues = (template.fields as CustomField[]).reduce<
+      Record<string, any>
+    >((acc: Record<string, any>, field: CustomField) => {
+      // Keep existing value if it exists and the field type hasn't changed
+      const existingValue = form.getValues(`templateValues.${field.name}`);
+      const shouldKeepValue =
+        existingValue !== undefined &&
+        ((typeof existingValue === "number" && field.type === "number") ||
+          (typeof existingValue === "boolean" &&
+            (field.type === "boolean" || field.type === "checkbox")) ||
+          (typeof existingValue === "string" &&
+            (field.type === "text" || field.type === "select")) ||
+          (existingValue instanceof Date && field.type === "date"));
 
-        if (shouldKeepValue) {
-          acc[field.name] = existingValue;
-          return acc;
-        }
-
-        // Otherwise set default value based on type
-        let defaultValue;
-        switch (field.type) {
-          case "number":
-            defaultValue = "";
-            break;
-          case "boolean":
-          case "checkbox": // Handle checkbox also as boolean
-            defaultValue = false;
-            break;
-          case "select":
-            defaultValue = field.options?.[0] || "";
-            break;
-          case "date":
-            defaultValue = undefined; // Use undefined for date picker to clear the value
-            break;
-          default:
-            defaultValue = "";
-        }
-        acc[field.name] = defaultValue;
+      if (shouldKeepValue) {
+        acc[field.name] = existingValue;
         return acc;
-      },
-      {},
-    );
+      }
+
+      // Otherwise set default value based on type
+      let defaultValue;
+      switch (field.type) {
+        case "number":
+          defaultValue = "";
+          break;
+        case "boolean":
+        case "checkbox": // Handle checkbox also as boolean
+          defaultValue = false;
+          break;
+        case "select":
+          defaultValue = field.options?.[0] || "";
+          break;
+        case "date":
+          defaultValue = undefined; // Use undefined for date picker to clear the value
+          break;
+        default:
+          defaultValue = "";
+      }
+      acc[field.name] = defaultValue;
+      return acc;
+    }, {});
 
     // Set the template values and trigger form validation
     form.setValue("templateValues", initialValues, {
@@ -490,7 +544,8 @@ const AssetForm = ({ id, isUpdate = false, onSuccess, onError, setLoading, setSa
               !field.showIf ||
               Object.entries(field.showIf).every(
                 ([dependentField, allowedValues]) => {
-                  const dependentValue1 = form.watch('templateValues')?.[dependentField];
+                  const dependentValue1 =
+                    form.watch("templateValues")?.[dependentField];
                   return (
                     Array.isArray(allowedValues) &&
                     allowedValues.includes(dependentValue1)
@@ -519,7 +574,10 @@ const AssetForm = ({ id, isUpdate = false, onSuccess, onError, setLoading, setSa
                     name={fieldName}
                     label={field.label}
                     control={form.control}
-                    data={(field.options || []).map(opt => ({ id: opt, name: opt }))}
+                    data={(field.options || []).map((opt) => ({
+                      id: opt,
+                      name: opt,
+                    }))}
                     required={field.required}
                     placeholder={field.placeholder || ""}
                   />
@@ -548,7 +606,7 @@ const AssetForm = ({ id, isUpdate = false, onSuccess, onError, setLoading, setSa
   };
 
   const onSubmit = async (data: AssetFormValues) => {
-    console.log('[AssetForm] onSubmit called', data);
+    console.log("[AssetForm] onSubmit called", data);
     setSaving?.(true);
     try {
       setSubmitting(true);
@@ -557,13 +615,21 @@ const AssetForm = ({ id, isUpdate = false, onSuccess, onError, setLoading, setSa
       // Defensive: ensure templateValues is always an object
       let safeTemplateValues = data.templateValues;
       if (Array.isArray(safeTemplateValues)) {
-        console.warn('[AssetForm] templateValues was an array, converting to object. This should not happen!');
+        console.warn(
+          "[AssetForm] templateValues was an array, converting to object. This should not happen!",
+        );
         safeTemplateValues = {};
       }
 
       // Defensive: if templateValues is not empty, formTemplateId must be present
-      if (safeTemplateValues && Object.keys(safeTemplateValues).length > 0 && !data.formTemplateId) {
-        toast.error("A category template must be selected when using custom fields.");
+      if (
+        safeTemplateValues &&
+        Object.keys(safeTemplateValues).length > 0 &&
+        !data.formTemplateId
+      ) {
+        toast.error(
+          "A category template must be selected when using custom fields.",
+        );
         setSubmitting(false);
         setSaving?.(false);
         return;
@@ -609,7 +675,8 @@ const AssetForm = ({ id, isUpdate = false, onSuccess, onError, setLoading, setSa
             !field.showIf ||
             Object.entries(field.showIf).every(
               ([dependentField, allowedValues]) => {
-                const dependentValue2 = form.watch('templateValues')?.[dependentField];
+                const dependentValue2 =
+                  form.watch("templateValues")?.[dependentField];
                 return (
                   Array.isArray(allowedValues) &&
                   allowedValues.includes(dependentValue2)
@@ -700,7 +767,9 @@ const AssetForm = ({ id, isUpdate = false, onSuccess, onError, setLoading, setSa
         const newAsset = await createAsset(assetData);
         toast.success("Asset created successfully!");
         onSuccess?.();
-        const newId = Array.isArray(newAsset?.data) ? newAsset.data[0]?.id : undefined;
+        const newId = Array.isArray(newAsset?.data)
+          ? newAsset.data[0]?.id
+          : undefined;
         if (!disableRedirect && newId) {
           router.push(`/assets/view/${newId}`);
         } else if (!disableRedirect) {
@@ -754,7 +823,8 @@ const AssetForm = ({ id, isUpdate = false, onSuccess, onError, setLoading, setSa
         !field.showIf ||
         Object.entries(field.showIf).every(
           ([dependentField, allowedValues]) => {
-            const dependentValue1 = form.watch('templateValues')?.[dependentField];
+            const dependentValue1 =
+              form.watch("templateValues")?.[dependentField];
             return (
               Array.isArray(allowedValues) &&
               allowedValues.includes(dependentValue1)
@@ -764,7 +834,7 @@ const AssetForm = ({ id, isUpdate = false, onSuccess, onError, setLoading, setSa
 
       if (!shouldShowField) return true; // If hidden, it doesn't need to be validated for completion
 
-      const value = form.watch('templateValues')?.[field.name];
+      const value = form.watch("templateValues")?.[field.name];
       if (!field.required) return true;
 
       switch (field.type) {
@@ -784,7 +854,7 @@ const AssetForm = ({ id, isUpdate = false, onSuccess, onError, setLoading, setSa
           return true;
       }
     });
-  }, [selectedTemplate?.fields, form.watch('templateValues')]);
+  }, [selectedTemplate?.fields, form.watch("templateValues")]);
 
   useEffect(() => {
     const templateSelected =
@@ -907,8 +977,16 @@ const AssetForm = ({ id, isUpdate = false, onSuccess, onError, setLoading, setSa
                             control={form.control}
                             placeholder="Enter asset name"
                             className="dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 dark:placeholder-gray-400"
-                            error={!isUpdate ? assetNameValidation.error ?? undefined : undefined}
-                            isLoading={!isUpdate ? assetNameValidation.isValidating : false}
+                            error={
+                              !isUpdate
+                                ? (assetNameValidation.error ?? undefined)
+                                : undefined
+                            }
+                            isLoading={
+                              !isUpdate
+                                ? assetNameValidation.isValidating
+                                : false
+                            }
                             disabled={isUpdate}
                           />
                         </div>
@@ -920,8 +998,16 @@ const AssetForm = ({ id, isUpdate = false, onSuccess, onError, setLoading, setSa
                             control={form.control}
                             placeholder="Enter asset tag"
                             className="dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 dark:placeholder-gray-400"
-                            error={!isUpdate ? assetTagValidation.error ?? undefined : undefined}
-                            isLoading={!isUpdate ? assetTagValidation.isValidating : false}
+                            error={
+                              !isUpdate
+                                ? (assetTagValidation.error ?? undefined)
+                                : undefined
+                            }
+                            isLoading={
+                              !isUpdate
+                                ? assetTagValidation.isValidating
+                                : false
+                            }
                             disabled={isUpdate}
                           />
                         </div>
@@ -1002,8 +1088,14 @@ const AssetForm = ({ id, isUpdate = false, onSuccess, onError, setLoading, setSa
                           data={[
                             { id: "auto", name: "Auto (Recommended)" },
                             { id: "straightLine", name: "Straight Line" },
-                            { id: "decliningBalance", name: "Declining Balance" },
-                            { id: "doubleDecliningBalance", name: "Double Declining Balance" },
+                            {
+                              id: "decliningBalance",
+                              name: "Declining Balance",
+                            },
+                            {
+                              id: "doubleDecliningBalance",
+                              name: "Double Declining Balance",
+                            },
                           ]}
                         />
                       </FormSection>
@@ -1091,8 +1183,16 @@ const AssetForm = ({ id, isUpdate = false, onSuccess, onError, setLoading, setSa
                                 control={form.control}
                                 placeholder="Enter asset name"
                                 className="dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 dark:placeholder-gray-400"
-                                error={!isUpdate ? assetNameValidation.error ?? undefined : undefined}
-                                isLoading={!isUpdate ? assetNameValidation.isValidating : false}
+                                error={
+                                  !isUpdate
+                                    ? (assetNameValidation.error ?? undefined)
+                                    : undefined
+                                }
+                                isLoading={
+                                  !isUpdate
+                                    ? assetNameValidation.isValidating
+                                    : false
+                                }
                                 disabled={isUpdate}
                               />
                             </div>
@@ -1104,8 +1204,16 @@ const AssetForm = ({ id, isUpdate = false, onSuccess, onError, setLoading, setSa
                                 control={form.control}
                                 placeholder="Enter asset tag"
                                 className="dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 dark:placeholder-gray-400"
-                                error={!isUpdate ? assetTagValidation.error ?? undefined : undefined}
-                                isLoading={!isUpdate ? assetTagValidation.isValidating : false}
+                                error={
+                                  !isUpdate
+                                    ? (assetTagValidation.error ?? undefined)
+                                    : undefined
+                                }
+                                isLoading={
+                                  !isUpdate
+                                    ? assetTagValidation.isValidating
+                                    : false
+                                }
                                 disabled={isUpdate}
                               />
                             </div>
@@ -1200,8 +1308,14 @@ const AssetForm = ({ id, isUpdate = false, onSuccess, onError, setLoading, setSa
                               data={[
                                 { id: "auto", name: "Auto (Recommended)" },
                                 { id: "straightLine", name: "Straight Line" },
-                                { id: "decliningBalance", name: "Declining Balance" },
-                                { id: "doubleDecliningBalance", name: "Double Declining Balance" },
+                                {
+                                  id: "decliningBalance",
+                                  name: "Declining Balance",
+                                },
+                                {
+                                  id: "doubleDecliningBalance",
+                                  name: "Double Declining Balance",
+                                },
                               ]}
                             />
                           </FormSection>
@@ -1210,12 +1324,12 @@ const AssetForm = ({ id, isUpdate = false, onSuccess, onError, setLoading, setSa
                           <FormSection title="Environmental & Lifecycle">
                             {/* User guidance message for CO2 accuracy */}
                             <div className="mb-4 p-3 bg-blue-50 border border-blue-200 text-blue-800 rounded text-sm">
-                              <strong>Tip:</strong> The more technical details you
-                              provide (like energy consumption, lifespan, or
+                              <strong>Tip:</strong> The more technical details
+                              you provide (like energy consumption, lifespan, or
                               end-of-life plan), the more accurate your CO2
-                              calculation will be. If any information is missing,
-                              we&apos;ll use typical values for your asset
-                              type/model.
+                              calculation will be. If any information is
+                              missing, we&apos;ll use typical values for your
+                              asset type/model.
                             </div>
                             <CustomInput
                               name="energyConsumption"
@@ -1262,7 +1376,11 @@ const AssetForm = ({ id, isUpdate = false, onSuccess, onError, setLoading, setSa
             )}
             {/* Footer */}
             {!isUpdate && (
-              <ActionFooter form={form} isPending={submitting} router={router} />
+              <ActionFooter
+                form={form}
+                isPending={submitting}
+                router={router}
+              />
             )}
           </form>
         </Form>

@@ -95,7 +95,7 @@ function getDateRanges() {
   const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const previousMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
   const previousMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
-  
+
   return {
     currentMonthStart,
     previousMonthStart,
@@ -113,7 +113,8 @@ export async function GET(
 
   if (type === "all") {
     try {
-      const { currentMonthStart, previousMonthStart, previousMonthEnd } = getDateRanges();
+      const { currentMonthStart, previousMonthStart, previousMonthEnd } =
+        getDateRanges();
 
       // Get total reports (GeneratedReport count)
       const totalReports = await prisma.generatedReport.count();
@@ -132,7 +133,10 @@ export async function GET(
           },
         },
       });
-      const totalReportsChange = calculatePercentageChange(currentMonthReports, previousMonthReports);
+      const totalReportsChange = calculatePercentageChange(
+        currentMonthReports,
+        previousMonthReports,
+      );
 
       // Get total assets (for activeAssets, etc.)
       const assetsRes = await getAllAssets();
@@ -152,7 +156,10 @@ export async function GET(
           },
         },
       });
-      const activeAssetsChange = calculatePercentageChange(currentMonthAssets, previousMonthAssets);
+      const activeAssetsChange = calculatePercentageChange(
+        currentMonthAssets,
+        previousMonthAssets,
+      );
 
       // Get total users
       const usersRes = await getAllUsersWithService();
@@ -160,10 +167,10 @@ export async function GET(
       // Get carbon reduction (in tons)
       const co2Res = await getTotalCo2Savings();
       const carbonReduction = co2Res.data || 0;
-      
+
       // Calculate carbon reduction trend (mock for now, can be enhanced with historical CO2 data)
       const carbonReductionChange = "+2.3%"; // TODO: Calculate from historical CO2 data
-      
+
       // Calculate energy efficiency trend (mock for now, can be enhanced with historical energy data)
       const energyEfficiencyChange = "+1.5%"; // TODO: Calculate from historical energy consumption
 
@@ -259,31 +266,45 @@ export async function GET(
           assetsRes.success && (assetsRes.data ?? []).length > 0
             ? (assetsRes.data ?? [])[0].companyId
             : undefined;
-            
+
         if (companyId) {
           const assetsByCategory = await prisma.asset.groupBy({
-            by: ['categoryId'],
+            by: ["categoryId"],
             where: { companyId },
             _count: { id: true },
           });
-          
+
           const categories = await prisma.category.findMany({
             where: {
-              id: { in: assetsByCategory.map((a: any) => a.categoryId).filter(Boolean) },
+              id: {
+                in: assetsByCategory
+                  .map((a: any) => a.categoryId)
+                  .filter(Boolean),
+              },
             },
             select: { id: true, name: true },
           });
-          
-          const totalAssetsForDistribution = assetsByCategory.reduce((sum: number, a: any) => sum + a._count.id, 0);
-          
+
+          const totalAssetsForDistribution = assetsByCategory.reduce(
+            (sum: number, a: any) => sum + a._count.id,
+            0,
+          );
+
           assetDistribution = assetsByCategory.map((asset: any) => {
-            const category = categories.find((c: any) => c.id === asset.categoryId);
-            const percentage = totalAssetsForDistribution > 0 ? Math.round((asset._count.id / totalAssetsForDistribution) * 100) : 0;
+            const category = categories.find(
+              (c: any) => c.id === asset.categoryId,
+            );
+            const percentage =
+              totalAssetsForDistribution > 0
+                ? Math.round(
+                    (asset._count.id / totalAssetsForDistribution) * 100,
+                  )
+                : 0;
             return {
-              name: category?.name || 'Uncategorized',
+              name: category?.name || "Uncategorized",
               value: percentage,
-              trend: 'stable', // TODO: Calculate real trend
-              change: '0%', // TODO: Calculate real change
+              trend: "stable", // TODO: Calculate real trend
+              change: "0%", // TODO: Calculate real change
             };
           });
         }
@@ -304,15 +325,32 @@ export async function GET(
           assetsRes.success && (assetsRes.data ?? []).length > 0
             ? (assetsRes.data ?? [])[0].companyId
             : undefined;
-            
-        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+        const months = [
+          "Jan",
+          "Feb",
+          "Mar",
+          "Apr",
+          "May",
+          "Jun",
+          "Jul",
+          "Aug",
+          "Sep",
+          "Oct",
+          "Nov",
+          "Dec",
+        ];
         const now = new Date();
-        
+
         for (let i = 5; i >= 0; i--) {
           const monthDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
-          const nextMonthDate = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
+          const nextMonthDate = new Date(
+            now.getFullYear(),
+            now.getMonth() - i + 1,
+            1,
+          );
           const monthName = months[monthDate.getMonth()];
-          
+
           // Get assets created in this month and their energy consumption
           const monthlyAssets = await prisma.asset.findMany({
             where: {
@@ -324,11 +362,14 @@ export async function GET(
             },
             select: { energyConsumption: true },
           });
-          
-          const monthlyUsage = monthlyAssets.reduce((sum: number, asset: any) => 
-            sum + (asset.energyConsumption ? Number(asset.energyConsumption) : 0), 0
+
+          const monthlyUsage = monthlyAssets.reduce(
+            (sum: number, asset: any) =>
+              sum +
+              (asset.energyConsumption ? Number(asset.energyConsumption) : 0),
+            0,
           );
-          
+
           energyUsage.push({
             month: monthName,
             usage: Math.round(monthlyUsage),
@@ -344,14 +385,31 @@ export async function GET(
       // Calculate real carbon emissions time-series (last 6 months)
       let carbonEmissions: any[] = [];
       try {
-        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const months = [
+          "Jan",
+          "Feb",
+          "Mar",
+          "Apr",
+          "May",
+          "Jun",
+          "Jul",
+          "Aug",
+          "Sep",
+          "Oct",
+          "Nov",
+          "Dec",
+        ];
         const now = new Date();
-        
+
         for (let i = 5; i >= 0; i--) {
           const monthDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
-          const nextMonthDate = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
+          const nextMonthDate = new Date(
+            now.getFullYear(),
+            now.getMonth() - i + 1,
+            1,
+          );
           const monthName = months[monthDate.getMonth()];
-          
+
           // Get CO2 records for this month
           const monthlyCo2Records = await prisma.co2eRecord.findMany({
             where: {
@@ -362,11 +420,13 @@ export async function GET(
             },
             select: { co2e: true },
           });
-          
-          const monthlyEmissions = monthlyCo2Records.reduce((sum: number, record: any) => 
-            sum + (record.co2e ? Number(record.co2e) : 0), 0
+
+          const monthlyEmissions = monthlyCo2Records.reduce(
+            (sum: number, record: any) =>
+              sum + (record.co2e ? Number(record.co2e) : 0),
+            0,
           );
-          
+
           carbonEmissions.push({
             month: monthName,
             emissions: Math.round(monthlyEmissions * 100) / 100, // Round to 2 decimal places

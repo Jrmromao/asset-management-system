@@ -4,12 +4,18 @@ import { NextRequest } from "next/server";
 
 export async function GET(request: NextRequest) {
   const { userId } = getAuth(request);
-  if (!userId) return new Response(JSON.stringify({ error: "Not authenticated" }), { status: 401 });
+  if (!userId)
+    return new Response(JSON.stringify({ error: "Not authenticated" }), {
+      status: 401,
+    });
   const user = await prisma.user.findUnique({
     where: { oauthId: userId },
     include: { role: true },
   });
-  if (!user) return new Response(JSON.stringify({ error: "User not found" }), { status: 404 });
+  if (!user)
+    return new Response(JSON.stringify({ error: "User not found" }), {
+      status: 404,
+    });
   return new Response(
     JSON.stringify({
       ...user,

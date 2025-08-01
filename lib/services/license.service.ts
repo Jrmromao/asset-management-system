@@ -39,7 +39,10 @@ interface EnhancedLicenseType {
   licenseFiles?: any[];
 }
 
-export async function getEnhancedLicenseById(id: string, companyId: string): Promise<EnhancedLicenseType | null> {
+export async function getEnhancedLicenseById(
+  id: string,
+  companyId: string,
+): Promise<EnhancedLicenseType | null> {
   const license = await prisma.license.findUnique({
     where: { id, companyId },
     include: {
@@ -83,7 +86,11 @@ export async function getEnhancedLicenseById(id: string, companyId: string): Pro
     },
     auditLogs: Array.isArray(auditLogsResult?.data) ? auditLogsResult.data : [],
     seats: license.seats ?? 0,
-    seatsAllocated: sumSeatsAssigned((license.userItems ?? []).map(item => ({ quantity: item.quantity ?? 1 })) as any),
+    seatsAllocated: sumSeatsAssigned(
+      (license.userItems ?? []).map((item) => ({
+        quantity: item.quantity ?? 1,
+      })) as any,
+    ),
     reorderPoint: license.minSeatsAlert ?? 0,
     seatsAlert: license.licensedEmail ?? "",
     supplier: license.supplier ?? {},
@@ -94,7 +101,13 @@ export async function getEnhancedLicenseById(id: string, companyId: string): Pro
   };
 }
 
-export async function getAllEnhancedLicenses(companyId: string, limit?: number, offset?: number, searchTerm?: string, filters?: any): Promise<{ data: EnhancedLicenseType[]; total: number }> {
+export async function getAllEnhancedLicenses(
+  companyId: string,
+  limit?: number,
+  offset?: number,
+  searchTerm?: string,
+  filters?: any,
+): Promise<{ data: EnhancedLicenseType[]; total: number }> {
   // Build where clause for search and filters
   const where: any = { companyId };
   if (searchTerm && searchTerm.trim()) {
@@ -154,7 +167,11 @@ export async function getAllEnhancedLicenses(companyId: string, limit?: number, 
       },
       auditLogs: [], // Optionally fetch with Promise.all if needed
       seats: license.seats ?? 0,
-      seatsAllocated: sumSeatsAssigned((license.userItems ?? []).map(item => ({ quantity: item.quantity ?? 1 })) as any),
+      seatsAllocated: sumSeatsAssigned(
+        (license.userItems ?? []).map((item) => ({
+          quantity: item.quantity ?? 1,
+        })) as any,
+      ),
       reorderPoint: license.minSeatsAlert ?? 0,
       seatsAlert: license.licensedEmail ?? "",
       supplier: license.supplier ?? {},
@@ -167,10 +184,16 @@ export async function getAllEnhancedLicenses(companyId: string, limit?: number, 
   };
 }
 
-export async function getEnhancedLicenseAfterCheckin(licenseId: string, companyId: string) {
+export async function getEnhancedLicenseAfterCheckin(
+  licenseId: string,
+  companyId: string,
+) {
   return getEnhancedLicenseById(licenseId, companyId);
 }
 
-export async function getEnhancedLicenseAfterCheckout(licenseId: string, companyId: string) {
+export async function getEnhancedLicenseAfterCheckout(
+  licenseId: string,
+  companyId: string,
+) {
   return getEnhancedLicenseById(licenseId, companyId);
-} 
+}

@@ -76,8 +76,7 @@ import { useUserQuery } from "@/hooks/queries/useUserQuery";
 import { useQueryClient } from "@tanstack/react-query";
 import { DepreciationCalculator } from "@/components/depreciation/DepreciationCalculator";
 import { updateAssetDepreciation } from "@/lib/actions/depreciation.actions";
-import { toast } from "react-hot-toast" 
-
+import { toast } from "react-hot-toast";
 
 // Helper component for individual detail items to reduce repetition
 const DetailItem: React.FC<{
@@ -219,7 +218,8 @@ export const AssetDetailView: React.FC<{
   const setEditOpen = setEditOpenProp || setInternalEditOpen;
   const [isEditingStatus, setIsEditingStatus] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState(asset.statusLabel?.id);
-  const { statusLabels, isLoading: isLoadingStatusLabels } = useStatusLabelsQuery();
+  const { statusLabels, isLoading: isLoadingStatusLabels } =
+    useStatusLabelsQuery();
   const [isSavingStatus, setIsSavingStatus] = useState(false);
   const [isEditingUser, setIsEditingUser] = useState(false);
   const [selectedUser, setSelectedUser] = useState(asset.userId || "");
@@ -242,7 +242,6 @@ export const AssetDetailView: React.FC<{
         )[0]
     : undefined;
 
-
   console.log("\n\nCO2 History Data:", asset.co2eRecords);
 
   // CO2 History columns (moved here for access to state)
@@ -257,11 +256,16 @@ export const AssetDetailView: React.FC<{
           let date: Date | null = null;
           if (rawDate instanceof Date) {
             date = rawDate;
-          } else if (typeof rawDate === 'string' && !isNaN(Date.parse(rawDate))) {
+          } else if (
+            typeof rawDate === "string" &&
+            !isNaN(Date.parse(rawDate))
+          ) {
             date = new Date(rawDate);
           }
           return (
-            <span>{date && !isNaN(date.getTime()) ? date.toLocaleString() : "—"}</span>
+            <span>
+              {date && !isNaN(date.getTime()) ? date.toLocaleString() : "—"}
+            </span>
           );
         },
         enableSorting: true,
@@ -325,9 +329,11 @@ export const AssetDetailView: React.FC<{
     if (!asset.model || !asset.model.manufacturer) {
       toast.error(
         <span>
-          <b>Missing Model or Manufacturer</b><br />
-          Please assign both a model and a manufacturer to this asset before calculating CO2.
-        </span>
+          <b>Missing Model or Manufacturer</b>
+          <br />
+          Please assign both a model and a manufacturer to this asset before
+          calculating CO2.
+        </span>,
       );
       return;
     }
@@ -353,7 +359,9 @@ export const AssetDetailView: React.FC<{
           toast.error(result.error || "CO2 Calculation Failed");
         }
       } catch (error) {
-        toast.error(error instanceof Error ? error.message : "An unknown error occurred.");
+        toast.error(
+          error instanceof Error ? error.message : "An unknown error occurred.",
+        );
       }
     });
   };
@@ -441,11 +449,22 @@ export const AssetDetailView: React.FC<{
   const [warrantyEndDateString, setWarrantyEndDateString] = useState("");
 
   useEffect(() => {
-    if (asset.createdAt) setCreatedAtString(new Date(asset.createdAt).toLocaleString());
-    if (asset.updatedAt) setUpdatedAtString(new Date(asset.updatedAt).toLocaleString());
-    if (asset.purchaseDate) setPurchaseDateString(new Date(asset.purchaseDate).toLocaleDateString());
-    if (asset.warrantyEndDate) setWarrantyEndDateString(new Date(asset.warrantyEndDate).toLocaleDateString());
-  }, [asset.createdAt, asset.updatedAt, asset.purchaseDate, asset.warrantyEndDate]);
+    if (asset.createdAt)
+      setCreatedAtString(new Date(asset.createdAt).toLocaleString());
+    if (asset.updatedAt)
+      setUpdatedAtString(new Date(asset.updatedAt).toLocaleString());
+    if (asset.purchaseDate)
+      setPurchaseDateString(new Date(asset.purchaseDate).toLocaleDateString());
+    if (asset.warrantyEndDate)
+      setWarrantyEndDateString(
+        new Date(asset.warrantyEndDate).toLocaleDateString(),
+      );
+  }, [
+    asset.createdAt,
+    asset.updatedAt,
+    asset.purchaseDate,
+    asset.warrantyEndDate,
+  ]);
 
   const hardwareDetails = (
     <>
@@ -516,7 +535,9 @@ export const AssetDetailView: React.FC<{
                       warrantyEndDate: asset.warrantyEndDate ?? undefined,
                     });
                     if (res.success) {
-                      toast.success("Asset assigned user updated successfully.");
+                      toast.success(
+                        "Asset assigned user updated successfully.",
+                      );
                       setIsEditingUser(false);
                       queryClient.invalidateQueries({
                         queryKey: ["asset", asset.id],
@@ -716,13 +737,17 @@ export const AssetDetailView: React.FC<{
                             updatePayload,
                           );
                           if (res.success) {
-                            toast.success("Asset status was updated successfully.");
+                            toast.success(
+                              "Asset status was updated successfully.",
+                            );
                             setIsEditingStatus(false);
                             queryClient.invalidateQueries({
                               queryKey: ["asset", asset.id],
                             });
                           } else {
-                            toast.error(res.error || "Failed to update status.");
+                            toast.error(
+                              res.error || "Failed to update status.",
+                            );
                           }
                         } catch (e) {
                           toast.error("Failed to update status.");
@@ -800,7 +825,7 @@ export const AssetDetailView: React.FC<{
                   "archived",
                   "inactive",
                   "out of order",
-                ].includes((asset.status ?? '').toLowerCase())}
+                ].includes((asset.status ?? "").toLowerCase())}
               />
             </div>
           </div>
@@ -904,7 +929,14 @@ export const AssetDetailView: React.FC<{
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="flex items-center justify-center p-4">
-                      <QRCode value={typeof window !== 'undefined' ? window.location.href : ''} size={128} />
+                      <QRCode
+                        value={
+                          typeof window !== "undefined"
+                            ? window.location.href
+                            : ""
+                        }
+                        size={128}
+                      />
                     </CardContent>
                   </Card>
                   <Card>
@@ -1039,7 +1071,7 @@ export const AssetDetailView: React.FC<{
                         pageIndex={0}
                         pageSize={10}
                         total={asset.assetHistory.length}
-                        onPaginationChange={() => {}} 
+                        onPaginationChange={() => {}}
                         columns={assetHistoryColumnsMemo}
                         data={asset.assetHistory as any}
                       />

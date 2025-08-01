@@ -488,9 +488,15 @@ export const supplierSchema = z.object({
   contactName: z.string().min(1, "Contact name is required"),
   email: emailField(),
   phoneNum: z.string().optional(),
-  url: z.string().optional().refine((val) => !val || val.startsWith('http://') || val.startsWith('https://'), {
-    message: "URL must start with http:// or https://"
-  }),
+  url: z
+    .string()
+    .optional()
+    .refine(
+      (val) => !val || val.startsWith("http://") || val.startsWith("https://"),
+      {
+        message: "URL must start with http:// or https://",
+      },
+    ),
   notes: z.string().optional(),
   name: z.string().min(1, "Company name is required"),
   ...addressFields,

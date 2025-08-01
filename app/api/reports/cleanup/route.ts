@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     if (!assetsRes.success || !assetsRes.data || assetsRes.data.length === 0) {
       return NextResponse.json(
         { error: "No company found. Please ensure you have assets created." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -27,7 +27,10 @@ export async function POST(request: NextRequest) {
 
     switch (action) {
       case "cleanup": {
-        const stats = await cleanupService.cleanupOldReports(companyId, customPolicies);
+        const stats = await cleanupService.cleanupOldReports(
+          companyId,
+          customPolicies,
+        );
         return NextResponse.json({
           success: true,
           message: "Cleanup completed successfully",
@@ -46,7 +49,7 @@ export async function POST(request: NextRequest) {
       default:
         return NextResponse.json(
           { error: "Invalid action. Use 'cleanup' or 'stats'" },
-          { status: 400 }
+          { status: 400 },
         );
     }
   } catch (error) {
@@ -56,7 +59,7 @@ export async function POST(request: NextRequest) {
         success: false,
         error: error instanceof Error ? error.message : "Internal server error",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -73,7 +76,7 @@ export async function GET(request: NextRequest) {
     if (!assetsRes.success || !assetsRes.data || assetsRes.data.length === 0) {
       return NextResponse.json(
         { error: "No company found. Please ensure you have assets created." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -94,7 +97,7 @@ export async function GET(request: NextRequest) {
         success: false,
         error: error instanceof Error ? error.message : "Internal server error",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
-} 
+}

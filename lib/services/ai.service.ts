@@ -28,7 +28,7 @@ export async function calculateAssetCo2(
     transportDistance?: number;
     endOfLifePlan?: string;
     energyConsumptionKwhPerYear?: number;
-  }
+  },
 ): Promise<{ success: boolean; data?: any; error?: string }> {
   try {
     // Build up asset details dynamically
@@ -48,22 +48,33 @@ export async function calculateAssetCo2(
       options?.dailyOperationHours !== undefined
     ) {
       // Estimate kWh/year from Watts and hours/day
-      annualKwh = (options.energyConsumption * options.dailyOperationHours * 365) / 1000;
-      assetDetails.push(`Energy Consumption: ${annualKwh.toFixed(1)} kWh/year (estimated from ${options.energyConsumption}W × ${options.dailyOperationHours}h/day)`);
+      annualKwh =
+        (options.energyConsumption * options.dailyOperationHours * 365) / 1000;
+      assetDetails.push(
+        `Energy Consumption: ${annualKwh.toFixed(1)} kWh/year (estimated from ${options.energyConsumption}W × ${options.dailyOperationHours}h/day)`,
+      );
     } else if (options?.energyConsumption !== undefined) {
       assetDetails.push(`Power Rating: ${options.energyConsumption} Watts`);
     } else {
-      assetDetails.push(`Energy Consumption: (use typical/average for this type/model)`);
+      assetDetails.push(
+        `Energy Consumption: (use typical/average for this type/model)`,
+      );
     }
     if (options?.expectedLifespan !== undefined) {
       assetDetails.push(`Expected Lifespan: ${options.expectedLifespan} years`);
     } else {
-      assetDetails.push(`Expected Lifespan: (use typical/average for this type/model)`);
+      assetDetails.push(
+        `Expected Lifespan: (use typical/average for this type/model)`,
+      );
     }
     if (options?.dailyOperationHours !== undefined) {
-      assetDetails.push(`Daily Operation Hours: ${options.dailyOperationHours} hours/day`);
+      assetDetails.push(
+        `Daily Operation Hours: ${options.dailyOperationHours} hours/day`,
+      );
     } else {
-      assetDetails.push(`Daily Operation Hours: (use typical/average for this type/model)`);
+      assetDetails.push(
+        `Daily Operation Hours: (use typical/average for this type/model)`,
+      );
     }
     if (options?.weight !== undefined) {
       assetDetails.push(`Weight: ${options.weight} kg`);
@@ -73,22 +84,29 @@ export async function calculateAssetCo2(
     if (options?.yearOfManufacture !== undefined) {
       assetDetails.push(`Year of Manufacture: ${options.yearOfManufacture}`);
     } else {
-      assetDetails.push(`Year of Manufacture: (use typical/average for this type/model)`);
+      assetDetails.push(
+        `Year of Manufacture: (use typical/average for this type/model)`,
+      );
     }
     if (options?.transportDistance !== undefined) {
       assetDetails.push(`Transport Distance: ${options.transportDistance} km`);
     } else {
-      assetDetails.push(`Transport Distance: (use typical/average for this type/model)`);
+      assetDetails.push(
+        `Transport Distance: (use typical/average for this type/model)`,
+      );
     }
     if (options?.endOfLifePlan) {
       assetDetails.push(`End of Life Plan: ${options.endOfLifePlan}`);
     } else {
-      assetDetails.push(`End of Life Plan: (use typical/average for this type/model)`);
+      assetDetails.push(
+        `End of Life Plan: (use typical/average for this type/model)`,
+      );
     }
 
-    const assetDetailsBlock = assetDetails.length > 0
-      ? `**Asset Details:**\n${assetDetails.join("\n")}`
-      : "";
+    const assetDetailsBlock =
+      assetDetails.length > 0
+        ? `**Asset Details:**\n${assetDetails.join("\n")}`
+        : "";
 
     console.log("🔍 Calculating CO2 for:", {
       assetType,
@@ -184,7 +202,16 @@ export async function createCo2eRecord(
  * @param assetHistory - Array of asset history events (optional)
  * @returns { method: string, reasoning: string, confidence?: number, assumptions?: string, summaryTable?: any[] }
  */
-export async function getDepreciationRecommendation(assetDetails: any, assetHistory: any[] = []): Promise<{ method: string; reasoning: string; confidence?: number; assumptions?: string; summaryTable?: any[] }> {
+export async function getDepreciationRecommendation(
+  assetDetails: any,
+  assetHistory: any[] = [],
+): Promise<{
+  method: string;
+  reasoning: string;
+  confidence?: number;
+  assumptions?: string;
+  summaryTable?: any[];
+}> {
   const prompt = `
 You are an expert in accounting, asset management, and financial reporting. Your job is to recommend the most appropriate depreciation method for a given asset, based on its details and usage history. Use all provided data, and be explicit about any uncertainty or missing information.
 
@@ -219,7 +246,7 @@ Respond in JSON with:
     seed: 12345,
   });
 
-  const json = JSON.parse(response.choices[0].message.content || "{}" );
+  const json = JSON.parse(response.choices[0].message.content || "{}");
   return {
     method: json.method || "straightLine",
     reasoning: json.reasoning || "No reasoning provided by AI.",

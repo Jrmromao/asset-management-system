@@ -551,7 +551,7 @@ export async function logMaintenanceFlowExecution({
   userId,
   success,
   executedAt,
-  details = ""
+  details = "",
 }: {
   companyId: string;
   flowId: string;
@@ -576,7 +576,7 @@ export async function logMaintenanceFlowBulkOperation({
   action,
   flowIds = [],
   flowNames = [],
-  details = ""
+  details = "",
 }: {
   companyId: string;
   userId: string;

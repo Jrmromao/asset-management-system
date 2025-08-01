@@ -7,7 +7,12 @@ import { prisma } from "@/app/db";
 import { withAuth, type AuthResponse } from "@/lib/middleware/withAuth";
 import S3Service from "@/services/aws/S3";
 import { EmailService } from "@/services/email";
-import { getEnhancedLicenseById, getAllEnhancedLicenses, getEnhancedLicenseAfterCheckin, getEnhancedLicenseAfterCheckout } from "@/lib/services/license.service";
+import {
+  getEnhancedLicenseById,
+  getAllEnhancedLicenses,
+  getEnhancedLicenseAfterCheckin,
+  getEnhancedLicenseAfterCheckout,
+} from "@/lib/services/license.service";
 
 export const create = withAuth(
   async (
@@ -120,15 +125,33 @@ export const create = withAuth(
 );
 
 export const getAll = withAuth(
-  async (user, pageIndex?: number, pageSize?: number, searchTerm?: string, filters?: any): Promise<AuthResponse<any>> => {
+  async (
+    user,
+    pageIndex?: number,
+    pageSize?: number,
+    searchTerm?: string,
+    filters?: any,
+  ): Promise<AuthResponse<any>> => {
     try {
       const companyId = user.user_metadata?.companyId;
       if (!companyId) {
-        return { success: false, error: "User is not associated with a company" };
+        return {
+          success: false,
+          error: "User is not associated with a company",
+        };
       }
       const limit = pageSize ?? undefined;
-      const offset = pageIndex !== undefined && pageSize !== undefined ? pageIndex * pageSize : undefined;
-      const { data, total } = await getAllEnhancedLicenses(companyId, limit, offset, searchTerm, filters);
+      const offset =
+        pageIndex !== undefined && pageSize !== undefined
+          ? pageIndex * pageSize
+          : undefined;
+      const { data, total } = await getAllEnhancedLicenses(
+        companyId,
+        limit,
+        offset,
+        searchTerm,
+        filters,
+      );
       return { success: true, data: { data, total } };
     } catch (error) {
       console.error("Error fetching licenses:", error);
@@ -144,7 +167,10 @@ export const findById = withAuth(
     try {
       const companyId = user.user_metadata?.companyId;
       if (!companyId) {
-        return { success: false, error: "User is not associated with a company" };
+        return {
+          success: false,
+          error: "User is not associated with a company",
+        };
       }
       const enhanced = await getEnhancedLicenseById(id, companyId);
       if (!enhanced) {
@@ -425,7 +451,10 @@ export const checkout = withAuth(
       }
 
       // Fetch enhanced license after checkout
-      const enhanced = await getEnhancedLicenseAfterCheckout(result.license.id, companyId);
+      const enhanced = await getEnhancedLicenseAfterCheckout(
+        result.license.id,
+        companyId,
+      );
       return { success: true, data: enhanced };
     } catch (error) {
       console.error("Error assigning license:", error);
@@ -520,7 +549,10 @@ export const checkin = withAuth(
       });
 
       // Fetch enhanced license after checkin
-      const enhanced = await getEnhancedLicenseAfterCheckin(result.license.id, companyId);
+      const enhanced = await getEnhancedLicenseAfterCheckin(
+        result.license.id,
+        companyId,
+      );
       return { success: true, data: enhanced };
     } catch (error) {
       console.error("Error checking in license:", error);
@@ -755,12 +787,15 @@ export const getLicenseFileDownloadUrl = withAuth(
   },
 );
 
-export const  getAllForStats = withAuth(
+export const getAllForStats = withAuth(
   async (user): Promise<AuthResponse<any>> => {
     try {
       const companyId = user.user_metadata?.companyId;
       if (!companyId) {
-        return { success: false, error: "User is not associated with a company" };
+        return {
+          success: false,
+          error: "User is not associated with a company",
+        };
       }
       // Fetch all licenses for stats (no pagination, no filters)
       const { data } = await getAllEnhancedLicenses(companyId);

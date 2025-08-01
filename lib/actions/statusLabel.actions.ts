@@ -328,11 +328,13 @@ export const bulkCreate = withAuth(
       description?: string;
       active?: boolean;
     }>,
-  ): Promise<AuthResponse<{
-    successCount: number;
-    errorCount: number;
-    errors: Array<{ row: number; error: string }>;
-  }>> => {
+  ): Promise<
+    AuthResponse<{
+      successCount: number;
+      errorCount: number;
+      errors: Array<{ row: number; error: string }>;
+    }>
+  > => {
     console.log(" [statusLabel.actions] bulkCreate - Starting with user:", {
       userId: user?.id,
       user_metadata: user?.user_metadata,
@@ -370,7 +372,7 @@ export const bulkCreate = withAuth(
           `[Status Label Actions] Processing status label ${i + 1}:`,
           statusLabelData,
         );
-        
+
         try {
           // Check if status label already exists (by name and company)
           const existingStatusLabel = await prisma.statusLabel.findFirst({
@@ -399,7 +401,7 @@ export const bulkCreate = withAuth(
             active: statusLabelData.active ?? true,
             companyId,
           });
-          
+
           const validation = statusLabelSchema.safeParse({
             name: statusLabelData.name,
             description: statusLabelData.description || "",
@@ -448,7 +450,6 @@ export const bulkCreate = withAuth(
             entityId: statusLabel.id,
             details: `Status label created via bulk import: ${statusLabel.name} by user ${user.id}`,
           });
-
         } catch (error) {
           console.error(
             `[Status Label Actions] Error processing status label at row ${i + 1}:`,
@@ -466,7 +467,7 @@ export const bulkCreate = withAuth(
       console.log(
         `[Status Label Actions] Bulk create completed: ${successCount} successful, ${errorCount} errors`,
       );
-      
+
       return {
         success: true,
         data: {

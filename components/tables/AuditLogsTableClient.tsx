@@ -9,7 +9,7 @@ function toCsvValue(value: any): string {
   if (value === null || value === undefined) return "";
   const str = String(value);
   // Escape quotes and wrap in quotes if needed
-  if (str.includes(",") || str.includes("\"") || str.includes("\n")) {
+  if (str.includes(",") || str.includes('"') || str.includes("\n")) {
     return '"' + str.replace(/"/g, '""') + '"';
   }
   return str;
@@ -40,7 +40,11 @@ function logsToCsv(logs: SimpleAuditLog[]): string {
   return csv;
 }
 
-export default function AuditLogsTableClient({ logs }: { logs: SimpleAuditLog[] }) {
+export default function AuditLogsTableClient({
+  logs,
+}: {
+  logs: SimpleAuditLog[];
+}) {
   const handleExport = () => {
     const csv = logsToCsv(logs);
     const blob = new Blob([csv], { type: "text/csv" });
@@ -53,7 +57,8 @@ export default function AuditLogsTableClient({ logs }: { logs: SimpleAuditLog[] 
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     toast.success(
-      `Exported ${logs.length} audit log record${logs.length === 1 ? '' : 's'} as CSV.`, {
+      `Exported ${logs.length} audit log record${logs.length === 1 ? "" : "s"} as CSV.`,
+      {
         description: "The CSV file has been downloaded to your device.",
       },
     );
@@ -74,4 +79,3 @@ export default function AuditLogsTableClient({ logs }: { logs: SimpleAuditLog[] 
     </div>
   );
 }
-

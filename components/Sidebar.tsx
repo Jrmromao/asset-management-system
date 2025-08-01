@@ -9,7 +9,12 @@ import React, { useState } from "react";
 import HeaderIcon from "@/components/page/HeaderIcon";
 import Footer from "./Footer";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+  TooltipProvider,
+} from "@/components/ui/tooltip";
 import * as TooltipPrimitive from "@radix-ui/react-tooltip";
 
 interface SidebarLinkProps {
@@ -56,7 +61,9 @@ const SidebarLink = React.memo(
                   priority
                 />
               </div>
-              {!isCollapsed && <span className="font-medium">{item.label}</span>}
+              {!isCollapsed && (
+                <span className="font-medium">{item.label}</span>
+              )}
             </Link>
           </TooltipTrigger>
           {isCollapsed && (

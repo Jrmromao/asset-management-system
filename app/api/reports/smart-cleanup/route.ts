@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { analyzeReports, getCleanupPolicies, executeSingleRecommendation, executeAllRecommendations } from "@/lib/actions/smart-cleanup.actions";
+import {
+  analyzeReports,
+  getCleanupPolicies,
+  executeSingleRecommendation,
+  executeAllRecommendations,
+} from "@/lib/actions/smart-cleanup.actions";
 
 // GET: Analyze storage patterns and get insights
 export async function GET(request: NextRequest) {
@@ -28,20 +33,22 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({
           success: recommendationsResponse.success,
           data: recommendationsResponse.data,
-          message: recommendationsResponse.message || "Smart cleanup recommendations generated",
+          message:
+            recommendationsResponse.message ||
+            "Smart cleanup recommendations generated",
         });
 
       default:
         return NextResponse.json(
           { error: "Invalid action parameter" },
-          { status: 400 }
+          { status: 400 },
         );
     }
   } catch (error) {
     console.error("Smart cleanup analysis error:", error);
     return NextResponse.json(
       { error: "Failed to analyze storage" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -55,18 +62,24 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { action, policies, dryRun = false, recommendation, recommendations } = body;
+    const {
+      action,
+      policies,
+      dryRun = false,
+      recommendation,
+      recommendations,
+    } = body;
 
     switch (action) {
-      case 'execute_single':
+      case "execute_single":
         // Execute a single recommendation
         if (!recommendation) {
           return NextResponse.json(
             { error: "Recommendation is required" },
-            { status: 400 }
+            { status: 400 },
           );
         }
-        
+
         const singleResult = await executeSingleRecommendation(recommendation);
         return NextResponse.json({
           success: singleResult.success,
@@ -74,15 +87,15 @@ export async function POST(request: NextRequest) {
           message: `${recommendation.action} executed successfully`,
         });
 
-      case 'execute_all':
+      case "execute_all":
         // Execute all recommendations
         if (!recommendations || !Array.isArray(recommendations)) {
           return NextResponse.json(
             { error: "Recommendations array is required" },
-            { status: 400 }
+            { status: 400 },
           );
         }
-        
+
         const allResult = await executeAllRecommendations(recommendations);
         return NextResponse.json({
           success: allResult.success,
@@ -95,7 +108,7 @@ export async function POST(request: NextRequest) {
         if (!policies || !Array.isArray(policies)) {
           return NextResponse.json(
             { error: "Invalid policies provided" },
-            { status: 400 }
+            { status: 400 },
           );
         }
 
@@ -104,7 +117,7 @@ export async function POST(request: NextRequest) {
           if (!policy.format || !policy.retentionDays) {
             return NextResponse.json(
               { error: "Each policy must have format and retentionDays" },
-              { status: 400 }
+              { status: 400 },
             );
           }
         }
@@ -114,8 +127,8 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({
           success: result.success,
           data: result.data,
-          message: dryRun 
-            ? "Smart cleanup analysis completed (dry run)" 
+          message: dryRun
+            ? "Smart cleanup analysis completed (dry run)"
             : "Smart cleanup analysis completed",
         });
     }
@@ -123,7 +136,7 @@ export async function POST(request: NextRequest) {
     console.error("Smart cleanup execution error:", error);
     return NextResponse.json(
       { error: "Failed to execute smart cleanup" },
-      { status: 500 }
+      { status: 500 },
     );
   }
-} 
+}

@@ -58,7 +58,7 @@ export async function POST(request: Request) {
       message: response.message,
       results: response.results,
     };
-    });
+  });
 
   const result = await handler();
   if (!result.success) {

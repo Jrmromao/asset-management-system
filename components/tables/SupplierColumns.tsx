@@ -22,7 +22,9 @@ export const supplierColumns = ({
         <ArrowUpDown className="ml-2 h-4 w-4" />
       </Button>
     ),
-    cell: ({ row }) => <span className="font-medium text-gray-900">{row.getValue("name")}</span>,
+    cell: ({ row }) => (
+      <span className="font-medium text-gray-900">{row.getValue("name")}</span>
+    ),
   },
   {
     accessorKey: "contactName",

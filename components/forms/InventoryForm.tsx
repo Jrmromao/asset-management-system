@@ -33,7 +33,9 @@ const InventoryForm = ({
     defaultValues,
   });
 
-  async function onSubmit(data: z.infer<typeof inventorySchema> & { active: boolean }) {
+  async function onSubmit(
+    data: z.infer<typeof inventorySchema> & { active: boolean },
+  ) {
     console.log("🔍 [InventoryForm] onSubmit - Starting with data:", data);
 
     startTransition(async () => {
@@ -103,7 +105,7 @@ const InventoryForm = ({
           tooltip="A unique name for this Inventory"
         />
 
-    {initialData && (
+        {initialData && (
           <CustomSwitch
             control={form.control}
             name="active"

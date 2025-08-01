@@ -37,14 +37,26 @@ const DataTableRowActions = <TData,>({
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showDisableDialog, setShowDisableDialog] = useState(false);
 
-  const handleDelete = () => {
-    onDelete && onDelete(row.original);
-    setShowDeleteDialog(false);
+  const handleDelete = async () => {
+    try {
+      onDelete && (await onDelete(row.original));
+      setShowDeleteDialog(false);
+    } catch (error) {
+      console.error("Delete operation failed:", error);
+      // The error will be handled by the parent component (AdminSettings)
+      // We don't need to show a toast here as it's already handled upstream
+    }
   };
 
-  const handleDisable = () => {
-    onDisable && onDisable(row.original);
-    setShowDisableDialog(false);
+  const handleDisable = async () => {
+    try {
+      onDisable && (await onDisable(row.original));
+      setShowDisableDialog(false);
+    } catch (error) {
+      console.error("Disable operation failed:", error);
+      // The error will be hand led by the parent component
+      // We don't need to show a toast here as it's already handled upstream
+    }
   };
 
   return (

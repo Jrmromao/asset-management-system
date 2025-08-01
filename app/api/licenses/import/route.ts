@@ -40,15 +40,23 @@ export async function POST(req: NextRequest) {
   try {
     const { userId, sessionClaims } = getAuth(req);
     if (!userId) {
-      return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 },
+      );
     }
     const json = await req.json();
     // Support both CSV and JSON array input
     const { fileContent, licenses } = json;
     // Get companyId from Clerk claims
-    const companyId = (sessionClaims?.privateMetadata as { companyId?: string } | undefined)?.companyId;
+    const companyId = (
+      sessionClaims?.privateMetadata as { companyId?: string } | undefined
+    )?.companyId;
     if (!companyId) {
-      return NextResponse.json({ success: false, message: "No companyId found in user metadata" }, { status: 400 });
+      return NextResponse.json(
+        { success: false, message: "No companyId found in user metadata" },
+        { status: 400 },
+      );
     }
     let records: Record<string, any>[] = [];
     if (Array.isArray(licenses)) {
@@ -57,26 +65,39 @@ export async function POST(req: NextRequest) {
     } else if (fileContent) {
       // CSV path
       try {
-        records = parse(fileContent, { columns: true, skip_empty_lines: true }) as Record<string, string>[];
+        records = parse(fileContent, {
+          columns: true,
+          skip_empty_lines: true,
+        }) as Record<string, string>[];
       } catch (e) {
-        return NextResponse.json({ success: false, message: "Invalid CSV format" }, { status: 400 });
+        return NextResponse.json(
+          { success: false, message: "Invalid CSV format" },
+          { status: 400 },
+        );
       }
     } else {
-      return NextResponse.json({ success: false, message: "No data provided" }, { status: 400 });
+      return NextResponse.json(
+        { success: false, message: "No data provided" },
+        { status: 400 },
+      );
     }
     let successCount = 0;
-    let errorRows: { row: number; error: string }[] = [];
+    const errorRows: { row: number; error: string }[] = [];
     for (let i = 0; i < records.length; i++) {
       const row = records[i];
       // Parse/validate
       const parsed = LicenseImportSchema.safeParse(row);
       if (!parsed.success) {
-        errorRows.push({ row: i + 2, error: parsed.error.errors.map(e => e.message).join(", ") });
+        errorRows.push({
+          row: i + 2,
+          error: parsed.error.errors.map((e) => e.message).join(", "),
+        });
         continue;
       }
-      let data: LicenseImportInput = parsed.data;
+      const data: LicenseImportInput = parsed.data;
       // Convert empty strings to null for foreign keys
-      const clean = <T extends string | undefined>(v: T) => (v && v.trim() !== "" ? v : null);
+      const clean = <T extends string | undefined>(v: T) =>
+        v && v.trim() !== "" ? v : null;
       const toDate = (v?: string) => (v ? new Date(v) : undefined);
       try {
         const licenseData: Prisma.LicenseCreateInput = {
@@ -86,16 +107,26 @@ export async function POST(req: NextRequest) {
           seats: data.seats,
           minSeatsAlert: data.minSeatsAlert,
           alertRenewalDays: data.alertRenewalDays,
-          purchaseDate: data.purchaseDate ? toDate(data.purchaseDate)! : new Date(),
-          renewalDate: data.renewalDate ? toDate(data.renewalDate)! : new Date(),
+          purchaseDate: data.purchaseDate
+            ? toDate(data.purchaseDate)!
+            : new Date(),
+          renewalDate: data.renewalDate
+            ? toDate(data.renewalDate)!
+            : new Date(),
           company: {
             connect: {
               id: companyId,
             },
           },
-          statusLabel: data.statusLabelId ? { connect: { id: data.statusLabelId } } : undefined,
-          supplier: data.supplierId ? { connect: { id: data.supplierId } } : undefined,
-          department: data.departmentId ? { connect: { id: data.departmentId } } : undefined,
+          statusLabel: data.statusLabelId
+            ? { connect: { id: data.statusLabelId } }
+            : undefined,
+          supplier: data.supplierId
+            ? { connect: { id: data.supplierId } }
+            : undefined,
+          department: data.departmentId
+            ? { connect: { id: data.departmentId } }
+            : undefined,
           purchaseNotes: data.purchaseNotes,
           licenseUrl: data.licenseUrl,
           purchasePrice: data.purchasePrice ?? 0,
@@ -117,8 +148,15 @@ export async function POST(req: NextRequest) {
         errorRows.push({ row: i + 2, error: e.message });
       }
     }
-    return NextResponse.json({ success: true, message: `Imported ${successCount} licenses.`, errors: errorRows });
+    return NextResponse.json({
+      success: true,
+      message: `Imported ${successCount} licenses.`,
+      errors: errorRows,
+    });
   } catch (e: any) {
-    return NextResponse.json({ success: false, message: e.message || "Server error" }, { status: 500 });
+    return NextResponse.json(
+      { success: false, message: e.message || "Server error" },
+      { status: 500 },
+    );
   }
-} 
+}

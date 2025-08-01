@@ -23,9 +23,12 @@ export default function Error({ reset }: { reset?: () => void }) {
         <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
           <AlertTriangle className="h-8 w-8 text-red-600" />
         </div>
-        <h1 className="text-2xl font-semibold text-gray-900 mb-2">Something went wrong</h1>
+        <h1 className="text-2xl font-semibold text-gray-900 mb-2">
+          Something went wrong
+        </h1>
         <p className="text-gray-600 mb-6 text-center">
-          We're sorry, but something unexpected happened. Please try again or contact support if the issue persists.
+          We're sorry, but something unexpected happened. Please try again or
+          contact support if the issue persists.
         </p>
         <div className="flex gap-3">
           <Button onClick={handleRetry} variant="outline">

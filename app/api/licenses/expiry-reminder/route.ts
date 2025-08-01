@@ -14,7 +14,9 @@ export const POST = async (req: NextRequest) => {
   }
 
   const now = new Date();
-  const soon = new Date(now.getTime() + DAYS_BEFORE_EXPIRY * 24 * 60 * 60 * 1000);
+  const soon = new Date(
+    now.getTime() + DAYS_BEFORE_EXPIRY * 24 * 60 * 60 * 1000,
+  );
 
   // Find licenses expiring soon
   const expiringLicenses = await prisma.license.findMany({
@@ -57,4 +59,4 @@ export const POST = async (req: NextRequest) => {
   }
   await prisma.$disconnect();
   return NextResponse.json({ success: true, sent });
-}; 
+};

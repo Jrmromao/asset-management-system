@@ -23,9 +23,9 @@ const DepartmentForm = ({
 }: FormProps<Department>) => {
   const [isPending, startTransition] = useTransition();
   const { onClose } = useDepartmentUIStore();
-  const { createDepartment, updateDepartment, isCreating, isUpdating} =
+  const { createDepartment, updateDepartment, isCreating, isUpdating } =
     useDepartmentQuery();
-  
+
   const { onClose: closeDepartment } = useDepartmentUIStore();
 
   const form = useForm<z.infer<typeof departmentSchema> & { active: boolean }>({
@@ -36,7 +36,9 @@ const DepartmentForm = ({
     },
   });
 
-  const onSubmit = async (data: z.infer<typeof departmentSchema> & { active: boolean }) => {
+  const onSubmit = async (
+    data: z.infer<typeof departmentSchema> & { active: boolean },
+  ) => {
     startTransition(async () => {
       try {
         if (initialData) {
@@ -91,7 +93,7 @@ const DepartmentForm = ({
           tooltip="A unique name for this department."
         />
 
-      {initialData && (
+        {initialData && (
           <CustomSwitch
             control={form.control}
             name="active"

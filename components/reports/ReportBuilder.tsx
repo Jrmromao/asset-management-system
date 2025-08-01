@@ -25,60 +25,73 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
-import { 
-  Calendar, 
-  FileText, 
-  Plus, 
-  Settings2, 
-  Table, 
-  Clock, 
-  CheckCircle, 
+import {
+  Calendar,
+  FileText,
+  Plus,
+  Settings2,
+  Table,
+  Clock,
+  CheckCircle,
   AlertCircle,
   Loader2,
   X,
-  Info
+  Info,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import CustomInput from "@/components/CustomInput";
 import CustomSelect from "@/components/CustomSelect";
 import CustomSwitch from "@/components/CustomSwitch";
-import { 
-  useCreateReportConfiguration, 
+import {
+  useCreateReportConfiguration,
   useGenerateReport,
   ReportMetric,
-  ReportConfiguration
+  ReportConfiguration,
 } from "@/hooks/queries/useReportConfigurations";
 import { getAllAssets } from "@/lib/actions/assets.actions";
 
 // Report Builder Schema
-const reportBuilderSchema = z.object({
-  reportName: z
-    .string()
-    .min(3, "Report name must be at least 3 characters long")
-    .max(100, "Report name must be less than 100 characters")
-    .regex(/^[a-zA-Z0-9\s\-_()]+$/, "Report name can only contain letters, numbers, spaces, hyphens, underscores, and parentheses"),
-  selectedMetrics: z
-    .array(z.string())
-    .min(1, "Please select at least one metric")
-    .max(8, "Please select no more than 8 metrics for optimal performance"),
-  reportFormat: z.enum(["pdf", "excel", "csv", "dashboard"]),
-  dateRange: z.enum(["last30days", "last3months", "last6months", "lastyear", "custom"]),
-  isScheduled: z.boolean(),
-  scheduleFrequency: z.string().optional(),
-}).refine(
-  (data) => !data.isScheduled || (data.isScheduled && data.scheduleFrequency),
-  {
-    message: "Please select a schedule frequency",
-    path: ["scheduleFrequency"],
-  }
-);
+const reportBuilderSchema = z
+  .object({
+    reportName: z
+      .string()
+      .min(3, "Report name must be at least 3 characters long")
+      .max(100, "Report name must be less than 100 characters")
+      .regex(
+        /^[a-zA-Z0-9\s\-_()]+$/,
+        "Report name can only contain letters, numbers, spaces, hyphens, underscores, and parentheses",
+      ),
+    selectedMetrics: z
+      .array(z.string())
+      .min(1, "Please select at least one metric")
+      .max(8, "Please select no more than 8 metrics for optimal performance"),
+    reportFormat: z.enum(["pdf", "excel", "csv", "dashboard"]),
+    dateRange: z.enum([
+      "last30days",
+      "last3months",
+      "last6months",
+      "lastyear",
+      "custom",
+    ]),
+    isScheduled: z.boolean(),
+    scheduleFrequency: z.string().optional(),
+  })
+  .refine(
+    (data) => !data.isScheduled || (data.isScheduled && data.scheduleFrequency),
+    {
+      message: "Please select a schedule frequency",
+      path: ["scheduleFrequency"],
+    },
+  );
 
 type ReportBuilderFormValues = z.infer<typeof reportBuilderSchema>;
 
 const ReportBuilder = () => {
   const [open, setOpen] = useState(false);
   const [companyId, setCompanyId] = useState<string>("");
-  const [step, setStep] = useState<"configure" | "preview" | "generating">("configure");
+  const [step, setStep] = useState<"configure" | "preview" | "generating">(
+    "configure",
+  );
   const [isGenerating, setIsGenerating] = useState(false);
   const generatingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const dialogWasClosedDuringGeneration = useRef(false);
@@ -116,96 +129,107 @@ const ReportBuilder = () => {
     fetchCompanyId();
   }, []);
 
-  const availableMetrics: { id: string; label: string; category: string; description: string }[] = [
-    { 
-      id: "energy", 
-      label: "Energy Consumption", 
+  const availableMetrics: {
+    id: string;
+    label: string;
+    category: string;
+    description: string;
+  }[] = [
+    {
+      id: "energy",
+      label: "Energy Consumption",
       category: "Environmental",
-      description: "Track energy usage across all assets and accessories"
+      description: "Track energy usage across all assets and accessories",
     },
-    { 
-      id: "carbon", 
-      label: "Carbon Emissions", 
+    {
+      id: "carbon",
+      label: "Carbon Emissions",
       category: "Environmental",
-      description: "Monitor CO₂ emissions and reduction targets"
+      description: "Monitor CO₂ emissions and reduction targets",
     },
-    { 
-      id: "assets", 
-      label: "Asset Distribution", 
+    {
+      id: "assets",
+      label: "Asset Distribution",
       category: "Assets",
-      description: "Analyze asset distribution by category and location"
+      description: "Analyze asset distribution by category and location",
     },
-    { 
-      id: "maintenance", 
-      label: "Maintenance History", 
+    {
+      id: "maintenance",
+      label: "Maintenance History",
       category: "Operations",
-      description: "Review maintenance activities and schedules"
+      description: "Review maintenance activities and schedules",
     },
-    { 
-      id: "costs", 
-      label: "Cost Analysis", 
+    {
+      id: "costs",
+      label: "Cost Analysis",
       category: "Financial",
-      description: "Examine total cost of ownership and depreciation"
+      description: "Examine total cost of ownership and depreciation",
     },
-    { 
-      id: "utilization", 
-      label: "Device Utilization", 
+    {
+      id: "utilization",
+      label: "Device Utilization",
       category: "Operations",
-      description: "Monitor asset usage and efficiency metrics"
+      description: "Monitor asset usage and efficiency metrics",
     },
-    { 
-      id: "efficiency", 
-      label: "Energy Efficiency", 
+    {
+      id: "efficiency",
+      label: "Energy Efficiency",
       category: "Environmental",
-      description: "Analyze energy efficiency trends and targets"
+      description: "Analyze energy efficiency trends and targets",
     },
     {
       id: "compliance",
       label: "Compliance Status",
       category: "Administration",
-      description: "Track license compliance and warranty status"
+      description: "Track license compliance and warranty status",
     },
     {
       id: "lifecycle",
       label: "Asset Lifecycle",
       category: "Assets",
-      description: "Monitor asset lifecycle stages and planning"
+      description: "Monitor asset lifecycle stages and planning",
     },
     {
       id: "security",
       label: "Security Metrics",
-      category: "Administration", 
-      description: "Track security compliance and incidents"
+      category: "Administration",
+      description: "Track security compliance and incidents",
     },
   ];
 
-  const categories = Array.from(new Set(availableMetrics.map((m) => m.category)));
+  const categories = Array.from(
+    new Set(availableMetrics.map((m) => m.category)),
+  );
 
   // Form handlers using React Hook Form
   const handleMetricToggle = (metricId: string) => {
     const currentMetrics = form.getValues("selectedMetrics");
-    const newMetrics = currentMetrics.includes(metricId) 
+    const newMetrics = currentMetrics.includes(metricId)
       ? currentMetrics.filter((id: string) => id !== metricId)
       : [...currentMetrics, metricId];
-    
+
     form.setValue("selectedMetrics", newMetrics, { shouldValidate: true });
   };
 
   const handleSelectAllInCategory = (category: string) => {
     const categoryMetrics = availableMetrics
-      .filter(m => m.category === category)
-      .map(m => m.id);
-    
+      .filter((m) => m.category === category)
+      .map((m) => m.id);
+
     const currentMetrics = form.getValues("selectedMetrics");
-    const allSelected = categoryMetrics.every((id: string) => currentMetrics.includes(id));
-    
+    const allSelected = categoryMetrics.every((id: string) =>
+      currentMetrics.includes(id),
+    );
+
     let newMetrics: string[];
     if (allSelected) {
-      newMetrics = currentMetrics.filter((id: string) => !categoryMetrics.includes(id));
+      newMetrics = currentMetrics.filter(
+        (id: string) => !categoryMetrics.includes(id),
+      );
     } else {
       newMetrics = Array.from(new Set([...currentMetrics, ...categoryMetrics]));
     }
-    
+
     form.setValue("selectedMetrics", newMetrics, { shouldValidate: true });
   };
 
@@ -213,10 +237,11 @@ const ReportBuilder = () => {
     const isValid = await form.trigger();
     if (!isValid) {
       const errors = form.formState.errors;
-      const firstError = errors.reportName?.message || 
-                        errors.selectedMetrics?.message || 
-                        errors.scheduleFrequency?.message;
-      
+      const firstError =
+        errors.reportName?.message ||
+        errors.selectedMetrics?.message ||
+        errors.scheduleFrequency?.message;
+
       toast({
         title: "Validation Error",
         description: firstError || "Please correct the errors in the form",
@@ -231,21 +256,25 @@ const ReportBuilder = () => {
     if (!isValid) return;
 
     const formData = form.getValues();
-    const metrics: ReportMetric[] = formData.selectedMetrics.map((metricId: string) => {
-      const metric = availableMetrics.find(m => m.id === metricId);
-      return {
-        category: metric?.category || "",
-        metricName: metric?.label || "",
-        enabled: true,
-      };
-    });
+    const metrics: ReportMetric[] = formData.selectedMetrics.map(
+      (metricId: string) => {
+        const metric = availableMetrics.find((m) => m.id === metricId);
+        return {
+          category: metric?.category || "",
+          metricName: metric?.label || "",
+          enabled: true,
+        };
+      },
+    );
 
     const configuration: ReportConfiguration = {
       name: formData.reportName,
       format: formData.reportFormat,
       timePeriod: formData.dateRange,
       isScheduled: formData.isScheduled,
-      scheduleFrequency: formData.isScheduled ? formData.scheduleFrequency : undefined,
+      scheduleFrequency: formData.isScheduled
+        ? formData.scheduleFrequency
+        : undefined,
       companyId,
       metrics,
     };
@@ -261,7 +290,8 @@ const ReportBuilder = () => {
     } catch (error) {
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to save template",
+        description:
+          error instanceof Error ? error.message : "Failed to save template",
         variant: "destructive",
       });
     }
@@ -277,21 +307,25 @@ const ReportBuilder = () => {
 
     // First save the configuration
     const formData = form.getValues();
-    const metrics: ReportMetric[] = formData.selectedMetrics.map((metricId: string) => {
-      const metric = availableMetrics.find(m => m.id === metricId);
-      return {
-        category: metric?.category || "",
-        metricName: metric?.label || "",
-        enabled: true,
-      };
-    });
+    const metrics: ReportMetric[] = formData.selectedMetrics.map(
+      (metricId: string) => {
+        const metric = availableMetrics.find((m) => m.id === metricId);
+        return {
+          category: metric?.category || "",
+          metricName: metric?.label || "",
+          enabled: true,
+        };
+      },
+    );
 
     const configuration: ReportConfiguration = {
       name: formData.reportName,
       format: formData.reportFormat,
       timePeriod: formData.dateRange,
       isScheduled: formData.isScheduled,
-      scheduleFrequency: formData.isScheduled ? formData.scheduleFrequency : undefined,
+      scheduleFrequency: formData.isScheduled
+        ? formData.scheduleFrequency
+        : undefined,
       companyId,
       metrics,
     };
@@ -317,15 +351,16 @@ const ReportBuilder = () => {
         if (open || dialogWasClosedDuringGeneration.current) {
           toast({
             title: "Report Generated Successfully",
-            description: "Your custom report has been generated and is available in the Recent Reports section.",
+            description:
+              "Your custom report has been generated and is available in the Recent Reports section.",
           });
         }
       }, 3000);
-
     } catch (error) {
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to generate report",
+        description:
+          error instanceof Error ? error.message : "Failed to generate report",
         variant: "destructive",
       });
       setStep("configure");
@@ -350,9 +385,11 @@ const ReportBuilder = () => {
 
   const getSelectedMetricsDetails = () => {
     const selectedMetrics = form.watch("selectedMetrics");
-    return selectedMetrics.map((metricId: string) => 
-      availableMetrics.find(m => m.id === metricId)
-    ).filter(Boolean);
+    return selectedMetrics
+      .map((metricId: string) =>
+        availableMetrics.find((m) => m.id === metricId),
+      )
+      .filter(Boolean);
   };
 
   // Format options for the select
@@ -388,10 +425,13 @@ const ReportBuilder = () => {
   }, []);
 
   return (
-    <Dialog open={open} onOpenChange={(val) => {
-      if (!val) handleClose();
-      else setOpen(true);
-    }}>
+    <Dialog
+      open={open}
+      onOpenChange={(val) => {
+        if (!val) handleClose();
+        else setOpen(true);
+      }}
+    >
       <DialogTrigger asChild>
         <Button className="bg-emerald-600 hover:bg-emerald-700">
           <Plus className="h-4 w-4 mr-2" />
@@ -413,8 +453,8 @@ const ReportBuilder = () => {
               <Loader2 className="h-12 w-12 animate-spin text-emerald-600" />
               <h3 className="text-lg font-medium">Generating Your Report</h3>
               <p className="text-gray-500 text-center max-w-md">
-                We're processing your selected metrics and generating your custom report. 
-                This usually takes 2-3 minutes.
+                We're processing your selected metrics and generating your
+                custom report. This usually takes 2-3 minutes.
               </p>
               <div className="flex items-center space-x-2 text-sm text-gray-500">
                 <Clock className="h-4 w-4" />
@@ -476,7 +516,7 @@ const ReportBuilder = () => {
                         label="Schedule recurring report"
                         control={form.control}
                       />
-                      
+
                       {form.watch("isScheduled") && (
                         <CustomSelect
                           name="scheduleFrequency"
@@ -509,13 +549,13 @@ const ReportBuilder = () => {
                       <div className="space-y-6">
                         {categories.map((category) => {
                           const categoryMetrics = availableMetrics.filter(
-                            (metric) => metric.category === category
+                            (metric) => metric.category === category,
                           );
                           const selectedMetrics = form.watch("selectedMetrics");
-                          const selectedInCategory = categoryMetrics.filter(m => 
-                            selectedMetrics.includes(m.id)
+                          const selectedInCategory = categoryMetrics.filter(
+                            (m) => selectedMetrics.includes(m.id),
                           ).length;
-                          
+
                           return (
                             <div key={category} className="space-y-3">
                               <div className="flex items-center justify-between">
@@ -524,16 +564,22 @@ const ReportBuilder = () => {
                                 </h3>
                                 <div className="flex items-center space-x-2">
                                   <Badge variant="outline" className="text-xs">
-                                    {selectedInCategory}/{categoryMetrics.length}
+                                    {selectedInCategory}/
+                                    {categoryMetrics.length}
                                   </Badge>
                                   <Button
                                     variant="ghost"
                                     size="sm"
                                     className="text-xs h-6 px-2"
-                                    onClick={() => handleSelectAllInCategory(category)}
+                                    onClick={() =>
+                                      handleSelectAllInCategory(category)
+                                    }
                                     type="button"
                                   >
-                                    {selectedInCategory === categoryMetrics.length ? "Deselect All" : "Select All"}
+                                    {selectedInCategory ===
+                                    categoryMetrics.length
+                                      ? "Deselect All"
+                                      : "Select All"}
                                   </Button>
                                 </div>
                               </div>
@@ -545,12 +591,16 @@ const ReportBuilder = () => {
                                   >
                                     <Checkbox
                                       id={metric.id}
-                                      checked={selectedMetrics.includes(metric.id)}
-                                      onCheckedChange={() => handleMetricToggle(metric.id)}
+                                      checked={selectedMetrics.includes(
+                                        metric.id,
+                                      )}
+                                      onCheckedChange={() =>
+                                        handleMetricToggle(metric.id)
+                                      }
                                     />
                                     <div className="flex-1 min-w-0">
-                                      <Label 
-                                        htmlFor={metric.id} 
+                                      <Label
+                                        htmlFor={metric.id}
                                         className="text-sm font-medium cursor-pointer"
                                       >
                                         {metric.label}
@@ -562,7 +612,8 @@ const ReportBuilder = () => {
                                   </div>
                                 ))}
                               </div>
-                              {category !== categories[categories.length - 1] && (
+                              {category !==
+                                categories[categories.length - 1] && (
                                 <Separator className="mt-4" />
                               )}
                             </div>
@@ -572,7 +623,9 @@ const ReportBuilder = () => {
                       {form.formState.errors.selectedMetrics && (
                         <div className="flex items-center space-x-1 text-sm text-red-600 mt-2">
                           <AlertCircle className="h-4 w-4" />
-                          <span>{form.formState.errors.selectedMetrics.message}</span>
+                          <span>
+                            {form.formState.errors.selectedMetrics.message}
+                          </span>
                         </div>
                       )}
                     </CardContent>
@@ -596,11 +649,23 @@ const ReportBuilder = () => {
                             <span className="font-medium">Report Details</span>
                           </div>
                           <div className="text-sm space-y-1">
-                            <div><span className="font-medium">Name:</span> {form.watch("reportName") || "Untitled Report"}</div>
-                            <div><span className="font-medium">Format:</span> {form.watch("reportFormat").toUpperCase()}</div>
-                            <div><span className="font-medium">Period:</span> {form.watch("dateRange")}</div>
+                            <div>
+                              <span className="font-medium">Name:</span>{" "}
+                              {form.watch("reportName") || "Untitled Report"}
+                            </div>
+                            <div>
+                              <span className="font-medium">Format:</span>{" "}
+                              {form.watch("reportFormat").toUpperCase()}
+                            </div>
+                            <div>
+                              <span className="font-medium">Period:</span>{" "}
+                              {form.watch("dateRange")}
+                            </div>
                             {form.watch("isScheduled") && (
-                              <div><span className="font-medium">Schedule:</span> {form.watch("scheduleFrequency")}</div>
+                              <div>
+                                <span className="font-medium">Schedule:</span>{" "}
+                                {form.watch("scheduleFrequency")}
+                              </div>
                             )}
                           </div>
                         </div>
@@ -608,14 +673,24 @@ const ReportBuilder = () => {
                         <div className="p-3 bg-gray-50 rounded-lg">
                           <div className="flex items-center space-x-2 text-sm text-gray-600 mb-2">
                             <Table className="h-4 w-4" />
-                            <span className="font-medium">Selected Metrics ({form.watch("selectedMetrics").length})</span>
+                            <span className="font-medium">
+                              Selected Metrics (
+                              {form.watch("selectedMetrics").length})
+                            </span>
                           </div>
                           <div className="space-y-2 max-h-48 overflow-y-auto">
                             {getSelectedMetricsDetails().map((metric) => (
-                              <div key={metric?.id} className="flex items-center justify-between text-xs">
+                              <div
+                                key={metric?.id}
+                                className="flex items-center justify-between text-xs"
+                              >
                                 <div>
-                                  <div className="font-medium">{metric?.label}</div>
-                                  <div className="text-gray-500">{metric?.category}</div>
+                                  <div className="font-medium">
+                                    {metric?.label}
+                                  </div>
+                                  <div className="text-gray-500">
+                                    {metric?.category}
+                                  </div>
                                 </div>
                                 <CheckCircle className="h-3 w-3 text-green-500" />
                               </div>
@@ -632,8 +707,14 @@ const ReportBuilder = () => {
                           <div className="flex items-start space-x-2">
                             <Info className="h-4 w-4 text-blue-600 mt-0.5" />
                             <div className="text-xs text-blue-700">
-                              <p className="font-medium mb-1">Report Generation</p>
-                              <p>Your report will be generated with real data from your asset management system. Processing typically takes 2-3 minutes.</p>
+                              <p className="font-medium mb-1">
+                                Report Generation
+                              </p>
+                              <p>
+                                Your report will be generated with real data
+                                from your asset management system. Processing
+                                typically takes 2-3 minutes.
+                              </p>
                             </div>
                           </div>
                         </div>
@@ -648,8 +729,8 @@ const ReportBuilder = () => {
 
         {step !== "generating" && (
           <DialogFooter className="shrink-0 mt-4 pt-4 border-t flex-row justify-between items-center">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={handleSaveTemplate}
               disabled={createConfiguration.isPending}
               className="flex items-center"
@@ -666,10 +747,12 @@ const ReportBuilder = () => {
               <Button variant="outline" onClick={handleClose} type="button">
                 Cancel
               </Button>
-              <Button 
+              <Button
                 onClick={handleGenerateReport}
                 className="bg-emerald-600 hover:bg-emerald-700"
-                disabled={generateReport.isPending || createConfiguration.isPending}
+                disabled={
+                  generateReport.isPending || createConfiguration.isPending
+                }
                 type="button"
               >
                 {generateReport.isPending || createConfiguration.isPending ? (

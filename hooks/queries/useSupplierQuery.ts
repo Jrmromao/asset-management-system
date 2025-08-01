@@ -16,7 +16,9 @@ type CreateSupplierInput = z.infer<typeof supplierSchema>;
 export function useSupplierQuery() {
   const { onClose } = useSupplierUIStore();
 
-  const genericQuery: ReturnType<typeof createGenericQuery<Supplier, CreateSupplierInput>> = createGenericQuery<Supplier, CreateSupplierInput>(
+  const genericQuery: ReturnType<
+    typeof createGenericQuery<Supplier, CreateSupplierInput>
+  > = createGenericQuery<Supplier, CreateSupplierInput>(
     MODEL_KEY,
     {
       getAll: async () => {
@@ -33,13 +35,21 @@ export function useSupplierQuery() {
         return result as ActionResponse<Supplier>;
       },
       delete: async (id: string) => {
-        return await deleteSupplierAction(id);
+        const result = await deleteSupplierAction(id);
+        if (!result.success) {
+          throw new Error(result.error || "Failed to delete supplier");
+        }
+        return result as ActionResponse<Supplier>;
       },
     },
     {
       onClose,
       successMessage: "Supplier created successfully",
       errorMessage: "Failed to create supplier",
+      deleteSuccessMessage: "Supplier deleted successfully",
+      deleteErrorMessage: "Failed to delete supplier",
+      updateSuccessMessage: "Supplier updated successfully",
+      updateErrorMessage: "Failed to update supplier",
       staleTime: 5 * 60 * 1000, // 5 minutes
     },
   );
@@ -50,6 +60,7 @@ export function useSupplierQuery() {
     error,
     createItem: createSupplier,
     updateItem: updateSupplier,
+    deleteItem: deleteSupplier,
     isCreating,
     refresh,
   } = genericQuery();
@@ -60,8 +71,8 @@ export function useSupplierQuery() {
     error,
     createSupplier,
     updateSupplier,
+    deleteSupplier,
     isCreating,
     refresh,
-    deleteItem: deleteSupplierAction,
   };
 }

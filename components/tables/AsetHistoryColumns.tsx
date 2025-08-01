@@ -63,9 +63,7 @@ export const assetHistoryColumns = (): ColumnDef<AssetHistory>[] => [
       notes = notes.replace(/to user [a-z0-9]+/gi, "to user");
       notes = notes.replace(/from user [a-z0-9]+/gi, "from user");
       return (
-        <div className="text-sm text-gray-700 whitespace-pre-line">
-          {notes}
-        </div>
+        <div className="text-sm text-gray-700 whitespace-pre-line">{notes}</div>
       );
     },
   },

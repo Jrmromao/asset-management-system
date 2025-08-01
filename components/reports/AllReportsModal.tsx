@@ -4,7 +4,16 @@ import { DialogContainer } from "@/components/dialogs/DialogContainer";
 import { DataTable } from "@/components/tables/DataTable/data-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, Archive, Trash2, Clock, Undo2, MoreVertical, CheckCircle, Download } from "lucide-react";
+import {
+  Calendar,
+  Archive,
+  Trash2,
+  Clock,
+  Undo2,
+  MoreVertical,
+  CheckCircle,
+  Download,
+} from "lucide-react";
 import { format } from "date-fns";
 import { CardFooter } from "@/components/ui/card";
 import {
@@ -28,7 +37,13 @@ import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 
 // Types
-export type ReportStatus = "active" | "archived" | "scheduled" | "deleted" | "processing" | "completed";
+export type ReportStatus =
+  | "active"
+  | "archived"
+  | "scheduled"
+  | "deleted"
+  | "processing"
+  | "completed";
 export interface Report {
   id: string;
   name: string;
@@ -64,7 +79,8 @@ function formatFileSize(sizeMB: number): string {
   const sizeBytes = sizeMB * 1024 * 1024;
   if (sizeBytes < 1024) return `${sizeBytes} B`;
   if (sizeBytes < 1024 * 1024) return `${(sizeBytes / 1024).toFixed(2)} KB`;
-  if (sizeBytes < 1024 * 1024 * 1024) return `${(sizeBytes / (1024 * 1024)).toFixed(2)} MB`;
+  if (sizeBytes < 1024 * 1024 * 1024)
+    return `${(sizeBytes / (1024 * 1024)).toFixed(2)} MB`;
   return `${(sizeBytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
 }
 
@@ -95,7 +111,7 @@ const AllReportsModal: React.FC<AllReportsModalProps> = ({
     reportId: string;
     reportName: string;
     date: string;
-  }>({ open: false, reportId: '', reportName: '', date: '' });
+  }>({ open: false, reportId: "", reportName: "", date: "" });
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -103,7 +119,8 @@ const AllReportsModal: React.FC<AllReportsModalProps> = ({
   const filteredReports = useMemo(() => {
     return reports.filter((r) => {
       if (!showArchived && r.status === "archived") return false;
-      if (search && !r.name.toLowerCase().includes(search.toLowerCase())) return false;
+      if (search && !r.name.toLowerCase().includes(search.toLowerCase()))
+        return false;
       return true;
     });
   }, [reports, search, showArchived]);
@@ -130,19 +147,21 @@ const AllReportsModal: React.FC<AllReportsModalProps> = ({
         return;
       }
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Download failed' }));
+        const errorData = await response
+          .json()
+          .catch(() => ({ error: "Download failed" }));
         toast({
           title: "Download Failed",
-          description: errorData.error || 'Failed to download report',
+          description: errorData.error || "Failed to download report",
           variant: "destructive",
         });
         return;
       }
 
-      const contentType = response.headers.get('content-type');
-      if (contentType && contentType.includes('application/json')) {
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
         const jsonData = await response.json();
-        console.log('Dashboard data:', jsonData);
+        console.log("Dashboard data:", jsonData);
         toast({
           title: "Dashboard Data",
           description: "Data logged to console (feature coming soon)",
@@ -152,12 +171,12 @@ const AllReportsModal: React.FC<AllReportsModalProps> = ({
 
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
-      const disposition = response.headers.get('content-disposition');
+      const disposition = response.headers.get("content-disposition");
       let filename = report.name;
-      if (disposition && disposition.includes('filename=')) {
-        filename = disposition.split('filename=')[1].replace(/"/g, '');
+      if (disposition && disposition.includes("filename=")) {
+        filename = disposition.split("filename=")[1].replace(/"/g, "");
       }
       a.download = filename;
       document.body.appendChild(a);
@@ -170,7 +189,7 @@ const AllReportsModal: React.FC<AllReportsModalProps> = ({
         description: `${report.name} has been downloaded successfully.`,
       });
     } catch (error) {
-      console.error('Download error:', error);
+      console.error("Download error:", error);
       toast({
         title: "Download Failed",
         description: "An error occurred while downloading the report.",
@@ -218,7 +237,8 @@ const AllReportsModal: React.FC<AllReportsModalProps> = ({
       } catch (err) {
         toast({
           title: "Archive Failed",
-          description: err instanceof Error ? err.message : "Failed to archive report.",
+          description:
+            err instanceof Error ? err.message : "Failed to archive report.",
           variant: "destructive",
         });
       }
@@ -238,7 +258,8 @@ const AllReportsModal: React.FC<AllReportsModalProps> = ({
       } catch (err) {
         toast({
           title: "Delete Failed",
-          description: err instanceof Error ? err.message : "Failed to delete report.",
+          description:
+            err instanceof Error ? err.message : "Failed to delete report.",
           variant: "destructive",
         });
       }
@@ -258,12 +279,18 @@ const AllReportsModal: React.FC<AllReportsModalProps> = ({
       } catch (err) {
         toast({
           title: "Restore Failed",
-          description: err instanceof Error ? err.message : "Failed to restore report.",
+          description:
+            err instanceof Error ? err.message : "Failed to restore report.",
           variant: "destructive",
         });
       }
     }
-    setAlertDialog({ open: false, type: "delete", reportId: "", reportName: "" });
+    setAlertDialog({
+      open: false,
+      type: "delete",
+      reportId: "",
+      reportName: "",
+    });
   };
 
   // Table columns
@@ -273,7 +300,9 @@ const AllReportsModal: React.FC<AllReportsModalProps> = ({
         header: "Name",
         accessorKey: "name",
         cell: (row: any) => (
-          <span className="font-medium text-gray-900">{row.row.original.name}</span>
+          <span className="font-medium text-gray-900">
+            {row.row.original.name}
+          </span>
         ),
       },
       {
@@ -289,7 +318,10 @@ const AllReportsModal: React.FC<AllReportsModalProps> = ({
         header: "Size",
         accessorKey: "sizeMB",
         cell: (row: any) => (
-          <span className="text-gray-600 text-sm" title={`${row.row.original.sizeMB} MB`}>
+          <span
+            className="text-gray-600 text-sm"
+            title={`${row.row.original.sizeMB} MB`}
+          >
             {formatFileSize(row.row.original.sizeMB)}
           </span>
         ),
@@ -300,20 +332,38 @@ const AllReportsModal: React.FC<AllReportsModalProps> = ({
         cell: (row: any) => {
           const status: ReportStatus = row.row.original.status;
           return (
-            <Badge className={`border ${statusColors[status]} capitalize flex items-center gap-1`}>
-              {status === "active" && <CheckCircle className="w-3 h-3 text-emerald-600" />}
-              {status === "archived" && <Archive className="w-3 h-3 text-slate-600" />}
-              {status === "scheduled" && <Clock className="w-3 h-3 text-amber-600" />}
-              {status === "deleted" && <Trash2 className="w-3 h-3 text-red-600" />}
-              {status === "processing" && <Clock className="w-3 h-3 animate-spin text-blue-600" />}
-              {status === "completed" && <CheckCircle className="w-3 h-3 text-emerald-600" />}
-              {status}
-              {status === "scheduled" && row.row.original.scheduledDeletionAt && (
-                <span className="ml-2 flex items-center gap-1 text-xs">
-                  <Clock className="w-3 h-3" />
-                  {format(new Date(row.row.original.scheduledDeletionAt), "yyyy-MM-dd")}
-                </span>
+            <Badge
+              className={`border ${statusColors[status]} capitalize flex items-center gap-1`}
+            >
+              {status === "active" && (
+                <CheckCircle className="w-3 h-3 text-emerald-600" />
               )}
+              {status === "archived" && (
+                <Archive className="w-3 h-3 text-slate-600" />
+              )}
+              {status === "scheduled" && (
+                <Clock className="w-3 h-3 text-amber-600" />
+              )}
+              {status === "deleted" && (
+                <Trash2 className="w-3 h-3 text-red-600" />
+              )}
+              {status === "processing" && (
+                <Clock className="w-3 h-3 animate-spin text-blue-600" />
+              )}
+              {status === "completed" && (
+                <CheckCircle className="w-3 h-3 text-emerald-600" />
+              )}
+              {status}
+              {status === "scheduled" &&
+                row.row.original.scheduledDeletionAt && (
+                  <span className="ml-2 flex items-center gap-1 text-xs">
+                    <Clock className="w-3 h-3" />
+                    {format(
+                      new Date(row.row.original.scheduledDeletionAt),
+                      "yyyy-MM-dd",
+                    )}
+                  </span>
+                )}
             </Badge>
           );
         },
@@ -332,25 +382,33 @@ const AllReportsModal: React.FC<AllReportsModalProps> = ({
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 {report.status === "processing" && (
-                  <DropdownMenuItem disabled>No actions available</DropdownMenuItem>
+                  <DropdownMenuItem disabled>
+                    No actions available
+                  </DropdownMenuItem>
                 )}
                 {report.status === "completed" && (
                   <>
-                    <DropdownMenuItem 
-                      onClick={() => handleDownload(report)} 
+                    <DropdownMenuItem
+                      onClick={() => handleDownload(report)}
                       title="Download Report"
                     >
-                      <Download className="w-4 h-4 mr-2 text-blue-600" /> Download
+                      <Download className="w-4 h-4 mr-2 text-blue-600" />{" "}
+                      Download
                     </DropdownMenuItem>
-                    <DropdownMenuItem 
-                      onClick={() => handleArchiveWithConfirm(report.id, report.name)} 
+                    <DropdownMenuItem
+                      onClick={() =>
+                        handleArchiveWithConfirm(report.id, report.name)
+                      }
                       title="Archive Report"
                     >
-                      <Archive className="w-4 h-4 mr-2 text-slate-600" /> Archive
+                      <Archive className="w-4 h-4 mr-2 text-slate-600" />{" "}
+                      Archive
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
-                      onClick={() => handleDeleteWithConfirm(report.id, report.name)}
+                      onClick={() =>
+                        handleDeleteWithConfirm(report.id, report.name)
+                      }
                       className="text-red-600"
                       title="Delete Report"
                     >
@@ -360,27 +418,41 @@ const AllReportsModal: React.FC<AllReportsModalProps> = ({
                 )}
                 {report.status === "active" && (
                   <>
-                    <DropdownMenuItem 
-                      onClick={() => handleDownload(report)} 
+                    <DropdownMenuItem
+                      onClick={() => handleDownload(report)}
                       title="Download Report"
                     >
-                      <Download className="w-4 h-4 mr-2 text-blue-600" /> Download
-                    </DropdownMenuItem>
-                    <DropdownMenuItem 
-                      onClick={() => handleArchiveWithConfirm(report.id, report.name)} 
-                      title="Archive Report"
-                    >
-                      <Archive className="w-4 h-4 mr-2 text-slate-600" /> Archive
+                      <Download className="w-4 h-4 mr-2 text-blue-600" />{" "}
+                      Download
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                      onClick={() => setScheduleDialog({ open: true, reportId: report.id, reportName: report.name, date: '' })}
+                      onClick={() =>
+                        handleArchiveWithConfirm(report.id, report.name)
+                      }
+                      title="Archive Report"
+                    >
+                      <Archive className="w-4 h-4 mr-2 text-slate-600" />{" "}
+                      Archive
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() =>
+                        setScheduleDialog({
+                          open: true,
+                          reportId: report.id,
+                          reportName: report.name,
+                          date: "",
+                        })
+                      }
                       title="Schedule Deletion"
                     >
-                      <Clock className="w-4 h-4 mr-2 text-amber-600" /> Schedule Deletion
+                      <Clock className="w-4 h-4 mr-2 text-amber-600" /> Schedule
+                      Deletion
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
-                      onClick={() => handleDeleteWithConfirm(report.id, report.name)}
+                      onClick={() =>
+                        handleDeleteWithConfirm(report.id, report.name)
+                      }
                       className="text-red-600"
                       title="Delete Report"
                     >
@@ -390,21 +462,32 @@ const AllReportsModal: React.FC<AllReportsModalProps> = ({
                 )}
                 {report.status === "archived" && (
                   <>
-                    <DropdownMenuItem 
-                      onClick={() => handleDownload(report)} 
+                    <DropdownMenuItem
+                      onClick={() => handleDownload(report)}
                       title="Download Report"
                     >
-                      <Download className="w-4 h-4 mr-2 text-blue-600" /> Download
+                      <Download className="w-4 h-4 mr-2 text-blue-600" />{" "}
+                      Download
                     </DropdownMenuItem>
-                    <DropdownMenuItem 
-                      onClick={() => setAlertDialog({ open: true, type: "restore", reportId: report.id, reportName: report.name })} 
+                    <DropdownMenuItem
+                      onClick={() =>
+                        setAlertDialog({
+                          open: true,
+                          type: "restore",
+                          reportId: report.id,
+                          reportName: report.name,
+                        })
+                      }
                       title="Restore Report"
                     >
-                      <Undo2 className="w-4 h-4 mr-2 text-emerald-600" /> Restore
+                      <Undo2 className="w-4 h-4 mr-2 text-emerald-600" />{" "}
+                      Restore
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
-                      onClick={() => handleDeleteWithConfirm(report.id, report.name)}
+                      onClick={() =>
+                        handleDeleteWithConfirm(report.id, report.name)
+                      }
                       className="text-red-600"
                       title="Delete Report"
                     >
@@ -414,11 +497,12 @@ const AllReportsModal: React.FC<AllReportsModalProps> = ({
                 )}
                 {report.status === "scheduled" && (
                   <>
-                    <DropdownMenuItem 
-                      onClick={() => handleDownload(report)} 
+                    <DropdownMenuItem
+                      onClick={() => handleDownload(report)}
                       title="Download Report"
                     >
-                      <Download className="w-4 h-4 mr-2 text-blue-600" /> Download
+                      <Download className="w-4 h-4 mr-2 text-blue-600" />{" "}
+                      Download
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={() => {
@@ -430,11 +514,14 @@ const AllReportsModal: React.FC<AllReportsModalProps> = ({
                       }}
                       title="Cancel Scheduled Deletion"
                     >
-                      <Clock className="w-4 h-4 mr-2 text-amber-600" /> Cancel Scheduled Deletion
+                      <Clock className="w-4 h-4 mr-2 text-amber-600" /> Cancel
+                      Scheduled Deletion
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
-                      onClick={() => handleDeleteWithConfirm(report.id, report.name)}
+                      onClick={() =>
+                        handleDeleteWithConfirm(report.id, report.name)
+                      }
                       className="text-red-600"
                       title="Delete Now"
                     >
@@ -443,7 +530,9 @@ const AllReportsModal: React.FC<AllReportsModalProps> = ({
                   </>
                 )}
                 {report.status === "deleted" && (
-                  <DropdownMenuItem disabled>No actions available</DropdownMenuItem>
+                  <DropdownMenuItem disabled>
+                    No actions available
+                  </DropdownMenuItem>
                 )}
               </DropdownMenuContent>
             </DropdownMenu>
@@ -451,7 +540,7 @@ const AllReportsModal: React.FC<AllReportsModalProps> = ({
         },
       },
     ],
-    [onArchive, onRestore, onDelete, onScheduleDeletion]
+    [onArchive, onRestore, onDelete, onScheduleDeletion],
   );
 
   return (
@@ -471,13 +560,13 @@ const AllReportsModal: React.FC<AllReportsModalProps> = ({
                 className="border border-gray-200 rounded-lg px-3 py-2 text-sm w-64"
                 placeholder="Search reports..."
                 value={search}
-                onChange={e => setSearch(e.target.value)}
+                onChange={(e) => setSearch(e.target.value)}
               />
               <label className="flex items-center gap-1 text-xs text-gray-600">
                 <input
                   type="checkbox"
                   checked={showArchived}
-                  onChange={e => setShowArchived(e.target.checked)}
+                  onChange={(e) => setShowArchived(e.target.checked)}
                   className="accent-slate-600"
                 />
                 Show Archived
@@ -492,52 +581,62 @@ const AllReportsModal: React.FC<AllReportsModalProps> = ({
       />
 
       {/* Alert Dialog for Delete/Archive confirmation */}
-      <AlertDialog open={alertDialog.open} onOpenChange={(open) => setAlertDialog(prev => ({ ...prev, open }))}>
+      <AlertDialog
+        open={alertDialog.open}
+        onOpenChange={(open) => setAlertDialog((prev) => ({ ...prev, open }))}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
               {alertDialog.type === "delete"
                 ? "Delete Report"
                 : alertDialog.type === "archive"
-                ? "Archive Report"
-                : "Restore Report"}
+                  ? "Archive Report"
+                  : "Restore Report"}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {alertDialog.type === "delete"
                 ? `Are you sure you want to delete \"${alertDialog.reportName}\"? This action cannot be undone.`
                 : alertDialog.type === "archive"
-                ? `Are you sure you want to archive \"${alertDialog.reportName}\"? You can restore it later from the archived section.`
-                : `Are you sure you want to restore \"${alertDialog.reportName}\"? It will become active again.`}
+                  ? `Are you sure you want to archive \"${alertDialog.reportName}\"? You can restore it later from the archived section.`
+                  : `Are you sure you want to restore \"${alertDialog.reportName}\"? It will become active again.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
+            <AlertDialogAction
               onClick={executeAction}
               className={
                 alertDialog.type === "delete"
                   ? "bg-red-600 hover:bg-red-700"
                   : alertDialog.type === "restore"
-                  ? "bg-emerald-600 hover:bg-emerald-700"
-                  : ""
+                    ? "bg-emerald-600 hover:bg-emerald-700"
+                    : ""
               }
             >
               {alertDialog.type === "delete"
                 ? "Delete"
                 : alertDialog.type === "archive"
-                ? "Archive"
-                : "Restore"}
+                  ? "Archive"
+                  : "Restore"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
       {/* Schedule Deletion Dialog */}
-      <AlertDialog open={scheduleDialog.open} onOpenChange={open => setScheduleDialog(prev => ({ ...prev, open }))}>
+      <AlertDialog
+        open={scheduleDialog.open}
+        onOpenChange={(open) =>
+          setScheduleDialog((prev) => ({ ...prev, open }))
+        }
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Schedule Report Deletion</AlertDialogTitle>
             <AlertDialogDescription>
-              Choose a date to schedule deletion for <span className="font-semibold">{scheduleDialog.reportName}</span>.
+              Choose a date to schedule deletion for{" "}
+              <span className="font-semibold">{scheduleDialog.reportName}</span>
+              .
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="flex flex-col gap-4 mt-2">
@@ -546,22 +645,43 @@ const AllReportsModal: React.FC<AllReportsModalProps> = ({
               type="date"
               className="border rounded px-3 py-2 text-sm"
               value={scheduleDialog.date}
-              min={new Date().toISOString().split('T')[0]}
-              onChange={e => setScheduleDialog(prev => ({ ...prev, date: e.target.value }))}
+              min={new Date().toISOString().split("T")[0]}
+              onChange={(e) =>
+                setScheduleDialog((prev) => ({ ...prev, date: e.target.value }))
+              }
               required
             />
           </div>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setScheduleDialog({ open: false, reportId: '', reportName: '', date: '' })}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel
+              onClick={() =>
+                setScheduleDialog({
+                  open: false,
+                  reportId: "",
+                  reportName: "",
+                  date: "",
+                })
+              }
+            >
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               disabled={!scheduleDialog.date}
               onClick={() => {
-                onScheduleDeletion(scheduleDialog.reportId, scheduleDialog.date);
+                onScheduleDeletion(
+                  scheduleDialog.reportId,
+                  scheduleDialog.date,
+                );
                 toast({
                   title: "Deletion Scheduled",
                   description: `Report will be deleted on ${scheduleDialog.date}.`,
                 });
-                setScheduleDialog({ open: false, reportId: '', reportName: '', date: '' });
+                setScheduleDialog({
+                  open: false,
+                  reportId: "",
+                  reportName: "",
+                  date: "",
+                });
               }}
             >
               Schedule
@@ -573,4 +693,4 @@ const AllReportsModal: React.FC<AllReportsModalProps> = ({
   );
 };
 
-export default AllReportsModal; 
+export default AllReportsModal;

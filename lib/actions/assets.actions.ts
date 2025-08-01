@@ -16,7 +16,7 @@ import { createAuditLog } from "@/lib/actions/auditLog.actions";
 import levenshtein from "js-levenshtein";
 import { getEnhancedAssetById } from "@/lib/services/asset.service";
 import { EnhancedAssetType } from "@/lib/services/asset.service";
-import { diff } from 'just-diff';
+import { diff } from "just-diff";
 
 type CSVResponse = {
   success: boolean;
@@ -108,13 +108,18 @@ const serializeAsset = (asset: any) => {
   const serialized = { ...asset };
   // Serialize top-level date fields
   const dateFields = [
-    'createdAt', 'updatedAt', 'purchaseDate', 'warrantyEndDate', 'endOfLife', 'nextMaintenance'
+    "createdAt",
+    "updatedAt",
+    "purchaseDate",
+    "warrantyEndDate",
+    "endOfLife",
+    "nextMaintenance",
   ];
   for (const field of dateFields) {
     const value = serialized[field];
     if (value instanceof Date) {
       serialized[field] = value.toISOString();
-    } else if (typeof value === 'string' && !isNaN(Date.parse(value))) {
+    } else if (typeof value === "string" && !isNaN(Date.parse(value))) {
       serialized[field] = new Date(value).toISOString();
     }
   }
@@ -173,12 +178,12 @@ const serializeAsset = (asset: any) => {
             : undefined,
       };
       // Serialize date fields in co2eRecords
-      const co2eDateFields = ['createdAt', 'updatedAt'];
+      const co2eDateFields = ["createdAt", "updatedAt"];
       for (const field of co2eDateFields) {
         const value = serializedRecord[field];
         if (value instanceof Date) {
           serializedRecord[field] = value.toISOString();
-        } else if (typeof value === 'string' && !isNaN(Date.parse(value))) {
+        } else if (typeof value === "string" && !isNaN(Date.parse(value))) {
           serializedRecord[field] = new Date(value).toISOString();
         }
       }
@@ -219,12 +224,12 @@ const serializeAsset = (asset: any) => {
   if (asset.auditLogs && Array.isArray(asset.auditLogs)) {
     serialized.auditLogs = asset.auditLogs.map((log: any) => {
       const serializedLog = { ...log };
-      const auditLogDateFields = ['createdAt', 'updatedAt'];
+      const auditLogDateFields = ["createdAt", "updatedAt"];
       for (const field of auditLogDateFields) {
         const value = serializedLog[field];
         if (value instanceof Date) {
           serializedLog[field] = value.toISOString();
-        } else if (typeof value === 'string' && !isNaN(Date.parse(value))) {
+        } else if (typeof value === "string" && !isNaN(Date.parse(value))) {
           serializedLog[field] = new Date(value).toISOString();
         }
       }
@@ -249,7 +254,7 @@ const EXCLUDED_FIELDS = new Set([
 function generateSummary(
   changes: Record<string, { before: any; after: any }>,
   before: Record<string, any>,
-  after: Record<string, any>
+  after: Record<string, any>,
 ): string {
   const fieldSummaries: string[] = [];
   for (const field of Object.keys(changes)) {
@@ -266,8 +271,10 @@ function generateSummary(
       beforeValue = before.model?.name || beforeId;
       afterValue = after.model?.name || afterId;
     } else if (field === "statusLabel") {
-      const beforeId = before.statusLabelId || before.statusLabel?.id || beforeValue;
-      const afterId = after.statusLabelId || after.statusLabel?.id || afterValue;
+      const beforeId =
+        before.statusLabelId || before.statusLabel?.id || beforeValue;
+      const afterId =
+        after.statusLabelId || after.statusLabel?.id || afterValue;
       if (beforeId === afterId) continue;
       beforeValue = before.statusLabel?.name || beforeId;
       afterValue = after.statusLabel?.name || afterId;
@@ -281,16 +288,22 @@ function generateSummary(
     // --- ARRAYS: Only log if content changed ---
     else if (Array.isArray(beforeValue) || Array.isArray(afterValue)) {
       if (JSON.stringify(beforeValue) === JSON.stringify(afterValue)) continue;
-      beforeValue = Array.isArray(beforeValue) ? `[${beforeValue.length} items]` : beforeValue;
-      afterValue = Array.isArray(afterValue) ? `[${afterValue.length} items]` : afterValue;
+      beforeValue = Array.isArray(beforeValue)
+        ? `[${beforeValue.length} items]`
+        : beforeValue;
+      afterValue = Array.isArray(afterValue)
+        ? `[${afterValue.length} items]`
+        : afterValue;
     }
     // --- PRIMITIVES/OTHER: Only log if value changed ---
     else if (JSON.stringify(beforeValue) === JSON.stringify(afterValue)) {
       continue;
     }
 
-    if (typeof beforeValue === "object" && beforeValue !== null) beforeValue = JSON.stringify(beforeValue);
-    if (typeof afterValue === "object" && afterValue !== null) afterValue = JSON.stringify(afterValue);
+    if (typeof beforeValue === "object" && beforeValue !== null)
+      beforeValue = JSON.stringify(beforeValue);
+    if (typeof afterValue === "object" && afterValue !== null)
+      afterValue = JSON.stringify(afterValue);
 
     fieldSummaries.push(`${field}: ${beforeValue} → ${afterValue}`);
   }
@@ -353,7 +366,7 @@ export const createAsset = withAuth(
         if (
           co2eResponse.success &&
           co2eResponse.data &&
-          typeof co2eResponse.data.confidence === 'number' &&
+          typeof co2eResponse.data.confidence === "number" &&
           co2eResponse.data.confidence >= CO2_CONFIDENCE_THRESHOLD
         ) {
           await createCo2eRecord(asset.id, co2eResponse.data);
@@ -418,7 +431,8 @@ export const getAllAssets = withAuth(
       }
       // Defaults
       const page = options?.page && options.page > 0 ? options.page : 1;
-      const pageSize = options?.pageSize && options.pageSize > 0 ? options.pageSize : 10;
+      const pageSize =
+        options?.pageSize && options.pageSize > 0 ? options.pageSize : 10;
       const skip = (page - 1) * pageSize;
       const take = pageSize;
       // Filters
@@ -476,7 +490,8 @@ export const getAllAssets = withAuth(
         total: 0,
         page: 1,
         pageSize: 10,
-        error: error instanceof Error ? error.message : "An unknown error occurred",
+        error:
+          error instanceof Error ? error.message : "An unknown error occurred",
       };
     }
   },
@@ -616,7 +631,9 @@ export const updateAsset = withAuth(
     try {
       const companyId = user.privateMetadata?.companyId as string;
       if (!companyId) {
-        console.log(`[updateAsset] User not associated with a company. User: ${user.id}`);
+        console.log(
+          `[updateAsset] User not associated with a company. User: ${user.id}`,
+        );
         return {
           success: false,
           data: [],
@@ -625,20 +642,29 @@ export const updateAsset = withAuth(
       }
 
       // Get asset before update for audit log
-      const beforeAsset = await prisma.asset.findUnique({ where: { id, companyId } });
+      const beforeAsset = await prisma.asset.findUnique({
+        where: { id, companyId },
+      });
 
       const { name, assetTag, templateValues, statusLabelId, ...assetData } =
         await assetSchema.parseAsync(data);
 
       // Explicit validation for statusLabelId
       let statusLabelChanged = false;
-      if (typeof statusLabelId === "string" && statusLabelId !== beforeAsset?.statusLabelId) {
-        console.log(`[updateAsset] Attempting status label update for asset ${id}: ${beforeAsset?.statusLabelId} -> ${statusLabelId}`);
+      if (
+        typeof statusLabelId === "string" &&
+        statusLabelId !== beforeAsset?.statusLabelId
+      ) {
+        console.log(
+          `[updateAsset] Attempting status label update for asset ${id}: ${beforeAsset?.statusLabelId} -> ${statusLabelId}`,
+        );
         const statusLabel = await prisma.statusLabel.findFirst({
           where: { id: statusLabelId, companyId },
         });
         if (!statusLabel) {
-          console.log(`[updateAsset] Invalid status label: ${statusLabelId} for asset ${id}`);
+          console.log(
+            `[updateAsset] Invalid status label: ${statusLabelId} for asset ${id}`,
+          );
           return {
             success: false,
             data: [],
@@ -668,14 +694,22 @@ export const updateAsset = withAuth(
           ...assetDataWithoutRelations,
           name,
           assetTag,
-          statusLabel: statusLabelId ? { connect: { id: statusLabelId } } : undefined,
-          department: departmentId ? { connect: { id: departmentId } } : undefined,
+          statusLabel: statusLabelId
+            ? { connect: { id: statusLabelId } }
+            : undefined,
+          department: departmentId
+            ? { connect: { id: departmentId } }
+            : undefined,
           supplier: supplierId ? { connect: { id: supplierId } } : undefined,
           inventory: inventoryId ? { connect: { id: inventoryId } } : undefined,
-          departmentLocation: locationId ? { connect: { id: locationId } } : undefined,
+          departmentLocation: locationId
+            ? { connect: { id: locationId } }
+            : undefined,
           model: modelId ? { connect: { id: modelId } } : undefined,
           user: userId ? { connect: { id: userId } } : undefined,
-          purchaseOrder: purchaseOrderId ? { connect: { id: purchaseOrderId } } : undefined,
+          purchaseOrder: purchaseOrderId
+            ? { connect: { id: purchaseOrderId } }
+            : undefined,
           License: licenseId ? { connect: { id: licenseId } } : undefined,
           formValues: templateValues
             ? {
@@ -684,7 +718,11 @@ export const updateAsset = withAuth(
                   values: templateValues,
                   formTemplate: formTemplateId
                     ? { connect: { id: formTemplateId } }
-                    : (() => { throw new Error("formTemplateId is required when updating form values"); })(),
+                    : (() => {
+                        throw new Error(
+                          "formTemplateId is required when updating form values",
+                        );
+                      })(),
                 },
               }
             : undefined,
@@ -698,7 +736,10 @@ export const updateAsset = withAuth(
       console.log(`[updateAsset] Asset updated: ${id}`);
       // --- AUDIT LOG ---
       // Compute diff (only changed fields, shallow for now)
-      function getChangedFields(before: Record<string, any>, after: Record<string, any>): Record<string, { before: any; after: any }> {
+      function getChangedFields(
+        before: Record<string, any>,
+        after: Record<string, any>,
+      ): Record<string, { before: any; after: any }> {
         const changes: { [key: string]: { before: any; after: any } } = {};
         for (const key of Object.keys(after)) {
           if (before[key] !== after[key]) {
@@ -708,7 +749,11 @@ export const updateAsset = withAuth(
         return changes;
       }
       const changes = getChangedFields(beforeAsset || {}, updatedAsset || {});
-      const summary = generateSummary(changes, beforeAsset || {}, updatedAsset || {});
+      const summary = generateSummary(
+        changes,
+        beforeAsset || {},
+        updatedAsset || {},
+      );
       await createAuditLog({
         companyId,
         action: "ASSET_UPDATED",
@@ -718,7 +763,9 @@ export const updateAsset = withAuth(
         dataAccessed: { changes },
       });
       if (statusLabelChanged) {
-        console.log(`[updateAsset] Status label successfully updated for asset ${id}: ${statusLabelId}`);
+        console.log(
+          `[updateAsset] Status label successfully updated for asset ${id}: ${statusLabelId}`,
+        );
         await createAuditLog({
           companyId,
           action: "ASSET_STATUS_UPDATED",
@@ -734,7 +781,10 @@ export const updateAsset = withAuth(
         data: [parseStringify(serializeAsset(updatedAsset))],
       };
     } catch (error: any) {
-      console.error(`[updateAsset] Error updating asset ${id || "unknown"}:`, error);
+      console.error(
+        `[updateAsset] Error updating asset ${id || "unknown"}:`,
+        error,
+      );
       return {
         success: false,
         data: [],
@@ -964,13 +1014,17 @@ export const setMaintenanceStatus = withAuth(
 
       // Look up the status label ID for 'Scheduled' for this company
       const scheduledStatus = await prisma.statusLabel.findFirst({
-        where: { name: { equals: "Scheduled", mode: "insensitive" }, companyId },
+        where: {
+          name: { equals: "Scheduled", mode: "insensitive" },
+          companyId,
+        },
       });
       if (!scheduledStatus) {
         return {
           success: false,
           data: [],
-          error: "Scheduled status label not found. Please ensure a 'Scheduled' status label exists.",
+          error:
+            "Scheduled status label not found. Please ensure a 'Scheduled' status label exists.",
         };
       }
 
@@ -984,8 +1038,6 @@ export const setMaintenanceStatus = withAuth(
           notes: "Scheduled maintenance for asset",
         },
       });
-
-
 
       await createAuditLog({
         companyId,
@@ -1302,10 +1354,14 @@ export const getAssetDistribution = withAuth(
       });
 
       // Group assets by the requested category name logic
-      const categoryMap = new Map<string, { count: number; assigned: number }>();
+      const categoryMap = new Map<
+        string,
+        { count: number; assigned: number }
+      >();
       let totalAssets = 0;
       for (const asset of assets) {
-        const categoryName = asset.formValues?.[0]?.formTemplate?.category?.name ?? "N/A";
+        const categoryName =
+          asset.formValues?.[0]?.formTemplate?.category?.name ?? "N/A";
         totalAssets++;
         if (!categoryMap.has(categoryName)) {
           categoryMap.set(categoryName, { count: 0, assigned: 0 });
@@ -1317,23 +1373,26 @@ export const getAssetDistribution = withAuth(
       }
 
       // Build distribution data
-      const distributionData = Array.from(categoryMap.entries()).map(([name, { count, assigned }]) => {
-        const percentage = totalAssets > 0 ? (count / totalAssets) * 100 : 0;
-        const utilization = count > 0 ? Math.round((assigned / count) * 100) : 0;
-        let status: "Healthy" | "Warning" | "Critical" = "Healthy";
-        if (utilization < 30) {
-          status = "Critical";
-        } else if (utilization < 70) {
-          status = "Warning";
-        }
-        return {
-          name,
-          count,
-          percentage: Math.round(percentage),
-          status,
-          utilization,
-        };
-      });
+      const distributionData = Array.from(categoryMap.entries()).map(
+        ([name, { count, assigned }]) => {
+          const percentage = totalAssets > 0 ? (count / totalAssets) * 100 : 0;
+          const utilization =
+            count > 0 ? Math.round((assigned / count) * 100) : 0;
+          let status: "Healthy" | "Warning" | "Critical" = "Healthy";
+          if (utilization < 30) {
+            status = "Critical";
+          } else if (utilization < 70) {
+            status = "Warning";
+          }
+          return {
+            name,
+            count,
+            percentage: Math.round(percentage),
+            status,
+            utilization,
+          };
+        },
+      );
 
       // Sort by count descending
       distributionData.sort((a, b) => b.count - a.count);
@@ -1397,7 +1456,10 @@ export const updateAssetNotes = withAuth(
 );
 
 export const bulkCreateAssets = withAuth(
-  async (user, assets: Partial<CreateAssetInput>[]): Promise<{ success: boolean; count: number; error?: string }> => {
+  async (
+    user,
+    assets: Partial<CreateAssetInput>[],
+  ): Promise<{ success: boolean; count: number; error?: string }> => {
     try {
       console.log("[BULK IMPORT] Function called");
       console.log("[BULK IMPORT] User:", user?.id);
@@ -1405,15 +1467,34 @@ export const bulkCreateAssets = withAuth(
       console.log("[BULK IMPORT] companyId:", companyId);
       if (!companyId) {
         console.error("[BULK IMPORT] No companyId found for user");
-        return { success: false, count: 0, error: "User is not associated with a company" };
+        return {
+          success: false,
+          count: 0,
+          error: "User is not associated with a company",
+        };
       }
 
       // Log incoming asset data
-      console.log("\n\n[BULK IMPORT] Incoming assets:", JSON.stringify(assets, null, 2));
+      console.log(
+        "\n\n[BULK IMPORT] Incoming assets:",
+        JSON.stringify(assets, null, 2),
+      );
 
       // Fetch all dependencies for the company
       console.log("[BULK IMPORT] Fetching dependencies...");
-      const [models, suppliers, statusLabels, categories, departments, locations, inventories, users, formTemplates, licenses, purchaseOrders] = await Promise.all([
+      const [
+        models,
+        suppliers,
+        statusLabels,
+        categories,
+        departments,
+        locations,
+        inventories,
+        users,
+        formTemplates,
+        licenses,
+        purchaseOrders,
+      ] = await Promise.all([
         prisma.model.findMany({ where: { companyId } }),
         prisma.supplier.findMany({ where: { companyId } }),
         prisma.statusLabel.findMany({ where: { companyId } }),
@@ -1429,26 +1510,49 @@ export const bulkCreateAssets = withAuth(
       console.log("[BULK IMPORT] Dependencies fetched.");
 
       // Helper for fuzzy matching by name (or other fields)
-      function fuzzyFindId(arr: { id: string; name?: string; email?: string; assetTag?: string; poNumber?: string }[], input?: string): string | undefined {
+      function fuzzyFindId(
+        arr: {
+          id: string;
+          name?: string;
+          email?: string;
+          assetTag?: string;
+          poNumber?: string;
+        }[],
+        input?: string,
+      ): string | undefined {
         if (!input) return undefined;
         const normalized = input.trim().toLowerCase();
         // Try name
-        let match = arr.find(item => item.name && item.name.toLowerCase() === normalized);
+        let match = arr.find(
+          (item) => item.name && item.name.toLowerCase() === normalized,
+        );
         if (match) return match.id;
-        match = arr.find(item => item.name && item.name.toLowerCase().startsWith(normalized));
+        match = arr.find(
+          (item) => item.name && item.name.toLowerCase().startsWith(normalized),
+        );
         if (match) return match.id;
-        match = arr.find(item => item.name && item.name.toLowerCase().includes(normalized));
+        match = arr.find(
+          (item) => item.name && item.name.toLowerCase().includes(normalized),
+        );
         if (match) return match.id;
-        match = arr.find(item => item.name && item.name.toLowerCase().startsWith(normalized));
+        match = arr.find(
+          (item) => item.name && item.name.toLowerCase().startsWith(normalized),
+        );
         if (match) return match.id;
         // Try email (for user)
-        match = arr.find(item => item.email && item.email.toLowerCase() === normalized);
+        match = arr.find(
+          (item) => item.email && item.email.toLowerCase() === normalized,
+        );
         if (match) return match.id;
         // Try assetTag (for asset)
-        match = arr.find(item => item.assetTag && item.assetTag.toLowerCase() === normalized);
+        match = arr.find(
+          (item) => item.assetTag && item.assetTag.toLowerCase() === normalized,
+        );
         if (match) return match.id;
         // Try poNumber (for purchase order)
-        match = arr.find(item => item.poNumber && item.poNumber.toLowerCase() === normalized);
+        match = arr.find(
+          (item) => item.poNumber && item.poNumber.toLowerCase() === normalized,
+        );
         if (match) return match.id;
         return undefined;
       }
@@ -1465,35 +1569,80 @@ export const bulkCreateAssets = withAuth(
       // Map of dependencies to handle
       const dependencyMap = [
         { key: "modelId", arr: models, inputKeys: ["modelName", "Model"] },
-        { key: "supplierId", arr: suppliers, inputKeys: ["supplierName", "Supplier"] },
-        { key: "statusLabelId", arr: statusLabels, inputKeys: ["statusLabelName", "Status Label"] },
-        { key: "categoryId", arr: categories, inputKeys: ["categoryName", "Category"] },
-        { key: "departmentId", arr: departments, inputKeys: ["departmentName", "Department"] },
-        { key: "locationId", arr: locations, inputKeys: ["locationName", "Location"] },
-        { key: "inventoryId", arr: inventories, inputKeys: ["inventoryName", "Inventory"] },
-        { key: "userId", arr: users, inputKeys: ["userEmail", "userName", "Assigned To", "User"] },
-        { key: "formTemplateId", arr: formTemplates, inputKeys: ["formTemplateName", "Form Template"] },
-        { key: "licenseId", arr: licenses, inputKeys: ["licenseName", "License"] },
-        { key: "purchaseOrderId", arr: purchaseOrders, inputKeys: ["purchaseOrderNumber", "poNumber", "Purchase Order"] },
+        {
+          key: "supplierId",
+          arr: suppliers,
+          inputKeys: ["supplierName", "Supplier"],
+        },
+        {
+          key: "statusLabelId",
+          arr: statusLabels,
+          inputKeys: ["statusLabelName", "Status Label"],
+        },
+        {
+          key: "categoryId",
+          arr: categories,
+          inputKeys: ["categoryName", "Category"],
+        },
+        {
+          key: "departmentId",
+          arr: departments,
+          inputKeys: ["departmentName", "Department"],
+        },
+        {
+          key: "locationId",
+          arr: locations,
+          inputKeys: ["locationName", "Location"],
+        },
+        {
+          key: "inventoryId",
+          arr: inventories,
+          inputKeys: ["inventoryName", "Inventory"],
+        },
+        {
+          key: "userId",
+          arr: users,
+          inputKeys: ["userEmail", "userName", "Assigned To", "User"],
+        },
+        {
+          key: "formTemplateId",
+          arr: formTemplates,
+          inputKeys: ["formTemplateName", "Form Template"],
+        },
+        {
+          key: "licenseId",
+          arr: licenses,
+          inputKeys: ["licenseName", "License"],
+        },
+        {
+          key: "purchaseOrderId",
+          arr: purchaseOrders,
+          inputKeys: ["purchaseOrderNumber", "poNumber", "Purchase Order"],
+        },
       ];
 
       console.log("[BULK IMPORT] Mapping assets...");
       const assetsToCreate: Prisma.AssetCreateManyInput[] = assets
-        .filter(asset => asset.name && asset.assetTag) // Only include valid records
-        .map(asset => {
+        .filter((asset) => asset.name && asset.assetTag) // Only include valid records
+        .map((asset) => {
           const depIds: Record<string, string | null> = {};
           for (const dep of dependencyMap) {
-            const value = dep.inputKeys.map(k => getField(asset, k)).find(v => v);
+            const value = dep.inputKeys
+              .map((k) => getField(asset, k))
+              .find((v) => v);
             depIds[dep.key] = fuzzyFindId(dep.arr, value) || null;
           }
-          const cleanField = (value: any) => (value === undefined ? null : value);
+          const cleanField = (value: any) =>
+            value === undefined ? null : value;
 
           return {
             name: asset.name as string,
             assetTag: asset.assetTag as string,
             companyId,
             ...depIds,
-            purchaseDate: (asset as any)?.purchaseDate ? new Date((asset as any).purchaseDate) : new Date(),
+            purchaseDate: (asset as any)?.purchaseDate
+              ? new Date((asset as any).purchaseDate)
+              : new Date(),
             notes: cleanField(asset.notes),
             endOfLifePlan: cleanField(asset.endOfLifePlan),
             energyConsumption: cleanField(asset.energyConsumption),
@@ -1513,15 +1662,22 @@ export const bulkCreateAssets = withAuth(
 
       // 2. Fetch inserted assets by assetTag
       console.log("[BULK IMPORT] Fetching inserted assets...");
-      const assetTags = assetsToCreate.map(a => a.assetTag);
+      const assetTags = assetsToCreate.map((a) => a.assetTag);
       const insertedAssets = await prisma.asset.findMany({
         where: { assetTag: { in: assetTags }, companyId },
         select: { id: true, assetTag: true },
       });
-      console.log("[BULK IMPORT] insertedAssets:", JSON.stringify(insertedAssets, null, 2));
+      console.log(
+        "[BULK IMPORT] insertedAssets:",
+        JSON.stringify(insertedAssets, null, 2),
+      );
 
       // Helper to extract only valid custom field values for a given template
-      function extractFormTemplateValues(asset: any, formTemplateId: string, templateFieldMap: Map<string, any>): Record<string, any> | null {
+      function extractFormTemplateValues(
+        asset: any,
+        formTemplateId: string,
+        templateFieldMap: Map<string, any>,
+      ): Record<string, any> | null {
         const fields = templateFieldMap.get(formTemplateId);
         if (!Array.isArray(fields)) return null;
         const values: Record<string, any> = {};
@@ -1533,32 +1689,55 @@ export const bulkCreateAssets = withAuth(
       }
 
       // Fetch all relevant form templates and their fields
-      const formTemplateIds = Array.from(new Set(assets.map(a => a.formTemplateId).filter((id): id is string => typeof id === 'string')));
+      const formTemplateIds = Array.from(
+        new Set(
+          assets
+            .map((a) => a.formTemplateId)
+            .filter((id): id is string => typeof id === "string"),
+        ),
+      );
       const formTemplatesForMapping = await prisma.formTemplate.findMany({
         where: { id: { in: formTemplateIds } },
         select: { id: true, fields: true }, // fields assumed to be JSON or relation
       });
       // Build a map for quick lookup
-      const templateFieldMap = new Map(formTemplatesForMapping.map(t => [t.id, t.fields]));
+      const templateFieldMap = new Map(
+        formTemplatesForMapping.map((t) => [t.id, t.fields]),
+      );
 
       console.log("[BULK IMPORT] Mapping form template values...");
-      const formTemplateValuesToCreate = insertedAssets.map(asset => {
-        const original = assets.find(a => a.assetTag === asset.assetTag);
-        if (!original?.formTemplateId) return null;
-        const values = extractFormTemplateValues(original, original.formTemplateId, templateFieldMap);
-        if (!values) return null;
-        return {
-          assetId: asset.id,
-          templateId: original.formTemplateId,
-          values,
-        };
-      }).filter(Boolean) as { assetId: string; templateId: string; values: any }[];
-      console.log("[BULK IMPORT] formTemplateValuesToCreate:", JSON.stringify(formTemplateValuesToCreate, null, 2));
+      const formTemplateValuesToCreate = insertedAssets
+        .map((asset) => {
+          const original = assets.find((a) => a.assetTag === asset.assetTag);
+          if (!original?.formTemplateId) return null;
+          const values = extractFormTemplateValues(
+            original,
+            original.formTemplateId,
+            templateFieldMap,
+          );
+          if (!values) return null;
+          return {
+            assetId: asset.id,
+            templateId: original.formTemplateId,
+            values,
+          };
+        })
+        .filter(Boolean) as {
+        assetId: string;
+        templateId: string;
+        values: any;
+      }[];
+      console.log(
+        "[BULK IMPORT] formTemplateValuesToCreate:",
+        JSON.stringify(formTemplateValuesToCreate, null, 2),
+      );
 
       // 5. Bulk insert FormTemplateValue
       if (formTemplateValuesToCreate.length > 0) {
         console.log("[BULK IMPORT] Creating form template values in DB...");
-        await prisma.formTemplateValue.createMany({ data: formTemplateValuesToCreate });
+        await prisma.formTemplateValue.createMany({
+          data: formTemplateValuesToCreate,
+        });
         console.log("[BULK IMPORT] Form template value creation complete.");
       }
 
@@ -1575,13 +1754,15 @@ export const bulkCreateAssets = withAuth(
       console.error("[BULK IMPORT] Error:", error);
       return { success: false, count: 0, error: error.message };
     }
-  }
+  },
 );
 
 /**
  * Returns the count of unique assets with scheduled maintenance within the next 30 days for the given companyId.
  */
-export async function getMaintenanceDueCount(companyId: string): Promise<number> {
+export async function getMaintenanceDueCount(
+  companyId: string,
+): Promise<number> {
   // Start of today
   const now = new Date();
   now.setHours(0, 0, 0, 0);
@@ -1603,6 +1784,6 @@ export async function getMaintenanceDueCount(companyId: string): Promise<number>
     select: { assetId: true },
   });
 
-  const uniqueAssetIds = new Set(maintenanceDueAssets.map(m => m.assetId));
+  const uniqueAssetIds = new Set(maintenanceDueAssets.map((m) => m.assetId));
   return uniqueAssetIds.size;
 }

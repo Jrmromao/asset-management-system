@@ -34,7 +34,12 @@ import {
 import { CO2CalculationResult } from "@/types/co2";
 import { saveAssetCO2Action } from "@/lib/actions/co2.actions";
 import { toast } from "react-hot-toast";
-import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+  TooltipProvider,
+} from "@/components/ui/tooltip";
 
 interface CO2DialogProps {
   isOpen: boolean;
@@ -106,7 +111,9 @@ const CO2Dialog: React.FC<CO2DialogProps> = ({
       if (result.success && result.data) {
         setCurrentResult(result.data);
         setIsUnsaved(true);
-        toast.success("CO2 footprint has been recalculated with refined parameters.");
+        toast.success(
+          "CO2 footprint has been recalculated with refined parameters.",
+        );
       } else {
         toast.error(result.error || "Failed to recalculate CO2 footprint");
       }
@@ -194,7 +201,9 @@ const CO2Dialog: React.FC<CO2DialogProps> = ({
           {manufacturerName && (manufacturerUrl || manufacturerSupportUrl) && (
             <div className="mt-2 flex flex-wrap gap-4 items-center text-sm">
               <span className="font-medium">Manufacturer:</span>
-              <span className="font-semibold text-gray-900">{manufacturerName}</span>
+              <span className="font-semibold text-gray-900">
+                {manufacturerName}
+              </span>
               {manufacturerUrl && (
                 <a
                   href={manufacturerUrl}
@@ -203,7 +212,20 @@ const CO2Dialog: React.FC<CO2DialogProps> = ({
                   className="inline-flex items-center gap-1 text-blue-600 hover:underline"
                 >
                   Website
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 3h7m0 0v7m0-7L10 14m-7 7h7a2 2 0 002-2v-7" /></svg>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M14 3h7m0 0v7m0-7L10 14m-7 7h7a2 2 0 002-2v-7"
+                    />
+                  </svg>
                 </a>
               )}
               {manufacturerSupportUrl && (
@@ -214,7 +236,20 @@ const CO2Dialog: React.FC<CO2DialogProps> = ({
                   className="inline-flex items-center gap-1 text-blue-600 hover:underline"
                 >
                   Support
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 3h7m0 0v7m0-7L10 14m-7 7h7a2 2 0 002-2v-7" /></svg>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M14 3h7m0 0v7m0-7L10 14m-7 7h7a2 2 0 002-2v-7"
+                    />
+                  </svg>
                 </a>
               )}
             </div>
@@ -242,8 +277,11 @@ const CO2Dialog: React.FC<CO2DialogProps> = ({
                             <Info className="h-4 w-4 text-blue-500 cursor-pointer ml-1" />
                           </TooltipTrigger>
                           <TooltipContent>
-                            Total CO₂ emissions this asset will generate over its entire life.<br />
-                            Use this value to compare environmental impact.<br />
+                            Total CO₂ emissions this asset will generate over
+                            its entire life.
+                            <br />
+                            Use this value to compare environmental impact.
+                            <br />
                             <i>(Key result of LCA)</i>
                           </TooltipContent>
                         </Tooltip>
@@ -253,10 +291,12 @@ const CO2Dialog: React.FC<CO2DialogProps> = ({
                       {currentResult.totalCo2e} {currentResult.units}
                     </p>
                     {/* Amortized Values */}
-                    {typeof currentResult.amortizedAnnualCo2e === 'number' && (
+                    {typeof currentResult.amortizedAnnualCo2e === "number" && (
                       <div className="flex items-center gap-1 mt-2">
                         <p className="text-sm text-blue-700">
-                          <strong>Amortized Annual CO2e:</strong> {currentResult.amortizedAnnualCo2e.toFixed(2)} {currentResult.units}/year
+                          <strong>Amortized Annual CO2e:</strong>{" "}
+                          {currentResult.amortizedAnnualCo2e.toFixed(2)}{" "}
+                          {currentResult.units}/year
                         </p>
                         <TooltipProvider>
                           <Tooltip>
@@ -264,16 +304,20 @@ const CO2Dialog: React.FC<CO2DialogProps> = ({
                               <Info className="h-4 w-4 text-blue-500 cursor-pointer" />
                             </TooltipTrigger>
                             <TooltipContent>
-                              Average yearly CO₂ emissions, calculated by dividing the total by the expected lifespan. Useful for annual ESG reporting and benchmarking.
+                              Average yearly CO₂ emissions, calculated by
+                              dividing the total by the expected lifespan.
+                              Useful for annual ESG reporting and benchmarking.
                             </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
                       </div>
                     )}
-                    {typeof currentResult.amortizedMonthlyCo2e === 'number' && (
+                    {typeof currentResult.amortizedMonthlyCo2e === "number" && (
                       <div className="flex items-center gap-1 mt-1">
                         <p className="text-sm text-blue-700">
-                          <strong>Amortized Monthly CO2e:</strong> {currentResult.amortizedMonthlyCo2e.toFixed(2)} {currentResult.units}/month
+                          <strong>Amortized Monthly CO2e:</strong>{" "}
+                          {currentResult.amortizedMonthlyCo2e.toFixed(2)}{" "}
+                          {currentResult.units}/month
                         </p>
                         <TooltipProvider>
                           <Tooltip>
@@ -281,16 +325,21 @@ const CO2Dialog: React.FC<CO2DialogProps> = ({
                               <Info className="h-4 w-4 text-blue-500 cursor-pointer" />
                             </TooltipTrigger>
                             <TooltipContent>
-                              Average monthly CO₂ emissions, calculated by dividing the total by the expected lifespan in months. Useful for short-term analysis and operational dashboards.
+                              Average monthly CO₂ emissions, calculated by
+                              dividing the total by the expected lifespan in
+                              months. Useful for short-term analysis and
+                              operational dashboards.
                             </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
                       </div>
                     )}
-                    {typeof currentResult.expectedLifespanYears === 'number' && (
+                    {typeof currentResult.expectedLifespanYears ===
+                      "number" && (
                       <div className="flex items-center gap-1 mt-1">
                         <p className="text-xs text-muted-foreground">
-                          <strong>Expected Lifespan:</strong> {currentResult.expectedLifespanYears} years
+                          <strong>Expected Lifespan:</strong>{" "}
+                          {currentResult.expectedLifespanYears} years
                         </p>
                         <TooltipProvider>
                           <Tooltip>
@@ -298,7 +347,9 @@ const CO2Dialog: React.FC<CO2DialogProps> = ({
                               <Info className="h-4 w-4 text-blue-500 cursor-pointer" />
                             </TooltipTrigger>
                             <TooltipContent>
-                              The number of years the asset is expected to be in use. This is a key input for amortizing the total CO₂ footprint in LCA.
+                              The number of years the asset is expected to be in
+                              use. This is a key input for amortizing the total
+                              CO₂ footprint in LCA.
                             </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
@@ -344,21 +395,28 @@ const CO2Dialog: React.FC<CO2DialogProps> = ({
                             className="h-2"
                             indicatorClassName={
                               currentResult.confidenceScore < 0.6
-                                ? 'bg-red-600'
+                                ? "bg-red-600"
                                 : currentResult.confidenceScore < 0.8
-                                ? 'bg-yellow-400'
-                                : 'bg-green-600'
+                                  ? "bg-yellow-400"
+                                  : "bg-green-600"
                             }
                           />
                         </div>
                       </TooltipTrigger>
                       <TooltipContent>
                         <span>
-                          This score reflects how much technical data was available for this calculation.<br/>
-                          <b>Higher confidence</b> means more accurate and consistent results.<br/>
+                          This score reflects how much technical data was
+                          available for this calculation.
+                          <br />
+                          <b>Higher confidence</b> means more accurate and
+                          consistent results.
+                          <br />
                           {currentResult.confidenceScore < 0.8 && (
                             <>
-                              <br/><b>Tip:</b> Provide more technical details (e.g., energy consumption, weight, year, etc.) for higher accuracy.
+                              <br />
+                              <b>Tip:</b> Provide more technical details (e.g.,
+                              energy consumption, weight, year, etc.) for higher
+                              accuracy.
                             </>
                           )}
                         </span>
@@ -369,34 +427,38 @@ const CO2Dialog: React.FC<CO2DialogProps> = ({
                     Based on {currentResult.sources?.length || 0} data sources
                     and {currentResult.methodology}
                   </p>
-                  {Array.isArray(currentResult.sources) && currentResult.sources.length > 0 && (
-                    <div className="mt-2 text-xs text-muted-foreground">
-                      <span className="font-medium">Sources:&nbsp;</span>
-                      {currentResult.sources.map((src, idx) => (
-                        <span key={src.url || src.name}>
-                          {src.url ? (
-                            <a
-                              href={src.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-blue-600 hover:underline"
-                            >
-                              {src.name || src.url}
-                            </a>
-                          ) : (
-                            src.name
-                          )}
-                          {idx < currentResult.sources.length - 1 && ", "}
-                        </span>
-                      ))}
-                    </div>
-                  )}
+                  {Array.isArray(currentResult.sources) &&
+                    currentResult.sources.length > 0 && (
+                      <div className="mt-2 text-xs text-muted-foreground">
+                        <span className="font-medium">Sources:&nbsp;</span>
+                        {currentResult.sources.map((src, idx) => (
+                          <span key={src.url || src.name}>
+                            {src.url ? (
+                              <a
+                                href={src.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:underline"
+                              >
+                                {src.name || src.url}
+                              </a>
+                            ) : (
+                              src.name
+                            )}
+                            {idx < currentResult.sources.length - 1 && ", "}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                 </div>
               </CardContent>
             </Card>
 
             <div className="mb-4 p-3 bg-blue-50 border border-blue-200 text-blue-800 rounded text-sm">
-              <strong>Tip:</strong> The more technical details you provide for this asset, the more accurate your CO2 calculation will be. If any information is missing, we'll use typical values for your asset type/model.
+              <strong>Tip:</strong> The more technical details you provide for
+              this asset, the more accurate your CO2 calculation will be. If any
+              information is missing, we'll use typical values for your asset
+              type/model.
             </div>
           </TabsContent>
 
@@ -527,7 +589,6 @@ const CO2Dialog: React.FC<CO2DialogProps> = ({
           </TabsContent>
 
           <TabsContent value="lifecycle" className="space-y-4">
-    
             {/* Premium Lifecycle Breakdown Grid */}
             <div className="grid grid-cols-2 gap-3">
               <div className="flex items-center gap-2 p-3 bg-blue-50 rounded border">
@@ -537,7 +598,10 @@ const CO2Dialog: React.FC<CO2DialogProps> = ({
                     Manufacturing
                   </div>
                   <div className="font-medium">
-                    {formatCO2e(currentResult.lifecycleManufacturing ?? currentResult.lifecycleBreakdown?.manufacturing)}
+                    {formatCO2e(
+                      currentResult.lifecycleManufacturing ??
+                        currentResult.lifecycleBreakdown?.manufacturing,
+                    )}
                   </div>
                 </div>
               </div>
@@ -546,7 +610,10 @@ const CO2Dialog: React.FC<CO2DialogProps> = ({
                 <div>
                   <div className="text-xs text-muted-foreground">Transport</div>
                   <div className="font-medium">
-                    {formatCO2e(currentResult.lifecycleTransport ?? currentResult.lifecycleBreakdown?.transport)}
+                    {formatCO2e(
+                      currentResult.lifecycleTransport ??
+                        currentResult.lifecycleBreakdown?.transport,
+                    )}
                   </div>
                 </div>
               </div>
@@ -555,7 +622,10 @@ const CO2Dialog: React.FC<CO2DialogProps> = ({
                 <div>
                   <div className="text-xs text-muted-foreground">Use Phase</div>
                   <div className="font-medium">
-                    {formatCO2e(currentResult.lifecycleUse ?? currentResult.lifecycleBreakdown?.use)}
+                    {formatCO2e(
+                      currentResult.lifecycleUse ??
+                        currentResult.lifecycleBreakdown?.use,
+                    )}
                   </div>
                 </div>
               </div>
@@ -566,7 +636,10 @@ const CO2Dialog: React.FC<CO2DialogProps> = ({
                     End of Life
                   </div>
                   <div className="font-medium">
-                    {formatCO2e(currentResult.lifecycleEndOfLife ?? currentResult.lifecycleBreakdown?.endOfLife)}
+                    {formatCO2e(
+                      currentResult.lifecycleEndOfLife ??
+                        currentResult.lifecycleBreakdown?.endOfLife,
+                    )}
                   </div>
                 </div>
               </div>
@@ -594,16 +667,25 @@ const CO2Dialog: React.FC<CO2DialogProps> = ({
                           <TooltipTrigger asChild>
                             <Info className="h-3 w-3 text-gray-400" />
                           </TooltipTrigger>
-                          <TooltipContent>Typical/average value used</TooltipContent>
+                          <TooltipContent>
+                            Typical/average value used
+                          </TooltipContent>
                         </Tooltip>
                         typical/average value used
                       </span>
                     </div>
                     <div className="grid grid-cols-2 gap-4 text-sm">
-                      {typeof currentResult.activityData.weight !== 'undefined' && (
+                      {typeof currentResult.activityData.weight !==
+                        "undefined" && (
                         <div className="flex items-center gap-2">
                           <span className="text-muted-foreground">Weight:</span>
-                          <span className={currentResult.activityData._userProvided?.weight ? "font-medium ml-2" : "font-medium ml-2 text-gray-500 italic"}>
+                          <span
+                            className={
+                              currentResult.activityData._userProvided?.weight
+                                ? "font-medium ml-2"
+                                : "font-medium ml-2 text-gray-500 italic"
+                            }
+                          >
                             {currentResult.activityData.weight} kg
                           </span>
                           {currentResult.activityData._userProvided?.weight ? (
@@ -618,18 +700,30 @@ const CO2Dialog: React.FC<CO2DialogProps> = ({
                               <TooltipTrigger asChild>
                                 <Info className="h-4 w-4 text-gray-400" />
                               </TooltipTrigger>
-                              <TooltipContent>Typical/average value used</TooltipContent>
+                              <TooltipContent>
+                                Typical/average value used
+                              </TooltipContent>
                             </Tooltip>
                           )}
                         </div>
                       )}
-                      {typeof currentResult.activityData.energyConsumption !== 'undefined' && (
+                      {typeof currentResult.activityData.energyConsumption !==
+                        "undefined" && (
                         <div className="flex items-center gap-2">
                           <span className="text-muted-foreground">Energy:</span>
-                          <span className={currentResult.activityData._userProvided?.energyConsumption ? "font-medium ml-2" : "font-medium ml-2 text-gray-500 italic"}>
-                            {currentResult.activityData.energyConsumption} kWh/year
+                          <span
+                            className={
+                              currentResult.activityData._userProvided
+                                ?.energyConsumption
+                                ? "font-medium ml-2"
+                                : "font-medium ml-2 text-gray-500 italic"
+                            }
+                          >
+                            {currentResult.activityData.energyConsumption}{" "}
+                            kWh/year
                           </span>
-                          {currentResult.activityData._userProvided?.energyConsumption ? (
+                          {currentResult.activityData._userProvided
+                            ?.energyConsumption ? (
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <CheckCircle className="h-4 w-4 text-green-600" />
@@ -641,18 +735,31 @@ const CO2Dialog: React.FC<CO2DialogProps> = ({
                               <TooltipTrigger asChild>
                                 <Info className="h-4 w-4 text-gray-400" />
                               </TooltipTrigger>
-                              <TooltipContent>Typical/average value used</TooltipContent>
+                              <TooltipContent>
+                                Typical/average value used
+                              </TooltipContent>
                             </Tooltip>
                           )}
                         </div>
                       )}
-                      {typeof currentResult.activityData.expectedLifespan !== 'undefined' && (
+                      {typeof currentResult.activityData.expectedLifespan !==
+                        "undefined" && (
                         <div className="flex items-center gap-2">
-                          <span className="text-muted-foreground">Lifespan:</span>
-                          <span className={currentResult.activityData._userProvided?.expectedLifespan ? "font-medium ml-2" : "font-medium ml-2 text-gray-500 italic"}>
+                          <span className="text-muted-foreground">
+                            Lifespan:
+                          </span>
+                          <span
+                            className={
+                              currentResult.activityData._userProvided
+                                ?.expectedLifespan
+                                ? "font-medium ml-2"
+                                : "font-medium ml-2 text-gray-500 italic"
+                            }
+                          >
                             {currentResult.activityData.expectedLifespan} years
                           </span>
-                          {currentResult.activityData._userProvided?.expectedLifespan ? (
+                          {currentResult.activityData._userProvided
+                            ?.expectedLifespan ? (
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <CheckCircle className="h-4 w-4 text-green-600" />
@@ -664,18 +771,31 @@ const CO2Dialog: React.FC<CO2DialogProps> = ({
                               <TooltipTrigger asChild>
                                 <Info className="h-4 w-4 text-gray-400" />
                               </TooltipTrigger>
-                              <TooltipContent>Typical/average value used</TooltipContent>
+                              <TooltipContent>
+                                Typical/average value used
+                              </TooltipContent>
                             </Tooltip>
                           )}
                         </div>
                       )}
-                      {typeof currentResult.activityData.transportDistance !== 'undefined' && (
+                      {typeof currentResult.activityData.transportDistance !==
+                        "undefined" && (
                         <div className="flex items-center gap-2">
-                          <span className="text-muted-foreground">Transport:</span>
-                          <span className={currentResult.activityData._userProvided?.transportDistance ? "font-medium ml-2" : "font-medium ml-2 text-gray-500 italic"}>
+                          <span className="text-muted-foreground">
+                            Transport:
+                          </span>
+                          <span
+                            className={
+                              currentResult.activityData._userProvided
+                                ?.transportDistance
+                                ? "font-medium ml-2"
+                                : "font-medium ml-2 text-gray-500 italic"
+                            }
+                          >
                             {currentResult.activityData.transportDistance} km
                           </span>
-                          {currentResult.activityData._userProvided?.transportDistance ? (
+                          {currentResult.activityData._userProvided
+                            ?.transportDistance ? (
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <CheckCircle className="h-4 w-4 text-green-600" />
@@ -687,7 +807,9 @@ const CO2Dialog: React.FC<CO2DialogProps> = ({
                               <TooltipTrigger asChild>
                                 <Info className="h-4 w-4 text-gray-400" />
                               </TooltipTrigger>
-                              <TooltipContent>Typical/average value used</TooltipContent>
+                              <TooltipContent>
+                                Typical/average value used
+                              </TooltipContent>
                             </Tooltip>
                           )}
                         </div>
@@ -702,11 +824,14 @@ const CO2Dialog: React.FC<CO2DialogProps> = ({
 
         {/* Action Buttons */}
         <div className="pt-4 border-t">
-          {(!isNewCalculation && isUnsaved) && (
+          {!isNewCalculation && isUnsaved && (
             <div className="flex justify-center mb-2">
               <div className="p-2 bg-yellow-50 border border-yellow-300 text-yellow-800 rounded text-xs flex items-center gap-2 max-w-xl w-full justify-center">
                 <Info className="h-4 w-4 text-yellow-600" />
-                <span>Saving will override the previous CO2 calculation for this asset.</span>
+                <span>
+                  Saving will override the previous CO2 calculation for this
+                  asset.
+                </span>
               </div>
             </div>
           )}
@@ -738,7 +863,13 @@ const CO2Dialog: React.FC<CO2DialogProps> = ({
                   Save Results
                 </Button>
               )}
-              <Button variant="outline" onClick={() => { setIsUnsaved(false); onClose(); }}>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsUnsaved(false);
+                  onClose();
+                }}
+              >
                 <X className="mr-2 h-4 w-4" />
                 Close
               </Button>

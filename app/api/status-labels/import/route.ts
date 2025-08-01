@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
         { status: 400 },
       );
     }
-    
+
     console.log(
       "[Status Labels Import API] Processing",
       statusLabels.length,
@@ -34,7 +34,10 @@ export async function POST(req: NextRequest) {
     const result = await bulkCreate(statusLabels);
 
     if (!result.success) {
-      console.log("[Status Labels Import API] Bulk create failed:", result.error);
+      console.log(
+        "[Status Labels Import API] Bulk create failed:",
+        result.error,
+      );
       return NextResponse.json(
         {
           success: false,
@@ -54,7 +57,6 @@ export async function POST(req: NextRequest) {
         errors: result.data?.errors || [],
       },
     });
-
   } catch (error) {
     console.error("Status labels import error:", error);
     return NextResponse.json(
@@ -62,4 +64,4 @@ export async function POST(req: NextRequest) {
       { status: 500 },
     );
   }
-} 
+}

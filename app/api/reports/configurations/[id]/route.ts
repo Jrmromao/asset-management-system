@@ -6,7 +6,7 @@ import { createAuditLog } from "@/lib/actions/auditLog.actions";
 
 export async function DELETE(
   request: NextRequest,
-  context: { params: { id: string } }
+  context: { params: { id: string } },
 ) {
   try {
     const { userId } = await auth();
@@ -19,7 +19,7 @@ export async function DELETE(
     if (!id) {
       return NextResponse.json(
         { error: "Configuration ID is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -31,7 +31,7 @@ export async function DELETE(
     if (!configuration) {
       return NextResponse.json(
         { error: "Report configuration not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -65,14 +65,14 @@ export async function DELETE(
         success: false,
         error: error instanceof Error ? error.message : "Internal server error",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
 export async function GET(
   request: NextRequest,
-  context: { params: { id: string } }
+  context: { params: { id: string } },
 ) {
   try {
     const { userId } = await auth();
@@ -85,7 +85,7 @@ export async function GET(
     if (!id) {
       return NextResponse.json(
         { error: "Configuration ID is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -98,7 +98,7 @@ export async function GET(
     if (!configuration) {
       return NextResponse.json(
         { error: "Report configuration not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -122,7 +122,7 @@ export async function GET(
         success: false,
         error: error instanceof Error ? error.message : "Internal server error",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
-} 
+}

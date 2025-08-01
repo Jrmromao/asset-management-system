@@ -16,20 +16,21 @@ import Link from "next/link";
 export default async function AuditLogsPage() {
   // Fetch the first page of audit logs, 20 per page
   const result = await getAuditLogs(1, 20);
-  const logs: SimpleAuditLog[] = result?.success && result.data ? result.data : [];
+  const logs: SimpleAuditLog[] =
+    result?.success && result.data ? result.data : [];
 
   return (
     <div className="p-6 space-y-6 dark:bg-gray-900">
-         <Breadcrumb className="hidden md:flex">
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <Link href="/audit-logs">Audit Logs</Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-          </BreadcrumbList>
-        </Breadcrumb>
+      <Breadcrumb className="hidden md:flex">
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink asChild>
+              <Link href="/audit-logs">Audit Logs</Link>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+        </BreadcrumbList>
+      </Breadcrumb>
       <HeaderBox
         title="Audit Logs"
         subtitle="Track all critical actions and changes across your organization."
@@ -41,4 +42,4 @@ export default async function AuditLogsPage() {
       </div>
     </div>
   );
-} 
+}

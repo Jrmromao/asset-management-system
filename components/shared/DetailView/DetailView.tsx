@@ -107,7 +107,10 @@ export const DetailView: React.FC<DetailViewProps> = ({
             </div>
             {tagNumber && (
               <p className="text-sm text-muted-foreground flex items-center gap-1">
-               Tag: {tagNumber !== undefined && tagNumber !== null ? String(tagNumber) : ""}
+                Tag:{" "}
+                {tagNumber !== undefined && tagNumber !== null
+                  ? String(tagNumber)
+                  : ""}
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>

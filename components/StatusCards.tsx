@@ -77,11 +77,15 @@ const StatusCards: React.FC<StatusCardsProps> = ({ cards, columns = 4 }) => {
                     {card.title}
                   </p>
                   <div className="flex items-baseline">
-                    <h2 className={`text-2xl font-bold tracking-tight dark:text-white ${
-                      card.title === "Upcoming Maintenance" && typeof card.value === "number" && card.value > 0
-                        ? "text-red-600"
-                        : "text-gray-900"
-                    }`}>
+                    <h2
+                      className={`text-2xl font-bold tracking-tight dark:text-white ${
+                        card.title === "Upcoming Maintenance" &&
+                        typeof card.value === "number" &&
+                        card.value > 0
+                          ? "text-red-600"
+                          : "text-gray-900"
+                      }`}
+                    >
                       {card.value}
                     </h2>
                     {card.total && (

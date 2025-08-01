@@ -497,17 +497,21 @@ const LicenseForm: React.FC<LicenseFormProps> = ({
   return (
     <FormContainer
       form={form}
-      requiredFields={isUpdate ? [] : [
-        "licenseName",
-        "seats", 
-        "minSeatsAlert",
-        "licensedEmail",
-        "statusLabelId",
-        "alertRenewalDays",
-        "departmentId",
-        "inventoryId", 
-        "locationId"
-      ]}
+      requiredFields={
+        isUpdate
+          ? []
+          : [
+              "licenseName",
+              "seats",
+              "minSeatsAlert",
+              "licensedEmail",
+              "statusLabelId",
+              "alertRenewalDays",
+              "departmentId",
+              "inventoryId",
+              "locationId",
+            ]
+      }
       requiredFieldsCount={isUpdate ? 0 : 9}
       hideProgress={isUpdate}
     >

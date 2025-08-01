@@ -226,15 +226,18 @@ const UnifiedReportsPage = () => {
   ];
 
   // Update the allReports mapping to include filePath
-  const allReports = (allReportsData?.data || []).map((r: any, idx: number) => ({
-    id: r.id || `report-${idx}`,
-    name: r.name || r.title || "Untitled",
-    createdAt: r.createdAt || r.date || r.generatedAt || new Date().toISOString(),
-    sizeMB: r.sizeMB || r.size || r.fileSize || 0,
-    status: r.status || "active",
-    scheduledDeletionAt: r.scheduledDeletionAt || null,
-    filePath: r.filePath || null,
-  }));
+  const allReports = (allReportsData?.data || []).map(
+    (r: any, idx: number) => ({
+      id: r.id || `report-${idx}`,
+      name: r.name || r.title || "Untitled",
+      createdAt:
+        r.createdAt || r.date || r.generatedAt || new Date().toISOString(),
+      sizeMB: r.sizeMB || r.size || r.fileSize || 0,
+      status: r.status || "active",
+      scheduledDeletionAt: r.scheduledDeletionAt || null,
+      filePath: r.filePath || null,
+    }),
+  );
 
   // Updated action handlers with toaster notifications
   const handleArchive = (id: string) => {
@@ -286,8 +289,6 @@ const UnifiedReportsPage = () => {
             </p>
           </div>
           <div className="flex gap-2">
-    
-       
             <ReportBuilder />
           </div>
         </div>
@@ -336,8 +337,8 @@ const UnifiedReportsPage = () => {
                           stat.trend === "up"
                             ? "text-emerald-600"
                             : stat.trend === "down"
-                            ? "text-red-600"
-                            : "text-gray-600"
+                              ? "text-red-600"
+                              : "text-gray-600"
                         }`}
                       >
                         {stat.trend === "up" ? (
@@ -394,405 +395,443 @@ const UnifiedReportsPage = () => {
       {/* Tab Content */}
       {activeTab === "charts" && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* ESG & Environmental */}
-        {showESG && (
-          <Card className="hover:shadow-lg transition-shadow duration-200">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Energy Usage</CardTitle>
-                  <CardDescription className="flex items-center gap-2">
-                    Monthly consumption in kWh
-                    <Badge
-                      variant="secondary"
-                      className="bg-emerald-50 text-emerald-600"
-                    >
-                      -8% vs last month
-                    </Badge>
-                  </CardDescription>
-                </div>
-                <LineChart className="h-4 w-4 text-gray-400" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <div className="flex flex-col items-center justify-center h-[300px] w-full">
-                  <Skeleton className="h-6 w-1/2 mb-4" />
-                  <Skeleton className="h-48 w-full rounded-lg" />
-                </div>
-              ) : error ? (
-                renderError()
-              ) : apiData.energyUsage ? (
-                <div className="h-[300px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <RechartsLineChart data={apiData.energyUsage}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                      <XAxis dataKey="month" stroke="#6b7280" />
-                      <YAxis stroke="#6b7280" />
-                      <Tooltip />
-                      <Line
-                        type="monotone"
-                        dataKey="usage"
-                        stroke="#10B981"
-                        strokeWidth={2}
-                        dot={{ fill: "#10B981", strokeWidth: 2 }}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="target"
-                        stroke="#6B7280"
-                        strokeDasharray="5 5"
-                        strokeWidth={1}
-                      />
-                    </RechartsLineChart>
-                  </ResponsiveContainer>
-                </div>
-              ) : (
-                <div className="text-gray-400 text-center py-12">
-                  No data available.
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Carbon Emissions (ESG) */}
-        {showESG && (
-          <Card className="hover:shadow-lg transition-shadow duration-200">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Carbon Emissions</CardTitle>
-                  <CardDescription className="flex items-center gap-2">
-                    Monthly CO₂ emissions in tons
-                    <Badge
-                      variant="secondary"
-                      className="bg-emerald-50 text-emerald-600"
-                    >
-                      On target
-                    </Badge>
-                  </CardDescription>
-                </div>
-                <BarChart3 className="h-4 w-4 text-gray-400" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <div className="flex flex-col items-center justify-center h-[300px] w-full">
-                  <Skeleton className="h-6 w-1/2 mb-4" />
-                  <div className="flex gap-2 w-full items-end justify-center mt-8">
-                    {/* Varying bar heights for realism */}
-                    <Skeleton className="h-32 w-8 rounded" />
-                    <Skeleton className="h-24 w-8 rounded" />
-                    <Skeleton className="h-40 w-8 rounded" />
-                    <Skeleton className="h-28 w-8 rounded" />
-                    <Skeleton className="h-36 w-8 rounded" />
-                    <Skeleton className="h-20 w-8 rounded" />
+          {/* ESG & Environmental */}
+          {showESG && (
+            <Card className="hover:shadow-lg transition-shadow duration-200">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Energy Usage</CardTitle>
+                    <CardDescription className="flex items-center gap-2">
+                      Monthly consumption in kWh
+                      <Badge
+                        variant="secondary"
+                        className="bg-emerald-50 text-emerald-600"
+                      >
+                        -8% vs last month
+                      </Badge>
+                    </CardDescription>
                   </div>
+                  <LineChart className="h-4 w-4 text-gray-400" />
                 </div>
-              ) : error ? (
-                renderError()
-              ) : apiData.carbonEmissions ? (
-                <div className="h-[300px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <RechartsBarChart data={apiData.carbonEmissions}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                      <XAxis dataKey="month" stroke="#6b7280" />
-                      <YAxis stroke="#6b7280" />
-                      <Tooltip />
-                      <Bar
-                        dataKey="emissions"
-                        fill="#10B981"
-                        radius={[4, 4, 0, 0]}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="target"
-                        stroke="#6B7280"
-                        strokeDasharray="5 5"
-                      />
-                    </RechartsBarChart>
-                  </ResponsiveContainer>
-                </div>
-              ) : (
-                <div className="text-gray-400 text-center py-12">
-                  No data available.
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Asset Distribution (Operational) - Placeholder for now */}
-        {showOperational && (
-          <Card className="hover:shadow-lg transition-shadow duration-200">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Asset Distribution</CardTitle>
-                  <CardDescription>By device category</CardDescription>
-                </div>
-                <PieChart className="h-4 w-4 text-gray-400" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <div className="grid grid-cols-2 gap-4">
-                  {/* Pie chart skeleton */}
-                  <div className="flex flex-col items-center justify-center h-[300px]">
-                    <Skeleton className="rounded-full w-40 h-40 mb-4" />
+              </CardHeader>
+              <CardContent>
+                {isLoading ? (
+                  <div className="flex flex-col items-center justify-center h-[300px] w-full">
+                    <Skeleton className="h-6 w-1/2 mb-4" />
+                    <Skeleton className="h-48 w-full rounded-lg" />
                   </div>
-                  {/* Legend skeletons */}
-                  <div className="space-y-4 mt-8">
-                    {[...Array(4)].map((_, i) => (
-                      <div key={i} className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Skeleton className="w-3 h-3 rounded-full" />
-                          <Skeleton className="h-4 w-24" />
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Skeleton className="h-4 w-8" />
-                          <Skeleton className="h-4 w-8" />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : apiData.assetDistribution ? (
-                <div className="grid grid-cols-2 gap-4">
+                ) : error ? (
+                  renderError()
+                ) : apiData.energyUsage ? (
                   <div className="h-[300px]">
                     <ResponsiveContainer width="100%" height="100%">
-                      <RechartsPieChart>
-                        <Pie
-                          data={apiData.assetDistribution}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={60}
-                          outerRadius={80}
-                          fill="#8884d8"
-                          paddingAngle={5}
-                          dataKey="value"
-                        >
-                          {apiData.assetDistribution.map(
-                            (entry: any, index: number) => (
-                              <Cell
-                                key={`cell-${index}`}
-                                fill={COLORS[index % COLORS.length]}
-                              />
-                            ),
-                          )}
-                        </Pie>
+                      <RechartsLineChart data={apiData.energyUsage}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                        <XAxis dataKey="month" stroke="#6b7280" />
+                        <YAxis stroke="#6b7280" />
                         <Tooltip />
-                      </RechartsPieChart>
+                        <Line
+                          type="monotone"
+                          dataKey="usage"
+                          stroke="#10B981"
+                          strokeWidth={2}
+                          dot={{ fill: "#10B981", strokeWidth: 2 }}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="target"
+                          stroke="#6B7280"
+                          strokeDasharray="5 5"
+                          strokeWidth={1}
+                        />
+                      </RechartsLineChart>
                     </ResponsiveContainer>
                   </div>
-                  <div className="space-y-4">
-                    {apiData.assetDistribution.map(
-                      (item: any, index: number) => (
+                ) : (
+                  <div className="text-gray-400 text-center py-12">
+                    No data available.
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Carbon Emissions (ESG) */}
+          {showESG && (
+            <Card className="hover:shadow-lg transition-shadow duration-200">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Carbon Emissions</CardTitle>
+                    <CardDescription className="flex items-center gap-2">
+                      Monthly CO₂ emissions in tons
+                      <Badge
+                        variant="secondary"
+                        className="bg-emerald-50 text-emerald-600"
+                      >
+                        On target
+                      </Badge>
+                    </CardDescription>
+                  </div>
+                  <BarChart3 className="h-4 w-4 text-gray-400" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                {isLoading ? (
+                  <div className="flex flex-col items-center justify-center h-[300px] w-full">
+                    <Skeleton className="h-6 w-1/2 mb-4" />
+                    <div className="flex gap-2 w-full items-end justify-center mt-8">
+                      {/* Varying bar heights for realism */}
+                      <Skeleton className="h-32 w-8 rounded" />
+                      <Skeleton className="h-24 w-8 rounded" />
+                      <Skeleton className="h-40 w-8 rounded" />
+                      <Skeleton className="h-28 w-8 rounded" />
+                      <Skeleton className="h-36 w-8 rounded" />
+                      <Skeleton className="h-20 w-8 rounded" />
+                    </div>
+                  </div>
+                ) : error ? (
+                  renderError()
+                ) : apiData.carbonEmissions ? (
+                  <div className="h-[300px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <RechartsBarChart data={apiData.carbonEmissions}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                        <XAxis dataKey="month" stroke="#6b7280" />
+                        <YAxis stroke="#6b7280" />
+                        <Tooltip />
+                        <Bar
+                          dataKey="emissions"
+                          fill="#10B981"
+                          radius={[4, 4, 0, 0]}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="target"
+                          stroke="#6B7280"
+                          strokeDasharray="5 5"
+                        />
+                      </RechartsBarChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : (
+                  <div className="text-gray-400 text-center py-12">
+                    No data available.
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Asset Distribution (Operational) - Placeholder for now */}
+          {showOperational && (
+            <Card className="hover:shadow-lg transition-shadow duration-200">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Asset Distribution</CardTitle>
+                    <CardDescription>By device category</CardDescription>
+                  </div>
+                  <PieChart className="h-4 w-4 text-gray-400" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                {isLoading ? (
+                  <div className="grid grid-cols-2 gap-4">
+                    {/* Pie chart skeleton */}
+                    <div className="flex flex-col items-center justify-center h-[300px]">
+                      <Skeleton className="rounded-full w-40 h-40 mb-4" />
+                    </div>
+                    {/* Legend skeletons */}
+                    <div className="space-y-4 mt-8">
+                      {[...Array(4)].map((_, i) => (
                         <div
-                          key={index}
+                          key={i}
                           className="flex items-center justify-between"
                         >
                           <div className="flex items-center gap-2">
-                            <div
-                              className="w-3 h-3 rounded-full"
-                              style={{
-                                backgroundColor: COLORS[index % COLORS.length],
-                              }}
-                            />
-                            <span className="text-sm font-medium">
-                              {item.name}
-                            </span>
+                            <Skeleton className="w-3 h-3 rounded-full" />
+                            <Skeleton className="h-4 w-24" />
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className="text-sm font-bold">
-                              {item.value}%
-                            </span>
-                            <span
-                              className={`text-xs ${
-                                item.trend === "up"
-                                  ? "text-emerald-600"
-                                  : item.trend === "down"
-                                    ? "text-red-600"
-                                    : "text-gray-600"
-                              }`}
-                            >
-                              {item.change}
-                            </span>
+                            <Skeleton className="h-4 w-8" />
+                            <Skeleton className="h-4 w-8" />
                           </div>
                         </div>
-                      ),
-                    )}
-                  </div>
-                </div>
-              ) : (
-                <div className="h-[300px] flex items-center justify-center text-gray-400">
-                  Coming soon
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Recent Reports (All) */}
-        {selectedCategory === "all" && (
-          <Card className="hover:shadow-lg transition-shadow duration-200">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Recent Reports</CardTitle>
-                  <CardDescription>Latest generated reports</CardDescription>
-                </div>
-                <FileText className="h-4 w-4 text-gray-400" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <div className="space-y-4">
-                  {/* Loading skeleton for 3 report items */}
-                  {[1, 2, 3].map((index) => (
-                    <div
-                      key={index}
-                      className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
-                    >
-                      <div className="flex items-center gap-3">
-                        <Skeleton className="h-10 w-10 rounded-lg" />
-                        <div className="space-y-2">
-                          <Skeleton className="h-4 w-32" />
-                          <div className="flex items-center gap-2">
-                            <Skeleton className="h-3 w-16" />
-                            <Skeleton className="h-3 w-3 rounded-full" />
-                            <Skeleton className="h-3 w-12" />
-                            <Skeleton className="h-3 w-3 rounded-full" />
-                            <Skeleton className="h-3 w-16" />
-                          </div>
-                        </div>
-                      </div>
-                      <Skeleton className="h-8 w-20" />
+                      ))}
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {apiData.recentReports && apiData.recentReports.length > 0 ? (
-                    apiData.recentReports.map((report: any, index: number) => (
-                      <div
-                        key={index}
-                        className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors duration-200"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-lg bg-white flex items-center justify-center">
-                            <FileText className="h-5 w-5 text-gray-500" />
-                          </div>
-                          <div>
-                            <p className="font-medium text-sm text-gray-900">
-                              {report.name}
-                            </p>
-                            <div className="flex items-center gap-2 mt-1">
-                              <span className="text-xs text-gray-500">
-                                {report.date}
+                  </div>
+                ) : apiData.assetDistribution ? (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="h-[300px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <RechartsPieChart>
+                          <Pie
+                            data={apiData.assetDistribution}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={60}
+                            outerRadius={80}
+                            fill="#8884d8"
+                            paddingAngle={5}
+                            dataKey="value"
+                          >
+                            {apiData.assetDistribution.map(
+                              (entry: any, index: number) => (
+                                <Cell
+                                  key={`cell-${index}`}
+                                  fill={COLORS[index % COLORS.length]}
+                                />
+                              ),
+                            )}
+                          </Pie>
+                          <Tooltip />
+                        </RechartsPieChart>
+                      </ResponsiveContainer>
+                    </div>
+                    <div className="space-y-4">
+                      {apiData.assetDistribution.map(
+                        (item: any, index: number) => (
+                          <div
+                            key={index}
+                            className="flex items-center justify-between"
+                          >
+                            <div className="flex items-center gap-2">
+                              <div
+                                className="w-3 h-3 rounded-full"
+                                style={{
+                                  backgroundColor:
+                                    COLORS[index % COLORS.length],
+                                }}
+                              />
+                              <span className="text-sm font-medium">
+                                {item.name}
                               </span>
-                              <span className="text-xs text-gray-400">•</span>
-                              <span className="text-xs text-gray-500">
-                                {report.type}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-bold">
+                                {item.value}%
                               </span>
-                              <span className="text-xs text-gray-400">•</span>
-                              <span className="text-xs text-gray-500">
-                                {report.size}
+                              <span
+                                className={`text-xs ${
+                                  item.trend === "up"
+                                    ? "text-emerald-600"
+                                    : item.trend === "down"
+                                      ? "text-red-600"
+                                      : "text-gray-600"
+                                }`}
+                              >
+                                {item.change}
                               </span>
                             </div>
                           </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {report.status === "processing" ? (
-                            <Badge
-                              variant="secondary"
-                              className="bg-blue-50 text-blue-600"
-                            >
-                              Processing
-                            </Badge>
-                          ) : (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="text-gray-600"
-                              onClick={async () => {
-                                if (!report.filePath) {
-                                  alert('Download not available');
-                                  return;
-                                }
-                                try {
-                                  const response = await fetch(report.filePath);
-                                  if (response.status === 202) {
-                                    alert('Report is still being generated. Please try again in a few moments.');
-                                    return;
-                                  }
-                                  if (!response.ok) {
-                                    const errorData = await response.json().catch(() => ({ error: 'Download failed' }));
-                                    alert(errorData.error || 'Download failed');
-                                    return;
-                                  }
-                                  const contentType = response.headers.get('content-type');
-                                  if (contentType && contentType.includes('application/json')) {
-                                    const jsonData = await response.json();
-                                    console.log('Dashboard data:', jsonData);
-                                    alert('Dashboard data logged to console (feature coming soon)');
-                                    return;
-                                  }
-                                  const blob = await response.blob();
-                                  const url = window.URL.createObjectURL(blob);
-                                  const a = document.createElement('a');
-                                  a.href = url;
-                                  const disposition = response.headers.get('content-disposition');
-                                  let filename = 'report';
-                                  if (disposition && disposition.includes('filename=')) {
-                                    filename = disposition.split('filename=')[1].replace(/"/g, '');
-                                  }
-                                  a.download = filename;
-                                  document.body.appendChild(a);
-                                  a.click();
-                                  window.URL.revokeObjectURL(url);
-                                  document.body.removeChild(a);
-                                } catch (error) {
-                                  console.error('Download error:', error);
-                                  alert('Failed to download report');
-                                }
-                              }}
-                            >
-                              <Download className="h-4 w-4 mr-2" />
-                              Download
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-gray-400 text-center py-12">
-                      No recent reports available.
+                        ),
+                      )}
                     </div>
-                  )}
+                  </div>
+                ) : (
+                  <div className="h-[300px] flex items-center justify-center text-gray-400">
+                    Coming soon
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Recent Reports (All) */}
+          {selectedCategory === "all" && (
+            <Card className="hover:shadow-lg transition-shadow duration-200">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Recent Reports</CardTitle>
+                    <CardDescription>Latest generated reports</CardDescription>
+                  </div>
+                  <FileText className="h-4 w-4 text-gray-400" />
                 </div>
-              )}
-            </CardContent>
-            <CardFooter>
-              <button
-                className="mt-2 text-emerald-700 hover:underline text-sm font-medium"
-                onClick={() => setShowAllReports(true)}
-              >
-                📄 View All Reports
-              </button>
-              <AllReportsModal
-                open={showAllReports}
-                onOpenChange={() => setShowAllReports(false)}
-                reports={allReports}
-                onArchive={handleArchive}
-                onRestore={handleRestore}
-                onDelete={handleDelete}
-                onScheduleDeletion={handleScheduleDeletion}
-              />
-            </CardFooter>
-          </Card>
-        )}
+              </CardHeader>
+              <CardContent>
+                {isLoading ? (
+                  <div className="space-y-4">
+                    {/* Loading skeleton for 3 report items */}
+                    {[1, 2, 3].map((index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
+                      >
+                        <div className="flex items-center gap-3">
+                          <Skeleton className="h-10 w-10 rounded-lg" />
+                          <div className="space-y-2">
+                            <Skeleton className="h-4 w-32" />
+                            <div className="flex items-center gap-2">
+                              <Skeleton className="h-3 w-16" />
+                              <Skeleton className="h-3 w-3 rounded-full" />
+                              <Skeleton className="h-3 w-12" />
+                              <Skeleton className="h-3 w-3 rounded-full" />
+                              <Skeleton className="h-3 w-16" />
+                            </div>
+                          </div>
+                        </div>
+                        <Skeleton className="h-8 w-20" />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {apiData.recentReports &&
+                    apiData.recentReports.length > 0 ? (
+                      apiData.recentReports.map(
+                        (report: any, index: number) => (
+                          <div
+                            key={index}
+                            className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors duration-200"
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="h-10 w-10 rounded-lg bg-white flex items-center justify-center">
+                                <FileText className="h-5 w-5 text-gray-500" />
+                              </div>
+                              <div>
+                                <p className="font-medium text-sm text-gray-900">
+                                  {report.name}
+                                </p>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <span className="text-xs text-gray-500">
+                                    {report.date}
+                                  </span>
+                                  <span className="text-xs text-gray-400">
+                                    •
+                                  </span>
+                                  <span className="text-xs text-gray-500">
+                                    {report.type}
+                                  </span>
+                                  <span className="text-xs text-gray-400">
+                                    •
+                                  </span>
+                                  <span className="text-xs text-gray-500">
+                                    {report.size}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {report.status === "processing" ? (
+                                <Badge
+                                  variant="secondary"
+                                  className="bg-blue-50 text-blue-600"
+                                >
+                                  Processing
+                                </Badge>
+                              ) : (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="text-gray-600"
+                                  onClick={async () => {
+                                    if (!report.filePath) {
+                                      alert("Download not available");
+                                      return;
+                                    }
+                                    try {
+                                      const response = await fetch(
+                                        report.filePath,
+                                      );
+                                      if (response.status === 202) {
+                                        alert(
+                                          "Report is still being generated. Please try again in a few moments.",
+                                        );
+                                        return;
+                                      }
+                                      if (!response.ok) {
+                                        const errorData = await response
+                                          .json()
+                                          .catch(() => ({
+                                            error: "Download failed",
+                                          }));
+                                        alert(
+                                          errorData.error || "Download failed",
+                                        );
+                                        return;
+                                      }
+                                      const contentType =
+                                        response.headers.get("content-type");
+                                      if (
+                                        contentType &&
+                                        contentType.includes("application/json")
+                                      ) {
+                                        const jsonData = await response.json();
+                                        console.log(
+                                          "Dashboard data:",
+                                          jsonData,
+                                        );
+                                        alert(
+                                          "Dashboard data logged to console (feature coming soon)",
+                                        );
+                                        return;
+                                      }
+                                      const blob = await response.blob();
+                                      const url =
+                                        window.URL.createObjectURL(blob);
+                                      const a = document.createElement("a");
+                                      a.href = url;
+                                      const disposition = response.headers.get(
+                                        "content-disposition",
+                                      );
+                                      let filename = "report";
+                                      if (
+                                        disposition &&
+                                        disposition.includes("filename=")
+                                      ) {
+                                        filename = disposition
+                                          .split("filename=")[1]
+                                          .replace(/"/g, "");
+                                      }
+                                      a.download = filename;
+                                      document.body.appendChild(a);
+                                      a.click();
+                                      window.URL.revokeObjectURL(url);
+                                      document.body.removeChild(a);
+                                    } catch (error) {
+                                      console.error("Download error:", error);
+                                      alert("Failed to download report");
+                                    }
+                                  }}
+                                >
+                                  <Download className="h-4 w-4 mr-2" />
+                                  Download
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        ),
+                      )
+                    ) : (
+                      <div className="text-gray-400 text-center py-12">
+                        No recent reports available.
+                      </div>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+              <CardFooter>
+                <button
+                  className="mt-2 text-emerald-700 hover:underline text-sm font-medium"
+                  onClick={() => setShowAllReports(true)}
+                >
+                  📄 View All Reports
+                </button>
+                <AllReportsModal
+                  open={showAllReports}
+                  onOpenChange={() => setShowAllReports(false)}
+                  reports={allReports}
+                  onArchive={handleArchive}
+                  onRestore={handleRestore}
+                  onDelete={handleDelete}
+                  onScheduleDeletion={handleScheduleDeletion}
+                />
+              </CardFooter>
+            </Card>
+          )}
         </div>
       )}
 
@@ -816,9 +855,12 @@ const UnifiedReportsPage = () => {
             <CardContent>
               <div className="text-center py-12 text-gray-500">
                 <FileText className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                <p className="text-lg font-medium mb-2">Saved Reports Coming Soon</p>
+                <p className="text-lg font-medium mb-2">
+                  Saved Reports Coming Soon
+                </p>
                 <p className="text-sm">
-                  This section will display all your generated reports with advanced filtering and search capabilities.
+                  This section will display all your generated reports with
+                  advanced filtering and search capabilities.
                 </p>
               </div>
             </CardContent>

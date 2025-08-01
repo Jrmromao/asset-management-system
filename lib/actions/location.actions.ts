@@ -273,11 +273,13 @@ export const bulkCreate = withAuth(
       country: string;
       active?: boolean;
     }>,
-  ): Promise<AuthResponse<{
-    successCount: number;
-    errorCount: number;
-    errors: Array<{ row: number; error: string }>;
-  }>> => {
+  ): Promise<
+    AuthResponse<{
+      successCount: number;
+      errorCount: number;
+      errors: Array<{ row: number; error: string }>;
+    }>
+  > => {
     console.log(" [location.actions] bulkCreate - Starting with user:", {
       userId: user?.id,
       user_metadata: user?.user_metadata,
@@ -315,7 +317,7 @@ export const bulkCreate = withAuth(
           `[Location Actions] Processing location ${i + 1}:`,
           locationData,
         );
-        
+
         try {
           // Validate the location data
           console.log(`[Location Actions] Validating location data:`, {
@@ -328,7 +330,7 @@ export const bulkCreate = withAuth(
             country: locationData.country,
             active: locationData.active ?? true,
           });
-          
+
           const validation = locationSchema.safeParse({
             name: locationData.name,
             addressLine1: locationData.addressLine1,
@@ -402,7 +404,6 @@ export const bulkCreate = withAuth(
             entityId: location.id,
             details: `Location created via bulk import: ${location.name} by user ${user.id}`,
           });
-
         } catch (error) {
           console.error(
             `[Location Actions] Error processing location at row ${i + 1}:`,
@@ -420,7 +421,7 @@ export const bulkCreate = withAuth(
       console.log(
         `[Location Actions] Bulk create completed: ${successCount} successful, ${errorCount} errors`,
       );
-      
+
       return {
         success: true,
         data: {

@@ -2,7 +2,10 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/app/db";
 import { withAuth } from "@/lib/middleware/withAuth";
 
-export async function POST(req: Request, contextPromise: Promise<{ params: { endpoint: string } }>) {
+export async function POST(
+  req: Request,
+  contextPromise: Promise<{ params: { endpoint: string } }>,
+) {
   const { params } = await contextPromise;
   try {
     const body = await req.json();

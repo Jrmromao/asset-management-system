@@ -71,7 +71,10 @@ function deepConvertDecimals(obj: any): any {
   return obj;
 }
 
-export async function getEnhancedAssetById(id: string, companyId: string): Promise<EnhancedAssetType | null> {
+export async function getEnhancedAssetById(
+  id: string,
+  companyId: string,
+): Promise<EnhancedAssetType | null> {
   const asset = await prisma.asset.findUnique({
     where: { id, companyId },
     include: {
@@ -113,7 +116,7 @@ export async function getEnhancedAssetById(id: string, companyId: string): Promi
           expectedLifespanYears: true,
           amortizedMonthlyCo2e: true,
           amortizedAnnualCo2e: true,
-        }
+        },
       },
       assetHistory: true,
       user: true,
@@ -124,9 +127,19 @@ export async function getEnhancedAssetById(id: string, companyId: string): Promi
   if (!asset) return null;
   // Debug: log co2eRecords and their createdAt fields
   if (asset.co2eRecords && Array.isArray(asset.co2eRecords)) {
-    console.log('[DEBUG] co2eRecords:', asset.co2eRecords.map(r => ({ id: r.id, createdAt: r.createdAt, updatedAt: r.updatedAt })));
+    console.log(
+      "[DEBUG] co2eRecords:",
+      asset.co2eRecords.map((r) => ({
+        id: r.id,
+        createdAt: r.createdAt,
+        updatedAt: r.updatedAt,
+      })),
+    );
   } else {
-    console.log('[DEBUG] No co2eRecords found or not an array:', asset.co2eRecords);
+    console.log(
+      "[DEBUG] No co2eRecords found or not an array:",
+      asset.co2eRecords,
+    );
   }
   const auditLogs = await prisma.auditLog.findMany({
     where: { entity: "ASSET", entityId: id, companyId },
@@ -142,7 +155,8 @@ export async function getEnhancedAssetById(id: string, companyId: string): Promi
 
   // --- AI-powered depreciation recommendation (real AI call) ---
   let aiRecommendedDepreciationMethod = "straightLine";
-  let aiDepreciationReasoning = "Based on the asset's category and typical usage, straight-line depreciation is recommended for predictable value loss.";
+  let aiDepreciationReasoning =
+    "Based on the asset's category and typical usage, straight-line depreciation is recommended for predictable value loss.";
   try {
     const aiResult = await getDepreciationRecommendation(
       {
@@ -157,26 +171,36 @@ export async function getEnhancedAssetById(id: string, companyId: string): Promi
         notes: safeAsset.notes,
         assetTag: safeAsset.assetTag,
       },
-      safeAsset.assetHistory || []
+      safeAsset.assetHistory || [],
     );
     aiRecommendedDepreciationMethod = aiResult.method;
     aiDepreciationReasoning = aiResult.reasoning;
   } catch (e) {
     // fallback to stub logic if AI call fails
-    if (safeAsset.category?.name?.toLowerCase().includes("tech") || safeAsset.modelName?.toLowerCase().includes("laptop")) {
+    if (
+      safeAsset.category?.name?.toLowerCase().includes("tech") ||
+      safeAsset.modelName?.toLowerCase().includes("laptop")
+    ) {
       aiRecommendedDepreciationMethod = "doubleDecliningBalance";
-      aiDepreciationReasoning = "This asset is technology-related and likely to lose value quickly due to obsolescence. Double declining balance is recommended for accelerated depreciation.";
+      aiDepreciationReasoning =
+        "This asset is technology-related and likely to lose value quickly due to obsolescence. Double declining balance is recommended for accelerated depreciation.";
     } else if (safeAsset.assetHistory && safeAsset.assetHistory.length > 5) {
       aiRecommendedDepreciationMethod = "decliningBalance";
-      aiDepreciationReasoning = "This asset has a rich usage history, suggesting higher early-year depreciation. Declining balance is recommended.";
+      aiDepreciationReasoning =
+        "This asset has a rich usage history, suggesting higher early-year depreciation. Declining balance is recommended.";
     }
   }
 
   // Determine category from formValues[0].formTemplate.category if present
   let categoryFromForm: any = null;
   let categoryNameFromForm: string | undefined = undefined;
-  if (safeAsset.formValues && Array.isArray(safeAsset.formValues) && safeAsset.formValues.length > 0) {
-    const formTemplateCategory = safeAsset.formValues[0]?.formTemplate?.category;
+  if (
+    safeAsset.formValues &&
+    Array.isArray(safeAsset.formValues) &&
+    safeAsset.formValues.length > 0
+  ) {
+    const formTemplateCategory =
+      safeAsset.formValues[0]?.formTemplate?.category;
     if (formTemplateCategory) {
       categoryFromForm = formTemplateCategory;
       categoryNameFromForm = formTemplateCategory.name;
@@ -188,11 +212,11 @@ export async function getEnhancedAssetById(id: string, companyId: string): Promi
     auditLogs: safeAuditLogs ?? [],
     belowReorderPoint,
     category: categoryFromForm || safeAsset.category,
-    categoryName: categoryNameFromForm || safeAsset.category?.name || 'N/A',
-    modelName: safeAsset.model?.name ?? 'N/A',
-    manufacturerName: safeAsset.model?.manufacturer?.name ?? 'N/A',
-    locationName: safeAsset.departmentLocation?.name ?? 'N/A',
+    categoryName: categoryNameFromForm || safeAsset.category?.name || "N/A",
+    modelName: safeAsset.model?.name ?? "N/A",
+    manufacturerName: safeAsset.model?.manufacturer?.name ?? "N/A",
+    locationName: safeAsset.departmentLocation?.name ?? "N/A",
     aiRecommendedDepreciationMethod,
     aiDepreciationReasoning,
   };
-} 
+}

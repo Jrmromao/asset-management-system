@@ -324,8 +324,8 @@ export const bulkAssignAssets = withAuth(
 
       await createAuditLog({
         companyId: user.privateMetadata?.companyId,
-        action: 'BULK_OPERATION',
-        entity: 'BULK',
+        action: "BULK_OPERATION",
+        entity: "BULK",
         entityId: undefined,
         details: `Bulk operation performed by user ${user.id}. Details: ${JSON.stringify(results)}`,
       });
@@ -404,7 +404,9 @@ export const bulkUpdateAssetStatus = withAuth(
               where: { id: assetId },
               data: { statusLabelId },
             });
-            const afterAsset = await tx.asset.findFirst({ where: { id: assetId, companyId } });
+            const afterAsset = await tx.asset.findFirst({
+              where: { id: assetId, companyId },
+            });
 
             // Use createAuditLog for consistency
             await createAuditLog({
@@ -433,8 +435,8 @@ export const bulkUpdateAssetStatus = withAuth(
 
       await createAuditLog({
         companyId: user.privateMetadata?.companyId,
-        action: 'BULK_OPERATION',
-        entity: 'BULK',
+        action: "BULK_OPERATION",
+        entity: "BULK",
         entityId: undefined,
         details: `Bulk status update performed by user ${user.id}. Summary: ${JSON.stringify(results)}`,
         dataAccessed: { assetIds, statusLabelId },
@@ -556,8 +558,8 @@ export const bulkCheckinAssets = withAuth(
 
       await createAuditLog({
         companyId: user.privateMetadata?.companyId,
-        action: 'BULK_OPERATION',
-        entity: 'BULK',
+        action: "BULK_OPERATION",
+        entity: "BULK",
         entityId: undefined,
         details: `Bulk operation performed by user ${user.id}. Details: ${JSON.stringify(results)}`,
       });

@@ -5,18 +5,22 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { 
-  Calculator, 
-  TrendingDown, 
-  Calendar, 
+import {
+  Calculator,
+  TrendingDown,
+  Calendar,
   DollarSign,
   RefreshCw,
   BarChart3,
   Brain,
   TrendingUp,
-  AlertTriangle
+  AlertTriangle,
 } from "lucide-react";
-import { calculateAssetDepreciation, generateDepreciationSchedule, getMarketConditions } from "@/lib/actions/depreciation.actions";
+import {
+  calculateAssetDepreciation,
+  generateDepreciationSchedule,
+  getMarketConditions,
+} from "@/lib/actions/depreciation.actions";
 import { Asset } from "@prisma/client";
 import { MarketConditions } from "@/lib/utils/depreciation";
 
@@ -30,18 +34,27 @@ interface DepreciationCalculatorProps {
   onUpdate?: () => void;
 }
 
-export function DepreciationCalculator({ asset, onUpdate }: DepreciationCalculatorProps) {
+export function DepreciationCalculator({
+  asset,
+  onUpdate,
+}: DepreciationCalculatorProps) {
   const [isCalculating, setIsCalculating] = useState(false);
   const [depreciationData, setDepreciationData] = useState<any>(null);
   const [schedule, setSchedule] = useState<any[]>([]);
   const [selectedMethod, setSelectedMethod] = useState<string>("auto");
-  const [marketConditions, setMarketConditions] = useState<MarketConditions | null>(null);
+  const [marketConditions, setMarketConditions] =
+    useState<MarketConditions | null>(null);
   const [showMarketAdjustments, setShowMarketAdjustments] = useState(false);
 
   const handleCalculate = async (method: string = "auto") => {
     setIsCalculating(true);
     try {
-      const result = await calculateAssetDepreciation(asset.id, method as any, undefined, marketConditions ?? undefined);
+      const result = await calculateAssetDepreciation(
+        asset.id,
+        method as any,
+        undefined,
+        marketConditions ?? undefined,
+      );
       if (result.success) {
         setDepreciationData(result.data);
         setSelectedMethod(method);
@@ -56,7 +69,11 @@ export function DepreciationCalculator({ asset, onUpdate }: DepreciationCalculat
 
   const handleGenerateSchedule = async () => {
     try {
-      const result = await generateDepreciationSchedule(asset.id, selectedMethod as any, marketConditions ?? undefined);
+      const result = await generateDepreciationSchedule(
+        asset.id,
+        selectedMethod as any,
+        marketConditions ?? undefined,
+      );
       if (result.success && result.data) {
         setSchedule(result.data.schedule);
       }
@@ -76,9 +93,9 @@ export function DepreciationCalculator({ asset, onUpdate }: DepreciationCalculat
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
     }).format(amount);
   };
 
@@ -89,7 +106,7 @@ export function DepreciationCalculator({ asset, onUpdate }: DepreciationCalculat
   const formatDate = (date: any) => {
     if (!date) return "—";
     try {
-      const dateObj = typeof date === 'string' ? new Date(date) : date;
+      const dateObj = typeof date === "string" ? new Date(date) : date;
       return dateObj.toLocaleDateString();
     } catch (error) {
       return "—";
@@ -114,7 +131,9 @@ export function DepreciationCalculator({ asset, onUpdate }: DepreciationCalculat
                 AI Recommendation:
               </span>
               <Badge className="ml-2 bg-blue-600 text-white">
-                {asset.aiRecommendedDepreciationMethod.replace(/([A-Z])/g, ' $1').replace(/^./, (str: string) => str.toUpperCase())}
+                {asset.aiRecommendedDepreciationMethod
+                  .replace(/([A-Z])/g, " $1")
+                  .replace(/^./, (str: string) => str.toUpperCase())}
               </Badge>
             </div>
             {asset.aiDepreciationReasoning && (
@@ -141,21 +160,24 @@ export function DepreciationCalculator({ asset, onUpdate }: DepreciationCalculat
                 {formatCurrency(Number(asset.purchasePrice) || 0)}
               </div>
             </div>
-            
+
             <div className="space-y-2">
               <label className="text-sm font-medium">Current Value</label>
               <div className="text-2xl font-bold text-blue-600">
                 {formatCurrency(Number(asset.currentValue) || 0)}
               </div>
             </div>
-            
+
             <div className="space-y-2">
               <label className="text-sm font-medium">Total Depreciation</label>
               <div className="text-2xl font-bold text-red-600">
-                {formatCurrency((Number(asset.purchasePrice) || 0) - (Number(asset.currentValue) || 0))}
+                {formatCurrency(
+                  (Number(asset.purchasePrice) || 0) -
+                    (Number(asset.currentValue) || 0),
+                )}
               </div>
             </div>
-            
+
             <div className="space-y-2">
               <label className="text-sm font-medium">Remaining Life</label>
               <div className="text-2xl font-bold text-orange-600">
@@ -167,7 +189,9 @@ export function DepreciationCalculator({ asset, onUpdate }: DepreciationCalculat
           {/* Market Conditions Section */}
           <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-blue-800">Market Intelligence</h3>
+              <h3 className="text-lg font-semibold text-blue-800">
+                Market Intelligence
+              </h3>
               <Button
                 onClick={handleLoadMarketConditions}
                 variant="outline"
@@ -178,7 +202,7 @@ export function DepreciationCalculator({ asset, onUpdate }: DepreciationCalculat
                 Load Market Data
               </Button>
             </div>
-            
+
             {marketConditions && (
               <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
                 <div>
@@ -229,7 +253,7 @@ export function DepreciationCalculator({ asset, onUpdate }: DepreciationCalculat
                 )}
                 AI Calculate
               </Button>
-              
+
               <Button
                 variant="outline"
                 onClick={() => handleCalculate("straightLine")}
@@ -237,7 +261,7 @@ export function DepreciationCalculator({ asset, onUpdate }: DepreciationCalculat
               >
                 Straight Line
               </Button>
-              
+
               <Button
                 variant="outline"
                 onClick={() => handleCalculate("decliningBalance")}
@@ -245,7 +269,7 @@ export function DepreciationCalculator({ asset, onUpdate }: DepreciationCalculat
               >
                 Declining Balance
               </Button>
-              
+
               <Button
                 variant="outline"
                 onClick={() => handleCalculate("doubleDecliningBalance")}
@@ -271,7 +295,12 @@ export function DepreciationCalculator({ asset, onUpdate }: DepreciationCalculat
                     </div>
                     {depreciationData.confidence && (
                       <div className="text-xs text-gray-400 mt-1">
-                        Confidence: <span className={getConfidenceColor(depreciationData.confidence)}>
+                        Confidence:{" "}
+                        <span
+                          className={getConfidenceColor(
+                            depreciationData.confidence,
+                          )}
+                        >
                           {(depreciationData.confidence * 100).toFixed(0)}%
                         </span>
                       </div>
@@ -283,17 +312,25 @@ export function DepreciationCalculator({ asset, onUpdate }: DepreciationCalculat
                   <CardContent className="pt-6">
                     <div className="flex items-center gap-2 mb-2">
                       <TrendingDown className="h-4 w-4 text-red-600" />
-                      <span className="text-sm font-medium">Annual Depreciation</span>
+                      <span className="text-sm font-medium">
+                        Annual Depreciation
+                      </span>
                     </div>
                     <div className="text-2xl font-bold">
                       {formatCurrency(depreciationData.annualDepreciation)}
                     </div>
                     <div className="text-sm text-gray-500">
-                      {formatPercentage(depreciationData.depreciationPercentage)} of original value
+                      {formatPercentage(
+                        depreciationData.depreciationPercentage,
+                      )}{" "}
+                      of original value
                     </div>
                     {depreciationData.marketAdjustments && (
                       <div className="text-xs text-blue-600 mt-1">
-                        Market adjusted: {formatPercentage(depreciationData.marketAdjustments.multiplier * 100)}
+                        Market adjusted:{" "}
+                        {formatPercentage(
+                          depreciationData.marketAdjustments.multiplier * 100,
+                        )}
                       </div>
                     )}
                   </CardContent>
@@ -303,13 +340,16 @@ export function DepreciationCalculator({ asset, onUpdate }: DepreciationCalculat
                   <CardContent className="pt-6">
                     <div className="flex items-center gap-2 mb-2">
                       <Calendar className="h-4 w-4 text-blue-600" />
-                      <span className="text-sm font-medium">Remaining Life</span>
+                      <span className="text-sm font-medium">
+                        Remaining Life
+                      </span>
                     </div>
                     <div className="text-2xl font-bold">
                       {depreciationData.remainingLife.toFixed(1)} years
                     </div>
                     <div className="text-sm text-gray-500">
-                      Next update: {formatDate(depreciationData.nextDepreciationDate)}
+                      Next update:{" "}
+                      {formatDate(depreciationData.nextDepreciationDate)}
                     </div>
                   </CardContent>
                 </Card>
@@ -319,27 +359,36 @@ export function DepreciationCalculator({ asset, onUpdate }: DepreciationCalculat
             {depreciationData && (
               <div className="mt-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold">Depreciation Progress</h3>
+                  <h3 className="text-lg font-semibold">
+                    Depreciation Progress
+                  </h3>
                   <Badge variant="secondary">
                     {formatPercentage(depreciationData.depreciationPercentage)}
                   </Badge>
                 </div>
-                <Progress 
-                  value={Math.min(depreciationData.depreciationPercentage, 100)} 
+                <Progress
+                  value={Math.min(depreciationData.depreciationPercentage, 100)}
                   className="h-3"
                 />
                 <div className="flex justify-between text-sm text-gray-500 mt-2">
                   <span>Purchase Date: {formatDate(asset.purchaseDate)}</span>
-                  <span>Calculation Date: {formatDate(depreciationData.calculationDate)}</span>
+                  <span>
+                    Calculation Date:{" "}
+                    {formatDate(depreciationData.calculationDate)}
+                  </span>
                 </div>
-                
+
                 {depreciationData.reasoning && (
                   <div className="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
                     <div className="flex items-center gap-2 mb-2">
                       <Brain className="h-4 w-4 text-blue-600" />
-                      <span className="text-sm font-medium text-gray-700">AI Reasoning</span>
+                      <span className="text-sm font-medium text-gray-700">
+                        AI Reasoning
+                      </span>
                     </div>
-                    <p className="text-sm text-gray-600">{depreciationData.reasoning}</p>
+                    <p className="text-sm text-gray-600">
+                      {depreciationData.reasoning}
+                    </p>
                   </div>
                 )}
               </div>
@@ -376,7 +425,7 @@ export function DepreciationCalculator({ asset, onUpdate }: DepreciationCalculat
                     <th className="text-right p-2">Depreciation</th>
                     <th className="text-right p-2">Ending Value</th>
                     <th className="text-right p-2">Accumulated</th>
-                    {schedule.some(row => row.marketValue) && (
+                    {schedule.some((row) => row.marketValue) && (
                       <th className="text-right p-2">Market Value</th>
                     )}
                   </tr>
@@ -385,13 +434,22 @@ export function DepreciationCalculator({ asset, onUpdate }: DepreciationCalculat
                   {schedule.map((row, index) => (
                     <tr key={index} className="border-b hover:bg-gray-50">
                       <td className="p-2">{row.year}</td>
-                      <td className="text-right p-2">{formatCurrency(row.beginningValue)}</td>
-                      <td className="text-right p-2 text-red-600">{formatCurrency(row.depreciation)}</td>
-                      <td className="text-right p-2">{formatCurrency(row.endingValue)}</td>
-                      <td className="text-right p-2 text-gray-600">{formatCurrency(row.accumulatedDepreciation)}</td>
-                      {schedule.some(row => row.marketValue) && (
+                      <td className="text-right p-2">
+                        {formatCurrency(row.beginningValue)}
+                      </td>
+                      <td className="text-right p-2 text-red-600">
+                        {formatCurrency(row.depreciation)}
+                      </td>
+                      <td className="text-right p-2">
+                        {formatCurrency(row.endingValue)}
+                      </td>
+                      <td className="text-right p-2 text-gray-600">
+                        {formatCurrency(row.accumulatedDepreciation)}
+                      </td>
+                      {schedule.some((row) => row.marketValue) && (
                         <td className="text-right p-2 text-blue-600">
-                          {typeof row.marketValue === 'number' && !isNaN(row.marketValue)
+                          {typeof row.marketValue === "number" &&
+                          !isNaN(row.marketValue)
                             ? formatCurrency(row.marketValue)
                             : "—"}
                         </td>
@@ -406,4 +464,4 @@ export function DepreciationCalculator({ asset, onUpdate }: DepreciationCalculat
       )}
     </div>
   );
-} 
+}

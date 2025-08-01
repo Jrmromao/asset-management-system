@@ -33,11 +33,21 @@ const SettingsPage = ({ searchParams }: SettingsPageProps): JSX.Element => {
           <BreadcrumbItem>
             <BreadcrumbLink asChild>
               <Link href={`/settings?tab=${activeTab}`}>
-                {activeTab === 'asset-categories' ? 'Asset Categories' : 
-                 activeTab === 'status-label' ? 'Status Labels' :
-                 activeTab === 'company-settings' ? 'Company Settings' :
-                 activeTab === 'report-storage' ? 'Report Storage' :
-                 activeTab.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                {activeTab === "asset-categories"
+                  ? "Asset Categories"
+                  : activeTab === "status-label"
+                    ? "Status Labels"
+                    : activeTab === "company-settings"
+                      ? "Company Settings"
+                      : activeTab === "report-storage"
+                        ? "Report Storage"
+                        : activeTab
+                            .split("-")
+                            .map(
+                              (word) =>
+                                word.charAt(0).toUpperCase() + word.slice(1),
+                            )
+                            .join(" ")}
               </Link>
             </BreadcrumbLink>
           </BreadcrumbItem>

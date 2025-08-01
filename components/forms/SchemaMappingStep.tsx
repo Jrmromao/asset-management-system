@@ -29,7 +29,9 @@ export default function SchemaMappingStep({
 
   return (
     <div>
-      <h2 className="text-lg font-semibold mb-4">Map Uploaded Columns to Template Fields</h2>
+      <h2 className="text-lg font-semibold mb-4">
+        Map Uploaded Columns to Template Fields
+      </h2>
       <table className="min-w-full border mb-4">
         <thead>
           <tr>
@@ -39,17 +41,17 @@ export default function SchemaMappingStep({
           </tr>
         </thead>
         <tbody>
-          {uploadedColumns.map(col => (
+          {uploadedColumns.map((col) => (
             <tr key={col}>
               <td className="border px-2 py-1">{col}</td>
               <td className="border px-2 py-1">
                 <select
                   className="border rounded px-1 py-0.5"
                   value={columnMapping[col] || ""}
-                  onChange={e => updateMapping(col, e.target.value || null)}
+                  onChange={(e) => updateMapping(col, e.target.value || null)}
                 >
                   <option value="">Ignore</option>
-                  {templateFields.map(f => (
+                  {templateFields.map((f) => (
                     <option key={f.name} value={f.name}>
                       {f.label}
                     </option>
@@ -57,9 +59,11 @@ export default function SchemaMappingStep({
                 </select>
               </td>
               <td className="border px-2 py-1">
-                {columnMapping[col]
-                  ? "Mapped"
-                  : <span className="text-orange-600">Will be ignored</span>}
+                {columnMapping[col] ? (
+                  "Mapped"
+                ) : (
+                  <span className="text-orange-600">Will be ignored</span>
+                )}
               </td>
             </tr>
           ))}
@@ -69,7 +73,7 @@ export default function SchemaMappingStep({
         <div className="text-red-600 mb-2">
           <strong>Required fields not mapped:</strong>
           <ul className="list-disc ml-6">
-            {unmappedRequiredFields.map(f => (
+            {unmappedRequiredFields.map((f) => (
               <li key={f.name}>{f.label}</li>
             ))}
           </ul>
@@ -77,7 +81,8 @@ export default function SchemaMappingStep({
       )}
       {ignoredColumns.length > 0 && (
         <div className="text-orange-600 mb-2">
-          <strong>These columns will be ignored:</strong> {ignoredColumns.join(", ")}
+          <strong>These columns will be ignored:</strong>{" "}
+          {ignoredColumns.join(", ")}
         </div>
       )}
       <button
@@ -89,4 +94,4 @@ export default function SchemaMappingStep({
       </button>
     </div>
   );
-} 
+}

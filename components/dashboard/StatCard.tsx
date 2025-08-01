@@ -31,11 +31,17 @@ export const StatCard = ({
       </CardHeader>
       <CardContent>
         <div className="flex items-baseline gap-1">
-          <div className={`text-2xl font-bold ${
-            title === "Upcoming Maintenance" && typeof mainValue === "number" && mainValue > 0
-              ? "text-red-600"
-              : "text-gray-900"
-          }`}>{mainValue}</div>
+          <div
+            className={`text-2xl font-bold ${
+              title === "Upcoming Maintenance" &&
+              typeof mainValue === "number" &&
+              mainValue > 0
+                ? "text-red-600"
+                : "text-gray-900"
+            }`}
+          >
+            {mainValue}
+          </div>
           {subValue && (
             <div className="text-sm text-muted-foreground">{subValue}</div>
           )}

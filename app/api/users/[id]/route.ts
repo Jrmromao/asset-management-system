@@ -1,4 +1,10 @@
-import { getUserById, remove, update, deactivateUser, activateUser } from "@/lib/actions/user.actions";
+import {
+  getUserById,
+  remove,
+  update,
+  deactivateUser,
+  activateUser,
+} from "@/lib/actions/user.actions";
 import { NextResponse } from "next/server";
 
 export async function GET(

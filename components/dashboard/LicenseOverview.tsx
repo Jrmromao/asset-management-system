@@ -27,25 +27,29 @@ export const LicenseOverview = () => {
   const router = useRouter();
   const { user } = useContext(UserContext);
   // Use companyId for filtering licenses by company
-  const { licenses, isLoading } = useLicenseQuery(0, 2000, "", { companyId: user?.companyId }) as { licenses: any, isLoading: boolean };
+  const { licenses, isLoading } = useLicenseQuery(0, 2000, "", {
+    companyId: user?.companyId,
+  }) as { licenses: any; isLoading: boolean };
   // Type guard for object-with-data
   function hasDataProp(obj: any): obj is { data: any[] } {
-    return obj && typeof obj === 'object' && Array.isArray(obj.data);
+    return obj && typeof obj === "object" && Array.isArray(obj.data);
   }
   const safeLicenses = Array.isArray(licenses)
     ? licenses
-    : (hasDataProp(licenses) ? licenses.data : []);
-
+    : hasDataProp(licenses)
+      ? licenses.data
+      : [];
 
   // Calculate expiring soon (within 30 days)
   const expiringSoon = useMemo(() => {
     const now = new Date();
     const threshold = new Date();
     threshold.setDate(now.getDate() + 30);
-    return safeLicenses.filter((license: any) =>
-      license.renewalDate &&
-      new Date(license.renewalDate) <= threshold &&
-      new Date(license.renewalDate) >= now,
+    return safeLicenses.filter(
+      (license: any) =>
+        license.renewalDate &&
+        new Date(license.renewalDate) <= threshold &&
+        new Date(license.renewalDate) >= now,
     ).length;
   }, [safeLicenses]);
 
@@ -53,7 +57,10 @@ export const LicenseOverview = () => {
   const utilization = useMemo(() => {
     const withSeats = safeLicenses.filter((l: any) => l.seats && l.seats > 0);
     if (withSeats.length === 0) return 0;
-    const totalSeats = withSeats.reduce((sum: number, l: any) => sum + l.seats, 0);
+    const totalSeats = withSeats.reduce(
+      (sum: number, l: any) => sum + l.seats,
+      0,
+    );
     const totalAssigned = withSeats.reduce((sum: number, l: any) => {
       if (typeof l.seatsAllocated === "number") {
         return sum + l.seatsAllocated;
@@ -105,8 +112,13 @@ export const LicenseOverview = () => {
         </div>
         {/* Per-license utilization horizontal bar chart */}
         <div className="mt-8">
-          <h3 className="text-lg font-semibold mb-2">Per-License Utilization</h3>
-          <ResponsiveContainer width="100%" height={40 + licenseUtilizationData.length * 40}>
+          <h3 className="text-lg font-semibold mb-2">
+            Per-License Utilization
+          </h3>
+          <ResponsiveContainer
+            width="100%"
+            height={40 + licenseUtilizationData.length * 40}
+          >
             <BarChart
               data={licenseUtilizationData}
               layout="vertical"
@@ -118,17 +130,28 @@ export const LicenseOverview = () => {
                 type="category"
                 width={120}
                 tick={{ fontSize: 14, fontWeight: 500, fill: "#334155" }}
-                tickFormatter={name => name.length > 18 ? name.slice(0, 15) + '…' : name}
+                tickFormatter={(name) =>
+                  name.length > 18 ? name.slice(0, 15) + "…" : name
+                }
               />
               <XAxis
                 type="number"
                 domain={[0, 100]}
-                tickFormatter={tick => `${tick}%`}
+                tickFormatter={(tick) => `${tick}%`}
                 tick={{ fontSize: 13, fill: "#64748b" }}
               />
-              <Tooltip formatter={value => `${value}%`} />
-              <Bar dataKey="value" radius={[0, 8, 8, 0]} fill="#2563eb" minPointSize={4}>
-                <LabelList dataKey="value" position="right" formatter={(v: any) => `${v}%`} />
+              <Tooltip formatter={(value) => `${value}%`} />
+              <Bar
+                dataKey="value"
+                radius={[0, 8, 8, 0]}
+                fill="#2563eb"
+                minPointSize={4}
+              >
+                <LabelList
+                  dataKey="value"
+                  position="right"
+                  formatter={(v: any) => `${v}%`}
+                />
               </Bar>
             </BarChart>
           </ResponsiveContainer>

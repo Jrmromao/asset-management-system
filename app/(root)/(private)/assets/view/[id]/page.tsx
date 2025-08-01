@@ -53,14 +53,15 @@ export default function AssetPage() {
   const params = useParams();
   const id = params.id as string;
   const { isLoaded, user } = useUser();
-  const [asset, setAsset] = useState<EnhancedAssetTypeWithFormValues | undefined>();
+  const [asset, setAsset] = useState<
+    EnhancedAssetTypeWithFormValues | undefined
+  >();
   const [showUnassignDialog, setShowUnassignDialog] = useState(false);
   const { isAssignOpen, onAssignOpen, onAssignClose } = useAssetStore();
   const navigate = useRouter();
   const queryClient = useQueryClient();
   const [editOpen, setEditOpen] = useState(false);
   const [isMaintenanceDialogOpen, setMaintenanceDialogOpen] = useState(false);
-
 
   const {
     data: fetchedAsset,
@@ -83,14 +84,12 @@ export default function AssetPage() {
     refetchOnReconnect: false,
   });
 
-
   useEffect(() => {
     if (fetchedAsset) {
       console.log("\n\nFetched Asset:", fetchedAsset);
       setAsset(fetchedAsset as unknown as EnhancedAssetTypeWithFormValues);
     }
   }, [fetchedAsset]);
-
 
   console.log("\n\nAsset Data:", asset);
 
@@ -153,7 +152,7 @@ export default function AssetPage() {
       if (response.success) {
         toast.success("Notes updated successfully");
         // Update the local state instead of refetching
-        setAsset(prev => prev ? { ...prev, notes } : undefined);
+        setAsset((prev) => (prev ? { ...prev, notes } : undefined));
         // Invalidate the query cache for future fetches
         queryClient.invalidateQueries({ queryKey: ["asset", id] });
       } else {

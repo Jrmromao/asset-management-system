@@ -20,11 +20,17 @@ export const DetailField: React.FC<DetailFieldProps> = ({
       case "currency":
         return <AnimatedCounter value={Number(field.value)} />;
       case "date":
-        return (typeof field.value === "string" || typeof field.value === "number" || field.value instanceof Date)
+        return typeof field.value === "string" ||
+          typeof field.value === "number" ||
+          field.value instanceof Date
           ? new Date(field.value).toLocaleDateString()
           : "-";
       default:
-        if (typeof field.value === "string" || typeof field.value === "number" || React.isValidElement(field.value)) {
+        if (
+          typeof field.value === "string" ||
+          typeof field.value === "number" ||
+          React.isValidElement(field.value)
+        ) {
           return field.value;
         }
         return "-";

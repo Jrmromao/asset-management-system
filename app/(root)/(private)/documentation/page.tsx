@@ -1,5 +1,16 @@
 import React from "react";
-import { BookOpen, Zap, Wrench, CheckCircle, AlertTriangle, Play, Users, MessageCircle, Mail, ArrowRight } from "lucide-react";
+import {
+  BookOpen,
+  Zap,
+  Wrench,
+  CheckCircle,
+  AlertTriangle,
+  Play,
+  Users,
+  MessageCircle,
+  Mail,
+  ArrowRight,
+} from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,9 +38,12 @@ export default function DocumentationPage() {
         </CardHeader>
         <CardContent className="space-y-6">
           <div>
-            <h2 className="text-xl font-semibold mb-2">New to Maintenance Flows?</h2>
+            <h2 className="text-xl font-semibold mb-2">
+              New to Maintenance Flows?
+            </h2>
             <p className="text-gray-700 mb-2">
-              Start here to understand what flows are and how they can transform your maintenance operations.
+              Start here to understand what flows are and how they can transform
+              your maintenance operations.
             </p>
             <ul className="list-disc ml-6 text-gray-600">
               <li>What are maintenance flows and why use them</li>
@@ -108,7 +122,10 @@ export default function DocumentationPage() {
               <CardTitle>🏢 High-Value Asset Protection</CardTitle>
             </CardHeader>
             <CardContent>
-              <p>Automatically require manager approval for expensive equipment maintenance.</p>
+              <p>
+                Automatically require manager approval for expensive equipment
+                maintenance.
+              </p>
               <ul className="list-disc ml-4 text-gray-600">
                 <li>Trigger: On Creation</li>
                 <li>Condition: Asset Value &gt; $10,000</li>
@@ -175,4 +192,4 @@ export default function DocumentationPage() {
       </Card>
     </div>
   );
-} 
+}

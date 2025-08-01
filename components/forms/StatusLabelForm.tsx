@@ -180,7 +180,10 @@ export default function StatusLabelForm({
           </Button>
           <Button
             type="submit"
-            disabled={isLoading || (shouldValidateName && (isNameChecking || !isNameUnique))}
+            disabled={
+              isLoading ||
+              (shouldValidateName && (isNameChecking || !isNameUnique))
+            }
           >
             {isLoading || (shouldValidateName && isNameChecking) ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />

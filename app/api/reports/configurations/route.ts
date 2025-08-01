@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     if (!name || !format || !timePeriod || !companyId) {
       return NextResponse.json(
         { error: "Missing required fields" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -39,11 +39,12 @@ export async function POST(request: NextRequest) {
         scheduleFrequency: isScheduled ? scheduleFrequency : null,
         companyId,
         metrics: {
-          create: metrics?.map((metric: any) => ({
-            category: metric.category,
-            metricName: metric.metricName,
-            enabled: metric.enabled ?? true,
-          })) || [],
+          create:
+            metrics?.map((metric: any) => ({
+              category: metric.category,
+              metricName: metric.metricName,
+              enabled: metric.enabled ?? true,
+            })) || [],
         },
       },
       include: {
@@ -71,7 +72,7 @@ export async function POST(request: NextRequest) {
         success: false,
         error: error instanceof Error ? error.message : "Internal server error",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -89,7 +90,7 @@ export async function GET(request: NextRequest) {
     if (!companyId) {
       return NextResponse.json(
         { error: "Company ID is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -125,7 +126,7 @@ export async function GET(request: NextRequest) {
         success: false,
         error: error instanceof Error ? error.message : "Internal server error",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
-} 
+}

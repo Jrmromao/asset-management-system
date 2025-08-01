@@ -193,7 +193,8 @@ const NotesSection: React.FC<{
               <p className="whitespace-pre-wrap text-sm">{notes}</p>
             ) : (
               <p className="text-muted-foreground text-sm">
-                No notes added yet. Click &quot;Add Notes&quot; to add information about this user.
+                No notes added yet. Click &quot;Add Notes&quot; to add
+                information about this user.
               </p>
             )}
           </div>
@@ -227,15 +228,15 @@ interface UserDetailsViewProps {
 // Local type to reflect backend response
 type UserItemWithLicense = UserItems & { license?: License };
 
-export default function UserDetailsView(
-  {
-    user: initialUser,
-    isLoading,
-  }: UserDetailsViewProps
-) {
+export default function UserDetailsView({
+  user: initialUser,
+  isLoading,
+}: UserDetailsViewProps) {
   const router = useRouter();
   const [user, setUser] = React.useState(initialUser);
-  React.useEffect(() => { setUser(initialUser); }, [initialUser]);
+  React.useEffect(() => {
+    setUser(initialUser);
+  }, [initialUser]);
   const { findById } = useUserQuery();
   const isLonee =
     user.active === false && ((user as any).status ?? "-") === "REGISTERED";
@@ -287,48 +288,71 @@ export default function UserDetailsView(
       icon: <Users className="w-4 h-4 text-gray-400" />,
     },
   ];
-  const columns = React.useMemo(() => userAssetColumns({ onDelete: () => {}, onView: (asset) => router.push(`/assets/view/${asset.id}`), }), [router]);
+  const columns = React.useMemo(
+    () =>
+      userAssetColumns({
+        onDelete: () => {},
+        onView: (asset) => router.push(`/assets/view/${asset.id}`),
+      }),
+    [router],
+  );
 
   // Accessories DataTable columns
-  const accessoryColumns = React.useMemo(() => [
-    {
-      accessorKey: 'accessory.name',
-      header: 'Accessory Name',
-      cell: ({ row }: { row: any }) => row.original.accessory?.name || 'Accessory',
-    },
-    {
-      accessorKey: 'quantity',
-      header: 'Quantity',
-    },
-    {
-      accessorKey: 'assignedAt',
-      header: 'Assigned At',
-      cell: ({ row }: { row: any }) => new Date(row.original.assignedAt).toLocaleDateString(),
-    },
-    {
-      id: 'actions',
-      header: 'Actions',
-      cell: ({ row }: { row: any }) => (
-        <Button variant="outline" size="sm" onClick={() => {/* TODO: View accessory details */}}>
-          View
-        </Button>
-      ),
-    },
-  ], []);
+  const accessoryColumns = React.useMemo(
+    () => [
+      {
+        accessorKey: "accessory.name",
+        header: "Accessory Name",
+        cell: ({ row }: { row: any }) =>
+          row.original.accessory?.name || "Accessory",
+      },
+      {
+        accessorKey: "quantity",
+        header: "Quantity",
+      },
+      {
+        accessorKey: "assignedAt",
+        header: "Assigned At",
+        cell: ({ row }: { row: any }) =>
+          new Date(row.original.assignedAt).toLocaleDateString(),
+      },
+      {
+        id: "actions",
+        header: "Actions",
+        cell: ({ row }: { row: any }) => (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              /* TODO: View accessory details */
+            }}
+          >
+            View
+          </Button>
+        ),
+      },
+    ],
+    [],
+  );
   const [editDrawerOpen, setEditDrawerOpen] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showDeactivateDialog, setShowDeactivateDialog] = useState(false);
-  const { deactivateUser, isDeactivating, activateUser, isActivating } = useUserQuery();
+  const { deactivateUser, isDeactivating, activateUser, isActivating } =
+    useUserQuery();
   const { user: currentUser } = useContext(UserContext);
   if (isLoading) return <UserProfileSkeleton />;
   const userStatus = user.active ? "Active" : "Inactive";
-  const statusColor = user.active ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800";
+  const statusColor = user.active
+    ? "bg-green-100 text-green-800"
+    : "bg-red-100 text-red-800";
   // Memoized formatted dates
   const [createdAtString, setCreatedAtString] = React.useState("");
   const [updatedAtString, setUpdatedAtString] = React.useState("");
   React.useEffect(() => {
-    if ((user as any).createdAt) setCreatedAtString(new Date((user as any).createdAt).toLocaleString());
-    if ((user as any).updatedAt) setUpdatedAtString(new Date((user as any).updatedAt).toLocaleString());
+    if ((user as any).createdAt)
+      setCreatedAtString(new Date((user as any).createdAt).toLocaleString());
+    if ((user as any).updatedAt)
+      setUpdatedAtString(new Date((user as any).updatedAt).toLocaleString());
   }, [user]);
   return (
     <section aria-label="User Details" className="bg-white shadow rounded-lg">
@@ -355,10 +379,16 @@ export default function UserDetailsView(
         <div className="flex items-center gap-4 w-full">
           <Avatar>
             {(user as any).images ? (
-              <AvatarImage src={(user as any).images ?? undefined} alt={user.name || user.email} />
+              <AvatarImage
+                src={(user as any).images ?? undefined}
+                alt={user.name || user.email}
+              />
             ) : (
               <AvatarFallback>
-                {user.firstName?.[0] || user.name?.[0] || user.email?.[0] || "?"}
+                {user.firstName?.[0] ||
+                  user.name?.[0] ||
+                  user.email?.[0] ||
+                  "?"}
                 {user.lastName?.[0] || ""}
               </AvatarFallback>
             )}
@@ -367,16 +397,27 @@ export default function UserDetailsView(
             <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
               {`${user.firstName} ${user.lastName}`.trim()}
               {isLonee && (
-                <span className="ml-2 px-2 py-0.5 rounded bg-yellow-100 text-yellow-800 text-xs font-semibold" title="Assignment-only user">Lonee</span>
+                <span
+                  className="ml-2 px-2 py-0.5 rounded bg-yellow-100 text-yellow-800 text-xs font-semibold"
+                  title="Assignment-only user"
+                >
+                  Lonee
+                </span>
               )}
             </h1>
             <div className="flex flex-wrap gap-2 mt-2">
-              <span className={`px-3 py-1 text-xs rounded-full ${statusColor}`}>{userStatus}</span>
+              <span className={`px-3 py-1 text-xs rounded-full ${statusColor}`}>
+                {userStatus}
+              </span>
               {user.role?.name && (
-                <span className="px-3 py-1 text-xs rounded-full bg-blue-100 text-blue-800">{user.role.name}</span>
+                <span className="px-3 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
+                  {user.role.name}
+                </span>
               )}
               {user.accountType && (
-                <span className="px-3 py-1 text-xs rounded-full bg-gray-100 text-gray-800">{user.accountType}</span>
+                <span className="px-3 py-1 text-xs rounded-full bg-gray-100 text-gray-800">
+                  {user.accountType}
+                </span>
               )}
             </div>
           </div>
@@ -393,7 +434,9 @@ export default function UserDetailsView(
           <CustomButton
             value="Send Message"
             Icon={Mail}
-            action={() => {/* TODO: Implement send message */}}
+            action={() => {
+              /* TODO: Implement send message */
+            }}
             className="w-full sm:w-auto"
           />
           {user.active ? (
@@ -414,7 +457,9 @@ export default function UserDetailsView(
                 variant="warning"
                 onConfirm={async () => {
                   if (!currentUser?.id || !currentUser?.companyName) {
-                    toast.error("Current user context is missing. Please refresh and try again.");
+                    toast.error(
+                      "Current user context is missing. Please refresh and try again.",
+                    );
                     setShowDeactivateDialog(false);
                     return;
                   }
@@ -442,7 +487,9 @@ export default function UserDetailsView(
               Icon={CheckCircle}
               action={async () => {
                 if (!currentUser?.id || !currentUser?.companyName) {
-                  toast.error("Current user context is missing. Please refresh and try again.");
+                  toast.error(
+                    "Current user context is missing. Please refresh and try again.",
+                  );
                   return;
                 }
                 try {
@@ -471,36 +518,42 @@ export default function UserDetailsView(
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={async () => {
-                let auditLogs = (user as any).auditLogs;
-                // If auditLogs are not present, fetch from backend
-                if (!auditLogs) {
-                  try {
-                    const res = await fetch(`/api/audit-logs?userId=${user.id}`);
-                    if (res.ok) {
-                      const data = await res.json();
-                      auditLogs = data.auditLogs || [];
-                    } else {
+              <DropdownMenuItem
+                onClick={async () => {
+                  let auditLogs = (user as any).auditLogs;
+                  // If auditLogs are not present, fetch from backend
+                  if (!auditLogs) {
+                    try {
+                      const res = await fetch(
+                        `/api/audit-logs?userId=${user.id}`,
+                      );
+                      if (res.ok) {
+                        const data = await res.json();
+                        auditLogs = data.auditLogs || [];
+                      } else {
+                        auditLogs = [];
+                      }
+                    } catch {
                       auditLogs = [];
                     }
-                  } catch {
-                    auditLogs = [];
                   }
-                }
-                const exportData = { user, auditLogs };
-                const dataStr = JSON.stringify(exportData, null, 2);
-                const blob = new Blob([dataStr], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `user-${user.id}-with-logs.json`;
-                document.body.appendChild(a);
-                a.click();
-                setTimeout(() => {
-                  document.body.removeChild(a);
-                  URL.revokeObjectURL(url);
-                }, 100);
-              }}>
+                  const exportData = { user, auditLogs };
+                  const dataStr = JSON.stringify(exportData, null, 2);
+                  const blob = new Blob([dataStr], {
+                    type: "application/json",
+                  });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = `user-${user.id}-with-logs.json`;
+                  document.body.appendChild(a);
+                  a.click();
+                  setTimeout(() => {
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                  }, 100);
+                }}
+              >
                 <Download className="h-4 w-4 mr-2" /> Export Data
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -510,42 +563,86 @@ export default function UserDetailsView(
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 p-6">
         <div className="lg:col-span-3 space-y-6">
           <Card>
-            <CardHeader><CardTitle>Profile</CardTitle></CardHeader>
+            <CardHeader>
+              <CardTitle>Profile</CardTitle>
+            </CardHeader>
             <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {fieldsProfile.map((field, i) => <DetailItem key={i} icon={field.icon} label={field.label} value={field.value} />)}
+              {fieldsProfile.map((field, i) => (
+                <DetailItem
+                  key={i}
+                  icon={field.icon}
+                  label={field.label}
+                  value={field.value}
+                />
+              ))}
             </CardContent>
           </Card>
           <Card>
-            <CardHeader><CardTitle>Organization</CardTitle></CardHeader>
+            <CardHeader>
+              <CardTitle>Organization</CardTitle>
+            </CardHeader>
             <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {fieldsOrg.map((field, i) => <DetailItem key={i} icon={field.icon} label={field.label} value={field.value} />)}
+              {fieldsOrg.map((field, i) => (
+                <DetailItem
+                  key={i}
+                  icon={field.icon}
+                  label={field.label}
+                  value={field.value}
+                />
+              ))}
             </CardContent>
           </Card>
           <Card>
-            <CardHeader><CardTitle>Account</CardTitle></CardHeader>
+            <CardHeader>
+              <CardTitle>Account</CardTitle>
+            </CardHeader>
             <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {fieldsAccount.map((field, i) => <DetailItem key={i} icon={field.icon} label={field.label} value={field.value} />)}
+              {fieldsAccount.map((field, i) => (
+                <DetailItem
+                  key={i}
+                  icon={field.icon}
+                  label={field.label}
+                  value={field.value}
+                />
+              ))}
             </CardContent>
           </Card>
-          <NotesSection userId={user.id} currentNotes={(user as any).notes} onNotesUpdate={(notes, newAuditLog) => {
-            setUser(prev => {
-              const prevLogs = (prev as any).auditLogs || [];
-              return {
-                ...prev,
-                notes,
-                auditLogs: newAuditLog ? [newAuditLog, ...prevLogs] : prevLogs,
-              };
-            });
-          }} />
+          <NotesSection
+            userId={user.id}
+            currentNotes={(user as any).notes}
+            onNotesUpdate={(notes, newAuditLog) => {
+              setUser((prev) => {
+                const prevLogs = (prev as any).auditLogs || [];
+                return {
+                  ...prev,
+                  notes,
+                  auditLogs: newAuditLog
+                    ? [newAuditLog, ...prevLogs]
+                    : prevLogs,
+                };
+              });
+            }}
+          />
         </div>
         <div className="lg:col-span-1 space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle className="text-sm font-medium flex items-center gap-2"><Calendar className="h-4 w-4" />Timestamps</CardTitle>
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                Timestamps
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <DetailItem icon={<Calendar className="h-4 w-4" />} label="Created At" value={createdAtString} />
-              <DetailItem icon={<RefreshCcw className="h-4 w-4" />} label="Last Updated" value={updatedAtString} />
+              <DetailItem
+                icon={<Calendar className="h-4 w-4" />}
+                label="Created At"
+                value={createdAtString}
+              />
+              <DetailItem
+                icon={<RefreshCcw className="h-4 w-4" />}
+                label="Last Updated"
+                value={updatedAtString}
+              />
             </CardContent>
           </Card>
         </div>
@@ -553,34 +650,65 @@ export default function UserDetailsView(
       <React.Suspense fallback={<UserProfileSkeleton />}>
         <Tabs defaultValue="assets" className="w-full mt-6">
           <TabsList className="inline-flex h-auto p-0 bg-transparent gap-1">
-            <TabsTrigger value="assets" className="flex items-center gap-2 px-6 py-3 data-[state=active]:bg-white rounded-none border-b-2 border-transparent data-[state=active]:border-primary">
+            <TabsTrigger
+              value="assets"
+              className="flex items-center gap-2 px-6 py-3 data-[state=active]:bg-white rounded-none border-b-2 border-transparent data-[state=active]:border-primary"
+            >
               <Laptop className="h-4 w-4" /> Assets
-              <span className="ml-1 bg-primary text-primary-foreground rounded-full h-5 w-5 flex items-center justify-center text-xs">{user?.assets?.length || 0}</span>
-            </TabsTrigger>
-            <TabsTrigger value="accessories" className="flex items-center gap-2 px-6 py-3 data-[state=active]:bg-white rounded-none border-b-2 border-transparent data-[state=active]:border-primary">
-              <Monitor className="h-4 w-4" /> Accessories
-              <span className="ml-1 bg-primary text-primary-foreground rounded-full h-5 w-5 flex items-center justify-center text-xs">{user?.userItem?.length || 0}</span>
-            </TabsTrigger>
-            <TabsTrigger value="licenses" className="flex items-center gap-2 px-6 py-3 data-[state=active]:bg-white rounded-none border-b-2 border-transparent data-[state=active]:border-primary">
-              <Key className="h-4 w-4" /> Licenses
               <span className="ml-1 bg-primary text-primary-foreground rounded-full h-5 w-5 flex items-center justify-center text-xs">
-                {user?.userItem ? (user.userItem as UserItemWithLicense[]).filter(item => item.license).length : 0}
+                {user?.assets?.length || 0}
               </span>
             </TabsTrigger>
-            <TabsTrigger value="history" className="flex items-center gap-2 px-6 py-3 data-[state=active]:bg-white rounded-none border-b-2 border-transparent data-[state=active]:border-primary">
+            <TabsTrigger
+              value="accessories"
+              className="flex items-center gap-2 px-6 py-3 data-[state=active]:bg-white rounded-none border-b-2 border-transparent data-[state=active]:border-primary"
+            >
+              <Monitor className="h-4 w-4" /> Accessories
+              <span className="ml-1 bg-primary text-primary-foreground rounded-full h-5 w-5 flex items-center justify-center text-xs">
+                {user?.userItem?.length || 0}
+              </span>
+            </TabsTrigger>
+            <TabsTrigger
+              value="licenses"
+              className="flex items-center gap-2 px-6 py-3 data-[state=active]:bg-white rounded-none border-b-2 border-transparent data-[state=active]:border-primary"
+            >
+              <Key className="h-4 w-4" /> Licenses
+              <span className="ml-1 bg-primary text-primary-foreground rounded-full h-5 w-5 flex items-center justify-center text-xs">
+                {user?.userItem
+                  ? (user.userItem as UserItemWithLicense[]).filter(
+                      (item) => item.license,
+                    ).length
+                  : 0}
+              </span>
+            </TabsTrigger>
+            <TabsTrigger
+              value="history"
+              className="flex items-center gap-2 px-6 py-3 data-[state=active]:bg-white rounded-none border-b-2 border-transparent data-[state=active]:border-primary"
+            >
               <History className="h-4 w-4" /> Activity Log
             </TabsTrigger>
           </TabsList>
           <TabsContent value="assets" className="mt-6">
             <div className="space-y-4">
               {user?.assets && user.assets.length > 0 ? (
-                <DataTable columns={columns} data={user.assets} isLoading={isLoading} />
+                <DataTable
+                  columns={columns}
+                  data={user.assets}
+                  isLoading={isLoading}
+                />
               ) : (
                 <div className="text-center py-12">
                   <Laptop className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No Assets</h3>
-                  <p className="text-gray-600 mb-4">This user hasn't been assigned any assets yet.</p>
-                  <p className="text-sm text-gray-500"><strong>Tip:</strong> Assign assets to this user from the asset management page.</p>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    No Assets
+                  </h3>
+                  <p className="text-gray-600 mb-4">
+                    This user hasn't been assigned any assets yet.
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    <strong>Tip:</strong> Assign assets to this user from the
+                    asset management page.
+                  </p>
                 </div>
               )}
             </div>
@@ -588,31 +716,55 @@ export default function UserDetailsView(
           <TabsContent value="accessories" className="mt-6">
             <div className="space-y-4">
               {user?.userItem && user.userItem.length > 0 ? (
-                <DataTable columns={accessoryColumns} data={user.userItem} isLoading={isLoading} />
+                <DataTable
+                  columns={accessoryColumns}
+                  data={user.userItem}
+                  isLoading={isLoading}
+                />
               ) : (
                 <div className="text-center py-12">
                   <Monitor className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No Accessories</h3>
-                  <p className="text-gray-600 mb-4">This user hasn't been assigned any accessories yet.</p>
-                  <p className="text-sm text-gray-500"><strong>Tip:</strong> Accessory management is coming soon!</p>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    No Accessories
+                  </h3>
+                  <p className="text-gray-600 mb-4">
+                    This user hasn't been assigned any accessories yet.
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    <strong>Tip:</strong> Accessory management is coming soon!
+                  </p>
                 </div>
               )}
             </div>
           </TabsContent>
           <TabsContent value="licenses" className="mt-6">
             <div className="space-y-4">
-              {user?.userItem && (user.userItem as UserItemWithLicense[]).filter(item => item.license).length > 0 ? (
+              {user?.userItem &&
+              (user.userItem as UserItemWithLicense[]).filter(
+                (item) => item.license,
+              ).length > 0 ? (
                 <DataTable
-                  columns={licenseColumns({ onDelete: () => {}, onView: () => {} })}
-                  data={(user.userItem as UserItemWithLicense[]).filter(item => item.license).map(item => item.license!)}
+                  columns={licenseColumns({
+                    onDelete: () => {},
+                    onView: () => {},
+                  })}
+                  data={(user.userItem as UserItemWithLicense[])
+                    .filter((item) => item.license)
+                    .map((item) => item.license!)}
                   isLoading={isLoading}
                 />
               ) : (
                 <div className="text-center py-12">
                   <Key className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No Licenses</h3>
-                  <p className="text-gray-600 mb-4">This user hasn't been assigned any software licenses yet.</p>
-                  <p className="text-sm text-gray-500"><strong>Tip:</strong> License management is coming soon!</p>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    No Licenses
+                  </h3>
+                  <p className="text-gray-600 mb-4">
+                    This user hasn't been assigned any software licenses yet.
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    <strong>Tip:</strong> License management is coming soon!
+                  </p>
                 </div>
               )}
             </div>
@@ -622,7 +774,13 @@ export default function UserDetailsView(
               <ActivityLog
                 sourceType="user"
                 sourceId={user.id}
-                auditLogs={((user as any).auditLogs || []).slice().sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())}
+                auditLogs={((user as any).auditLogs || [])
+                  .slice()
+                  .sort(
+                    (a: any, b: any) =>
+                      new Date(b.createdAt).getTime() -
+                      new Date(a.createdAt).getTime(),
+                  )}
               />
             ) : (
               <EmptyState type={"history"} />
@@ -632,15 +790,19 @@ export default function UserDetailsView(
       </React.Suspense>
       {/* User Edit Side Drawer */}
       {user.id && (
-        <EditUserDrawer userId={user.id} open={editDrawerOpen} onClose={async (updatedUser) => {
-          setEditDrawerOpen(false);
-          if (updatedUser) {
-            // Fetch the latest user details (with relations)
-            const freshUser = await findById(user.id);
-            if (freshUser) setUser(freshUser);
-            else setUser(updatedUser); // fallback
-          }
-        }} />
+        <EditUserDrawer
+          userId={user.id}
+          open={editDrawerOpen}
+          onClose={async (updatedUser) => {
+            setEditDrawerOpen(false);
+            if (updatedUser) {
+              // Fetch the latest user details (with relations)
+              const freshUser = await findById(user.id);
+              if (freshUser) setUser(freshUser);
+              else setUser(updatedUser); // fallback
+            }
+          }}
+        />
       )}
     </section>
   );

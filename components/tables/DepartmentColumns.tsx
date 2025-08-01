@@ -4,7 +4,12 @@ import { ArrowUpDown, Check, X } from "lucide-react";
 import React from "react";
 import DataTableRowActions from "@/components/tables/DataTable/DataTableRowActions";
 import { ColumnsProps } from "@/components/tables/table.types";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export const departmentColumns = ({
   onDelete,
@@ -60,12 +65,14 @@ export const departmentColumns = ({
                 }`}
                 aria-label={value ? "Active" : "Inactive"}
               >
-                {value ? <Check className="w-5 h-5" /> : <X className="w-5 h-5" />}
+                {value ? (
+                  <Check className="w-5 h-5" />
+                ) : (
+                  <X className="w-5 h-5" />
+                )}
               </span>
             </TooltipTrigger>
-            <TooltipContent>
-              {value ? "Active" : "Inactive"}
-            </TooltipContent>
+            <TooltipContent>{value ? "Active" : "Inactive"}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
       );
@@ -75,11 +82,7 @@ export const departmentColumns = ({
   {
     id: "actions",
     cell: ({ row }) => (
-      <DataTableRowActions
-        row={row}
-        onDelete={onDelete}
-        onUpdate={onUpdate}
-      />
+      <DataTableRowActions row={row} onDelete={onDelete} onUpdate={onUpdate} />
     ),
   },
 ];

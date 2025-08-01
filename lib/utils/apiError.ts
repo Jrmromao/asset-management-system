@@ -12,7 +12,7 @@ import * as Sentry from "@sentry/nextjs";
 export function apiErrorResponse(
   error: unknown,
   status: number = 500,
-  context?: string
+  context?: string,
 ) {
   let message = "Internal server error";
   if (error instanceof Error) {
@@ -30,4 +30,4 @@ export function apiErrorResponse(
   // Report to Sentry
   Sentry.captureException(error, { extra: { context } });
   return NextResponse.json({ success: false, error: message }, { status });
-} 
+}

@@ -38,58 +38,80 @@ const accountTypeOptions = [
 
 // Helper to robustly extract a string value from possible string/object/null
 function getStringValue(val: any): string {
-  if (!val) return '';
-  if (typeof val === 'string') return val;
-  if (typeof val === 'object' && val.name) return val.name;
-  if (typeof val === 'object' && val.id) return val.id;
-  return '';
+  if (!val) return "";
+  if (typeof val === "string") return val;
+  if (typeof val === "object" && val.name) return val.name;
+  if (typeof val === "object" && val.id) return val.id;
+  return "";
 }
 
 function mapDepartmentNameToId(name: any): string {
   const str = getStringValue(name).toLowerCase();
   switch (str) {
-    case 'engineering': return 'engineering';
-    case 'hr': return 'hr';
-    case 'finance': return 'finance';
-    case 'it department':
-    case 'it': return 'it';
-    default: return '';
+    case "engineering":
+      return "engineering";
+    case "hr":
+      return "hr";
+    case "finance":
+      return "finance";
+    case "it department":
+    case "it":
+      return "it";
+    default:
+      return "";
   }
 }
 
 function mapRoleNameToId(name: any): string {
   const str = getStringValue(name).toLowerCase();
   switch (str) {
-    case 'admin': return 'admin';
-    case 'manager': return 'manager';
-    case 'user': return 'user';
-    case 'lonee': return 'lonee'; // Map lonee to lonee
-    default: return 'user';
+    case "admin":
+      return "admin";
+    case "manager":
+      return "manager";
+    case "user":
+      return "user";
+    case "lonee":
+      return "lonee"; // Map lonee to lonee
+    default:
+      return "user";
   }
 }
 
 function mapAccountTypeNameToId(name: any): string {
   const str = getStringValue(name).toLowerCase();
   switch (str) {
-    case 'employee':
-    case 'internal user': return 'employee';
-    case 'contractor': return 'contractor';
-    case 'guest': return 'guest';
-    default: return '';
+    case "employee":
+    case "internal user":
+      return "employee";
+    case "contractor":
+      return "contractor";
+    case "guest":
+      return "guest";
+    default:
+      return "";
   }
 }
 
-const UserEditForm: React.FC<{ user: any; onSave: (data: any) => void; onCancel: () => void }> = ({ user, onSave, onCancel }) => {
-  const [departments, setDepartments] = useState<{ id: string; name: string }[]>([]);
+const UserEditForm: React.FC<{
+  user: any;
+  onSave: (data: any) => void;
+  onCancel: () => void;
+}> = ({ user, onSave, onCancel }) => {
+  const [departments, setDepartments] = useState<
+    { id: string; name: string }[]
+  >([]);
   const [departmentsLoading, setDepartmentsLoading] = useState(true);
 
   useEffect(() => {
     setDepartmentsLoading(true);
     fetch("/api/departments")
-      .then(res => res.json())
-      .then(data => {
+      .then((res) => res.json())
+      .then((data) => {
         if (data.success && Array.isArray(data.departments)) {
-          setDepartments(data.departments.map((d: any) => ({ id: d.id, name: d.name })));
+          setDepartments(
+            data.departments.map((d: any) => ({ id: d.id, name: d.name })),
+          );
         } else {
           setDepartments([]);
         }
@@ -98,17 +120,20 @@ const UserEditForm: React.FC<{ user: any; onSave: (data: any) => void; onCancel:
       .finally(() => setDepartmentsLoading(false));
   }, []);
 
-  const defaultValues = React.useMemo(() => ({
-    firstName: user.firstName || "",
-    lastName: user.lastName || "",
-    email: user.email || "",
-    title: user.title || "",
-    employeeId: user.employeeId || "",
-    department: user.department?.id || "",
-    role: mapRoleNameToId(user.role),
-    accountType: mapAccountTypeNameToId(user.accountType),
-    isActive: user.isActive ?? true,
-  }), [user]);
+  const defaultValues = React.useMemo(
+    () => ({
+      firstName: user.firstName || "",
+      lastName: user.lastName || "",
+      email: user.email || "",
+      title: user.title || "",
+      employeeId: user.employeeId || "",
+      department: user.department?.id || "",
+      role: mapRoleNameToId(user.role),
+      accountType: mapAccountTypeNameToId(user.accountType),
+      isActive: user.isActive ?? true,
+    }),
+    [user],
+  );
 
   const form = useForm<UserEditFormValues>({
     resolver: zodResolver(userEditSchema),
@@ -129,18 +154,42 @@ const UserEditForm: React.FC<{ user: any; onSave: (data: any) => void; onCancel:
   };
 
   return (
-    <FormContainer form={form} requiredFields={[]} requiredFieldsCount={0} hideProgress>
+    <FormContainer
+      form={form}
+      requiredFields={[]}
+      requiredFieldsCount={0}
+      hideProgress
+    >
       <Form {...form}>
-        <form id="user-edit-form" onSubmit={handleSubmit(handleSave)} className="space-y-6">
+        <form
+          id="user-edit-form"
+          onSubmit={handleSubmit(handleSave)}
+          className="space-y-6"
+        >
           <Card className="bg-white border-gray-200">
             <CardContent className="divide-y divide-slate-100">
               <FormSection title="Profile Details">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <CustomInput name="firstName" label="First Name" control={control} required />
-                  <CustomInput name="lastName" label="Last Name" control={control} required />
+                  <CustomInput
+                    name="firstName"
+                    label="First Name"
+                    control={control}
+                    required
+                  />
+                  <CustomInput
+                    name="lastName"
+                    label="Last Name"
+                    control={control}
+                    required
+                  />
                 </div>
                 <CustomInput name="title" label="Title" control={control} />
-                <CustomInput name="employeeId" label="Employee ID" control={control} readonly />
+                <CustomInput
+                  name="employeeId"
+                  label="Employee ID"
+                  control={control}
+                  readonly
+                />
               </FormSection>
               <FormSection title="Organization">
                 <CustomSelect
@@ -149,17 +198,43 @@ const UserEditForm: React.FC<{ user: any; onSave: (data: any) => void; onCancel:
                   control={control}
                   data={departments}
                   required
-                  placeholder={departmentsLoading ? "Loading..." : "Select department"}
+                  placeholder={
+                    departmentsLoading ? "Loading..." : "Select department"
+                  }
                   disabled={departmentsLoading}
                 />
-                <CustomSelect name="role" label="Role" control={control} data={roleOptions} required placeholder="Select role" />
+                <CustomSelect
+                  name="role"
+                  label="Role"
+                  control={control}
+                  data={roleOptions}
+                  required
+                  placeholder="Select role"
+                />
               </FormSection>
               <FormSection title="Account">
-                <CustomInput name="email" label="Email" control={control} required type="email" />
-                <CustomSelect name="accountType" label="Account Type" control={control} data={accountTypeOptions} required placeholder="Select account type" />
+                <CustomInput
+                  name="email"
+                  label="Email"
+                  control={control}
+                  required
+                  type="email"
+                />
+                <CustomSelect
+                  name="accountType"
+                  label="Account Type"
+                  control={control}
+                  data={accountTypeOptions}
+                  required
+                  placeholder="Select account type"
+                />
               </FormSection>
               <FormSection title="Status">
-                <CustomSwitch name="isActive" label="Active" control={control} />
+                <CustomSwitch
+                  name="isActive"
+                  label="Active"
+                  control={control}
+                />
               </FormSection>
             </CardContent>
           </Card>
@@ -169,4 +244,4 @@ const UserEditForm: React.FC<{ user: any; onSave: (data: any) => void; onCancel:
   );
 };
 
-export default UserEditForm; 
+export default UserEditForm;

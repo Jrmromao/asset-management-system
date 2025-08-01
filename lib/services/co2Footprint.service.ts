@@ -143,9 +143,7 @@ export class CO2FootprintService {
       }
 
       if (!asset.company?.id) {
-        console.error(
-          `❌ Asset company missing for: ${asset.name}`,
-        );
+        console.error(`❌ Asset company missing for: ${asset.name}`);
         return {
           success: false,
           error: "Asset company not found",
@@ -158,7 +156,7 @@ export class CO2FootprintService {
         asset.name,
         asset.model.manufacturer.name,
         asset.model.name,
-        asset.category?.name ?? ""
+        asset.category?.name ?? "",
       );
 
       if (!co2Result.success) {
@@ -237,11 +235,15 @@ export class CO2FootprintService {
           : Prisma.JsonNull,
 
         // --- New lifecycle and amortized fields ---
-        lifecycleManufacturing: co2Data.lifecycleBreakdown?.manufacturing ?? null,
+        lifecycleManufacturing:
+          co2Data.lifecycleBreakdown?.manufacturing ?? null,
         lifecycleTransport: co2Data.lifecycleBreakdown?.transport ?? null,
         lifecycleUse: co2Data.lifecycleBreakdown?.use ?? null,
         lifecycleEndOfLife: co2Data.lifecycleBreakdown?.endOfLife ?? null,
-        expectedLifespanYears: co2Data.expectedLifespanYears ?? co2Data.activityData?.expectedLifespan ?? null,
+        expectedLifespanYears:
+          co2Data.expectedLifespanYears ??
+          co2Data.activityData?.expectedLifespan ??
+          null,
         amortizedMonthlyCo2e: co2Data.amortizedMonthlyCo2e ?? null,
         amortizedAnnualCo2e: co2Data.amortizedAnnualCo2e ?? null,
       };

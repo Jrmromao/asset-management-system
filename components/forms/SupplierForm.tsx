@@ -72,13 +72,15 @@ const SupplierForm = ({ initialData, onSubmitSuccess }: SupplierFormProps) => {
   const onSubmit = async (data: z.infer<typeof supplierSchema>) => {
     try {
       console.log("Supplier form submission - data:", data);
-      
+
       // Validate the data before submission
       try {
         const validation = supplierSchema.safeParse(data);
         if (!validation.success) {
           console.error("Validation errors:", validation.error.errors);
-          toast.error(`Validation failed: ${validation.error.errors[0].message}`);
+          toast.error(
+            `Validation failed: ${validation.error.errors[0].message}`,
+          );
           return;
         }
       } catch (validationError) {
@@ -93,7 +95,7 @@ const SupplierForm = ({ initialData, onSubmitSuccess }: SupplierFormProps) => {
             console.log("Updating supplier with ID:", initialData.id);
             const updateData = sanitizeSupplierUpdate(data);
             console.log("Sanitized update data:", updateData);
-            
+
             try {
               const result = await updateSupplier(initialData.id, updateData);
               console.log("Update result:", result);
@@ -103,15 +105,32 @@ const SupplierForm = ({ initialData, onSubmitSuccess }: SupplierFormProps) => {
                 onClose();
                 form.reset();
               } else {
-                toast.error(result.error || "Failed to update supplier");
+                // Provide more specific error messages
+                const errorMessage =
+                  result.error || "Failed to update supplier";
+                if (errorMessage.includes("not associated with a company")) {
+                  toast.error(
+                    "Please refresh the page and try again. Your session may need to be updated.",
+                  );
+                } else if (
+                  errorMessage.includes(
+                    "not found or you don't have permission",
+                  )
+                ) {
+                  toast.error(
+                    "Supplier not found or you don't have permission to update it.",
+                  );
+                } else {
+                  toast.error(errorMessage);
+                }
               }
             } catch (updateError) {
               console.error("Update operation error:", updateError);
-              toast.error("Failed to update supplier");
+              toast.error("Failed to update supplier. Please try again.");
             }
           } else {
             console.log("Creating new supplier");
-            
+
             try {
               const result = await createSupplier(data);
               console.log("Create result:", result);
@@ -303,8 +322,10 @@ const SupplierForm = ({ initialData, onSubmitSuccess }: SupplierFormProps) => {
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   {initialData ? "Updating..." : "Creating..."}
                 </>
+              ) : initialData ? (
+                "Update"
               ) : (
-                initialData ? "Update" : "Create"
+                "Create"
               )}
             </Button>
           </div>

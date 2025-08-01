@@ -75,7 +75,10 @@ const ReportTemplates: React.FC<ReportTemplatesProps> = ({ className }) => {
 
   const configurations: ReportConfiguration[] = configurationsData?.data || [];
 
-  const handleGenerateReport = async (configurationId: string, templateName: string) => {
+  const handleGenerateReport = async (
+    configurationId: string,
+    templateName: string,
+  ) => {
     try {
       const result = await generateReport.mutateAsync({
         configurationId,
@@ -96,7 +99,8 @@ const ReportTemplates: React.FC<ReportTemplatesProps> = ({ className }) => {
     } catch (error) {
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to generate report",
+        description:
+          error instanceof Error ? error.message : "Failed to generate report",
         variant: "destructive",
       });
     }
@@ -106,9 +110,12 @@ const ReportTemplates: React.FC<ReportTemplatesProps> = ({ className }) => {
     if (!templateToDelete) return;
 
     try {
-      const response = await fetch(`/api/reports/configurations/${templateToDelete}`, {
-        method: "DELETE",
-      });
+      const response = await fetch(
+        `/api/reports/configurations/${templateToDelete}`,
+        {
+          method: "DELETE",
+        },
+      );
 
       if (!response.ok) {
         throw new Error("Failed to delete template");
@@ -123,7 +130,8 @@ const ReportTemplates: React.FC<ReportTemplatesProps> = ({ className }) => {
     } catch (error) {
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to delete template",
+        description:
+          error instanceof Error ? error.message : "Failed to delete template",
         variant: "destructive",
       });
     } finally {
@@ -265,7 +273,8 @@ const ReportTemplates: React.FC<ReportTemplatesProps> = ({ className }) => {
                         </span>
                         <span className="flex items-center">
                           <FileText className="h-3 w-3 mr-1" />
-                          {config._count?.generatedReports || 0} reports generated
+                          {config._count?.generatedReports || 0} reports
+                          generated
                         </span>
                         {config.createdAt && (
                           <span>Created {formatDate(config.createdAt)}</span>
@@ -277,7 +286,9 @@ const ReportTemplates: React.FC<ReportTemplatesProps> = ({ className }) => {
                   <div className="flex items-center space-x-2">
                     <Button
                       size="sm"
-                      onClick={() => handleGenerateReport(config.id!, config.name)}
+                      onClick={() =>
+                        handleGenerateReport(config.id!, config.name)
+                      }
                       disabled={generateReport.isPending}
                       className="bg-emerald-600 hover:bg-emerald-700"
                     >
@@ -330,8 +341,8 @@ const ReportTemplates: React.FC<ReportTemplatesProps> = ({ className }) => {
             <AlertDialogTitle>Delete Report Template</AlertDialogTitle>
             <AlertDialogDescription>
               Are you sure you want to delete this report template? This action
-              cannot be undone. All generated reports from this template will remain
-              available.
+              cannot be undone. All generated reports from this template will
+              remain available.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -349,4 +360,4 @@ const ReportTemplates: React.FC<ReportTemplatesProps> = ({ className }) => {
   );
 };
 
-export default ReportTemplates; 
+export default ReportTemplates;

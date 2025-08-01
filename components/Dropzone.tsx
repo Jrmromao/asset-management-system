@@ -8,7 +8,11 @@ interface DropzoneProps {
   multiple?: boolean;
 }
 
-const Dropzone: React.FC<DropzoneProps> = ({ onDrop, accept, multiple = false }) => {
+const Dropzone: React.FC<DropzoneProps> = ({
+  onDrop,
+  accept,
+  multiple = false,
+}) => {
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept,

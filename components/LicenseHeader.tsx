@@ -67,4 +67,4 @@ export const LicenseHeader: React.FC<LicenseHeaderProps> = ({
       </Badge>
     )}
   </div>
-); 
+);

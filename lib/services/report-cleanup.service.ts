@@ -42,21 +42,21 @@ export class ReportCleanupService {
         maxReportsPerConfiguration: 50,
         maxTotalSizeInMB: 500,
       },
-      
+
       // Excel reports - business critical, moderate retention
       excel: {
         maxAgeInDays: 60,
         maxReportsPerConfiguration: 30,
         maxTotalSizeInMB: 200,
       },
-      
+
       // CSV exports - often for data analysis, shorter retention
       csv: {
         maxAgeInDays: 30,
         maxReportsPerConfiguration: 20,
         maxTotalSizeInMB: 100,
       },
-      
+
       // Dashboard JSON - temporary data, shortest retention
       dashboard: {
         maxAgeInDays: 7,
@@ -71,7 +71,7 @@ export class ReportCleanupService {
    */
   public async cleanupOldReports(
     companyId: string,
-    customPolicies?: Record<string, RetentionPolicy>
+    customPolicies?: Record<string, RetentionPolicy>,
   ): Promise<CleanupStats> {
     const stats: CleanupStats = {
       deletedReports: 0,
@@ -80,7 +80,10 @@ export class ReportCleanupService {
       errors: [],
     };
 
-    const policies = { ...this.getDefaultRetentionPolicies(), ...customPolicies };
+    const policies = {
+      ...this.getDefaultRetentionPolicies(),
+      ...customPolicies,
+    };
 
     try {
       // Get all reports for the company
@@ -89,24 +92,30 @@ export class ReportCleanupService {
         include: {
           configuration: true,
         },
-        orderBy: { generatedAt: 'desc' },
+        orderBy: { generatedAt: "desc" },
       });
 
       // Group reports by format
-      const reportsByFormat = allReports.reduce((acc, report) => {
-        const format = report.format.toLowerCase();
-        if (!acc[format]) acc[format] = [];
-        acc[format].push(report);
-        return acc;
-      }, {} as Record<string, typeof allReports>);
+      const reportsByFormat = allReports.reduce(
+        (acc, report) => {
+          const format = report.format.toLowerCase();
+          if (!acc[format]) acc[format] = [];
+          acc[format].push(report);
+          return acc;
+        },
+        {} as Record<string, typeof allReports>,
+      );
 
       // Apply cleanup policies for each format
       for (const [format, reports] of Object.entries(reportsByFormat)) {
         const policy = policies[format];
         if (!policy) continue;
 
-        const reportsToDelete = this.identifyReportsForDeletion(reports, policy);
-        
+        const reportsToDelete = this.identifyReportsForDeletion(
+          reports,
+          policy,
+        );
+
         for (const report of reportsToDelete) {
           try {
             await this.deleteReport(companyId, report.id);
@@ -114,8 +123,8 @@ export class ReportCleanupService {
             stats.freedSpace += report.fileSize;
             await createAuditLog({
               companyId: companyId,
-              action: 'REPORT_DELETED',
-              entity: 'REPORT_CLEANUP',
+              action: "REPORT_DELETED",
+              entity: "REPORT_CLEANUP",
               entityId: report.id,
               details: `Report ${report.id} deleted during cleanup for company ${companyId}`,
             });
@@ -133,16 +142,17 @@ export class ReportCleanupService {
           stats.deletedFiles++;
           await createAuditLog({
             companyId: companyId,
-            action: 'ORPHANED_FILE_DELETED',
-            entity: 'REPORT_CLEANUP',
+            action: "ORPHANED_FILE_DELETED",
+            entity: "REPORT_CLEANUP",
             entityId: fileKey,
             details: `Orphaned file ${fileKey} deleted during cleanup for company ${companyId}`,
           });
         } catch (error) {
-          stats.errors.push(`Failed to delete orphaned file ${fileKey}: ${error}`);
+          stats.errors.push(
+            `Failed to delete orphaned file ${fileKey}: ${error}`,
+          );
         }
       }
-
     } catch (error) {
       stats.errors.push(`Cleanup failed: ${error}`);
     }
@@ -155,39 +165,47 @@ export class ReportCleanupService {
    */
   private identifyReportsForDeletion(
     reports: any[],
-    policy: RetentionPolicy
+    policy: RetentionPolicy,
   ): any[] {
     const reportsToDelete: any[] = [];
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - policy.maxAgeInDays);
 
     // Sort by generation date (newest first)
-    reports.sort((a, b) => new Date(b.generatedAt).getTime() - new Date(a.generatedAt).getTime());
+    reports.sort(
+      (a, b) =>
+        new Date(b.generatedAt).getTime() - new Date(a.generatedAt).getTime(),
+    );
 
     // Group by configuration to apply per-configuration limits
-    const reportsByConfig = reports.reduce((acc, report) => {
-      const configId = report.configurationId;
-      if (!acc[configId]) acc[configId] = [];
-      acc[configId].push(report);
-      return acc;
-    }, {} as Record<string, any[]>);
+    const reportsByConfig = reports.reduce(
+      (acc, report) => {
+        const configId = report.configurationId;
+        if (!acc[configId]) acc[configId] = [];
+        acc[configId].push(report);
+        return acc;
+      },
+      {} as Record<string, any[]>,
+    );
 
     for (const [configId, configReports] of Object.entries(reportsByConfig)) {
       const typedConfigReports = configReports as any[];
-      
+
       // Rule 1: Delete reports older than maxAgeInDays
       const oldReports = typedConfigReports.filter(
-        (report: any) => new Date(report.generatedAt) < cutoffDate
+        (report: any) => new Date(report.generatedAt) < cutoffDate,
       );
       reportsToDelete.push(...oldReports);
 
       // Rule 2: Keep only maxReportsPerConfiguration most recent reports
       const recentReports = typedConfigReports.filter(
-        (report: any) => new Date(report.generatedAt) >= cutoffDate
+        (report: any) => new Date(report.generatedAt) >= cutoffDate,
       );
-      
+
       if (recentReports.length > policy.maxReportsPerConfiguration) {
-        const excessReports = recentReports.slice(policy.maxReportsPerConfiguration);
+        const excessReports = recentReports.slice(
+          policy.maxReportsPerConfiguration,
+        );
         reportsToDelete.push(...excessReports);
       }
     }
@@ -196,8 +214,12 @@ export class ReportCleanupService {
     const totalSize = reports.reduce((sum, report) => sum + report.fileSize, 0);
     if (totalSize > policy.maxTotalSizeInMB) {
       const sortedByAge = reports
-        .filter(report => !reportsToDelete.includes(report))
-        .sort((a, b) => new Date(a.generatedAt).getTime() - new Date(b.generatedAt).getTime());
+        .filter((report) => !reportsToDelete.includes(report))
+        .sort(
+          (a, b) =>
+            new Date(a.generatedAt).getTime() -
+            new Date(b.generatedAt).getTime(),
+        );
 
       let currentSize = totalSize;
       for (const report of sortedByAge) {
@@ -213,7 +235,10 @@ export class ReportCleanupService {
   /**
    * Delete a specific report and its associated file
    */
-  public async deleteReport(companyId: string, reportId: string): Promise<void> {
+  public async deleteReport(
+    companyId: string,
+    reportId: string,
+  ): Promise<void> {
     // Get report details
     const report = await prisma.generatedReport.findUnique({
       where: { id: reportId },
@@ -228,16 +253,16 @@ export class ReportCleanupService {
     try {
       // List all files in the report directory
       const files = await this.s3Service.listFiles(companyId, s3Key);
-      
+
       // Delete each file
       for (const file of files) {
         if (file.Key) {
-          const fileKey = file.Key.replace(`companies/${companyId}/`, '');
+          const fileKey = file.Key.replace(`companies/${companyId}/`, "");
           await this.s3Service.deleteFile(companyId, fileKey);
           await createAuditLog({
             companyId: companyId,
-            action: 'ORPHANED_FILE_DELETED',
-            entity: 'REPORT_CLEANUP',
+            action: "ORPHANED_FILE_DELETED",
+            entity: "REPORT_CLEANUP",
             entityId: fileKey,
             details: `Orphaned file ${fileKey} deleted during cleanup for company ${companyId}`,
           });
@@ -257,7 +282,9 @@ export class ReportCleanupService {
   /**
    * Delete all reports for a specific configuration
    */
-  public async deleteReportsForConfiguration(configurationId: string): Promise<CleanupStats> {
+  public async deleteReportsForConfiguration(
+    configurationId: string,
+  ): Promise<CleanupStats> {
     const stats: CleanupStats = {
       deletedReports: 0,
       deletedFiles: 0,
@@ -278,8 +305,8 @@ export class ReportCleanupService {
           stats.freedSpace += report.fileSize;
           await createAuditLog({
             companyId: report.companyId,
-            action: 'REPORTS_DELETED_FOR_CONFIGURATION',
-            entity: 'REPORT_CLEANUP',
+            action: "REPORTS_DELETED_FOR_CONFIGURATION",
+            entity: "REPORT_CLEANUP",
             entityId: configurationId,
             details: `Reports deleted for configuration ${configurationId} (company ${report.companyId})`,
           });
@@ -288,7 +315,9 @@ export class ReportCleanupService {
         }
       }
     } catch (error) {
-      stats.errors.push(`Failed to delete reports for configuration ${configurationId}: ${error}`);
+      stats.errors.push(
+        `Failed to delete reports for configuration ${configurationId}: ${error}`,
+      );
     }
 
     return stats;
@@ -297,7 +326,9 @@ export class ReportCleanupService {
   /**
    * Delete all reports for a company (used when company is deleted)
    */
-  public async deleteAllCompanyReports(companyId: string): Promise<CleanupStats> {
+  public async deleteAllCompanyReports(
+    companyId: string,
+  ): Promise<CleanupStats> {
     const stats: CleanupStats = {
       deletedReports: 0,
       deletedFiles: 0,
@@ -311,23 +342,29 @@ export class ReportCleanupService {
         where: { companyId },
         select: { fileSize: true },
       });
-      
-      stats.freedSpace = reports.reduce((sum, report) => sum + report.fileSize, 0);
+
+      stats.freedSpace = reports.reduce(
+        (sum, report) => sum + report.fileSize,
+        0,
+      );
 
       // Delete all S3 files for the company's reports
       try {
-        const reportFiles = await this.s3Service.listFiles(companyId, 'reports/');
+        const reportFiles = await this.s3Service.listFiles(
+          companyId,
+          "reports/",
+        );
         stats.deletedFiles = reportFiles.length;
-        
+
         // Delete the entire reports directory for the company
         for (const file of reportFiles) {
           if (file.Key) {
-            const fileKey = file.Key.replace(`companies/${companyId}/`, '');
+            const fileKey = file.Key.replace(`companies/${companyId}/`, "");
             await this.s3Service.deleteFile(companyId, fileKey);
             await createAuditLog({
               companyId: companyId,
-              action: 'ORPHANED_FILE_DELETED',
-              entity: 'REPORT_CLEANUP',
+              action: "ORPHANED_FILE_DELETED",
+              entity: "REPORT_CLEANUP",
               entityId: fileKey,
               details: `Orphaned file ${fileKey} deleted during cleanup for company ${companyId}`,
             });
@@ -341,16 +378,15 @@ export class ReportCleanupService {
       const deleteResult = await prisma.generatedReport.deleteMany({
         where: { companyId },
       });
-      
+
       stats.deletedReports = deleteResult.count;
       await createAuditLog({
         companyId: companyId,
-        action: 'ALL_REPORTS_DELETED',
-        entity: 'REPORT_CLEANUP',
+        action: "ALL_REPORTS_DELETED",
+        entity: "REPORT_CLEANUP",
         entityId: companyId,
         details: `All reports deleted for company ${companyId}`,
       });
-
     } catch (error) {
       stats.errors.push(`Failed to delete company reports: ${error}`);
     }
@@ -366,36 +402,37 @@ export class ReportCleanupService {
 
     try {
       // Get all report files from S3
-      const s3Files = await this.s3Service.listFiles(companyId, 'reports/');
-      
+      const s3Files = await this.s3Service.listFiles(companyId, "reports/");
+
       // Get all report IDs from database
       const dbReports = await prisma.generatedReport.findMany({
         where: { companyId },
         select: { id: true },
       });
-      
-      const dbReportIds = new Set(dbReports.map(r => r.id));
+
+      const dbReportIds = new Set(dbReports.map((r) => r.id));
 
       // Check each S3 file
       for (const file of s3Files) {
         if (!file.Key) continue;
-        
+
         // Extract report ID from path: companies/{companyId}/reports/{reportId}/filename
-        const pathParts = file.Key.split('/');
-        const reportIdIndex = pathParts.findIndex(part => part === 'reports') + 1;
-        
+        const pathParts = file.Key.split("/");
+        const reportIdIndex =
+          pathParts.findIndex((part) => part === "reports") + 1;
+
         if (reportIdIndex > 0 && reportIdIndex < pathParts.length) {
           const reportId = pathParts[reportIdIndex];
-          
+
           if (!dbReportIds.has(reportId)) {
             // This file is orphaned
-            const fileKey = file.Key.replace(`companies/${companyId}/`, '');
+            const fileKey = file.Key.replace(`companies/${companyId}/`, "");
             orphanedFiles.push(fileKey);
           }
         }
       }
     } catch (error) {
-      console.error('Error finding orphaned files:', error);
+      console.error("Error finding orphaned files:", error);
     }
 
     return orphanedFiles;
@@ -418,15 +455,19 @@ export class ReportCleanupService {
         fileSize: true,
         generatedAt: true,
       },
-      orderBy: { generatedAt: 'asc' },
+      orderBy: { generatedAt: "asc" },
     });
 
     const stats = {
       totalReports: reports.length,
       totalSizeInMB: reports.reduce((sum, r) => sum + r.fileSize, 0),
-      reportsByFormat: {} as Record<string, { count: number; sizeInMB: number }>,
+      reportsByFormat: {} as Record<
+        string,
+        { count: number; sizeInMB: number }
+      >,
       oldestReport: reports.length > 0 ? reports[0].generatedAt : null,
-      newestReport: reports.length > 0 ? reports[reports.length - 1].generatedAt : null,
+      newestReport:
+        reports.length > 0 ? reports[reports.length - 1].generatedAt : null,
     };
 
     // Group by format
@@ -443,4 +484,4 @@ export class ReportCleanupService {
   }
 }
 
-export default ReportCleanupService; 
+export default ReportCleanupService;

@@ -119,7 +119,7 @@ export async function getAll(): Promise<AuthResponse<Role[]>> {
     }
 
     console.log("🔍 [getAll] Querying roles for company:", companyId);
-    
+
     // First, get company-specific roles
     const companyRoles = await prisma.role.findMany({
       where: {
@@ -152,11 +152,13 @@ export async function getAll(): Promise<AuthResponse<Role[]>> {
     });
 
     // Create a map of company role names to prioritize them
-    const companyRoleNames = new Set(companyRoles.map(role => role.name));
-    
+    const companyRoleNames = new Set(companyRoles.map((role) => role.name));
+
     // Filter out global roles that have company equivalents
-    const filteredGlobalRoles = globalRoles.filter(role => !companyRoleNames.has(role.name));
-    
+    const filteredGlobalRoles = globalRoles.filter(
+      (role) => !companyRoleNames.has(role.name),
+    );
+
     // Combine company roles first, then filtered global roles
     const roles = [...companyRoles, ...filteredGlobalRoles];
 

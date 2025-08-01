@@ -266,8 +266,8 @@ export async function calculateAssetCO2Action(assetId: string) {
 // Utility to deeply convert Decimal-like objects to numbers
 function deepConvertDecimals(obj: any): any {
   if (obj === null || obj === undefined) return obj;
-  if (typeof obj === 'object') {
-    if (typeof obj.toNumber === 'function') return obj.toNumber();
+  if (typeof obj === "object") {
+    if (typeof obj.toNumber === "function") return obj.toNumber();
     if (Array.isArray(obj)) return obj.map(deepConvertDecimals);
     const result: any = {};
     for (const key in obj) {
@@ -285,7 +285,8 @@ export async function saveAssetCO2Action(
   try {
     // Get current user for audit log
     const { sessionClaims } = await auth();
-    const companyId = (sessionClaims?.privateMetadata as { companyId?: string })?.companyId as string;
+    const companyId = (sessionClaims?.privateMetadata as { companyId?: string })
+      ?.companyId as string;
     // Check if there is an existing CO2 record for this asset
     const existingRecord = await prisma.co2eRecord.findFirst({
       where: { assetId, itemType: "Asset" },
@@ -301,23 +302,39 @@ export async function saveAssetCO2Action(
       const serializedRecord = {
         ...record,
         co2e: record.co2e ? Number(record.co2e) : null,
-        emissionFactor: record.emissionFactor ? Number(record.emissionFactor) : null,
-        lifecycleManufacturing: record.lifecycleManufacturing ? Number(record.lifecycleManufacturing) : null,
-        lifecycleTransport: record.lifecycleTransport ? Number(record.lifecycleTransport) : null,
+        emissionFactor: record.emissionFactor
+          ? Number(record.emissionFactor)
+          : null,
+        lifecycleManufacturing: record.lifecycleManufacturing
+          ? Number(record.lifecycleManufacturing)
+          : null,
+        lifecycleTransport: record.lifecycleTransport
+          ? Number(record.lifecycleTransport)
+          : null,
         lifecycleUse: record.lifecycleUse ? Number(record.lifecycleUse) : null,
-        lifecycleEndOfLife: record.lifecycleEndOfLife ? Number(record.lifecycleEndOfLife) : null,
-        amortizedMonthlyCo2e: record.amortizedMonthlyCo2e ? Number(record.amortizedMonthlyCo2e) : null,
-        amortizedAnnualCo2e: record.amortizedAnnualCo2e ? Number(record.amortizedAnnualCo2e) : null,
-        expectedLifespanYears: record.expectedLifespanYears ? Number(record.expectedLifespanYears) : null,
+        lifecycleEndOfLife: record.lifecycleEndOfLife
+          ? Number(record.lifecycleEndOfLife)
+          : null,
+        amortizedMonthlyCo2e: record.amortizedMonthlyCo2e
+          ? Number(record.amortizedMonthlyCo2e)
+          : null,
+        amortizedAnnualCo2e: record.amortizedAnnualCo2e
+          ? Number(record.amortizedAnnualCo2e)
+          : null,
+        expectedLifespanYears: record.expectedLifespanYears
+          ? Number(record.expectedLifespanYears)
+          : null,
       };
       // Recursively convert Decimals in activityData
       if (record.activityData) {
         try {
-          if (typeof record.activityData === 'string') {
+          if (typeof record.activityData === "string") {
             const parsed = JSON.parse(record.activityData);
             serializedRecord.activityData = deepConvertDecimals(parsed);
           } else {
-            serializedRecord.activityData = deepConvertDecimals(record.activityData);
+            serializedRecord.activityData = deepConvertDecimals(
+              record.activityData,
+            );
           }
         } catch {
           serializedRecord.activityData = record.activityData;
@@ -326,8 +343,13 @@ export async function saveAssetCO2Action(
       // Parse and serialize the details JSON to handle any Decimal objects
       if (record.details) {
         try {
-          const parsedDetails = typeof record.details === 'string' ? JSON.parse(record.details) : record.details;
-          serializedRecord.details = JSON.stringify(deepConvertDecimals(parsedDetails));
+          const parsedDetails =
+            typeof record.details === "string"
+              ? JSON.parse(record.details)
+              : record.details;
+          serializedRecord.details = JSON.stringify(
+            deepConvertDecimals(parsedDetails),
+          );
         } catch (parseError) {
           serializedRecord.details = record.details;
         }

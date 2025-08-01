@@ -178,7 +178,7 @@ export async function bulkInsertTemplates(
             name,
             fields,
             companyId,
-            categoryId
+            categoryId,
           },
         }),
       ),

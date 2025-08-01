@@ -31,7 +31,12 @@ import {
 import { useStatusLabelsQuery } from "@/hooks/queries/useStatusLabelsQuery";
 import { toast } from "sonner";
 import { hasPermission, Permission } from "@/lib/utils/permissions";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useStatusLabelUIStore } from "@/lib/stores";
 import StatusLabelForm from "@/components/forms/StatusLabelForm";
@@ -42,20 +47,17 @@ import { StatusLabel } from "@prisma/client";
 
 function StatusLabelsTab({ userRole }: { userRole?: string }) {
   const canEdit = hasPermission(userRole, "statusLabels.manage" as any);
-  const {
-    statusLabels,
-    isLoading,
-    error,
-    deleteStatusLabel,
-  } = useStatusLabelsQuery();
-  
+  const { statusLabels, isLoading, error, deleteStatusLabel } =
+    useStatusLabelsQuery();
+
   const {
     isOpen: isStatusLabelOpen,
     onClose: closeStatusLabel,
     onOpen: onStatusLabelOpen,
   } = useStatusLabelUIStore();
 
-  const [editingStatusLabel, setEditingStatusLabel] = useState<StatusLabel | null>(null);
+  const [editingStatusLabel, setEditingStatusLabel] =
+    useState<StatusLabel | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
   const handleDelete = async (statusLabel: StatusLabel) => {
@@ -125,7 +127,8 @@ function StatusLabelsTab({ userRole }: { userRole?: string }) {
             Status Labels
           </CardTitle>
           <CardDescription>
-            Configure status labels to track asset conditions and lifecycle states
+            Configure status labels to track asset conditions and lifecycle
+            states
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -141,7 +144,7 @@ function StatusLabelsTab({ userRole }: { userRole?: string }) {
                 <Info className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
               </div>
             </div>
-            
+
             <DataTable
               columns={columns}
               data={filteredStatusLabels}
@@ -178,7 +181,7 @@ function StatusLabelsTab({ userRole }: { userRole?: string }) {
 
 function ConfigurationTab({ userRole }: { userRole?: string }) {
   const canEdit = hasPermission(userRole, "statusLabels.manage" as any);
-  
+
   return (
     <Card>
       <CardHeader>
@@ -209,7 +212,7 @@ function ConfigurationTab({ userRole }: { userRole?: string }) {
               </SelectContent>
             </Select>
           </div>
-          
+
           <div>
             <Label className="text-sm font-medium">Color Scheme</Label>
             <p className="text-sm text-gray-600 mt-1">
@@ -227,7 +230,7 @@ function ConfigurationTab({ userRole }: { userRole?: string }) {
             </Select>
           </div>
         </div>
-        
+
         <div className="pt-4 border-t">
           <h4 className="font-medium mb-3">Status Label Categories</h4>
           <div className="space-y-3">
@@ -293,9 +296,10 @@ function AnalyticsTab() {
             <div className="text-sm text-purple-600">Label Coverage</div>
           </div>
         </div>
-        
+
         <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded text-yellow-800 flex items-center gap-2">
-          <span className="font-semibold">Coming Soon:</span> Detailed analytics and usage reports will be available in the next version.
+          <span className="font-semibold">Coming Soon:</span> Detailed analytics
+          and usage reports will be available in the next version.
         </div>
       </CardContent>
     </Card>
@@ -303,15 +307,30 @@ function AnalyticsTab() {
 }
 
 const ALL_TABS = [
-  { id: "status-labels", label: "Status Labels", icon: Tags, permission: "statusLabels.view" as any },
-  { id: "configuration", label: "Configuration", icon: Settings, permission: "statusLabels.manage" as any },
-  { id: "analytics", label: "Analytics", icon: Palette, permission: "statusLabels.view" as any },
+  {
+    id: "status-labels",
+    label: "Status Labels",
+    icon: Tags,
+    permission: "statusLabels.view" as any,
+  },
+  {
+    id: "configuration",
+    label: "Configuration",
+    icon: Settings,
+    permission: "statusLabels.manage" as any,
+  },
+  {
+    id: "analytics",
+    label: "Analytics",
+    icon: Palette,
+    permission: "statusLabels.view" as any,
+  },
 ];
 
 const TAB_COMPONENTS: Record<string, React.FC<{ userRole?: string }>> = {
   "status-labels": StatusLabelsTab,
-  "configuration": ConfigurationTab,
-  "analytics": AnalyticsTab,
+  configuration: ConfigurationTab,
+  analytics: AnalyticsTab,
 };
 
 const StatusLabelSettings: React.FC = () => {
@@ -333,13 +352,13 @@ const StatusLabelSettings: React.FC = () => {
   }, []);
 
   // Filter tabs based on permission
-  const TABS = ALL_TABS.filter(tab =>
-    !tab.permission || hasPermission(userRole, tab.permission)
+  const TABS = ALL_TABS.filter(
+    (tab) => !tab.permission || hasPermission(userRole, tab.permission),
   );
 
   // If the current activeTab is not allowed, reset to first allowed tab
   useEffect(() => {
-    if (!TABS.find(tab => tab.id === activeTab)) {
+    if (!TABS.find((tab) => tab.id === activeTab)) {
       setActiveTab(TABS[0]?.id || "status-labels");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -394,7 +413,7 @@ const StatusLabelSettings: React.FC = () => {
               })}
             </nav>
           </aside>
-          
+
           {/* Top tab bar for mobile */}
           <nav className="flex md:hidden w-full bg-white border-b border-slate-100 px-2 py-2 overflow-x-auto">
             {TABS.map((tab) => (
@@ -409,12 +428,14 @@ const StatusLabelSettings: React.FC = () => {
               </button>
             ))}
           </nav>
-          
+
           {/* Main Content */}
           <main className="flex-1 px-2 py-4 md:px-12 md:py-16">
             <div className="max-w-full md:max-w-4xl mx-auto space-y-8 md:space-y-12">
               <div className="bg-white rounded-2xl shadow-lg p-4 md:p-12">
-                <h1 className="text-2xl md:text-3xl font-bold mb-2">Status Label Settings</h1>
+                <h1 className="text-2xl md:text-3xl font-bold mb-2">
+                  Status Label Settings
+                </h1>
                 <p className="text-slate-500 mb-6 md:mb-8">
                   Manage asset status labels and their configuration.
                 </p>

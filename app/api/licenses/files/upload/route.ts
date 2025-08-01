@@ -5,12 +5,16 @@ import { isUserAdminOrManager } from "@/lib/utils/user";
 
 export const POST = async (req: NextRequest) => {
   const { userId } = await auth();
-  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!userId)
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   // Permission check
   const isAllowed = await isUserAdminOrManager(userId);
   if (!isAllowed) {
-    return NextResponse.json({ error: "You do not have permission to upload files." }, { status: 403 });
+    return NextResponse.json(
+      { error: "You do not have permission to upload files." },
+      { status: 403 },
+    );
   }
 
   const formData = await req.formData();
@@ -18,7 +22,10 @@ export const POST = async (req: NextRequest) => {
   const licenseId = formData.get("licenseId") as string;
 
   if (!file || !licenseId) {
-    return NextResponse.json({ error: "Missing file or licenseId" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Missing file or licenseId" },
+      { status: 400 },
+    );
   }
 
   const buffer = Buffer.from(await file.arrayBuffer());
@@ -32,4 +39,4 @@ export const POST = async (req: NextRequest) => {
     return NextResponse.json({ error: result.error }, { status: 500 });
   }
   return NextResponse.json({ data: result.data });
-}; 
+};

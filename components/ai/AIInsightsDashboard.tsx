@@ -142,7 +142,10 @@ export function AIInsightsDashboard() {
         console.log("❌ AI Dashboard: Analysis failed", {
           error: result.error,
         });
-        toast.error(result.error || "Analysis failed. Please check your AI provider configuration.");
+        toast.error(
+          result.error ||
+            "Analysis failed. Please check your AI provider configuration.",
+        );
       }
     } catch (error) {
       console.error("💥 AI Dashboard: Analysis error:", error);

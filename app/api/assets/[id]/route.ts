@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
   try {
     const { orgId } = await auth();
@@ -20,16 +20,16 @@ export async function GET(
 
     const { id } = params;
     if (!id) {
-      return NextResponse.json({ error: "Asset ID is required" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Asset ID is required" },
+        { status: 400 },
+      );
     }
 
     const assetResponse = await findAssetById(id);
-    
+
     if (!assetResponse.success) {
-      return NextResponse.json(
-        { error: assetResponse.error },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: assetResponse.error }, { status: 500 });
     }
 
     return NextResponse.json({
@@ -39,7 +39,7 @@ export async function GET(
     console.error("Error fetching asset:", error);
     return NextResponse.json(
       { error: "Failed to fetch asset" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

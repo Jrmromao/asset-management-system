@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
     if (!configurationId) {
       return NextResponse.json(
         { error: "Configuration ID is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
     if (!configuration) {
       return NextResponse.json(
         { error: "Report configuration not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
     if (generateNow) {
       // In a real implementation, this would trigger background job processing
       // For now, we'll simulate immediate processing
-              // Generate report in background
+      // Generate report in background
       generateReportFile(generatedReport.id, configuration)
         .then(async (result) => {
           await prisma.generatedReport.update({
@@ -116,18 +116,21 @@ export async function POST(request: NextRequest) {
         success: false,
         error: error instanceof Error ? error.message : "Internal server error",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
 // Generate and save report file to S3
-async function generateReportFile(reportId: string, configuration: any): Promise<{ filePath: string; fileSize: number }> {
+async function generateReportFile(
+  reportId: string,
+  configuration: any,
+): Promise<{ filePath: string; fileSize: number }> {
   const s3Service = S3Service.getInstance();
-  
+
   // Generate report content
   const reportData = await generateReportData(configuration);
-  
+
   let buffer: Buffer;
   let contentType: string;
   let fileExtension: string;
@@ -138,38 +141,44 @@ async function generateReportFile(reportId: string, configuration: any): Promise
       contentType = "application/pdf";
       fileExtension = "pdf";
       break;
-    
+
     case "excel":
       buffer = await generateExcelBuffer(reportData);
-      contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+      contentType =
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
       fileExtension = "xlsx";
       break;
-    
+
     case "csv":
       const csvContent = generateCSVContent(reportData);
-      buffer = Buffer.from(csvContent, 'utf-8');
+      buffer = Buffer.from(csvContent, "utf-8");
       contentType = "text/csv";
       fileExtension = "csv";
       break;
-    
+
     case "dashboard":
       const jsonContent = JSON.stringify(reportData, null, 2);
-      buffer = Buffer.from(jsonContent, 'utf-8');
+      buffer = Buffer.from(jsonContent, "utf-8");
       contentType = "application/json";
       fileExtension = "json";
       break;
-    
+
     default:
       throw new Error(`Unsupported format: ${configuration.format}`);
   }
 
   // Generate S3 key
-  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-  const fileName = `${reportData.title.replace(/[^a-zA-Z0-9]/g, '_')}_${timestamp}.${fileExtension}`;
+  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+  const fileName = `${reportData.title.replace(/[^a-zA-Z0-9]/g, "_")}_${timestamp}.${fileExtension}`;
   const s3Key = `reports/${reportId}/${fileName}`;
 
   // Upload to S3
-  await s3Service.uploadFile(configuration.companyId, s3Key, buffer, contentType);
+  await s3Service.uploadFile(
+    configuration.companyId,
+    s3Key,
+    buffer,
+    contentType,
+  );
 
   // Calculate file size in MB
   const fileSize = buffer.length / (1024 * 1024);
@@ -184,7 +193,7 @@ async function generateReportFile(reportId: string, configuration: any): Promise
 async function generateReportData(configuration: any) {
   // This would contain the actual report generation logic
   // For now, we'll return a mock structure
-  
+
   const reportData: ReportData = {
     title: configuration.name,
     generatedAt: new Date(),
@@ -208,7 +217,7 @@ async function generateReportData(configuration: any) {
       case "Carbon Emissions":
         reportData.sections.push({
           title: "Carbon Emissions Report",
-          type: "chart", 
+          type: "chart",
           data: await getCarbonEmissionsData(configuration.companyId),
         });
         break;
@@ -272,17 +281,17 @@ async function getMaintenanceHistoryData(companyId: string) {
 async function getCostAnalysisData(companyId: string) {
   const assets = await prisma.asset.findMany({
     where: { companyId },
-    select: { 
-      name: true, 
-      purchasePrice: true, 
+    select: {
+      name: true,
+      purchasePrice: true,
       currentValue: true,
-      category: { select: { name: true } } 
+      category: { select: { name: true } },
     },
   });
 
-  return assets.map(asset => ({
+  return assets.map((asset) => ({
     "Asset Name": asset.name,
-    "Category": asset.category?.name || "Uncategorized",
+    Category: asset.category?.name || "Uncategorized",
     "Purchase Price": asset.purchasePrice || 0,
     "Current Value": asset.currentValue || 0,
   }));
@@ -291,27 +300,27 @@ async function getCostAnalysisData(companyId: string) {
 // Content generation functions
 async function generatePDFBuffer(reportData: any): Promise<Buffer> {
   const htmlContent = generateHTMLContent(reportData);
-  
+
   const browser = await puppeteer.launch({
     headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox']
+    args: ["--no-sandbox", "--disable-setuid-sandbox"],
   });
-  
+
   try {
     const page = await browser.newPage();
-    await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
-    
+    await page.setContent(htmlContent, { waitUntil: "networkidle0" });
+
     const pdfBuffer = await page.pdf({
-      format: 'A4',
+      format: "A4",
       printBackground: true,
       margin: {
-        top: '20mm',
-        right: '20mm',
-        bottom: '20mm',
-        left: '20mm'
-      }
+        top: "20mm",
+        right: "20mm",
+        bottom: "20mm",
+        left: "20mm",
+      },
     });
-    
+
     return Buffer.from(pdfBuffer);
   } finally {
     await browser.close();
@@ -320,69 +329,71 @@ async function generatePDFBuffer(reportData: any): Promise<Buffer> {
 
 async function generateExcelBuffer(reportData: any): Promise<Buffer> {
   const workbook = new ExcelJS.Workbook();
-  
+
   // Add metadata
-  workbook.creator = 'EcoKeepr';
-  workbook.lastModifiedBy = 'EcoKeepr';
+  workbook.creator = "EcoKeepr";
+  workbook.lastModifiedBy = "EcoKeepr";
   workbook.created = new Date();
   workbook.modified = new Date();
-  
+
   // Create main sheet
-  const worksheet = workbook.addWorksheet('Report');
-  
+  const worksheet = workbook.addWorksheet("Report");
+
   // Add header
-  worksheet.mergeCells('A1:E1');
-  const titleCell = worksheet.getCell('A1');
+  worksheet.mergeCells("A1:E1");
+  const titleCell = worksheet.getCell("A1");
   titleCell.value = reportData.title;
   titleCell.font = { size: 16, bold: true };
-  titleCell.alignment = { horizontal: 'center' };
-  
+  titleCell.alignment = { horizontal: "center" };
+
   // Add metadata
   let currentRow = 3;
-  worksheet.getCell(`A${currentRow}`).value = 'Generated:';
-  worksheet.getCell(`B${currentRow}`).value = new Date(reportData.generatedAt).toLocaleString();
+  worksheet.getCell(`A${currentRow}`).value = "Generated:";
+  worksheet.getCell(`B${currentRow}`).value = new Date(
+    reportData.generatedAt,
+  ).toLocaleString();
   currentRow++;
-  worksheet.getCell(`A${currentRow}`).value = 'Time Period:';
+  worksheet.getCell(`A${currentRow}`).value = "Time Period:";
   worksheet.getCell(`B${currentRow}`).value = reportData.timePeriod;
   currentRow++;
-  worksheet.getCell(`A${currentRow}`).value = 'Format:';
+  worksheet.getCell(`A${currentRow}`).value = "Format:";
   worksheet.getCell(`B${currentRow}`).value = reportData.format.toUpperCase();
   currentRow += 2;
-  
+
   // Add sections
   for (const section of reportData.sections) {
     // Section title
     worksheet.getCell(`A${currentRow}`).value = section.title;
     worksheet.getCell(`A${currentRow}`).font = { bold: true, size: 14 };
     currentRow += 2;
-    
+
     if (Array.isArray(section.data)) {
       // Table data
       if (section.data.length > 0) {
         const headers = Object.keys(section.data[0]);
-        
+
         // Add headers
         headers.forEach((header, index) => {
           const cell = worksheet.getCell(currentRow, index + 1);
           cell.value = header;
           cell.font = { bold: true };
           cell.fill = {
-            type: 'pattern',
-            pattern: 'solid',
-            fgColor: { argb: 'FFE6E6E6' }
+            type: "pattern",
+            pattern: "solid",
+            fgColor: { argb: "FFE6E6E6" },
           };
         });
         currentRow++;
-        
+
         // Add data rows
         section.data.forEach((row: any) => {
           headers.forEach((header, index) => {
-            worksheet.getCell(currentRow, index + 1).value = row[header] || '';
+            worksheet.getCell(currentRow, index + 1).value = row[header] || "";
           });
           currentRow++;
         });
       }
-    } else if (typeof section.data === 'object' && section.data !== null) {
+    } else if (typeof section.data === "object" && section.data !== null) {
       // Object data
       Object.entries(section.data).forEach(([key, value]) => {
         worksheet.getCell(`A${currentRow}`).value = key;
@@ -390,71 +401,79 @@ async function generateExcelBuffer(reportData: any): Promise<Buffer> {
         currentRow++;
       });
     }
-    
+
     currentRow += 2; // Add space between sections
   }
-  
+
   // Auto-fit columns
   worksheet.columns.forEach((column) => {
     if (column.values) {
-      const lengths = column.values.map(v => v ? v.toString().length : 0);
-      const maxLength = Math.max(...lengths.filter(v => typeof v === 'number'));
+      const lengths = column.values.map((v) => (v ? v.toString().length : 0));
+      const maxLength = Math.max(
+        ...lengths.filter((v) => typeof v === "number"),
+      );
       column.width = Math.min(maxLength + 2, 50);
     }
   });
-  
+
   // Generate buffer
   const buffer = await workbook.xlsx.writeBuffer();
   return Buffer.from(buffer);
 }
 
 function generateHTMLContent(reportData: any): string {
-  const sections = reportData.sections.map((section: any) => {
-    let sectionContent = "";
-    
-    if (section.data.message) {
-      sectionContent = `<p>${section.data.message}</p>`;
-    } else if (Array.isArray(section.data)) {
-      // Table format for arrays
-      const headers = Object.keys(section.data[0] || {});
-      sectionContent = `
+  const sections = reportData.sections
+    .map((section: any) => {
+      let sectionContent = "";
+
+      if (section.data.message) {
+        sectionContent = `<p>${section.data.message}</p>`;
+      } else if (Array.isArray(section.data)) {
+        // Table format for arrays
+        const headers = Object.keys(section.data[0] || {});
+        sectionContent = `
         <table style="width: 100%; border-collapse: collapse; margin: 10px 0;">
           <thead>
             <tr style="background-color: #f5f5f5;">
-              ${headers.map(h => `<th style="border: 1px solid #ddd; padding: 8px; text-align: left;">${h}</th>`).join('')}
+              ${headers.map((h) => `<th style="border: 1px solid #ddd; padding: 8px; text-align: left;">${h}</th>`).join("")}
             </tr>
           </thead>
           <tbody>
-            ${section.data.map((row: any) => `
+            ${section.data
+              .map(
+                (row: any) => `
               <tr>
-                ${headers.map(h => `<td style="border: 1px solid #ddd; padding: 8px;">${row[h] || ''}</td>`).join('')}
+                ${headers.map((h) => `<td style="border: 1px solid #ddd; padding: 8px;">${row[h] || ""}</td>`).join("")}
               </tr>
-            `).join('')}
+            `,
+              )
+              .join("")}
           </tbody>
         </table>
       `;
-    } else {
-      // Object format
-      sectionContent = `
+      } else {
+        // Object format
+        sectionContent = `
         <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 10px 0;">
-          ${Object.entries(section.data).map(([key, value]) => 
-            `<p><strong>${key}:</strong> ${value}</p>`
-          ).join('')}
+          ${Object.entries(section.data)
+            .map(([key, value]) => `<p><strong>${key}:</strong> ${value}</p>`)
+            .join("")}
         </div>
       `;
-    }
+      }
 
-    return `
+      return `
       <div style="margin-bottom: 30px;">
         <h2 style="color: #333; border-bottom: 2px solid #10b981; padding-bottom: 10px;">${section.title}</h2>
         <p style="color: #666; font-size: 14px; margin-bottom: 15px;">Category: ${section.category}</p>
         ${sectionContent}
       </div>
     `;
-  }).join('');
+    })
+    .join("");
 
   // Use EcoKeepr as the app name
-  const appName = 'EcoKeepr';
+  const appName = "EcoKeepr";
   // Use companyName if available, otherwise EcoKeepr
   const companyName = reportData.companyName || appName;
 
@@ -515,24 +534,25 @@ function generateCSVContent(reportData: any): string {
 
   reportData.sections.forEach((section: any) => {
     csvContent += `"${section.title}"\n`;
-    
+
     if (Array.isArray(section.data)) {
       if (section.data.length > 0) {
         const headers = Object.keys(section.data[0]);
-        csvContent += headers.map(h => `"${h}"`).join(',') + '\n';
+        csvContent += headers.map((h) => `"${h}"`).join(",") + "\n";
         section.data.forEach((row: any) => {
-          csvContent += headers.map(h => `"${row[h] || ''}"`).join(',') + '\n';
+          csvContent +=
+            headers.map((h) => `"${row[h] || ""}"`).join(",") + "\n";
         });
       }
-    } else if (typeof section.data === 'object' && section.data !== null) {
+    } else if (typeof section.data === "object" && section.data !== null) {
       Object.entries(section.data).forEach(([key, value]) => {
         csvContent += `"${key}","${value}"\n`;
       });
     }
-    csvContent += '\n';
+    csvContent += "\n";
   });
 
-  csvContent += '\nGenerated by EcoKeepr – Sustainable Asset Management';
+  csvContent += "\nGenerated by EcoKeepr – Sustainable Asset Management";
 
   return csvContent;
-} 
+}

@@ -26,7 +26,9 @@ const ManufacturerForm = ({
     useManufacturerQuery();
   const { onClose } = useManufacturerUIStore();
 
-  const form = useForm<z.infer<typeof manufacturerSchema> & { active: boolean }>({
+  const form = useForm<
+    z.infer<typeof manufacturerSchema> & { active: boolean }
+  >({
     resolver: zodResolver(manufacturerSchema),
     defaultValues: {
       name: initialData?.name || "",
@@ -44,7 +46,9 @@ const ManufacturerForm = ({
     onClose();
   };
 
-  async function onSubmit(data: z.infer<typeof manufacturerSchema> & { active: boolean }) {
+  async function onSubmit(
+    data: z.infer<typeof manufacturerSchema> & { active: boolean },
+  ) {
     startTransition(async () => {
       try {
         console.log("Form data being submitted:", data);
@@ -120,7 +124,7 @@ const ManufacturerForm = ({
           control={form.control}
           type="email"
         />
-         {initialData && (
+        {initialData && (
           <CustomSwitch
             control={form.control}
             name="active"

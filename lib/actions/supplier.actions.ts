@@ -119,8 +119,18 @@ export const getAll = withAuth(
 export const getById = withAuth(
   async (user, id: string): Promise<ActionResponse<Supplier>> => {
     try {
-      const supplier = await prisma.supplier.findUnique({
-        where: { id, companyId: user.user_metadata?.companyId },
+      // Check if user has companyId
+      const companyId = user.user_metadata?.companyId;
+      if (!companyId) {
+        return {
+          success: false,
+          data: undefined,
+          error: "User is not associated with a company",
+        };
+      }
+
+      const supplier = await prisma.supplier.findFirst({
+        where: { id, companyId },
       });
       if (!supplier) {
         return { success: false, data: undefined, error: "Supplier not found" };
@@ -157,6 +167,32 @@ export const update = withAuth(
         };
       }
 
+      // Check if user has companyId
+      const companyId = user.user_metadata?.companyId;
+      if (!companyId) {
+        return {
+          success: false,
+          data: undefined,
+          error: "User is not associated with a company",
+        };
+      }
+
+      // First, check if the supplier exists and belongs to the user's company
+      const existingSupplier = await prisma.supplier.findFirst({
+        where: {
+          id,
+          companyId,
+        },
+      });
+
+      if (!existingSupplier) {
+        return {
+          success: false,
+          data: undefined,
+          error: "Supplier not found or you don't have permission to update it",
+        };
+      }
+
       const supplierData: Prisma.SupplierUpdateInput = {
         name: validation.data.name,
         contactName: validation.data.contactName,
@@ -172,18 +208,20 @@ export const update = withAuth(
         ...(validation.data.addressLine2 && {
           addressLine2: validation.data.addressLine2,
         }),
-        ...(typeof validation.data.active === "boolean" ? { active: validation.data.active } : {}),
+        ...(typeof validation.data.active === "boolean"
+          ? { active: validation.data.active }
+          : {}),
       };
 
       // Update supplier
       const supplier = await prisma.supplier.update({
-        where: { id, companyId: user.user_metadata?.companyId },
+        where: { id, companyId },
         data: supplierData,
       });
 
       revalidatePath("/assets/create");
       await createAuditLog({
-        companyId: user.user_metadata?.companyId,
+        companyId,
         action: "SUPPLIER_UPDATED",
         entity: "SUPPLIER",
         entityId: supplier.id,
@@ -207,9 +245,37 @@ export const update = withAuth(
 export const remove = withAuth(
   async (user, id: string): Promise<ActionResponse<Supplier>> => {
     try {
-      const supplier = await prisma.supplier.delete({
-        where: { id, companyId: user.user_metadata?.companyId },
+      // Check if user has companyId
+      const companyId = user.user_metadata?.companyId;
+      if (!companyId) {
+        return {
+          success: false,
+          data: undefined,
+          error: "User is not associated with a company",
+        };
+      }
+
+      // First, check if the supplier exists and belongs to the user's company
+      const existingSupplier = await prisma.supplier.findFirst({
+        where: {
+          id,
+          companyId,
+        },
       });
+
+      if (!existingSupplier) {
+        return {
+          success: false,
+          data: undefined,
+          error: "Supplier not found or you don't have permission to delete it",
+        };
+      }
+
+      // Delete the supplier
+      const supplier = await prisma.supplier.delete({
+        where: { id, companyId },
+      });
+
       revalidatePath("/assets/create");
       await createAuditLog({
         companyId: user.user_metadata?.companyId,
@@ -218,16 +284,15 @@ export const remove = withAuth(
         entityId: supplier.id,
         details: `Supplier deleted: ${supplier.name} by user ${user.id}`,
       });
+
       return { success: true, data: parseStringify(supplier) };
     } catch (error) {
-      console.error("Failed to delete supplier:", error);
+      console.error("Delete supplier error:", error);
       return {
         success: false,
         data: undefined,
         error: "Failed to delete supplier",
       };
-    } finally {
-      await prisma.$disconnect();
     }
   },
 );
@@ -250,11 +315,13 @@ export const bulkCreate = withAuth(
       country: string;
       active?: boolean;
     }>,
-  ): Promise<ActionResponse<{
-    successCount: number;
-    errorCount: number;
-    errors: Array<{ row: number; error: string }>;
-  }>> => {
+  ): Promise<
+    ActionResponse<{
+      successCount: number;
+      errorCount: number;
+      errors: Array<{ row: number; error: string }>;
+    }>
+  > => {
     console.log(" [supplier.actions] bulkCreate - Starting with user:", {
       userId: user?.id,
       user_metadata: user?.user_metadata,
@@ -292,7 +359,7 @@ export const bulkCreate = withAuth(
           `[Supplier Actions] Processing supplier ${i + 1}:`,
           supplierData,
         );
-        
+
         try {
           // Validate the supplier data
           console.log(`[Supplier Actions] Validating supplier data:`, {
@@ -310,7 +377,7 @@ export const bulkCreate = withAuth(
             country: supplierData.country,
             active: supplierData.active ?? true,
           });
-          
+
           const validation = supplierSchema.safeParse({
             name: supplierData.name,
             contactName: supplierData.contactName,
@@ -394,7 +461,6 @@ export const bulkCreate = withAuth(
             entityId: supplier.id,
             details: `Supplier created via bulk import: ${supplier.name} by user ${user.id}`,
           });
-
         } catch (error) {
           console.error(
             `[Supplier Actions] Error processing supplier at row ${i + 1}:`,
@@ -412,7 +478,7 @@ export const bulkCreate = withAuth(
       console.log(
         `[Supplier Actions] Bulk create completed: ${successCount} successful, ${errorCount} errors`,
       );
-      
+
       return {
         success: true,
         data: {

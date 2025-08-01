@@ -44,7 +44,9 @@ export async function validateUserCompany(clerkUserId: string): Promise<{
   }
 }
 
-export async function isUserAdminOrManager(clerkUserId: string): Promise<boolean> {
+export async function isUserAdminOrManager(
+  clerkUserId: string,
+): Promise<boolean> {
   try {
     const user = await prisma.user.findUnique({
       where: { oauthId: clerkUserId },

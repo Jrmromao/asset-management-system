@@ -133,7 +133,9 @@ export const auditLogColumns = (): ColumnDef<SimpleAuditLog>[] => [
     },
     cell: ({ row }) => {
       const data = row.original;
-      const user = data.user as { id: string; name?: string; email?: string; role?: string } | undefined;
+      const user = data.user as
+        | { id: string; name?: string; email?: string; role?: string }
+        | undefined;
       const name = user?.name || null;
       const email = user?.email || null;
       const userId = user?.id || data.userId;
@@ -147,8 +149,12 @@ export const auditLogColumns = (): ColumnDef<SimpleAuditLog>[] => [
               {name || email || userId || "Unknown"}
             </div>
             {email && <div className="text-xs text-gray-500">{email}</div>}
-            {name && email && <div className="text-xs text-gray-400">{userId}</div>}
-            {user?.role && <div className="text-xs text-gray-400">{user.role}</div>}
+            {name && email && (
+              <div className="text-xs text-gray-400">{userId}</div>
+            )}
+            {user?.role && (
+              <div className="text-xs text-gray-400">{user.role}</div>
+            )}
           </div>
         </div>
       );

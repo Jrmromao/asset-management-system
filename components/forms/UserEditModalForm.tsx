@@ -39,15 +39,15 @@ interface UserEditModalFormProps {
   onSubmitSuccess?: () => void;
 }
 
-const UserEditModalForm: React.FC<UserEditModalFormProps> = ({ 
-  user, 
-  onSubmitSuccess 
+const UserEditModalForm: React.FC<UserEditModalFormProps> = ({
+  user,
+  onSubmitSuccess,
 }) => {
   const [isPending, setIsPending] = useState(false);
   const { updateUser } = useUserQuery();
   const { roles, isLoading: rolesLoading } = useRoleQuery();
   const { departments, isLoading: departmentsLoading } = useDepartmentQuery();
-  
+
   // State for active user usage
   const [activeUserUsage, setActiveUserUsage] = useState<{
     used: number;
@@ -111,7 +111,7 @@ const UserEditModalForm: React.FC<UserEditModalFormProps> = ({
     try {
       // Check if we're activating a user and if it would exceed quota
       const isActivatingUser = data.isActive && !user.active;
-      
+
       if (isActivatingUser) {
         // Check current user quota before activating
         const quotaResponse = await fetch("/api/user/can-add-active-user");
@@ -119,7 +119,7 @@ const UserEditModalForm: React.FC<UserEditModalFormProps> = ({
           const quotaData = await quotaResponse.json();
           if (!quotaData.allowed) {
             toast.error(
-              `Cannot activate user. You've reached your active user limit (${quotaData.used}/${quotaData.limit}). Please upgrade your plan to add more users.`
+              `Cannot activate user. You've reached your active user limit (${quotaData.used}/${quotaData.limit}). Please upgrade your plan to add more users.`,
             );
             setIsPending(false);
             return;
@@ -131,12 +131,12 @@ const UserEditModalForm: React.FC<UserEditModalFormProps> = ({
         }
       }
 
-      const result = await updateUser({ 
-        id: user.id, 
+      const result = await updateUser({
+        id: user.id,
         data: {
           ...data,
           name: `${data.firstName} ${data.lastName}`.trim(),
-        }
+        },
       });
 
       if (result?.success) {
@@ -177,7 +177,7 @@ const UserEditModalForm: React.FC<UserEditModalFormProps> = ({
             </span>
           ) : null}
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <CustomInput
             control={form.control}
@@ -187,7 +187,7 @@ const UserEditModalForm: React.FC<UserEditModalFormProps> = ({
             required
           />
           <CustomInput
-             control={form.control}
+            control={form.control}
             name="lastName"
             label="Last Name"
             placeholder="Enter last name"
@@ -196,7 +196,7 @@ const UserEditModalForm: React.FC<UserEditModalFormProps> = ({
         </div>
 
         <CustomInput
-         control={form.control}
+          control={form.control}
           name="email"
           label="Email"
           type="email"
@@ -225,10 +225,12 @@ const UserEditModalForm: React.FC<UserEditModalFormProps> = ({
             name="departmentId"
             label="Department"
             placeholder="Select department"
-            data={departments?.map(dept => ({
-              id: dept.id,
-              name: dept.name
-            })) || []}
+            data={
+              departments?.map((dept) => ({
+                id: dept.id,
+                name: dept.name,
+              })) || []
+            }
             required
           />
           <CustomSelect
@@ -236,10 +238,12 @@ const UserEditModalForm: React.FC<UserEditModalFormProps> = ({
             name="roleId"
             label="Role"
             placeholder="Select role"
-            data={roles?.map(role => ({
-              id: role.id,
-              name: role.name
-            })) || []}
+            data={
+              roles?.map((role) => ({
+                id: role.id,
+                name: role.name,
+              })) || []
+            }
             required
           />
         </div>
@@ -258,20 +262,19 @@ const UserEditModalForm: React.FC<UserEditModalFormProps> = ({
           name="isActive"
           label="Is Active"
         />
-        
+
         {/* Show warning if trying to activate user at quota limit */}
-        {activeUserUsage && !user.active && activeUserUsage.used >= activeUserUsage.limit && (
-          <div className="text-sm text-amber-600 bg-amber-50 p-3 rounded-md border border-amber-200">
-            ⚠️ Warning: You've reached your active user limit. You cannot activate this user until you upgrade your plan.
-          </div>
-        )}
+        {activeUserUsage &&
+          !user.active &&
+          activeUserUsage.used >= activeUserUsage.limit && (
+            <div className="text-sm text-amber-600 bg-amber-50 p-3 rounded-md border border-amber-200">
+              ⚠️ Warning: You've reached your active user limit. You cannot
+              activate this user until you upgrade your plan.
+            </div>
+          )}
 
         <div className="flex justify-end space-x-2 pt-4">
-          <Button
-            type="submit"
-            disabled={isPending}
-            className="min-w-[100px]"
-          >
+          <Button type="submit" disabled={isPending} className="min-w-[100px]">
             {isPending ? "Updating..." : "Update User"}
           </Button>
         </div>
@@ -280,4 +283,4 @@ const UserEditModalForm: React.FC<UserEditModalFormProps> = ({
   );
 };
 
-export default UserEditModalForm; 
+export default UserEditModalForm;

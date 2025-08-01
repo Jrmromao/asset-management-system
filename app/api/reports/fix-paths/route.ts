@@ -22,13 +22,13 @@ export async function POST(request: NextRequest) {
     console.log(`Found ${reportsToFix.length} reports to fix`);
 
     // Update each report with the correct file path
-    const updatePromises = reportsToFix.map(report => 
+    const updatePromises = reportsToFix.map((report) =>
       prisma.generatedReport.update({
         where: { id: report.id },
         data: {
           filePath: `/api/reports/download/${report.id}`,
         },
-      })
+      }),
     );
 
     await Promise.all(updatePromises);
@@ -38,10 +38,9 @@ export async function POST(request: NextRequest) {
       message: `Fixed ${reportsToFix.length} report file paths`,
       data: {
         reportsFixed: reportsToFix.length,
-        reportIds: reportsToFix.map(r => r.id),
+        reportIds: reportsToFix.map((r) => r.id),
       },
     });
-
   } catch (error) {
     console.error("Error fixing report paths:", error);
     return NextResponse.json(
@@ -49,7 +48,7 @@ export async function POST(request: NextRequest) {
         success: false,
         error: error instanceof Error ? error.message : "Internal server error",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
-} 
+}

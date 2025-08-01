@@ -7,8 +7,8 @@ import { createAuditLog } from "@/lib/actions/auditLog.actions";
 
 // Initialize Upstash Redis client
 const redis = new Redis({
-  url: "https://stirring-lizard-41234.upstash.io",
-  token: "AaESAAIjcDE3MjQxZjJjNTY4YmI0NmU4ODc3YjU5MWEzNDc3ZGQxZXAxMA",
+  url: process.env.UPSTASH_REDIS_REST_URL,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN,
 });
 
 interface AssetFingerprint {
@@ -45,7 +45,9 @@ export class CO2ConsistencyService {
   /**
    * Normalize asset data to handle different ways of describing the same asset
    */
-  private static normalizeAssetData(asset: AssetFingerprint): Omit<NormalizedAsset, "fingerprint"> {
+  private static normalizeAssetData(
+    asset: AssetFingerprint,
+  ): Omit<NormalizedAsset, "fingerprint"> {
     // Normalize manufacturer names
     const normalizedManufacturer = this.normalizeManufacturer(
       asset.manufacturer,
@@ -275,12 +277,17 @@ export class CO2ConsistencyService {
         if (redisCached) {
           try {
             const cachedData = JSON.parse(redisCached as string);
-            if (this.validateCO2Data(cachedData) && cachedData.confidenceScore >= 0.8) {
-              console.log(`♻️ [REDIS] Using cached HIGH-CONFIDENCE CO2 for fingerprint: ${assetFingerprint}`);
+            if (
+              this.validateCO2Data(cachedData) &&
+              cachedData.confidenceScore >= 0.8
+            ) {
+              console.log(
+                `♻️ [REDIS] Using cached HIGH-CONFIDENCE CO2 for fingerprint: ${assetFingerprint}`,
+              );
               await createAuditLog({
                 companyId,
-                action: 'CO2_CALCULATED',
-                entity: 'CO2_CALCULATION',
+                action: "CO2_CALCULATED",
+                entity: "CO2_CALCULATION",
                 entityId: assetName || assetFingerprint,
                 details: `CO2 calculated for asset ${assetName} (${manufacturer} ${model})`,
               });
@@ -292,7 +299,9 @@ export class CO2ConsistencyService {
               };
             }
           } catch (e) {
-            console.warn("[REDIS] Failed to parse cached CO2 data, falling back to DB.");
+            console.warn(
+              "[REDIS] Failed to parse cached CO2 data, falling back to DB.",
+            );
           }
         }
       }
@@ -320,14 +329,17 @@ export class CO2ConsistencyService {
               // Only use cached value if confidence is high
               if (cachedData.confidenceScore >= 0.8) {
                 // Also update Redis for future fast lookups
-                await redis.set(`co2:${assetFingerprint}`, JSON.stringify(cachedData));
+                await redis.set(
+                  `co2:${assetFingerprint}`,
+                  JSON.stringify(cachedData),
+                );
                 console.log(
                   `♻️ Using cached HIGH-CONFIDENCE CO2 calculation for fingerprint: ${assetFingerprint}`,
                 );
                 await createAuditLog({
                   companyId,
-                  action: 'CO2_CALCULATED',
-                  entity: 'CO2_CALCULATION',
+                  action: "CO2_CALCULATED",
+                  entity: "CO2_CALCULATION",
                   entityId: assetName || assetFingerprint,
                   details: `CO2 calculated for asset ${assetName} (${manufacturer} ${model})`,
                 });
@@ -397,7 +409,10 @@ export class CO2ConsistencyService {
 
       // --- 3. Store in Redis if high confidence ---
       if (enhancedData.confidenceScore >= 0.8) {
-        await redis.set(`co2:${assetFingerprint}`, JSON.stringify(enhancedData));
+        await redis.set(
+          `co2:${assetFingerprint}`,
+          JSON.stringify(enhancedData),
+        );
       }
 
       // Store the calculation for future use in DB
@@ -405,8 +420,8 @@ export class CO2ConsistencyService {
 
       await createAuditLog({
         companyId,
-        action: 'CO2_CALCULATED',
-        entity: 'CO2_CALCULATION',
+        action: "CO2_CALCULATED",
+        entity: "CO2_CALCULATION",
         entityId: assetName || assetFingerprint,
         details: `CO2 calculated for asset ${assetName} (${manufacturer} ${model})`,
       });
@@ -459,8 +474,8 @@ export class CO2ConsistencyService {
       console.log(`💾 Stored CO2 calculation for fingerprint: ${fingerprint}`);
       await createAuditLog({
         companyId,
-        action: 'CO2_CALCULATION_STORED',
-        entity: 'CO2_CALCULATION',
+        action: "CO2_CALCULATION_STORED",
+        entity: "CO2_CALCULATION",
         entityId: fingerprint,
         details: `CO2 calculation stored for fingerprint ${fingerprint}`,
       });
@@ -580,8 +595,8 @@ export class CO2ConsistencyService {
 
       await createAuditLog({
         companyId,
-        action: 'CO2_CACHE_CLEARED',
-        entity: 'CO2_CACHE',
+        action: "CO2_CACHE_CLEARED",
+        entity: "CO2_CACHE",
         entityId: fingerprint,
         details: `CO2 cache cleared for fingerprint ${fingerprint}`,
       });

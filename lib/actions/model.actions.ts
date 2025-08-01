@@ -319,11 +319,13 @@ export const bulkCreate = withAuth(
       active?: boolean;
       notes?: string;
     }>,
-  ): Promise<AuthResponse<{
-    successCount: number;
-    errorCount: number;
-    errors: Array<{ row: number; error: string }>;
-  }>> => {
+  ): Promise<
+    AuthResponse<{
+      successCount: number;
+      errorCount: number;
+      errors: Array<{ row: number; error: string }>;
+    }>
+  > => {
     console.log(" [model.actions] bulkCreate - Starting with user:", {
       userId: user?.id,
       user_metadata: user?.user_metadata,
@@ -357,11 +359,8 @@ export const bulkCreate = withAuth(
       // Process each model
       for (let i = 0; i < models.length; i++) {
         const modelData = models[i];
-        console.log(
-          `[Model Actions] Processing model ${i + 1}:`,
-          modelData,
-        );
-        
+        console.log(`[Model Actions] Processing model ${i + 1}:`, modelData);
+
         try {
           // First, find the manufacturer by name
           const manufacturer = await prisma.manufacturer.findFirst({
@@ -391,7 +390,7 @@ export const bulkCreate = withAuth(
             active: modelData.active ?? true,
             notes: modelData.notes,
           });
-          
+
           const validation = modelSchema.safeParse({
             name: modelData.name,
             modelNo: modelData.modelNo,
@@ -460,7 +459,6 @@ export const bulkCreate = withAuth(
             entityId: model.id,
             details: `Model created via bulk import: ${model.name} by user ${user.id}`,
           });
-
         } catch (error) {
           console.error(
             `[Model Actions] Error processing model at row ${i + 1}:`,
@@ -478,7 +476,7 @@ export const bulkCreate = withAuth(
       console.log(
         `[Model Actions] Bulk create completed: ${successCount} successful, ${errorCount} errors`,
       );
-      
+
       return {
         success: true,
         data: {
@@ -488,10 +486,7 @@ export const bulkCreate = withAuth(
         },
       };
     } catch (error) {
-      console.error(
-        "❌ [model.actions] bulkCreate - Database error:",
-        error,
-      );
+      console.error("❌ [model.actions] bulkCreate - Database error:", error);
       return {
         success: false,
         data: null as any,

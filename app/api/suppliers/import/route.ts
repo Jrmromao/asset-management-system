@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
         { status: 400 },
       );
     }
-    
+
     console.log(
       "[Suppliers Import API] Processing",
       suppliers.length,
@@ -54,7 +54,6 @@ export async function POST(req: NextRequest) {
         errors: result.data?.errors || [],
       },
     });
-
   } catch (error) {
     console.error("Supplier import error:", error);
     return NextResponse.json(
@@ -62,4 +61,4 @@ export async function POST(req: NextRequest) {
       { status: 500 },
     );
   }
-} 
+}

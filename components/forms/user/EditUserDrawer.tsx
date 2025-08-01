@@ -17,7 +17,11 @@ interface EditUserDrawerProps {
   onClose: (updatedUser?: any) => void;
 }
 
-const EditUserDrawer: React.FC<EditUserDrawerProps> = ({ userId, open, onClose }) => {
+const EditUserDrawer: React.FC<EditUserDrawerProps> = ({
+  userId,
+  open,
+  onClose,
+}) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -75,7 +79,9 @@ const EditUserDrawer: React.FC<EditUserDrawerProps> = ({ userId, open, onClose }
         const res = await fetch("/api/user/can-add-active-user");
         const usage = await res.json();
         if (!usage.allowed) {
-          toast.error(`User quota reached (${usage.limit}). Upgrade to add more users.`);
+          toast.error(
+            `User quota reached (${usage.limit}). Upgrade to add more users.`,
+          );
           setSaving(false);
           return;
         }
@@ -119,10 +125,20 @@ const EditUserDrawer: React.FC<EditUserDrawerProps> = ({ userId, open, onClose }
       icon={<Pencil className="h-6 w-6 text-primary" aria-label="User Icon" />}
       footer={
         <>
-          <Button variant="outline" onClick={onClose} type="button" disabled={saving}>
+          <Button
+            variant="outline"
+            onClick={onClose}
+            type="button"
+            disabled={saving}
+          >
             Cancel
           </Button>
-          <Button variant="default" form="user-edit-form" type="submit" disabled={saving}>
+          <Button
+            variant="default"
+            form="user-edit-form"
+            type="submit"
+            disabled={saving}
+          >
             Save
           </Button>
         </>
@@ -142,4 +158,4 @@ const EditUserDrawer: React.FC<EditUserDrawerProps> = ({ userId, open, onClose }
   );
 };
 
-export default EditUserDrawer; 
+export default EditUserDrawer;

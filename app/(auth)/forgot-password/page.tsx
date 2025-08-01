@@ -37,7 +37,10 @@ export default function ForgotPasswordPage() {
       toast.custom((t) => (
         <div className="flex items-center gap-3 px-5 py-3 min-w-[220px] text-white bg-blue-500 shadow-lg rounded-lg font-medium">
           <Info className="text-white w-5 h-5" />
-          <span>You're already signed in. Please sign out first to reset your password.</span>
+          <span>
+            You're already signed in. Please sign out first to reset your
+            password.
+          </span>
           <button
             className="ml-auto text-white/70 hover:text-white"
             onClick={() => toast.dismiss()}

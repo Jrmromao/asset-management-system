@@ -19,7 +19,11 @@ interface TargetProgress {
 
 // Get sustainability targets for a company
 export const getSustainabilityTargets = withAuth(
-  async (user): Promise<AuthResponse<{ targets: SustainabilityTargets; progress: TargetProgress }>> => {
+  async (
+    user,
+  ): Promise<
+    AuthResponse<{ targets: SustainabilityTargets; progress: TargetProgress }>
+  > => {
     try {
       const companyId = user.privateMetadata?.companyId as string;
       if (!companyId) {
@@ -37,8 +41,12 @@ export const getSustainabilityTargets = withAuth(
       });
 
       const targets: SustainabilityTargets = {
-        targetEnergy: company?.targetEnergy ? Number(company.targetEnergy) : null,
-        targetCarbonReduction: company?.targetCarbonReduction ? Number(company.targetCarbonReduction) : null,
+        targetEnergy: company?.targetEnergy
+          ? Number(company.targetEnergy)
+          : null,
+        targetCarbonReduction: company?.targetCarbonReduction
+          ? Number(company.targetCarbonReduction)
+          : null,
       };
 
       // Calculate current progress
@@ -55,7 +63,7 @@ export const getSustainabilityTargets = withAuth(
         }),
         // Get total CO2 savings
         prisma.co2eRecord.aggregate({
-          where: { 
+          where: {
             asset: { companyId },
             co2e: { gt: 0 },
           },
@@ -63,17 +71,27 @@ export const getSustainabilityTargets = withAuth(
         }),
       ]);
 
-      const totalEnergy = Number(assets._sum.energyConsumption || 0) + Number(accessories._sum.energyConsumption || 0);
+      const totalEnergy =
+        Number(assets._sum.energyConsumption || 0) +
+        Number(accessories._sum.energyConsumption || 0);
       const totalCarbon = Number(co2Records._sum.co2e || 0) / 1000; // Convert kg to tons
 
       // Calculate progress percentages
-      const energyProgress = targets.targetEnergy && totalEnergy > 0 
-        ? Math.min(100, Math.round((totalEnergy / targets.targetEnergy) * 100))
-        : 0;
-      
-      const carbonProgress = targets.targetCarbonReduction && totalCarbon > 0
-        ? Math.min(100, Math.round((totalCarbon / targets.targetCarbonReduction) * 100))
-        : 0;
+      const energyProgress =
+        targets.targetEnergy && totalEnergy > 0
+          ? Math.min(
+              100,
+              Math.round((totalEnergy / targets.targetEnergy) * 100),
+            )
+          : 0;
+
+      const carbonProgress =
+        targets.targetCarbonReduction && totalCarbon > 0
+          ? Math.min(
+              100,
+              Math.round((totalCarbon / targets.targetCarbonReduction) * 100),
+            )
+          : 0;
 
       const progress: TargetProgress = {
         currentEnergy: totalEnergy,
@@ -100,7 +118,10 @@ export const getSustainabilityTargets = withAuth(
 
 // Update sustainability targets for a company
 export const updateSustainabilityTargets = withAuth(
-  async (user, targets: SustainabilityTargets): Promise<AuthResponse<{ targets: SustainabilityTargets }>> => {
+  async (
+    user,
+    targets: SustainabilityTargets,
+  ): Promise<AuthResponse<{ targets: SustainabilityTargets }>> => {
     try {
       const companyId = user.privateMetadata?.companyId as string;
       if (!companyId) {
@@ -142,4 +163,4 @@ export const updateSustainabilityTargets = withAuth(
       };
     }
   },
-); 
+);

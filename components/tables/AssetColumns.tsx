@@ -19,7 +19,13 @@ interface AssetColumnsProps {
   onCo2Update: (assetId: string, newCo2Record: any) => void;
 }
 
-const CO2FootprintCell = ({ row, onCo2Update }: { row: any; onCo2Update: (assetId: string, newCo2Record: any) => void }) => {
+const CO2FootprintCell = ({
+  row,
+  onCo2Update,
+}: {
+  row: any;
+  onCo2Update: (assetId: string, newCo2Record: any) => void;
+}) => {
   // const { toast } = useToast();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -309,12 +315,15 @@ export const assetColumns = ({
         if (!hexcolor) return "text-white";
         let hex = hexcolor.replace("#", "");
         if (hex.length === 3) {
-          hex = hex.split("").map((x) => x + x).join("");
+          hex = hex
+            .split("")
+            .map((x) => x + x)
+            .join("");
         }
-        const r = parseInt(hex.substr(0,2),16);
-        const g = parseInt(hex.substr(2,2),16);
-        const b = parseInt(hex.substr(4,2),16);
-        const yiq = (r*299+g*587+b*114)/1000;
+        const r = parseInt(hex.substr(0, 2), 16);
+        const g = parseInt(hex.substr(2, 2), 16);
+        const b = parseInt(hex.substr(4, 2), 16);
+        const yiq = (r * 299 + g * 587 + b * 114) / 1000;
         return yiq >= 128 ? "text-black" : "text-white";
       }
       return (
@@ -323,14 +332,21 @@ export const assetColumns = ({
             className={cn(
               "inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border text-white",
               {
-                "bg-green-100 text-green-800": !colorCode && status === "Available",
-                "bg-yellow-100 text-yellow-800": !colorCode && status === "In Use",
-                "bg-blue-100 text-blue-800": !colorCode && status === "In Repair",
+                "bg-green-100 text-green-800":
+                  !colorCode && status === "Available",
+                "bg-yellow-100 text-yellow-800":
+                  !colorCode && status === "In Use",
+                "bg-blue-100 text-blue-800":
+                  !colorCode && status === "In Repair",
                 "bg-red-100 text-red-800": !colorCode && status === "Inactive",
                 "bg-gray-100 text-gray-800": !colorCode && status === "Pending",
-              }
+              },
             )}
-            style={colorCode ? { backgroundColor: colorCode, borderColor: colorCode } : {}}
+            style={
+              colorCode
+                ? { backgroundColor: colorCode, borderColor: colorCode }
+                : {}
+            }
           >
             {status}
           </span>
@@ -359,7 +375,8 @@ export const assetColumns = ({
     header: "Category",
     cell: ({ row }) => {
       const modelCategory = (row.original as any).model?.category?.name;
-      const formTemplateCategory = (row.original as any).formValues?.[0]?.formTemplate?.category?.name;
+      const formTemplateCategory = (row.original as any).formValues?.[0]
+        ?.formTemplate?.category?.name;
       const value = formTemplateCategory ?? modelCategory ?? "-";
       return <LinkTableCell value={value} />;
     },
@@ -367,11 +384,7 @@ export const assetColumns = ({
   {
     id: "actions",
     cell: ({ row }) => (
-      <DataTableRowActions
-        row={row}
-        onDelete={onDelete}
-        onView={onView}
-      />
+      <DataTableRowActions row={row} onDelete={onDelete} onView={onView} />
     ),
   },
 ];

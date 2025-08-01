@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
     // Verify the request is from an authorized source (e.g., cron job)
     const authHeader = request.headers.get("authorization");
     const expectedToken = process.env.CLEANUP_CRON_TOKEN;
-    
+
     if (!expectedToken || authHeader !== `Bearer ${expectedToken}`) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
 
     // Get all active companies
     const companies = await prisma.company.findMany({
-      where: { 
+      where: {
         // Only process active companies
         // Add any additional filters if needed
       },
@@ -37,18 +37,21 @@ export async function POST(request: NextRequest) {
     // Process each company
     for (const company of companies) {
       try {
-        console.log(`Processing cleanup for company: ${company.name} (${company.id})`);
-        
+        console.log(
+          `Processing cleanup for company: ${company.name} (${company.id})`,
+        );
+
         const stats = await cleanupService.cleanupOldReports(company.id);
-        
+
         allStats.companiesProcessed++;
         allStats.totalDeletedReports += stats.deletedReports;
         allStats.totalDeletedFiles += stats.deletedFiles;
         allStats.totalFreedSpace += stats.freedSpace;
         allStats.errors.push(...stats.errors);
 
-        console.log(`Cleanup completed for ${company.name}: ${stats.deletedReports} reports, ${stats.freedSpace.toFixed(2)} MB freed`);
-        
+        console.log(
+          `Cleanup completed for ${company.name}: ${stats.deletedReports} reports, ${stats.freedSpace.toFixed(2)} MB freed`,
+        );
       } catch (error) {
         const errorMsg = `Failed to cleanup company ${company.name}: ${error}`;
         console.error(errorMsg);
@@ -70,15 +73,15 @@ export async function POST(request: NextRequest) {
       message: "Scheduled cleanup completed",
       stats: allStats,
     });
-
   } catch (error) {
     console.error("Scheduled cleanup failed:", error);
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : "Scheduled cleanup failed",
+        error:
+          error instanceof Error ? error.message : "Scheduled cleanup failed",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -89,7 +92,7 @@ export async function GET(request: NextRequest) {
     // Verify the request is from an authorized source
     const authHeader = request.headers.get("authorization");
     const expectedToken = process.env.CLEANUP_CRON_TOKEN;
-    
+
     if (!expectedToken || authHeader !== `Bearer ${expectedToken}`) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -117,7 +120,6 @@ export async function GET(request: NextRequest) {
         lastChecked: new Date().toISOString(),
       },
     });
-
   } catch (error) {
     console.error("Health check failed:", error);
     return NextResponse.json(
@@ -125,7 +127,7 @@ export async function GET(request: NextRequest) {
         success: false,
         error: error instanceof Error ? error.message : "Health check failed",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
-} 
+}

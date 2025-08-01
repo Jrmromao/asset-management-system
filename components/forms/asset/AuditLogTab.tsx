@@ -63,7 +63,9 @@ const AuditLogTab: React.FC<{ assetId: string }> = ({ assetId }) => {
         <div className="flex flex-col items-center justify-center py-12 text-gray-400">
           <Clock className="h-12 w-12 mb-4" />
           <p className="text-lg font-medium">No Audit Log Entries</p>
-          <p className="text-sm text-muted-foreground">No audit activities have been recorded for this asset yet.</p>
+          <p className="text-sm text-muted-foreground">
+            No audit activities have been recorded for this asset yet.
+          </p>
         </div>
       ) : (
         <ol className="relative border-l border-gray-200 dark:border-gray-700">
@@ -95,4 +97,4 @@ const AuditLogTab: React.FC<{ assetId: string }> = ({ assetId }) => {
   );
 };
 
-export default AuditLogTab; 
+export default AuditLogTab;

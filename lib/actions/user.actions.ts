@@ -224,7 +224,13 @@ export const updateUserNonAuthDetails = async (
   data: Partial<
     Pick<
       PrismaUser,
-      "firstName" | "lastName" | "roleId" | "title" | "employeeId" | "departmentId" | "active"
+      | "firstName"
+      | "lastName"
+      | "roleId"
+      | "title"
+      | "employeeId"
+      | "departmentId"
+      | "active"
     >
   >,
 ): Promise<{ success: boolean; error?: string; data?: PrismaUser }> => {
@@ -244,12 +250,12 @@ export const updateUserNonAuthDetails = async (
 
     // Check if we're activating a user and if it would exceed quota
     const isActivatingUser = data.active === true && !currentUser.active;
-    
+
     if (isActivatingUser) {
       // Import the quota checking function
       const { canAddActiveUser } = await import("@/lib/services/usage.service");
       const quotaCheck = await canAddActiveUser(currentUser.companyId);
-      
+
       if (!quotaCheck.allowed) {
         return {
           success: false,
@@ -451,7 +457,10 @@ export const markUserItemsAwaitingReturn = async (
       where: { name: "Awaiting Return", companyId },
     });
     if (!statusLabel) {
-      return { success: false, error: "Awaiting Return status label not found for this company." };
+      return {
+        success: false,
+        error: "Awaiting Return status label not found for this company.",
+      };
     }
     // Find all UserItem assignments for this user
     const userItems = await prisma.userItem.findMany({
@@ -484,7 +493,11 @@ export const markUserItemsAwaitingReturn = async (
             details: `Asset marked as awaiting return due to user deactivation/deletion`,
           },
         });
-        details.push({ type: "asset", id: item.assetId, name: item.asset.name });
+        details.push({
+          type: "asset",
+          id: item.assetId,
+          name: item.asset.name,
+        });
       }
       if (item.accessoryId && item.accessory) {
         await prisma.accessory.update({
@@ -501,7 +514,11 @@ export const markUserItemsAwaitingReturn = async (
             details: `Accessory marked as awaiting return due to user deactivation/deletion`,
           },
         });
-        details.push({ type: "accessory", id: item.accessoryId, name: item.accessory.name });
+        details.push({
+          type: "accessory",
+          id: item.accessoryId,
+          name: item.accessory.name,
+        });
       }
       if (item.licenseId && item.license) {
         await prisma.license.update({
@@ -518,14 +535,21 @@ export const markUserItemsAwaitingReturn = async (
             details: `License marked as awaiting return due to user deactivation/deletion`,
           },
         });
-        details.push({ type: "license", id: item.licenseId, name: item.license.name });
+        details.push({
+          type: "license",
+          id: item.licenseId,
+          name: item.license.name,
+        });
       }
       // Remove the user assignment
       await prisma.userItem.delete({ where: { id: item.id } });
     }
     return { success: true, details };
   } catch (error) {
-    return { success: false, error: error instanceof Error ? error.message : String(error) };
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : String(error),
+    };
   }
 };
 
@@ -552,7 +576,11 @@ export const deactivateUser = async (
       details: `User deactivated: ${user.email} (${user.name}) by user ${actorId}`,
     });
     // 3. Mark all items as Awaiting Return
-    const { details } = await markUserItemsAwaitingReturn(userId, actorId, companyId);
+    const { details } = await markUserItemsAwaitingReturn(
+      userId,
+      actorId,
+      companyId,
+    );
     // 4. Send asset return email to user (if not lonee)
     let isLonee = false;
     if (user.roleId) {
@@ -574,7 +602,10 @@ export const deactivateUser = async (
     // ...
     return { success: true };
   } catch (error) {
-    return { success: false, error: error instanceof Error ? error.message : String(error) };
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : String(error),
+    };
   }
 };
 
@@ -602,7 +633,10 @@ export const activateUser = async (
     });
     return { success: true };
   } catch (error) {
-    return { success: false, error: error instanceof Error ? error.message : String(error) };
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : String(error),
+    };
   }
 };
 
@@ -646,9 +680,15 @@ export const updateUserNotes = async (
       details: `User notes updated by ${actorLabel}. New notes: ${notes}`,
       dataAccessed: { notes },
     });
-    return { success: true, data: { ...parseStringify(updatedUser), lastAuditLog: auditLog?.data } };
+    return {
+      success: true,
+      data: { ...parseStringify(updatedUser), lastAuditLog: auditLog?.data },
+    };
   } catch (error) {
-    return { success: false, error: error instanceof Error ? error.message : String(error) };
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : String(error),
+    };
   }
 };
 

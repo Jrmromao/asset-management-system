@@ -23,12 +23,8 @@ export async function POST(req: NextRequest) {
         { status: 400 },
       );
     }
-    
-    console.log(
-      "[Models Import API] Processing",
-      models.length,
-      "models",
-    );
+
+    console.log("[Models Import API] Processing", models.length, "models");
 
     // Use the bulkCreate action which handles authentication and companyId extraction
     const result = await bulkCreate(models);
@@ -54,7 +50,6 @@ export async function POST(req: NextRequest) {
         errors: result.data?.errors || [],
       },
     });
-
   } catch (error) {
     console.error("Model import error:", error);
     return NextResponse.json(
@@ -62,4 +57,4 @@ export async function POST(req: NextRequest) {
       { status: 500 },
     );
   }
-} 
+}

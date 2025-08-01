@@ -28,28 +28,46 @@ interface SmartCleanupResult {
 }
 
 class SimpleSmartCleanupEngine {
-  private analyzeReportWithPath(report: any, downloads: any[], filePath: string): SmartCleanupRecommendation | null {
+  private analyzeReportWithPath(
+    report: any,
+    downloads: any[],
+    filePath: string,
+  ): SmartCleanupRecommendation | null {
     const now = new Date();
-    const reportAge = Math.floor((now.getTime() - new Date(report.generatedAt).getTime()) / (1000 * 60 * 60 * 24));
+    const reportAge = Math.floor(
+      (now.getTime() - new Date(report.generatedAt).getTime()) /
+        (1000 * 60 * 60 * 24),
+    );
     const lastDownload = downloads[0]?.downloadedAt;
-    const daysSinceLastDownload = lastDownload 
-      ? Math.floor((now.getTime() - new Date(lastDownload).getTime()) / (1000 * 60 * 60 * 24))
+    const daysSinceLastDownload = lastDownload
+      ? Math.floor(
+          (now.getTime() - new Date(lastDownload).getTime()) /
+            (1000 * 60 * 60 * 24),
+        )
       : null;
     const downloadCount = downloads.length;
     const fileSizeMB = report.fileSize || 0;
 
     // AI-powered decision logic
-    
+
     // PROTECT: Recent, frequently accessed, or business critical
-    if (reportAge <= 7 || downloadCount >= 5 || report.format === 'PDF' && downloadCount >= 2) {
+    if (
+      reportAge <= 7 ||
+      downloadCount >= 5 ||
+      (report.format === "PDF" && downloadCount >= 2)
+    ) {
       return {
         filePath,
         action: "PROTECT",
-        reasoning: this.getProtectReasoning(reportAge, downloadCount, report.format),
+        reasoning: this.getProtectReasoning(
+          reportAge,
+          downloadCount,
+          report.format,
+        ),
         confidence: 0.9,
         riskLevel: "low",
         potentialSavings: 0,
-        businessImpact: "No impact - file protected due to recent activity"
+        businessImpact: "No impact - file protected due to recent activity",
       };
     }
 
@@ -62,12 +80,16 @@ class SimpleSmartCleanupEngine {
         confidence: 0.95,
         riskLevel: "low",
         potentialSavings: fileSizeMB,
-        businessImpact: "Minimal impact - file has never been accessed"
+        businessImpact: "Minimal impact - file has never been accessed",
       };
     }
 
     // DELETE: Old with no recent access
-    if (reportAge > 180 && daysSinceLastDownload && daysSinceLastDownload > 120) {
+    if (
+      reportAge > 180 &&
+      daysSinceLastDownload &&
+      daysSinceLastDownload > 120
+    ) {
       return {
         filePath,
         action: "DELETE",
@@ -75,7 +97,7 @@ class SimpleSmartCleanupEngine {
         confidence: 0.85,
         riskLevel: "low",
         potentialSavings: fileSizeMB,
-        businessImpact: "Low impact - file not accessed recently"
+        businessImpact: "Low impact - file not accessed recently",
       };
     }
 
@@ -88,12 +110,17 @@ class SimpleSmartCleanupEngine {
         confidence: 0.8,
         riskLevel: "low",
         potentialSavings: fileSizeMB * 0.6, // Assume 60% compression
-        businessImpact: "No impact on accessibility, file remains available"
+        businessImpact: "No impact on accessibility, file remains available",
       };
     }
 
     // ARCHIVE: Moderate age with some historical value
-    if (reportAge > 90 && downloadCount > 0 && daysSinceLastDownload && daysSinceLastDownload > 60) {
+    if (
+      reportAge > 90 &&
+      downloadCount > 0 &&
+      daysSinceLastDownload &&
+      daysSinceLastDownload > 60
+    ) {
       return {
         filePath,
         action: "ARCHIVE",
@@ -101,7 +128,7 @@ class SimpleSmartCleanupEngine {
         confidence: 0.75,
         riskLevel: "medium",
         potentialSavings: fileSizeMB * 0.8, // Cost savings from cold storage
-        businessImpact: "Slower access time when needed (cold storage)"
+        businessImpact: "Slower access time when needed (cold storage)",
       };
     }
 
@@ -111,12 +138,12 @@ class SimpleSmartCleanupEngine {
 
   private getFileExtension(format: string): string {
     const extensions: Record<string, string> = {
-      'PDF': 'pdf',
-      'EXCEL': 'xlsx',
-      'CSV': 'csv',
-      'DASHBOARD': 'json'
+      PDF: "pdf",
+      EXCEL: "xlsx",
+      CSV: "csv",
+      DASHBOARD: "json",
     };
-    return extensions[format.toUpperCase()] || 'dat';
+    return extensions[format.toUpperCase()] || "dat";
   }
 
   /**
@@ -125,22 +152,30 @@ class SimpleSmartCleanupEngine {
    */
   private generateConsistentFilePath(report: any): string {
     // If the report already has a filePath, use it
-    if (report.filePath && !report.filePath.startsWith('/api/reports/download/')) {
+    if (
+      report.filePath &&
+      !report.filePath.startsWith("/api/reports/download/")
+    ) {
       return report.filePath;
     }
-    
+
     // Otherwise, construct a consistent path
-    const configName = report.configuration?.name || 'unknown';
+    const configName = report.configuration?.name || "unknown";
     const extension = this.getFileExtension(report.format);
     const reportIdSuffix = report.id.slice(-8);
-    
+
     return `reports/${configName}/${report.format.toLowerCase()}-${reportIdSuffix}.${extension}`;
   }
 
-  private getProtectReasoning(age: number, downloads: number, format: string): string {
+  private getProtectReasoning(
+    age: number,
+    downloads: number,
+    format: string,
+  ): string {
     if (age <= 7) return `Recently generated (${age} days ago)`;
     if (downloads >= 5) return `Frequently accessed (${downloads} downloads)`;
-    if (format === 'PDF' && downloads >= 2) return `Important document format with recent access`;
+    if (format === "PDF" && downloads >= 2)
+      return `Important document format with recent access`;
     return `Active file with business value`;
   }
 
@@ -156,22 +191,27 @@ class SimpleSmartCleanupEngine {
     };
   }> {
     console.log(`🔍 Starting smart cleanup analysis for company: ${companyId}`);
-    
+
     // Use executeSmartCleanup with dryRun=true to get recommendations
     const result = await this.executeSmartCleanup(companyId, [], true);
-    
+
     const summary = {
-      deleteCount: result.recommendations.filter(r => r.action === 'DELETE').length,
-      archiveCount: result.recommendations.filter(r => r.action === 'ARCHIVE').length,
-      compressCount: result.recommendations.filter(r => r.action === 'COMPRESS').length,
-      protectCount: result.recommendations.filter(r => r.action === 'PROTECT').length,
+      deleteCount: result.recommendations.filter((r) => r.action === "DELETE")
+        .length,
+      archiveCount: result.recommendations.filter((r) => r.action === "ARCHIVE")
+        .length,
+      compressCount: result.recommendations.filter(
+        (r) => r.action === "COMPRESS",
+      ).length,
+      protectCount: result.recommendations.filter((r) => r.action === "PROTECT")
+        .length,
     };
-    
+
     return {
       analyzedFiles: result.totalFilesAnalyzed,
       recommendations: result.recommendations,
       totalPotentialSavings: result.potentialSavingsMB,
-      summary
+      summary,
     };
   }
 
@@ -180,7 +220,9 @@ class SimpleSmartCleanupEngine {
     policies: CleanupPolicy[],
     dryRun: boolean = false,
   ): Promise<SmartCleanupResult> {
-    console.log(`🧠 Starting AI-powered smart cleanup analysis (dryRun: ${dryRun})`);
+    console.log(
+      `🧠 Starting AI-powered smart cleanup analysis (dryRun: ${dryRun})`,
+    );
 
     try {
       // Fetch actual reports from database
@@ -191,36 +233,37 @@ class SimpleSmartCleanupEngine {
             select: {
               name: true,
               format: true,
-            }
-          }
+            },
+          },
         },
         orderBy: {
-          generatedAt: 'desc'
-        }
+          generatedAt: "desc",
+        },
       });
 
       // Fetch download data separately
       const downloadData = await prisma.reportDownload.findMany({
         where: { companyId },
-        orderBy: { downloadedAt: 'desc' }
+        orderBy: { downloadedAt: "desc" },
       });
 
       // Fetch already protected files
       const protectedFiles = await prisma.fileProtectionRule.findMany({
-        where: { 
+        where: {
           companyId,
-          OR: [
-            { expiresAt: null },
-            { expiresAt: { gt: new Date() } }
-          ]
+          OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
         },
-        select: { filePath: true }
+        select: { filePath: true },
       });
-      
-      const protectedFilePaths = new Set(protectedFiles.map(pf => pf.filePath));
-      console.log(`🛡️ Found ${protectedFilePaths.size} already protected files`);
+
+      const protectedFilePaths = new Set(
+        protectedFiles.map((pf) => pf.filePath),
+      );
+      console.log(
+        `🛡️ Found ${protectedFilePaths.size} already protected files`,
+      );
       console.log(`🔍 Protected file paths:`, Array.from(protectedFilePaths));
-      
+
       // Debug: Show sample report data and path generation
       if (reports.length > 0) {
         const sampleReport = reports[0];
@@ -231,11 +274,13 @@ class SimpleSmartCleanupEngine {
           configName: sampleReport.configuration?.name,
           format: sampleReport.format,
           generatedPath: generatedPath,
-          isProtected: protectedFilePaths.has(generatedPath)
+          isProtected: protectedFilePaths.has(generatedPath),
         });
       }
 
-      console.log(`📊 Found ${reports.length} reports in database for analysis`);
+      console.log(
+        `📊 Found ${reports.length} reports in database for analysis`,
+      );
 
       // Generate intelligent recommendations based on actual data
       const recommendations: SmartCleanupRecommendation[] = [];
@@ -250,43 +295,60 @@ class SimpleSmartCleanupEngine {
           potentialSavingsMB: 0,
           protectedFiles: 0,
           spaceSaved: 0,
-          warnings
+          warnings,
         };
       }
 
       for (const report of reports) {
-        const reportDownloads = downloadData.filter(d => d.filePath.includes(report.id));
-        
+        const reportDownloads = downloadData.filter((d) =>
+          d.filePath.includes(report.id),
+        );
+
         // Generate a consistent filePath for this report
         const filePath = this.generateConsistentFilePath(report);
-        
+
         // Debug: Log the file path and check protection
-        console.log(`📁 Analyzing file: ${filePath} (original: ${report.filePath || 'none'})`);
+        console.log(
+          `📁 Analyzing file: ${filePath} (original: ${report.filePath || "none"})`,
+        );
         console.log(`🔍 Is protected? ${protectedFilePaths.has(filePath)}`);
-        
+
         // Skip files that are already protected
         if (protectedFilePaths.has(filePath)) {
           console.log(`⏭️ Skipping already protected file: ${filePath}`);
           skippedProtectedCount++;
           continue;
         }
-        
-        const recommendation = this.analyzeReportWithPath(report, reportDownloads, filePath);
+
+        const recommendation = this.analyzeReportWithPath(
+          report,
+          reportDownloads,
+          filePath,
+        );
         if (recommendation) {
           recommendations.push(recommendation);
         }
       }
 
       // Summary of filtering
-      console.log(`📊 Filtering summary: ${reports.length} total files, ${skippedProtectedCount} skipped (protected), ${recommendations.length} recommendations generated`);
+      console.log(
+        `📊 Filtering summary: ${reports.length} total files, ${skippedProtectedCount} skipped (protected), ${recommendations.length} recommendations generated`,
+      );
 
       const result: SmartCleanupResult = {
         totalFilesAnalyzed: reports.length,
         recommendations,
-        potentialSavingsMB: recommendations.reduce((sum, rec) => sum + rec.potentialSavings, 0),
-        protectedFiles: recommendations.filter(rec => rec.action === "PROTECT").length,
-        spaceSaved: dryRun ? 0 : recommendations.reduce((sum, rec) => sum + rec.potentialSavings, 0),
-        warnings
+        potentialSavingsMB: recommendations.reduce(
+          (sum, rec) => sum + rec.potentialSavings,
+          0,
+        ),
+        protectedFiles: recommendations.filter(
+          (rec) => rec.action === "PROTECT",
+        ).length,
+        spaceSaved: dryRun
+          ? 0
+          : recommendations.reduce((sum, rec) => sum + rec.potentialSavings, 0),
+        warnings,
       };
 
       console.log(`✅ AI-powered cleanup analysis complete:`, {
@@ -294,7 +356,7 @@ class SimpleSmartCleanupEngine {
         recommendations: result.recommendations.length,
         potentialSavings: result.potentialSavingsMB,
         protectedFiles: result.protectedFiles,
-        skippedProtected: skippedProtectedCount
+        skippedProtected: skippedProtectedCount,
       });
 
       return result;
@@ -306,4 +368,4 @@ class SimpleSmartCleanupEngine {
 }
 
 // Export service instance
-export const smartCleanupEngine = new SimpleSmartCleanupEngine(); 
+export const smartCleanupEngine = new SimpleSmartCleanupEngine();

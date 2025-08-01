@@ -40,11 +40,14 @@ export const peopleColumns = ({
           <Avatar className="h-8 w-8 border border-gray-200">
             <AvatarImage src={user.images || undefined} alt={user.name} />
             <AvatarFallback className="text-xs font-medium bg-gray-50">
-              {user.firstName?.[0]}{user.lastName?.[0]}
+              {user.firstName?.[0]}
+              {user.lastName?.[0]}
             </AvatarFallback>
           </Avatar>
           <div className="flex flex-col min-w-0">
-            <span className="font-medium text-sm text-gray-900 truncate">{user.name}</span>
+            <span className="font-medium text-sm text-gray-900 truncate">
+              {user.name}
+            </span>
             <span className="text-xs text-gray-500 truncate">{user.email}</span>
           </div>
         </div>
@@ -59,7 +62,9 @@ export const peopleColumns = ({
       const employeeId = row.original.employeeId;
       return (
         <div className="flex flex-col py-2">
-          <span className="text-sm font-medium text-gray-900">{title || "—"}</span>
+          <span className="text-sm font-medium text-gray-900">
+            {title || "—"}
+          </span>
           {employeeId && (
             <span className="text-xs text-gray-500">ID: {employeeId}</span>
           )}
@@ -72,28 +77,28 @@ export const peopleColumns = ({
     header: "Role",
     cell: ({ row }) => {
       const role = row.original.role;
-      
+
       const getRoleVariant = (roleName: string) => {
         const name = roleName?.toLowerCase();
-        if (name?.includes('admin') || name?.includes('super')) {
-          return 'destructive' as const; // Red for admin roles
+        if (name?.includes("admin") || name?.includes("super")) {
+          return "destructive" as const; // Red for admin roles
         }
-        if (name?.includes('manager') || name?.includes('lead')) {
-          return 'default' as const; // Blue for manager roles
+        if (name?.includes("manager") || name?.includes("lead")) {
+          return "default" as const; // Blue for manager roles
         }
-        if (name?.includes('user') || name?.includes('employee')) {
-          return 'secondary' as const; // Gray for regular users
+        if (name?.includes("user") || name?.includes("employee")) {
+          return "secondary" as const; // Gray for regular users
         }
-        if (name?.includes('lonee')) {
-          return 'outline' as const; // Outline for lonee
+        if (name?.includes("lonee")) {
+          return "outline" as const; // Outline for lonee
         }
-        return 'outline' as const; // Default for other roles
+        return "outline" as const; // Default for other roles
       };
-      
+
       return (
         <div className="py-2">
-          <Badge 
-            variant={getRoleVariant(role?.name)} 
+          <Badge
+            variant={getRoleVariant(role?.name)}
             className="text-xs font-medium"
           >
             {role?.name || "—"}
@@ -109,7 +114,7 @@ export const peopleColumns = ({
       const user = row.original;
       const isActive = user.active;
       const status = user.status;
-      
+
       const getStatusInfo = () => {
         if (!isActive) {
           return {
@@ -117,19 +122,19 @@ export const peopleColumns = ({
             variant: "secondary" as const,
           };
         }
-        
+
         switch (status) {
-          case 'ACTIVE':
+          case "ACTIVE":
             return {
               label: "Active",
               variant: "default" as const,
             };
-          case 'INVITED':
+          case "INVITED":
             return {
               label: "Invited",
               variant: "outline" as const,
             };
-          case 'DISABLED':
+          case "DISABLED":
             return {
               label: "Disabled",
               variant: "destructive" as const,
@@ -141,9 +146,9 @@ export const peopleColumns = ({
             };
         }
       };
-      
+
       const statusInfo = getStatusInfo();
-      
+
       return (
         <div className="py-2">
           <Badge variant={statusInfo.variant} className="text-xs">
@@ -159,7 +164,7 @@ export const peopleColumns = ({
     cell: ({ row }) => {
       const date = new Date(row.getValue("createdAt"));
       const formattedDate = date.toLocaleDateString();
-      
+
       return (
         <div className="py-2">
           <span className="text-sm text-gray-600">{formattedDate}</span>

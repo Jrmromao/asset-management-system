@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     if (!assetsRes.success || !assetsRes.data || assetsRes.data.length === 0) {
       return NextResponse.json(
         { error: "No assets found. Please create some assets first." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -90,7 +90,6 @@ export async function POST(request: NextRequest) {
         configurationId: testConfiguration.id,
       },
     });
-
   } catch (error) {
     console.error("Error creating test report:", error);
     return NextResponse.json(
@@ -98,7 +97,7 @@ export async function POST(request: NextRequest) {
         success: false,
         error: error instanceof Error ? error.message : "Internal server error",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
-} 
+}

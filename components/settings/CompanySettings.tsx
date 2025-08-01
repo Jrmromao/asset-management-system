@@ -47,14 +47,20 @@ import { useCompanyQuery } from "@/hooks/queries/useCompanyQuery";
 import { useBillingOverviewQuery } from "@/hooks/queries/useBillingOverviewQuery";
 import { toast } from "sonner";
 import { hasPermission, Permission } from "@/lib/utils/permissions";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import SustainabilityTargets from "@/components/settings/SustainabilityTargets";
 
 function ProfileTab({ userRole }: { userRole?: string }) {
   const canEdit = hasPermission(userRole, "company.settings");
   const [isEditing, setIsEditing] = useState(false);
-  const { companies, isLoading, error, refresh, updateCompany, isCreating } = useCompanyQuery();
+  const { companies, isLoading, error, refresh, updateCompany, isCreating } =
+    useCompanyQuery();
   const [form, setForm] = useState({
     name: "",
     industry: "Technology",
@@ -78,7 +84,9 @@ function ProfileTab({ userRole }: { userRole?: string }) {
         logoUrl: company.logoUrl || "/logo-placeholder.png",
         employeeCount: company.employeeCount ?? 0,
         updatedBy: company.updatedBy || "",
-        updatedAt: company.updatedAt ? new Date(company.updatedAt).toLocaleString() : "",
+        updatedAt: company.updatedAt
+          ? new Date(company.updatedAt).toLocaleString()
+          : "",
       });
     }
   }, [companies]);
@@ -102,11 +110,14 @@ function ProfileTab({ userRole }: { userRole?: string }) {
         const company = companies[0];
         const updateData: any = {};
         if (form.name !== company.name) updateData.name = form.name;
-        if (form.industry !== company.industry) updateData.industry = form.industry;
+        if (form.industry !== company.industry)
+          updateData.industry = form.industry;
         if (form.website !== company.website) updateData.website = form.website;
-        if (form.primaryContactEmail !== company.primaryContactEmail) updateData.primaryContactEmail = form.primaryContactEmail;
+        if (form.primaryContactEmail !== company.primaryContactEmail)
+          updateData.primaryContactEmail = form.primaryContactEmail;
         if (form.logoUrl !== company.logoUrl) updateData.logoUrl = form.logoUrl;
-        if (form.employeeCount !== company.employeeCount) updateData.employeeCount = form.employeeCount;
+        if (form.employeeCount !== company.employeeCount)
+          updateData.employeeCount = form.employeeCount;
         if (Object.keys(updateData).length > 0) {
           await updateCompany(company.id, updateData);
           toast.success("Profile updated successfully");
@@ -162,7 +173,9 @@ function ProfileTab({ userRole }: { userRole?: string }) {
                     disabled={!canEdit || !isEditing}
                     aria-label="Industry"
                   >
-                    <SelectTrigger className={`bg-white border border-slate-300 rounded-lg px-3 py-2 mt-1 transition-all duration-150 focus:outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-100 ${isEditing && canEdit ? "shadow-md" : ""}`}>
+                    <SelectTrigger
+                      className={`bg-white border border-slate-300 rounded-lg px-3 py-2 mt-1 transition-all duration-150 focus:outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-100 ${isEditing && canEdit ? "shadow-md" : ""}`}
+                    >
                       <SelectValue placeholder="Select industry" />
                     </SelectTrigger>
                     <SelectContent>
@@ -174,7 +187,9 @@ function ProfileTab({ userRole }: { userRole?: string }) {
                     </SelectContent>
                   </Select>
                 </TooltipTrigger>
-                <TooltipContent>Industry sector your company operates in</TooltipContent>
+                <TooltipContent>
+                  Industry sector your company operates in
+                </TooltipContent>
               </Tooltip>
             </TooltipProvider>
           </div>
@@ -212,7 +227,9 @@ function ProfileTab({ userRole }: { userRole?: string }) {
                     className={`bg-white border border-slate-300 rounded-lg px-3 py-2 mt-1 transition-all duration-150 focus:outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-100 ${isEditing && canEdit ? "shadow-md" : ""}`}
                   />
                 </TooltipTrigger>
-                <TooltipContent>Primary contact for company communications</TooltipContent>
+                <TooltipContent>
+                  Primary contact for company communications
+                </TooltipContent>
               </Tooltip>
             </TooltipProvider>
           </div>
@@ -368,7 +385,7 @@ function BillingTab() {
           </span>
         </div>
         {/* Billing History */}
-    <div>
+        <div>
           <div className="font-semibold mb-2 flex items-center gap-2">
             <Receipt className="w-5 h-5" /> Billing History
           </div>
@@ -469,8 +486,8 @@ function GDPRTab({ userRole }: { userRole?: string }) {
       </CardHeader>
       <CardContent>
         <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded text-yellow-800 flex items-center gap-2">
-          <span className="font-semibold">Coming Soon:</span> GDPR and
-          privacy management will be available in the next version.
+          <span className="font-semibold">Coming Soon:</span> GDPR and privacy
+          management will be available in the next version.
         </div>
       </CardContent>
       <CardFooter className="border-t bg-slate-50 px-6 py-4 flex justify-end"></CardFooter>
@@ -480,11 +497,36 @@ function GDPRTab({ userRole }: { userRole?: string }) {
 
 const ALL_TABS = [
   { id: "profile", label: "Profile", icon: User, permission: undefined },
-  { id: "billing", label: "Billing", icon: CreditCard, permission: "company.billing" as Permission },
-  { id: "gdpr", label: "GDPR & Privacy", icon: FileText, permission: "company.settings" as Permission },
-  { id: "sustainability", label: "Sustainability", icon: Leaf, permission: "company.settings" as Permission },
-  { id: "integrations", label: "Integrations", icon: Plug, permission: "company.settings" as Permission },
-  { id: "security", label: "Security", icon: Shield, permission: "company.settings" as Permission },
+  {
+    id: "billing",
+    label: "Billing",
+    icon: CreditCard,
+    permission: "company.billing" as Permission,
+  },
+  {
+    id: "gdpr",
+    label: "GDPR & Privacy",
+    icon: FileText,
+    permission: "company.settings" as Permission,
+  },
+  {
+    id: "sustainability",
+    label: "Sustainability",
+    icon: Leaf,
+    permission: "company.settings" as Permission,
+  },
+  {
+    id: "integrations",
+    label: "Integrations",
+    icon: Plug,
+    permission: "company.settings" as Permission,
+  },
+  {
+    id: "security",
+    label: "Security",
+    icon: Shield,
+    permission: "company.settings" as Permission,
+  },
 ];
 
 const TAB_COMPONENTS: Record<string, React.FC> = {
@@ -516,13 +558,13 @@ const CompanySettings: React.FC = () => {
   }, []);
 
   // Filter tabs based on permission
-  const TABS = ALL_TABS.filter(tab =>
-    !tab.permission || hasPermission(userRole, tab.permission)
+  const TABS = ALL_TABS.filter(
+    (tab) => !tab.permission || hasPermission(userRole, tab.permission),
   );
 
   // If the current activeTab is not allowed, reset to first allowed tab
   useEffect(() => {
-    if (!TABS.find(tab => tab.id === activeTab)) {
+    if (!TABS.find((tab) => tab.id === activeTab)) {
       setActiveTab(TABS[0]?.id || "profile");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -557,7 +599,9 @@ const CompanySettings: React.FC = () => {
                   <AvatarFallback>{company?.name?.[0]}</AvatarFallback>
                 </Avatar>
               )}
-              <span className="font-bold text-lg">{company?.name || "Company"}</span>
+              <span className="font-bold text-lg">
+                {company?.name || "Company"}
+              </span>
             </div>
             <nav className="flex flex-col gap-3">
               {TABS.map((tab) => {
@@ -600,7 +644,9 @@ const CompanySettings: React.FC = () => {
           <main className="flex-1 px-2 py-4 md:px-12 md:py-16">
             <div className="max-w-full md:max-w-3xl mx-auto space-y-8 md:space-y-12">
               <div className="bg-white rounded-2xl shadow-lg p-4 md:p-12">
-                <h1 className="text-2xl md:text-3xl font-bold mb-2">Company Settings</h1>
+                <h1 className="text-2xl md:text-3xl font-bold mb-2">
+                  Company Settings
+                </h1>
                 <p className="text-slate-500 mb-6 md:mb-8">
                   Manage your company’s settings and preferences.
                 </p>
@@ -612,7 +658,9 @@ const CompanySettings: React.FC = () => {
                 ) : activeTab === "sustainability" ? (
                   <div className="space-y-8 md:space-y-12">
                     <section>
-                      <h2 className="text-lg md:text-xl font-semibold mb-4">Sustainability Targets</h2>
+                      <h2 className="text-lg md:text-xl font-semibold mb-4">
+                        Sustainability Targets
+                      </h2>
                       <SustainabilityTargets />
                     </section>
                   </div>

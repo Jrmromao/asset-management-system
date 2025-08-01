@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     if (!assetsRes.success || !assetsRes.data || assetsRes.data.length === 0) {
       return NextResponse.json(
         { error: "No company found. Please ensure you have assets created." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
         success: false,
         error: error instanceof Error ? error.message : "Internal server error",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -74,7 +74,10 @@ export async function PATCH(request: NextRequest) {
     const body = await request.json();
     const { id, restore } = body;
     if (!id) {
-      return NextResponse.json({ error: "Report ID is required" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Report ID is required" },
+        { status: 400 },
+      );
     }
 
     // If restore is true, set status to 'active', else 'archived'
@@ -91,7 +94,7 @@ export async function PATCH(request: NextRequest) {
         success: false,
         error: error instanceof Error ? error.message : "Internal server error",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -106,7 +109,10 @@ export async function DELETE(request: NextRequest) {
     const body = await request.json();
     const { id } = body;
     if (!id) {
-      return NextResponse.json({ error: "Report ID is required" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Report ID is required" },
+        { status: 400 },
+      );
     }
 
     await prisma.generatedReport.delete({ where: { id } });
@@ -118,7 +124,7 @@ export async function DELETE(request: NextRequest) {
         success: false,
         error: error instanceof Error ? error.message : "Internal server error",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getAllAssets, createAsset, getMaintenanceDueCount } from "@/lib/actions/assets.actions";
+import {
+  getAllAssets,
+  createAsset,
+  getMaintenanceDueCount,
+} from "@/lib/actions/assets.actions";
 import { auth } from "@clerk/nextjs/server";
 import { assetListQuerySchema } from "@/lib/schemas";
 
@@ -29,10 +33,14 @@ export async function GET(request: Request) {
     // Validate and coerce types
     const parsed = assetListQuerySchema.safeParse(params);
     if (!parsed.success) {
-      return NextResponse.json({ error: parsed.error.flatten().fieldErrors }, { status: 400 });
+      return NextResponse.json(
+        { error: parsed.error.flatten().fieldErrors },
+        { status: 400 },
+      );
     }
     // Parse pagination and filters
-    const { page, pageSize, search, sort, status, department, model } = parsed.data;
+    const { page, pageSize, search, sort, status, department, model } =
+      parsed.data;
     const pageNum = page ? parseInt(page, 10) : 1;
     const pageSizeNum = pageSize ? parseInt(pageSize, 10) : 10;
     const assetsResponse = await getAllAssets({
@@ -50,7 +58,11 @@ export async function GET(request: Request) {
         { status: 500 },
       );
     }
-    const pagination = (assetsResponse.data as any)?._pagination || { total: 0, page: 1, pageSize: 10 };
+    const pagination = (assetsResponse.data as any)?._pagination || {
+      total: 0,
+      page: 1,
+      pageSize: 10,
+    };
     // Get maintenance due count for this company
     const maintenanceDue = await getMaintenanceDueCount(orgId);
     return NextResponse.json({

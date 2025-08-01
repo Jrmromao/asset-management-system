@@ -196,14 +196,18 @@ export async function generateAssetInsights(
 
     // Check if AI providers are available
     if (availableProviders.length === 0) {
-      console.log("⚠️ AI Analytics Service: No AI providers available, using mock data");
+      console.log(
+        "⚠️ AI Analytics Service: No AI providers available, using mock data",
+      );
       const mockAnalysis = generateMockAnalysisData(assetData);
-      
+
       // Store the mock analysis for tracking
       console.log("💾 AI Analytics Service: Storing mock analysis");
       await storeAssetAnalysis(user.companyId, mockAnalysis);
-      
-      console.log("🎉 AI Analytics Service: Mock analysis completed successfully");
+
+      console.log(
+        "🎉 AI Analytics Service: Mock analysis completed successfully",
+      );
       return { success: true, data: mockAnalysis };
     }
 
@@ -216,7 +220,7 @@ export async function generateAssetInsights(
     const aiResponse = await aiService.calculateAssetCO2WithFallback(
       prompt,
       "AI Asset Analytics",
-      "Asset Management System"
+      "Asset Management System",
     );
 
     if (!aiResponse.success) {
@@ -321,27 +325,27 @@ export async function generateMaintenanceInsights(
     const aiResponse = await aiService.calculateAssetCO2WithFallback(
       prompt,
       "AI Maintenance Analytics",
-      "Asset Management System"
+      "Asset Management System",
     );
 
     if (!aiResponse.success) {
       console.log("❌ Maintenance Analytics: AI call failed, using mock data");
-      return { 
-        success: true, 
+      return {
+        success: true,
         data: {
           maintenanceRecommendations: [],
           costAnalysis: {
             totalMaintenanceCost: 0,
             preventiveCost: 0,
             correctiveCost: 0,
-            potentialSavings: 0
+            potentialSavings: 0,
           },
           performanceMetrics: {
             averageUptime: 95,
             maintenanceEfficiency: 80,
-            costPerAsset: 150
-          }
-        }
+            costPerAsset: 150,
+          },
+        },
       };
     }
 
@@ -405,16 +409,16 @@ export async function detectAssetAnomalies(
     const aiResponse = await aiService.calculateAssetCO2WithFallback(
       prompt,
       "AI Anomaly Detection",
-      "Asset Management System"
+      "Asset Management System",
     );
 
     if (!aiResponse.success) {
       console.log("❌ Anomaly Detection: AI call failed, using mock data");
-      return { 
-        success: true, 
+      return {
+        success: true,
         data: {
-          anomalies: []
-        }
+          anomalies: [],
+        },
       };
     }
 
@@ -433,7 +437,7 @@ export async function detectAssetAnomalies(
 function generateMockAnalysisData(assetData: any): AIAnalyticsData {
   const totalAssets = assetData.assets?.total || 0;
   const activeAssets = Math.floor(totalAssets * 0.85);
-  
+
   return {
     insights: [
       {
@@ -443,35 +447,40 @@ function generateMockAnalysisData(assetData: any): AIAnalyticsData {
         description: `${Math.floor(totalAssets * 0.15)} laptops show low usage patterns and could be reassigned to optimize utilization.`,
         severity: "medium",
         impact: 7,
-        recommendation: "Consider redistributing underutilized laptops to departments with higher demand or evaluate for replacement cycle optimization.",
+        recommendation:
+          "Consider redistributing underutilized laptops to departments with higher demand or evaluate for replacement cycle optimization.",
         affectedAssets: Math.floor(totalAssets * 0.15),
         potentialSavings: 2500,
-        timeframe: "short-term"
+        timeframe: "short-term",
       },
       {
         id: "insight-2",
         type: "cost",
         title: "License Optimization Opportunity",
-        description: "Several software licenses are approaching renewal with potential for volume discounts.",
+        description:
+          "Several software licenses are approaching renewal with potential for volume discounts.",
         severity: "low",
         impact: 5,
-        recommendation: "Consolidate license purchases and negotiate volume discounts with vendors.",
+        recommendation:
+          "Consolidate license purchases and negotiate volume discounts with vendors.",
         affectedAssets: Math.floor(totalAssets * 0.3),
         potentialSavings: 1200,
-        timeframe: "medium-term"
+        timeframe: "medium-term",
       },
       {
         id: "insight-3",
         type: "lifecycle",
         title: "Asset Replacement Planning",
-        description: "Multiple assets are approaching end-of-life and should be included in replacement planning.",
+        description:
+          "Multiple assets are approaching end-of-life and should be included in replacement planning.",
         severity: "high",
         impact: 8,
-        recommendation: "Develop a structured replacement plan for aging assets to prevent disruption.",
+        recommendation:
+          "Develop a structured replacement plan for aging assets to prevent disruption.",
         affectedAssets: Math.floor(totalAssets * 0.12),
         potentialSavings: 0,
-        timeframe: "long-term"
-      }
+        timeframe: "long-term",
+      },
     ],
     utilization: [
       {
@@ -479,29 +488,29 @@ function generateMockAnalysisData(assetData: any): AIAnalyticsData {
         utilized: Math.floor(totalAssets * 0.4 * 0.82),
         total: Math.floor(totalAssets * 0.4),
         trend: "stable",
-        value: 82
+        value: 82,
       },
       {
         category: "Desktops",
         utilized: Math.floor(totalAssets * 0.3 * 0.75),
         total: Math.floor(totalAssets * 0.3),
         trend: "down",
-        value: 75
+        value: 75,
       },
       {
         category: "Licenses",
         utilized: Math.floor(totalAssets * 0.2 * 0.91),
         total: Math.floor(totalAssets * 0.2),
         trend: "up",
-        value: 91
+        value: 91,
       },
       {
         category: "Accessories",
         utilized: Math.floor(totalAssets * 0.1 * 0.68),
         total: Math.floor(totalAssets * 0.1),
         trend: "stable",
-        value: 68
-      }
+        value: 68,
+      },
     ],
     lifecycle: [
       {
@@ -512,20 +521,22 @@ function generateMockAnalysisData(assetData: any): AIAnalyticsData {
         replacementRecommendation: {
           timeframe: "1 year",
           confidence: 85,
-          reasoning: "Asset approaching optimal replacement window based on performance degradation patterns"
-        }
+          reasoning:
+            "Asset approaching optimal replacement window based on performance degradation patterns",
+        },
       },
       {
-        assetId: "asset-2", 
+        assetId: "asset-2",
         assetName: "HP Desktop #002",
         currentAge: 4.1,
         predictedRemainingLife: 0.9,
         replacementRecommendation: {
           timeframe: "6 months",
           confidence: 92,
-          reasoning: "High usage patterns indicate accelerated wear; replacement recommended before warranty expiration"
-        }
-      }
+          reasoning:
+            "High usage patterns indicate accelerated wear; replacement recommended before warranty expiration",
+        },
+      },
     ],
     anomalies: [
       {
@@ -533,25 +544,27 @@ function generateMockAnalysisData(assetData: any): AIAnalyticsData {
         assetName: "MacBook Pro #003",
         anomalyType: "usage",
         severity: "medium",
-        description: "Unusual spike in resource usage detected over the past 30 days",
-        detectedAt: new Date().toISOString()
+        description:
+          "Unusual spike in resource usage detected over the past 30 days",
+        detectedAt: new Date().toISOString(),
       },
       {
         id: "anomaly-2",
         assetName: "Software License #004",
         anomalyType: "cost",
         severity: "low",
-        description: "License cost variance detected compared to similar assets",
-        detectedAt: new Date().toISOString()
-      }
+        description:
+          "License cost variance detected compared to similar assets",
+        detectedAt: new Date().toISOString(),
+      },
     ],
     summary: {
       totalAssets,
       activeAssets,
       utilizationRate: 78,
       costOptimizationOpportunities: 3,
-      maintenanceAlerts: 2
-    }
+      maintenanceAlerts: 2,
+    },
   };
 }
 
@@ -614,7 +627,8 @@ async function getComprehensiveAssetData(companyId: string) {
   return {
     assets: {
       total: assets.length,
-      active: assets.filter((a) => a.statusLabelId !== "disposed-status-id").length, // Need to check by ID instead
+      active: assets.filter((a) => a.statusLabelId !== "disposed-status-id")
+        .length, // Need to check by ID instead
       byCategory: assets.reduce(
         (acc, asset) => {
           const category = "Uncategorized"; // Need to include category relation or get by ID
