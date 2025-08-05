@@ -8,7 +8,7 @@ import { createAuditLog } from "@/lib/actions/auditLog.actions";
 const requiredEnvVars = {
   STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
   STRIPE_PRICE_ID: process.env.STRIPE_PRICE_ID,
-  NEXTAUTH_URL: process.env.NEXTAUTH_URL,
+  NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
 } as const;
 
 // Type-safe validation
@@ -95,6 +95,29 @@ export async function createCheckoutSession({
         error instanceof Error
           ? error.message
           : "Failed to create checkout session",
+    };
+  }
+}
+
+export async function createCustomerPortalSession(
+  customerId: string,
+  returnUrl: string,
+): Promise<{ success: boolean; url?: string; error?: string }> {
+  try {
+    const session = await stripe.billingPortal.sessions.create({
+      customer: customerId,
+      return_url: returnUrl,
+    });
+
+    return { success: true, url: session.url };
+  } catch (error) {
+    console.error("Error creating customer portal session:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to create portal session",
     };
   }
 }

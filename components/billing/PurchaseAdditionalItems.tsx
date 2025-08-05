@@ -142,7 +142,7 @@ export function PurchaseAdditionalItems({
           Purchase Additional Items
         </CardTitle>
         <CardDescription>
-          Add more assets or users to your subscription as needed.
+          Add more items or users to your subscription as needed.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -150,7 +150,7 @@ export function PurchaseAdditionalItems({
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="assets" className="flex items-center gap-2">
               <Package className="h-4 w-4" />
-              Assets
+              Items
             </TabsTrigger>
             <TabsTrigger value="users" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
@@ -161,7 +161,7 @@ export function PurchaseAdditionalItems({
           <TabsContent value="assets" className="space-y-4">
             <div className="space-y-4">
               <div>
-                <Label htmlFor="additional-assets">Additional Assets</Label>
+                <Label htmlFor="additional-assets">Additional Items</Label>
                 <div className="flex items-center gap-2 mt-1">
                   <Input
                     id="additional-assets"
@@ -184,16 +184,14 @@ export function PurchaseAdditionalItems({
                   <span className="text-sm text-muted-foreground">
                     Current quota:
                   </span>
-                  <span className="font-medium">
-                    {currentAssetQuota} assets
-                  </span>
+                  <span className="font-medium">{currentAssetQuota} items</span>
                 </div>
                 <div className="flex justify-between items-center mt-1">
                   <span className="text-sm text-muted-foreground">
                     New quota:
                   </span>
                   <span className="font-medium">
-                    {currentAssetQuota + additionalAssets} assets
+                    {currentAssetQuota + additionalAssets} items
                   </span>
                 </div>
                 <div className="flex justify-between items-center mt-2 pt-2 border-t">
@@ -215,7 +213,7 @@ export function PurchaseAdditionalItems({
                 ) : (
                   <>
                     <Package className="mr-2 h-4 w-4" />
-                    Purchase {additionalAssets} Additional Assets
+                    Purchase {additionalAssets} Additional Items
                   </>
                 )}
               </Button>

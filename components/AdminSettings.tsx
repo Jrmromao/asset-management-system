@@ -26,6 +26,7 @@ import {
   UserCheck,
   Mail,
   UserX,
+  ChevronLeft,
 } from "lucide-react";
 import {
   useDepartmentQuery,
@@ -652,7 +653,6 @@ const AdminSettings = ({ activeTab: initialActiveTab }: AdminSettingsProps) => {
       deleteStatusLabel,
       deleteInventory,
       deleteFormTemplate,
-      deleteUser,
       deleteSupplier,
     ],
   );
@@ -858,10 +858,6 @@ const AdminSettings = ({ activeTab: initialActiveTab }: AdminSettingsProps) => {
       closeFormTemplate,
       setEditingFormTemplate,
       isFormTemplateOpen,
-      editingUser,
-      closeUser,
-      setEditingUser,
-      isUserOpen,
       editingSupplier,
       closeSupplier,
       setEditingSupplier,
@@ -1296,15 +1292,38 @@ const AdminSettings = ({ activeTab: initialActiveTab }: AdminSettingsProps) => {
         <div className="px-6 pb-8">
           <div className="flex flex-col xl:flex-row gap-6">
             {/* Navigation Sidebar */}
-            <div className="xl:w-80 space-y-2">
+            <div
+              className={`space-y-2 transition-all duration-300 ${configAreasCollapsed ? "xl:w-20" : "xl:w-80"}`}
+            >
               <div className="bg-white rounded-2xl border border-gray-200/60 shadow-sm overflow-hidden sticky top-6">
                 <div className="p-4 border-b border-gray-100">
-                  <h3 className="font-medium flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-slate-600" />
-                    <span className="text-gray-900 font-medium">
-                      Configuration Areas
-                    </span>
-                  </h3>
+                  <div className="flex items-center justify-between">
+                    {!configAreasCollapsed && (
+                      <h3 className="font-medium flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 text-slate-600" />
+                        <span className="text-gray-900 font-medium">
+                          Configuration Areas
+                        </span>
+                      </h3>
+                    )}
+                    <button
+                      onClick={() =>
+                        setConfigAreasCollapsed(!configAreasCollapsed)
+                      }
+                      className={`p-1 rounded-lg hover:bg-gray-100 transition-colors ${configAreasCollapsed ? "mx-auto" : ""}`}
+                      aria-label={
+                        configAreasCollapsed
+                          ? "Expand sidebar"
+                          : "Collapse sidebar"
+                      }
+                    >
+                      {configAreasCollapsed ? (
+                        <ChevronRight className="w-4 h-4 text-gray-600" />
+                      ) : (
+                        <ChevronLeft className="w-4 h-4 text-gray-600" />
+                      )}
+                    </button>
+                  </div>
                 </div>
                 <div className="p-2">
                   {TABS.map((tab) => {
@@ -1318,7 +1337,7 @@ const AdminSettings = ({ activeTab: initialActiveTab }: AdminSettingsProps) => {
                           isActive
                             ? "bg-slate-900 text-white shadow-lg shadow-slate-900/20"
                             : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
-                        }`}
+                        } ${configAreasCollapsed ? "justify-center px-2" : ""}`}
                       >
                         <div
                           className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
@@ -1331,7 +1350,7 @@ const AdminSettings = ({ activeTab: initialActiveTab }: AdminSettingsProps) => {
                             className={`w-4 h-4 ${isActive ? "text-white" : "text-gray-600"}`}
                           />
                         </div>
-                        {!sidebarCollapsed && (
+                        {!configAreasCollapsed && (
                           <>
                             <div className="flex-1 text-left">
                               <div
