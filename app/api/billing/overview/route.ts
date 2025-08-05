@@ -1,23 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/app/db";
-import Stripe from "stripe";
 import { auth } from "@clerk/nextjs/server";
 import { clerkClient } from "@clerk/nextjs/server";
+import { prisma } from "@/app/db";
+import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2024-06-20",
 });
 
-export async function GET(request: NextRequest) {
+export async function GET(req: NextRequest) {
   try {
-    // Get user from Clerk
     const { userId } = await auth();
-    if (!userId) {
-      console.log("[Billing API] No userId found");
-      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-    }
 
-    console.log("[Billing API] User ID:", userId);
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     // Get user metadata to find company
     const clerk = await clerkClient();
@@ -36,7 +33,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Find company by ID
+    // Find the company
     const company = await prisma.company.findUnique({
       where: { id: companyId },
     });
@@ -67,6 +64,29 @@ export async function GET(request: NextRequest) {
 
     console.log("[Billing API] Subscription found:", !!subscription);
 
+    // Get Stripe subscription details if available
+    let stripeSubscription = null;
+    let stripeCustomer = null;
+
+    if (subscription?.stripeCustomerId) {
+      try {
+        // Get Stripe customer
+        stripeCustomer = await stripe.customers.retrieve(
+          subscription.stripeCustomerId,
+        );
+
+        // Get Stripe subscription
+        if (subscription.stripeSubscriptionId) {
+          stripeSubscription = await stripe.subscriptions.retrieve(
+            subscription.stripeSubscriptionId,
+          );
+        }
+      } catch (stripeError) {
+        console.error("[Billing API] Stripe error:", stripeError);
+        // Continue without Stripe data if there's an error
+      }
+    }
+
     // Return billing overview with or without subscription
     const billingOverview = {
       company: {
@@ -82,6 +102,12 @@ export async function GET(request: NextRequest) {
             billingCycle: subscription.billingCycle,
             trialEndsAt: subscription.trialEndsAt,
             plan: subscription.pricingPlan,
+            stripe: {
+              customerId: subscription.stripeCustomerId,
+              subscriptionId: subscription.stripeSubscriptionId,
+              stripeSubscription: stripeSubscription,
+              stripeCustomer: stripeCustomer,
+            },
           }
         : null,
       usage: {
@@ -100,7 +126,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error("[Billing Overview API]", error);
     return NextResponse.json(
-      { error: "Failed to load billing overview" },
+      { error: "Internal server error" },
       { status: 500 },
     );
   }
