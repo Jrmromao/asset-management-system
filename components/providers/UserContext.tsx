@@ -26,6 +26,7 @@ export interface RegistrationData {
   password: string;
   clerkUserId?: string;
   status?: string;
+  plan?: string; // Add plan information
 }
 
 interface UserContextType {

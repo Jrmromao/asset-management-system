@@ -10,6 +10,7 @@ import {
   Star,
   Brain,
   Zap,
+  Sparkles,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -37,21 +38,21 @@ const Hero = () => {
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           {/* Left Column - Content */}
           <div className="text-center lg:text-left">
-            {/* Social Proof Badge */}
+            {/* Beta Badge */}
             <motion.div
               initial={{ opacity: 0, scale: 0.8 }}
               whileInView={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5 }}
-              className="inline-flex items-center gap-2 bg-emerald-100 text-emerald-800 px-4 py-2 rounded-full text-sm font-medium mb-6"
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-blue-500 text-white px-4 py-2 rounded-full text-sm font-medium mb-6"
             >
-              <Star className="w-4 h-4" />
+              <Sparkles className="w-4 h-4" />
               <span className="hidden sm:inline">
-                AI-Powered Carbon Tracking
+                Beta Launch - Early Access
               </span>
-              <span className="sm:hidden">AI-Powered</span>
+              <span className="sm:hidden">Beta Launch</span>
             </motion.div>
 
-            {/* Main Headline - Benefit Focused */}
+            {/* Main Headline - Beta Focused */}
             <motion.h1
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -60,25 +61,29 @@ const Hero = () => {
               className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-6 leading-tight"
             >
               <span className="text-gray-900">
-                Stop Manual Carbon Calculations.
+                The Future of Asset Management
               </span>
               <br />
               <span className="text-emerald-600">
-                Get Results in 5 Seconds.
+                AI-Powered & Carbon Conscious
               </span>
             </motion.h1>
 
-            {/* Clear Value Proposition */}
+            {/* Beta Value Proposition */}
             <motion.p
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2, duration: 0.5 }}
               className="text-lg sm:text-xl text-gray-600 mb-8 leading-relaxed max-w-2xl mx-auto lg:mx-0"
             >
-              Our AI instantly calculates lifecycle carbon footprints for any
-              asset.{" "}
-              <strong className="text-gray-900">Save 95% of your time</strong>{" "}
-              and generate audit-ready ESG reports with confidence scoring.
+              Be among the first to experience AI-driven asset management with
+              <strong className="text-gray-900">
+                {" "}
+                instant carbon calculations
+              </strong>{" "}
+              and
+              <strong className="text-gray-900"> ESG reporting</strong>. Join
+              our beta program and shape the future.
             </motion.p>
 
             {/* Primary CTAs */}
@@ -93,7 +98,7 @@ const Hero = () => {
                 className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-xl hover:shadow-2xl transition-all duration-300 px-8 py-4 text-lg font-semibold group relative"
                 onClick={() => router.push("/sign-up")}
               >
-                Start 30-Day Free Trial
+                Join Beta Program
                 <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Button>
 
@@ -103,15 +108,15 @@ const Hero = () => {
                 className="border-2 border-gray-300 text-gray-700 hover:bg-gray-50 px-8 py-4 text-lg font-semibold group"
                 onClick={() => {
                   window.location.href =
-                    "mailto:ecokeepr@gmail.com?subject=Book%20a%20Demo&body=I'm%20interested%20in%20seeing%20how%20EcoKeepr's%20AI%20can%20automate%20our%20carbon%20calculations.";
+                    "mailto:ecokeepr@gmail.com?subject=Beta%20Access%20Request&body=I'm%20interested%20in%20joining%20the%20EcoKeepr%20beta%20program%20and%20would%20like%20to%20learn%20more%20about%20the%20AI-powered%20features.";
                 }}
               >
                 <Play className="mr-2 w-5 h-5 group-hover:scale-110 transition-transform" />
-                Watch 2-Min Demo
+                Request Demo
               </Button>
             </motion.div>
 
-            {/* Trust Signals */}
+            {/* Beta Trust Signals */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -120,15 +125,15 @@ const Hero = () => {
             >
               <div className="flex items-center gap-2">
                 <CheckCircle className="w-4 h-4 text-emerald-500" />
-                <span>30-day free trial</span>
+                <span>Free beta access</span>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle className="w-4 h-4 text-emerald-500" />
-                <span>Cancel anytime</span>
+                <span>Early adopter benefits</span>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle className="w-4 h-4 text-emerald-500" />
-                <span>Setup in 5 minutes</span>
+                <span>Direct feedback channel</span>
               </div>
             </motion.div>
           </div>
@@ -199,157 +204,76 @@ const Hero = () => {
                       <motion.div
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="flex items-center gap-2 text-sm text-emerald-600 bg-emerald-50 p-3 rounded-lg"
+                        className="bg-emerald-50 border border-emerald-200 rounded-xl p-4"
                       >
-                        <Brain className="w-4 h-4 animate-pulse" />
-                        <span>AI analyzing lifecycle emissions...</span>
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-emerald-600 rounded-full flex items-center justify-center">
+                            <Brain className="w-4 h-4 text-white" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="font-medium text-emerald-900">
+                              AI Analysis in Progress
+                            </div>
+                            <div className="text-sm text-emerald-700">
+                              Analyzing lifecycle data...
+                            </div>
+                          </div>
+                        </div>
                       </motion.div>
                     )}
 
-                    {/* Results */}
-                    <motion.div
-                      animate={{ opacity: isCalculating ? 0.4 : 1 }}
-                      className="grid grid-cols-2 gap-3"
-                    >
-                      <div className="bg-emerald-50 p-4 rounded-xl text-center border border-emerald-100">
-                        <div className="text-3xl font-bold text-emerald-600">
-                          384
-                        </div>
-                        <div className="text-sm text-emerald-700 font-medium">
-                          kg CO2e
-                        </div>
-                      </div>
-                      <div className="bg-blue-50 p-4 rounded-xl text-center border border-blue-100">
-                        <div className="text-3xl font-bold text-blue-600">
-                          94%
-                        </div>
-                        <div className="text-sm text-blue-700 font-medium">
-                          Confidence
-                        </div>
-                      </div>
-                    </motion.div>
-
-                    {/* Lifecycle Breakdown */}
-                    <div className="space-y-3 bg-gray-50 p-4 rounded-xl">
-                      <div className="text-sm font-semibold text-gray-700 mb-2">
-                        Lifecycle Breakdown
-                      </div>
-                      {[
-                        {
-                          phase: "Manufacturing",
-                          value: 285,
-                          color: "bg-red-400",
-                        },
-                        {
-                          phase: "Transport",
-                          value: 12,
-                          color: "bg-orange-400",
-                        },
-                        {
-                          phase: "Use Phase",
-                          value: 78,
-                          color: "bg-yellow-400",
-                        },
-                        {
-                          phase: "End of Life",
-                          value: 9,
-                          color: "bg-green-400",
-                        },
-                      ].map((item, index) => (
-                        <div
-                          key={index}
-                          className="flex items-center justify-between text-sm"
-                        >
-                          <div className="flex items-center gap-2">
-                            <div
-                              className={`w-3 h-3 rounded-full ${item.color}`}
-                            ></div>
-                            <span className="text-gray-600">{item.phase}</span>
+                    {/* Results Display */}
+                    {!isCalculating && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="bg-gradient-to-r from-emerald-50 to-blue-50 border border-emerald-200 rounded-xl p-4"
+                      >
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="font-medium text-emerald-900">
+                            Carbon Footprint
                           </div>
-                          <span className="font-medium text-gray-900">
-                            {item.value} kg
-                          </span>
+                          <div className="text-xs bg-emerald-100 text-emerald-800 px-2 py-1 rounded">
+                            94% Confidence
+                          </div>
                         </div>
-                      ))}
-                    </div>
+                        <div className="text-2xl font-bold text-emerald-900 mb-2">
+                          287 kg CO₂e
+                        </div>
+                        <div className="text-sm text-emerald-700">
+                          Complete lifecycle assessment
+                        </div>
+                      </motion.div>
+                    )}
                   </div>
                 </div>
               </div>
 
-              {/* Floating Stats */}
+              {/* Floating Elements */}
               <motion.div
-                animate={{ y: [0, -8, 0] }}
-                transition={{ duration: 2, repeat: Infinity }}
-                className="absolute -top-4 -right-4 bg-emerald-500 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg"
+                animate={{ y: [0, -10, 0] }}
+                transition={{ duration: 3, repeat: Infinity }}
+                className="absolute -top-4 -right-4 bg-white rounded-lg shadow-lg p-3 border"
               >
-                3.2s ⚡
+                <div className="flex items-center gap-2">
+                  <Zap className="w-4 h-4 text-yellow-500" />
+                  <span className="text-xs font-medium">AI Powered</span>
+                </div>
               </motion.div>
 
               <motion.div
-                animate={{ y: [0, 8, 0] }}
-                transition={{ duration: 2.5, repeat: Infinity }}
-                className="absolute -bottom-4 -left-4 bg-blue-500 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg"
+                animate={{ y: [0, 10, 0] }}
+                transition={{ duration: 4, repeat: Infinity, delay: 1 }}
+                className="absolute -bottom-4 -left-4 bg-white rounded-lg shadow-lg p-3 border"
               >
-                AI-Powered
+                <div className="flex items-center gap-2">
+                  <Star className="w-4 h-4 text-emerald-500" />
+                  <span className="text-xs font-medium">Beta Feature</span>
+                </div>
               </motion.div>
             </motion.div>
           </div>
         </div>
-
-        {/* Bottom Social Proof */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.8, duration: 0.6 }}
-          className="mt-20 pt-12 border-t border-gray-200"
-        >
-          <div className="text-center mb-8">
-            <p className="text-sm text-gray-500 mb-4">
-              Trusted by sustainability leaders worldwide
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 text-center">
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              className="flex flex-col items-center gap-2"
-            >
-              <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center">
-                <Users className="w-8 h-8 text-emerald-600" />
-              </div>
-              <div className="font-bold text-2xl text-gray-900">500+</div>
-              <div className="text-sm text-gray-600">
-                Companies tracking carbon
-              </div>
-            </motion.div>
-
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              className="flex flex-col items-center gap-2"
-            >
-              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
-                <Clock className="w-8 h-8 text-blue-600" />
-              </div>
-              <div className="font-bold text-2xl text-gray-900">95%</div>
-              <div className="text-sm text-gray-600">
-                Time saved on calculations
-              </div>
-            </motion.div>
-
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              className="flex flex-col items-center gap-2"
-            >
-              <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center">
-                <Zap className="w-8 h-8 text-orange-600" />
-              </div>
-              <div className="font-bold text-2xl text-gray-900">3.2s</div>
-              <div className="text-sm text-gray-600">
-                Average calculation time
-              </div>
-            </motion.div>
-          </div>
-        </motion.div>
       </div>
     </section>
   );

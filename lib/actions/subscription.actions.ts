@@ -356,3 +356,261 @@ export async function updateAssetQuota(
     };
   }
 }
+
+// Purchase additional assets
+export async function purchaseAdditionalAssets(
+  companyId: string,
+  additionalAssets: number,
+): Promise<{ success: boolean; url?: string; error?: string }> {
+  try {
+    const subscription = await prisma.subscription.findUnique({
+      where: { companyId },
+      include: { pricingPlan: true },
+    });
+
+    if (!subscription || !subscription.pricingPlan) {
+      throw new Error("Subscription or pricing plan not found.");
+    }
+
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+    const company = await prisma.company.findUnique({
+      where: { id: companyId },
+    });
+
+    if (!company) {
+      throw new Error("Company not found.");
+    }
+
+    // Calculate the total cost for additional assets
+    const pricePerAsset = Number(subscription.pricingPlan.pricePerAsset);
+    const totalCost = pricePerAsset * additionalAssets;
+
+    // Create a one-time checkout session for additional assets
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ["card"],
+      line_items: [
+        {
+          price_data: {
+            currency: "usd",
+            product_data: {
+              name: `Additional ${additionalAssets} Assets`,
+              description: `Purchase ${additionalAssets} additional assets for your subscription`,
+            },
+            unit_amount: Math.round(pricePerAsset * 100), // Convert to cents
+          },
+          quantity: additionalAssets,
+        },
+      ],
+      mode: "payment",
+      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?additional_assets_success=true&quantity=${additionalAssets}`,
+      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/settings/billing`,
+      customer: subscription.stripeCustomerId,
+      metadata: {
+        companyId,
+        type: "additional_assets",
+        quantity: additionalAssets.toString(),
+        currentQuota: subscription.assetQuota.toString(),
+      },
+    });
+
+    await createAuditLog({
+      companyId,
+      action: "ADDITIONAL_ASSETS_PURCHASE_INITIATED",
+      entity: "SUBSCRIPTION",
+      entityId: subscription.id,
+      details: `Purchase initiated for ${additionalAssets} additional assets at $${totalCost}`,
+    });
+
+    return { success: true, url: session.url || undefined };
+  } catch (error) {
+    console.error("Failed to create additional assets purchase:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "An unknown error occurred",
+    };
+  }
+}
+
+// Purchase additional users
+export async function purchaseAdditionalUsers(
+  companyId: string,
+  additionalUsers: number,
+): Promise<{ success: boolean; url?: string; error?: string }> {
+  try {
+    const subscription = await prisma.subscription.findUnique({
+      where: { companyId },
+      include: { pricingPlan: true },
+    });
+
+    if (!subscription || !subscription.pricingPlan) {
+      throw new Error("Subscription or pricing plan not found.");
+    }
+
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+    const company = await prisma.company.findUnique({
+      where: { id: companyId },
+    });
+
+    if (!company) {
+      throw new Error("Company not found.");
+    }
+
+    // Calculate user pricing based on plan type
+    const userPricing = getUserPricing(subscription.pricingPlan.planType);
+    const totalCost = userPricing * additionalUsers;
+
+    // Create a one-time checkout session for additional users
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ["card"],
+      line_items: [
+        {
+          price_data: {
+            currency: "usd",
+            product_data: {
+              name: `Additional ${additionalUsers} Users`,
+              description: `Purchase ${additionalUsers} additional user seats for your subscription`,
+            },
+            unit_amount: Math.round(userPricing * 100), // Convert to cents
+          },
+          quantity: additionalUsers,
+        },
+      ],
+      mode: "payment",
+      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?additional_users_success=true&quantity=${additionalUsers}`,
+      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/settings/billing`,
+      customer: subscription.stripeCustomerId,
+      metadata: {
+        companyId,
+        type: "additional_users",
+        quantity: additionalUsers.toString(),
+      },
+    });
+
+    await createAuditLog({
+      companyId,
+      action: "ADDITIONAL_USERS_PURCHASE_INITIATED",
+      entity: "SUBSCRIPTION",
+      entityId: subscription.id,
+      details: `Purchase initiated for ${additionalUsers} additional users at $${totalCost}`,
+    });
+
+    return { success: true, url: session.url || undefined };
+  } catch (error) {
+    console.error("Failed to create additional users purchase:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "An unknown error occurred",
+    };
+  }
+}
+
+// Helper function to get user pricing based on plan type
+function getUserPricing(planType: string): number {
+  switch (planType.toLowerCase()) {
+    case "pro":
+      return 10; // $10 per additional user for Pro plan
+    case "enterprise":
+      return 8; // $8 per additional user for Enterprise plan
+    default:
+      return 12; // $12 per additional user for other plans
+  }
+}
+
+// Handle successful purchase of additional assets
+export async function handleAdditionalAssetsPurchase(
+  sessionId: string,
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+
+    if (session.payment_status !== "paid") {
+      throw new Error("Payment not completed.");
+    }
+
+    if (!session.metadata) {
+      throw new Error("Session metadata not found.");
+    }
+
+    const { companyId, quantity, currentQuota } = session.metadata;
+    if (!companyId || !quantity || !currentQuota) {
+      throw new Error("Missing required metadata.");
+    }
+
+    const additionalAssets = parseInt(quantity, 10);
+    const newQuota = parseInt(currentQuota, 10) + additionalAssets;
+
+    // Update the subscription with new asset quota
+    await updateAssetQuota(companyId, newQuota);
+
+    await createAuditLog({
+      companyId,
+      action: "ADDITIONAL_ASSETS_PURCHASE_COMPLETED",
+      entity: "SUBSCRIPTION",
+      entityId: undefined,
+      details: `Successfully purchased ${additionalAssets} additional assets. New quota: ${newQuota}`,
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to handle additional assets purchase:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "An unknown error occurred",
+    };
+  }
+}
+
+// Handle successful purchase of additional users
+export async function handleAdditionalUsersPurchase(
+  sessionId: string,
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+
+    if (session.payment_status !== "paid") {
+      throw new Error("Payment not completed.");
+    }
+
+    if (!session.metadata) {
+      throw new Error("Session metadata not found.");
+    }
+
+    const { companyId, quantity } = session.metadata;
+    if (!companyId || !quantity) {
+      throw new Error("Missing required metadata.");
+    }
+
+    const additionalUsers = parseInt(quantity, 10);
+
+    // Update the company's user limit in the database
+    // Note: You'll need to add a userLimit field to the Company model
+    await prisma.company.update({
+      where: { id: companyId },
+      data: {
+        // userLimit: { increment: additionalUsers }, // Uncomment when userLimit field is added
+      },
+    });
+
+    await createAuditLog({
+      companyId,
+      action: "ADDITIONAL_USERS_PURCHASE_COMPLETED",
+      entity: "COMPANY",
+      entityId: companyId,
+      details: `Successfully purchased ${additionalUsers} additional user seats`,
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to handle additional users purchase:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "An unknown error occurred",
+    };
+  }
+}

@@ -12,6 +12,7 @@ import { EmailService } from "@/services/email";
 import { clerkClient } from "@clerk/nextjs/server";
 import { createUserWithCompany } from "./user.actions";
 import { createAuditLog } from "@/lib/actions/auditLog.actions";
+import { parseCompanySize } from "@/lib/utils/onboarding";
 
 interface RegistrationState {
   companyId?: string;
@@ -19,16 +20,14 @@ interface RegistrationState {
 }
 
 const handlePrismaError = (error: Prisma.PrismaClientKnownRequestError) => {
-  const errorMap: Record<string, string> = {
-    P2002: "Company name already exists",
-    P2003: "Invalid reference",
-    P2025: "Company not found",
-  };
-
-  return {
-    success: false,
-    error: errorMap[error.code] || "Database error",
-  };
+  switch (error.code) {
+    case "P2002":
+      return "A record with this information already exists.";
+    case "P2025":
+      return "The requested record was not found.";
+    default:
+      return "A database error occurred.";
+  }
 };
 
 // Cleanup function to handle rollback of company creation
@@ -210,22 +209,54 @@ export async function registerCompany(
   let company;
 
   try {
-    // 1. Create company in Prisma
+    // 1. Create company in Prisma with all onboarding data
+    console.log("Creating company with data:", {
+      name: data.companyName,
+      industry: data.industry,
+      companySize: data.companySize,
+      assetCount: data.assetCount,
+      useCases: data.useCase,
+      painPoints: data.painPoints,
+      primaryContactEmail: data.primaryContactEmail,
+      firstName: data.firstName,
+      lastName: data.lastName,
+    });
+
     company = await prisma.company.create({
       data: {
         name: data.companyName,
         status: data.status as CompanyStatus,
         primaryContactEmail: data.primaryContactEmail,
+        industry: data.industry,
+        employeeCount: data.companySize
+          ? parseCompanySize(data.companySize)
+          : null, // Convert "1-10" to 1, "500+" to 500, etc.
+        notes: JSON.stringify({
+          assetCount: data.assetCount,
+          useCases: data.useCase,
+          painPoints: data.painPoints,
+          phoneNumber: data.phoneNumber,
+          plan: data.plan,
+          onboardingCompletedAt: new Date().toISOString(),
+        }),
       },
     });
+
+    console.log("Company created successfully:", company.id);
     state.companyId = company.id;
+
+    // Check if this is a Starter plan and apply user restrictions
+    const isStarterPlan = data.plan === "starter";
+    if (isStarterPlan) {
+      console.log("Starter plan detected - restricting to 1 user only");
+    }
 
     await createAuditLog({
       companyId: company.id,
       action: "COMPANY_CREATED",
       entity: "COMPANY",
       entityId: company.id,
-      details: `Company registered: ${company.name} by email ${data.email}`,
+      details: `Company registered: ${company.name} by email ${data.email} - Industry: ${data.industry}, Size: ${data.companySize}, Assets: ${data.assetCount}, Plan: ${data.plan || "Premium"}`,
     });
 
     // 2. Create an Admin role
@@ -394,19 +425,43 @@ export async function registerCompany(
       data: { clerkOrgId: organization.id },
     });
 
-    // 6. Update Clerk user metadata (SECURE - companyId in private metadata only)
-    await clerk.users.updateUserMetadata(data.clerkUserId, {
-      publicMetadata: {
-        userId: prismaUser.id,
-        role: "Admin",
-        onboardingComplete: true, // Mark onboarding as complete
-        // companyId removed from public metadata for security
-      },
-      privateMetadata: {
-        companyId: company.id, // companyId in private metadata only
-        clerkOrgId: organization.id,
-      },
-    });
+    // 6. Apply Starter plan restrictions if applicable
+    if (isStarterPlan) {
+      console.log("Applying Starter plan restrictions - limiting to 1 user");
+
+      // Update Clerk user metadata with plan restriction
+      await clerk.users.updateUserMetadata(data.clerkUserId, {
+        publicMetadata: {
+          userId: prismaUser.id,
+          role: "Admin",
+          onboardingComplete: true,
+          plan: "starter",
+          userLimit: 1, // Restrict to 1 user for Starter plan
+        },
+        privateMetadata: {
+          companyId: company.id,
+          clerkOrgId: organization.id,
+          planRestrictions: {
+            maxUsers: 1,
+            plan: "starter",
+          },
+        },
+      });
+    } else {
+      // Standard metadata for other plans
+      await clerk.users.updateUserMetadata(data.clerkUserId, {
+        publicMetadata: {
+          userId: prismaUser.id,
+          role: "Admin",
+          onboardingComplete: true,
+          plan: data.plan || "professional",
+        },
+        privateMetadata: {
+          companyId: company.id,
+          clerkOrgId: organization.id,
+        },
+      });
+    }
 
     // 7. Send welcome email
     try {

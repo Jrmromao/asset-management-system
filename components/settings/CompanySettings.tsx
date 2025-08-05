@@ -42,6 +42,9 @@ import {
   Download,
   Trash2,
   Leaf,
+  Package,
+  Users,
+  AlertCircle,
 } from "lucide-react";
 import { useCompanyQuery } from "@/hooks/queries/useCompanyQuery";
 import { useBillingOverviewQuery } from "@/hooks/queries/useBillingOverviewQuery";
@@ -55,6 +58,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import SustainabilityTargets from "@/components/settings/SustainabilityTargets";
+import { PurchaseAdditionalItems } from "@/components/billing/PurchaseAdditionalItems";
 
 function ProfileTab({ userRole }: { userRole?: string }) {
   const canEdit = hasPermission(userRole, "company.settings");
@@ -305,133 +309,363 @@ function ProfileTab({ userRole }: { userRole?: string }) {
 
 function BillingTab() {
   const { data, isLoading, error } = useBillingOverviewQuery();
+  const [showPurchaseForm, setShowPurchaseForm] = useState(false);
+
   if (isLoading)
     return (
       <div className="p-8 text-center text-slate-500">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-900 mx-auto mb-4"></div>
         Loading billing info...
       </div>
     );
-  if (error)
+
+  if (error) {
+    console.error("Billing error:", error);
     return (
-      <div className="p-8 text-center text-red-500">
-        Failed to load billing info.
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Billing & Subscription</CardTitle>
+            <CardDescription>
+              Manage your subscription, payment methods, and view billing
+              history.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="p-8 text-center">
+              <div className="text-red-500 mb-4">
+                <AlertCircle className="h-12 w-12 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">
+                  Failed to load billing info
+                </h3>
+                <p className="text-sm text-slate-600">
+                  {error.message ||
+                    "Unable to load your billing information. Please try again later."}
+                </p>
+              </div>
+              <Button
+                onClick={() => window.location.reload()}
+                variant="outline"
+                className="mt-4"
+              >
+                Retry
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
-  const { subscription, pricingPlan, paymentMethod, invoices } = data || {};
+  }
+
+  const {
+    subscription,
+    pricingPlan,
+    paymentMethod,
+    invoices,
+    usage,
+    userCount,
+    userLimit,
+  } = data || {};
+
+  // If no subscription found, show setup message
+  if (!subscription) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Billing & Subscription</CardTitle>
+            <CardDescription>
+              Set up your subscription to start managing your assets.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="p-8 text-center">
+              <div className="text-slate-500 mb-4">
+                <CreditCard className="h-12 w-12 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">
+                  No subscription found
+                </h3>
+                <p className="text-sm text-slate-600">
+                  You don&apos;t have an active subscription. Contact your
+                  administrator to set up billing.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Calculate usage percentages
+  const assetUsagePercentage =
+    usage?.total && subscription?.assetQuota
+      ? (usage.total / subscription.assetQuota) * 100
+      : 0;
+  const userUsagePercentage =
+    userCount && userLimit ? (userCount / userLimit) * 100 : 0;
+
+  // Get user pricing based on plan type
+  const getUserPricing = (planType: string): number => {
+    switch (planType?.toLowerCase()) {
+      case "pro":
+        return 10;
+      case "enterprise":
+        return 8;
+      default:
+        return 12;
+    }
+  };
+
+  const pricePerUser = getUserPricing(pricingPlan?.planType);
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Billing & Subscription</CardTitle>
-        <CardDescription>
-          Manage your subscription, payment methods, and view billing history.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-8">
-        {/* Plan & Status */}
-        <div className="flex items-center justify-between">
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Billing & Subscription</CardTitle>
+          <CardDescription>
+            Manage your subscription, payment methods, and view billing history.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-8">
+          {/* Plan & Status */}
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="text-base px-3 py-1">
+                  {pricingPlan?.name || "-"}
+                </Badge>
+                <span className={"text-green-600 flex items-center gap-1"}>
+                  <CheckCircle className="w-4 h-4" />
+                  {subscription?.status || "-"}
+                </span>
+              </div>
+              <div className="text-sm text-slate-500 mt-1">
+                {" "}
+                <span className="font-medium">
+                  {subscription?.trialEndsAt
+                    ? new Date(subscription.trialEndsAt).toLocaleDateString()
+                    : "-"}
+                </span>
+              </div>
+            </div>
+            <Button variant="outline" className="ml-4" disabled>
+              Manage Subscription
+            </Button>
+          </div>
+
+          {/* Usage Overview */}
+          {usage && subscription && (
+            <div className="space-y-4">
+              <h3 className="font-semibold">Usage Overview</h3>
+
+              {/* Asset Usage */}
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm font-medium">Assets</span>
+                  <span className="text-sm text-slate-500">
+                    {usage.total} / {subscription.assetQuota}
+                  </span>
+                </div>
+                <div className="w-full bg-slate-200 rounded-full h-2">
+                  <div
+                    className="bg-blue-600 h-2 rounded-full transition-all"
+                    style={{ width: `${Math.min(assetUsagePercentage, 100)}%` }}
+                  />
+                </div>
+                {assetUsagePercentage > 80 && (
+                  <p className="text-xs text-orange-600 mt-1">
+                    {assetUsagePercentage > 100
+                      ? "Over limit"
+                      : "Approaching limit"}
+                  </p>
+                )}
+              </div>
+
+              {/* User Usage */}
+              {userCount !== undefined && userLimit && (
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm font-medium">Users</span>
+                    <span className="text-sm text-slate-500">
+                      {userCount} / {userLimit}
+                    </span>
+                  </div>
+                  <div className="w-full bg-slate-200 rounded-full h-2">
+                    <div
+                      className="bg-green-600 h-2 rounded-full transition-all"
+                      style={{
+                        width: `${Math.min(userUsagePercentage, 100)}%`,
+                      }}
+                    />
+                  </div>
+                  {userUsagePercentage > 80 && (
+                    <p className="text-xs text-orange-600 mt-1">
+                      {userUsagePercentage > 100
+                        ? "Over limit"
+                        : "Approaching limit"}
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Purchase Additional Items */}
+          <div className="border-t pt-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold">Purchase Additional Resources</h3>
+              <Button
+                variant="outline"
+                onClick={() => setShowPurchaseForm(!showPurchaseForm)}
+              >
+                {showPurchaseForm ? "Cancel" : "Purchase More"}
+              </Button>
+            </div>
+
+            {showPurchaseForm && subscription && pricingPlan && (
+              <div className="mt-4">
+                <PurchaseAdditionalItems
+                  currentAssetQuota={subscription.assetQuota}
+                  currentUserLimit={userLimit || 0}
+                  pricePerAsset={Number(pricingPlan.pricePerAsset)}
+                  pricePerUser={pricePerUser}
+                  onSuccess={() => {
+                    setShowPurchaseForm(false);
+                    // Refresh billing data
+                    window.location.reload();
+                  }}
+                />
+              </div>
+            )}
+
+            {!showPurchaseForm && (
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="p-4 border rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Package className="h-4 w-4" />
+                    <h4 className="font-medium">Additional Assets</h4>
+                  </div>
+                  <p className="text-sm text-slate-500 mb-2">
+                    ${Number(pricingPlan?.pricePerAsset || 0).toFixed(2)} per
+                    asset
+                  </p>
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowPurchaseForm(true)}
+                    className="w-full"
+                  >
+                    Purchase Assets
+                  </Button>
+                </div>
+
+                <div className="p-4 border rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Users className="h-4 w-4" />
+                    <h4 className="font-medium">Additional Users</h4>
+                  </div>
+                  <p className="text-sm text-slate-500 mb-2">
+                    ${pricePerUser.toFixed(2)} per user
+                  </p>
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowPurchaseForm(true)}
+                    className="w-full"
+                  >
+                    Purchase Users
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Payment Method */}
+          <div className="flex items-center gap-4">
+            <CreditCard className="w-6 h-6 text-slate-400" />
+            <div>
+              <div className="font-medium">
+                {paymentMethod?.card?.brand?.toUpperCase() || "-"} ••••{" "}
+                {paymentMethod?.card?.last4 || "----"}
+              </div>
+              <div className="text-xs text-slate-500">
+                {" "}
+                Expires {paymentMethod?.card?.exp_month}/
+                {paymentMethod?.card?.exp_year}
+              </div>
+            </div>
+            <Button variant="outline" className="ml-auto" disabled>
+              Update Payment Method
+            </Button>
+          </div>
+
+          {/* Next Invoice */}
+          <div className="flex items-center gap-3 text-slate-600">
+            <Calendar className="w-5 h-5" />{" "}
+            <span className="font-medium">
+              {invoices?.[0]?.dueDate
+                ? new Date(invoices[0].dueDate).toLocaleDateString()
+                : "-"}
+            </span>
+            <span className="ml-2">
+              {invoices?.[0]?.amount
+                ? `$${Number(invoices[0].amount).toFixed(2)}`
+                : "-"}
+            </span>
+          </div>
+
+          {/* Billing History */}
           <div>
-            <div className="flex items-center gap-2">
-              <Badge variant="outline" className="text-base px-3 py-1">
-                {pricingPlan?.name || "-"}
-              </Badge>
-              <span className={"text-green-600 flex items-center gap-1"}>
-                <CheckCircle className="w-4 h-4" />
-                {subscription?.status || "-"}
-              </span>
+            <div className="font-semibold mb-2 flex items-center gap-2">
+              <Receipt className="w-5 h-5" /> Billing History
             </div>
-            <div className="text-sm text-slate-500 mt-1">
-              {" "}
-              <span className="font-medium">
-                {subscription?.trialEndsAt
-                  ? new Date(subscription.trialEndsAt).toLocaleDateString()
-                  : "-"}
-              </span>
-            </div>
-          </div>
-          <Button variant="outline" className="ml-4" disabled>
-            Manage Subscription
-          </Button>
-        </div>
-        {/* Payment Method */}
-        <div className="flex items-center gap-4">
-          <CreditCard className="w-6 h-6 text-slate-400" />
-          <div>
-            <div className="font-medium">
-              {paymentMethod?.card?.brand?.toUpperCase() || "-"} ••••{" "}
-              {paymentMethod?.card?.last4 || "----"}
-            </div>
-            <div className="text-xs text-slate-500">
-              {" "}
-              Expires {paymentMethod?.card?.exp_month}/
-              {paymentMethod?.card?.exp_year}
-            </div>
-          </div>
-          <Button variant="outline" className="ml-auto" disabled>
-            Update Payment Method
-          </Button>
-        </div>
-        {/* Next Invoice */}
-        <div className="flex items-center gap-3 text-slate-600">
-          <Calendar className="w-5 h-5" />{" "}
-          <span className="font-medium">
-            {invoices?.[0]?.dueDate
-              ? new Date(invoices[0].dueDate).toLocaleDateString()
-              : "-"}
-          </span>
-          <span className="ml-2">
-            {invoices?.[0]?.amount
-              ? `$${Number(invoices[0].amount).toFixed(2)}`
-              : "-"}
-          </span>
-        </div>
-        {/* Billing History */}
-        <div>
-          <div className="font-semibold mb-2 flex items-center gap-2">
-            <Receipt className="w-5 h-5" /> Billing History
-          </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead>
-                <tr className="text-slate-500">
-                  <th className="text-left py-2 pr-4">Invoice</th>
-                  <th className="text-left py-2 pr-4">Date</th>
-                  <th className="text-left py-2 pr-4">Amount</th>
-                  <th className="text-left py-2 pr-4">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {invoices?.length ? (
-                  invoices.map((inv: any) => (
-                    <tr key={inv.id} className="border-t">
-                      <td className="py-2 pr-4">
-                        {inv.stripeInvoiceId || inv.id}
-                      </td>
-                      <td className="py-2 pr-4">
-                        {inv.invoiceDate
-                          ? new Date(inv.invoiceDate).toLocaleDateString()
-                          : "-"}
-                      </td>
-                      <td className="py-2 pr-4">
-                        ${Number(inv.amount).toFixed(2)}
-                      </td>
-                      <td className="py-2 pr-4">
-                        <Badge variant="outline">{inv.status}</Badge>
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm">
+                <thead>
+                  <tr className="text-slate-500">
+                    <th className="text-left py-2 pr-4">Invoice</th>
+                    <th className="text-left py-2 pr-4">Date</th>
+                    <th className="text-left py-2 pr-4">Amount</th>
+                    <th className="text-left py-2 pr-4">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {invoices?.length ? (
+                    invoices.map((inv: any) => (
+                      <tr key={inv.id} className="border-t">
+                        <td className="py-2 pr-4">
+                          {inv.stripeInvoiceId || inv.id}
+                        </td>
+                        <td className="py-2 pr-4">
+                          {inv.invoiceDate
+                            ? new Date(inv.invoiceDate).toLocaleDateString()
+                            : "-"}
+                        </td>
+                        <td className="py-2 pr-4">
+                          ${Number(inv.amount).toFixed(2)}
+                        </td>
+                        <td className="py-2 pr-4">
+                          <Badge variant="outline">{inv.status}</Badge>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td
+                        colSpan={4}
+                        className="py-4 text-center text-slate-400"
+                      >
+                        No invoices found.
                       </td>
                     </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={4} className="py-4 text-center text-slate-400">
-                      No invoices found.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
 
@@ -481,7 +715,7 @@ function GDPRTab({ userRole }: { userRole?: string }) {
       <CardHeader>
         <CardTitle>GDPR & Privacy</CardTitle>
         <CardDescription>
-          Manage your company's GDPR compliance and privacy settings.
+          Manage your company&apos;s GDPR compliance and privacy settings.
         </CardDescription>
       </CardHeader>
       <CardContent>

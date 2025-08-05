@@ -244,6 +244,20 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
 }
 
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
+  // Check if this is an additional purchase
+  const purchaseType = session.metadata?.type;
+
+  if (purchaseType === "additional_assets") {
+    await handleAdditionalAssetsPurchase(session);
+    return;
+  }
+
+  if (purchaseType === "additional_users") {
+    await handleAdditionalUsersPurchase(session);
+    return;
+  }
+
+  // Handle regular subscription checkout
   // 1. Validate required data is present
   const subscriptionFromSession = session.subscription;
   if (!subscriptionFromSession) {
@@ -309,4 +323,80 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       `Successfully created subscription ${subscriptionId} for company ${companyId}.`,
     );
   });
+}
+
+async function handleAdditionalAssetsPurchase(
+  session: Stripe.Checkout.Session,
+) {
+  const { companyId, quantity, currentQuota } = session.metadata || {};
+
+  if (!companyId || !quantity || !currentQuota) {
+    throw new Error(
+      "Missing required metadata for additional assets purchase.",
+    );
+  }
+
+  const additionalAssets = parseInt(quantity, 10);
+  const newQuota = parseInt(currentQuota, 10) + additionalAssets;
+
+  await prisma.$transaction(async (tx) => {
+    // Update the subscription with new asset quota
+    await tx.subscription.updateMany({
+      where: { companyId },
+      data: { assetQuota: newQuota },
+    });
+
+    // Create audit log with system user
+    await tx.auditLog.create({
+      data: {
+        companyId,
+        userId: "system", // System user for webhook events
+        action: "ADDITIONAL_ASSETS_PURCHASE_COMPLETED",
+        entity: "SUBSCRIPTION",
+        entityId: undefined,
+        details: `Successfully purchased ${additionalAssets} additional assets. New quota: ${newQuota}`,
+      },
+    });
+  });
+
+  console.log(
+    `Successfully processed additional assets purchase for company ${companyId}. New quota: ${newQuota}`,
+  );
+}
+
+async function handleAdditionalUsersPurchase(session: Stripe.Checkout.Session) {
+  const { companyId, quantity } = session.metadata || {};
+
+  if (!companyId || !quantity) {
+    throw new Error("Missing required metadata for additional users purchase.");
+  }
+
+  const additionalUsers = parseInt(quantity, 10);
+
+  await prisma.$transaction(async (tx) => {
+    // Update the company's user limit
+    // Note: You'll need to add a userLimit field to the Company model
+    await tx.company.update({
+      where: { id: companyId },
+      data: {
+        // userLimit: { increment: additionalUsers }, // Uncomment when userLimit field is added
+      },
+    });
+
+    // Create audit log with system user
+    await tx.auditLog.create({
+      data: {
+        companyId,
+        userId: "system", // System user for webhook events
+        action: "ADDITIONAL_USERS_PURCHASE_COMPLETED",
+        entity: "COMPANY",
+        entityId: companyId,
+        details: `Successfully purchased ${additionalUsers} additional user seats`,
+      },
+    });
+  });
+
+  console.log(
+    `Successfully processed additional users purchase for company ${companyId}. Additional users: ${additionalUsers}`,
+  );
 }

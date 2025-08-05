@@ -57,51 +57,55 @@ export default function PricingTable() {
     MIN_ITEMS.toString(),
   );
 
-  // Competitive pricing tiers - per month, unified item count
+  // Beta pricing tiers - competitive early access pricing
   const pricingTiers: PricingTier[] = [
     {
-      name: "Starter",
+      name: "Beta Starter",
       description:
-        "Essential asset, license, and accessory management for small teams",
-      baseMonthlyPrice: 39,
+        "Essential asset management with AI-powered carbon tracking for early adopters",
+      baseMonthlyPrice: 19,
       maxItems: 100,
       activeUserLimit: 3,
       overagePerItem: 0.25,
       features: [
         "Complete asset, license, and accessory lifecycle tracking",
+        "AI-powered carbon footprint calculations",
         "QR/barcode generation",
         "Depreciation calculations",
-        "Check-in/check-out workflows",
-        "Basic reporting & dashboards",
+        "Auditing capabilities",
+        // "Check-in/check-out workflows",
+        "Basic reporting",
         "CSV import/export capabilities",
         "User roles & permissions",
-        "Email support",
+        "Direct feedback channel to development team",
+        "Early access to new features",
       ],
-      cta: "Start Free Trial",
+      badge: "Beta Access",
+      cta: "Join Beta Program",
     },
     {
-      name: "Professional",
+      name: "Beta Professional",
       description:
-        "Advanced features with AI insights and sustainability tracking for growing businesses",
-      baseMonthlyPrice: 99,
+        "Advanced AI features with sustainability tracking for growing businesses",
+      baseMonthlyPrice: 79,
       maxItems: 1000,
       activeUserLimit: 10,
       overagePerItem: 0.1,
       features: [
-        "Everything in Starter, plus:",
+        "Everything in Beta Starter, plus:",
         "AI-powered cost optimization insights",
-        "CO₂ tracking & ESG reporting",
-        "Advanced analytics & custom dashboards",
-        "Maintenance workflow builder",
+        "Advanced CO₂ tracking & ESG reporting",
         "Bulk operations & mass updates",
         "Purchase order management",
-        "Priority support",
+        "Priority beta support",
         "API access & integrations",
+        "Influence product roadmap",
+        "Exclusive beta community access",
       ],
       popular: true,
       badge: "Most Popular",
-      cta: "Start Free Trial",
-      savings: "Save $198 annually",
+      cta: "Join Beta Program",
+      savings: "30% off launch pricing",
     },
     // Enterprise tier hidden for first release
     // {
@@ -236,7 +240,7 @@ export default function PricingTable() {
       >
         <div className="inline-flex items-center gap-2 bg-emerald-50 text-emerald-700 px-4 py-2 rounded-full text-sm font-medium mb-4">
           <Sparkles className="h-4 w-4" />
-          Limited Time: 30-Day Free Trial + 15% Annual Discount
+          Beta Launch: 50% Off Market Rate + Early Adopter Benefits
         </div>
         <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
           Simple, Transparent Pricing

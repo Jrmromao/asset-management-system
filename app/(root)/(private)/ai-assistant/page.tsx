@@ -84,15 +84,15 @@ export default function AIAssistantPage() {
       value: "Up to 30% savings",
       tab: "cost-optimization",
     },
-    {
-      title: "Predictive Maintenance",
-      description: "Predict asset failures before they happen",
-      icon: Wrench,
-      color: "text-blue-600",
-      bgColor: "bg-blue-50",
-      value: "85% accuracy",
-      tab: "maintenance",
-    },
+    // {
+    //   title: "Predictive Maintenance",
+    //   description: "Predict asset failures before they happen",
+    //   icon: Wrench,
+    //   color: "text-blue-600",
+    //   bgColor: "bg-blue-50",
+    //   value: "85% accuracy",
+    //   tab: "maintenance",
+    // },
     {
       title: "Asset Insights",
       description: "Deep analytics on asset performance and utilization",
@@ -102,15 +102,15 @@ export default function AIAssistantPage() {
       value: "Real-time analysis",
       tab: "insights",
     },
-    {
-      title: "Anomaly Detection",
-      description: "Identify unusual patterns and potential issues",
-      icon: AlertTriangle,
-      color: "text-orange-600",
-      bgColor: "bg-orange-50",
-      value: "24/7 monitoring",
-      tab: "anomalies",
-    },
+    // {
+    //   title: "Anomaly Detection",
+    //   description: "Identify unusual patterns and potential issues",
+    //   icon: AlertTriangle,
+    //   color: "text-orange-600",
+    //   bgColor: "bg-orange-50",
+    //   value: "24/7 monitoring",
+    //   tab: "anomalies",
+    // },
   ];
 
   return (
@@ -157,7 +157,7 @@ export default function AIAssistantPage() {
       </div>
 
       {/* AI Capabilities Overview */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
         {aiCapabilities.map((capability) => {
           const Icon = capability.icon;
           return (
@@ -193,12 +193,12 @@ export default function AIAssistantPage() {
         onValueChange={setActiveTab}
         className="space-y-6"
       >
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="cost-optimization">Cost Optimization</TabsTrigger>
-          <TabsTrigger value="maintenance">Maintenance</TabsTrigger>
+          {/* <TabsTrigger value="maintenance">Maintenance</TabsTrigger> */}
           <TabsTrigger value="insights">Asset Insights</TabsTrigger>
-          <TabsTrigger value="anomalies">Anomalies</TabsTrigger>
+          {/* <TabsTrigger value="anomalies">Anomalies</TabsTrigger> */}
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">

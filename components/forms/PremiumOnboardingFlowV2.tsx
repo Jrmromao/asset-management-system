@@ -43,7 +43,7 @@ import { Form } from "@/components/ui/form";
 import HeaderIcon from "@/components/page/HeaderIcon";
 import ReCAPTCHA from "@/components/ReCAPTCHA";
 import { UserContext } from "@/components/providers/UserContext"; // Keeping for context, though not used in logic
-import { useRouter } from "next/navigation"; // Keeping for context, though not used in logic
+import { useRouter, useSearchParams } from "next/navigation"; // Keeping for context, though not used in logic
 import { registerCompany } from "@/lib/actions/company.actions"; // Assuming this is your server action
 import { Stepper } from "@/components/ui/stepper";
 import { Slider } from "@/components/ui/slider";
@@ -64,13 +64,14 @@ interface OnboardingData {
   phoneNumber: string;
   primaryContactEmail: string;
   password: string;
+  plan?: string;
 }
 
 const onboardingSchema = z.object({
   companyName: z.string().min(2, "Company name is required"),
   industry: z.string().min(1, "Please select an industry"),
   companySize: z.string().min(1, "Please select company size"),
-  assetCount: z.number().min(100, "Minimum 100 assets"),
+  assetCount: z.number().min(100, "Minimum 100 unique items"),
   useCase: z.array(z.string()).min(1, "Select at least one use case"),
   painPoints: z.array(z.string()).min(1, "Select at least one pain point"),
   firstName: z.string().min(2, "First name is required"),
@@ -79,6 +80,7 @@ const onboardingSchema = z.object({
   phoneNumber: z.string().optional(),
   primaryContactEmail: z.string().email("A valid contact email is required"),
   password: z.string().min(8, "Password must be at least 8 characters"),
+  plan: z.string().optional(),
 });
 
 // Static data for form options
@@ -139,6 +141,10 @@ interface StepComponentProps {
   form: UseFormReturn<OnboardingData>;
   // Add other props if needed for specific steps (e.g., error for PaymentStep)
   error?: string | undefined;
+  urlAssetCount?: string | null;
+  urlPlan?: string | null;
+  urlUsers?: string | null;
+  urlBilling?: string | null;
 }
 
 const WelcomeStep: React.FC = () => (
@@ -210,7 +216,7 @@ const WelcomeStep: React.FC = () => (
         </ul>
       </div>
 
-      <div className="border-t pt-6">
+      {/* <div className="border-t pt-6">
         <blockquote className="text-muted-foreground">
           <p>
             &quot;EcoKeepr has transformed how we manage our assets. It&apos;s
@@ -219,13 +225,16 @@ const WelcomeStep: React.FC = () => (
           <footer className="mt-2 text-sm font-semibold text-foreground">
             - Alex Johnson, CEO of Innovate Inc.
           </footer>
-        </blockquote>
-      </div>
+        </blockquote> */}
+      {/* </div> */}
     </motion.div>
   </motion.div>
 );
 
-const CompanyInfoStep: React.FC<StepComponentProps> = ({ form }) => {
+const CompanyInfoStep: React.FC<StepComponentProps> = ({
+  form,
+  urlAssetCount,
+}) => {
   // Set initial value for company size if it's not already set
   React.useEffect(() => {
     if (!form.getValues("companySize")) {
@@ -306,6 +315,65 @@ const CompanyInfoStep: React.FC<StepComponentProps> = ({ form }) => {
             <div className="mt-2 text-center text-lg font-semibold text-foreground">
               {companySizeValue}
             </div>
+          </div>
+
+          <div>
+            <label
+              htmlFor="asset-count-slider"
+              className="block mb-4 text-sm font-medium text-muted-foreground"
+            >
+              Estimated Number of Unique Items *
+              {urlAssetCount && (
+                <span className="ml-2 text-xs text-green-600 bg-green-100 px-2 py-1 rounded-full">
+                  Pre-filled from pricing
+                </span>
+              )}
+            </label>
+            <Slider
+              id="asset-count-slider"
+              min={100}
+              max={10000}
+              step={100}
+              value={[form.watch("assetCount") || 100]}
+              onValueChange={([value]) => {
+                form.setValue("assetCount", value);
+                form.trigger("assetCount");
+              }}
+              className="w-full"
+            />
+            <div className="mt-2 text-center">
+              <span className="text-lg font-semibold text-foreground">
+                {form.watch("assetCount") || 100}
+              </span>
+              <span className="text-sm text-muted-foreground ml-1">
+                unique items
+              </span>
+            </div>
+
+            {/* Quick preset buttons */}
+            <div className="mt-4 flex justify-center gap-2">
+              {[100, 500, 1000, 2500, 5000].map((preset) => (
+                <button
+                  key={preset}
+                  type="button"
+                  onClick={() => {
+                    form.setValue("assetCount", preset);
+                    form.trigger("assetCount");
+                  }}
+                  className={`px-3 py-1 text-xs rounded-full transition-all ${
+                    form.watch("assetCount") === preset
+                      ? "bg-green-600 text-white"
+                      : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
+                  }`}
+                >
+                  {preset.toLocaleString()}
+                </button>
+              ))}
+            </div>
+
+            <p className="mt-2 text-sm text-muted-foreground text-center">
+              Minimum 100 unique items required for Premium plan
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -463,7 +531,13 @@ const AccountStep: React.FC<StepComponentProps> = ({ form }) => (
   </motion.div>
 );
 
-const PaymentStep: React.FC<StepComponentProps> = ({ form, error }) => (
+const PaymentStep: React.FC<StepComponentProps> = ({
+  form,
+  error,
+  urlPlan,
+  urlUsers,
+  urlBilling,
+}) => (
   <motion.div
     initial={{ opacity: 0, x: 50 }}
     animate={{ opacity: 1, x: 0 }}
@@ -480,16 +554,52 @@ const PaymentStep: React.FC<StepComponentProps> = ({ form, error }) => (
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="p-6 border rounded-lg bg-background/50">
-          <h3 className="text-lg font-semibold mb-2">Summary</h3>
-          <p className="text-muted-foreground">
-            You are signing up for the{" "}
-            <Badge variant="default">Premium Plan</Badge> with support for up to{" "}
-            <span className="font-bold text-foreground">
-              {form.getValues("assetCount")}
-            </span>{" "}
-            assets.
-          </p>
-          <p className="text-sm mt-4">
+          <h3 className="text-lg font-semibold mb-4">Summary</h3>
+          <div className="space-y-3">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Company:</span>
+              <span className="font-medium">
+                {form.getValues("companyName")}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Industry:</span>
+              <span className="font-medium">{form.getValues("industry")}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Company Size:</span>
+              <span className="font-medium">
+                {form.getValues("companySize")} employees
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Items:</span>
+              <span className="font-medium">
+                {form.getValues("assetCount")} unique items
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Plan:</span>
+              <Badge variant="default">
+                {urlPlan
+                  ? `${urlPlan.charAt(0).toUpperCase() + urlPlan.slice(1)} Plan`
+                  : "Premium Plan"}
+              </Badge>
+            </div>
+            {urlUsers && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Users:</span>
+                <span className="font-medium">{urlUsers} users</span>
+              </div>
+            )}
+            {urlBilling && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Billing:</span>
+                <span className="font-medium capitalize">{urlBilling}</span>
+              </div>
+            )}
+          </div>
+          <p className="text-sm mt-4 text-muted-foreground">
             No payment is required today. Your 14-day free trial will begin
             after you complete the sign-up.
           </p>
@@ -518,15 +628,26 @@ const PremiumOnboardingFlowV2 = ({
 }: PremiumOnboardingFlowProps) => {
   const { user } = useContext(UserContext);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { isLoaded, signUp, setActive } = useSignUp();
   const { userId, isLoaded: isAuthLoaded } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | undefined>();
 
+  // Get URL parameters from pricing page
+  const urlAssetCount = searchParams.get("assets");
+  const urlPlan = searchParams.get("plan");
+  const urlUsers = searchParams.get("users");
+  const urlBilling = searchParams.get("billing");
+
+  const initialAssetCount = urlAssetCount
+    ? Math.max(100, Math.min(10000, parseInt(urlAssetCount))) // Ensure it's within bounds
+    : assetCount;
+
   const form = useForm<OnboardingData>({
     resolver: zodResolver(onboardingSchema),
     defaultValues: {
-      assetCount,
+      assetCount: initialAssetCount,
       companyName: "",
       industry: "",
       companySize: "",
@@ -538,6 +659,7 @@ const PremiumOnboardingFlowV2 = ({
       phoneNumber: "",
       primaryContactEmail: "",
       password: "",
+      plan: urlPlan || undefined,
     },
     mode: "onBlur",
   });
@@ -552,7 +674,7 @@ const PremiumOnboardingFlowV2 = ({
       name: "Company",
       icon: Building,
       component: CompanyInfoStep,
-      fields: ["companyName", "industry", "companySize"],
+      fields: ["companyName", "industry", "companySize", "assetCount"],
     },
     {
       name: "Goals",
@@ -583,7 +705,13 @@ const PremiumOnboardingFlowV2 = ({
     useMultistepForm(
       steps.map((s, index) => {
         const Component = s.component;
-        const propsForStep: StepComponentProps = { form };
+        const propsForStep: StepComponentProps = {
+          form,
+          urlAssetCount,
+          urlPlan,
+          urlUsers,
+          urlBilling,
+        };
         if (Component === PaymentStep) {
           propsForStep.error = error || undefined;
         }
