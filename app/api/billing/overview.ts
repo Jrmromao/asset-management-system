@@ -2,6 +2,7 @@ import { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "@/app/db";
 import Stripe from "stripe";
 import { getAuth } from "@clerk/nextjs/server";
+import { getPlanLimits } from "@/lib/services/plan-features.service";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2024-06-20",
@@ -55,19 +56,22 @@ export default async function handler(
 
     // Get user limit based on plan type
     const getUserLimit = (planType: string): number => {
-      switch (planType.toLowerCase()) {
+      switch (planType?.toLowerCase()) {
         case "pro":
+        case "professional":
           return 10;
         case "enterprise":
           return 100;
+        case "free":
+        case "starter":
         default:
           return 3;
       }
     };
 
-    const userLimit = getUserLimit(
-      subscription.pricingPlan?.planType || "free",
-    );
+    const userLimit = subscription.pricingPlan?.planType
+      ? getUserLimit(subscription.pricingPlan.planType)
+      : 3; // Default to starter plan limit
 
     // Get invoices
     const invoices = await prisma.invoice.findMany({

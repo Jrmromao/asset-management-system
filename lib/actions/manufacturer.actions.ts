@@ -414,30 +414,47 @@ export const bulkCreate = withAuth(
             },
           });
 
+          let manufacturer;
           if (existingManufacturer) {
             console.log(
-              `[Manufacturer Actions] Manufacturer "${manufacturerData.name}" already exists`,
+              `[Manufacturer Actions] Manufacturer "${manufacturerData.name}" already exists, updating...`,
             );
-            errors.push({
-              row: i + 1,
-              error: `Manufacturer "${manufacturerData.name}" already exists`,
-            });
-            errorCount++;
-            continue;
-          }
 
-          // Create the manufacturer
-          const manufacturer = await prisma.manufacturer.create({
-            data: {
-              name: manufacturerData.name,
-              url: manufacturerData.url,
-              supportUrl: manufacturerData.supportUrl,
-              supportPhone: manufacturerData.supportPhone || null,
-              supportEmail: manufacturerData.supportEmail || null,
-              active: manufacturerData.active ?? true,
-              companyId,
-            },
-          });
+            // Update the existing manufacturer
+            manufacturer = await prisma.manufacturer.update({
+              where: { id: existingManufacturer.id },
+              data: {
+                url: manufacturerData.url,
+                supportUrl: manufacturerData.supportUrl,
+                supportPhone: manufacturerData.supportPhone || null,
+                supportEmail: manufacturerData.supportEmail || null,
+                active: manufacturerData.active ?? true,
+              },
+            });
+
+            console.log(
+              `[Manufacturer Actions] Successfully updated manufacturer:`,
+              manufacturer.name,
+            );
+          } else {
+            // Create the manufacturer
+            manufacturer = await prisma.manufacturer.create({
+              data: {
+                name: manufacturerData.name,
+                url: manufacturerData.url,
+                supportUrl: manufacturerData.supportUrl,
+                supportPhone: manufacturerData.supportPhone || null,
+                supportEmail: manufacturerData.supportEmail || null,
+                active: manufacturerData.active ?? true,
+                companyId,
+              },
+            });
+
+            console.log(
+              `[Manufacturer Actions] Successfully created manufacturer:`,
+              manufacturer.name,
+            );
+          }
 
           console.log(
             `[Manufacturer Actions] Successfully created manufacturer:`,
@@ -448,10 +465,12 @@ export const bulkCreate = withAuth(
           // Create audit log
           await createAuditLog({
             companyId,
-            action: "MANUFACTURER_CREATED",
+            action: existingManufacturer
+              ? "MANUFACTURER_UPDATED"
+              : "MANUFACTURER_CREATED",
             entity: "MANUFACTURER",
             entityId: manufacturer.id,
-            details: `Manufacturer created via bulk import: ${manufacturer.name} by user ${user.id}`,
+            details: `Manufacturer ${existingManufacturer ? "updated" : "created"} via bulk import: ${manufacturer.name} by user ${user.id}`,
           });
         } catch (error) {
           console.error(

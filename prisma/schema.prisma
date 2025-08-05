@@ -479,7 +479,7 @@ model Company {
 
 model Manufacturer {
   id           String   @id @default(cuid())
-  name         String   @unique
+  name         String
   url          String
   supportUrl   String   @unique
   supportPhone String?
@@ -496,6 +496,7 @@ model Manufacturer {
   PurchaseOrder PurchaseOrder[]
   Maintenance   Maintenance[]
 
+  @@unique([name, companyId])
   @@index([companyId])
 }
 
@@ -578,7 +579,7 @@ model Supplier {
   id            String          @id @default(cuid())
   name          String
   contactName   String
-  email         String          @unique
+  email         String
   phoneNum      String? // Made optional
   url           String? // Made optional
   addressLine1  String

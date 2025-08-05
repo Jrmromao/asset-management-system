@@ -551,7 +551,7 @@ function BillingTab() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-8">
-              {/* Assets */}
+              {/* Items */}
               <div>
                 <div className="flex justify-between items-center mb-4">
                   <div className="flex items-center gap-3">
@@ -560,7 +560,7 @@ function BillingTab() {
                     </div>
                     <div>
                       <span className="font-semibold text-slate-900">
-                        Assets
+                        Items
                       </span>
                       <p className="text-xs text-slate-500">
                         Tracked in your system
